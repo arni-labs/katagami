@@ -23,6 +23,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
   const tags = parseJson<string[]>(f.tags) ?? [];
   const lineage = f.lineage_type ?? "original";
   const slug = f.slug || lang.entity_id;
+  const elementCount = c.element_count ?? (parseInt(f.element_count ?? "0", 10) || 0);
 
   return (
     <Link href={`/language/${lang.entity_id}`}>
@@ -50,9 +51,9 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                 gen {f.generation_number ?? "?"}
               </Badge>
             )}
-            {(c.element_count ?? 0) > 0 && (
+            {elementCount > 0 && (
               <Badge variant="outline" className="text-[10px]">
-                {c.element_count} elements
+                {elementCount} elements
               </Badge>
             )}
           </div>

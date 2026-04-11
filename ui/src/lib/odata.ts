@@ -46,6 +46,8 @@ export interface DesignLanguage {
     tags?: string;
     curator_notes?: string;
     source_ids?: string;
+    element_count?: string;
+    composition_count?: string;
     [key: string]: string | undefined;
   };
   counters: {
@@ -110,7 +112,8 @@ export async function listTaxonomies(
 // ── Files (embodiment HTML) ──
 
 export function getFileUrl(fileId: string): string {
-  return `${API_BASE}/tdata/Files('${fileId}')/$value`;
+  // Use the Next.js API proxy which adds the X-Tenant-Id header
+  return `/api/file/${encodeURIComponent(fileId)}`;
 }
 
 // ── Helpers ──

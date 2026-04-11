@@ -25,6 +25,7 @@ export default async function LanguageDetailPage({
   const c = lang.counters;
   const tags = parseJson<string[]>(f.tags) ?? [];
   const parentIds = parseJson<string[]>(f.parent_ids) ?? [];
+  const elementCount = c.element_count ?? (parseInt(f.element_count ?? "0", 10) || 0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -71,7 +72,7 @@ export default async function LanguageDetailPage({
           <Badge variant="outline">gen {f.generation_number ?? "?"}</Badge>
         )}
         <Badge variant="outline">v{c.version ?? 0}</Badge>
-        <Badge variant="outline">{c.element_count ?? 0} elements</Badge>
+        <Badge variant="outline">{elementCount} elements</Badge>
         <Badge variant="outline">{c.usage_count ?? 0} uses</Badge>
         <Badge variant="outline">{c.fork_count ?? 0} forks</Badge>
       </div>
