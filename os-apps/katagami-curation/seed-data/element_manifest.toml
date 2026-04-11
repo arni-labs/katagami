@@ -4,13 +4,13 @@
 [[instance]]
 type = "ElementManifest"
 id = "seed-element-manifest-v1"
-fields = { version = 1, element_count = 70, composition_count = 5 }
+fields = { version = 1, element_count = 61, composition_count = 5 }
 
 [[instance.actions]]
 name = "SetElements"
 
 [instance.actions.params]
-element_count = 70
+element_count = 61
 elements = '''
 [
   {"key": "typography.heading-1", "category": "typography", "name": "Heading 1", "description": "Primary page heading (h1)", "required": true},

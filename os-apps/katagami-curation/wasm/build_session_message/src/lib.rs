@@ -26,7 +26,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let soul_id = fields
             .get("soul_id")
             .and_then(|v| v.as_str())
-            .unwrap_or("app-soul-bootstrap")
+            .unwrap_or("app-agent-bootstrap")
             .to_string();
 
         let model = fields
