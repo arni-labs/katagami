@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -21,7 +22,10 @@ export function CompareSelector({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function update(key: string, value: string | null) {
+  const [a, setA] = useState(initialA ?? "");
+  const [b, setB] = useState(initialB ?? "");
+
+  function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set(key, value);
@@ -33,7 +37,13 @@ export function CompareSelector({
 
   return (
     <div className="flex items-center gap-4">
-      <Select defaultValue={initialA} onValueChange={(v) => update("a", v)}>
+      <Select
+        value={a}
+        onValueChange={(v) => {
+          setA(v);
+          update("a", v);
+        }}
+      >
         <SelectTrigger className="w-64">
           <SelectValue placeholder="Select first language..." />
         </SelectTrigger>
@@ -46,7 +56,13 @@ export function CompareSelector({
         </SelectContent>
       </Select>
       <span className="text-muted-foreground text-sm">vs</span>
-      <Select defaultValue={initialB} onValueChange={(v) => update("b", v)}>
+      <Select
+        value={b}
+        onValueChange={(v) => {
+          setB(v);
+          update("b", v);
+        }}
+      >
         <SelectTrigger className="w-64">
           <SelectValue placeholder="Select second language..." />
         </SelectTrigger>
