@@ -1,0 +1,9 @@
+# WASM build artifacts
+os-apps/*/wasm/*/target/
+os-apps/*/wasm/*/Cargo.lock
+
+# OS
+.DS_Store
+
+# Node
+node_modules/
