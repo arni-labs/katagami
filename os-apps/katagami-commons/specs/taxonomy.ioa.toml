@@ -1,0 +1,84 @@
+# Taxonomy — I/O Automaton Specification
+#
+# Agent-maintained hierarchical classification of design movements and
+# schools. Each node has a parent (for hierarchy), characteristics,
+# historical context, and links to related taxonomies.
+#
+# Lifecycle: Draft -> Published -> Archived
+
+[automaton]
+name = "Taxonomy"
+states = ["Draft", "Published", "Archived"]
+initial = "Draft"
+
+# --- State Variables ---
+
+[[state]]
+name = "has_description"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "language_count"
+type = "counter"
+initial = 0
+
+# --- Draft ---
+
+[[action]]
+name = "Define"
+kind = "input"
+from = ["Draft"]
+effect = "set has_description true"
+params = ["name", "parent_id", "description", "characteristics", "historical_context", "related_taxonomy_ids"]
+hint = "Define or update taxonomy node: name, parent, description, characteristics, and relations."
+
+[[action]]
+name = "Publish"
+kind = "internal"
+from = ["Draft"]
+to = "Published"
+guard = "is_true has_description"
+hint = "Publish taxonomy node. Requires a description."
+
+# --- Published ---
+
+[[action]]
+name = "UpdateCharacteristics"
+kind = "input"
+from = ["Published"]
+params = ["characteristics", "historical_context"]
+hint = "Refine characteristics and historical context without state change."
+
+[[action]]
+name = "UpdateRelations"
+kind = "input"
+from = ["Published"]
+params = ["related_taxonomy_ids"]
+hint = "Update cross-references to related taxonomy nodes."
+
+[[action]]
+name = "IncrementLanguageCount"
+kind = "input"
+from = ["Published"]
+effect = "increment language_count"
+hint = "Record that a DesignLanguage was classified under this taxonomy."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Published"]
+to = "Archived"
+hint = "Archive a taxonomy node. Terminal state."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "ArchivedIsFinal"
+when = ["Archived"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "PublishedRequiresDescription"
+when = ["Published"]
+assert = "has_description"

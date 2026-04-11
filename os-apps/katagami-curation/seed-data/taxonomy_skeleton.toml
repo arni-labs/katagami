@@ -1,0 +1,288 @@
+# Seed data: Initial taxonomy skeleton for design movement classification.
+# ~15 top-level categories. The curator agent will refine, add subcategories,
+# and maintain this hierarchy as design languages are indexed.
+
+# --- Modernist Foundations ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-bauhaus"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Bauhaus"
+parent_id = ""
+description = "Form follows function. Geometric shapes, primary colors, sans-serif typography, grid systems. Originated at the Bauhaus school (1919-1933)."
+characteristics = '{"key_traits": ["geometric", "functional", "grid-based", "primary-colors"], "era": "1919-1933"}'
+historical_context = "Founded by Walter Gropius in Weimar. United fine art and craft. Hugely influential on graphic design, architecture, and later digital interfaces."
+related_taxonomy_ids = '["taxonomy-swiss", "taxonomy-minimalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-swiss"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Swiss / International Typographic Style"
+parent_id = ""
+description = "Clarity through grids, sans-serif type (Helvetica, Akzidenz-Grotesk), asymmetric layouts, objective photography. The gold standard of information design."
+characteristics = '{"key_traits": ["grid-based", "sans-serif", "asymmetric", "objective", "clean"], "era": "1950s-present"}'
+historical_context = "Emerged in Switzerland in the 1950s. Josef Müller-Brockmann, Max Bill. Became the default for corporate identity systems."
+related_taxonomy_ids = '["taxonomy-bauhaus", "taxonomy-minimalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-art-deco"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Art Deco"
+parent_id = ""
+description = "Luxury, glamour, geometric ornamentation. Bold colors, metallic finishes, symmetry, stepped forms. Opulence with structure."
+characteristics = '{"key_traits": ["ornamental", "geometric", "luxurious", "symmetrical", "metallic"], "era": "1920s-1940s"}'
+historical_context = "Peaked in the 1920s-30s. Architecture (Chrysler Building), fashion, graphic arts. Revival in digital design for premium/luxury brands."
+related_taxonomy_ids = '["taxonomy-bauhaus"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# --- Digital Natives ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-flat"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Flat Design"
+parent_id = ""
+description = "No gradients, no shadows, no skeuomorphism. Solid colors, simple iconography, bold typography. Content over chrome."
+characteristics = '{"key_traits": ["no-shadows", "solid-colors", "simple-icons", "bold-typography", "minimal-chrome"], "era": "2012-present"}'
+historical_context = "Microsoft Metro (2012), Apple iOS 7 (2013). Reaction against skeuomorphism. Dominated UI design for a decade."
+related_taxonomy_ids = '["taxonomy-material", "taxonomy-minimalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-material"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Material Design"
+parent_id = ""
+description = "Google's design system. Paper metaphor with elevation, shadows, bold color, motion. Structured yet expressive."
+characteristics = '{"key_traits": ["elevation-shadows", "bold-color", "motion-meaningful", "paper-metaphor", "8dp-grid"], "era": "2014-present"}'
+historical_context = "Launched by Google in 2014. Material Design 3 (2021) added dynamic color from wallpaper. Ubiquitous on Android."
+related_taxonomy_ids = '["taxonomy-flat"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-skeuomorphism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Skeuomorphism"
+parent_id = ""
+description = "Realistic textures, shadows, and physical metaphors in digital interfaces. Leather, wood, metal, paper. Familiar through mimicry."
+characteristics = '{"key_traits": ["realistic-textures", "drop-shadows", "physical-metaphors", "glossy", "detailed"], "era": "2007-2013"}'
+historical_context = "Dominated early iOS and desktop UIs. Scott Forstall era at Apple. Gave way to flat design but seeing selective revival."
+related_taxonomy_ids = '["taxonomy-flat", "taxonomy-neumorphism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# --- Morphisms ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-glassmorphism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Glassmorphism"
+parent_id = ""
+description = "Frosted glass effect. Background blur, transparency, subtle borders, vibrant backgrounds showing through. Depth through translucency."
+characteristics = '{"key_traits": ["backdrop-blur", "transparency", "subtle-borders", "vibrant-backgrounds", "layered"], "era": "2020-present"}'
+historical_context = "Popularized with macOS Big Sur and Windows 11 Acrylic. Evolved from Microsoft's Fluent Design Acrylic material."
+related_taxonomy_ids = '["taxonomy-neumorphism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-neumorphism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Neumorphism"
+parent_id = ""
+description = "Soft, extruded plastic look. Elements appear pressed into or raised from the background using subtle dual shadows. Monochromatic depth."
+characteristics = '{"key_traits": ["soft-shadows", "monochromatic", "extruded", "subtle-depth", "minimal-contrast"], "era": "2020-present"}'
+historical_context = "Emerged on Dribbble around 2020. Criticized for accessibility (low contrast) but influential on component aesthetics."
+related_taxonomy_ids = '["taxonomy-glassmorphism", "taxonomy-skeuomorphism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# --- Aesthetic Movements ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-brutalism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Brutalism"
+parent_id = ""
+description = "Raw, unpolished, confrontational. Monospaced type, harsh colors, exposed structure, intentional ugliness. Anti-design as design."
+characteristics = '{"key_traits": ["monospaced-type", "harsh-colors", "raw-structure", "anti-polish", "deliberately-ugly"], "era": "2014-present"}'
+historical_context = "Inspired by Brutalist architecture (Béton brut). Web brutalism as reaction to polished corporate sites. Bloomberg, Balenciaga."
+related_taxonomy_ids = '["taxonomy-minimalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-minimalism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Minimalism"
+parent_id = ""
+description = "Less is more. Maximum whitespace, restrained palette, essential elements only. Quiet confidence through reduction."
+characteristics = '{"key_traits": ["whitespace-heavy", "restrained-palette", "essential-only", "quiet", "refined"], "era": "1960s-present"}'
+historical_context = "Roots in Japanese aesthetics, De Stijl, Bauhaus. Dieter Rams' 10 principles. Apple under Jony Ive. Perennial in luxury/tech."
+related_taxonomy_ids = '["taxonomy-swiss", "taxonomy-flat", "taxonomy-brutalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-maximalism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Maximalism"
+parent_id = ""
+description = "More is more. Rich textures, dense layouts, layered imagery, vibrant colors, pattern mixing. Sensory abundance as identity."
+characteristics = '{"key_traits": ["dense-layouts", "vibrant-colors", "layered", "pattern-mixing", "ornamental"], "era": "2018-present"}'
+historical_context = "Counter-movement to minimalism. Fashion influence (Gucci, Versace). Gen Z aesthetics. Y2K revival."
+related_taxonomy_ids = '["taxonomy-art-deco", "taxonomy-retro-futurism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-retro-futurism"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Retro-Futurism"
+parent_id = ""
+description = "Past visions of the future. Neon colors, chrome, CRT aesthetics, pixel art, synthwave palettes. Nostalgia for futures that never were."
+characteristics = '{"key_traits": ["neon-colors", "chrome", "crt-aesthetics", "synthwave", "pixel-art"], "era": "2015-present"}'
+historical_context = "Synthwave music scene, vaporwave aesthetics, cyberpunk revival. Stranger Things, Blade Runner 2049 influence on UI."
+related_taxonomy_ids = '["taxonomy-maximalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# --- Emergent & Specialized ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-organic"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Organic / Biomorphic"
+parent_id = ""
+description = "Nature-inspired forms. Soft curves, earth tones, fluid shapes, natural textures. Warmth and approachability."
+characteristics = '{"key_traits": ["soft-curves", "earth-tones", "fluid-shapes", "natural-textures", "warm"], "era": "2019-present"}'
+historical_context = "Reaction to rigid geometric UIs. Influenced by biophilic design in architecture. Wellness, sustainability brands."
+related_taxonomy_ids = '["taxonomy-minimalism"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-neo-corporate"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Neo-Corporate"
+parent_id = ""
+description = "Modern enterprise aesthetic. Clean but not sterile. Accessible, systematic, scalable. Design systems as product."
+characteristics = '{"key_traits": ["systematic", "accessible", "scalable", "clean", "professional"], "era": "2018-present"}'
+historical_context = "Stripe, Linear, Vercel influence. Enterprise software that looks like consumer software. Design tokens as API."
+related_taxonomy_ids = '["taxonomy-swiss", "taxonomy-flat"]'
+
+[[instance.actions]]
+name = "Publish"
+
+# ---
+
+[[instance]]
+type = "Taxonomy"
+id = "taxonomy-japanese"
+
+[[instance.actions]]
+name = "Define"
+[instance.actions.params]
+name = "Japanese / Wabi-Sabi Digital"
+parent_id = ""
+description = "Imperfection, impermanence, incompleteness. Asymmetry, muted tones, natural materials, generous negative space. Quiet beauty."
+characteristics = '{"key_traits": ["asymmetric", "muted-tones", "negative-space", "imperfection", "restrained"], "era": "traditional-present"}'
+historical_context = "Rooted in wabi-sabi aesthetics, ikebana composition, karesansui gardens. Muji, Uniqlo, MUJI passport app."
+related_taxonomy_ids = '["taxonomy-minimalism", "taxonomy-organic"]'
+
+[[instance.actions]]
+name = "Publish"

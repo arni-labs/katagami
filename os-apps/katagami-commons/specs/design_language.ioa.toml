@@ -1,0 +1,275 @@
+# DesignLanguage — I/O Automaton Specification
+#
+# A complete design language with structured spec (Philosophy, Tokens, Rules,
+# LayoutPrinciples, Guidance) and a self-contained HTML embodiment rendering
+# all canonical UI elements.
+#
+# Lifecycle: Draft -> UnderReview -> Published -> Archived
+#                         ^              |
+#                         └──────────────┘ (Revise)
+#
+# Key invariants: can't Publish without all spec sections + embodiment.
+# Lineage: originals, single-parent evolutions, multi-parent remixes.
+
+[automaton]
+name = "DesignLanguage"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+
+# --- State Variables ---
+
+[[state]]
+name = "has_philosophy"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_tokens"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_rules"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_layout"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_guidance"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_embodiment"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_thumbnail"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "element_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "composition_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "fork_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "usage_count"
+type = "counter"
+initial = 0
+
+# --- Actions: Spec Authoring (Draft & UnderReview) ---
+
+[[action]]
+name = "SetName"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["name", "slug"]
+hint = "Set the design language name and URL-safe slug."
+
+[[action]]
+name = "WritePhilosophy"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_philosophy true"
+params = ["philosophy"]
+hint = "Write or update the Philosophy section (values, anti-values, aesthetic lineage)."
+
+[[action]]
+name = "SetTokens"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_tokens true"
+params = ["tokens"]
+hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevation, motion, opacity)."
+
+[[action]]
+name = "SetRules"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_rules true"
+params = ["rules"]
+hint = "Set compositional rules (how tokens combine to form elements)."
+
+[[action]]
+name = "SetLayout"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_layout true"
+params = ["layout_principles"]
+hint = "Set layout principles (density, grid, whitespace, responsive)."
+
+[[action]]
+name = "SetGuidance"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_guidance true"
+params = ["guidance"]
+hint = "Set guidance section (do's, don'ts, usage context)."
+
+# --- Actions: Embodiment ---
+
+[[action]]
+name = "AttachEmbodiment"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = "set has_embodiment true"
+params = ["embodiment_file_id", "element_count", "composition_count"]
+hint = "Attach the self-contained HTML embodiment rendering all canonical elements."
+
+[[action]]
+name = "AttachThumbnail"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = "set has_thumbnail true"
+params = ["thumbnail_file_id"]
+hint = "Attach or update the preview thumbnail image."
+
+# --- Actions: Classification ---
+
+[[action]]
+name = "SetTaxonomy"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["taxonomy_ids"]
+hint = "Assign taxonomy categories to this design language."
+
+[[action]]
+name = "SetTags"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["tags"]
+hint = "Set freeform tags for discovery and search."
+
+[[action]]
+name = "SetSources"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["source_ids"]
+hint = "Link DesignSource entities that informed this language."
+
+# --- Actions: Lineage ---
+
+[[action]]
+name = "SetLineage"
+kind = "input"
+from = ["Draft"]
+params = ["parent_ids", "lineage_type", "generation_number"]
+hint = "Set lineage: parent_ids=[] for originals, single parent for evolution, multiple for remix."
+
+# --- Actions: Review Lifecycle ---
+
+[[action]]
+name = "SubmitForReview"
+kind = "internal"
+from = ["Draft"]
+to = "UnderReview"
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }]
+hint = "Submit for curator review. Requires all five spec sections and an embodiment."
+
+[[action]]
+name = "Publish"
+kind = "internal"
+from = ["UnderReview"]
+to = "Published"
+effect = [{ type = "increment", field = "version" }]
+hint = "Curator approves and publishes. Increments version."
+
+[[action]]
+name = "Revise"
+kind = "input"
+from = ["Published"]
+to = "UnderReview"
+params = ["curator_notes"]
+hint = "Pull a published language back for revision with stated rationale."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Published"]
+to = "Archived"
+hint = "Archive a published design language. Terminal state."
+
+# --- Actions: Quality & Usage Signals ---
+
+[[action]]
+name = "UpdateQuality"
+kind = "input"
+from = ["UnderReview", "Published"]
+params = ["quality_score"]
+hint = "Update multi-dimensional quality score (spec_completeness, embodiment_fidelity, token_consistency)."
+
+[[action]]
+name = "IncrementUsage"
+kind = "input"
+from = ["Published"]
+effect = "increment usage_count"
+hint = "Record that an agent used this design language to build a UI."
+
+[[action]]
+name = "IncrementFork"
+kind = "input"
+from = ["Published"]
+effect = "increment fork_count"
+hint = "Record that a child language was forked from this one."
+
+# --- Output Actions ---
+
+[[action]]
+name = "LanguagePublishedEvent"
+kind = "output"
+hint = "Emitted when a design language is published."
+
+[[action]]
+name = "LanguageArchivedEvent"
+kind = "output"
+hint = "Emitted when a design language is archived."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "ArchivedIsFinal"
+when = ["Archived"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "PublishedRequiresEmbodiment"
+when = ["Published"]
+assert = "has_embodiment"
+
+[[invariant]]
+name = "PublishedRequiresAllSections"
+when = ["Published"]
+assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidance"
+
+# --- Integrations ---
+
+[[integration]]
+name = "notify_published"
+trigger = "Publish"
+type = "webhook"
+
+[[integration]]
+name = "notify_archived"
+trigger = "Archive"
+type = "webhook"

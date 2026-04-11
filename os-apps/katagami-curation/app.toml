@@ -1,0 +1,4 @@
+name = "katagami-curation"
+description = "Agent work layer for katagami — CurationJob queue, bootstrap and curator agents, source search and synthesis pipeline."
+version = "0.1.0"
+dependencies = ["paw-agent", "paw-fs", "katagami-commons"]

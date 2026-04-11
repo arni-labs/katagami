@@ -1,0 +1,94 @@
+# DesignSource — I/O Automaton Specification
+#
+# Raw research material (articles, style guides, design system docs) about
+# design movements. Follows the koto-wiki WikiSource pattern exactly.
+# The Bootstrap agent indexes sources by extracting topics and tracking
+# which DesignLanguages were derived from each source.
+#
+# Lifecycle: Submitted -> Indexed | Failed
+#
+# No WASM integrations; agents dispatch all actions directly.
+
+[automaton]
+name = "DesignSource"
+states = ["Submitted", "Indexed", "Failed"]
+initial = "Submitted"
+
+# --- State Variables ---
+
+[[state]]
+name = "title"
+type = "string"
+initial = ""
+
+[[state]]
+name = "source_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "source_url"
+type = "string"
+initial = ""
+
+[[state]]
+name = "file_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "metadata"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "extracted_topics"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "derived_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "error_message"
+type = "string"
+initial = ""
+
+# --- Submitted ---
+
+[[action]]
+name = "Submit"
+kind = "input"
+from = ["Submitted"]
+params = ["title", "source_type", "source_url", "file_id", "metadata"]
+hint = "Populate or update source fields while in Submitted state."
+
+[[action]]
+name = "Index"
+kind = "input"
+from = ["Submitted"]
+to = "Indexed"
+params = ["extracted_topics", "derived_language_ids"]
+hint = "Mark source as indexed after agent has processed it and extracted design topics."
+
+[[action]]
+name = "IndexFailed"
+kind = "input"
+from = ["Submitted"]
+to = "Failed"
+params = ["error_message"]
+hint = "Mark source as failed if indexing could not complete."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "IndexedIsFinal"
+when = ["Indexed"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "FailedIsFinal"
+when = ["Failed"]
+assert = "no_further_transitions"

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Katagami Curation — Agent Work Layer
+     CurationJob: task queue for bootstrap and curator agents.
+     Structurally identical to koto-wiki WikiJob. -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="Katagami.Curation" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+
+      <!-- CurationJob: task queue entry for bootstrap/curator agents -->
+      <EntityType Name="CurationJob">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Queued" />
+        <Property Name="JobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Input" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Output" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Session spawning fields -->
+        <Property Name="SoulId" Type="Edm.String" Nullable="false" DefaultValue="app-agent-bootstrap" />
+        <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="claude-sonnet-4-20250514" />
+        <Property Name="Provider" Type="Edm.String" Nullable="false" DefaultValue="anthropic" />
+        <Property Name="ToolsEnabled" Type="Edm.String" Nullable="false" DefaultValue="temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch" />
+        <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
+        <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <EntityContainer Name="KatagamiCurationContainer">
+        <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
+      </EntityContainer>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

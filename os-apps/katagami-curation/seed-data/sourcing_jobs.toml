@@ -1,0 +1,22 @@
+# Seed data: Initial sourcing jobs for the bootstrap agent.
+# These kick off the discovery pipeline — the agent researches design movements
+# via web search, stores authoritative sources as DesignSource entities,
+# then synthesis jobs create DesignLanguages from indexed sources.
+
+[[instance]]
+type = "CurationJob"
+id = "seed-design-movements-survey"
+fields = { job_type = "source_search" }
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "source_search"
+input = '''
+{
+  "task": "Survey all major UI/UX design movements, schools, and aesthetic directions used in digital interfaces. Cover historical (Bauhaus, Swiss, Art Deco), contemporary (Material, Flat, Glassmorphism, Neumorphism), and emerging trends. For each movement, find authoritative sources: design system documentation, foundational articles, style guides, academic references. Store each source as a DesignSource entity. Catalog what exists comprehensively before synthesizing.",
+  "priority": "high",
+  "scope": "comprehensive"
+}
+'''

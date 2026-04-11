@@ -1,0 +1,92 @@
+# DesignElement — I/O Automaton Specification
+#
+# One canonical element within one DesignLanguage. Created from the
+# ElementManifest when a DesignLanguage is drafted. Each element gets
+# rendered as HTML, then verified for spec fidelity and accessibility.
+#
+# Lifecycle: Pending -> Rendered -> Verified | Failed
+
+[automaton]
+name = "DesignElement"
+states = ["Pending", "Rendered", "Verified", "Failed"]
+initial = "Pending"
+
+# --- State Variables ---
+
+[[state]]
+name = "design_language_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "element_key"
+type = "string"
+initial = ""
+
+[[state]]
+name = "category"
+type = "string"
+initial = ""
+
+[[state]]
+name = "has_html"
+type = "bool"
+initial = "false"
+
+# --- Pending ---
+
+[[action]]
+name = "Configure"
+kind = "input"
+from = ["Pending"]
+params = ["design_language_id", "element_key", "category", "name"]
+hint = "Set element identity: which language, canonical key, and category."
+
+[[action]]
+name = "Render"
+kind = "input"
+from = ["Pending"]
+to = "Rendered"
+effect = "set has_html true"
+params = ["html_snippet"]
+hint = "Submit the rendered HTML snippet for this element."
+
+# --- Rendered ---
+
+[[action]]
+name = "Verify"
+kind = "input"
+from = ["Rendered"]
+to = "Verified"
+params = ["verification_notes"]
+hint = "Mark element as verified after spec-match, render-quality, and accessibility checks."
+
+[[action]]
+name = "RejectRender"
+kind = "input"
+from = ["Rendered"]
+to = "Failed"
+params = ["verification_notes"]
+hint = "Mark element as failed verification with notes on what went wrong."
+
+# --- Re-render from Failed ---
+
+[[action]]
+name = "Rerender"
+kind = "input"
+from = ["Failed"]
+to = "Rendered"
+params = ["html_snippet"]
+hint = "Submit a corrected HTML snippet after a failed render."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "VerifiedIsFinal"
+when = ["Verified"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "RenderedRequiresHtml"
+when = ["Rendered", "Verified"]
+assert = "has_html"

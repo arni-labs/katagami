@@ -1,0 +1,69 @@
+# ElementManifest — I/O Automaton Specification
+#
+# Defines the canonical set of ~75 UI elements that every design language
+# must render. Versioned and evolvable — when the manifest updates, new
+# DesignElements get created for existing languages.
+#
+# Lifecycle: Draft -> Active -> Superseded
+
+[automaton]
+name = "ElementManifest"
+states = ["Draft", "Active", "Superseded"]
+initial = "Draft"
+
+# --- State Variables ---
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "element_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "composition_count"
+type = "counter"
+initial = 0
+
+# --- Draft ---
+
+[[action]]
+name = "SetElements"
+kind = "input"
+from = ["Draft"]
+params = ["elements", "element_count"]
+hint = "Define the canonical element set (JSON array of {key, category, name, description, required})."
+
+[[action]]
+name = "SetCompositions"
+kind = "input"
+from = ["Draft"]
+params = ["compositions", "composition_count"]
+hint = "Define the canonical compositions (JSON array of {key, name, description})."
+
+[[action]]
+name = "Activate"
+kind = "internal"
+from = ["Draft"]
+to = "Active"
+effect = [{ type = "increment", field = "version" }]
+hint = "Activate this manifest version. Previous Active manifest becomes Superseded."
+
+# --- Active ---
+
+[[action]]
+name = "Supersede"
+kind = "internal"
+from = ["Active"]
+to = "Superseded"
+hint = "Mark this manifest as superseded by a newer version."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "SupersededIsFinal"
+when = ["Superseded"]
+assert = "no_further_transitions"

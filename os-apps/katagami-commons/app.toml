@@ -1,0 +1,4 @@
+name = "katagami-commons"
+description = "Design Language Commons — core data layer for versioned, agent-maintained design languages with canonical UI element coverage."
+version = "0.1.0"
+dependencies = ["paw-fs"]

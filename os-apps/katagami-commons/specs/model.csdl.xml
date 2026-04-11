@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Katagami Design Language Commons — Core Data Model
+     Five entity types: DesignLanguage, DesignElement, DesignSource, ElementManifest, Taxonomy.
+     All large content stored in paw-fs Files; entities hold metadata and JSON specs. -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="Katagami" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+
+      <!-- DesignLanguage: complete design language with structured spec + embodiment -->
+      <EntityType Name="DesignLanguage">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Structured spec sections (JSON) -->
+        <Property Name="Philosophy" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Tokens" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Rules" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="LayoutPrinciples" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Guidance" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Embodiment: self-contained HTML file in paw-fs -->
+        <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Lineage -->
+        <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LineageType" Type="Edm.String" Nullable="false" DefaultValue="original" />
+        <Property Name="GenerationNumber" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Classification -->
+        <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- Quality signals -->
+        <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Timestamps -->
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- DesignElement: one canonical element within one DesignLanguage -->
+      <EntityType Name="DesignElement">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Pending" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ElementKey" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Category" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HtmlSnippet" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VerificationNotes" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- DesignSource: raw research material (articles, style guides, etc.) -->
+      <EntityType Name="DesignSource">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Submitted" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="FileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Metadata" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="ExtractedTopics" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="DerivedLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- ElementManifest: the canonical set of UI elements every design language must render -->
+      <EntityType Name="ElementManifest">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="Elements" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Compositions" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- Taxonomy: agent-maintained hierarchical classification of design movements -->
+      <EntityType Name="Taxonomy">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ParentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Description" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Characteristics" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HistoricalContext" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RelatedTaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LanguageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <EntityContainer Name="KatagamiCommonsContainer">
+        <EntitySet Name="DesignLanguages" EntityType="Katagami.DesignLanguage" />
+        <EntitySet Name="DesignElements" EntityType="Katagami.DesignElement" />
+        <EntitySet Name="DesignSources" EntityType="Katagami.DesignSource" />
+        <EntitySet Name="ElementManifests" EntityType="Katagami.ElementManifest" />
+        <EntitySet Name="Taxonomies" EntityType="Katagami.Taxonomy" />
+      </EntityContainer>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

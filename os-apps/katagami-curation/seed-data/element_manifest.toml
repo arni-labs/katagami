@@ -1,0 +1,102 @@
+# Seed data: Canonical Element Manifest v1
+# Defines the ~75 UI elements + 5 compositions every design language must render.
+
+[[instance]]
+type = "ElementManifest"
+id = "seed-element-manifest-v1"
+fields = { version = 1, element_count = 70, composition_count = 5 }
+
+[[instance.actions]]
+name = "SetElements"
+
+[instance.actions.params]
+element_count = 70
+elements = '''
+[
+  {"key": "typography.heading-1", "category": "typography", "name": "Heading 1", "description": "Primary page heading (h1)", "required": true},
+  {"key": "typography.heading-2", "category": "typography", "name": "Heading 2", "description": "Section heading (h2)", "required": true},
+  {"key": "typography.heading-3", "category": "typography", "name": "Heading 3", "description": "Subsection heading (h3)", "required": true},
+  {"key": "typography.heading-4", "category": "typography", "name": "Heading 4", "description": "Minor heading (h4)", "required": true},
+  {"key": "typography.heading-5", "category": "typography", "name": "Heading 5", "description": "Fine heading (h5)", "required": false},
+  {"key": "typography.heading-6", "category": "typography", "name": "Heading 6", "description": "Smallest heading (h6)", "required": false},
+  {"key": "typography.body", "category": "typography", "name": "Body Text", "description": "Standard paragraph text", "required": true},
+  {"key": "typography.caption", "category": "typography", "name": "Caption", "description": "Small descriptive text for images, tables, figures", "required": true},
+  {"key": "typography.label", "category": "typography", "name": "Label", "description": "Form and UI labels", "required": true},
+  {"key": "typography.code-block", "category": "typography", "name": "Code Block", "description": "Monospaced code display", "required": true},
+
+  {"key": "controls.button", "category": "controls", "name": "Button", "description": "Primary, secondary, and ghost button variants", "required": true},
+  {"key": "controls.button-group", "category": "controls", "name": "Button Group", "description": "Grouped action buttons", "required": true},
+  {"key": "controls.text-input", "category": "controls", "name": "Text Input", "description": "Single-line text field with label, placeholder, validation", "required": true},
+  {"key": "controls.textarea", "category": "controls", "name": "Textarea", "description": "Multi-line text input", "required": true},
+  {"key": "controls.select", "category": "controls", "name": "Select", "description": "Dropdown selection", "required": true},
+  {"key": "controls.checkbox", "category": "controls", "name": "Checkbox", "description": "Single and grouped checkboxes", "required": true},
+  {"key": "controls.radio", "category": "controls", "name": "Radio", "description": "Radio button group", "required": true},
+  {"key": "controls.toggle", "category": "controls", "name": "Toggle", "description": "On/off switch", "required": true},
+  {"key": "controls.slider", "category": "controls", "name": "Slider", "description": "Range slider input", "required": true},
+  {"key": "controls.date-picker", "category": "controls", "name": "Date Picker", "description": "Date selection control", "required": false},
+  {"key": "controls.file-upload", "category": "controls", "name": "File Upload", "description": "File upload dropzone/button", "required": false},
+  {"key": "controls.search", "category": "controls", "name": "Search", "description": "Search input with icon", "required": true},
+
+  {"key": "feedback.alert", "category": "feedback", "name": "Alert", "description": "Info, success, warning, error alert banners", "required": true},
+  {"key": "feedback.toast", "category": "feedback", "name": "Toast", "description": "Ephemeral notification popup", "required": true},
+  {"key": "feedback.badge", "category": "feedback", "name": "Badge", "description": "Status indicator badge/pill", "required": true},
+  {"key": "feedback.tooltip", "category": "feedback", "name": "Tooltip", "description": "Hover information tooltip", "required": true},
+  {"key": "feedback.progress-bar", "category": "feedback", "name": "Progress Bar", "description": "Determinate progress indicator", "required": true},
+  {"key": "feedback.spinner", "category": "feedback", "name": "Spinner", "description": "Indeterminate loading indicator", "required": true},
+  {"key": "feedback.skeleton", "category": "feedback", "name": "Skeleton", "description": "Content placeholder during loading", "required": true},
+  {"key": "feedback.empty-state", "category": "feedback", "name": "Empty State", "description": "No-content state with illustration and call-to-action", "required": true},
+  {"key": "feedback.error-state", "category": "feedback", "name": "Error State", "description": "Error display with recovery action", "required": true},
+  {"key": "feedback.success-state", "category": "feedback", "name": "Success State", "description": "Success confirmation with next steps", "required": true},
+
+  {"key": "nav.navbar", "category": "navigation", "name": "Navbar", "description": "Top navigation bar with logo, links, actions", "required": true},
+  {"key": "nav.sidebar", "category": "navigation", "name": "Sidebar", "description": "Vertical navigation sidebar with sections", "required": true},
+  {"key": "nav.tabs", "category": "navigation", "name": "Tabs", "description": "Tabbed content navigation", "required": true},
+  {"key": "nav.breadcrumbs", "category": "navigation", "name": "Breadcrumbs", "description": "Hierarchical path indicator", "required": true},
+  {"key": "nav.pagination", "category": "navigation", "name": "Pagination", "description": "Page navigation controls", "required": true},
+  {"key": "nav.command-palette", "category": "navigation", "name": "Command Palette", "description": "Keyboard-driven command search overlay", "required": false},
+  {"key": "nav.footer", "category": "navigation", "name": "Footer", "description": "Page footer with links and info", "required": true},
+  {"key": "nav.mobile-nav", "category": "navigation", "name": "Mobile Nav", "description": "Responsive mobile navigation (hamburger, bottom bar)", "required": true},
+
+  {"key": "containers.card", "category": "containers", "name": "Card", "description": "Content card with header, body, footer", "required": true},
+  {"key": "containers.modal", "category": "containers", "name": "Modal", "description": "Overlay dialog with backdrop", "required": true},
+  {"key": "containers.drawer", "category": "containers", "name": "Drawer", "description": "Slide-out panel (left/right)", "required": true},
+  {"key": "containers.sheet", "category": "containers", "name": "Sheet", "description": "Bottom sheet for mobile contexts", "required": false},
+  {"key": "containers.accordion", "category": "containers", "name": "Accordion", "description": "Expandable/collapsible sections", "required": true},
+  {"key": "containers.popover", "category": "containers", "name": "Popover", "description": "Anchored content popup", "required": true},
+  {"key": "containers.divider", "category": "containers", "name": "Divider", "description": "Horizontal/vertical content separator", "required": true},
+  {"key": "containers.section", "category": "containers", "name": "Section", "description": "Page section with heading and content area", "required": true},
+
+  {"key": "data.table", "category": "data", "name": "Table", "description": "Data table with sorting, selection, pagination", "required": true},
+  {"key": "data.list", "category": "data", "name": "List", "description": "Vertical list with items, icons, actions", "required": true},
+  {"key": "data.stat-card", "category": "data", "name": "Stat Card", "description": "Key metric display with label, value, trend", "required": true},
+  {"key": "data.chart-bar", "category": "data", "name": "Bar Chart", "description": "Vertical/horizontal bar chart", "required": true},
+  {"key": "data.chart-line", "category": "data", "name": "Line Chart", "description": "Time series line chart", "required": true},
+  {"key": "data.chart-pie", "category": "data", "name": "Pie Chart", "description": "Pie/donut chart", "required": false},
+  {"key": "data.timeline", "category": "data", "name": "Timeline", "description": "Chronological event timeline", "required": false},
+  {"key": "data.avatar", "category": "data", "name": "Avatar", "description": "User avatar (image, initials, icon)", "required": true},
+
+  {"key": "forms.login", "category": "forms", "name": "Login Form", "description": "Email/password login with validation and social options", "required": true},
+  {"key": "forms.signup", "category": "forms", "name": "Signup Form", "description": "Registration form with field validation", "required": true},
+  {"key": "forms.contact", "category": "forms", "name": "Contact Form", "description": "Name, email, message contact form", "required": true},
+  {"key": "forms.settings", "category": "forms", "name": "Settings Form", "description": "Settings page with grouped controls", "required": true},
+  {"key": "forms.checkout", "category": "forms", "name": "Checkout Form", "description": "Multi-step or single-page checkout", "required": false}
+]
+'''
+
+[[instance.actions]]
+name = "SetCompositions"
+
+[instance.actions.params]
+composition_count = 5
+compositions = '''
+[
+  {"key": "compositions.dashboard", "name": "Dashboard", "description": "Full dashboard layout with sidebar nav, stat cards, charts, and data table"},
+  {"key": "compositions.landing", "name": "Landing Page", "description": "Marketing landing page with hero, features, testimonials, CTA, footer"},
+  {"key": "compositions.settings-page", "name": "Settings Page", "description": "App settings page with sidebar navigation and grouped form controls"},
+  {"key": "compositions.auth-page", "name": "Auth Page", "description": "Authentication page with centered form, branding, and social login"},
+  {"key": "compositions.error-page", "name": "Error Page", "description": "Full-page error display (404, 500) with illustration and recovery"}
+]
+'''
+
+[[instance.actions]]
+name = "Activate"
