@@ -1,5 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3467";
-const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "rita-agents";
+const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
+const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
+const API_KEY = process.env.TEMPER_API_KEY || "";
 
 interface ODataResponse<T> {
   value: T[];
@@ -10,6 +11,7 @@ interface ODataResponse<T> {
 const headers: Record<string, string> = {
   "Content-Type": "application/json",
   "X-Tenant-Id": TENANT,
+  ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
 };
 
 async function odata<T>(path: string, init?: RequestInit): Promise<T> {
@@ -37,6 +39,8 @@ export interface DesignLanguage {
     rules?: string;
     layout_principles?: string;
     guidance?: string;
+    imagery_direction?: string;
+    generative_canvas?: string;
     embodiment_file_id?: string;
     thumbnail_file_id?: string;
     parent_ids?: string;

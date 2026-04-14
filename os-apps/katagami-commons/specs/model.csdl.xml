@@ -22,6 +22,9 @@
         <Property Name="Rules" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="LayoutPrinciples" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Guidance" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Imagery & generative direction (JSON) -->
+        <Property Name="ImageryDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="GenerativeCanvas" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />

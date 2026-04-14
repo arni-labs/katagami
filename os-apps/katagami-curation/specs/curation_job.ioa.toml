@@ -108,7 +108,7 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "workspace_id", "input"]
+params = ["job_type", "design_language_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled"]
 hint = "Set or update job parameters before execution."
 
 [[action]]

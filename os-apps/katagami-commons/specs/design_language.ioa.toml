@@ -127,6 +127,20 @@ effect = "set has_guidance true"
 params = ["guidance"]
 hint = "Set guidance section (do's, don'ts, usage context)."
 
+[[action]]
+name = "SetImageryDirection"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["imagery_direction"]
+hint = "Set imagery & illustration direction (illustration_style, hero_image_direction, icon_style, image_gen_prompts)."
+
+[[action]]
+name = "SetGenerativeCanvas"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["generative_canvas"]
+hint = "Set generative/interactive canvas direction (WebGL techniques, canvas effects, shader palette, animation philosophy)."
+
 # --- Actions: Embodiment ---
 
 [[action]]

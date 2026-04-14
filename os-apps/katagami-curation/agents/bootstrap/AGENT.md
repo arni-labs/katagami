@@ -137,6 +137,25 @@ Create DesignLanguage entities from indexed sources.
               'accessibility': '...'
           })
       })
+      temper.action('DesignLanguages', lang['entity_id'], 'SetImageryDirection', {
+          'imagery_direction': json.dumps({
+              'illustration_style': '...',
+              'hero_image_direction': '...',
+              'background_treatment': '...',
+              'icon_style': '...',
+              'image_generation_prompts': [...],
+              'photography_direction': '...'
+          })
+      })
+      temper.action('DesignLanguages', lang['entity_id'], 'SetGenerativeCanvas', {
+          'generative_canvas': json.dumps({
+              'webgl_techniques': [...],
+              'canvas_effects': [...],
+              'shader_palette': '...',
+              'animation_philosophy': '...',
+              'interactive_elements': [...]
+          })
+      })
       ```
    b. Generate a self-contained HTML embodiment rendering all canonical elements:
       - The HTML must be a single file with inline CSS and no external dependencies
@@ -168,13 +187,17 @@ Create DesignLanguage entities from indexed sources.
 
 4. Complete the job with output listing created language IDs.
 
-### Design Language Quality Standards
+### Design Language Quality Standards — CRITICAL
 
-- **Philosophy** must reflect genuine design principles, not generic statements
-- **Tokens** must be specific and internally consistent (colors that work together, typography that creates hierarchy)
-- **Rules** must describe how tokens combine, not just list tokens again
-- **Layout** must specify concrete grid and spacing decisions
-- **Guidance** must include actionable do's and don'ts
+Each design language spec is a COMPREHENSIVE REFERENCE DOCUMENT, not a summary. A designer or AI agent should be able to build any complete UI from the spec alone. Every section must be SUBSTANTIAL:
+
+- **Philosophy** (minimum 800 chars): Include `summary`, `values` (5-8 with explanations), `anti_values` (3-5), `aesthetic_lineage` (paragraph on historical roots), `core_principle`, `emotional_target`, `cultural_context`. This should read like the opening chapter of a design book.
+- **Tokens** (minimum 1200 chars): Complete color palette (16+ named colors with hex values), full typography system (font stacks, scale ratio, line heights, letter spacings, weights), spacing scale (8+ values), border radii (6 sizes), shadows (4 levels with full CSS values), elevation levels, motion durations and easings, opacity values. Every value must be SPECIFIC — no placeholders.
+- **Rules** (minimum 800 chars): Include `composition` (5-8 rules), `hierarchy` (4-6), `contrast` (3-5), `rhythm` (3-5), `color_usage` (3-5), `typography_rules` (3-5), `interaction_patterns` (3-5). Each rule should be a concrete instruction, not a vague principle.
+- **Layout** (minimum 600 chars): Include `density` with rationale, `grid` with specific column count/gutter/max-width, `whitespace` philosophy, `responsive` breakpoints with pixel values, `alignment` patterns, `content_width` specs.
+- **Guidance** (minimum 800 chars): Include `dos` (6-10 specific instructions), `donts` (6-10 prohibitions), `common_mistakes` (3-5), `usage_context` (paragraph), `accessibility` (paragraph), `brand_voice` (2-3 sentences).
+- **Imagery & Illustration Direction** (minimum 600 chars): Include `illustration_style`, `hero_image_direction`, `background_treatment`, `icon_style`, `image_generation_prompts` (3-5 AI image gen prompts), `photography_direction`. This tells image generators and illustrators how to create on-brand visuals.
+- **Generative & Interactive Canvas** (minimum 400 chars): Include `webgl_techniques` (3-5 Three.js/WebGL effects), `canvas_effects` (3-5 2D canvas techniques), `shader_palette`, `animation_philosophy`, `interactive_elements` (cursor trails, scroll effects, etc.). This guides developers building immersive interactive experiences.
 - **Embodiment HTML** must be self-contained, render all canonical elements, and visually embody the design language
 
 ## Hard Constraints

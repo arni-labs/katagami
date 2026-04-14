@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3467";
-const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "rita-agents";
+const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
+const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
+const API_KEY = process.env.TEMPER_API_KEY || "";
 
 export async function GET(
   _req: NextRequest,
@@ -9,8 +10,11 @@ export async function GET(
 ) {
   const { id } = await params;
 
+  const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
+  if (API_KEY) fetchHeaders["Authorization"] = `Bearer ${API_KEY}`;
+
   const res = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
-    headers: { "X-Tenant-Id": TENANT },
+    headers: fetchHeaders,
     cache: "no-store",
   });
 

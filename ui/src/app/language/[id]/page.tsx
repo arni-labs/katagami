@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { getDesignLanguage, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
+import { DesignShowcase } from "@/components/design-showcase";
 
 export default async function LanguageDetailPage({
   params,
@@ -127,19 +128,23 @@ export default async function LanguageDetailPage({
           rules={f.rules}
           layout={f.layout_principles}
           guidance={f.guidance}
+          imageryDirection={f.imagery_direction}
+          generativeCanvas={f.generative_canvas}
         />
       </section>
 
       <Separator />
 
-      {/* Embodiment */}
+      {/* Design Embodiment */}
       <section>
-        <h2 className="text-lg font-semibold mb-4">Embodiment</h2>
+        <h2 className="text-lg font-semibold mb-4">Design Embodiment</h2>
         {f.embodiment_file_id ? (
           <EmbodimentViewer fileId={f.embodiment_file_id} />
+        ) : f.tokens ? (
+          <DesignShowcase tokensRaw={f.tokens} languageName={f.name ?? "Untitled"} />
         ) : (
           <div className="text-center py-16 text-muted-foreground rounded-lg border border-dashed">
-            No embodiment attached yet.
+            No embodiment or design tokens defined yet.
           </div>
         )}
       </section>

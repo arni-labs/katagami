@@ -33,7 +33,8 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
     <div className="rounded-lg border border-border overflow-hidden bg-white">
       <iframe
         src={url}
-        className="w-full h-[600px]"
+        className="w-full"
+        style={{ minHeight: 800 }}
         sandbox="allow-scripts"
         title="Design language embodiment"
       />

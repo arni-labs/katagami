@@ -316,18 +316,15 @@ fn build_synthesize_message(
 Job ID: {job_id}
 Workspace ID: {workspace_id}
 
-## Operating Model
+## CRITICAL: Execution Discipline
 
-- This session has the shared workspace attached. Use `temper.read()` and `temper.write()`.
-- The Monty REPL is persistent. Variables and helpers survive across `execute` calls.
-- Persist durable artifacts to workspace files and Temper entities.
+- Do NOT spend turns exploring state or reading existing entities. Start creating immediately.
+- Do NOT create or modify Taxonomy entities. Taxonomies already exist.
+- Do NOT call temper.read() for workspace files — there is nothing useful to read.
+- EVERY tool call must create or populate a DesignLanguage. No exploration turns.
+- You MUST create ALL languages before stopping. Do NOT return a text response until done.
+- The Monty REPL is persistent. Variables survive across `execute` calls.
 - Do not use `bash` or `sandbox.*`. Stay inside Temper tools only.
-
-## Orient First
-
-1. Load the active ElementManifest: `temper.list('ElementManifests', "$filter=State eq 'Active'")`
-2. Read indexed DesignSources referenced by this job.
-3. List existing DesignLanguages to avoid duplicates.
 
 ## Required Scope
 
@@ -335,52 +332,56 @@ Workspace ID: {workspace_id}
 
 ## Mission
 
-Create complete DesignLanguage entities from the indexed sources. Each language must have all 5 structured spec sections (Philosophy, Tokens, Rules, Layout, Guidance) and a self-contained HTML embodiment rendering all canonical UI elements.
+Create complete DesignLanguage entities. Each language must have all 5 structured spec sections (Philosophy, Tokens, Rules, Layout, Guidance) and a self-contained HTML embodiment. You must create ALL languages listed in the scope, then call `temper.done()`.
 
 ## Tooling Rules
 
 - No `import` statements
-- No `enumerate(..., start=...)`
+- No `enumerate(..., start=...)` — use `for i in range(len(items)):` instead
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
 - Always serialize JSON with `json.dumps(...)`.
+- String literals containing quotes MUST use proper escaping. Prefer single-quoted strings for JSON content.
+- When writing long strings, break them into smaller concatenated parts to avoid syntax errors.
 - Runtime constants:
   - `job_id = "{job_id}"`
   - `workspace_id = "{workspace_id}"`
 
 ## Exact Entity Shapes
 
-- Create and populate a DesignLanguage:
-  ```
+- Create and populate a DesignLanguage (ALL in one tool call per language):
+  ```python
+  slug = 'my-language-slug'
+  name = 'My Language Name'
   lang = temper.create('DesignLanguages', {{'Id': slug}})
   eid = lang['entity_id']
   temper.action('DesignLanguages', eid, 'SetName', {{'name': name, 'slug': slug}})
-  temper.action('DesignLanguages', eid, 'WritePhilosophy', {{'philosophy': json.dumps(philosophy_obj)}})
-  temper.action('DesignLanguages', eid, 'SetTokens', {{'tokens': json.dumps(tokens_obj)}})
-  temper.action('DesignLanguages', eid, 'SetRules', {{'rules': json.dumps(rules_obj)}})
-  temper.action('DesignLanguages', eid, 'SetLayout', {{'layout_principles': json.dumps(layout_obj)}})
-  temper.action('DesignLanguages', eid, 'SetGuidance', {{'guidance': json.dumps(guidance_obj)}})
+  philosophy = {{"summary": "...", "values": [...], "anti_values": [...]}}
+  temper.action('DesignLanguages', eid, 'WritePhilosophy', {{'philosophy': json.dumps(philosophy)}})
+  tokens = {{"colors": {{...}}, "typography": {{...}}, "spacing": {{...}}, "radii": {{...}}, "shadows": {{...}}}}
+  temper.action('DesignLanguages', eid, 'SetTokens', {{'tokens': json.dumps(tokens)}})
+  rules = {{"composition": "...", "hierarchy": "...", "density": "..."}}
+  temper.action('DesignLanguages', eid, 'SetRules', {{'rules': json.dumps(rules)}})
+  layout = {{"grid": "...", "breakpoints": "...", "whitespace": "..."}}
+  temper.action('DesignLanguages', eid, 'SetLayout', {{'layout_principles': json.dumps(layout)}})
+  guidance = {{"do": [...], "dont": [...]}}
+  temper.action('DesignLanguages', eid, 'SetGuidance', {{'guidance': json.dumps(guidance)}})
   ```
-- Generate and attach embodiment:
-  ```
-  html = generate_embodiment(tokens, rules, elements)
-  result = temper.write(f'/katagami/embodiments/{{slug}}.html', html)
+- Generate and attach embodiment (in the SAME tool call):
+  ```python
+  html = '<full HTML embodiment here>'
+  result = temper.write('/katagami/embodiments/' + slug + '.html', html)
   temper.action('DesignLanguages', eid, 'AttachEmbodiment', {{
       'embodiment_file_id': result['file_id'],
-      'element_count': str(element_count),
-      'composition_count': str(composition_count)
+      'element_count': '15',
+      'composition_count': '5'
   }})
-  ```
-- Set lineage and sources:
-  ```
   temper.action('DesignLanguages', eid, 'SetLineage', {{
       'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
   }})
-  temper.action('DesignLanguages', eid, 'SetSources', {{
-      'source_ids': json.dumps(source_ids)
-  }})
+  print('CREATED: ' + name + ' eid=' + eid)
   ```
-- Complete:
-  ```
+- After ALL languages are created:
+  ```python
   output = json.dumps({{'language_ids': created_ids}}, ensure_ascii=False)
   temper.action('CurationJobs', job_id, 'Complete', {{'output': output}})
   temper.done("synthesize complete")
@@ -388,17 +389,12 @@ Create complete DesignLanguage entities from the indexed sources. Each language 
 
 ## Required Flow
 
-1. Load ElementManifest and indexed sources.
-2. Plan which design languages to create from the discovered movements.
-3. For each language:
-   a. Create entity and populate all 5 spec sections with substantive, movement-specific content.
-   b. Generate self-contained HTML embodiment with inline CSS, no external deps.
-   c. The embodiment must render EVERY element from the ElementManifest in the language's style.
-   d. Store embodiment in workspace and attach to entity.
-   e. Set lineage (original, generation 0) and link sources.
-4. Update workspace index and log.
-5. Dispatch `Complete` with all created language IDs.
-6. Call `temper.done("synthesize complete")` immediately after.
+1. First tool call: Create language #1 (entity + all specs + HTML embodiment + attach).
+2. Second tool call: Create language #2.
+3. Continue until ALL languages in scope are created.
+4. Final tool call: Complete the job and call temper.done().
+
+Do NOT skip any language. Do NOT stop early. Do NOT return text between languages. Every tool call = one complete language.
 
 ## Token Structure
 
@@ -408,18 +404,33 @@ Each design language's tokens must include:
 - **spacing**: base unit (typically 4 or 8px), scale array
 - **radii**: none, sm, md, lg, full
 - **shadows**: sm, md, lg (with color, offset, blur)
-- **elevation**: levels 0-4
-- **motion**: duration_fast, duration_normal, duration_slow, easing
-- **opacity**: disabled, hover, backdrop
 
-## Embodiment HTML Standards
+## Embodiment HTML Standards — STRUCTURAL UNIQUENESS IS MANDATORY
 
-- Single self-contained HTML file with all CSS inline (in a `<style>` block)
-- No external dependencies (no CDN links, no Google Fonts URLs)
-- Must render every canonical element from the ElementManifest
+Each embodiment MUST have a DIFFERENT HTML structure, not just different CSS variables. If two embodiments share the same template with only colors changed, that is a failure.
+
+Structural differentiation requirements:
+- **Neo-Brutalist**: 0px border-radius, thick 3-4px borders, offset box-shadows (4px 4px 0px), asymmetric grid, uppercase headings, monospace accents, raw/punk aesthetic
+- **Cyberpunk/Neon**: Dark backgrounds (#0a0a0f), neon glow box-shadows (0 0 20px), monospace fonts, scan-line CSS effects, terminal-style inputs, glitch decorations
+- **Swiss/International**: 12-column grid, Helvetica/Arial, zero decoration, pure typographic hierarchy, red accent, extreme letter-spacing on labels
+- **Glassmorphism**: backdrop-filter blur, semi-transparent surfaces (rgba backgrounds), large border-radius (16-24px), subtle borders (1px rgba), frosted-glass cards
+- **Neumorphism**: Large border-radius (20px+), double box-shadows (light + dark offset for 3D pillow effect), NO visible borders, soft muted palette
+- **Art Deco**: Geometric ornamental borders, gold/brass accents (#C9A84C), wide letter-spacing, decorative section dividers, serif headings, fan/chevron patterns
+- **Material Design 3**: Rounded rectangles (12-16px radius), tonal color system, elevation via shadows, 8px grid, Roboto font, FAB and chip components
+- **Flat/Metro**: Zero shadows, zero gradients, zero border-radius, bold solid colors, thin borders only, segmented grid, clean sans-serif
+- **Organic/Nature**: Irregular border-radius (blob shapes), earth tones, hand-drawn border styles, warm shadows, variable spacing, nature-inspired decorations
+- **Retro-Futurism**: CRT phosphor colors, scanline overlays, curved/rounded shapes, monospace type, terminal green (#33ff33), bevel effects
+- **Minimalist Japanese**: Extreme whitespace, subtle borders, muted palette, small precise typography, zen-like simplicity, asymmetric balance
+- **Maximalist Pop**: Bold clashing colors, thick outlines, large type, sticker/collage aesthetic, rotated elements, playful shadows
+- **Dark Luxury**: Pure black backgrounds, thin gold borders, serif headings, extreme contrast, subtle gradients, premium spacing
+- **Retro Computing**: Pixel-perfect borders, system fonts (Courier), 1px borders, DOS-era colors, dithering patterns, 8-bit aesthetic
+
+Each embodiment is a single self-contained HTML file:
+- All CSS in a `<style>` block — NO external dependencies
+- No CDN links, no Google Fonts URLs — use system font stacks
+- Must render: buttons (primary, secondary, disabled), text inputs, select, checkbox, radio, toggle, cards, modal, alert, toast, table, tabs, badges, avatar, pagination, accordion, progress bar, and a mini dashboard composition
 - Organized by category with clear section headers
-- Must visually demonstrate the design language's aesthetic
-- Include both light states and interactive states (hover, focus, disabled) where applicable
+- Include interactive states (hover, focus, disabled) via CSS pseudo-classes
 "#
     )
 }

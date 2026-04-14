@@ -19,6 +19,9 @@ async function GalleryGrid({
 
   let languages = await listDesignLanguages(filter);
 
+  // Filter out empty drafts (no name set = incomplete/abandoned)
+  languages = languages.filter((l) => l.fields.name);
+
   // Client-side filters for taxonomy and search (OData filter on JSON fields
   // is not yet reliable in Temper)
   if (taxonomy) {

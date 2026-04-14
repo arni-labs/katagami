@@ -12,7 +12,7 @@ import Link from "next/link";
 export default async function TaxonomyPage() {
   let taxonomies;
   try {
-    taxonomies = await listTaxonomies();
+    taxonomies = await listTaxonomies("Status ne 'Archived'");
   } catch {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8">

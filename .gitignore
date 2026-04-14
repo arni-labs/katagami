@@ -2,6 +2,9 @@
 os-apps/*/wasm/*/target/
 os-apps/*/wasm/*/Cargo.lock
 
+# Local database
+.data/
+
 # OS
 .DS_Store
 

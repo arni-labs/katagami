@@ -13,6 +13,8 @@ interface SpecPanelProps {
   rules?: string;
   layout?: string;
   guidance?: string;
+  imageryDirection?: string;
+  generativeCanvas?: string;
 }
 
 function PhilosophyView({ raw }: { raw?: string }) {
@@ -153,13 +155,15 @@ function Empty() {
   return <p className="text-sm text-muted-foreground italic p-4">Not set</p>;
 }
 
-export function SpecPanel({ philosophy, tokens, rules, layout, guidance }: SpecPanelProps) {
+export function SpecPanel({ philosophy, tokens, rules, layout, guidance, imageryDirection, generativeCanvas }: SpecPanelProps) {
   const sections = [
     { key: "philosophy", label: "Philosophy", content: <PhilosophyView raw={philosophy} /> },
     { key: "tokens", label: "Tokens", content: <TokensView raw={tokens} /> },
     { key: "rules", label: "Rules", content: <KeyValueView raw={rules} /> },
     { key: "layout", label: "Layout", content: <KeyValueView raw={layout} /> },
     { key: "guidance", label: "Guidance", content: <KeyValueView raw={guidance} /> },
+    ...(imageryDirection ? [{ key: "imagery", label: "Imagery", content: <KeyValueView raw={imageryDirection} /> }] : []),
+    ...(generativeCanvas ? [{ key: "generative", label: "Generative", content: <KeyValueView raw={generativeCanvas} /> }] : []),
   ];
 
   return (
