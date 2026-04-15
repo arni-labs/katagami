@@ -99,6 +99,12 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "synthesize" => {
                 build_synthesize_message(&fields, &input, &entity_id, &workspace_id)
             }
+            "quality_review" => {
+                build_quality_review_message(&input, &entity_id, &workspace_id)
+            }
+            "organize_taxonomy" => {
+                build_organize_taxonomy_message(&input, &entity_id, &workspace_id)
+            }
             other => {
                 return Err(format!(
                     "build_session_message: unsupported job_type '{other}'"
@@ -319,10 +325,12 @@ Workspace ID: {workspace_id}
 ## CRITICAL: Execution Discipline
 
 - Do NOT spend turns exploring state or reading existing entities. Start creating immediately.
-- Do NOT create or modify Taxonomy entities. Taxonomies already exist.
+- NEVER create, modify, or delete Taxonomy entities. Taxonomy organization is handled by a separate organize_taxonomy job. If you call temper.create('Taxonomies', ...) or temper.action('Taxonomies', ...), you are violating this constraint.
+- Do NOT call SetTaxonomy on DesignLanguages. Taxonomy assignment is the curator agent's job, not yours.
 - Do NOT call temper.read() for workspace files — there is nothing useful to read.
 - EVERY tool call must create or populate a DesignLanguage. No exploration turns.
-- You MUST create ALL languages before stopping. Do NOT return a text response until done.
+- You MUST create ALL languages listed in the scope before stopping. Do NOT return a text response until done.
+- Each session should create ONE language unless multiple are explicitly listed. Template fatigue degrades quality when generating many languages sequentially.
 - The Monty REPL is persistent. Variables survive across `execute` calls.
 - Do not use `bash` or `sandbox.*`. Stay inside Temper tools only.
 
@@ -355,11 +363,12 @@ Create complete DesignLanguage entities. Each language must have all 5 structure
   lang = temper.create('DesignLanguages', {{'Id': slug}})
   eid = lang['entity_id']
   temper.action('DesignLanguages', eid, 'SetName', {{'name': name, 'slug': slug}})
-  philosophy = {{"summary": "...", "values": [...], "anti_values": [...]}}
+  philosophy = {{"summary": "...", "values": [...], "anti_values": [...], "visual_character": ["3-5 CONCRETE visual traits unique to this language, e.g. 'thick 4px solid black borders on every container', 'uppercase monospace section labels', 'asymmetric grid with oversized left gutter', 'diagonal clip-path corners on cards'"]}}
+  # visual_character is CRITICAL — these traits become the structural blueprint for the embodiment
   temper.action('DesignLanguages', eid, 'WritePhilosophy', {{'philosophy': json.dumps(philosophy)}})
-  tokens = {{"colors": {{...}}, "typography": {{...}}, "spacing": {{...}}, "radii": {{...}}, "shadows": {{...}}}}
+  tokens = {{"colors": {{...}}, "typography": {{...}}, "spacing": {{...}}, "radii": {{...}}, "shadows": {{...}}, "surfaces": {{"treatment": "flat|glass|gradient|noise|paper", "card_style": "...", "bg_pattern": "none|dots|lines|grid|noise"}}, "borders": {{"default_width": "...", "accent_width": "...", "style": "solid|dashed|double|groove|none", "character": "describe the border personality"}}, "motion": {{"duration": "...", "easing": "...", "philosophy": "snappy|elastic|deliberate|none"}}}}
   temper.action('DesignLanguages', eid, 'SetTokens', {{'tokens': json.dumps(tokens)}})
-  rules = {{"composition": "...", "hierarchy": "...", "density": "..."}}
+  rules = {{"composition": "...", "hierarchy": "...", "density": "...", "signature_patterns": ["3-5 unique CSS techniques that define this language structurally, e.g. 'every card has a 4px left-border color accent', 'section headers use a decorative double-underline', 'all containers use clip-path for angled corners', 'data cells have a dot-leader pattern'. These MUST appear in the embodiment HTML."]}}
   temper.action('DesignLanguages', eid, 'SetRules', {{'rules': json.dumps(rules)}})
   layout = {{"grid": "...", "breakpoints": "...", "whitespace": "..."}}
   temper.action('DesignLanguages', eid, 'SetLayout', {{'layout_principles': json.dumps(layout)}})
@@ -389,48 +398,271 @@ Create complete DesignLanguage entities. Each language must have all 5 structure
 
 ## Required Flow
 
-1. First tool call: Create language #1 (entity + all specs + HTML embodiment + attach).
-2. Second tool call: Create language #2.
-3. Continue until ALL languages in scope are created.
-4. Final tool call: Complete the job and call temper.done().
+For EACH language (typically one per session):
 
-Do NOT skip any language. Do NOT stop early. Do NOT return text between languages. Every tool call = one complete language.
+1. **Tool call 1 — SPEC PHASE**: Create the DesignLanguage entity and write ALL spec sections. This is where you make the structural decisions. Spend real thought on visual_character (3-5 concrete visual traits), signature_patterns (3-5 unique CSS techniques), and the surfaces/borders/motion tokens. These must be SPECIFIC and DISTINCTIVE — not design platitudes like "clean and minimal" but concrete choices like "all containers have a 3px top border in the accent color" or "section backgrounds alternate between surface and background with a 1px hairline divider."
+
+2. **Tool call 2 — EMBODIMENT PHASE**: Review the spec you just wrote (your variables are still in scope). Generate the HTML embodiment that manifests EVERY visual_character trait, EVERY signature_pattern, and uses the surfaces/borders/motion tokens. Attach the embodiment.
+
+3. **Final tool call**: Complete the job and call temper.done().
+
+Do NOT skip any language. Do NOT stop early.
 
 ## Token Structure
 
 Each design language's tokens must include:
 - **colors**: primary, secondary, accent, background, surface, text, muted, border, error, success, warning, info
-- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing
+- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing, google_fonts_url (the full `<link>` href for loading the chosen fonts)
 - **spacing**: base unit (typically 4 or 8px), scale array
 - **radii**: none, sm, md, lg, full
 - **shadows**: sm, md, lg (with color, offset, blur)
+- **surfaces**: treatment (flat, glass, gradient, noise, paper), card_style (how cards/containers look — raised, inset, outlined, floating), bg_pattern (none, dots, lines, grid, noise, custom SVG)
+- **borders**: default_width, accent_width, style (solid, dashed, double, groove, none), character (describe the border personality — "invisible except on focus", "thick and structural", "hairline and precise")
+- **motion**: duration, easing, philosophy (snappy, elastic, deliberate, none — how does this language feel when things move?)
+- **responsive**: breakpoints array (e.g. [1024, 768, 480]), column_progression (e.g. "12 → 8 → 4 → 1")
 
 ## Embodiment HTML Standards — STRUCTURAL UNIQUENESS IS MANDATORY
 
 Each embodiment MUST have a DIFFERENT HTML structure, not just different CSS variables. If two embodiments share the same template with only colors changed, that is a failure.
 
-Structural differentiation requirements:
-- **Neo-Brutalist**: 0px border-radius, thick 3-4px borders, offset box-shadows (4px 4px 0px), asymmetric grid, uppercase headings, monospace accents, raw/punk aesthetic
-- **Cyberpunk/Neon**: Dark backgrounds (#0a0a0f), neon glow box-shadows (0 0 20px), monospace fonts, scan-line CSS effects, terminal-style inputs, glitch decorations
-- **Swiss/International**: 12-column grid, Helvetica/Arial, zero decoration, pure typographic hierarchy, red accent, extreme letter-spacing on labels
-- **Glassmorphism**: backdrop-filter blur, semi-transparent surfaces (rgba backgrounds), large border-radius (16-24px), subtle borders (1px rgba), frosted-glass cards
-- **Neumorphism**: Large border-radius (20px+), double box-shadows (light + dark offset for 3D pillow effect), NO visible borders, soft muted palette
-- **Art Deco**: Geometric ornamental borders, gold/brass accents (#C9A84C), wide letter-spacing, decorative section dividers, serif headings, fan/chevron patterns
-- **Material Design 3**: Rounded rectangles (12-16px radius), tonal color system, elevation via shadows, 8px grid, Roboto font, FAB and chip components
-- **Flat/Metro**: Zero shadows, zero gradients, zero border-radius, bold solid colors, thin borders only, segmented grid, clean sans-serif
-- **Organic/Nature**: Irregular border-radius (blob shapes), earth tones, hand-drawn border styles, warm shadows, variable spacing, nature-inspired decorations
-- **Retro-Futurism**: CRT phosphor colors, scanline overlays, curved/rounded shapes, monospace type, terminal green (#33ff33), bevel effects
-- **Minimalist Japanese**: Extreme whitespace, subtle borders, muted palette, small precise typography, zen-like simplicity, asymmetric balance
-- **Maximalist Pop**: Bold clashing colors, thick outlines, large type, sticker/collage aesthetic, rotated elements, playful shadows
-- **Dark Luxury**: Pure black backgrounds, thin gold borders, serif headings, extreme contrast, subtle gradients, premium spacing
-- **Retro Computing**: Pixel-perfect borders, system fonts (Courier), 1px borders, DOS-era colors, dithering patterns, 8-bit aesthetic
+### HOW STRUCTURAL IDENTITY WORKS (THE SPEC→EMBODIMENT BRIDGE)
+
+Your spec sections ARE the structural blueprint. Before writing any HTML, review what you just defined:
+
+1. **Philosophy → visual_character**: You listed 3-5 concrete visual traits. EVERY ONE must manifest in the HTML/CSS. If you wrote "thick 4px solid borders on all containers," then every `.card`, `.panel`, `.modal` gets `border: 4px solid`. If you wrote "oversized negative space," your padding/gap values must be dramatically larger than a typical UI.
+2. **Tokens → surfaces, borders, motion**: These define the tactile quality. Glass treatment → use `backdrop-filter: blur()` and semi-transparent backgrounds. Paper texture → use subtle `background-image` patterns. Heavy borders → make them a dominant visual element, not an afterthought.
+3. **Rules → signature_patterns**: These are your CSS fingerprint — the 3-5 techniques that ONLY this language uses. Every single signature_pattern MUST appear in the embodiment. If you wrote "angled corners via clip-path," apply `clip-path` to cards and panels. If you wrote "decorative double-underline on section headers," every `h2`/`h3` gets that treatment.
+4. **Self-check before finishing**: If you could swap this embodiment's color palette for another language's palette and it would still look like the other language, your structure is too generic. The SHAPES, BORDER TREATMENTS, SPACING RHYTHM, DECORATIVE PATTERNS, and TYPOGRAPHIC HIERARCHY must be unmistakably this language.
+
+### SCENE-FIRST DESIGN (MANDATORY)
+
+Design a plausible application screen where all required UI elements appear NATURALLY within the scene. Do NOT create a component catalog or inventory organized by section labels like "Controls", "Feedback", "Data", "Dashboard". Instead, imagine a real app that this design language would power and build one cohesive screen:
+
+- An editorial dashboard, a project management board, a design tool workspace, an analytics console, a content editor — pick whatever scene fits the language's philosophy.
+- Buttons exist because the scene has actions. Tables exist because the scene shows data. Forms exist because the scene has input. Modals exist because the scene has confirmations.
+- Components earn their place through the scene's narrative, not a completeness checklist.
+- The 15 required elements must all be present, but they should feel organic to the page, not enumerated.
+
+BAD: Sections labeled "Buttons", "Inputs", "Cards", "Tables" with components lined up for display.
+GOOD: A "Library Overview" dashboard where KPIs, a chart, a data table, a form, alerts, and a modal all serve the editorial workflow.
+
+### TYPOGRAPHY IS IDENTITY (MANDATORY)
+
+Each design language MUST have a distinctive typographic system. Typography defines the language more than color or layout.
+
+- **Use Google Fonts** via `<link>` tags. Include `rel="preconnect"` for performance.
+- **Choose fonts that embody the philosophy.** Swiss demands a mechanical neo-grotesk. Art Deco demands a geometric display face + high-contrast serif. Retro Computing demands a pixel/monospace face. Every choice must be justified by the design philosophy.
+- **No LLM defaults.** Do NOT use Inter, Space Grotesk, Poppins, DM Sans, Roboto, or Montserrat unless they are genuinely the best choice for that specific language AND you can justify why.
+- **Two languages must never share a primary typeface.** Each language's display font must be unique across the library.
+- **Define 2-3 font roles**: display (headlines/poster), body (UI text/paragraphs), data (monospace/tabular). Each role may use a different family.
+- **Use variable fonts** when available. Exploit weight and optical-size axes for typographic range from a single family.
+
+### RESPONSIVE DESIGN (MANDATORY)
+
+Every embodiment must work from desktop (1200px+) down to phone (320px). This is non-negotiable.
+
+- **Three breakpoints minimum**: ~1024px (tablet landscape), ~768px (tablet portrait), ~480px (phone).
+- **NEVER use inline `style` attributes for grid or flex layouts.** Inline styles override media queries and break responsiveness. ALL layout declarations (`display:grid`, `grid-template-columns`, `display:flex` used for layout) must be in CSS classes that media queries can control.
+- Inline styles are ONLY acceptable for non-layout properties: colors, small margins, padding adjustments.
+- **Grid columns must reduce**: 12→8→4→1 or similar progression. Don't just hide columns.
+- **Section layouts must reflow**: side-by-side on desktop → stacked on mobile. Labels that sit beside content on wide screens must stack above content on narrow screens.
+- **Tables must scroll horizontally** on small viewports (wrap in `overflow-x:auto`).
+- **Buttons must stack** full-width on phone.
+- **Typography must scale** via `clamp()` — poster text should still be impactful on mobile but not overflow.
+- The spec's Layout section must document the responsive strategy.
+
+### Required UI Elements
+
+Each embodiment must include these 15 elements: buttons (primary, secondary, disabled), text input, select, checkbox, radio, toggle, card, modal/dialog, alert/toast, table, tabs, badges, avatar, pagination, accordion, progress bar.
+
+### File Format
 
 Each embodiment is a single self-contained HTML file:
-- All CSS in a `<style>` block — NO external dependencies
-- No CDN links, no Google Fonts URLs — use system font stacks
-- Must render: buttons (primary, secondary, disabled), text inputs, select, checkbox, radio, toggle, cards, modal, alert, toast, table, tabs, badges, avatar, pagination, accordion, progress bar, and a mini dashboard composition
-- Organized by category with clear section headers
-- Include interactive states (hover, focus, disabled) via CSS pseudo-classes
+- All CSS in a `<style>` block.
+- Google Fonts via `<link>` tags are allowed and encouraged.
+- No other CDN dependencies. No JavaScript frameworks.
+- Include interactive states (hover, focus, disabled) via CSS pseudo-classes.
+- Apply `appearance: none; -webkit-appearance: none;` on all form elements and style explicitly. Zero browser defaults visible.
+"#
+    )
+}
+
+/// Build the user_message for a quality_review job.
+fn build_quality_review_message(input: &str, job_id: &str, workspace_id: &str) -> String {
+    let parsed = serde_json::from_str::<serde_json::Value>(input).ok();
+    let lang_ids_raw = parsed
+        .as_ref()
+        .and_then(|v| v.get("language_ids"))
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .unwrap_or_default();
+    let task = parsed
+        .as_ref()
+        .and_then(|v| v.get("task"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("Review and fix embodiments for the specified design languages.");
+
+    format!(
+        r#"You are executing a CurationJob (quality_review) for the Katagami design language library.
+Job ID: {job_id}
+Workspace ID: {workspace_id}
+
+## Mission
+
+Review and FIX the embodiment HTML for each specified design language. Do not write reports. Read each language's spec and curator_notes, evaluate the embodiment, then regenerate the HTML fixing every issue.
+
+## Target Languages
+
+{lang_ids_raw}
+
+If no specific IDs are listed, review ALL DesignLanguages.
+
+## Task
+
+{task}
+
+## Tooling Rules
+
+- No `import` statements
+- Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
+- Always serialize JSON with `json.dumps(...)`.
+- Runtime constants: `job_id = "{job_id}"`, `workspace_id = "{workspace_id}"`
+
+## Required Flow (per language)
+
+1. Load the DesignLanguage: `temper.get('DesignLanguages', lang_id)`
+2. Read its fields: Philosophy, Tokens, Rules, Guidance, curator_notes, slug, embodiment_file_id.
+3. Read the current embodiment HTML: `temper.read('/katagami/embodiments/' + slug + '.html')`
+4. Evaluate against the spec. Common failures to fix:
+   - **Catalog layout**: Embodiment organized as a component inventory (sections labeled "Controls", "Feedback", "Data") instead of a plausible application scene. This is the #1 quality failure — redesign the scene entirely.
+   - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` (in Rules) must ALL manifest in the HTML/CSS. If the embodiment looks like a generic template with different colors, the structure is wrong. Check each visual_character trait and each signature_pattern — are they visible in the HTML? If not, rebuild to include them.
+   - **Generic typography**: Using system fonts or LLM defaults (Inter, Poppins, Roboto) instead of distinctive Google Fonts that embody the language's philosophy. Switch to researched, unique typefaces.
+   - **Not responsive**: No media queries, or inline `style` attributes for grid/flex layout (which break media queries). Must have 3 breakpoints and all layout in CSS classes.
+   - **Missing surface/border/motion tokens**: The spec should define surfaces (glass, paper, flat), borders (thick, hairline, none), and motion (snappy, elastic). The embodiment must use them. If the spec says "glass treatment," there must be `backdrop-filter` in the CSS.
+   - **Unstyled browser defaults**: `<select>`, `<input>`, `<checkbox>`, `<radio>` showing raw browser chrome. MUST apply `appearance: none` and style explicitly.
+   - **Inconsistent styling**: Buttons, inputs, cards not matching each other.
+   - **Alignment**: Elements off-grid, uneven spacing, misaligned columns. Elements sticking together on mobile due to missing gaps.
+   - **Missing aesthetic**: Generic-looking components that don't express the language's philosophy.
+   - **curator_notes**: If present, these are specific fix instructions from the human curator. Follow them.
+5. Regenerate the complete embodiment HTML. Every element must be explicitly styled. Include this CSS reset at the top:
+   ```css
+   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+   select, input, textarea, button {{ appearance: none; -webkit-appearance: none; font: inherit; color: inherit; border: none; background: none; outline: none; }}
+   ```
+6. Write and re-attach:
+   ```python
+   result = temper.write('/katagami/embodiments/' + slug + '.html', new_html)
+   temper.action('DesignLanguages', lang_id, 'AttachEmbodiment', {{
+       'embodiment_file_id': result['file_id'],
+       'element_count': '15',
+       'composition_count': '5'
+   }})
+   ```
+7. After ALL languages are fixed, complete the job:
+   ```python
+   temper.action('CurationJobs', job_id, 'Complete', {{'output': json.dumps({{'fixed': fixed_ids}})}})
+   temper.done("quality_review complete")
+   ```
+
+## Embodiment Requirements
+
+### SCENE-FIRST DESIGN (MANDATORY)
+
+The embodiment must be a plausible application screen where components appear naturally — NOT a component catalog organized by section labels. Design a real app screen (dashboard, editor, inbox, etc.) where buttons, forms, tables, and alerts all serve the scene's workflow. If the current embodiment is organized as a catalog with sections like "Controls" / "Feedback" / "Data", that IS a failure — redesign the scene entirely.
+
+### TYPOGRAPHY IS IDENTITY (MANDATORY)
+
+- **Google Fonts via `<link>` tags are allowed and encouraged.** Choose fonts that embody the language's philosophy.
+- Do NOT default to Inter, Space Grotesk, Poppins, DM Sans, Roboto, or Montserrat.
+- Each language should have a unique display typeface. Define 2-3 font roles: display, body, data.
+- Read the language's Philosophy section to understand what typographic character it demands.
+
+### RESPONSIVE DESIGN (MANDATORY)
+
+- Three breakpoints minimum: ~1024px, ~768px, ~480px.
+- **NEVER use inline `style` attributes for grid or flex layouts.** They override media queries. ALL layout must be in CSS classes.
+- Grid columns reduce: 12→8→4→1. Sections reflow from side-by-side to stacked. Tables scroll horizontally on mobile. Buttons stack full-width on phone. Type scales via clamp().
+
+### Technical Standards
+
+Each embodiment is a single self-contained HTML file:
+- All CSS in a `<style>` block. Google Fonts `<link>` tags are the ONLY external dependency allowed.
+- Must include: buttons (primary, secondary, disabled), text input, select, checkbox, radio, toggle, card, modal/dialog, alert/toast, table, tabs, badges, avatar, pagination, accordion, progress bar.
+- EVERY form element must be custom-styled with `appearance: none`. Zero browser defaults visible.
+- The embodiment must feel like a professional front-end designer submitted it.
+- Include interactive states (hover, focus, disabled) via CSS pseudo-classes.
+"#
+    )
+}
+
+/// Build the user_message for an organize_taxonomy job.
+fn build_organize_taxonomy_message(input: &str, job_id: &str, workspace_id: &str) -> String {
+    let parsed = serde_json::from_str::<serde_json::Value>(input).ok();
+    let task = parsed
+        .as_ref()
+        .and_then(|v| v.get("task"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("Organize all design languages into a coherent taxonomy.");
+
+    format!(
+        r#"You are executing a CurationJob (organize_taxonomy) for the Katagami design language library.
+Job ID: {job_id}
+Workspace ID: {workspace_id}
+
+## Mission
+
+You are the sole authority on taxonomy. Create, organize, relate, and deduplicate all taxonomies based on the design languages that actually exist. No seed taxonomies exist — you build the classification from scratch.
+
+## Task
+
+{task}
+
+## Tooling Rules
+
+- No `import` statements
+- Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
+- Always serialize JSON with `json.dumps(...)`.
+- Runtime constants: `job_id = "{job_id}"`, `workspace_id = "{workspace_id}"`
+
+## Required Flow
+
+0. Clean up orphaned drafts: List Draft Taxonomies. Delete any with empty Name fields.
+1. List all DesignLanguages (any state). Read each language's Philosophy, Tokens, Tags.
+2. List all existing Taxonomies (if any).
+3. Analyze the languages and determine what design movements, aesthetic schools, and traditions they represent.
+4. Create taxonomies (if none exist) or update existing ones:
+   ```python
+   tax = temper.create('Taxonomies', {{}})
+   temper.action('Taxonomies', tax['entity_id'], 'Define', {{
+       'name': name,
+       'parent_id': parent_id_or_empty,
+       'description': description,
+       'characteristics': json.dumps({{'key_traits': [...], 'era': '...'}}),
+       'historical_context': '...',
+       'related_taxonomy_ids': json.dumps([...])
+   }})
+   temper.action('Taxonomies', tax['entity_id'], 'Publish', {{}})
+   ```
+5. Set hierarchy (parent_id) where it makes sense. Don't force it.
+6. Set relationships (related_taxonomy_ids) — MUST be bidirectional.
+7. Deduplicate: merge taxonomies that describe the same movement.
+8. Classify every language (1-3 taxonomies each):
+   ```python
+   temper.action('DesignLanguages', lang_id, 'SetTaxonomy', {{
+       'taxonomy_ids': json.dumps([tax_id_1, tax_id_2])
+   }})
+   ```
+9. Update counts: `temper.action('Taxonomies', tax_id, 'IncrementLanguageCount', {{}})`
+10. Complete the job:
+    ```python
+    temper.action('CurationJobs', job_id, 'Complete', {{'output': json.dumps(summary)}})
+    temper.done("organize_taxonomy complete")
+    ```
 "#
     )
 }
