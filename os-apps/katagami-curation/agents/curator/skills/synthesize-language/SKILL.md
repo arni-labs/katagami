@@ -9,9 +9,9 @@ Job types: `synthesize`, `evolve_language`
 ## Before Starting
 
 Read the knowledge files in your workspace:
-- `/katagami/knowledge/design-principles.md` — embodiment standards, scene-first design, typography, responsive rules
-- `/katagami/knowledge/quality-standards.md` — minimum thresholds for each spec section
-- `/katagami/knowledge/feedback-log.md` — human feedback to incorporate
+- `/system/knowledge/design-principles.md` — embodiment standards, scene-first design, typography, responsive rules
+- `/system/knowledge/quality-standards.md` — minimum thresholds for each spec section
+- `/system/knowledge/feedback-log.md` — human feedback to incorporate
 
 ## Execution Discipline
 

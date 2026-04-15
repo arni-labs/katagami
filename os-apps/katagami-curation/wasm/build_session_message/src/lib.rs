@@ -127,9 +127,13 @@ Workspace ID: {workspace_id}
 
 ## Instructions
 
-Execute this job using your `{skill}` skill. Read the skill instructions
-carefully and follow them. Read the knowledge files in `/katagami/knowledge/`
-for design standards, quality thresholds, and accumulated feedback.
+Execute this job using your `{skill}` skill. Read your skill instructions
+carefully and follow them step by step.
+
+Read the knowledge files for design standards and quality thresholds:
+- `temper.read("/system/knowledge/design-principles.md")` — embodiment standards
+- `temper.read("/system/knowledge/quality-standards.md")` — quality thresholds
+- `temper.read("/system/knowledge/feedback-log.md")` — human feedback to incorporate
 
 When done, dispatch Complete on this CurationJob with structured output JSON.
 If you cannot complete, dispatch Fail with error_message.

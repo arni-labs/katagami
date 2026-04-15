@@ -9,9 +9,9 @@ Job type: `quality_review`
 ## Before Starting
 
 Read the knowledge files in your workspace:
-- `/katagami/knowledge/design-principles.md` — embodiment standards
-- `/katagami/knowledge/quality-standards.md` — quality thresholds
-- `/katagami/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
+- `/system/knowledge/design-principles.md` — embodiment standards
+- `/system/knowledge/quality-standards.md` — quality thresholds
+- `/system/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
 
 ## Process
 

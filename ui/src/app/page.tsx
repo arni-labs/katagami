@@ -17,7 +17,16 @@ async function GalleryGrid({
     filter = `Status eq '${status}'`;
   }
 
-  let languages = await listDesignLanguages(filter);
+  let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
+  try {
+    languages = await listDesignLanguages(filter);
+  } catch {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        Could not load design languages. Check that the Temper server is running.
+      </div>
+    );
+  }
 
   // Filter out empty drafts (no name set = incomplete/abandoned)
   languages = languages.filter((l) => l.fields.name);
