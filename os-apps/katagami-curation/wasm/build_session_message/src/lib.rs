@@ -41,13 +41,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let model = fields
             .get("model")
             .and_then(|v| v.as_str())
-            .unwrap_or("claude-sonnet-4-6")
+            .unwrap_or("gpt-5.4")
             .to_string();
 
         let provider = fields
             .get("provider")
             .and_then(|v| v.as_str())
-            .unwrap_or("anthropic")
+            .unwrap_or("openai_codex")
             .to_string();
 
         let tools_enabled = fields
