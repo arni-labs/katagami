@@ -1,6 +1,6 @@
 # CurationJob — I/O Automaton Specification
 #
-# Task queue entry for bootstrap and curator agents. Structurally identical
+# Task queue entry for the curator agent. Structurally identical
 # to koto-wiki's WikiJob — same states, same session-spawning fields, same
 # WASM triggers. Will be refactored into shared core later.
 #
@@ -64,7 +64,7 @@ initial = ""
 [[state]]
 name = "soul_id"
 type = "string"
-initial = "app-agent-bootstrap"
+initial = "app-agent-curator"
 
 # LLM model identifier
 [[state]]
