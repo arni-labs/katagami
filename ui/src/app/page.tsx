@@ -48,7 +48,7 @@ async function GalleryGrid({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {languages.map((lang) => (
         <LanguageCard key={lang.entity_id} lang={lang} />
       ))}
@@ -82,11 +82,11 @@ export default async function GalleryPage({
 
       <Suspense
         fallback={
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-40 rounded-lg bg-muted animate-pulse"
+                className="h-64 rounded-lg bg-muted animate-pulse"
               />
             ))}
           </div>
