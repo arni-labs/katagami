@@ -120,6 +120,40 @@ export function getFileUrl(fileId: string): string {
   return `/api/file/${encodeURIComponent(fileId)}`;
 }
 
+// ── Mutations ──
+
+export async function dispatchAction(
+  entitySet: string,
+  id: string,
+  action: string,
+  params: Record<string, string>,
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/tdata/${entitySet}('${id}')/Temper.${action}`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(params),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Action ${action} failed ${res.status}: ${await res.text()}`);
+  }
+}
+
+export async function deleteEntity(
+  entitySet: string,
+  id: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/tdata/${entitySet}('${id}')`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) {
+    throw new Error(`Delete failed ${res.status}: ${await res.text()}`);
+  }
+}
+
 // ── Helpers ──
 
 export function parseJson<T = unknown>(raw?: string): T | null {

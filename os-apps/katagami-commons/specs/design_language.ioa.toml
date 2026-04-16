@@ -176,6 +176,13 @@ params = ["tags"]
 hint = "Set freeform tags for discovery and search."
 
 [[action]]
+name = "AddCuratorNotes"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["curator_notes"]
+hint = "Add curator feedback notes to a draft or under-review language."
+
+[[action]]
 name = "SetSources"
 kind = "input"
 from = ["Draft", "UnderReview"]

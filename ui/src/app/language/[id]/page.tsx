@@ -3,10 +3,12 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getDesignLanguage, parseJson } from "@/lib/odata";
+import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
+import { DeleteLanguageButton } from "@/components/delete-language-button";
+import { CuratorNotesEditor } from "@/components/curator-notes-editor";
 
 export default async function LanguageDetailPage({
   params,
@@ -26,7 +28,24 @@ export default async function LanguageDetailPage({
   const c = lang.counters;
   const tags = parseJson<string[]>(f.tags) ?? [];
   const parentIds = parseJson<string[]>(f.parent_ids) ?? [];
+  const taxonomyIds = parseJson<string[]>(f.taxonomy_ids) ?? [];
   const elementCount = c.element_count ?? (parseInt(f.element_count ?? "0", 10) || 0);
+
+  // Resolve taxonomy names
+  let taxonomyNames: { id: string; name: string }[] = [];
+  if (taxonomyIds.length > 0) {
+    try {
+      const allTax = await listTaxonomies("Status eq 'Published'");
+      taxonomyNames = taxonomyIds
+        .map((tid) => {
+          const tax = allTax.find((t) => t.entity_id === tid);
+          return tax ? { id: tid, name: tax.fields.name ?? "Unnamed" } : null;
+        })
+        .filter((t): t is { id: string; name: string } => t !== null);
+    } catch {
+      // taxonomy lookup failed, show IDs only
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
@@ -63,6 +82,11 @@ export default async function LanguageDetailPage({
               Lineage
             </Button>
           </Link>
+          <DeleteLanguageButton
+            id={id}
+            name={f.name || "Untitled"}
+            redirectTo="/"
+          />
         </div>
       </div>
 
@@ -109,13 +133,26 @@ export default async function LanguageDetailPage({
         </div>
       )}
 
-      {/* Curator notes */}
-      {f.curator_notes && (
-        <div className="rounded-md bg-muted p-4 text-sm">
-          <p className="font-medium mb-1">Curator Notes</p>
-          <p className="text-muted-foreground">{f.curator_notes}</p>
+      {/* Taxonomy */}
+      {taxonomyNames.length > 0 ? (
+        <div className="flex flex-wrap gap-1 items-center">
+          <span className="text-sm text-muted-foreground mr-1">Taxonomies:</span>
+          {taxonomyNames.map((t) => (
+            <Badge key={t.id} variant="secondary">
+              {t.name}
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="text-muted-foreground">
+            Unclassified
+          </Badge>
         </div>
       )}
+
+      {/* Curator notes + feedback */}
+      <CuratorNotesEditor id={id} existingNotes={f.curator_notes} />
 
       <Separator />
 
