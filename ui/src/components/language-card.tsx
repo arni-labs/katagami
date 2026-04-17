@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { DesignLanguage } from "@/lib/odata";
-import { parseJson, getFileUrl } from "@/lib/odata";
-import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
+import { parseJson } from "@/lib/odata";
 
 const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
@@ -12,6 +11,8 @@ const PREVIEW_VIEWPORT_HEIGHT = 960;
 function usePreviewState() {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.22);
+  // Two-way IO: mount when in view, UNMOUNT when well out of view so we
+  // don't keep dozens of iframes alive at once (crash prevention).
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
@@ -23,12 +24,12 @@ function usePreviewState() {
     ro.observe(el);
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setInView(true);
-          io.disconnect();
-        }
+        const entry = entries[0];
+        if (!entry) return;
+        // Mount when near viewport; unmount when well offscreen.
+        setInView(entry.isIntersecting);
       },
-      { rootMargin: "150px" },
+      { rootMargin: "200px 0px 200px 0px" },
     );
     io.observe(el);
     return () => {
@@ -192,48 +193,39 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                   style={{ aspectRatio: "3 / 2" }}
                 >
                   {inView ? (
-                    embodimentFormat === "tsx" ? (
-                      <div
-                        className="absolute left-0 top-0"
-                        style={{
-                          width: `${PREVIEW_VIEWPORT_WIDTH}px`,
-                          height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
-                          transform: `scale(${previewScale})`,
-                          transformOrigin: "top left",
-                          pointerEvents: "none",
-                        }}
-                      >
-                        <DynamicEmbodiment
-                          fileId={embodimentFileId}
-                          format="tsx"
-                        />
-                      </div>
-                    ) : (
-                      <iframe
-                        src={getFileUrl(embodimentFileId)}
-                        className="absolute left-0 top-0 border-0"
-                        style={{
-                          width: `${PREVIEW_VIEWPORT_WIDTH}px`,
-                          height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
-                          transform: `scale(${previewScale})`,
-                          transformOrigin: "top left",
-                          pointerEvents: "none",
-                        }}
-                        tabIndex={-1}
-                        loading="lazy"
-                        sandbox=""
-                        title={`${f.name} preview`}
-                      />
-                    )
+                    <iframe
+                      key={embodimentFileId}
+                      src={`/embodiment/${embodimentFileId}?format=${embodimentFormat}`}
+                      className="absolute left-0 top-0 border-0"
+                      style={{
+                        width: `${PREVIEW_VIEWPORT_WIDTH}px`,
+                        height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
+                        transform: `scale(${previewScale})`,
+                        transformOrigin: "top left",
+                        pointerEvents: "none",
+                      }}
+                      tabIndex={-1}
+                      loading="lazy"
+                      sandbox="allow-scripts allow-same-origin"
+                      title={`${f.name} preview`}
+                      aria-hidden
+                    />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground/70">
                       loading…
                     </div>
                   )}
-                  {/* soft bottom fade for that scrapbook "faded photo" look */}
+                  {/* soft bottom fade */}
                   <span
                     aria-hidden
                     className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white/55 to-transparent"
+                  />
+                  {/* Full-coverage event blocker — absorbs ALL clicks, wheel,
+                      touch, and focus so the iframe content can't steal the
+                      gesture from the outer <Link> card. */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 z-10 cursor-pointer"
                   />
                 </div>
                 <span className="absolute bottom-0.5 left-0 right-0 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground/85">
@@ -397,3 +389,4 @@ function Sparkle() {
     </svg>
   );
 }
+
