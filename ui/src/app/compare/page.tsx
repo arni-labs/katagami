@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getDesignLanguage, listDesignLanguages, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
-import { EmbodimentViewer } from "@/components/embodiment-viewer";
+import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
 import { CompareSelector } from "@/components/compare-selector";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -118,8 +118,9 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
               />
               <div className="rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
                 {lang.fields.embodiment_file_id ? (
-                  <EmbodimentViewer
+                  <DynamicEmbodiment
                     fileId={lang.fields.embodiment_file_id}
+                    format={(lang.fields.embodiment_format as "html" | "tsx") ?? "html"}
                   />
                 ) : (
                   <div className="flex h-[500px] items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -231,7 +232,7 @@ export default async function ComparePage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-10">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
       <PageHero
         eyebrowAccent="sumire"
         eyebrow="side-by-side"

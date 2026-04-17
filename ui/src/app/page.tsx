@@ -83,7 +83,7 @@ export default async function GalleryPage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-8 sm:py-10">
       <section className="relative">
         <div className="flex items-end justify-between gap-6">
           <div className="max-w-2xl">
@@ -104,7 +104,7 @@ export default async function GalleryPage({
                 />
               </a>
             </div>
-            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-[56px]">
+            <h1 className="font-display text-[34px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[56px]">
               Design{" "}
               <span className="marker">
                 <span

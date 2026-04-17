@@ -541,8 +541,8 @@ export function SpecPanel({
 }: SpecPanelProps) {
   return (
     <div className="relative">
-      {/* Floating copy + download chips in top-right */}
-      <div className="absolute -top-1 right-0 z-10 flex items-center gap-1.5">
+      {/* Copy + download chips — inline on mobile, floating on sm+ */}
+      <div className="mb-4 flex items-center justify-end gap-1.5 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
         <SpecActionButton
           color="yuzu"
           tilt={-1}
@@ -563,8 +563,8 @@ export function SpecPanel({
         </span>
       </div>
 
-      {/* Spacer so chips don't collide with first section */}
-      <div className="h-8" />
+      {/* Spacer on sm+ so floating chips don't collide with first section */}
+      <div className="hidden h-8 sm:block" />
 
       <div className="divide-y divide-dashed divide-border">
         <Section label="philosophy" color="teal" defaultOpen>

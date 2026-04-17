@@ -68,7 +68,7 @@ export function GalleryFilters({
       <span className="stamp text-[var(--sumire)]">find</span>
 
       {/* Search field with magnifier */}
-      <div className="relative flex-1 min-w-[180px] max-w-[300px]">
+      <div className="relative min-w-[140px] max-w-[300px] flex-1">
         <Search className="pointer-events-none absolute left-1 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="search languages…"
@@ -92,7 +92,7 @@ export function GalleryFilters({
             navigate("status", next);
           }}
         >
-          <SelectTrigger className={`${fieldBase} h-8 w-36 gap-2`}>
+          <SelectTrigger className={`${fieldBase} h-8 w-32 gap-2 sm:w-36`}>
             <SelectValue placeholder="any" />
           </SelectTrigger>
           <SelectContent>
@@ -115,7 +115,7 @@ export function GalleryFilters({
                 navigate("taxonomy", next);
               }}
             >
-              <SelectTrigger className={`${fieldBase} h-8 w-40 gap-2`}>
+              <SelectTrigger className={`${fieldBase} h-8 w-36 gap-2 sm:w-40`}>
                 <SelectValue placeholder="any" />
               </SelectTrigger>
               <SelectContent>

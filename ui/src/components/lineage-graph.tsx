@@ -78,12 +78,12 @@ export function LineageGraph({
         return (
           <section key={gen} className="relative">
             {/* Generation header — dashed rule with marker-highlighted label */}
-            <div className="relative mb-4 flex items-center gap-3">
+            <div className="relative mb-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span
                 aria-hidden
                 className="inline-block h-[3px] w-8 rounded-[1px] bg-[var(--ramune)]"
               />
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   gen {String(gen).padStart(2, "0")}
                 </span>
@@ -100,9 +100,9 @@ export function LineageGraph({
               </div>
               <span
                 aria-hidden
-                className="h-px flex-1 border-t border-dashed border-border"
+                className="hidden h-px flex-1 border-t border-dashed border-border sm:block"
               />
-              <span className="font-mono text-[10px] text-muted-foreground">
+              <span className="ml-auto font-mono text-[10px] text-muted-foreground sm:ml-0">
                 {genNodes.length}
               </span>
             </div>

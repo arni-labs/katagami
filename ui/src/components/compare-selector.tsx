@@ -64,7 +64,7 @@ export function CompareSelector({
         onSelect={(id) => update("a", id)}
       />
 
-      <span className="font-display text-base font-bold italic text-foreground/80">
+      <span className="font-display text-base font-bold italic text-foreground/80 sm:text-lg">
         vs.
       </span>
 

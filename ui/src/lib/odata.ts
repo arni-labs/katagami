@@ -52,6 +52,7 @@ export interface DesignLanguage {
     source_ids?: string;
     element_count?: string;
     composition_count?: string;
+    embodiment_format?: string;
     [key: string]: string | undefined;
   };
   counters: {

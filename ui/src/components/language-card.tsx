@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
+import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
 
 const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
@@ -117,6 +118,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
   const bodyFont = tokens?.typography?.body_font;
   const summary = philosophy?.summary;
   const embodimentFileId = f.embodiment_file_id;
+  const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
 
   const id = lang.entity_id;
   const tapeAColor = accentColors[hashInt(id, "t1") % accentColors.length];
@@ -190,21 +192,39 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                   style={{ aspectRatio: "3 / 2" }}
                 >
                   {inView ? (
-                    <iframe
-                      src={getFileUrl(embodimentFileId)}
-                      className="absolute left-0 top-0 border-0"
-                      style={{
-                        width: `${PREVIEW_VIEWPORT_WIDTH}px`,
-                        height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
-                        transform: `scale(${previewScale})`,
-                        transformOrigin: "top left",
-                        pointerEvents: "none",
-                      }}
-                      tabIndex={-1}
-                      loading="lazy"
-                      sandbox=""
-                      title={`${f.name} preview`}
-                    />
+                    embodimentFormat === "tsx" ? (
+                      <div
+                        className="absolute left-0 top-0"
+                        style={{
+                          width: `${PREVIEW_VIEWPORT_WIDTH}px`,
+                          height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "top left",
+                          pointerEvents: "none",
+                        }}
+                      >
+                        <DynamicEmbodiment
+                          fileId={embodimentFileId}
+                          format="tsx"
+                        />
+                      </div>
+                    ) : (
+                      <iframe
+                        src={getFileUrl(embodimentFileId)}
+                        className="absolute left-0 top-0 border-0"
+                        style={{
+                          width: `${PREVIEW_VIEWPORT_WIDTH}px`,
+                          height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "top left",
+                          pointerEvents: "none",
+                        }}
+                        tabIndex={-1}
+                        loading="lazy"
+                        sandbox=""
+                        title={`${f.name} preview`}
+                      />
+                    )
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground/70">
                       loading…
@@ -228,9 +248,9 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
 
         <header className="space-y-1.5 px-4 pb-2 pt-3">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="flex items-center gap-1.5 font-display text-lg font-bold leading-tight tracking-[-0.02em]">
+            <h3 className="flex min-w-0 items-center gap-1.5 font-display text-lg font-bold leading-tight tracking-[-0.02em]">
               <Sparkle />
-              {f.name || "Untitled"}
+              <span className="truncate">{f.name || "Untitled"}</span>
             </h3>
             <div className="flex shrink-0 items-center gap-1.5">
               <span className={`stamp ${statusStamp[lang.status] ?? ""}`}>

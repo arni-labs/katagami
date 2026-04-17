@@ -13,7 +13,7 @@ const links = [
 export function HeaderNav() {
   const pathname = usePathname();
   return (
-    <div className="flex items-center gap-5 text-sm font-medium">
+    <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium md:flex md:flex-none md:gap-5">
       {links.map((l) => {
         const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
         return (
@@ -21,7 +21,7 @@ export function HeaderNav() {
             key={l.href}
             href={l.href}
             data-active={active}
-            className="ink-underline relative inline-block text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"
+            className="ink-underline relative inline-block shrink-0 text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"
           >
             {l.label}
           </Link>

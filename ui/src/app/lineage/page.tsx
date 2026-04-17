@@ -43,7 +43,7 @@ export default async function LineagePage({
   }));
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-10">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
       <PageHero
         eyebrowAccent="ramune"
         eyebrow="provenance"

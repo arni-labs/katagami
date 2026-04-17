@@ -3,6 +3,7 @@ import { Nunito, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { HeaderNav } from "@/components/header-nav";
+import { MobileNav } from "@/components/mobile-nav";
 
 const nunito = Nunito({
   variable: "--font-sans",
@@ -37,29 +38,29 @@ export default function RootLayout({
       lang="en"
       className={`${nunito.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <header className="relative border-b border-border/70 bg-background/70 backdrop-blur-sm">
-          <nav className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4">
+          <nav className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:gap-6 md:gap-8">
             <Link
               href="/"
               aria-label="katagami home"
-              className="group flex items-center gap-2.5 font-display"
+              className="group flex shrink-0 items-center gap-2 font-display sm:gap-2.5"
             >
-              <span className="relative block h-9 w-10">
+              <span className="relative block h-8 w-9 sm:h-9 sm:w-10">
                 <span
                   aria-hidden
-                  className="absolute left-0 top-0 h-6 w-6 rounded-full bg-[var(--sakura)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg]"
+                  className="absolute left-0 top-0 h-5 w-5 rounded-full bg-[var(--sakura)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg] sm:h-6 sm:w-6"
                 />
                 <span
                   aria-hidden
-                  className="absolute right-0 top-0 h-6 w-6 rounded-full bg-[var(--yuzu)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg]"
+                  className="absolute right-0 top-0 h-5 w-5 rounded-full bg-[var(--yuzu)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg] sm:h-6 sm:w-6"
                 />
                 <span
                   aria-hidden
-                  className="absolute bottom-0 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full bg-[var(--sumire)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-y-[3px]"
+                  className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-[var(--sumire)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-y-[3px] sm:h-6 sm:w-6"
                 />
               </span>
-              <span className="text-[22px] font-semibold leading-none tracking-[-0.02em]">
+              <span className="text-[18px] font-semibold leading-none tracking-[-0.02em] sm:text-[22px]">
                 katagami
               </span>
             </Link>
@@ -106,12 +107,12 @@ export default function RootLayout({
             }}
           />
 
-          <div className="mx-auto max-w-7xl space-y-6 px-4 pb-8 pt-12">
-            <div className="flex flex-wrap items-start justify-between gap-10">
+          <div className="mx-auto max-w-7xl space-y-6 px-4 pb-8 pt-10 sm:pt-12">
+            <div className="flex flex-wrap items-start justify-between gap-6 sm:gap-10">
               {/* Brand block */}
               <div className="space-y-3">
                 <div className="flex items-baseline gap-3">
-                  <span className="font-display text-[56px] font-bold leading-none tracking-[-0.04em]">
+                  <span className="font-display text-5xl font-bold leading-none tracking-[-0.04em] sm:text-[56px]">
                     型紙
                   </span>
                   <div className="flex flex-col leading-tight">
@@ -175,6 +176,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        <MobileNav />
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
 import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
-import { EmbodimentViewer } from "@/components/embodiment-viewer";
+import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
 import { DesignShowcase } from "@/components/design-showcase";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -64,7 +64,7 @@ export default async function LanguageDetailPage({
   const name = f.name || "Untitled";
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-10">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
       {/* Back link */}
       <Link
         href="/"
@@ -246,7 +246,7 @@ export default async function LanguageDetailPage({
       <Perforation />
 
       {/* Spec + Embodiment — side-by-side on lg+, narrower spec */}
-      <div className="grid gap-10 lg:grid-cols-5">
+      <div className="grid gap-8 sm:gap-10 lg:grid-cols-5">
         <section className="lg:col-span-2">
           <SectionHeading eyebrow="the spec" eyebrowColor="teal">
             <Marker color="teal">specification</Marker>
@@ -283,7 +283,10 @@ export default async function LanguageDetailPage({
                 width={80}
               />
               <div className="relative rounded-[2px] border border-border bg-white p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                <EmbodimentViewer fileId={f.embodiment_file_id} />
+                <DynamicEmbodiment
+                  fileId={f.embodiment_file_id}
+                  format={(f.embodiment_format as "html" | "tsx") ?? "html"}
+                />
                 <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   preview · {f.slug || id.slice(0, 12)}
                 </span>
