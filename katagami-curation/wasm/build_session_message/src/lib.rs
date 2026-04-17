@@ -147,13 +147,19 @@ You are regenerating the embodiment for an EXISTING design language as self-cont
    - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
    - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
    - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
-5. **If ANY section fails validation — ENRICH IT before generating the embodiment.**
-   This is the most critical step. Read the existing embodiment HTML:
-   `temper.read('/katagami/embodiments/' + slug + '.html')`
-   Analyze its CSS to extract the missing identity (visual traits, signature CSS techniques, colors, fonts).
-   Rewrite incomplete sections with concrete content and call the appropriate Set action.
-   Re-validate until all sections pass.
-   **NEVER generate an embodiment from empty or skeleton specs — it produces generic results.**
+5. **If ANY section fails validation — RESEARCH and rewrite it before generating the embodiment.**
+   The spec is the primary artifact. It must come from research, not from reverse-engineering existing CSS.
+   a. Search for existing research: `temper.list('DesignSources', "$filter=contains(name,'<language_name>')")`
+   b. If no sources exist, research the design direction:
+      `temper.web_search('<language_name> design system UI patterns typography')` and
+      `temper.web_fetch(url)` on the best results.
+   c. Study real-world references: what makes this design movement distinctive? What are the defining
+      structural choices, typography conventions, color palettes, spatial relationships?
+   d. Rewrite each failing section with concrete, research-backed content — specific CSS techniques
+      and design decisions grounded in real references, not vague adjectives.
+   e. Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance).
+   f. Re-validate until all sections pass.
+   **NEVER generate an embodiment from empty or skeleton specs — the spec defines the identity.**
 6. Generate a self-contained HTML embodiment using the now-complete spec's visual_character, signature_patterns, and tokens.
 7. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
 8. Call `AttachEmbodiment` with `embodiment_format: 'html'`.

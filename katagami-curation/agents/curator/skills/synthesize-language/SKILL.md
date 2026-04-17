@@ -17,10 +17,11 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    temper.action('DesignLanguages', eid, 'Revise', {'curator_notes': 'Regenerating embodiment HTML'})
    ```
 4. **Run the Spec Validation Gate** (see below). Parse each JSON field and check completeness.
-5. **If any section fails validation — ENRICH IT before proceeding.** This is mandatory:
-   - Read the existing embodiment HTML: `temper.read('/katagami/embodiments/' + slug + '.html')`
-   - Analyze the CSS to extract what's missing (visual traits, signature CSS techniques, color values, font names)
-   - Rewrite the incomplete sections with concrete, specific content derived from the existing embodiment
+5. **If any section fails validation — RESEARCH and rewrite it.** The spec is the primary artifact. It must be grounded in real design knowledge, not reverse-engineered from existing CSS.
+   - Search for DesignSources related to this language: `temper.list('DesignSources', "$filter=contains(name,'" + language_name + "')")`
+   - If no sources exist, research the design direction: `temper.web_search(language_name + ' design system UI patterns')` and `temper.web_fetch(url)` on the best results
+   - Study the real-world references: what makes this design movement distinctive? What are the defining structural choices, typography conventions, color palettes, spatial relationships?
+   - Rewrite each failing section with concrete, research-backed content — not vague adjectives, but specific CSS techniques and design decisions grounded in real references
    - Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance)
    - Re-validate until all sections pass
 6. Go to the **EMBODIMENT PHASE** — generate HTML from the now-complete spec
