@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
-import { useInView } from "@/lib/use-in-view";
+import { useIframeSlot } from "@/lib/iframe-slots";
 
 const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
@@ -80,7 +80,10 @@ function tintFor(lang: DesignLanguage): string {
 // causing scroll jank.
 
 export function LanguageCard({ lang }: { lang: DesignLanguage }) {
-  const { ref, inView } = useInView<HTMLAnchorElement>();
+  // hasSlot is gated by the global iframe cap (at most N iframes mount
+  // across the whole page, prioritised by viewport distance). This is
+  // the hard memory bound that stops scroll crashes.
+  const { ref, hasSlot } = useIframeSlot<HTMLAnchorElement>();
   const id = lang.entity_id;
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
 
@@ -91,7 +94,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
       prefetch={false}
       className="group relative block min-w-0"
     >
-      <FullCard lang={lang} stickyTint={stickyTint} iframeInView={inView} />
+      <FullCard lang={lang} stickyTint={stickyTint} iframeInView={hasSlot} />
     </Link>
   );
 }
