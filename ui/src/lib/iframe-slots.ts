@@ -16,7 +16,22 @@ import { useEffect, useRef, useState } from "react";
  * This is the definitive memory bound: total iframe memory ≤ MAX × one.
  */
 
-const MAX = 4;
+// Responsive cap: enough live previews to fill the viewport on each
+// device class without blowing up memory.
+//   mobile  (<640px)  → 3  (1 col, ~2–3 rows visible)
+//   tablet  (<1024px) → 6  (2 col, ~3 rows visible)
+//   desktop (<1536px) → 10 (3 col, ~3 rows visible)
+//   wide    (≥1536px) → 12 (4 col, ~3 rows visible)
+function computeMax(): number {
+  if (typeof window === "undefined") return 6;
+  const w = window.innerWidth;
+  if (w < 640) return 3;
+  if (w < 1024) return 6;
+  if (w < 1536) return 10;
+  return 12;
+}
+
+let MAX = computeMax();
 
 // Observation buffer — cards further than this from the viewport are
 // never candidates for a slot. Keeps the "candidate pool" small.
@@ -98,7 +113,10 @@ function attachScrollListener() {
   if (scrollListenerAttached || typeof window === "undefined") return;
   scrollListenerAttached = true;
   window.addEventListener("scroll", scheduleTick, { passive: true });
-  window.addEventListener("resize", scheduleTick);
+  window.addEventListener("resize", () => {
+    MAX = computeMax();
+    scheduleTick();
+  });
 }
 
 function register(
