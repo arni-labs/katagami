@@ -109,6 +109,14 @@ guidance = {"do": [...], "dont": [...]}
 temper.action('DesignLanguages', eid, 'SetGuidance', {'guidance': json.dumps(guidance)})
 ```
 
+**Tags** — set 5-10 specific, searchable tags describing the language's visual/structural properties. These help with gallery search and filtering. Use concrete descriptors, not abstract art history terms.
+
+```python
+temper.action('DesignLanguages', eid, 'SetTags', {
+    'tags': json.dumps(['serif-editorial', 'high-contrast', 'dark-mode', 'column-grid', 'long-form-reading'])
+})
+```
+
 ### Spec Validation Gate — MANDATORY before embodiment
 
 **Do NOT proceed to embodiment until every check passes.** Parse the JSON you wrote and verify:
