@@ -22,29 +22,31 @@ import { useEffect, useRef, useState } from "react";
  *    pauses for ~200ms, one bulk update runs.
  */
 
+// Radically conservative tiers — crashes kept recurring with higher caps.
+// Iframe browsing contexts are expensive even when just parked; keeping
+// fewer alive is the only reliable safety net.
 function computeMax(): number {
-  if (typeof window === "undefined") return 6;
+  if (typeof window === "undefined") return 3;
   const w = window.innerWidth;
-  if (w < 640) return 3;
-  if (w < 1024) return 6;
-  if (w < 1536) return 9;
-  return 12;
+  if (w < 640) return 2;
+  if (w < 1024) return 3;
+  if (w < 1536) return 4;
+  return 6;
 }
 
 let MAX = computeMax();
 
-// Observation buffer — cards further than this from the viewport are never
-// candidates for a slot. Keeps the candidate pool small.
-const ROOT_MARGIN = "400px 0px 400px 0px";
+// Only cards essentially ON-SCREEN (tight margin) are slot candidates.
+// Cuts down the candidate pool so reshuffles are smaller.
+const ROOT_MARGIN = "80px 0px 80px 0px";
 
 // How long the user must be scroll-idle before slots can reshuffle.
-const SCROLL_IDLE_MS = 200;
+const SCROLL_IDLE_MS = 250;
 
-// Stagger between individual iframe mounts. Creating N iframe browsing
-// contexts in the same animation frame is the crash spike — a brief delay
-// between each lets the browser amortise the work and keep GC/compositor
-// caught up. Revokes are not staggered (we want to free memory fast).
-const MOUNT_STAGGER_MS = 120;
+// Stagger between individual iframe mounts. 200ms gives the browser
+// enough time between mounts to start cleaning up the previous mount's
+// allocations before the next one begins.
+const MOUNT_STAGGER_MS = 200;
 
 type Entry = {
   el: HTMLElement;
