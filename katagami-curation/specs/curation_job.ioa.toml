@@ -70,7 +70,7 @@ initial = ""
 [[state]]
 name = "soul_id"
 type = "string"
-initial = "app-agent-curator"
+initial = "curator"
 
 # LLM model identifier
 [[state]]

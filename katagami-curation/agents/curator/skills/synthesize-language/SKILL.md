@@ -1,6 +1,6 @@
 # Synthesize Language
 
-Create a complete DesignLanguage entity with all spec sections and a self-contained HTML embodiment.
+Create a complete DesignLanguage entity with all spec sections and a self-contained HTML embodiment, visually verified at three viewport sizes.
 
 ## When to Use
 
@@ -14,11 +14,11 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
 2. Read ALL spec sections from the entity fields (Philosophy, Tokens, Rules, Layout, Guidance)
 3. If the language is in `Published` state, call `Revise` first:
    ```python
-   temper.action('DesignLanguages', eid, 'Revise', {'curator_notes': 'Regenerating embodiment as TSX with Radix UI'})
+   temper.action('DesignLanguages', eid, 'Revise', {'curator_notes': 'Regenerating embodiment HTML'})
    ```
 4. **Skip the SPEC PHASE** — use the existing spec sections as-is
 5. Go directly to the **EMBODIMENT PHASE** below
-6. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the TSX
+6. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the HTML
 7. After `AttachEmbodiment`, call `SubmitForReview` + `Publish` to re-publish
 
 ## Before Starting
@@ -100,104 +100,140 @@ guidance = {"do": [...], "dont": [...]}
 temper.action('DesignLanguages', eid, 'SetGuidance', {'guidance': json.dumps(guidance)})
 ```
 
-### Tool Call 2+ — EMBODIMENT PHASE (Sandbox Compile + Visual Feedback Loop)
+### Tool Call 2+ — EMBODIMENT PHASE (Sandbox Visual Feedback Loop)
 
-Review the spec you just wrote (your variables are still in scope). Generate a **TSX component** using **Radix UI primitives** that manifests EVERY visual_character trait, EVERY signature_pattern, and uses the surfaces/borders/motion tokens.
+Review the spec you just wrote (your variables are still in scope). Generate a **self-contained HTML file** that manifests EVERY visual_character trait, EVERY signature_pattern, and uses the surfaces/borders/motion tokens.
 
-The embodiment MUST be a self-contained TSX component that exports a default React component. Use `@radix-ui/themes` and other Radix primitives for structure (Card, Flex, Grid, Text, Heading, Button, Badge, etc.) with Tailwind CSS for custom styling on top.
+The embodiment MUST be a single, self-contained HTML file:
+- All CSS embedded in a `<style>` block (no external stylesheets except Google Fonts and optionally Tailwind CDN)
+- Google Fonts loaded via `<link>` tags in the `<head>`
+- Responsive media queries for desktop, tablet, and mobile
+- CSS class-prefixed to avoid collisions (e.g., `.nk-*`, `.kp-*`)
+- Interactive states via CSS pseudo-classes (`:hover`, `:focus`, `:disabled`, `:checked`)
+- No JavaScript frameworks. Vanilla JS only, and only for interactive behaviors (tabs, modals, accordions, toggles)
 
-**You MUST validate your output in the sandbox before publishing.** Follow this loop:
+**You MUST validate your output in the sandbox at three viewport sizes before publishing.** Follow this loop:
 
-#### Step 1 — Generate TSX and write to sandbox
+#### Step 1 — Generate HTML and write to sandbox
 
 ```python
-tsx_code = '''
-import React from "react";
-import { Theme, Card, Flex, Text, Heading, Button, Badge, Grid } from "@radix-ui/themes";
-// ... your full TSX component using Radix UI ...
-export function MyDesignLanguage() {
-  return <Theme><div>...</div></Theme>;
-}
-export default MyDesignLanguage;
-'''
-sandbox.write('/tmp/embodiment.tsx', tsx_code)
+html_code = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=YourFont:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>My Design Language</title>
+  <style>
+    /* CSS reset */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    select, input, textarea, button { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; border: none; background: none; outline: none; }
+
+    /* Your design language CSS here — ALL layout in classes, responsive via media queries */
+  </style>
+</head>
+<body>
+  <!-- Scene-first design: a real application screen, not a component catalog -->
+</body>
+</html>'''
+sandbox.write('/tmp/embodiment.html', html_code)
 ```
 
-#### Step 2 — Install dependencies and compile
+#### Step 2 — Install Playwright and screenshot at three viewports
 
 ```python
-sandbox.bash('cd /tmp && npm init -y && npm install react react-dom @radix-ui/themes typescript @types/react @types/react-dom 2>&1 | tail -3')
-sandbox.bash('cd /tmp && npx tsc --jsx react-jsx --module esnext --moduleResolution node --esModuleInterop --noEmit --skipLibCheck embodiment.tsx 2>&1')
-```
-
-If compilation fails, read the errors, fix the TSX, write it again, and re-compile. **Do not proceed until tsc reports zero errors.**
-
-#### Step 3 — Render with Playwright and take a screenshot
-
-```python
-# Create a minimal HTML wrapper that loads the component
-wrapper_html = '''<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>body { font-family: Inter, system-ui, sans-serif; margin: 0; padding: 24px; }</style>
-</head><body><div id="root"></div>
-<script type="module">
-import React from "https://esm.sh/react@18";
-import ReactDOM from "https://esm.sh/react-dom@18/client";
-import { Theme } from "https://esm.sh/@radix-ui/themes@3";
-// Inline your rendered HTML here as static markup for screenshot purposes
-</script></body></html>'''
-
-# For visual validation, generate a STATIC HTML version of your component
-# that uses the same design tokens and visual patterns
-static_html = '<your component rendered as static HTML with inline styles and Tailwind classes>'
-sandbox.write('/tmp/preview.html', static_html)
-
 sandbox.bash('pip install playwright 2>&1 | tail -1')
 sandbox.bash('playwright install chromium 2>&1 | tail -1')
+```
+
+Take screenshots at all three viewport sizes:
+
+```python
 sandbox.bash("""python3 -c "
 from playwright.sync_api import sync_playwright
+
+viewports = [
+    {'name': 'desktop', 'width': 1440, 'height': 900},
+    {'name': 'tablet',  'width': 768,  'height': 1024},
+    {'name': 'mobile',  'width': 375,  'height': 812},
+]
+
 p = sync_playwright().start()
 b = p.chromium.launch()
-pg = b.new_page(viewport={'width': 1280, 'height': 900})
-pg.goto('file:///tmp/preview.html')
-pg.wait_for_timeout(2000)
-pg.screenshot(path='/tmp/shot.png', full_page=True)
+
+for vp in viewports:
+    pg = b.new_page(viewport={'width': vp['width'], 'height': vp['height']})
+    pg.goto('file:///tmp/embodiment.html')
+    pg.wait_for_timeout(2000)
+    pg.screenshot(path=f'/tmp/shot_{vp[\"name\"]}.png', full_page=True)
+    pg.close()
+    print(f'{vp[\"name\"]} screenshot saved ({vp[\"width\"]}x{vp[\"height\"]})')
+
 b.close()
 p.stop()
-print('Screenshot saved')
 " 2>&1""")
 ```
 
-#### Step 4 — Read screenshot and visually evaluate
+#### Step 3 — Read all three screenshots and evaluate
 
 ```python
-screenshot = sandbox.read('/tmp/shot.png')
-# The image flows to you automatically. Evaluate:
-# - Does it express EVERY visual_character trait from the philosophy?
-# - Are the signature_patterns visible?
-# - Is the typography polished (proper sizes, weights, line-height)?
-# - Do surfaces, borders, and motion tokens match the spec?
-# - Is alignment and spacing consistent?
-# - Does it look professional-grade, not like a generic template?
+desktop_shot = sandbox.read('/tmp/shot_desktop.png')
+tablet_shot = sandbox.read('/tmp/shot_tablet.png')
+mobile_shot = sandbox.read('/tmp/shot_mobile.png')
 ```
 
-**If the visual quality is not satisfactory**, update the TSX, rewrite `/tmp/embodiment.tsx`, re-compile, re-render, re-screenshot, and re-evaluate. **Iterate until the embodiment looks polished and fully expresses the design language.**
+The images flow to you automatically. Evaluate EACH viewport against these criteria:
+
+**Desktop (1440px):**
+- Full layout renders with intended column structure
+- All 15 required UI elements visible and styled
+- Every visual_character trait from philosophy is present
+- Every signature_pattern from rules is visible
+- Typography hierarchy is clear (heading vs body vs data fonts)
+- Surfaces, borders, shadows match token definitions
+- The design looks professional — not a template or unstyled default
+
+**Tablet (768px):**
+- Layout reflows appropriately (multi-column → fewer columns)
+- No horizontal overflow or content cut-off
+- Touch targets are adequate size (44px minimum)
+- Typography remains readable without zooming
+- Cards/panels stack or reflow sensibly
+
+**Mobile (375px):**
+- Single-column layout with full-width content
+- No horizontal scroll (unless intentional for tables)
+- Buttons stack full-width
+- Typography scales down but remains readable
+- Modal/dialog fits within viewport
+- Navigation is accessible
+
+#### Step 4 — Iterate until polished
+
+**If ANY viewport fails evaluation**, fix the HTML, rewrite `/tmp/embodiment.html`, re-screenshot all three viewports, and re-evaluate. Common issues to fix:
+
+- **Broken responsive**: Layout not reflowing → check media queries, ensure no inline `style` for layout
+- **Unstyled form elements**: Browser defaults visible → apply explicit styles to all form controls
+- **Generic look**: Swap the palette and it still looks the same → strengthen signature_patterns, add more structural CSS
+- **Typography issues**: Font not loading → check Google Fonts URL; sizes wrong → check `clamp()` and scale_ratio
+- **Alignment problems**: Inconsistent spacing → audit padding/margin against spacing tokens
+- **Overflow on mobile**: Horizontal scroll → check for fixed-width elements, add `overflow-x: auto` wrappers
+
+**Iterate until ALL THREE viewports look polished and fully express the design language.**
 
 #### Step 5 — Publish to TemperFS
 
-Only when compilation succeeds AND visual evaluation passes:
+Only when all three viewports pass evaluation:
 
 ```python
-result = temper.write('/katagami/embodiments/' + slug + '.tsx', tsx_code)
+result = temper.write('/katagami/embodiments/' + slug + '.html', html_code)
 temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
     'embodiment_file_id': result['file_id'],
     'element_count': '15',
     'composition_count': '5',
-    'embodiment_format': 'tsx'
+    'embodiment_format': 'html'
 })
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'

@@ -46,7 +46,7 @@ Knowledge files (read via `temper.read()`):
 - `/system/knowledge/feedback-log.md` — human curator feedback log
 
 Workspace at `/katagami/`:
-- `/katagami/embodiments/{slug}.tsx` — embodiment files (TSX with Radix UI)
+- `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
 - `/katagami/sources/{slug}.md` — research source files
 
 ## Completion Protocol

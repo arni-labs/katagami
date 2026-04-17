@@ -35,19 +35,19 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let soul_id = fields
             .get("soul_id")
             .and_then(|v| v.as_str())
-            .unwrap_or("app-agent-curator")
+            .unwrap_or("curator")
             .to_string();
 
         let model = fields
             .get("model")
             .and_then(|v| v.as_str())
-            .unwrap_or("gpt-5.4")
+            .unwrap_or("claude-sonnet-4-20250514")
             .to_string();
 
         let provider = fields
             .get("provider")
             .and_then(|v| v.as_str())
-            .unwrap_or("openai_codex")
+            .unwrap_or("anthropic")
             .to_string();
 
         let tools_enabled = fields
@@ -131,30 +131,30 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "regenerate_embodiment" => r#"
 ## Regeneration Mode
 
-You are regenerating the embodiment for an EXISTING design language as TSX with Radix UI.
+You are regenerating the embodiment for an EXISTING design language as self-contained HTML.
 
 1. Read the existing language entity specified in the input (`existing_language_id`).
 2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
-3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment as TSX with Radix UI"`.
+3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment HTML"`.
 4. Skip the SPEC PHASE — specs already exist. Go directly to EMBODIMENT PHASE.
-5. Generate a TSX embodiment using the existing spec's visual_character, signature_patterns, and tokens.
-6. Follow the full sandbox compile + visual feedback loop from your skill instructions.
-7. Call `AttachEmbodiment` with `embodiment_format: 'tsx'`.
+5. Generate a self-contained HTML embodiment using the existing spec's visual_character, signature_patterns, and tokens.
+6. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
+7. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
 8. Call `SubmitForReview` then `Publish` to re-publish the language.
 "#,
             "synthesize" | "evolve_language" => r#"
-## CRITICAL: TSX + Sandbox Required
+## CRITICAL: Self-Contained HTML + Visual Verification Required
 
-**You MUST produce a TSX component, NOT raw HTML.** HTML embodiments are rejected.
+**You MUST produce a single self-contained HTML file with embedded CSS.**
 
 The embodiment MUST be:
-1. A TSX file using React + `@radix-ui/themes` (Radix UI primitives)
-2. Compiled via `sandbox.bash('cd /tmp && npx tsc --jsx react-jsx ...')` in the sandbox
-3. Visually validated via Playwright screenshot in the sandbox (`sandbox.bash`, `sandbox.write`, `sandbox.read`)
-4. Published with `embodiment_format: 'tsx'` in the AttachEmbodiment call
+1. A complete HTML file with all CSS in a `<style>` block — no external stylesheets except Google Fonts
+2. Responsive with media queries for desktop, tablet, and mobile
+3. Visually validated via Playwright screenshots at 3 viewports (desktop 1440px, tablet 768px, mobile 375px)
+4. Published with `embodiment_format: 'html'` in the AttachEmbodiment call
 
-**You MUST use `sandbox.write()` and `sandbox.bash()` for compilation and screenshots.**
-Do NOT write HTML directly to TemperFS. The sandbox tools are available — use them.
+**You MUST use `sandbox.write()`, `sandbox.bash()`, and `sandbox.read()` for screenshots.**
+Write HTML to sandbox, screenshot at all 3 viewports, evaluate, iterate until polished.
 
 After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
 "#,
