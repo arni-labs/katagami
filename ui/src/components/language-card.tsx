@@ -13,7 +13,7 @@ function usePreviewState() {
   // observes the element (no content-visibility interference). The scale
   // Observer uses the same ref to measure the inner preview width through
   // getBoundingClientRect on a sub-element by ratio.
-  const articleRef = useRef<HTMLElement>(null);
+  const articleRef = useRef<HTMLElement | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.22);
   const [inView, setInView] = useState(false);
@@ -153,11 +153,34 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
 
   return (
     <Link href={`/language/${id}`} className="group relative block min-w-0">
+      {/* When the card is nowhere near the viewport, render a cheap skeleton
+          instead of the full sticker chrome (palette ribbon, washi tapes,
+          Sparkle SVG, iframe). Dramatically reduces DOM + paint cost when
+          the gallery has many cards. */}
+      {!inView ? (
+        <div
+          className="relative h-full min-h-[440px] overflow-hidden"
+          style={{
+            background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
+            boxShadow:
+              "0 1px 2px rgba(30, 35, 45, 0.04), 0 6px 18px rgba(30, 35, 45, 0.06)",
+          }}
+          // Attach IO ref to the skeleton so it can flip to full-render
+          // when scrolled near viewport.
+          ref={articleRef as React.Ref<HTMLDivElement>}
+        >
+          <div className="px-4 pt-4">
+            <div className="mb-3 h-[6px] w-1/3 rounded-[2px] bg-foreground/10" />
+            <div className="mb-2 h-4 w-3/4 rounded-[2px] bg-foreground/15" />
+            <div className="h-3 w-1/2 rounded-[2px] bg-foreground/10" />
+          </div>
+        </div>
+      ) : (
       <article
         ref={articleRef}
         className="sticker-card relative h-full overflow-hidden"
         style={{
-          background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.75))`,
+          background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
         }}
       >
         {/* Palette ribbon — stripes across the top, one per palette color */}
@@ -384,6 +407,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
           </div>
         </div>
       </article>
+      )}
     </Link>
   );
 }
