@@ -40,6 +40,12 @@ const ROOT_MARGIN = "400px 0px 400px 0px";
 // How long the user must be scroll-idle before slots can reshuffle.
 const SCROLL_IDLE_MS = 200;
 
+// Stagger between individual iframe mounts. Creating N iframe browsing
+// contexts in the same animation frame is the crash spike — a brief delay
+// between each lets the browser amortise the work and keep GC/compositor
+// caught up. Revokes are not staggered (we want to free memory fast).
+const MOUNT_STAGGER_MS = 120;
+
 type Entry = {
   el: HTMLElement;
   intersecting: boolean;
@@ -83,6 +89,26 @@ function distanceToViewportCenter(el: HTMLElement): number {
   return Math.abs(elCenter - vpCenter);
 }
 
+// Staggered grant queue — deferred mounts.
+const grantQueue: Entry[] = [];
+let grantTimer: ReturnType<typeof setTimeout> | null = null;
+
+function drainGrantQueue() {
+  while (grantQueue.length > 0) {
+    const entry = grantQueue.shift()!;
+    // Entry may have been revoked / unregistered since enqueue — skip it.
+    if (!entries.has(entry)) continue;
+    if (entry.active) continue;
+    if (!entry.intersecting) continue;
+    entry.active = true;
+    entry.grant();
+    // Wait MOUNT_STAGGER_MS before mounting the next one.
+    grantTimer = setTimeout(drainGrantQueue, MOUNT_STAGGER_MS);
+    return;
+  }
+  grantTimer = null;
+}
+
 function tick() {
   if (typeof window === "undefined") return;
 
@@ -94,16 +120,28 @@ function tick() {
 
   const winners = new Set(candidates.slice(0, MAX));
 
+  // Revoke losers immediately — frees memory fast.
   for (const entry of entries) {
-    const shouldBeActive = winners.has(entry);
-    if (entry.active && !shouldBeActive) {
+    if (entry.active && !winners.has(entry)) {
       entry.active = false;
       entry.revoke();
-    } else if (!entry.active && shouldBeActive) {
-      entry.active = true;
-      entry.grant();
     }
   }
+
+  // Clear any pending grants that no longer won.
+  for (let i = grantQueue.length - 1; i >= 0; i--) {
+    if (!winners.has(grantQueue[i])) grantQueue.splice(i, 1);
+  }
+
+  // Enqueue new winners (those not already active or pending).
+  for (const entry of entries) {
+    if (!entry.active && winners.has(entry) && !grantQueue.includes(entry)) {
+      grantQueue.push(entry);
+    }
+  }
+
+  // Kick off the staggered drain if it's not already running.
+  if (!grantTimer && grantQueue.length > 0) drainGrantQueue();
 }
 
 let tickScheduled = false;
@@ -161,6 +199,9 @@ function register(
       entry.active = false;
       revoke();
     }
+    // Remove any pending grant for this entry.
+    const qi = grantQueue.indexOf(entry);
+    if (qi >= 0) grantQueue.splice(qi, 1);
     entries.delete(entry);
     io?.unobserve(el);
   };
