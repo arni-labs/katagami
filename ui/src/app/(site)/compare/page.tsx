@@ -118,20 +118,25 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 width={90}
               />
               <div className="relative rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
-                {lang.fields.embodiment_file_id ? (
+                {lang.fields.embodiment_file_id &&
+                (lang.fields.embodiment_format ?? "html") !== "tsx" ? (
                   <div
                     className="relative w-full overflow-hidden bg-white"
                     style={{ aspectRatio: "16 / 10" }}
                   >
                     <iframe
-                      src={`/embodiment/${lang.fields.embodiment_file_id}?format=${
-                        (lang.fields.embodiment_format as "html" | "tsx") ?? "html"
-                      }`}
+                      src={`/api/file/${encodeURIComponent(
+                        lang.fields.embodiment_file_id,
+                      )}`}
                       className="absolute inset-0 h-full w-full border-0"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox=""
                       title={`${lang.fields.name ?? "side"} embodiment`}
                       loading="lazy"
                     />
+                  </div>
+                ) : lang.fields.embodiment_file_id ? (
+                  <div className="flex h-[500px] items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    tsx preview not rendered
                   </div>
                 ) : (
                   <div className="flex h-[500px] items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground">

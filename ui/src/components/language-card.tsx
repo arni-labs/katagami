@@ -9,35 +9,47 @@ const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
 
 function usePreviewState() {
-  const ref = useRef<HTMLDivElement>(null);
+  // Ref is placed on the OUTER card article so the browser always sees and
+  // observes the element (no content-visibility interference). The scale
+  // Observer uses the same ref to measure the inner preview width through
+  // getBoundingClientRect on a sub-element by ratio.
+  const articleRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.22);
-  // Two-way IO: mount when in view, UNMOUNT when well out of view so we
-  // don't keep dozens of iframes alive at once (crash prevention).
   const [inView, setInView] = useState(false);
+
   useEffect(() => {
-    const el = ref.current;
+    const el = previewRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
       if (w > 0) setScale(w / PREVIEW_VIEWPORT_WIDTH);
     });
     ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = articleRef.current;
+    if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
         if (!entry) return;
-        // Mount when near viewport; unmount when well offscreen.
         setInView(entry.isIntersecting);
       },
-      { rootMargin: "200px 0px 200px 0px" },
+      {
+        // Only load cards that are basically in or adjacent to the viewport.
+        // Anything further away stays unmounted.
+        rootMargin: "150px 0px 150px 0px",
+        threshold: 0,
+      },
     );
     io.observe(el);
-    return () => {
-      ro.disconnect();
-      io.disconnect();
-    };
+    return () => io.disconnect();
   }, []);
-  return { ref, scale, inView };
+
+  return { articleRef, previewRef, scale, inView };
 }
 
 const statusStamp: Record<string, string> = {
@@ -90,7 +102,8 @@ function hashInt(s: string, salt = "") {
 }
 
 export function LanguageCard({ lang }: { lang: DesignLanguage }) {
-  const { ref: previewRef, scale: previewScale, inView } = usePreviewState();
+  const { articleRef, previewRef, scale: previewScale, inView } =
+    usePreviewState();
   const f = lang.fields;
   const c = lang.counters;
   const tags = parseJson<string[]>(f.tags) ?? [];
@@ -141,6 +154,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
   return (
     <Link href={`/language/${id}`} className="group relative block min-w-0">
       <article
+        ref={articleRef}
         className="sticker-card relative h-full overflow-hidden"
         style={{
           background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.75))`,
@@ -192,16 +206,15 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                   className="relative w-full overflow-hidden rounded-[1px] bg-muted"
                   style={{ aspectRatio: "3 / 2" }}
                 >
-                  {/* TSX uses a cheap placeholder (live React tree per card
-                      would crash the gallery); HTML uses a direct file iframe
-                      which is lightweight — no Next.js runtime. */}
+                  {/* TSX preview is disabled — we only render HTML embodiments
+                      in the gallery to keep memory bounded. */}
                   {embodimentFormat === "tsx" ? (
                     <TsxPlaceholder
                       paletteColors={paletteEntries.map((p) => p.color)}
                       headingFont={headingFont}
                       bodyFont={bodyFont}
                     />
-                  ) : inView ? (
+                  ) : inView && embodimentFileId ? (
                     <iframe
                       key={embodimentFileId}
                       src={getFileUrl(embodimentFileId)}
@@ -434,7 +447,7 @@ function TsxPlaceholder({
           </span>
         )}
         <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.22em] text-muted-foreground/70">
-          tsx · open to view
+          tsx · preview unavailable
         </span>
       </div>
     </div>

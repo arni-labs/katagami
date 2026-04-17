@@ -269,7 +269,8 @@ export default async function LanguageDetailPage({
           <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
             <Marker color="salad">design embodiment</Marker>
           </SectionHeading>
-          {f.embodiment_file_id ? (
+          {f.embodiment_file_id &&
+          (f.embodiment_format ?? "html") !== "tsx" ? (
             <div className="relative">
               <WashiTape
                 color="sakura"
@@ -289,11 +290,9 @@ export default async function LanguageDetailPage({
                   style={{ aspectRatio: "16 / 10" }}
                 >
                   <iframe
-                    src={`/embodiment/${f.embodiment_file_id}?format=${
-                      (f.embodiment_format as "html" | "tsx") ?? "html"
-                    }`}
+                    src={`/api/file/${encodeURIComponent(f.embodiment_file_id)}`}
                     className="absolute inset-0 h-full w-full border-0"
-                    sandbox="allow-scripts allow-same-origin"
+                    sandbox=""
                     title={`${name} embodiment`}
                     loading="lazy"
                   />
@@ -309,7 +308,9 @@ export default async function LanguageDetailPage({
             </StickyNote>
           ) : (
             <StickyNote className="flex items-center justify-center p-16 text-center font-mono text-sm text-muted-foreground">
-              no embodiment or tokens defined yet
+              {f.embodiment_file_id
+                ? "tsx preview is not rendered — view the spec for details"
+                : "no embodiment or tokens defined yet"}
             </StickyNote>
           )}
         </section>
