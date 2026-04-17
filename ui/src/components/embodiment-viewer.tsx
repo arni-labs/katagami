@@ -1,20 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { getFileUrl } from "@/lib/odata";
 
 // Fixed desktop viewport — embodiments are authored at ~1200–1440px.
-// We lock the iframe's viewport width to 1440 so responsive CSS always
-// lands on the desktop breakpoint, then transform-scale the iframe to
-// fit whatever container width it's rendered in.
+// Lock the iframe's CSS width to 1440 so the embodiment's responsive CSS
+// always lands on its desktop breakpoint, then transform-scale the whole
+// iframe to fit whatever container width it's rendered in.
 const VIEWPORT_WIDTH = 1440;
 const DEFAULT_HEIGHT = 900;
 const MIN_HEIGHT = 400;
 
+// Use layoutEffect on the browser, regular effect on the server (SSR safe).
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 export function EmbodimentViewer({ fileId }: { fileId: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [scale, setScale] = useState(0.5);
+  // null = not measured yet — we don't render the iframe until we know
+  // the correct scale, so mobile never flashes a clipped "left side only".
+  const [scale, setScale] = useState<number | null>(null);
   const [contentHeight, setContentHeight] = useState(DEFAULT_HEIGHT);
   const [status, setStatus] = useState<"loading" | "ok" | "failed">("loading");
   const url = getFileUrl(fileId);
@@ -25,6 +32,16 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
       .catch(() => setStatus("failed"));
   }, [url]);
 
+  // Measure container width synchronously before paint so the first visible
+  // frame already has the correct scale.
+  useIsoLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const w = el.getBoundingClientRect().width;
+    if (w > 0) setScale(w / VIEWPORT_WIDTH);
+  }, []);
+
+  // Track subsequent resizes (window resize, orientation change, etc.)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -54,17 +71,15 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
     }
   }
 
-  // Re-measure a few times after load in case the embodiment's layout
-  // settles asynchronously (fonts loading, images, etc.)
   function onIframeLoad() {
     measureContent();
-    const delays = [60, 160, 400, 1000];
-    delays.forEach((t) => setTimeout(measureContent, t));
+    [60, 160, 400, 1000].forEach((t) => setTimeout(measureContent, t));
   }
 
-  if (status === "loading") {
+  if (status === "loading" || scale === null) {
     return (
       <div
+        ref={containerRef}
         className="w-full animate-pulse bg-muted"
         style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
       />
@@ -82,30 +97,42 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
     );
   }
 
-  // The container grows to match the scaled content height so the entire
-  // embodiment is visible — no cropping.
   const scaledHeight = contentHeight * scale;
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full overflow-hidden bg-white"
-      style={{ height: scaledHeight }}
-    >
-      <iframe
-        ref={iframeRef}
-        src={url}
-        className="absolute left-0 top-0 border-0"
-        style={{
-          width: `${VIEWPORT_WIDTH}px`,
-          height: `${contentHeight}px`,
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
-        }}
-        sandbox="allow-scripts allow-same-origin"
-        onLoad={onIframeLoad}
-        title="Design language embodiment"
-      />
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className="relative w-full overflow-hidden bg-white"
+        style={{ height: scaledHeight }}
+      >
+        <iframe
+          ref={iframeRef}
+          src={url}
+          className="absolute left-0 top-0 border-0"
+          style={{
+            width: `${VIEWPORT_WIDTH}px`,
+            height: `${contentHeight}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+          sandbox="allow-scripts allow-same-origin"
+          onLoad={onIframeLoad}
+          title="Design language embodiment"
+        />
+      </div>
+      {/* Mobile-friendly escape hatch: open the raw embodiment in its own
+          tab, where pinch-zoom and native scroll work cleanly. */}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-[3px] border border-border bg-white/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:text-foreground"
+      >
+        <span className="hidden sm:inline">open full</span>
+        <span className="sm:hidden">full</span>
+        <ExternalLink className="h-3 w-3" />
+      </a>
     </div>
   );
 }
