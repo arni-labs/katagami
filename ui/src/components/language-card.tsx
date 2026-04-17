@@ -73,7 +73,11 @@ function tintFor(lang: DesignLanguage): string {
   return accentColors[hashInt(id, "tint") % accentColors.length];
 }
 
-// ── Root card — always mounts; swaps inner content based on inView ──
+// ── Root card ──
+// The full chrome (palette ribbon, washi tapes, title, etc.) always renders
+// — it's cheap DOM. Only the iframe mounts/unmounts based on inView so
+// memory stays bounded. This avoids the skeleton-swap layout shift that was
+// causing scroll jank.
 
 export function LanguageCard({ lang }: { lang: DesignLanguage }) {
   const { ref, inView } = useInView<HTMLAnchorElement>();
@@ -87,33 +91,8 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
       prefetch={false}
       className="group relative block min-w-0"
     >
-      {inView ? (
-        <FullCard lang={lang} stickyTint={stickyTint} />
-      ) : (
-        <CardSkeleton tint={stickyTint} />
-      )}
+      <FullCard lang={lang} stickyTint={stickyTint} iframeInView={inView} />
     </Link>
-  );
-}
-
-// ── Skeleton (cheap placeholder while off-screen) ──
-
-function CardSkeleton({ tint }: { tint: string }) {
-  return (
-    <div
-      className="relative h-full min-h-[440px] overflow-hidden"
-      style={{
-        background: `color-mix(in srgb, ${tint} 9%, rgba(255, 255, 255, 0.85))`,
-        boxShadow:
-          "0 1px 2px rgba(30, 35, 45, 0.04), 0 6px 18px rgba(30, 35, 45, 0.06)",
-      }}
-    >
-      <div className="px-4 pt-4">
-        <div className="mb-3 h-[6px] w-1/3 rounded-[2px] bg-foreground/10" />
-        <div className="mb-2 h-4 w-3/4 rounded-[2px] bg-foreground/15" />
-        <div className="h-3 w-1/2 rounded-[2px] bg-foreground/10" />
-      </div>
-    </div>
   );
 }
 
@@ -122,9 +101,14 @@ function CardSkeleton({ tint }: { tint: string }) {
 interface FullCardProps {
   lang: DesignLanguage;
   stickyTint: string;
+  iframeInView: boolean;
 }
 
-const FullCard = memo(function FullCard({ lang, stickyTint }: FullCardProps) {
+const FullCard = memo(function FullCard({
+  lang,
+  stickyTint,
+  iframeInView,
+}: FullCardProps) {
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(0.22);
 
@@ -241,11 +225,14 @@ const FullCard = memo(function FullCard({ lang, stickyTint }: FullCardProps) {
                     headingFont={headingFont}
                     bodyFont={bodyFont}
                   />
-                ) : (
+                ) : iframeInView ? (
                   <iframe
                     key={embodimentFileId}
                     src={getFileUrl(embodimentFileId)}
-                    className="absolute left-0 top-0 border-0"
+                    className="absolute left-0 top-0 border-0 opacity-0 transition-opacity duration-200"
+                    onLoad={(e) =>
+                      e.currentTarget.classList.remove("opacity-0")
+                    }
                     style={{
                       width: `${PREVIEW_VIEWPORT_WIDTH}px`,
                       height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
@@ -259,6 +246,32 @@ const FullCard = memo(function FullCard({ lang, stickyTint }: FullCardProps) {
                     title={`${f.name} preview`}
                     aria-hidden
                   />
+                ) : (
+                  // Neutral placeholder in the preview while iframe waits to
+                  // mount — matches polaroid dimensions so there's no layout
+                  // shift when the iframe fades in.
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{
+                      background: `color-mix(in srgb, ${stickyTint} 6%, white)`,
+                    }}
+                  >
+                    <div className="flex gap-1">
+                      {(paletteEntries.length > 0
+                        ? paletteEntries
+                        : [{ color: stickyTint }]
+                      )
+                        .slice(0, 5)
+                        .map((p, i) => (
+                          <span
+                            key={i}
+                            className="h-2 w-2 rounded-full"
+                            style={{ background: p.color }}
+                          />
+                        ))}
+                    </div>
+                  </div>
                 )}
                 {/* soft bottom fade */}
                 <span

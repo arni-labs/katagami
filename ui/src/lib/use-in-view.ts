@@ -21,7 +21,9 @@ function getSharedObserver(): IntersectionObserver | null {
           if (cb) cb(entry.isIntersecting);
         }
       },
-      { rootMargin: "150px 0px 150px 0px", threshold: 0 },
+      // Larger margin = iframe starts fetching before the card is visible,
+      // so by the time the user scrolls to it the content is already painted.
+      { rootMargin: "600px 0px 600px 0px", threshold: 0 },
     );
   }
   return sharedObserver;
