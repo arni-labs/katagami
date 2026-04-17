@@ -61,7 +61,7 @@ async function GalleryGrid({
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {languages.map((lang) => (
         <LanguageCard key={lang.entity_id} lang={lang} />
       ))}
@@ -87,9 +87,22 @@ export default async function GalleryPage({
       <section className="relative">
         <div className="flex items-end justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="inline-block h-[3px] w-9 bg-[var(--teal)] rounded-[2px]" />
-              a library of design languages
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--teal)]" />
+              <span>agent-maintained · ideas by</span>
+              <a
+                href="https://x.com/arni0x9053"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative inline-flex items-center text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
+              >
+                <span className="relative z-10">@arni0x9053</span>
+                <span
+                  aria-hidden
+                  className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px] bg-[var(--yuzu)] opacity-85"
+                  style={{ transform: "rotate(-0.8deg)" }}
+                />
+              </a>
             </div>
             <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-[56px]">
               Design{" "}
@@ -118,7 +131,7 @@ export default async function GalleryPage({
           </div>
           <div className="relative hidden shrink-0 flex-col items-end gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:flex">
             <span className="stamp text-[var(--sakura)]">katagami</span>
-            <span className="stamp text-[var(--teal)] rotate-[3deg]">no.000</span>
+            <span className="stamp text-[var(--teal)] rotate-[3deg]">no.001</span>
             <span className="pt-1">since 2026</span>
           </div>
         </div>
@@ -128,7 +141,7 @@ export default async function GalleryPage({
 
       <Suspense
         fallback={
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
