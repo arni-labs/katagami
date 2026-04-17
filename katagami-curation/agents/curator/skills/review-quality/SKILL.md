@@ -64,7 +64,7 @@ For each language specified in the job input (or ALL languages if none specified
 
 - No `import` statements
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`, `sandbox.bash(cmd)`, `sandbox.write(path, content)`, `sandbox.read(path)`
-- Always serialize JSON with `json.dumps(...)`
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` → `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` → `"['a', 'b']"` (broken).
 
 ## Output
 

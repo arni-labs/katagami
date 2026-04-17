@@ -18,10 +18,13 @@ Job type: `organize_taxonomy`
 4. **Set hierarchy** (`parent_id`): Group fine-grained taxonomies under broader parent categories where it makes sense. Don't force hierarchy — flat is fine when categories are truly peers.
 5. **Set relationships** (`related_taxonomy_ids`): Connect taxonomies that share aesthetic DNA, historical lineage, or are commonly compared. Relationships must be bidirectional — if A relates to B, B must also relate to A.
 6. **Deduplicate**: If two taxonomies describe essentially the same movement, merge them — keep the better-described one, delete the other, and update any language references.
-7. **Classify languages**: For each language, assign 1-3 taxonomy categories via `SetTaxonomy`. Every language must be classified.
+7. **Classify languages**: For each language, assign 1-3 taxonomy categories via `SetTaxonomy` and set discoverable tags via `SetTags`. Every language must be classified and tagged.
    ```python
    temper.action('DesignLanguages', lang_id, 'SetTaxonomy', {
        'taxonomy_ids': json.dumps([tax_id_1, tax_id_2])
+   })
+   temper.action('DesignLanguages', lang_id, 'SetTags', {
+       'tags': json.dumps(['tag-1', 'tag-2', 'tag-3'])
    })
    ```
 8. **Update counts**: For each taxonomy with newly linked languages, call `IncrementLanguageCount`.
@@ -54,7 +57,7 @@ temper.action('Taxonomies', tax['entity_id'], 'Publish', {})
 
 - No `import` statements
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
-- Always serialize JSON with `json.dumps(...)`
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` → `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` → `"['a', 'b']"` (broken).
 
 ## Output
 

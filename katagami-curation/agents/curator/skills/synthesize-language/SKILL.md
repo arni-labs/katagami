@@ -305,7 +305,7 @@ temper.done("synthesize complete")
 - No `import` statements
 - No `enumerate(..., start=...)` — use `for i in range(len(items)):` instead
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`, `sandbox.bash(cmd)`, `sandbox.write(path, content)`, `sandbox.read(path)`
-- Always serialize JSON with `json.dumps(...)`
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` → `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` → `"['a', 'b']"` (broken).
 - String literals containing quotes MUST use proper escaping. Prefer single-quoted strings for JSON content.
 
 ## Output
