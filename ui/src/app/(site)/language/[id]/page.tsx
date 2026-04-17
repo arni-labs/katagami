@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
 import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
+import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -285,18 +286,7 @@ export default async function LanguageDetailPage({
                 width={80}
               />
               <div className="relative rounded-[2px] border border-border bg-white p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                <div
-                  className="relative w-full overflow-hidden bg-white"
-                  style={{ aspectRatio: "16 / 10" }}
-                >
-                  <iframe
-                    src={`/api/file/${encodeURIComponent(f.embodiment_file_id)}`}
-                    className="absolute inset-0 h-full w-full border-0"
-                    sandbox=""
-                    title={`${name} embodiment`}
-                    loading="lazy"
-                  />
-                </div>
+                <EmbodimentViewer fileId={f.embodiment_file_id} />
                 <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   preview · {f.slug || id.slice(0, 12)}
                 </span>

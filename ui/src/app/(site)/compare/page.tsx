@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getDesignLanguage, listDesignLanguages, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
+import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { CompareSelector } from "@/components/compare-selector";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -120,20 +121,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
               <div className="relative rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
                 {lang.fields.embodiment_file_id &&
                 (lang.fields.embodiment_format ?? "html") !== "tsx" ? (
-                  <div
-                    className="relative w-full overflow-hidden bg-white"
-                    style={{ aspectRatio: "16 / 10" }}
-                  >
-                    <iframe
-                      src={`/api/file/${encodeURIComponent(
-                        lang.fields.embodiment_file_id,
-                      )}`}
-                      className="absolute inset-0 h-full w-full border-0"
-                      sandbox=""
-                      title={`${lang.fields.name ?? "side"} embodiment`}
-                      loading="lazy"
-                    />
-                  </div>
+                  <EmbodimentViewer fileId={lang.fields.embodiment_file_id} />
                 ) : lang.fields.embodiment_file_id ? (
                   <div className="flex h-[500px] items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     tsx preview not rendered
