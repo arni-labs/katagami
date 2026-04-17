@@ -28,7 +28,7 @@ Read knowledge files before starting work:
 - `temper.web_search(query)` — search the web
 - `temper.web_fetch(url)` — fetch a URL
 
-No `import` statements. No `bash` or `sandbox.*`. Always serialize JSON with `json.dumps(...)`.
+No `import` statements. The `sandbox.*` and `bash` tools are available for `synthesize`, `evolve_language`, and `regenerate_embodiment` jobs. Always serialize JSON with `json.dumps(...)`.
 
 ## Entity Sets
 
@@ -46,7 +46,7 @@ Knowledge files (read via `temper.read()`):
 - `/system/knowledge/feedback-log.md` — human curator feedback log
 
 Workspace at `/katagami/`:
-- `/katagami/embodiments/{slug}.html` — embodiment files
+- `/katagami/embodiments/{slug}.tsx` — embodiment files (TSX with Radix UI)
 - `/katagami/sources/{slug}.md` — research source files
 
 ## Completion Protocol

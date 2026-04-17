@@ -58,6 +58,12 @@ name = "error_message"
 type = "string"
 initial = ""
 
+# Link back to parent CurationQuery for automated pipeline tracking
+[[state]]
+name = "query_id"
+type = "string"
+initial = ""
+
 # --- Session spawning fields ---
 
 # Agent identity for the session
@@ -108,7 +114,7 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled"]
+params = ["job_type", "design_language_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id"]
 hint = "Set or update job parameters before execution."
 
 [[action]]
@@ -164,16 +170,21 @@ params = ["error_message"]
 hint = "Mark job as failed with error details."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# --- Retry ---
+
+[[action]]
+name = "Retry"
+kind = "input"
+from = ["Failed"]
+to = "Queued"
+params = ["error_message"]
+hint = "Retry a failed job. Resets to Queued for re-submission."
+
 # --- Invariants ---
 
 [[invariant]]
 name = "CompletedIsFinal"
 when = ["Completed"]
-assert = "no_further_transitions"
-
-[[invariant]]
-name = "FailedIsFinal"
-when = ["Failed"]
 assert = "no_further_transitions"
 
 # --- Integrations ---

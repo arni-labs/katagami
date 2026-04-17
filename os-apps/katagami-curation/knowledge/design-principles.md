@@ -4,9 +4,9 @@ These principles govern how design language embodiments are created and evaluate
 
 ## Structural Identity — The Spec-to-Embodiment Bridge
 
-Your spec sections ARE the structural blueprint. Before writing any HTML, review what you defined:
+Your spec sections ARE the structural blueprint. Before writing any TSX, review what you defined:
 
-1. **Philosophy -> visual_character**: You listed 3-5 concrete visual traits. EVERY ONE must manifest in the HTML/CSS. If you wrote "thick 4px solid borders on all containers," then every `.card`, `.panel`, `.modal` gets `border: 4px solid`. If you wrote "oversized negative space," your padding/gap values must be dramatically larger than a typical UI.
+1. **Philosophy -> visual_character**: You listed 3-5 concrete visual traits. EVERY ONE must manifest in the TSX/CSS. If you wrote "thick 4px solid borders on all containers," then every Card, Panel, Dialog gets `border: 4px solid`. If you wrote "oversized negative space," your padding/gap values must be dramatically larger than a typical UI.
 
 2. **Tokens -> surfaces, borders, motion**: These define the tactile quality. Glass treatment -> use `backdrop-filter: blur()` and semi-transparent backgrounds. Paper texture -> use subtle `background-image` patterns. Heavy borders -> make them a dominant visual element, not an afterthought.
 
@@ -66,12 +66,15 @@ Each embodiment must include these 15 elements: buttons (primary, secondary, dis
 
 ## File Format
 
-Each embodiment is a single self-contained HTML file:
-- All CSS in a `<style>` block.
-- Google Fonts via `<link>` tags are allowed and encouraged.
-- No other CDN dependencies. No JavaScript frameworks.
-- Include interactive states (hover, focus, disabled) via CSS pseudo-classes.
-- Apply `appearance: none; -webkit-appearance: none;` on all form elements.
+Each embodiment is a TSX component file using React and Radix UI:
+- Export a default React function component.
+- Use `@radix-ui/themes` and Radix primitives for interactive elements (Tabs, Dialog, Accordion, Switch, Select, etc.).
+- All custom CSS via inline `<style>` blocks within the component, using prefixed class names (e.g., `.nk-*`, `.kp-*`) to avoid collisions.
+- Google Fonts via `<link>` tags in the preview HTML wrapper.
+- Tailwind CSS available via CDN in the preview wrapper for utility classes.
+- Must compile cleanly with `tsc --noEmit --skipLibCheck`.
+- Must be visually validated via Playwright screenshot in the sandbox before publishing.
+- Include interactive states (hover, focus, disabled) via CSS pseudo-classes alongside Radix interactive primitives.
 
 ## Token Structure Reference
 

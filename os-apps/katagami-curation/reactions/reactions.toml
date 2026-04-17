@@ -1,0 +1,77 @@
+# Katagami Curation Reaction Rules
+#
+# Cross-entity reactions fired by the ReactionDispatcher.
+# Reactions are fire-and-forget, cascade depth bounded by MAX_REACTION_DEPTH = 8.
+#
+# These reactions propagate CurationJob state changes back to the parent
+# CurationQuery entity for pipeline tracking. Jobs without a query_id
+# field will have an empty resolve target and the reaction is a no-op.
+
+# When a source_search CurationJob completes, the synthesize follow-up has
+# already been spawned by finalize_spawned_session WASM. This reaction
+# advances the CurationQuery from Researching -> Synthesizing.
+[[reaction]]
+name = "research_complete_advances_query"
+
+[reaction.when]
+entity_type = "CurationJob"
+action = "Complete"
+
+[reaction.then]
+entity_type = "CurationQuery"
+action = "ResearchComplete"
+
+[reaction.resolve_target]
+type = "Field"
+field = "query_id"
+
+# When a synthesize CurationJob completes, the organize follow-up has
+# already been spawned by finalize_spawned_session WASM. This reaction
+# advances the CurationQuery from Synthesizing -> Organizing.
+[[reaction]]
+name = "synthesis_complete_advances_query"
+
+[reaction.when]
+entity_type = "CurationJob"
+action = "Complete"
+
+[reaction.then]
+entity_type = "CurationQuery"
+action = "SynthesisComplete"
+
+[reaction.resolve_target]
+type = "Field"
+field = "query_id"
+
+# When an organize_taxonomy CurationJob completes, the full pipeline is done.
+# This reaction advances the CurationQuery from Organizing -> Completed.
+[[reaction]]
+name = "organize_complete_finishes_query"
+
+[reaction.when]
+entity_type = "CurationJob"
+action = "Complete"
+
+[reaction.then]
+entity_type = "CurationQuery"
+action = "OrganizationComplete"
+
+[reaction.resolve_target]
+type = "Field"
+field = "query_id"
+
+# When a CurationJob fails, propagate the failure to the CurationQuery.
+[[reaction]]
+name = "job_failure_fails_query"
+
+[reaction.when]
+entity_type = "CurationJob"
+action = "Fail"
+
+[reaction.then]
+entity_type = "CurationQuery"
+action = "Fail"
+
+[reaction.resolve_target]
+type = "Field"
+field = "query_id"

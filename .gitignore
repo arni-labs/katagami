@@ -10,3 +10,5 @@ os-apps/*/wasm/*/Cargo.lock
 
 # Node
 node_modules/
+.vercel
+.env*.local

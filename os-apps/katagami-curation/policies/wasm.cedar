@@ -7,7 +7,8 @@ permit(
     resource is HttpEndpoint
 ) when {
     context.module == "build_session_message" ||
-    context.module == "finalize_spawned_session"
+    context.module == "finalize_spawned_session" ||
+    context.module == "launch_research"
 };
 
 // Allow WASM modules to access secrets (temper_api_url)
@@ -17,5 +18,6 @@ permit(
     resource is Secret
 ) when {
     context.module == "build_session_message" ||
-    context.module == "finalize_spawned_session"
+    context.module == "finalize_spawned_session" ||
+    context.module == "launch_research"
 };

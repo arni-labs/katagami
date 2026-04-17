@@ -28,12 +28,32 @@
         <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
         <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationQuery: end-to-end pipeline tracker for automated design language creation -->
+      <EntityType Name="CurationQuery">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Submitted" />
+        <Property Name="QueryText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SynthesizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="OrganizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
       <EntityContainer Name="KatagamiCurationContainer">
         <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
+        <EntitySet Name="CurationQueries" EntityType="Katagami.Curation.CurationQuery" />
       </EntityContainer>
 
     </Schema>

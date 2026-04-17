@@ -94,11 +94,23 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "quality_review" => "review-quality",
             "organize_taxonomy" => "organize-taxonomy",
             "evolve_language" => "synthesize-language",
+            "regenerate_embodiment" => "synthesize-language",
             other => {
                 return Err(format!(
                     "build_session_message: unsupported job_type '{other}'"
                 ));
             }
+        };
+
+        // Sandbox-capable skills need bash/read/write/edit tools
+        let tools_enabled = if skill == "synthesize-language" {
+            if tools_enabled.contains("bash") {
+                tools_enabled
+            } else {
+                format!("{},bash,read,write,edit", tools_enabled)
+            }
+        } else {
+            tools_enabled
         };
 
         // --- Ensure workspace ---
@@ -114,7 +126,25 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             existing_workspace_id
         };
 
-        // --- Build minimal user_message ---
+        // --- Build user_message ---
+        let extra_instructions = match job_type.as_str() {
+            "regenerate_embodiment" => r#"
+## Regeneration Mode
+
+You are regenerating the embodiment for an EXISTING design language as TSX with Radix UI.
+
+1. Read the existing language entity specified in the input (`existing_language_id`).
+2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
+3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment as TSX with Radix UI"`.
+4. Skip the SPEC PHASE — specs already exist. Go directly to EMBODIMENT PHASE.
+5. Generate a TSX embodiment using the existing spec's visual_character, signature_patterns, and tokens.
+6. Follow the full sandbox compile + visual feedback loop from your skill instructions.
+7. Call `AttachEmbodiment` with `embodiment_format: 'tsx'`.
+8. Call `SubmitForReview` then `Publish` to re-publish the language.
+"#,
+            _ => "",
+        };
+
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
@@ -124,7 +154,7 @@ Workspace ID: {workspace_id}
 ## Input
 
 {input}
-
+{extra_instructions}
 ## Instructions
 
 Execute this job using your `{skill}` skill. Read your skill instructions

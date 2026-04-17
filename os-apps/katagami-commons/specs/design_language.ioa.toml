@@ -1,8 +1,8 @@
 # DesignLanguage — I/O Automaton Specification
 #
 # A complete design language with structured spec (Philosophy, Tokens, Rules,
-# LayoutPrinciples, Guidance) and a self-contained HTML embodiment rendering
-# all canonical UI elements.
+# LayoutPrinciples, Guidance) and a TSX/Radix UI embodiment rendering
+# all canonical UI elements. Legacy HTML embodiments supported via embodiment_format field.
 #
 # Lifecycle: Draft -> UnderReview -> Published -> Archived
 #                         ^              |
@@ -52,6 +52,11 @@ initial = "false"
 name = "has_thumbnail"
 type = "bool"
 initial = "false"
+
+[[state]]
+name = "embodiment_format"
+type = "string"
+initial = "html"
 
 [[state]]
 name = "version"
@@ -148,8 +153,8 @@ name = "AttachEmbodiment"
 kind = "input"
 from = ["Draft", "UnderReview"]
 effect = "set has_embodiment true"
-params = ["embodiment_file_id", "element_count", "composition_count"]
-hint = "Attach the self-contained HTML embodiment rendering all canonical elements."
+params = ["embodiment_file_id", "element_count", "composition_count", "embodiment_format"]
+hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML."
 
 [[action]]
 name = "AttachThumbnail"

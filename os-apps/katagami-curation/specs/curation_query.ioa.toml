@@ -1,0 +1,129 @@
+# CurationQuery — I/O Automaton Specification
+#
+# End-to-end pipeline tracker for automated design language creation.
+# A user submits a text query, and the system automatically runs:
+# research → synthesize (with embodiment) → taxonomy → publish.
+#
+# Lifecycle: Submitted -> Researching -> Synthesizing -> Organizing -> Completed | Failed
+#
+# Submit triggers launch_research WASM which creates the first CurationJob.
+# Subsequent state transitions are driven by reactions on CurationJob.Complete.
+
+[automaton]
+name = "CurationQuery"
+states = ["Submitted", "Researching", "Synthesizing", "Organizing", "Completed", "Failed"]
+initial = "Submitted"
+
+# --- State Variables ---
+
+# The user's free-text design query (e.g., "Japanese woodblock prints meets brutalism")
+[[state]]
+name = "query_text"
+type = "string"
+initial = ""
+
+# CurationJob IDs for each pipeline stage
+[[state]]
+name = "source_search_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "synthesize_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "organize_job_id"
+type = "string"
+initial = ""
+
+# JSON array of DesignLanguage entity IDs created by this query
+[[state]]
+name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+# Error details if pipeline failed
+[[state]]
+name = "error_message"
+type = "string"
+initial = ""
+
+# Shared workspace for all jobs in this query
+[[state]]
+name = "workspace_id"
+type = "string"
+initial = ""
+
+# --- Actions ---
+
+[[action]]
+name = "Configure"
+kind = "input"
+from = ["Submitted"]
+params = ["query_text"]
+hint = "Set the design query text before submission."
+
+[[action]]
+name = "Submit"
+kind = "input"
+from = ["Submitted"]
+to = "Researching"
+hint = "Launch the automated pipeline. Triggers launch_research WASM."
+effect = [{ type = "trigger", name = "launch_research" }]
+
+[[action]]
+name = "ResearchComplete"
+kind = "input"
+from = ["Researching"]
+to = "Synthesizing"
+params = ["source_search_job_id", "synthesize_job_id"]
+hint = "Research phase completed. Synthesis has been auto-spawned."
+
+[[action]]
+name = "SynthesisComplete"
+kind = "input"
+from = ["Synthesizing"]
+to = "Organizing"
+params = ["design_language_ids", "organize_job_id"]
+hint = "Synthesis completed. Languages created and published. Taxonomy organization started."
+
+[[action]]
+name = "OrganizationComplete"
+kind = "input"
+from = ["Organizing"]
+to = "Completed"
+hint = "Taxonomy organization finished. Pipeline complete."
+
+[[action]]
+name = "Fail"
+kind = "input"
+from = ["Submitted", "Researching", "Synthesizing", "Organizing"]
+to = "Failed"
+params = ["error_message"]
+hint = "Pipeline failed at any stage."
+
+# --- Invariants ---
+
+[[invariant]]
+name = "CompletedIsFinal"
+when = ["Completed"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "FailedIsFinal"
+when = ["Failed"]
+assert = "no_further_transitions"
+
+# --- Integrations ---
+
+[[integration]]
+name = "launch_research"
+trigger = "launch_research"
+type = "wasm"
+module = "launch_research"
+on_failure = "Fail"
+
+[integration.config]
+temper_api_url = "{secret:temper_api_url}"

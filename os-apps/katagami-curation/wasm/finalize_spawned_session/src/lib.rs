@@ -77,21 +77,79 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let session_fields = session.get("fields").cloned().unwrap_or(json!({}));
         let session_counters = session.get("counters").cloned().unwrap_or(json!({}));
 
+        let query_id = fields
+            .get("query_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
         match job_status {
             "Completed" => {
-                // For source_search jobs, spawn a synthesize follow-up
-                let synth_job_id = if job_type == "source_search" {
-                    spawn_synth_followup(
-                        &ctx,
-                        &api_url,
-                        &headers,
-                        &workspace_id,
-                        input_json.as_ref(),
-                        output_json.as_ref(),
-                    )?
-                } else {
-                    None
+                // Cascade logic: spawn follow-up jobs based on job_type
+                let followup_job_id = match job_type.as_str() {
+                    // source_search -> synthesize
+                    "source_search" => {
+                        let synth_id = spawn_synth_followup(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &workspace_id,
+                            &query_id,
+                            input_json.as_ref(),
+                            output_json.as_ref(),
+                        )?;
+                        // Advance CurationQuery: Researching -> Synthesizing
+                        if !query_id.is_empty() {
+                            let job_id = ctx.entity_state.get("entity_id")
+                                .and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            advance_query(&ctx, &api_url, &headers, &query_id,
+                                "ResearchComplete", &json!({
+                                    "source_search_job_id": job_id,
+                                    "synthesize_job_id": synth_id.as_deref().unwrap_or("")
+                                }));
+                        }
+                        synth_id
+                    }
+                    // synthesize -> organize_taxonomy
+                    "synthesize" => {
+                        let organize_id = spawn_organize_followup(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &workspace_id,
+                            &query_id,
+                            output_json.as_ref(),
+                        )?;
+                        // Advance CurationQuery: Synthesizing -> Organizing
+                        if !query_id.is_empty() {
+                            let language_ids = output_json.as_ref()
+                                .and_then(|v| v.get("language_ids"))
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "[]".to_string());
+                            advance_query(&ctx, &api_url, &headers, &query_id,
+                                "SynthesisComplete", &json!({
+                                    "design_language_ids": language_ids,
+                                    "organize_job_id": organize_id.as_deref().unwrap_or("")
+                                }));
+                        }
+                        organize_id
+                    }
+                    // organize_taxonomy -> pipeline complete
+                    "organize_taxonomy" => {
+                        // Advance CurationQuery: Organizing -> Completed
+                        if !query_id.is_empty() {
+                            advance_query(&ctx, &api_url, &headers, &query_id,
+                                "OrganizationComplete", &json!({}));
+                        }
+                        None
+                    }
+                    // regenerate_embodiment -> submit next queued regen job
+                    "regenerate_embodiment" => {
+                        submit_next_queued_regeneration(&ctx, &api_url, &headers)?
+                    }
+                    _ => None,
                 };
+                let synth_job_id = followup_job_id;
 
                 // Finalize the Session if it's in a finalizable state
                 if !matches!(session_status, "Thinking" | "Executing") {
@@ -205,6 +263,7 @@ fn spawn_synth_followup(
     api_url: &str,
     headers: &[(String, String)],
     workspace_id: &str,
+    query_id: &str,
     input_json: Option<&serde_json::Value>,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
@@ -244,7 +303,8 @@ fn spawn_synth_followup(
         "topic_allowlist": topic_allowlist,
         "source_ids": source_ids,
         "discovered_movements": discovered_movements,
-        "priority": "high"
+        "priority": "high",
+        "query_id": query_id
     });
 
     // Create new CurationJob
@@ -273,7 +333,8 @@ fn spawn_synth_followup(
     let configure_body = json!({
         "job_type": "synthesize",
         "workspace_id": workspace_id,
-        "input": synth_input.to_string()
+        "input": synth_input.to_string(),
+        "query_id": query_id
     });
     let configure_resp = ctx.http_call(
         "POST",
@@ -309,4 +370,191 @@ fn spawn_synth_followup(
     }
 
     Ok(Some(synth_job_id))
+}
+
+/// Spawn an organize_taxonomy CurationJob after a successful synthesize.
+fn spawn_organize_followup(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    query_id: &str,
+    output_json: Option<&serde_json::Value>,
+) -> Result<Option<String>, String> {
+    let language_ids = string_array(
+        output_json.and_then(|v| v.get("language_ids")),
+    );
+    if language_ids.is_empty() {
+        ctx.log("info", "spawn_organize_followup: no language_ids in output, skipping");
+        return Ok(None);
+    }
+
+    let organize_input = json!({
+        "language_ids": language_ids,
+        "query_id": query_id
+    });
+
+    // Create new CurationJob
+    let create_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs"),
+        headers,
+        r#"{"fields":{}}"#,
+    )?;
+    if !(200..300).contains(&create_resp.status) {
+        return Err(format!(
+            "Failed to create organize CurationJob: HTTP {}: {}",
+            create_resp.status,
+            &create_resp.body[..create_resp.body.len().min(300)]
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
+        .map_err(|e| format!("Failed to parse organize CurationJob creation response: {e}"))?;
+    let organize_job_id = created
+        .get("entity_id")
+        .and_then(|v| v.as_str())
+        .ok_or("Created organize CurationJob has no entity_id")?
+        .to_string();
+
+    // Configure
+    let configure_body = json!({
+        "job_type": "organize_taxonomy",
+        "workspace_id": workspace_id,
+        "input": organize_input.to_string(),
+        "query_id": query_id
+    });
+    let configure_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Configure"
+        ),
+        headers,
+        &configure_body.to_string(),
+    )?;
+    if !(200..300).contains(&configure_resp.status) {
+        return Err(format!(
+            "Failed to configure organize CurationJob '{organize_job_id}': HTTP {}: {}",
+            configure_resp.status,
+            &configure_resp.body[..configure_resp.body.len().min(300)]
+        ));
+    }
+
+    // Submit
+    let submit_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Submit"
+        ),
+        headers,
+        "{}",
+    )?;
+    if !(200..300).contains(&submit_resp.status) {
+        return Err(format!(
+            "Failed to submit organize CurationJob '{organize_job_id}': HTTP {}: {}",
+            submit_resp.status,
+            &submit_resp.body[..submit_resp.body.len().min(300)]
+        ));
+    }
+
+    ctx.log(
+        "info",
+        &format!("spawn_organize_followup: submitted organize_taxonomy job '{organize_job_id}'"),
+    );
+
+    Ok(Some(organize_job_id))
+}
+
+/// For staggered bulk regeneration: find the next Queued regeneration job and Submit it.
+fn submit_next_queued_regeneration(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+) -> Result<Option<String>, String> {
+    // Find Queued CurationJobs with job_type = regenerate_embodiment
+    let filter = "State%20eq%20'Queued'";
+    let list_resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/CurationJobs?$filter={filter}&$top=5"),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&list_resp.status) {
+        ctx.log("warn", &format!(
+            "submit_next_queued_regeneration: failed to list jobs: HTTP {}",
+            list_resp.status
+        ));
+        return Ok(None);
+    }
+
+    let list: serde_json::Value = serde_json::from_str(&list_resp.body)
+        .map_err(|e| format!("Failed to parse job list: {e}"))?;
+
+    let jobs = list.get("value").and_then(|v| v.as_array());
+    if let Some(jobs) = jobs {
+        for job in jobs {
+            let job_type = job
+                .get("fields")
+                .and_then(|f| f.get("job_type"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if job_type == "regenerate_embodiment" {
+                let job_id = job
+                    .get("entity_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !job_id.is_empty() {
+                    let submit_resp = ctx.http_call(
+                        "POST",
+                        &format!(
+                            "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.Submit"
+                        ),
+                        headers,
+                        "{}",
+                    )?;
+                    if (200..300).contains(&submit_resp.status) {
+                        ctx.log(
+                            "info",
+                            &format!("submit_next_queued_regeneration: submitted '{job_id}'"),
+                        );
+                        return Ok(Some(job_id.to_string()));
+                    }
+                }
+            }
+        }
+    }
+
+    ctx.log("info", "submit_next_queued_regeneration: no more queued regeneration jobs");
+    Ok(None)
+}
+
+/// Advance the CurationQuery state machine. Best-effort — failures are logged but don't block.
+fn advance_query(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+    action: &str,
+    params: &serde_json::Value,
+) {
+    let url = format!(
+        "{api_url}/tdata/CurationQueries('{query_id}')/Katagami.Curation.{action}"
+    );
+    match ctx.http_call("POST", &url, headers, &params.to_string()) {
+        Ok(resp) if (200..300).contains(&resp.status) => {
+            ctx.log("info", &format!(
+                "advance_query: {action} succeeded for query '{query_id}'"
+            ));
+        }
+        Ok(resp) => {
+            ctx.log("warn", &format!(
+                "advance_query: {action} failed for query '{query_id}': HTTP {} — {}",
+                resp.status, &resp.body[..resp.body.len().min(200)]
+            ));
+        }
+        Err(e) => {
+            ctx.log("warn", &format!(
+                "advance_query: {action} error for query '{query_id}': {e}"
+            ));
+        }
+    }
 }
