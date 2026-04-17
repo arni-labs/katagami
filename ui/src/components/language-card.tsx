@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { DesignLanguage } from "@/lib/odata";
-import { parseJson } from "@/lib/odata";
+import { parseJson, getFileUrl } from "@/lib/odata";
 
 const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
@@ -192,10 +192,19 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                   className="relative w-full overflow-hidden rounded-[1px] bg-muted"
                   style={{ aspectRatio: "3 / 2" }}
                 >
-                  {inView ? (
+                  {/* TSX uses a cheap placeholder (live React tree per card
+                      would crash the gallery); HTML uses a direct file iframe
+                      which is lightweight — no Next.js runtime. */}
+                  {embodimentFormat === "tsx" ? (
+                    <TsxPlaceholder
+                      paletteColors={paletteEntries.map((p) => p.color)}
+                      headingFont={headingFont}
+                      bodyFont={bodyFont}
+                    />
+                  ) : inView ? (
                     <iframe
                       key={embodimentFileId}
-                      src={`/embodiment/${embodimentFileId}?format=${embodimentFormat}`}
+                      src={getFileUrl(embodimentFileId)}
                       className="absolute left-0 top-0 border-0"
                       style={{
                         width: `${PREVIEW_VIEWPORT_WIDTH}px`,
@@ -206,7 +215,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
                       }}
                       tabIndex={-1}
                       loading="lazy"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox=""
                       title={`${f.name} preview`}
                       aria-hidden
                     />
@@ -387,6 +396,48 @@ function Sparkle() {
         fill="currentColor"
       />
     </svg>
+  );
+}
+
+/** Cheap palette + type specimen shown for TSX embodiments in the gallery.
+ *  Mounting the live React tree per card crashes the page when there are
+ *  many cards; the real preview is available on the detail page. */
+function TsxPlaceholder({
+  paletteColors,
+  headingFont,
+  bodyFont,
+}: {
+  paletteColors: string[];
+  headingFont?: string;
+  bodyFont?: string;
+}) {
+  const stripes = paletteColors.length > 0 ? paletteColors : ["#e5e5e5"];
+  return (
+    <div className="absolute inset-0 flex flex-col bg-white">
+      <div className="flex h-[55%]">
+        {stripes.map((c, i) => (
+          <span key={i} className="flex-1" style={{ background: c }} />
+        ))}
+      </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 text-center">
+        <span
+          className="font-display text-2xl font-black leading-none tracking-tight text-foreground/90"
+          style={headingFont ? { fontFamily: headingFont } : undefined}
+        >
+          Aa
+        </span>
+        {(headingFont || bodyFont) && (
+          <span className="truncate font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
+            {headingFont}
+            {headingFont && bodyFont ? " · " : ""}
+            {bodyFont}
+          </span>
+        )}
+        <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.22em] text-muted-foreground/70">
+          tsx · open to view
+        </span>
+      </div>
+    </div>
   );
 }
 

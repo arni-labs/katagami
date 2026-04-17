@@ -37,9 +37,74 @@ import * as Toggle from "@radix-ui/react-toggle";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Tooltip from "@radix-ui/react-tooltip";
 
+// Shim for the common `cn` / `clsx` utility used by shadcn-style components.
+function cn(...args: unknown[]): string {
+  const out: string[] = [];
+  for (const arg of args) {
+    if (!arg) continue;
+    if (typeof arg === "string" || typeof arg === "number") {
+      out.push(String(arg));
+    } else if (Array.isArray(arg)) {
+      out.push(cn(...arg));
+    } else if (typeof arg === "object") {
+      for (const [k, v] of Object.entries(arg)) {
+        if (v) out.push(k);
+      }
+    }
+  }
+  return out.filter(Boolean).join(" ");
+}
+
+// Simple class-variance-authority shim. Returns a function that produces
+// class strings based on variants — good enough for read-only rendering.
+function cva(base: string, config?: { variants?: Record<string, Record<string, string>>; defaultVariants?: Record<string, string> }) {
+  return (props?: Record<string, unknown>) => {
+    const parts: string[] = [base];
+    const variants = config?.variants ?? {};
+    const defaults = config?.defaultVariants ?? {};
+    for (const [key, options] of Object.entries(variants)) {
+      const chosen = (props?.[key] ?? defaults[key]) as string | undefined;
+      if (chosen && options[chosen]) parts.push(options[chosen]);
+    }
+    if (props?.className) parts.push(String(props.className));
+    return parts.filter(Boolean).join(" ");
+  };
+}
+
+// Lucide-react shim — returns a proxy that yields a no-op SVG component for
+// any icon name. Keeps embodiments renderable even if we don't ship all icons.
+const lucideIconProxy = new Proxy(
+  {},
+  {
+    get: () =>
+      (props: Record<string, unknown>) =>
+        React.createElement("svg", {
+          ...props,
+          width: 16,
+          height: 16,
+          viewBox: "0 0 24 24",
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 2,
+          children: React.createElement("circle", { cx: 12, cy: 12, r: 4 }),
+        }),
+  },
+);
+
 const MODULE_REGISTRY: Record<string, unknown> = {
   react: React,
   "react-dom": ReactDOM,
+
+  // Common utility shims
+  clsx: { default: cn, clsx: cn },
+  "clsx/lite": { default: cn, clsx: cn },
+  "class-variance-authority": { cva, default: cva },
+  "tailwind-merge": { twMerge: (x: string) => x, default: (x: string) => x },
+  "@/lib/utils": { cn },
+
+  // Icon library shim
+  "lucide-react": lucideIconProxy,
+
   "@radix-ui/react-accordion": Accordion,
   "@radix-ui/react-avatar": Avatar,
   "@radix-ui/react-checkbox": Checkbox,
@@ -77,7 +142,16 @@ const componentCache = new Map<string, React.ComponentType>();
  *   import Foo, { Bar } from "module"
  */
 function rewriteImports(code: string): string {
-  // Match import statements — multiline-safe
+  // First, strip side-effect imports (e.g. `import "./foo.css"`,
+  // `import "normalize.css"`). Our module registry can't resolve them and
+  // they're always stylesheets/polyfills — safe to drop for preview.
+  code = code.replace(/^\s*import\s+["'][^"']+["'];?\s*$/gm, "");
+
+  // Also strip `import type { ... } from "..."` — Sucrase generally handles
+  // these but being explicit avoids trailing dead `const {} = __mod__;`.
+  code = code.replace(/^\s*import\s+type\s+[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "");
+
+  // Match remaining import statements — multiline-safe
   return code.replace(
     /import\s+([\s\S]*?)\s+from\s+["']([^"']+)["'];?/g,
     (_match, specifiers: string, moduleId: string) => {
@@ -149,13 +223,22 @@ export async function compileTsx(
   // Step 4: Evaluate using Function constructor (safer than eval, same CSP requirements)
   // eslint-disable-next-line no-new-func
   const factory = new Function("return " + wrappedCode)();
+  // For unknown modules, return a Proxy so any named/default import still
+  // resolves to *something* — a noop function that returns null React element.
+  // This prevents "X is not a function" crashes from obscure dependencies.
+  const unknownModuleProxy = () =>
+    new Proxy(
+      {},
+      {
+        get: () => () => null,
+      },
+    );
+
   const requireFn = (moduleId: string) => {
     const mod = MODULE_REGISTRY[moduleId];
     if (!mod) {
-      console.warn(
-        `[tsx-runtime] Unknown module "${moduleId}", returning empty object`,
-      );
-      return {};
+      console.warn(`[tsx-runtime] Unknown module "${moduleId}", returning proxy`);
+      return unknownModuleProxy();
     }
     return mod;
   };

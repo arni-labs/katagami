@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
 import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
-import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
 import { DesignShowcase } from "@/components/design-showcase";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -285,10 +284,20 @@ export default async function LanguageDetailPage({
                 width={80}
               />
               <div className="relative rounded-[2px] border border-border bg-white p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                <DynamicEmbodiment
-                  fileId={f.embodiment_file_id}
-                  format={(f.embodiment_format as "html" | "tsx") ?? "html"}
-                />
+                <div
+                  className="relative w-full overflow-hidden bg-white"
+                  style={{ aspectRatio: "16 / 10" }}
+                >
+                  <iframe
+                    src={`/embodiment/${f.embodiment_file_id}?format=${
+                      (f.embodiment_format as "html" | "tsx") ?? "html"
+                    }`}
+                    className="absolute inset-0 h-full w-full border-0"
+                    sandbox="allow-scripts allow-same-origin"
+                    title={`${name} embodiment`}
+                    loading="lazy"
+                  />
+                </div>
                 <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   preview · {f.slug || id.slice(0, 12)}
                 </span>

@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { getDesignLanguage, listDesignLanguages, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
-import { DynamicEmbodiment } from "@/components/dynamic-embodiment";
 import { CompareSelector } from "@/components/compare-selector";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -118,12 +117,22 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 className={i === 0 ? "-left-3 -top-3" : "-right-3 -top-3"}
                 width={90}
               />
-              <div className="rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
+              <div className="relative rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
                 {lang.fields.embodiment_file_id ? (
-                  <DynamicEmbodiment
-                    fileId={lang.fields.embodiment_file_id}
-                    format={(lang.fields.embodiment_format as "html" | "tsx") ?? "html"}
-                  />
+                  <div
+                    className="relative w-full overflow-hidden bg-white"
+                    style={{ aspectRatio: "16 / 10" }}
+                  >
+                    <iframe
+                      src={`/embodiment/${lang.fields.embodiment_file_id}?format=${
+                        (lang.fields.embodiment_format as "html" | "tsx") ?? "html"
+                      }`}
+                      className="absolute inset-0 h-full w-full border-0"
+                      sandbox="allow-scripts allow-same-origin"
+                      title={`${lang.fields.name ?? "side"} embodiment`}
+                      loading="lazy"
+                    />
+                  </div>
                 ) : (
                   <div className="flex h-[500px] items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     no embodiment
