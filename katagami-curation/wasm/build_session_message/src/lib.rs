@@ -136,11 +136,28 @@ You are regenerating the embodiment for an EXISTING design language as self-cont
 1. Read the existing language entity specified in the input (`existing_language_id`).
 2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
 3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment HTML"`.
-4. Skip the SPEC PHASE — specs already exist. Go directly to EMBODIMENT PHASE.
-5. Generate a self-contained HTML embodiment using the existing spec's visual_character, signature_patterns, and tokens.
-6. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
-7. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
-8. Call `SubmitForReview` then `Publish` to re-publish the language.
+4. **MANDATORY: Run the Spec Validation Gate from your skill instructions.**
+   Parse each JSON field and verify completeness:
+   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
+   - `philosophy.summary` non-empty, `philosophy.values` >= 3 items
+   - `tokens.colors` must have all 12 keys with real hex values (not empty or placeholder)
+   - `tokens.typography` must have real font names and a google_fonts_url
+   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must all be populated
+   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
+   - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
+   - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
+   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
+5. **If ANY section fails validation — ENRICH IT before generating the embodiment.**
+   This is the most critical step. Read the existing embodiment HTML:
+   `temper.read('/katagami/embodiments/' + slug + '.html')`
+   Analyze its CSS to extract the missing identity (visual traits, signature CSS techniques, colors, fonts).
+   Rewrite incomplete sections with concrete content and call the appropriate Set action.
+   Re-validate until all sections pass.
+   **NEVER generate an embodiment from empty or skeleton specs — it produces generic results.**
+6. Generate a self-contained HTML embodiment using the now-complete spec's visual_character, signature_patterns, and tokens.
+7. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
+8. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
+9. Call `SubmitForReview` then `Publish` to re-publish the language.
 "#,
             "synthesize" | "evolve_language" => r#"
 ## CRITICAL: Self-Contained HTML + Visual Verification Required

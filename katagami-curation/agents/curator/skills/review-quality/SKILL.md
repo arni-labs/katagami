@@ -20,7 +20,16 @@ For each language specified in the job input (or ALL languages if none specified
 1. **Load the DesignLanguage**: `temper.get('DesignLanguages', lang_id)`
 2. **Read its fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id.
 3. **Read the current embodiment**: `temper.read('/katagami/embodiments/' + slug + '.html')`
-4. **Evaluate against the spec.** Common failures to fix:
+4. **MANDATORY: Validate the spec before evaluating the embodiment.** Parse each JSON field:
+   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
+   - `tokens.colors` must have all 12 keys with real hex values
+   - `tokens.typography` must have real font names and a google_fonts_url
+   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must be populated
+   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
+   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
+
+   **If ANY section is empty or skeleton**: analyze the existing embodiment HTML CSS to extract the missing identity, write concrete content, and call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance). A weak spec produces a generic embodiment — fix the spec FIRST.
+5. **Evaluate against the spec.** Common failures to fix:
    - **Catalog layout**: Organized as a component inventory with sections labeled "Controls", "Feedback", "Data" instead of a plausible application scene. This is the #1 failure — redesign the scene entirely.
    - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` must ALL manifest in CSS. Check each one — if it's not visible, the structure is wrong.
    - **Generic typography**: Using system fonts or LLM defaults (Inter, Poppins, Roboto, DM Sans, Montserrat) instead of distinctive Google Fonts. Switch to researched, unique typefaces.

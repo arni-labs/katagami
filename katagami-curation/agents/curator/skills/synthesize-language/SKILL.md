@@ -16,10 +16,18 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```python
    temper.action('DesignLanguages', eid, 'Revise', {'curator_notes': 'Regenerating embodiment HTML'})
    ```
-4. **Skip the SPEC PHASE** — use the existing spec sections as-is
-5. Go directly to the **EMBODIMENT PHASE** below
-6. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the HTML
-7. After `AttachEmbodiment`, call `SubmitForReview` + `Publish` to re-publish
+4. **Run the Spec Validation Gate** (see below). Parse each JSON field and check completeness.
+5. **If any section fails validation — ENRICH IT before proceeding.** This is mandatory:
+   - Read the existing embodiment HTML: `temper.read('/katagami/embodiments/' + slug + '.html')`
+   - Analyze the CSS to extract what's missing (visual traits, signature CSS techniques, color values, font names)
+   - Rewrite the incomplete sections with concrete, specific content derived from the existing embodiment
+   - Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance)
+   - Re-validate until all sections pass
+6. Go to the **EMBODIMENT PHASE** — generate HTML from the now-complete spec
+7. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the HTML
+8. After `AttachEmbodiment`, call `SubmitForReview` + `Publish` to re-publish
+
+**NEVER skip to embodiment generation with empty or skeleton specs. The spec IS the identity.**
 
 ## Before Starting
 
@@ -99,6 +107,44 @@ temper.action('DesignLanguages', eid, 'SetLayout', {'layout_principles': json.du
 guidance = {"do": [...], "dont": [...]}
 temper.action('DesignLanguages', eid, 'SetGuidance', {'guidance': json.dumps(guidance)})
 ```
+
+### Spec Validation Gate — MANDATORY before embodiment
+
+**Do NOT proceed to embodiment until every check passes.** Parse the JSON you wrote and verify:
+
+**Philosophy:**
+- `summary` is non-empty, >= 50 chars
+- `values` has >= 3 items
+- `anti_values` has >= 2 items
+- `visual_character` has >= 3 items, EACH >= 30 chars, EACH describes a concrete structural CSS choice (not vague adjectives)
+
+**Tokens:**
+- `colors` has ALL 12 keys (`primary`, `secondary`, `accent`, `background`, `surface`, `text`, `muted`, `border`, `error`, `success`, `warning`, `info`), each a real hex value (not placeholder `#hex`)
+- `typography.heading_font` and `typography.body_font` are real font names (not `...` or empty)
+- `typography.google_fonts_url` is a complete URL
+- `surfaces.treatment` is one of: flat, glass, gradient, noise, paper
+- `surfaces.card_style` is non-empty, >= 20 chars
+- `borders.default_width` is a CSS value (e.g. `1px`, `2px`, `4px`)
+- `borders.character` is non-empty, >= 20 chars describing the border personality
+- `motion.duration` is a CSS value (e.g. `200ms`, `0.3s`)
+- `motion.easing` is a CSS value (e.g. `ease-out`, `cubic-bezier(...)`)
+
+**Rules:**
+- `composition` is non-empty, >= 30 chars
+- `hierarchy` is non-empty, >= 30 chars
+- `density` is non-empty, >= 20 chars
+- `signature_patterns` has >= 3 items, EACH >= 30 chars, EACH describes a specific CSS technique
+
+**Layout:**
+- `grid` is non-empty, >= 20 chars
+- `breakpoints` is non-empty
+- `whitespace` is non-empty, >= 20 chars
+
+**Guidance:**
+- `do` has >= 3 items
+- `dont` has >= 3 items
+
+**If ANY check fails**: rewrite that section immediately. Do NOT proceed with incomplete specs — they produce generic, indistinguishable embodiments. The spec is the identity of the language; a weak spec means a weak embodiment.
 
 ### Tool Call 2+ — EMBODIMENT PHASE (Sandbox Visual Feedback Loop)
 
