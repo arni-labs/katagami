@@ -37,10 +37,14 @@ export function GalleryFilters({
   );
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-border bg-card/80 p-3 shadow-[var(--shadow-paper-sm)] backdrop-blur-sm">
+      <div className="flex items-center gap-2 pl-1 pr-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+        <span className="inline-block h-2 w-2 rounded-full bg-[var(--teal)]" />
+        find
+      </div>
       <Input
-        placeholder="Search languages..."
-        className="w-56"
+        placeholder="search languages…"
+        className="w-60 border-border bg-background focus-visible:border-foreground/40 focus-visible:ring-[var(--sumire)]"
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
@@ -54,7 +58,7 @@ export function GalleryFilters({
           navigate("status", v);
         }}
       >
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-40 border-border bg-background">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -73,7 +77,7 @@ export function GalleryFilters({
             navigate("taxonomy", v);
           }}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 border-border bg-background">
             <SelectValue placeholder="Taxonomy" />
           </SelectTrigger>
           <SelectContent>
