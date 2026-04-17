@@ -16,19 +16,19 @@ import { useEffect, useRef, useState } from "react";
  * This is the definitive memory bound: total iframe memory ≤ MAX × one.
  */
 
-// Responsive cap: enough live previews to fill the viewport on each
-// device class without blowing up memory.
-//   mobile  (<640px)  → 3  (1 col, ~2–3 rows visible)
-//   tablet  (<1024px) → 6  (2 col, ~3 rows visible)
-//   desktop (<1536px) → 10 (3 col, ~3 rows visible)
-//   wide    (≥1536px) → 12 (4 col, ~3 rows visible)
+// Shadow-DOM previews are ~100× cheaper than iframes, so we can comfortably
+// fill the visible grid (and buffer) on every device class.
+//   mobile  (<640px)  → 6
+//   tablet  (<1024px) → 14
+//   desktop (<1536px) → 24
+//   wide    (≥1536px) → 32
 function computeMax(): number {
-  if (typeof window === "undefined") return 6;
+  if (typeof window === "undefined") return 12;
   const w = window.innerWidth;
-  if (w < 640) return 3;
-  if (w < 1024) return 6;
-  if (w < 1536) return 10;
-  return 12;
+  if (w < 640) return 6;
+  if (w < 1024) return 14;
+  if (w < 1536) return 24;
+  return 32;
 }
 
 let MAX = computeMax();
