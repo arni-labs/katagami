@@ -142,6 +142,22 @@ You are regenerating the embodiment for an EXISTING design language as TSX with 
 7. Call `AttachEmbodiment` with `embodiment_format: 'tsx'`.
 8. Call `SubmitForReview` then `Publish` to re-publish the language.
 "#,
+            "synthesize" | "evolve_language" => r#"
+## CRITICAL: TSX + Sandbox Required
+
+**You MUST produce a TSX component, NOT raw HTML.** HTML embodiments are rejected.
+
+The embodiment MUST be:
+1. A TSX file using React + `@radix-ui/themes` (Radix UI primitives)
+2. Compiled via `sandbox.bash('cd /tmp && npx tsc --jsx react-jsx ...')` in the sandbox
+3. Visually validated via Playwright screenshot in the sandbox (`sandbox.bash`, `sandbox.write`, `sandbox.read`)
+4. Published with `embodiment_format: 'tsx'` in the AttachEmbodiment call
+
+**You MUST use `sandbox.write()` and `sandbox.bash()` for compilation and screenshots.**
+Do NOT write HTML directly to TemperFS. The sandbox tools are available — use them.
+
+After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
+"#,
             _ => "",
         };
 
@@ -225,7 +241,10 @@ temper.done("{job_type} failed")
         );
 
         // --- Configure the Session ---
-        let config_body = json!({
+        // Sandbox-capable skills need a provisioned sandbox for compile + screenshot loop
+        let needs_sandbox = skill == "synthesize-language";
+
+        let mut config_body = json!({
             "soul_id": soul_id,
             "user_message": user_message,
             "model": model,
@@ -234,6 +253,32 @@ temper.done("{job_type} failed")
             "max_turns": max_turns,
             "workspace_id": workspace_id,
         });
+
+        if needs_sandbox {
+            // Read sandbox provider from server env (set via SANDBOX_PROVIDER)
+            let sandbox_provider = ctx
+                .config
+                .get("sandbox_provider")
+                .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                .cloned()
+                .unwrap_or_default();
+
+            if !sandbox_provider.is_empty() {
+                config_body
+                    .as_object_mut()
+                    .unwrap()
+                    .insert("sandbox_provider".to_string(), json!(sandbox_provider));
+                ctx.log(
+                    "info",
+                    &format!("build_session_message: enabling sandbox_provider='{sandbox_provider}' for {skill}"),
+                );
+            } else {
+                ctx.log(
+                    "warn",
+                    "build_session_message: no sandbox_provider configured — agent will not have sandbox tools",
+                );
+            }
+        }
 
         let configure_resp = ctx.http_call(
             "POST",

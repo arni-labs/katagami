@@ -215,6 +215,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &resp.body[..resp.body.len().min(300)]
                     ));
                 }
+                // Advance CurationQuery to Failed if query_id is present
+                if !query_id.is_empty() {
+                    advance_query(&ctx, &api_url, &headers, &query_id,
+                        "Fail", &json!({
+                            "error_message": format!("{} job failed: {}", job_type, error_message)
+                        }));
+                }
                 set_success_result(
                     "",
                     &json!({"status": "session failed", "session_id": session_id}),
