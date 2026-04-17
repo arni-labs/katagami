@@ -72,6 +72,8 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
           {sides.map(({ lang }) => (
             <StickyNote key={lang.entity_id} className="p-5">
               <SpecPanel
+                name={lang.fields.name}
+                slug={lang.fields.slug}
                 philosophy={lang.fields.philosophy}
                 tokens={lang.fields.tokens}
                 rules={lang.fields.rules}

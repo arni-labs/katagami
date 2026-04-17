@@ -253,6 +253,8 @@ export default async function LanguageDetailPage({
           </SectionHeading>
           <StickyNote className="p-5">
             <SpecPanel
+              name={name}
+              slug={f.slug}
               philosophy={f.philosophy}
               tokens={f.tokens}
               rules={f.rules}

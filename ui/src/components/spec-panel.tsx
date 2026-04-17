@@ -1,13 +1,10 @@
-import {
-  ChevronRight,
-  FileText,
-  Download,
-  Copy,
-  Sparkles,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { parseJson } from "@/lib/odata";
+import { SpecActions } from "./spec-actions";
 
 interface SpecPanelProps {
+  name?: string;
+  slug?: string;
   philosophy?: string;
   tokens?: string;
   rules?: string;
@@ -425,33 +422,154 @@ function RichKeyValueView({ raw }: { raw?: string }) {
   );
 }
 
-function MarkdownPlaceholder() {
+function SpecMarkdownView({ markdown }: { markdown: string }) {
   return (
-    <div className="relative border border-dashed border-border bg-white/50 p-6 text-center">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-14 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.05)]"
-        style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 75%, white) 0 6px, color-mix(in oklch, var(--yuzu) 35%, white) 6px 12px)",
-          transform: "rotate(-6deg)",
-        }}
-      />
-      <FileText
-        className="mx-auto mb-2 h-6 w-6 text-muted-foreground/60"
-        strokeWidth={1.5}
-      />
-      <div className="mb-1 font-display text-base font-bold tracking-[-0.02em]">
-        spec.md
-      </div>
-      <p className="mx-auto max-w-xs text-[12px] leading-relaxed text-muted-foreground">
-        A human-readable markdown export will live here.
-      </p>
-      <span className="stamp mt-3 inline-flex text-[var(--sumire)]">
-        coming soon
-      </span>
+    <div className="relative">
+      <pre className="max-h-[480px] overflow-auto rounded-[2px] border border-border bg-[#faf9f6] p-4 font-mono text-[11px] leading-[1.65] text-foreground/85 selection:bg-[var(--teal)]/20">
+        {markdown}
+      </pre>
     </div>
   );
+}
+
+// ── Markdown generation ───────────────────────────────────────────
+
+function titleCase(s: string) {
+  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function renderKvSection(
+  data: Record<string, unknown>,
+  lines: string[],
+  depth: "##" | "###" = "###",
+) {
+  for (const [key, val] of Object.entries(data)) {
+    if (Array.isArray(val)) {
+      lines.push(`${depth} ${titleCase(key)}`, "");
+      for (const item of val) {
+        lines.push(
+          `- ${typeof item === "object" ? JSON.stringify(item) : String(item)}`,
+        );
+      }
+      lines.push("");
+    } else if (typeof val === "object" && val !== null) {
+      lines.push(`${depth} ${titleCase(key)}`, "");
+      for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+        const display = typeof v === "object" ? JSON.stringify(v) : String(v);
+        lines.push(`- **${titleCase(k)}**: ${display}`);
+      }
+      lines.push("");
+    } else if (typeof val === "string") {
+      lines.push(`${depth} ${titleCase(key)}`, "", val, "");
+    }
+  }
+}
+
+function specToMarkdown(props: SpecPanelProps): string {
+  const lines: string[] = [];
+
+  if (props.name) {
+    lines.push(`# ${props.name}`, "");
+  }
+
+  // Philosophy
+  const phil = parseJson<Record<string, unknown>>(props.philosophy);
+  if (phil) {
+    lines.push("## Philosophy", "");
+    if (phil.summary) lines.push(String(phil.summary), "");
+    const listSections: [string, string][] = [
+      ["values", "Values"],
+      ["anti_values", "Anti-Values"],
+      ["visual_character", "Visual Character"],
+    ];
+    for (const [field, label] of listSections) {
+      const arr = phil[field] as string[] | undefined;
+      if (Array.isArray(arr) && arr.length > 0) {
+        lines.push(`### ${label}`, "");
+        for (const v of arr) lines.push(`- ${v}`);
+        lines.push("");
+      }
+    }
+    if (phil.lineage) lines.push("### Lineage", "", `> ${phil.lineage}`, "");
+  }
+
+  // Tokens
+  const tok = parseJson<Record<string, unknown>>(props.tokens);
+  if (tok) {
+    lines.push("## Tokens", "");
+    for (const [group, values] of Object.entries(tok)) {
+      lines.push(`### ${titleCase(group)}`, "");
+      if (
+        group === "colors" &&
+        typeof values === "object" &&
+        values !== null
+      ) {
+        lines.push("| Name | Value |", "|------|-------|");
+        for (const [k, v] of Object.entries(
+          values as Record<string, unknown>,
+        )) {
+          lines.push(`| ${k} | \`${v}\` |`);
+        }
+        lines.push("");
+      } else if (typeof values === "object" && values !== null) {
+        for (const [k, v] of Object.entries(
+          values as Record<string, unknown>,
+        )) {
+          const display = typeof v === "object" ? JSON.stringify(v) : String(v);
+          lines.push(`- **${titleCase(k)}**: ${display}`);
+        }
+        lines.push("");
+      } else {
+        lines.push(String(values), "");
+      }
+    }
+  }
+
+  // Rules
+  const rul = parseJson<Record<string, unknown>>(props.rules);
+  if (rul) {
+    lines.push("## Rules", "");
+    renderKvSection(rul, lines);
+  }
+
+  // Layout
+  const lay = parseJson<Record<string, unknown>>(props.layout);
+  if (lay) {
+    lines.push("## Layout", "");
+    renderKvSection(lay, lines);
+  }
+
+  // Guidance
+  const gui = parseJson<Record<string, unknown>>(props.guidance);
+  if (gui) {
+    lines.push("## Guidance", "");
+    if (Array.isArray(gui.do) && gui.do.length > 0) {
+      lines.push("### Do", "");
+      for (const d of gui.do as string[]) lines.push(`- ${d}`);
+      lines.push("");
+    }
+    if (Array.isArray(gui.dont) && gui.dont.length > 0) {
+      lines.push("### Don't", "");
+      for (const d of gui.dont as string[]) lines.push(`- ${d}`);
+      lines.push("");
+    }
+  }
+
+  // Imagery Direction
+  const img = parseJson<Record<string, unknown>>(props.imageryDirection);
+  if (img) {
+    lines.push("## Imagery Direction", "");
+    renderKvSection(img, lines);
+  }
+
+  // Generative Canvas
+  const gen = parseJson<Record<string, unknown>>(props.generativeCanvas);
+  if (gen) {
+    lines.push("## Generative Canvas", "");
+    renderKvSection(gen, lines);
+  }
+
+  return lines.join("\n").trimEnd() + "\n";
 }
 
 // ── Accordion row ──────────────────────────────────────────────────
@@ -485,82 +603,27 @@ function Section({
   );
 }
 
-// ── Cute sticker-button placeholders ───────────────────────────────
-
-function SpecActionButton({
-  color,
-  icon,
-  label,
-  tilt = 0,
-}: {
-  color: AccentColor;
-  icon: React.ReactNode;
-  label: string;
-  tilt?: number;
-}) {
-  return (
-    <button
-      type="button"
-      disabled
-      title="Coming soon"
-      className="group relative inline-flex cursor-not-allowed items-center gap-1.5 border border-border bg-white/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
-      style={{ transform: `rotate(${tilt}deg)` }}
-    >
-      <span
-        aria-hidden
-        className="absolute inset-0 opacity-30"
-        style={{
-          background: `color-mix(in oklch, var(--${color}) 55%, white)`,
-        }}
-      />
-      <span className="relative flex items-center gap-1.5">
-        {icon}
-        {label}
-      </span>
-      <span
-        aria-hidden
-        className="absolute -right-2 -top-2 border border-foreground/40 bg-white px-1 py-[1px] font-mono text-[7px] font-bold uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_0_rgba(30,35,45,0.05)]"
-        style={{ transform: "rotate(6deg)" }}
-      >
-        soon
-      </span>
-    </button>
-  );
-}
 
 // ── Panel ──────────────────────────────────────────────────────────
 
-export function SpecPanel({
-  philosophy,
-  tokens,
-  rules,
-  layout,
-  guidance,
-  imageryDirection,
-  generativeCanvas,
-}: SpecPanelProps) {
+export function SpecPanel(props: SpecPanelProps) {
+  const {
+    philosophy,
+    tokens,
+    rules,
+    layout,
+    guidance,
+    imageryDirection,
+    generativeCanvas,
+  } = props;
+
+  const markdown = specToMarkdown(props);
+
   return (
     <div className="relative">
-      {/* Copy + download chips — inline on mobile, floating on sm+ */}
-      <div className="mb-4 flex items-center justify-end gap-1.5 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
-        <SpecActionButton
-          color="yuzu"
-          tilt={-1}
-          icon={<Copy className="h-3 w-3" />}
-          label="copy"
-        />
-        <SpecActionButton
-          color="teal"
-          tilt={1}
-          icon={<Download className="h-3 w-3" />}
-          label="download"
-        />
-        <span
-          aria-hidden
-          className="hidden items-center pl-1 text-muted-foreground/50 sm:inline-flex"
-        >
-          <Sparkles className="h-3 w-3" />
-        </span>
+      {/* Copy + download — inline on mobile, floating on sm+ */}
+      <div className="mb-4 flex items-center justify-end sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
+        <SpecActions markdown={markdown} slug={props.slug} />
       </div>
 
       {/* Spacer on sm+ so floating chips don't collide with first section */}
@@ -580,7 +643,7 @@ export function SpecPanel({
           <RichKeyValueView raw={layout} />
         </Section>
         <Section label="guidance" color="yuzu">
-          <RichKeyValueView raw={guidance} />
+          <RulesView raw={guidance} />
         </Section>
         {imageryDirection && (
           <Section label="imagery" color="ramune">
@@ -592,8 +655,8 @@ export function SpecPanel({
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
-        <Section label="raw .md" color="sumire">
-          <MarkdownPlaceholder />
+        <Section label="spec.md" color="sumire">
+          <SpecMarkdownView markdown={markdown} />
         </Section>
       </div>
     </div>
