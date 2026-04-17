@@ -252,16 +252,14 @@ export default async function ComparePage({
         }
       />
 
-      <StickyNote className="p-5">
-        <CompareSelector
-          languages={languages.map((l) => ({
-            id: l.entity_id,
-            name: l.fields.name ?? l.entity_id,
-          }))}
-          initialA={sp.a}
-          initialB={sp.b}
-        />
-      </StickyNote>
+      <CompareSelector
+        languages={languages.map((l) => ({
+          id: l.entity_id,
+          name: l.fields.name ?? l.entity_id,
+        }))}
+        initialA={sp.a}
+        initialB={sp.b}
+      />
 
       {sp.a && sp.b && (
         <Suspense

@@ -87,8 +87,9 @@ export function GalleryFilters({
         <Select
           value={status}
           onValueChange={(v) => {
-            setStatus(v);
-            navigate("status", v);
+            const next = v ?? "all";
+            setStatus(next);
+            navigate("status", next);
           }}
         >
           <SelectTrigger className={`${fieldBase} h-8 w-36 gap-2`}>
@@ -109,8 +110,9 @@ export function GalleryFilters({
             <Select
               value={taxonomy}
               onValueChange={(v) => {
-                setTaxonomy(v);
-                navigate("taxonomy", v);
+                const next = v ?? "all";
+                setTaxonomy(next);
+                navigate("taxonomy", next);
               }}
             >
               <SelectTrigger className={`${fieldBase} h-8 w-40 gap-2`}>
