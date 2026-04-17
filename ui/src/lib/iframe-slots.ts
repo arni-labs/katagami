@@ -28,12 +28,10 @@ import { useEffect, useRef, useState } from "react";
 function computeMax(): number {
   if (typeof window === "undefined") return 3;
   const w = window.innerWidth;
-  // Mobile browsers have tight memory budgets and each iframe browsing
-  // context is disproportionately expensive. Even 1-2 simultaneous
-  // iframes on mobile crashes some phones. MAX=0 means no gallery-card
-  // iframes on mobile — the detail page still shows a full iframe there
-  // since that's only ever 1 at a time.
-  if (w < 640) return 0;
+  // Mobile browsers have tight memory budgets. MAX=1 means exactly one
+  // live preview on mobile at a time — the card closest to the viewport
+  // center. Others show the palette placeholder.
+  if (w < 640) return 1;
   if (w < 1024) return 3;
   if (w < 1536) return 4;
   return 6;
