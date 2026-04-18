@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ExternalLink, Play } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { getFileUrl } from "@/lib/odata";
 
 // Desktop viewport — embodiments render at 1440px internal width so
@@ -50,47 +50,9 @@ function patchHtml(html: string): string {
 }
 
 export function EmbodimentViewer({ fileId }: { fileId: string }) {
-  // Opt-in preview — tab shouldn't crash just because the user navigated
-  // to a detail page. Clicking "show preview" opts in for in-page render.
-  const [loaded, setLoaded] = useState(false);
+  // Auto-render the safety-patched preview by default. The srcdoc
+  // injection caps layout from first paint, so mounting is safe.
   const url = getFileUrl(fileId);
-
-  if (!loaded) {
-    return (
-      <div
-        className="relative flex w-full flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/30 p-8 text-center"
-        style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
-      >
-        <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-          preview paused
-        </div>
-        <p className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
-          Click to render the embodiment in-page, or open it in its own
-          tab for the full interactive version.
-        </p>
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setLoaded(true)}
-            className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
-          >
-            <Play className="h-3 w-3" />
-            show preview
-          </button>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
-          >
-            open full
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return <SafePreview fileId={fileId} url={url} />;
 }
 
