@@ -32,7 +32,7 @@ export function CompareSelector({
   }
 
   return (
-    <div className="relative flex flex-wrap items-center gap-x-4 gap-y-3 bg-white/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
+    <div className="relative z-50 flex flex-wrap items-center gap-x-4 gap-y-3 bg-white/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
       {/* washi tapes pinning the card */}
       <span
         aria-hidden
@@ -189,7 +189,7 @@ function LangSearch({
         {open && filtered.length > 0 && (
           <ul
             role="listbox"
-            className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto border border-border bg-white shadow-[0_4px_16px_rgba(30,35,45,0.1)]"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto border border-border bg-white shadow-[0_4px_16px_rgba(30,35,45,0.1)]"
           >
             {filtered.map((l, i) => {
               const isActive = i === active;
@@ -239,7 +239,7 @@ function LangSearch({
         )}
 
         {open && filtered.length === 0 && (
-          <div className="absolute left-0 right-0 top-full z-30 mt-1 border border-dashed border-border bg-white/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-dashed border-border bg-white/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground">
             no matches for &ldquo;{query}&rdquo;
           </div>
         )}
