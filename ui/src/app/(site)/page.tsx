@@ -60,14 +60,34 @@ async function GalleryGrid({
     );
   }
 
-  // Sort: featured languages first (by display_order asc), then the rest
-  // (by display_order asc, then by entity_id for stability).
+  // Sort: featured languages first (by display_order asc), then the rest.
+  // Booleans and counters may land in different places depending on how
+  // Temper serializes entity state — check every plausible path.
+  function isFeatured(l: (typeof languages)[number]): boolean {
+    if (l.booleans?.featured === true) return true;
+    // Some serializers flatten bools into fields as strings.
+    const flat = (l.fields as Record<string, unknown>)?.featured;
+    if (flat === true) return true;
+    if (typeof flat === "string" && flat.toLowerCase() === "true") return true;
+    return false;
+  }
+  function displayOrder(l: (typeof languages)[number]): number {
+    if (typeof l.counters?.display_order === "number")
+      return l.counters.display_order;
+    const flat = (l.fields as Record<string, unknown>)?.display_order;
+    if (typeof flat === "number") return flat;
+    if (typeof flat === "string") {
+      const n = parseInt(flat, 10);
+      if (!Number.isNaN(n)) return n;
+    }
+    return 0;
+  }
   languages.sort((a, b) => {
-    const fa = a.booleans?.featured ? 1 : 0;
-    const fb = b.booleans?.featured ? 1 : 0;
+    const fa = isFeatured(a) ? 1 : 0;
+    const fb = isFeatured(b) ? 1 : 0;
     if (fa !== fb) return fb - fa;
-    const oa = a.counters?.display_order ?? 0;
-    const ob = b.counters?.display_order ?? 0;
+    const oa = displayOrder(a);
+    const ob = displayOrder(b);
     if (oa !== ob) return oa - ob;
     return a.entity_id.localeCompare(b.entity_id);
   });
