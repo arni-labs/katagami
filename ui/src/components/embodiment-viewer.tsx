@@ -11,6 +11,12 @@ import { getFileUrl } from "@/lib/odata";
 const VIEWPORT_WIDTH = 1440;
 const DEFAULT_HEIGHT = 900;
 const MIN_HEIGHT = 400;
+// Cap measured height to prevent feedback loops with embodiments that use
+// 100vh / min-height: 100vh in their CSS — re-measuring after setting the
+// iframe height grows the body, which grows the measurement, which grows
+// the iframe height, which grows the body, ad infinitum until the tab
+// dies. ~8 screens worth of height is plenty for real designs.
+const MAX_HEIGHT = 6000;
 
 // Use layoutEffect on the browser, regular effect on the server (SSR safe).
 const useIsoLayoutEffect =
@@ -53,7 +59,12 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
     return () => ro.disconnect();
   }, []);
 
+  const measuredRef = useRef(false);
+
   function measureContent() {
+    // Only measure once — re-measuring after setting the iframe height
+    // creates a feedback loop with embodiments using 100vh-based CSS.
+    if (measuredRef.current) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
     try {
@@ -65,15 +76,16 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
         doc.body?.offsetHeight ?? 0,
         MIN_HEIGHT,
       );
-      setContentHeight(measured);
+      measuredRef.current = true;
+      setContentHeight(Math.min(measured, MAX_HEIGHT));
     } catch {
       // Cross-origin or other error — keep default
     }
   }
 
   function onIframeLoad() {
-    measureContent();
-    [60, 160, 400, 1000].forEach((t) => setTimeout(measureContent, t));
+    // Wait for layout to settle (fonts, images, reflow) then measure once.
+    setTimeout(measureContent, 400);
   }
 
   if (status === "loading" || scale === null) {
