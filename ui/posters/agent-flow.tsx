@@ -503,18 +503,20 @@ export default function AgentFlowPoster() {
       <Connector x1={600} y1={755} x2={600} y2={900} color={C.ink} />
       <Connector x1={600} y1={755} x2={980} y2={900} color={C.ink} curve={40} />
 
-      {/* ── Step 3 · Synthesize (S1 / S2 / S3) ── */}
-      {([
-        { x: 80, y: 900, tint: C.salad, label: "S1", title: "Earthshine Obs." },
-        { x: 460, y: 900, tint: C.yuzu, label: "S2", title: "Holo-Review" },
-        { x: 840, y: 900, tint: C.ramune, label: "S3", title: "Nebula Weekly" },
-      ] as const).map((s, i) => (
+      {/* ── Step 3 · Synthesize (S1 / S2 / S3 — label + example, no repeat copy) ── */}
+      {(
+        [
+          { x: 80, y: 900, tint: C.salad, label: "S1", title: "Earthshine Obs." },
+          { x: 460, y: 900, tint: C.yuzu, label: "S2", title: "Holo-Review" },
+          { x: 840, y: 900, tint: C.ramune, label: "S3", title: "Nebula Weekly" },
+        ] as const
+      ).map((s, i) => (
         <StickyNote
           key={s.label}
           x={s.x}
           y={s.y}
           w={280}
-          h={190}
+          h={120}
           rotate={(i - 1) * 1.2}
           tint={s.tint}
         >
@@ -544,45 +546,54 @@ export default function AgentFlowPoster() {
               fontFamily:
                 '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
               fontWeight: 700,
-              fontSize: 18,
-              margin: "6px 0 4px",
+              fontSize: 20,
+              margin: "10px 0 0",
               color: C.ink,
+              lineHeight: 1.1,
             }}
           >
             {s.title}
           </h4>
-          <p
-            style={{
-              fontSize: 12.5,
-              lineHeight: 1.45,
-              color: C.ink,
-              opacity: 0.8,
-              margin: 0,
-            }}
-          >
-            One agent session per direction. Each writes a full spec +
-            embodiment in its own sandbox.
-          </p>
         </StickyNote>
       ))}
 
-      {/* ── Arrows S → O ── */}
-      <Connector x1={220} y1={1095} x2={220} y2={1180} color={C.ink} />
-      <Connector x1={600} y1={1095} x2={600} y2={1180} color={C.ink} />
-      <Connector x1={980} y1={1095} x2={980} y2={1180} color={C.ink} />
+      {/* Single shared caption under the Synthesize row */}
+      <div
+        style={{
+          position: "absolute",
+          left: 80,
+          top: 1030,
+          right: 80,
+          textAlign: "center",
+          fontFamily: "ui-monospace, Menlo, monospace",
+          fontSize: 11,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.muted,
+        }}
+      >
+        ↳ each: full spec + embodiment, its own sandbox
+      </div>
 
-      {/* ── Step 4 · Organize (O1 / O2 / O3) ── */}
-      {([
-        { x: 80, y: 1180, tint: C.matcha, label: "O1" },
-        { x: 460, y: 1180, tint: C.sumire, label: "O2" },
-        { x: 840, y: 1180, tint: C.sakura, label: "O3" },
-      ] as const).map((o, i) => (
+      {/* ── Arrows S → O ── */}
+      <Connector x1={220} y1={1060} x2={220} y2={1120} color={C.ink} />
+      <Connector x1={600} y1={1060} x2={600} y2={1120} color={C.ink} />
+      <Connector x1={980} y1={1060} x2={980} y2={1120} color={C.ink} />
+
+      {/* ── Step 4 · Organize (just the labels; shared caption below) ── */}
+      {(
+        [
+          { x: 80, y: 1130, tint: C.matcha, label: "O1" },
+          { x: 460, y: 1130, tint: C.sumire, label: "O2" },
+          { x: 840, y: 1130, tint: C.sakura, label: "O3" },
+        ] as const
+      ).map((o, i) => (
         <StickyNote
           key={o.label}
           x={o.x}
           y={o.y}
           w={280}
-          h={150}
+          h={90}
           rotate={(i - 1) * -0.8}
           tint={o.tint}
         >
@@ -602,30 +613,37 @@ export default function AgentFlowPoster() {
                 fontWeight: 900,
                 color: o.tint,
                 opacity: 0.75,
+                lineHeight: 1,
               }}
             >
               {o.label}
             </span>
           </div>
-          <p
-            style={{
-              fontSize: 12.5,
-              lineHeight: 1.45,
-              color: C.ink,
-              opacity: 0.8,
-              margin: "8px 0 0",
-            }}
-          >
-            Each completion auto-spawns its own organize job — taxonomy,
-            tags, lineage all recorded.
-          </p>
         </StickyNote>
       ))}
 
+      {/* Single shared caption under the Organize row */}
+      <div
+        style={{
+          position: "absolute",
+          left: 80,
+          top: 1230,
+          right: 80,
+          textAlign: "center",
+          fontFamily: "ui-monospace, Menlo, monospace",
+          fontSize: 11,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.muted,
+        }}
+      >
+        ↳ auto-records taxonomy · tags · lineage
+      </div>
+
       {/* ── Converging arrows O → Gallery ── */}
-      <Connector x1={220} y1={1335} x2={600} y2={1440} color={C.ink} curve={-30} />
-      <Connector x1={600} y1={1335} x2={600} y2={1440} color={C.ink} />
-      <Connector x1={980} y1={1335} x2={600} y2={1440} color={C.ink} curve={-30} />
+      <Connector x1={220} y1={1260} x2={600} y2={1440} color={C.ink} curve={-30} />
+      <Connector x1={600} y1={1260} x2={600} y2={1440} color={C.ink} />
+      <Connector x1={980} y1={1260} x2={600} y2={1440} color={C.ink} curve={-30} />
 
       {/* ── Step 5 · Gallery ── */}
       <StickyNote
