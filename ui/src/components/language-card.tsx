@@ -11,6 +11,7 @@ import {
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
 import { useIframeSlot } from "@/lib/iframe-slots";
+import { SafeEmbodimentFrame } from "@/components/safe-embodiment-frame";
 
 const PREVIEW_VIEWPORT_WIDTH = 1440;
 const PREVIEW_VIEWPORT_HEIGHT = 960;
@@ -229,25 +230,13 @@ const FullCard = memo(function FullCard({
                     bodyFont={bodyFont}
                   />
                 ) : iframeInView ? (
-                  <iframe
-                    key={embodimentFileId}
-                    src={getFileUrl(embodimentFileId)}
-                    className="absolute left-0 top-0 border-0 opacity-0 transition-opacity duration-200"
-                    onLoad={(e) =>
-                      e.currentTarget.classList.remove("opacity-0")
-                    }
-                    style={{
-                      width: `${PREVIEW_VIEWPORT_WIDTH}px`,
-                      height: `${PREVIEW_VIEWPORT_HEIGHT}px`,
-                      transform: `scale(${previewScale})`,
-                      transformOrigin: "top left",
-                      pointerEvents: "none",
-                    }}
-                    tabIndex={-1}
-                    loading="lazy"
-                    sandbox=""
+                  <SafeEmbodimentFrame
+                    fileId={embodimentFileId}
+                    url={getFileUrl(embodimentFileId)}
+                    width={PREVIEW_VIEWPORT_WIDTH}
+                    height={PREVIEW_VIEWPORT_HEIGHT}
+                    scale={previewScale}
                     title={`${f.name} preview`}
-                    aria-hidden
                   />
                 ) : (
                   // No iframe — show a design-rich placeholder: palette
