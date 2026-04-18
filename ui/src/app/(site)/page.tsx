@@ -19,7 +19,13 @@ async function GalleryGrid({
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
   try {
-    languages = await listDesignLanguages(filter);
+    // Order featured first, then by display_order. The client-side sort
+    // below is still applied as a safety net in case the backend ignores
+    // $orderby on these specific fields.
+    languages = await listDesignLanguages(
+      filter,
+      "Featured desc,DisplayOrder asc",
+    );
   } catch {
     return (
       <div className="paper-card mx-auto max-w-md rounded-[var(--radius-lg)] p-8 text-center text-sm text-muted-foreground">
