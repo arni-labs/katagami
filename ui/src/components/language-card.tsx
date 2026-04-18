@@ -250,31 +250,15 @@ const FullCard = memo(function FullCard({
                     aria-hidden
                   />
                 ) : (
-                  // Neutral placeholder in the preview while iframe waits to
-                  // mount — matches polaroid dimensions so there's no layout
-                  // shift when the iframe fades in.
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      background: `color-mix(in srgb, ${stickyTint} 6%, white)`,
-                    }}
-                  >
-                    <div className="flex gap-1">
-                      {(paletteEntries.length > 0
-                        ? paletteEntries
-                        : [{ color: stickyTint }]
-                      )
-                        .slice(0, 5)
-                        .map((p, i) => (
-                          <span
-                            key={i}
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: p.color }}
-                          />
-                        ))}
-                    </div>
-                  </div>
+                  // No iframe — show a design-rich placeholder: palette
+                  // stripes + Aa type specimen. Same pattern as TsxPlaceholder
+                  // so cards with/without active iframe feel equivalent.
+                  <TsxPlaceholder
+                    paletteColors={paletteEntries.map((p) => p.color)}
+                    headingFont={headingFont}
+                    bodyFont={bodyFont}
+                    subtitle="preview"
+                  />
                 )}
                 {/* soft bottom fade */}
                 <span
@@ -453,10 +437,12 @@ function TsxPlaceholder({
   paletteColors,
   headingFont,
   bodyFont,
+  subtitle = "tsx · preview unavailable",
 }: {
   paletteColors: string[];
   headingFont?: string;
   bodyFont?: string;
+  subtitle?: string;
 }) {
   const stripes = paletteColors.length > 0 ? paletteColors : ["#e5e5e5"];
   return (
@@ -481,7 +467,7 @@ function TsxPlaceholder({
           </span>
         )}
         <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.22em] text-muted-foreground/70">
-          tsx · preview unavailable
+          {subtitle}
         </span>
       </div>
     </div>
