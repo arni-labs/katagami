@@ -28,11 +28,9 @@ import { useEffect, useRef, useState } from "react";
 function computeMax(): number {
   if (typeof window === "undefined") return 3;
   const w = window.innerWidth;
-  // Mobile: exactly one iframe — the card closest to viewport center.
-  // Its embodiment HTML is fetched + safety-patched before rendering
-  // (see components/language-card.tsx), so even heavy designs can't
-  // blow out mobile GPU VRAM.
-  if (w < 640) return 1;
+  // Mobile gallery runs safety-patched iframes (see SafeEmbodimentFrame)
+  // so layout is capped from first paint — higher MAX is safe.
+  if (w < 640) return 8;
   if (w < 1024) return 3;
   if (w < 1536) return 4;
   return 6;

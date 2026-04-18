@@ -9,38 +9,50 @@ import {
 import { ExternalLink, Play } from "lucide-react";
 import { getFileUrl } from "@/lib/odata";
 
-// Fixed desktop viewport — embodiments are authored at ~1200–1440px.
-// Lock the iframe's CSS width to 1440 so the embodiment's responsive CSS
-// always lands on its desktop breakpoint, then transform-scale the whole
-// iframe to fit whatever container width it's rendered in.
+// Desktop viewport — embodiments render at 1440px internal width so
+// their responsive CSS lands on the desktop breakpoint.
 const VIEWPORT_WIDTH = 1440;
 const DEFAULT_HEIGHT = 900;
 const MIN_HEIGHT = 400;
-// Cap measured height to prevent feedback loops with embodiments that use
-// 100vh / min-height: 100vh in their CSS.
-const MAX_HEIGHT = 6000;
+// Max internal body height on the detail page — generous enough for
+// most tall designs but capped to prevent runaway 100vh layouts.
+const MAX_HEIGHT = 5000;
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-export function EmbodimentViewer({ fileId }: { fileId: string }) {
-  // Don't auto-load the iframe — some embodiments have content (heavy
-  // inline assets, complex CSS, runaway layouts) that crash the tab
-  // before a single user interaction. User opts in by clicking.
-  const [loaded, setLoaded] = useState(false);
-  // On mobile, even a single in-page iframe can crash the tab (GPU
-  // memory limits). We hide the "show preview" button there and only
-  // offer the "open full" escape hatch (new tab = separate memory).
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    function check() {
-      setIsMobile(window.innerWidth < 768);
-    }
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+// Safety CSS injected at the top of <head> in the embodiment HTML
+// before it's rendered via srcdoc. Prevents runaway body heights and
+// kills continuous GPU work from animations/transitions.
+const SAFETY_CSS = `<style>
+  html, body {
+    max-height: ${MAX_HEIGHT}px !important;
+    overflow: hidden !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+</style>`;
 
+function patchHtml(html: string): string {
+  if (html.includes("<head>")) {
+    return html.replace("<head>", `<head>${SAFETY_CSS}`);
+  }
+  const m = html.match(/<html[^>]*>/i);
+  if (m) {
+    return html.replace(m[0], `${m[0]}<head>${SAFETY_CSS}</head>`);
+  }
+  return SAFETY_CSS + html;
+}
+
+export function EmbodimentViewer({ fileId }: { fileId: string }) {
+  // Opt-in preview — tab shouldn't crash just because the user navigated
+  // to a detail page. Clicking "show preview" opts in for in-page render.
+  const [loaded, setLoaded] = useState(false);
   const url = getFileUrl(fileId);
 
   if (!loaded) {
@@ -50,24 +62,21 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
         style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
       >
         <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-          {isMobile ? "desktop preview" : "preview paused"}
+          preview paused
         </div>
         <p className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
-          {isMobile
-            ? "Embodiments are authored for desktop and render heavy layouts. Open in a new tab for a stable, pinch-zoomable view."
-            : "Some embodiments render heavy layouts that can freeze the tab. Click to load the in-page preview, or open it in its own tab."}
+          Click to render the embodiment in-page, or open it in its own
+          tab for the full interactive version.
         </p>
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          {!isMobile && (
-            <button
-              type="button"
-              onClick={() => setLoaded(true)}
-              className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
-            >
-              <Play className="h-3 w-3" />
-              show preview
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setLoaded(true)}
+            className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
+          >
+            <Play className="h-3 w-3" />
+            show preview
+          </button>
           <a
             href={url}
             target="_blank"
@@ -82,28 +91,41 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
     );
   }
 
-  return <LivePreview fileId={fileId} />;
+  return <SafePreview fileId={fileId} url={url} />;
 }
 
-// ── Live preview — actual iframe render ─────────────────────────────
+// ── Safety-patched in-page preview ─────────────────────────────────
 
-function LivePreview({ fileId }: { fileId: string }) {
+function SafePreview({ fileId, url }: { fileId: string; url: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const measuredRef = useRef(false);
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [scale, setScale] = useState<number | null>(null);
   const [contentHeight, setContentHeight] = useState(DEFAULT_HEIGHT);
   const [status, setStatus] = useState<"loading" | "ok" | "failed">(
     "loading",
   );
-  const url = getFileUrl(fileId);
 
+  // Fetch + patch the HTML before it hits the iframe renderer.
   useEffect(() => {
-    fetch(url, { method: "HEAD" })
-      .then((res) => setStatus(res.ok ? "ok" : "failed"))
-      .catch(() => setStatus("failed"));
+    let cancelled = false;
+    fetch(url)
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((html) => {
+        if (cancelled) return;
+        setSrcDoc(patchHtml(html));
+        setStatus("ok");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("failed");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [url]);
 
+  // Measure container width synchronously before paint.
   useIsoLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -122,42 +144,13 @@ function LivePreview({ fileId }: { fileId: string }) {
     return () => ro.disconnect();
   }, []);
 
-  function injectSafetyStyles() {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      const doc = iframe.contentDocument;
-      if (!doc) return;
-      // Inject hard caps + animation kill inside the iframe. Prevents:
-      //   - runaway body height from 100vh-based CSS (we set iframe height,
-      //     iframe internal 100vh = that, body fills it, content grows)
-      //   - continuous GPU work from CSS animations / transitions
-      //   - internal scrollbars causing reflow thrash
-      const style = doc.createElement("style");
-      style.textContent = `
-        html, body {
-          max-height: ${MAX_HEIGHT}px !important;
-          overflow: hidden !important;
-        }
-        *, *::before, *::after {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0s !important;
-          transition-delay: 0s !important;
-        }
-      `;
-      doc.head.appendChild(style);
-    } catch {
-      // Cross-origin or other error — skip
-    }
-  }
-
   function measureContent() {
     if (measuredRef.current) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
     try {
+      // srcdoc iframes are treated as same-origin (inherit parent) so
+      // contentDocument is accessible without allow-same-origin.
       const doc = iframe.contentDocument;
       if (!doc) return;
       const measured = Math.max(
@@ -174,12 +167,10 @@ function LivePreview({ fileId }: { fileId: string }) {
   }
 
   function onIframeLoad() {
-    // Cap the embodiment's internal layout BEFORE we measure / render.
-    injectSafetyStyles();
     setTimeout(measureContent, 400);
   }
 
-  if (status === "loading" || scale === null) {
+  if (status === "loading" || scale === null || !srcDoc) {
     return (
       <div
         ref={containerRef}
@@ -211,7 +202,7 @@ function LivePreview({ fileId }: { fileId: string }) {
       >
         <iframe
           ref={iframeRef}
-          src={url}
+          srcDoc={srcDoc}
           className="absolute left-0 top-0 border-0"
           style={{
             width: `${VIEWPORT_WIDTH}px`,
@@ -219,9 +210,8 @@ function LivePreview({ fileId }: { fileId: string }) {
             transform: `scale(${scale})`,
             transformOrigin: "top left",
           }}
-          // No allow-scripts — blocks rAF loops, setInterval, and other
-          // JS that can crash the tab. Static HTML + CSS still renders.
-          sandbox="allow-same-origin"
+          // No scripts, no same-origin — srcdoc already has patched content.
+          sandbox=""
           onLoad={onIframeLoad}
           title="Design language embodiment"
         />
