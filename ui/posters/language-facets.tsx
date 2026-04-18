@@ -1,13 +1,12 @@
 /**
- * Katagami — Code Snippet (card only)
+ * Katagami — Design Language Facets (card only)
  *
- * Temper language lifecycle in Python. No poster header, no footer rail —
- * just the code card. Styled to match the Katagami front-page: Bricolage /
- * Nunito / Geist Mono, translucent sticker card with a thin top ribbon and
- * washi tape corners, dot-grid paper, palette-driven syntax colors.
+ * A Katagami spec has 7 facets (2 optional). Rendered like the code-snippet
+ * poster: translucent sticker card with thin top ribbon, washi tape corners,
+ * chrome header, and a line-numbered definition-list body.
  *
  * Render with:
- *   npx poster-ai export posters/code-snippet.tsx -o posters/code-snippet.png
+ *   npx poster-ai export posters/language-facets.tsx -o posters/language-facets.png
  */
 
 // ── Palette (matches ui/src/app/globals.css) ─────────────────────
@@ -24,11 +23,6 @@ const C = {
   ramune: "oklch(0.78 0.16 235)",
   sumire: "oklch(0.75 0.16 300)",
   beni: "oklch(0.65 0.2 25)",
-  // Darker palette shades for syntax colors so code stays readable
-  kw: "oklch(0.5 0.18 300)", // darker sumire — keywords
-  str: "oklch(0.5 0.15 140)", // darker matcha — strings
-  method: "oklch(0.5 0.14 200)", // darker teal — methods/functions
-  comment: "oklch(0.58 0.02 260)", // slight tint — comments
 } as const;
 
 const FONT_DISPLAY =
@@ -117,47 +111,70 @@ function Stamp({
   );
 }
 
-// Syntax atoms — all share Geist Mono via the parent.
-function KW({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ color: C.kw, fontWeight: 600 }}>{children}</span>
-  );
-}
-function Str({ children }: { children: React.ReactNode }) {
-  return <span style={{ color: C.str }}>{children}</span>;
-}
-function Method({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ color: C.method, fontWeight: 600 }}>{children}</span>
-  );
-}
-function Var({ children }: { children: React.ReactNode }) {
-  return <span style={{ color: C.ink }}>{children}</span>;
-}
-function Comment({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ color: C.comment, fontStyle: "italic" }}>{children}</span>
-  );
-}
-function Punc({ children }: { children: React.ReactNode }) {
-  return <span style={{ color: C.muted }}>{children}</span>;
-}
-void KW;
-
-function Line({
-  n,
+// Marker-highlight key — ink text on top of a palette-colored marker bar,
+// mirroring the front-page `.marker` treatment.
+function MarkerKey({
   children,
+  tint,
 }: {
-  n?: number | string;
-  children?: React.ReactNode;
+  children: React.ReactNode;
+  tint: string;
+}) {
+  return (
+    <span
+      style={{
+        position: "relative",
+        display: "inline-block",
+        fontFamily: FONT_DISPLAY,
+        fontSize: 24,
+        fontWeight: 700,
+        color: C.ink,
+        letterSpacing: "-0.01em",
+        lineHeight: "32px",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: -3,
+          right: -3,
+          bottom: 2,
+          height: "42%",
+          background: tint,
+          opacity: 0.85,
+          borderRadius: 2,
+          transform: "rotate(-0.3deg)",
+          zIndex: 0,
+        }}
+      />
+      <span style={{ position: "relative", zIndex: 1 }}>{children}</span>
+    </span>
+  );
+}
+
+// Row — line number gutter, key w/ marker highlight, optional stamp,
+// description in mono ink.
+function Row({
+  n,
+  keyLabel,
+  tint,
+  desc,
+  optional = false,
+}: {
+  n: number;
+  keyLabel: string;
+  tint: string;
+  desc: string;
+  optional?: boolean;
 }) {
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         gap: 22,
-        minHeight: 30,
+        minHeight: 44,
         paddingLeft: 2,
       }}
     >
@@ -168,30 +185,92 @@ function Line({
           color: "color-mix(in oklch, " + C.muted + " 55%, white)",
           fontFamily: FONT_MONO,
           fontSize: 13,
-          lineHeight: "30px",
+          lineHeight: "32px",
           userSelect: "none",
         }}
       >
-        {n ?? ""}
+        {n}
+      </span>
+      <span style={{ flex: "0 0 200px" }}>
+        <MarkerKey tint={tint}>{keyLabel}</MarkerKey>
       </span>
       <span
         style={{
-          fontFamily: FONT_MONO,
-          fontSize: 18,
-          lineHeight: "30px",
-          color: C.ink,
-          whiteSpace: "pre",
-          flex: 1,
+          flex: "0 0 80px",
+          display: "flex",
+          justifyContent: "flex-start",
         }}
       >
-        {children}
+        {optional && (
+          <Stamp color={C.sumire} rotate={-3} size={9}>
+            optional
+          </Stamp>
+        )}
+      </span>
+      <span
+        style={{
+          flex: 1,
+          fontFamily: FONT_MONO,
+          fontSize: 15,
+          lineHeight: "26px",
+          color: C.ink,
+        }}
+      >
+        {desc}
       </span>
     </div>
   );
 }
 
 // ── Poster ────────────────────────────────────────────────────────
-export default function CodeSnippetPoster() {
+export default function LanguageFacetsPoster() {
+  const facets: {
+    keyLabel: string;
+    tint: string;
+    desc: string;
+    optional?: boolean;
+  }[] = [
+    // Marker tints match only the 5 palette colors used as front-page
+    // highlighter markers: sumire, sakura, salad, teal, yuzu.
+    {
+      keyLabel: "Philosophy",
+      tint: C.sumire,
+      desc: "What this style believes — and what it rejects",
+    },
+    {
+      keyLabel: "Tokens",
+      tint: C.sakura,
+      desc: "Colors, typography, spacing, shadows, motion",
+    },
+    {
+      keyLabel: "Rules",
+      tint: C.salad,
+      desc: "How tokens combine into elements",
+    },
+    {
+      keyLabel: "Layout",
+      tint: C.teal,
+      desc: "Grids, breakpoints, density, whitespace",
+    },
+    {
+      keyLabel: "Guidance",
+      tint: C.yuzu,
+      desc: "Do\u2019s, don\u2019ts, usage context",
+    },
+    {
+      keyLabel: "Imagery",
+      tint: C.sakura,
+      desc: "Art direction for generated/sourced images",
+      optional: true,
+    },
+    {
+      keyLabel: "Generative",
+      tint: C.sumire,
+      desc: "Canvas rules for decorative/background art",
+      optional: true,
+    },
+  ];
+
   return (
     <div
       className="w-[1200px] h-[620px]"
@@ -207,7 +286,7 @@ export default function CodeSnippetPoster() {
     >
       <FontsAndVars />
 
-      {/* Code card — translucent, soft shadow, thin top ribbon, no border */}
+      {/* Spec card — translucent, soft shadow, thin top ribbon, no border */}
       <div
         style={{
           position: "absolute",
@@ -222,7 +301,7 @@ export default function CodeSnippetPoster() {
           overflow: "visible",
         }}
       >
-        {/* thin top ribbon — card identity */}
+        {/* Top ribbon */}
         <div
           style={{
             position: "absolute",
@@ -230,22 +309,15 @@ export default function CodeSnippetPoster() {
             right: 0,
             top: 0,
             height: 4,
-            background: C.matcha,
+            background: C.sumire,
           }}
         />
 
-        {/* washi tapes pinning the card */}
-        <WashiTape x={-14} y={-10} w={140} h={20} rotate={-5} color={C.yuzu} />
-        <WashiTape
-          x={960}
-          y={-8}
-          w={120}
-          h={18}
-          rotate={6}
-          color={C.sakura}
-        />
+        {/* Washi tapes pinning the card */}
+        <WashiTape x={-14} y={-10} w={140} h={20} rotate={-5} color={C.sakura} />
+        <WashiTape x={960} y={-8} w={120} h={18} rotate={6} color={C.teal} />
 
-        {/* Editor chrome bar */}
+        {/* Chrome header */}
         <div
           style={{
             display: "flex",
@@ -262,19 +334,19 @@ export default function CodeSnippetPoster() {
               gap: 12,
             }}
           >
-            <Stamp color={C.matcha} rotate={-3}>
-              snippet
+            <Stamp color={C.sumire} rotate={-3}>
+              spec
             </Stamp>
             <span
               style={{
                 fontFamily: FONT_DISPLAY,
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: 700,
                 color: C.ink,
-                letterSpacing: "-0.01em",
+                letterSpacing: "-0.015em",
               }}
             >
-              Monty Sandbox
+              Design Language
             </span>
           </div>
           <span
@@ -287,75 +359,22 @@ export default function CodeSnippetPoster() {
               fontWeight: 700,
             }}
           >
-            python 3 · 11 lines
+            7 facets · 2 optional
           </span>
         </div>
 
-        {/* Code body */}
-        <div style={{ padding: "22px 22px 26px" }}>
-          <Line n={1}>
-            <Var>lang</Var> <Punc>=</Punc> <Method>temper.create</Method>
-            <Punc>(</Punc>
-            <Str>&apos;DesignLanguages&apos;</Str>
-            <Punc>,</Punc> <Punc>{"{"}</Punc>
-            <Str>&apos;Id&apos;</Str>
-            <Punc>:</Punc> <Str>&apos;retro-futurism-crt&apos;</Str>
-            <Punc>{"}"})</Punc>
-          </Line>
-          <Line n={2}>
-            <Var>eid</Var> <Punc>=</Punc> <Var>lang</Var>
-            <Punc>[</Punc>
-            <Str>&apos;entity_id&apos;</Str>
-            <Punc>]</Punc>
-          </Line>
-          <Line n={3}> </Line>
-          <Line n={4}>
-            <Method>temper.action</Method>
-            <Punc>(</Punc>
-            <Str>&apos;DesignLanguages&apos;</Str>
-            <Punc>,</Punc> <Var>eid</Var>
-            <Punc>,</Punc>{" "}
-            <Str>&apos;WritePhilosophy&apos;</Str>
-            <Punc>,</Punc> <Punc>{"{"}</Punc>
-          </Line>
-          <Line n={5}>
-            {"    "}
-            <Str>&apos;philosophy&apos;</Str>
-            <Punc>:</Punc> <Method>json.dumps</Method>
-            <Punc>(</Punc>
-            <Var>philosophy</Var>
-            <Punc>)</Punc>
-          </Line>
-          <Line n={6}>
-            <Punc>{"}"})</Punc>
-          </Line>
-          <Line n={7}> </Line>
-          <Line n={8}>
-            <Comment>
-              # ... SetTokens, SetRules, SetLayout, SetGuidance, etc.
-            </Comment>
-          </Line>
-          <Line n={9}> </Line>
-          <Line n={10}>
-            <Method>temper.action</Method>
-            <Punc>(</Punc>
-            <Str>&apos;DesignLanguages&apos;</Str>
-            <Punc>,</Punc> <Var>eid</Var>
-            <Punc>,</Punc>{" "}
-            <Str>&apos;SubmitForReview&apos;</Str>
-            <Punc>,</Punc> <Punc>{"{"}</Punc>
-            <Punc>{"}"})</Punc>
-          </Line>
-          <Line n={11}>
-            <Method>temper.action</Method>
-            <Punc>(</Punc>
-            <Str>&apos;DesignLanguages&apos;</Str>
-            <Punc>,</Punc> <Var>eid</Var>
-            <Punc>,</Punc>{" "}
-            <Str>&apos;Publish&apos;</Str>
-            <Punc>,</Punc> <Punc>{"{"}</Punc>
-            <Punc>{"}"})</Punc>
-          </Line>
+        {/* Definition list body */}
+        <div style={{ padding: "18px 22px 22px" }}>
+          {facets.map((f, i) => (
+            <Row
+              key={f.keyLabel}
+              n={i + 1}
+              keyLabel={f.keyLabel}
+              tint={f.tint}
+              desc={f.desc}
+              optional={f.optional}
+            />
+          ))}
         </div>
       </div>
     </div>

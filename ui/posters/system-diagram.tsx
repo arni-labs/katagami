@@ -459,7 +459,7 @@ export default function SystemDiagramPoster() {
 
   return (
     <div
-      className="w-[1200px] h-[1500px]"
+      className="w-[1350px] h-[1500px]"
       style={{
         position: "relative",
         background: C.paper,
@@ -474,7 +474,7 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── HUMAN ─────── */}
       <Card
-        x={420}
+        x={460}
         y={60}
         w={360}
         h={120}
@@ -501,7 +501,7 @@ export default function SystemDiagramPoster() {
 
       {/* asks ↓ */}
       <VArrow
-        x={600}
+        x={640}
         y1={185}
         y2={260}
         color={C.sumire}
@@ -511,7 +511,7 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── ANY AGENT ─────── */}
       <Card
-        x={380}
+        x={420}
         y={270}
         w={440}
         h={120}
@@ -541,7 +541,7 @@ export default function SystemDiagramPoster() {
 
       {/* submits CurationJob ↓ */}
       <VArrow
-        x={600}
+        x={640}
         y1={395}
         y2={470}
         color={C.beni}
@@ -551,7 +551,7 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── KATAGAMI ─────── */}
       <Card
-        x={70}
+        x={90}
         y={480}
         w={460}
         h={320}
@@ -599,7 +599,7 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── OPENPAW ─────── */}
       <Card
-        x={600}
+        x={630}
         y={480}
         w={460}
         h={320}
@@ -648,10 +648,10 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── MODAL SANDBOX ─────── */}
       <Card
-        x={1080}
+        x={1120}
         y={555}
-        w={110}
-        h={110}
+        w={140}
+        h={120}
         tint={C.yuzu}
         rotate={3}
         tape={C.teal}
@@ -662,8 +662,8 @@ export default function SystemDiagramPoster() {
         <div
           style={{
             ...title,
-            fontSize: 19,
-            marginTop: 6,
+            fontSize: 20,
+            marginTop: 8,
             lineHeight: 1.05,
           }}
         >
@@ -675,8 +675,8 @@ export default function SystemDiagramPoster() {
 
       {/* Katagami → OpenPaw: triggers agent */}
       <HArrow
-        x1={536}
-        x2={596}
+        x1={556}
+        x2={626}
         y={565}
         color={C.teal}
         label="triggers agent"
@@ -686,8 +686,8 @@ export default function SystemDiagramPoster() {
       />
       {/* OpenPaw → Katagami: writes back */}
       <HArrow
-        x1={536}
-        x2={596}
+        x1={556}
+        x2={626}
         y={715}
         color={C.sakura}
         label="writes back"
@@ -696,17 +696,17 @@ export default function SystemDiagramPoster() {
         direction="left"
       />
       {/* OpenPaw → Modal Sandbox */}
-      <HArrow x1={1062} x2={1082} y={590} color={C.yuzu} direction="right" />
+      <HArrow x1={1092} x2={1122} y={590} color={C.yuzu} direction="right" />
 
       {/* ↓ convergence to Temper */}
-      <VArrow x={295} y1={810} y2={905} color={C.matcha} amp={9} />
-      <VArrow x={830} y1={810} y2={905} color={C.ramune} amp={9} />
+      <VArrow x={320} y1={810} y2={905} color={C.matcha} amp={9} />
+      <VArrow x={860} y1={810} y2={905} color={C.ramune} amp={9} />
 
       {/* ─────── TEMPER ─────── */}
       <Card
-        x={70}
+        x={90}
         y={915}
-        w={1060}
+        w={1100}
         h={180}
         tint={C.sumire}
         rotate={-0.3}
@@ -714,7 +714,7 @@ export default function SystemDiagramPoster() {
         tapeRot={-3}
         tapePos="tl"
       >
-        <IndexBadge x={1010} y={-12} tint={C.sumire} rotate={6}>
+        <IndexBadge x={1050} y={-12} tint={C.sumire} rotate={6}>
           ✦
         </IndexBadge>
         <div style={eyebrow}>platform · governed runtime</div>
@@ -730,8 +730,7 @@ export default function SystemDiagramPoster() {
           {[
             ["state machines", C.sumire],
             ["files", C.teal],
-            ["auth (Cedar)", C.beni],
-            ["WASM", C.matcha],
+            ["auth", C.beni],
           ].map(([n, col]) => (
             <span
               key={n as string}
@@ -754,7 +753,7 @@ export default function SystemDiagramPoster() {
 
       {/* Temper → Datadog */}
       <VArrow
-        x={600}
+        x={640}
         y1={1105}
         y2={1200}
         color={C.salad}
@@ -764,7 +763,7 @@ export default function SystemDiagramPoster() {
 
       {/* ─────── DATADOG ─────── */}
       <Card
-        x={450}
+        x={490}
         y={1210}
         w={300}
         h={150}
@@ -796,13 +795,13 @@ export default function SystemDiagramPoster() {
 
       {/* Scrapbook flourishes */}
       <Sparkle x={48} y={70} size={13} color={C.sumire} rotate={-15} />
-      <Sparkle x={1140} y={100} size={15} color={C.teal} rotate={10} />
+      <Sparkle x={1290} y={100} size={15} color={C.teal} rotate={10} />
       <Sparkle x={58} y={850} size={11} color={C.beni} rotate={22} />
-      <Sparkle x={1145} y={880} size={12} color={C.matcha} rotate={-10} />
+      <Sparkle x={1295} y={880} size={12} color={C.matcha} rotate={-10} />
       <Sparkle x={50} y={1200} size={10} color={C.yuzu} rotate={14} />
-      <Sparkle x={1150} y={1290} size={13} color={C.sakura} rotate={-12} />
-      <Sparkle x={760} y={1430} size={14} color={C.sumire} rotate={10} />
-      <Sparkle x={240} y={1430} size={11} color={C.ramune} rotate={-5} />
+      <Sparkle x={1300} y={1290} size={13} color={C.sakura} rotate={-12} />
+      <Sparkle x={820} y={1430} size={14} color={C.sumire} rotate={10} />
+      <Sparkle x={260} y={1430} size={11} color={C.ramune} rotate={-5} />
 
       {/* Small washi strips in empty areas */}
       <WashiTape
@@ -814,7 +813,7 @@ export default function SystemDiagramPoster() {
         color={C.yuzu}
       />
       <WashiTape
-        x={990}
+        x={1130}
         y={1410}
         w={150}
         h={16}
