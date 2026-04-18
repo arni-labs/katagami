@@ -205,30 +205,22 @@ const FullCard = memo(function FullCard({
         ))}
       </div>
 
-      {/* Featured stamp — big round red-ink seal in the top-right corner,
-          fully standalone. No color override on the card, no ring. */}
+      {/* Featured — cute sakura+sumire sticker pill in the top-right */}
       {isFeatured && (
         <div
-          className="pointer-events-none absolute -right-2 top-6 z-30"
-          style={{ transform: "rotate(-8deg)" }}
+          className="pointer-events-none absolute right-2 top-4 z-30"
+          style={{ transform: "rotate(6deg)" }}
         >
           <span
-            className="relative inline-flex flex-col items-center justify-center"
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
             style={{
-              width: "54px",
-              height: "54px",
-              borderRadius: "999px",
-              border: "1.5px solid var(--beni)",
-              background: "rgba(255,255,255,0.8)",
-              boxShadow:
-                "0 1px 0 rgba(30,35,45,0.08), inset 0 0 0 2px rgba(255,255,255,0.6)",
-              color: "var(--beni)",
+              background: `color-mix(in oklch, var(--sakura) 55%, white)`,
+              border: `1px solid color-mix(in oklch, var(--sumire) 70%, white)`,
+              color: `color-mix(in oklch, var(--sumire), black 15%)`,
             }}
           >
-            <FeaturedStar />
-            <span className="mt-0.5 font-mono text-[8px] font-black uppercase tracking-[0.16em] leading-none">
-              featured
-            </span>
+            <FeaturedSparkle />
+            featured
           </span>
         </div>
       )}
@@ -475,16 +467,17 @@ function Sparkle() {
   );
 }
 
-function FeaturedStar() {
+function FeaturedSparkle() {
+  // Soft 4-point "twinkle" shape — same family as the title Sparkle,
+  // reads as cute/sticker rather than official-seal.
   return (
     <svg
-      viewBox="0 0 10 10"
+      viewBox="0 0 12 12"
       aria-hidden
-      className="h-3.5 w-3.5 shrink-0"
+      className="h-3 w-3 shrink-0"
       fill="currentColor"
-      strokeLinejoin="round"
     >
-      <path d="M5 0.5 L6.4 3.7 L10 4.1 L7.3 6.5 L8 10 L5 8.2 L2 10 L2.7 6.5 L0 4.1 L3.6 3.7 Z" />
+      <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
     </svg>
   );
 }
