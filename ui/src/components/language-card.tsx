@@ -205,28 +205,22 @@ const FullCard = memo(function FullCard({
         ))}
       </div>
 
-      {/* Featured — soft translucent pink seal, sparkle + text stacked */}
+      {/* Featured — sakura/sumire sticker pill, pink fill nearly transparent */}
       {isFeatured && (
         <div
-          className="pointer-events-none absolute -right-2 top-6 z-30"
-          style={{ transform: "rotate(-8deg)" }}
+          className="pointer-events-none absolute right-2 top-4 z-30"
+          style={{ transform: "rotate(6deg)" }}
         >
           <span
-            className="relative inline-flex flex-col items-center justify-center"
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
             style={{
-              width: "54px",
-              height: "54px",
-              borderRadius: "999px",
-              border: "1.5px solid color-mix(in oklch, var(--sakura) 60%, white)",
               background: "color-mix(in oklch, var(--sakura) 18%, transparent)",
-              boxShadow: "0 1px 2px rgba(30,35,45,0.05)",
-              color: "color-mix(in oklch, var(--sakura), black 20%)",
+              border: "1px solid color-mix(in oklch, var(--sumire) 70%, white)",
+              color: "color-mix(in oklch, var(--sumire), black 15%)",
             }}
           >
             <FeaturedSparkle />
-            <span className="mt-0.5 font-mono text-[8px] font-black uppercase tracking-[0.16em] leading-none">
-              featured
-            </span>
+            featured
           </span>
         </div>
       )}
@@ -478,7 +472,7 @@ function FeaturedSparkle() {
     <svg
       viewBox="0 0 12 12"
       aria-hidden
-      className="h-[14px] w-[14px] shrink-0"
+      className="h-3 w-3 shrink-0"
       fill="currentColor"
     >
       <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
