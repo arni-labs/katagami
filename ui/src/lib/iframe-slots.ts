@@ -26,14 +26,12 @@ import { useEffect, useRef, useState } from "react";
 // Iframe browsing contexts are expensive even when just parked; keeping
 // fewer alive is the only reliable safety net.
 function computeMax(): number {
-  if (typeof window === "undefined") return 3;
+  if (typeof window === "undefined") return 6;
   const w = window.innerWidth;
-  // Mobile gallery runs safety-patched iframes (see SafeEmbodimentFrame)
-  // so layout is capped from first paint — higher MAX is safe.
-  if (w < 640) return 8;
-  if (w < 1024) return 3;
-  if (w < 1536) return 4;
-  return 6;
+  if (w < 640) return 1;
+  if (w < 1024) return 4;
+  if (w < 1536) return 8;
+  return 12;
 }
 
 let MAX = computeMax();
