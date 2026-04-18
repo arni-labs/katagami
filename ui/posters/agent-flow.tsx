@@ -1,230 +1,85 @@
 /**
  * Katagami — Agent Flow Poster
- * Visual language: "Signal Press Brutalism"
- *   - Archivo (Narrow/Condensed) display, IBM Plex Mono utility labels
- *   - 3px black rules, square corners, fluorescent-orange offset backplates
- *   - Visible grid, crop marks, asymmetric columns, spot-ink accents
  *
- * Render with:
- *   poster export posters/agent-flow.tsx -o posters/agent-flow.png
+ * Render with: `poster export posters/agent-flow.tsx -o flow.png`
+ * or any poster-ai format (html/pdf/svg/jpg/webp).
+ *
+ * Self-contained — all color, layout, typography live in this file.
+ * Uses the Katagami Hobonichi aesthetic: dot-grid paper, sticky-notes,
+ * washi tape, stamps, marker highlights, sparkle doodles.
  */
 
-// ── Tokens ────────────────────────────────────────────────────────
+// ── Palette (oklch values from globals.css, hex-approximated) ─────
 const C = {
-  ink: "#0a0a0a",
-  paper: "#f1ede3",
-  surface: "#fffdf8",
-  secondary: "#f3efe6",
-  muted: "#5f5a52",
-  accent: "#ff5a1f", // fluorescent spot ink
-  acid: "#d4ff3a", // secondary spot (acid lime)
-  text: "#111111",
+  paper: "#FEFDF9",
+  ink: "#2B2A3F",
+  muted: "#5F5C73",
+  border: "#D4D1DC",
+  sakura: "#F7BAC9",
+  yuzu: "#F5E787",
+  salad: "#BFE67A",
+  matcha: "#8FD1A0",
+  teal: "#8DD6DB",
+  ramune: "#9EB8EE",
+  sumire: "#C79DE4",
+  beni: "#E46D6D",
 };
 
-const FONT_DISPLAY =
-  '"Archivo Narrow", "Archivo Condensed", "Barlow Condensed", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif';
-const FONT_SANS =
-  '"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const FONT_MONO =
-  '"IBM Plex Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
-
 // ── Atoms ─────────────────────────────────────────────────────────
-
-function MonoStrip({
-  children,
-  color = C.ink,
-  bg = "transparent",
-  borderless = false,
-  style,
-}: {
-  children: React.ReactNode;
-  color?: string;
-  bg?: string;
-  borderless?: boolean;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontFamily: FONT_MONO,
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: "0.16em",
-        textTransform: "uppercase",
-        color,
-        background: bg,
-        padding: borderless ? "0" : "3px 8px",
-        border: borderless ? "none" : `2px solid ${C.ink}`,
-        lineHeight: 1,
-        ...style,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-// A block with a thick black border and a fluorescent offset backplate
-// behind it — the signature "overprinted poster mounted on the page" look.
-function Block({
+function StickyNote({
   x,
   y,
   w,
   h,
-  offset = 10,
-  plate = C.accent,
-  bg = C.surface,
+  rotate = 0,
+  tint,
   children,
 }: {
   x: number;
   y: number;
   w: number;
   h: number;
-  offset?: number;
-  plate?: string;
-  bg?: string;
+  rotate?: number;
+  tint?: string;
   children: React.ReactNode;
 }) {
+  const bg = tint
+    ? `color-mix(in srgb, ${tint} 14%, rgba(255,255,255,0.92))`
+    : "rgba(255,255,255,0.92)";
   return (
-    <div style={{ position: "absolute", left: x, top: y, width: w, height: h }}>
-      {/* Offset backplate */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          transform: `translate(${offset}px, ${offset}px)`,
-          background: plate,
-        }}
-      />
-      {/* Foreground card */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          background: bg,
-          border: `3px solid ${C.ink}`,
-          padding: 18,
-          boxSizing: "border-box",
-        }}
-      >
-        {children}
-      </div>
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        height: h,
+        transform: `rotate(${rotate}deg)`,
+        background: bg,
+        boxShadow:
+          "0 1px 2px rgba(30,35,45,0.05), 0 10px 26px rgba(30,35,45,0.08)",
+        padding: 20,
+      }}
+    >
+      {children}
     </div>
   );
 }
 
-// Crop marks at the corners of a region.
-function CropMarks({
+function WashiTape({
   x,
   y,
   w,
   h,
-  size = 14,
-  color = C.ink,
-  stroke = 2,
+  rotate = 0,
+  color,
 }: {
   x: number;
   y: number;
   w: number;
   h: number;
-  size?: number;
-  color?: string;
-  stroke?: number;
-}) {
-  const corners = [
-    { cx: x, cy: y },
-    { cx: x + w, cy: y },
-    { cx: x, cy: y + h },
-    { cx: x + w, cy: y + h },
-  ];
-  return (
-    <svg
-      style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none" }}
-      width={1200}
-      height={1800}
-      viewBox="0 0 1200 1800"
-    >
-      {corners.map((c, i) => (
-        <g key={i} stroke={color} strokeWidth={stroke}>
-          <line x1={c.cx - size} y1={c.cy} x2={c.cx + size} y2={c.cy} />
-          <line x1={c.cx} y1={c.cy - size} x2={c.cx} y2={c.cy + size} />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-// Solid heavy arrow between two points.
-function FlowArrow({
-  x1,
-  y1,
-  x2,
-  y2,
-  color = C.ink,
-  width = 4,
-  curve = 0,
-}: {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  color?: string;
-  width?: number;
-  curve?: number;
-}) {
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2 + curve;
-  const markerId = `arrow-${x1}-${y1}-${x2}-${y2}`;
-  return (
-    <svg
-      style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none" }}
-      width={1200}
-      height={1800}
-      viewBox="0 0 1200 1800"
-    >
-      <defs>
-        <marker
-          id={markerId}
-          viewBox="0 0 10 10"
-          refX="8"
-          refY="5"
-          markerWidth="8"
-          markerHeight="8"
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 0 L 10 5 L 0 10 z" fill={color} />
-        </marker>
-      </defs>
-      <path
-        d={`M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`}
-        fill="none"
-        stroke={color}
-        strokeWidth={width}
-        strokeLinecap="square"
-        markerEnd={`url(#${markerId})`}
-      />
-    </svg>
-  );
-}
-
-// Thick horizontal rule.
-function Rule({
-  x,
-  y,
-  w,
-  h = 4,
-  color = C.ink,
-}: {
-  x: number;
-  y: number;
-  w: number;
-  h?: number;
-  color?: string;
+  rotate?: number;
+  color: string;
 }) {
   return (
     <div
@@ -234,70 +89,163 @@ function Rule({
         top: y,
         width: w,
         height: h,
-        background: color,
+        transform: `rotate(${rotate}deg)`,
+        background: `repeating-linear-gradient(45deg, ${color} 0 7px, color-mix(in oklch, ${color} 50%, white) 7px 14px)`,
+        opacity: 0.85,
+        boxShadow: "0 1px 2px rgba(30,35,45,0.05)",
       }}
     />
   );
 }
 
-// Massive section-number + label.
-function SectionHeader({
+function Stamp({
+  children,
+  color = C.sumire,
+  rotate = -2,
+  style,
+}: {
+  children: React.ReactNode;
+  color?: string;
+  rotate?: number;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        border: `1.4px solid ${color}`,
+        borderRadius: 3,
+        padding: "2px 9px",
+        fontFamily: "ui-monospace, Menlo, monospace",
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        color,
+        background: `color-mix(in srgb, ${color} 8%, white)`,
+        transform: `rotate(${rotate}deg)`,
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Marker({
+  children,
+  color = C.yuzu,
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <span style={{ position: "relative", display: "inline-block" }}>
+      <span
+        style={{
+          position: "absolute",
+          left: -4,
+          right: -4,
+          bottom: 4,
+          height: "42%",
+          background: color,
+          opacity: 0.85,
+          transform: "rotate(-0.4deg)",
+          borderRadius: 2,
+          zIndex: 0,
+        }}
+      />
+      <span style={{ position: "relative", zIndex: 1 }}>{children}</span>
+    </span>
+  );
+}
+
+function Sparkle({
   x,
   y,
-  num,
-  kicker,
-  title,
-  titleColor = C.ink,
+  size = 14,
+  color = C.sumire,
+  rotate = 0,
 }: {
   x: number;
   y: number;
-  num: string;
-  kicker: string;
-  title: string;
-  titleColor?: string;
+  size?: number;
+  color?: string;
+  rotate?: number;
 }) {
   return (
-    <div
-      style={{ position: "absolute", left: x, top: y, display: "flex", gap: 14, alignItems: "flex-end" }}
+    <svg
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        transform: `rotate(${rotate}deg)`,
+      }}
+      width={size}
+      height={size}
+      viewBox="0 0 12 12"
+      fill={color}
     >
-      <span
-        style={{
-          fontFamily: FONT_DISPLAY,
-          fontSize: 72,
-          fontWeight: 900,
-          lineHeight: 0.85,
-          letterSpacing: "-0.04em",
-          color: C.accent,
-          transform: "scaleX(0.85)",
-          transformOrigin: "left bottom",
-          display: "inline-block",
-        }}
-      >
-        {num}
-      </span>
-      <div style={{ marginBottom: 4 }}>
-        <MonoStrip bg={C.accent} color={C.ink}>
-          {kicker}
-        </MonoStrip>
-        <h2
-          style={{
-            margin: "6px 0 0",
-            fontFamily: FONT_DISPLAY,
-            fontSize: 44,
-            fontWeight: 800,
-            lineHeight: 0.9,
-            letterSpacing: "-0.02em",
-            textTransform: "uppercase",
-            color: titleColor,
-            transform: "scaleX(0.9)",
-            transformOrigin: "left bottom",
-            display: "inline-block",
-          }}
+      <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
+    </svg>
+  );
+}
+
+// Dashed SVG connector with small arrowhead, from (x1,y1) to (x2,y2)
+function Connector({
+  x1,
+  y1,
+  x2,
+  y2,
+  color = C.ink,
+  curve = 0,
+}: {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  color?: string;
+  curve?: number;
+}) {
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2 + curve;
+  const d = `M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`;
+  return (
+    <svg
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        pointerEvents: "none",
+      }}
+      width={1200}
+      height={1800}
+      viewBox="0 0 1200 1800"
+    >
+      <defs>
+        <marker
+          id={`arrow-${x1}-${y1}-${x2}-${y2}`}
+          viewBox="0 0 10 10"
+          refX="7"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
         >
-          {title}
-        </h2>
-      </div>
-    </div>
+          <path d="M 0 0 L 10 5 L 0 10 z" fill={color} />
+        </marker>
+      </defs>
+      <path
+        d={d}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeDasharray="5 4"
+        strokeLinecap="round"
+        markerEnd={`url(#arrow-${x1}-${y1}-${x2}-${y2})`}
+      />
+    </svg>
   );
 }
 
@@ -309,472 +257,485 @@ export default function AgentFlowPoster() {
       style={{
         position: "relative",
         background: C.paper,
-        // Visible print-style grid
-        backgroundImage: `
-          linear-gradient(to right, rgba(16,16,16,0.05) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(16,16,16,0.05) 1px, transparent 1px)
-        `,
-        backgroundSize: "48px 48px",
-        color: C.text,
+        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(75,70,100,0.12) 1px, transparent 0)`,
+        backgroundSize: "22px 22px",
+        color: C.ink,
+        fontFamily:
+          '"Nunito", system-ui, -apple-system, "Segoe UI", sans-serif',
         overflow: "hidden",
-        fontFamily: FONT_SANS,
       }}
     >
-      {/* Load the brutalist publication fonts */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-            @media print { body { background: ${C.paper}; } }
-          `,
-        }}
+      {/* ── Decorative washi tapes on the outer edges ── */}
+      <WashiTape x={60} y={-10} w={120} h={22} rotate={-6} color={C.salad} />
+      <WashiTape
+        x={1000}
+        y={-8}
+        w={90}
+        h={20}
+        rotate={7}
+        color={C.sumire}
+      />
+      <WashiTape
+        x={80}
+        y={1760}
+        w={110}
+        h={20}
+        rotate={5}
+        color={C.sakura}
+      />
+      <WashiTape
+        x={990}
+        y={1770}
+        w={100}
+        h={20}
+        rotate={-6}
+        color={C.teal}
       />
 
-      {/* ── Top issue strip ── */}
-      <div
-        style={{
-          position: "absolute",
-          left: 40,
-          right: 40,
-          top: 40,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: `3px solid ${C.ink}`,
-          paddingBottom: 10,
-        }}
-      >
-        <MonoStrip bg={C.ink} color={C.paper}>
-          型紙 · katagami
-        </MonoStrip>
-        <div style={{ display: "flex", gap: 10 }}>
-          <MonoStrip>spread 04</MonoStrip>
-          <MonoStrip>issue 01</MonoStrip>
-          <MonoStrip bg={C.accent}>agent · native</MonoStrip>
-        </div>
-      </div>
-
-      {/* ── Masthead ── */}
-      <div style={{ position: "absolute", left: 40, top: 100, right: 40 }}>
-        <MonoStrip bg={C.ink} color={C.paper}>
-          A · no human in the loop after &quot;go&quot;
-        </MonoStrip>
-        <h1
+      {/* ── Header ── */}
+      <div style={{ position: "absolute", left: 80, top: 80, right: 80 }}>
+        <div
           style={{
-            margin: "14px 0 0",
-            fontFamily: FONT_DISPLAY,
-            fontSize: 128,
-            fontWeight: 900,
-            lineHeight: 0.88,
-            letterSpacing: "-0.035em",
-            textTransform: "uppercase",
-            color: C.ink,
-            transform: "scaleX(0.82)",
-            transformOrigin: "left top",
-            display: "inline-block",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 10,
           }}
         >
-          How one idea
-          <br />
-          becomes a{" "}
           <span
             style={{
-              background: C.accent,
-              padding: "0 12px",
               display: "inline-block",
-              color: C.ink,
+              width: 36,
+              height: 3,
+              borderRadius: 2,
+              background: C.teal,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "ui-monospace, Menlo, monospace",
+              fontSize: 11,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              color: C.muted,
             }}
           >
-            gallery
+            katagami · how a language is made
           </span>
+        </div>
+        <h1
+          style={{
+            fontFamily:
+              '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+            fontWeight: 700,
+            fontSize: 64,
+            lineHeight: 1.04,
+            letterSpacing: "-0.03em",
+            margin: 0,
+            color: C.ink,
+          }}
+        >
+          from a{" "}
+          <Marker color={C.yuzu}>
+            <span>single idea</span>
+          </Marker>
+          , a whole{" "}
+          <Marker color={C.salad}>
+            <span>gallery</span>
+          </Marker>
         </h1>
         <p
           style={{
-            marginTop: 20,
-            maxWidth: 820,
-            fontFamily: FONT_SANS,
-            fontSize: 17,
+            marginTop: 14,
+            maxWidth: 760,
+            fontSize: 16,
             lineHeight: 1.55,
-            color: C.text,
+            color: C.muted,
           }}
         >
-          Agents fan out from one seed into parallel sessions. Each writes a
-          full spec + embodiment, organizes itself, publishes. The pipeline
-          below runs unattended — research, synthesize × N, organize × N,
-          gallery — with every stage emitting its own artifacts.
+          Agents fan out from one seed into parallel sessions — each writes a
+          full spec and embodiment, organizes itself, and publishes to the
+          gallery. No human in the loop after "go".
         </p>
-      </div>
-
-      {/* ── Rule between masthead and body ── */}
-      <Rule x={40} y={498} w={1120} h={6} />
-
-      {/* ── 01 · IDEA ── */}
-      <SectionHeader
-        x={40}
-        y={528}
-        num="01"
-        kicker="the seed · 1 input"
-        title="Idea"
-      />
-      <Block x={40} y={640} w={560} h={150} offset={10} plate={C.accent}>
-        <MonoStrip>submitted · by user</MonoStrip>
         <div
           style={{
-            marginTop: 10,
-            fontFamily: FONT_DISPLAY,
-            fontSize: 48,
-            fontWeight: 800,
-            lineHeight: 1,
-            letterSpacing: "-0.02em",
-            textTransform: "uppercase",
-            color: C.ink,
-            transform: "scaleX(0.9)",
-            transformOrigin: "left top",
-            display: "inline-block",
+            position: "absolute",
+            right: 0,
+            top: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 6,
           }}
         >
-          &ldquo;Sci-fi meets editorial&rdquo;
+          <Stamp color={C.sakura} rotate={-3}>
+            v0.1.0
+          </Stamp>
+          <Stamp color={C.sumire} rotate={2}>
+            agent-native
+          </Stamp>
         </div>
-      </Block>
-      <CropMarks x={40} y={640} w={560} h={150} />
+      </div>
 
-      {/* Right margin annotation rail */}
+      {/* ── Step 1 · Idea ── */}
+      <StickyNote x={420} y={280} w={360} h={170} rotate={-1} tint={C.sakura}>
+        <WashiTape
+          x={-12}
+          y={-10}
+          w={90}
+          h={16}
+          rotate={-5}
+          color={C.sakura}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Stamp color={C.sakura}>step · 01</Stamp>
+          <span
+            style={{
+              fontFamily: "ui-monospace, Menlo, monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.muted,
+            }}
+          >
+            the seed
+          </span>
+        </div>
+        <h3
+          style={{
+            fontFamily:
+              '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+            fontWeight: 700,
+            fontSize: 28,
+            margin: "10px 0 6px",
+            color: C.ink,
+          }}
+        >
+          Idea
+        </h3>
+        <div
+          style={{
+            fontFamily: "Georgia, serif",
+            fontStyle: "italic",
+            fontSize: 20,
+            color: C.ink,
+            opacity: 0.85,
+          }}
+        >
+          &ldquo;sci-fi meets editorial&rdquo;
+        </div>
+      </StickyNote>
+      <Sparkle x={780} y={290} color={C.sumire} size={18} />
+      <Sparkle x={400} y={410} color={C.yuzu} size={14} rotate={15} />
+
+      {/* ── Arrow 1 → 2 ── */}
+      <Connector x1={600} y1={455} x2={600} y2={540} color={C.ink} />
+
+      {/* ── Step 2 · Research ── */}
+      <StickyNote x={360} y={550} w={480} h={200} rotate={0.5} tint={C.teal}>
+        <WashiTape
+          x={400}
+          y={-10}
+          w={80}
+          h={16}
+          rotate={6}
+          color={C.teal}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Stamp color={C.teal}>step · 02</Stamp>
+          <span
+            style={{
+              fontFamily: "ui-monospace, Menlo, monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.muted,
+            }}
+          >
+            one agent session
+          </span>
+        </div>
+        <h3
+          style={{
+            fontFamily:
+              '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+            fontWeight: 700,
+            fontSize: 28,
+            margin: "10px 0 6px",
+            color: C.ink,
+          }}
+        >
+          Research
+        </h3>
+        <p
+          style={{
+            fontSize: 15,
+            lineHeight: 1.5,
+            color: C.ink,
+            opacity: 0.85,
+            margin: 0,
+          }}
+        >
+          Searches the web, reads articles and style guides, identifies{" "}
+          <b>N promising directions</b>. Auto-fans-out a separate session for
+          each.
+        </p>
+      </StickyNote>
+
+      {/* ── Branching connectors from Research to S1, S2, S3 ── */}
       <div
         style={{
           position: "absolute",
-          left: 640,
-          top: 640,
-          width: 520,
-          height: 150,
-          borderLeft: `2px solid ${C.ink}`,
-          padding: "10px 0 0 16px",
-          fontFamily: FONT_MONO,
-          fontSize: 12,
-          lineHeight: 1.6,
+          left: 80,
+          top: 790,
+          right: 80,
+          textAlign: "center",
+          fontFamily: "ui-monospace, Menlo, monospace",
+          fontSize: 11,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
           color: C.muted,
         }}
       >
-        <div style={{ color: C.ink, fontWeight: 600, marginBottom: 6 }}>
-          // MARGIN · INPUT
-        </div>
-        One plain string. No JSON, no schema. Anything the user can type:
-        a vibe, a brief, a reference, a contradiction. The pipeline treats
-        it as editorial brief for the research agent.
+        ⇣ auto-fans-out ⇣
       </div>
+      <Connector x1={600} y1={755} x2={220} y2={900} color={C.ink} curve={40} />
+      <Connector x1={600} y1={755} x2={600} y2={900} color={C.ink} />
+      <Connector x1={600} y1={755} x2={980} y2={900} color={C.ink} curve={40} />
 
-      {/* ── Flow arrow 01 → 02 ── */}
-      <FlowArrow x1={320} y1={820} x2={320} y2={876} width={4} />
-
-      {/* ── 02 · RESEARCH ── */}
-      <SectionHeader
-        x={40}
-        y={870}
-        num="02"
-        kicker="one agent session"
-        title="Research"
-      />
-      <Block x={40} y={990} w={1120} h={130} offset={10} plate={C.accent}>
-        <div style={{ display: "flex", gap: 24, alignItems: "stretch" }}>
-          <div style={{ flex: 1 }}>
-            <MonoStrip>reads · web</MonoStrip>
-            <h3
-              style={{
-                margin: "8px 0 6px",
-                fontFamily: FONT_DISPLAY,
-                fontSize: 26,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Searches + reads
-            </h3>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: C.muted }}>
-              Articles, style guides, editorial archives, design history.
-            </p>
-          </div>
-          <div style={{ width: 2, background: C.ink }} />
-          <div style={{ flex: 1 }}>
-            <MonoStrip>identifies · N</MonoStrip>
-            <h3
-              style={{
-                margin: "8px 0 6px",
-                fontFamily: FONT_DISPLAY,
-                fontSize: 26,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              N directions
-            </h3>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: C.muted }}>
-              Distinct, promising, mutually-exclusive angles worth pursuing.
-            </p>
-          </div>
-          <div style={{ width: 2, background: C.ink }} />
-          <div style={{ flex: 1 }}>
-            <MonoStrip bg={C.accent}>fans · out</MonoStrip>
-            <h3
-              style={{
-                margin: "8px 0 6px",
-                fontFamily: FONT_DISPLAY,
-                fontSize: 26,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Auto-spawns
-            </h3>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: C.muted }}>
-              One synthesize job per direction. Parallel. Sandboxed.
-            </p>
-          </div>
-        </div>
-      </Block>
-
-      {/* Fan-out connectors */}
-      <FlowArrow x1={200} y1={1150} x2={200} y2={1230} curve={0} />
-      <FlowArrow x1={600} y1={1150} x2={600} y2={1230} curve={0} />
-      <FlowArrow x1={1000} y1={1150} x2={1000} y2={1230} curve={0} />
-
-      {/* ── 03 · SYNTHESIZE × N ── */}
-      <SectionHeader
-        x={40}
-        y={1200}
-        num="03"
-        kicker="synthesize · parallel"
-        title="Draft × N"
-      />
-
-      {(
-        [
-          {
-            x: 40,
-            tag: "S1",
-            name: "Earthshine Obs.",
-            note: "Dense editorial grid, spot colour, reader rails.",
-          },
-          {
-            x: 420,
-            tag: "S2",
-            name: "Holo-Review",
-            note: "Display-heavy spread; tactile scanned texture.",
-          },
-          {
-            x: 800,
-            tag: "S3",
-            name: "Nebula Weekly",
-            note: "Tall masthead, vertical dividers, issue badges.",
-          },
-        ] as const
-      ).map((s) => (
-        <div key={s.tag}>
-          <Block
-            x={s.x}
-            y={1330}
-            w={360}
-            h={200}
-            offset={10}
-            plate={C.accent}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-              }}
-            >
-              <MonoStrip>synthesize</MonoStrip>
-              <span
-                style={{
-                  fontFamily: FONT_DISPLAY,
-                  fontSize: 72,
-                  fontWeight: 900,
-                  lineHeight: 0.82,
-                  color: C.ink,
-                  letterSpacing: "-0.04em",
-                  transform: "scaleX(0.8)",
-                  transformOrigin: "right top",
-                  display: "inline-block",
-                }}
-              >
-                {s.tag}
-              </span>
-            </div>
-            <h4
-              style={{
-                margin: "10px 0 8px",
-                fontFamily: FONT_DISPLAY,
-                fontSize: 22,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {s.name}
-            </h4>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 12,
-                lineHeight: 1.5,
-                color: C.muted,
-              }}
-            >
-              {s.note}
-            </p>
-            <div
-              style={{
-                position: "absolute",
-                left: 18,
-                right: 18,
-                bottom: 14,
-                borderTop: `2px solid ${C.ink}`,
-                paddingTop: 6,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <MonoStrip borderless color={C.muted}>
-                spec · embodiment
-              </MonoStrip>
-              <MonoStrip borderless color={C.ink}>
-                → organize
-              </MonoStrip>
-            </div>
-          </Block>
-          <CropMarks x={s.x} y={1330} w={360} h={200} />
-        </div>
-      ))}
-
-      {/* Synthesize → Organize arrows (straight down) */}
-      <FlowArrow x1={200} y1={1540} x2={200} y2={1608} />
-      <FlowArrow x1={600} y1={1540} x2={600} y2={1608} />
-      <FlowArrow x1={1000} y1={1540} x2={1000} y2={1608} />
-
-      {/* ── 04 · ORGANIZE × N ── */}
-      <div style={{ position: "absolute", left: 40, top: 1580, display: "flex", gap: 14, alignItems: "center" }}>
-        <span
-          style={{
-            fontFamily: FONT_DISPLAY,
-            fontSize: 40,
-            fontWeight: 900,
-            color: C.accent,
-            transform: "scaleX(0.85)",
-            transformOrigin: "left center",
-            display: "inline-block",
-            lineHeight: 1,
-          }}
+      {/* ── Step 3 · Synthesize (S1 / S2 / S3) ── */}
+      {([
+        { x: 80, y: 900, tint: C.salad, label: "S1", title: "Earthshine Obs." },
+        { x: 460, y: 900, tint: C.yuzu, label: "S2", title: "Holo-Review" },
+        { x: 840, y: 900, tint: C.ramune, label: "S3", title: "Nebula Weekly" },
+      ] as const).map((s, i) => (
+        <StickyNote
+          key={s.label}
+          x={s.x}
+          y={s.y}
+          w={280}
+          h={190}
+          rotate={(i - 1) * 1.2}
+          tint={s.tint}
         >
-          04
-        </span>
-        <MonoStrip bg={C.accent}>organize · auto-spawns</MonoStrip>
-        <h2
-          style={{
-            margin: 0,
-            fontFamily: FONT_DISPLAY,
-            fontSize: 28,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          Classify × N
-        </h2>
-      </div>
-
-      {(
-        [
-          { x: 40, tag: "O1" },
-          { x: 420, tag: "O2" },
-          { x: 800, tag: "O3" },
-        ] as const
-      ).map((o) => (
-        <Block key={o.tag} x={o.x} y={1630} w={360} h={110} offset={8} plate={C.acid}>
           <div
             style={{
               display: "flex",
-              alignItems: "flex-start",
+              alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <MonoStrip>organize</MonoStrip>
+            <Stamp color={s.tint}>synthesize</Stamp>
             <span
               style={{
-                fontFamily: FONT_DISPLAY,
-                fontSize: 44,
+                fontFamily:
+                  '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+                fontSize: 36,
                 fontWeight: 900,
-                lineHeight: 0.85,
-                color: C.ink,
-                letterSpacing: "-0.03em",
-                transform: "scaleX(0.8)",
-                transformOrigin: "right top",
-                display: "inline-block",
+                color: s.tint,
+                opacity: 0.75,
               }}
             >
-              {o.tag}
+              {s.label}
+            </span>
+          </div>
+          <h4
+            style={{
+              fontFamily:
+                '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+              fontWeight: 700,
+              fontSize: 18,
+              margin: "6px 0 4px",
+              color: C.ink,
+            }}
+          >
+            {s.title}
+          </h4>
+          <p
+            style={{
+              fontSize: 12.5,
+              lineHeight: 1.45,
+              color: C.ink,
+              opacity: 0.8,
+              margin: 0,
+            }}
+          >
+            One agent session per direction. Each writes a full spec +
+            embodiment in its own sandbox.
+          </p>
+        </StickyNote>
+      ))}
+
+      {/* ── Arrows S → O ── */}
+      <Connector x1={220} y1={1095} x2={220} y2={1180} color={C.ink} />
+      <Connector x1={600} y1={1095} x2={600} y2={1180} color={C.ink} />
+      <Connector x1={980} y1={1095} x2={980} y2={1180} color={C.ink} />
+
+      {/* ── Step 4 · Organize (O1 / O2 / O3) ── */}
+      {([
+        { x: 80, y: 1180, tint: C.matcha, label: "O1" },
+        { x: 460, y: 1180, tint: C.sumire, label: "O2" },
+        { x: 840, y: 1180, tint: C.sakura, label: "O3" },
+      ] as const).map((o, i) => (
+        <StickyNote
+          key={o.label}
+          x={o.x}
+          y={o.y}
+          w={280}
+          h={150}
+          rotate={(i - 1) * -0.8}
+          tint={o.tint}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Stamp color={o.tint}>organize</Stamp>
+            <span
+              style={{
+                fontFamily:
+                  '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+                fontSize: 32,
+                fontWeight: 900,
+                color: o.tint,
+                opacity: 0.75,
+              }}
+            >
+              {o.label}
             </span>
           </div>
           <p
             style={{
-              margin: "10px 0 0",
-              fontSize: 12,
-              lineHeight: 1.5,
+              fontSize: 12.5,
+              lineHeight: 1.45,
+              color: C.ink,
+              opacity: 0.8,
+              margin: "8px 0 0",
+            }}
+          >
+            Each completion auto-spawns its own organize job — taxonomy,
+            tags, lineage all recorded.
+          </p>
+        </StickyNote>
+      ))}
+
+      {/* ── Converging arrows O → Gallery ── */}
+      <Connector x1={220} y1={1335} x2={600} y2={1440} color={C.ink} curve={-30} />
+      <Connector x1={600} y1={1335} x2={600} y2={1440} color={C.ink} />
+      <Connector x1={980} y1={1335} x2={600} y2={1440} color={C.ink} curve={-30} />
+
+      {/* ── Step 5 · Gallery ── */}
+      <StickyNote
+        x={320}
+        y={1450}
+        w={560}
+        h={210}
+        rotate={-0.6}
+        tint={C.yuzu}
+      >
+        <WashiTape
+          x={-14}
+          y={-10}
+          w={110}
+          h={18}
+          rotate={-7}
+          color={C.yuzu}
+        />
+        <WashiTape
+          x={460}
+          y={-8}
+          w={80}
+          h={16}
+          rotate={8}
+          color={C.sakura}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Stamp color={C.beni}>step · 05</Stamp>
+          <span
+            style={{
+              fontFamily: "ui-monospace, Menlo, monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
               color: C.muted,
             }}
           >
-            Taxonomy, tags, lineage, related works — recorded on commit.
-          </p>
-        </Block>
-      ))}
+            published · browsable
+          </span>
+        </div>
+        <h3
+          style={{
+            fontFamily:
+              '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+            fontWeight: 700,
+            fontSize: 34,
+            margin: "10px 0 6px",
+            color: C.ink,
+          }}
+        >
+          <Marker color={C.salad}>
+            <span>Gallery</span>
+          </Marker>
+        </h3>
+        <p
+          style={{
+            fontSize: 15,
+            lineHeight: 1.5,
+            color: C.ink,
+            opacity: 0.85,
+            margin: 0,
+          }}
+        >
+          <b>N new languages</b>, each with its own palette, typography, spec,
+          and embodiment. Published. Browsable. Forkable.
+        </p>
+      </StickyNote>
+      <Sparkle x={290} y={1460} color={C.sumire} size={20} rotate={-10} />
+      <Sparkle x={870} y={1640} color={C.teal} size={16} rotate={20} />
 
-      {/* Converging to Gallery */}
-      <FlowArrow x1={200} y1={1740} x2={600} y2={1772} curve={-12} />
-      <FlowArrow x1={600} y1={1740} x2={600} y2={1772} />
-      <FlowArrow x1={1000} y1={1740} x2={600} y2={1772} curve={-12} />
-
-      {/* ── 05 · GALLERY (foot block) ── */}
+      {/* ── Footer · Legend + attribution ── */}
       <div
         style={{
           position: "absolute",
-          left: 40,
-          right: 40,
-          bottom: 40,
+          left: 80,
+          right: 80,
+          bottom: 60,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderTop: `3px solid ${C.ink}`,
-          paddingTop: 10,
-          gap: 20,
+          fontFamily: "ui-monospace, Menlo, monospace",
+          fontSize: 11,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          color: C.muted,
         }}
       >
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <MonoStrip bg={C.ink} color={C.paper}>
-            05
-          </MonoStrip>
-          <MonoStrip>published · browsable · forkable</MonoStrip>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span>
+            <b style={{ color: C.salad }}>S</b> = synthesize
+          </span>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span>
+            <b style={{ color: C.sumire }}>O</b> = organize
+          </span>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span
             style={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: 34,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "-0.02em",
+              fontFamily:
+                '"Bricolage Grotesque", "Inter", system-ui, sans-serif',
+              fontSize: 22,
+              fontWeight: 700,
               color: C.ink,
-              background: C.accent,
-              padding: "2px 10px",
-              transform: "scaleX(0.9)",
-              transformOrigin: "right center",
-              display: "inline-block",
+              letterSpacing: "-0.02em",
             }}
           >
-            Gallery · N
+            型紙
           </span>
-          <MonoStrip>katagami.vercel.app</MonoStrip>
+          <span>katagami.vercel.app</span>
         </div>
       </div>
     </div>
