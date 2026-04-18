@@ -128,7 +128,11 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
             transform: `scale(${scale})`,
             transformOrigin: "top left",
           }}
-          sandbox="allow-scripts allow-same-origin"
+          // Deliberately NO allow-scripts — embodiments with heavy JS
+          // (rAF loops, setInterval, layout-thrashing listeners) can crash
+          // the tab. Static HTML + CSS still renders; JS animations are
+          // sacrificed. allow-same-origin so we can measure contentDocument.
+          sandbox="allow-same-origin"
           onLoad={onIframeLoad}
           title="Design language embodiment"
         />
