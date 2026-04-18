@@ -35,6 +35,32 @@ async function GalleryGrid({
     );
   }
 
+  // TEMP DEBUG: dump shape of first language so we can see how Temper
+  // actually serializes `featured` / `display_order`. Safe to remove
+  // after confirming.
+  if (languages[0]) {
+    console.log(
+      "[gallery] first language shape:",
+      JSON.stringify(
+        {
+          entity_id: languages[0].entity_id,
+          status: languages[0].status,
+          keys: Object.keys(languages[0]),
+          booleans: languages[0].booleans,
+          counters: languages[0].counters,
+          fields_featured: (
+            languages[0].fields as Record<string, unknown>
+          )?.featured,
+          fields_display_order: (
+            languages[0].fields as Record<string, unknown>
+          )?.display_order,
+        },
+        null,
+        0,
+      ),
+    );
+  }
+
   // Filter out empty drafts (no name set = incomplete/abandoned)
   languages = languages.filter((l) => l.fields.name);
 
@@ -67,24 +93,37 @@ async function GalleryGrid({
   }
 
   // Sort: featured languages first (by display_order asc), then the rest.
-  // Booleans and counters may land in different places depending on how
-  // Temper serializes entity state — check every plausible path.
+  // OData queries use PascalCase (Featured / DisplayOrder) but the JSON
+  // response might put values in any of several shapes — check them all.
   function isFeatured(l: (typeof languages)[number]): boolean {
-    if (l.booleans?.featured === true) return true;
-    // Some serializers flatten bools into fields as strings.
-    const flat = (l.fields as Record<string, unknown>)?.featured;
-    if (flat === true) return true;
-    if (typeof flat === "string" && flat.toLowerCase() === "true") return true;
+    const bag = l as unknown as Record<string, unknown>;
+    const candidates = [
+      bag.booleans,
+      bag.fields,
+      bag.counters,
+      bag, // top-level, in case it's flattened
+    ];
+    for (const c of candidates) {
+      if (!c || typeof c !== "object") continue;
+      const rec = c as Record<string, unknown>;
+      const v = rec.featured ?? rec.Featured ?? rec.isFeatured;
+      if (v === true || v === 1) return true;
+      if (typeof v === "string" && v.toLowerCase() === "true") return true;
+    }
     return false;
   }
   function displayOrder(l: (typeof languages)[number]): number {
-    if (typeof l.counters?.display_order === "number")
-      return l.counters.display_order;
-    const flat = (l.fields as Record<string, unknown>)?.display_order;
-    if (typeof flat === "number") return flat;
-    if (typeof flat === "string") {
-      const n = parseInt(flat, 10);
-      if (!Number.isNaN(n)) return n;
+    const bag = l as unknown as Record<string, unknown>;
+    const candidates = [bag.counters, bag.fields, bag];
+    for (const c of candidates) {
+      if (!c || typeof c !== "object") continue;
+      const rec = c as Record<string, unknown>;
+      const v = rec.display_order ?? rec.displayOrder ?? rec.DisplayOrder;
+      if (typeof v === "number") return v;
+      if (typeof v === "string") {
+        const n = parseInt(v, 10);
+        if (!Number.isNaN(n)) return n;
+      }
     }
     return 0;
   }

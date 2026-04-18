@@ -113,14 +113,19 @@ const FullCard = memo(function FullCard({
   stickyTint,
   iframeInView,
 }: FullCardProps) {
-  // Defensive: Temper may serialize the `featured` boolean in different
-  // places. Check booleans.* first, then fall back to fields.featured.
-  const isFeatured =
-    lang.booleans?.featured === true ||
-    (lang.fields as Record<string, unknown>)?.featured === true ||
-    ((lang.fields as Record<string, unknown>)?.featured as string)
-      ?.toString()
-      ?.toLowerCase() === "true";
+  // Defensive: check every plausible location for the `featured` flag.
+  const isFeatured = (() => {
+    const bag = lang as unknown as Record<string, unknown>;
+    const bags = [bag.booleans, bag.fields, bag.counters, bag];
+    for (const b of bags) {
+      if (!b || typeof b !== "object") continue;
+      const rec = b as Record<string, unknown>;
+      const v = rec.featured ?? rec.Featured ?? rec.isFeatured;
+      if (v === true || v === 1) return true;
+      if (typeof v === "string" && v.toLowerCase() === "true") return true;
+    }
+    return false;
+  })();
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(0.22);
 
