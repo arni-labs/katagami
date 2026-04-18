@@ -181,36 +181,150 @@ export default async function GalleryPage({
                 />
               </a>
             </div>
-            <h1 className="font-display text-[34px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-[56px]">
-              Design{" "}
-              <span className="marker">
+            <div className="relative inline-block max-w-full">
+              <h1 className="font-display text-[40px] font-bold leading-[1] tracking-[-0.03em] sm:text-[56px] lg:text-[68px]">
+                Design{" "}
+                <span className="marker">
+                  <span
+                    aria-hidden
+                    className="marker-fill"
+                    style={{ background: "var(--yuzu)" }}
+                  />
+                  <span className="marker-text">languages</span>
+                </span>
+                .
+              </h1>
+              {/* Side stamps: "for agents" + "by agents" as tilted stickers,
+                  anchored to the title's trailing edge */}
+              <div className="mt-3 flex items-center gap-1.5 sm:mt-0 sm:absolute sm:-right-2 sm:top-0 sm:flex-col sm:items-start sm:gap-1.5 lg:-right-10 lg:top-1">
                 <span
-                  aria-hidden
-                  className="marker-fill"
-                  style={{ background: "var(--yuzu)" }}
-                />
-                <span className="marker-text">language</span>
-              </span>{" "}
-              <span className="marker">
+                  className="stamp text-[var(--salad)] whitespace-nowrap shadow-[0_1px_0_rgba(30,35,45,0.05)]"
+                  style={{
+                    transform: "rotate(-6deg)",
+                    fontSize: 11,
+                    padding: "3px 10px",
+                    letterSpacing: "0.16em",
+                  }}
+                >
+                  ✦ for agents
+                </span>
                 <span
-                  aria-hidden
-                  className="marker-fill"
-                  style={{ background: "var(--salad)" }}
-                />
-                <span className="marker-text">gallery</span>
-              </span>
-            </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-              Browse, compare, and select design languages for your projects.
-              Each card is a full system — palette, type, philosophy, embodied
-              preview.
-            </p>
+                  className="stamp text-[var(--sumire)] whitespace-nowrap shadow-[0_1px_0_rgba(30,35,45,0.05)]"
+                  style={{
+                    transform: "rotate(4deg)",
+                    fontSize: 10,
+                    padding: "2px 9px",
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  by agents
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 max-w-lg space-y-1">
+              <p className="font-display text-[17px] font-bold leading-snug tracking-[-0.015em] text-foreground/90 sm:text-[19px]">
+                Give your agent taste.
+              </p>
+              <p className="font-mono text-[11px] leading-relaxed text-muted-foreground sm:text-[12px]">
+                A vocabulary of design movements you can hand off as a spec.md.
+              </p>
+            </div>
           </div>
           <div className="relative hidden shrink-0 flex-col items-end gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:flex">
             <span className="stamp text-[var(--sakura)]">katagami</span>
             <span className="stamp text-[var(--teal)] rotate-[3deg]">no.001</span>
             <span className="pt-1">since 2026</span>
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="what-you-can-do">
+        <div className="mb-5 flex items-center gap-2">
+          <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--sumire)]" />
+          <h2
+            id="what-you-can-do"
+            className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground"
+          >
+            what you can do with it
+          </h2>
+        </div>
+
+        <div className="rounded-[3px] border border-border bg-white/60">
+          {/* Desktop column headers */}
+          <div className="hidden border-b border-border px-5 py-2.5 md:grid md:grid-cols-[minmax(180px,1fr)_1fr_1fr] md:gap-6 md:px-6 md:py-3">
+            <span />
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+              for you
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+              for your agent
+            </span>
+          </div>
+
+          {[
+            {
+              outcome: "Skip the cold start.",
+              you: "Name what you like.",
+              agent: "Receive a vocabulary.",
+              prompt: "\u201Crebuild this landing in Sumi-e Editorial\u201D",
+            },
+            {
+              outcome: "Commit with confidence.",
+              you: "Compare moods quickly.",
+              agent: "Stay on-style, session to session.",
+              prompt: "\u201Cpreview this page \u2014 calm, aggressive, playful\u201D",
+            },
+            {
+              outcome: "Remix freely.",
+              you: "Remix languages.",
+              agent: "Cite tokens precisely.",
+              prompt: "\u201Capply CRT Terminal tokens to the Sumi-e layout\u201D",
+            },
+            {
+              outcome: "Explore wider.",
+              you: "Discover new movements.",
+              agent: "Stop inventing defaults.",
+              prompt: "\u201Cresearch sci-fi \u00D7 editorial typography\u201D",
+            },
+          ].map((row) => (
+            <div
+              key={row.outcome}
+              className="border-b border-dashed border-border px-5 py-5 last:border-b-0 md:px-6"
+            >
+              <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_1fr_1fr] md:gap-6">
+                <h3 className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] sm:text-[22px]">
+                  {row.outcome}
+                </h3>
+                <div>
+                  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground md:hidden">
+                    for you
+                  </div>
+                  <p className="text-[14px] leading-relaxed text-foreground/90">
+                    {row.you}
+                  </p>
+                </div>
+                <div>
+                  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground md:hidden">
+                    for your agent
+                  </div>
+                  <p className="text-[14px] leading-relaxed text-foreground/90">
+                    {row.agent}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <code
+                  className="inline-block rounded-[3px] border border-dashed border-border px-3 py-1.5 font-mono text-[11px] text-foreground/85"
+                  style={{
+                    background:
+                      "color-mix(in oklch, var(--yuzu) 10%, white)",
+                  }}
+                >
+                  → {row.prompt}
+                </code>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
