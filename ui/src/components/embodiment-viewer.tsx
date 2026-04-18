@@ -28,6 +28,19 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
   // inline assets, complex CSS, runaway layouts) that crash the tab
   // before a single user interaction. User opts in by clicking.
   const [loaded, setLoaded] = useState(false);
+  // On mobile, even a single in-page iframe can crash the tab (GPU
+  // memory limits). We hide the "show preview" button there and only
+  // offer the "open full" escape hatch (new tab = separate memory).
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    function check() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const url = getFileUrl(fileId);
 
   if (!loaded) {
@@ -37,26 +50,29 @@ export function EmbodimentViewer({ fileId }: { fileId: string }) {
         style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
       >
         <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-          preview paused
+          {isMobile ? "desktop preview" : "preview paused"}
         </div>
         <p className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
-          Some embodiments render heavy layouts that can freeze the tab.
-          Click to load the in-page preview, or open it in its own tab.
+          {isMobile
+            ? "Embodiments are authored for desktop and render heavy layouts. Open in a new tab for a stable, pinch-zoomable view."
+            : "Some embodiments render heavy layouts that can freeze the tab. Click to load the in-page preview, or open it in its own tab."}
         </p>
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setLoaded(true)}
-            className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
-          >
-            <Play className="h-3 w-3" />
-            show preview
-          </button>
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => setLoaded(true)}
+              className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
+            >
+              <Play className="h-3 w-3" />
+              show preview
+            </button>
+          )}
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-1.5 border border-border bg-white/90 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[1px] hover:text-foreground"
+            className="group inline-flex items-center gap-1.5 border border-foreground/80 bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:shadow-[0_3px_6px_rgba(30,35,45,0.12)]"
           >
             open full
             <ExternalLink className="h-3 w-3" />
