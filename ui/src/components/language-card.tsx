@@ -205,19 +205,14 @@ const FullCard = memo(function FullCard({
         ))}
       </div>
 
-      {/* Featured — cute sakura+sumire sticker pill in the top-right */}
+      {/* Featured — minimalist paper tag */}
       {isFeatured && (
         <div
           className="pointer-events-none absolute right-2 top-4 z-30"
-          style={{ transform: "rotate(6deg)" }}
+          style={{ transform: "rotate(4deg)" }}
         >
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
-            style={{
-              background: `color-mix(in oklch, var(--sakura) 55%, white)`,
-              border: `1px solid color-mix(in oklch, var(--sumire) 70%, white)`,
-              color: `color-mix(in oklch, var(--sumire), black 15%)`,
-            }}
+            className="inline-flex items-center gap-1 rounded-[3px] border border-foreground/70 bg-white px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-foreground/85 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
           >
             <FeaturedSparkle />
             featured
@@ -468,13 +463,11 @@ function Sparkle() {
 }
 
 function FeaturedSparkle() {
-  // Soft 4-point "twinkle" shape — same family as the title Sparkle,
-  // reads as cute/sticker rather than official-seal.
   return (
     <svg
       viewBox="0 0 12 12"
       aria-hidden
-      className="h-3 w-3 shrink-0"
+      className="h-2.5 w-2.5 shrink-0 text-[var(--sumire)]"
       fill="currentColor"
     >
       <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
