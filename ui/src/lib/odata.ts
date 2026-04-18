@@ -61,8 +61,9 @@ export interface DesignLanguage {
     composition_count?: number;
     fork_count?: number;
     usage_count?: number;
+    display_order?: number;
   };
-  booleans: Record<string, boolean>;
+  booleans: Record<string, boolean> & { featured?: boolean };
 }
 
 export async function listDesignLanguages(

@@ -113,6 +113,7 @@ const FullCard = memo(function FullCard({
   stickyTint,
   iframeInView,
 }: FullCardProps) {
+  const isFeatured = lang.booleans?.featured === true;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(0.22);
 
@@ -182,15 +183,36 @@ const FullCard = memo(function FullCard({
     <article
       className="sticker-card relative h-full overflow-hidden"
       style={{
-        background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
+        background: isFeatured
+          ? `color-mix(in srgb, var(--yuzu) 14%, rgba(255, 255, 255, 0.92))`
+          : `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
+        // Featured cards get a slightly more pronounced shadow + gold outline
+        boxShadow: isFeatured
+          ? "0 0 0 1px color-mix(in oklch, var(--yuzu) 70%, white), 0 2px 6px rgba(30,35,45,0.06), 0 12px 28px rgba(30,35,45,0.08)"
+          : undefined,
       }}
     >
-      {/* Palette ribbon */}
-      <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[10px]">
+      {/* Palette ribbon — thicker when featured */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 z-10 flex"
+        style={{ height: isFeatured ? "14px" : "10px" }}
+      >
         {ribbonStripes.map((color, i) => (
           <span key={i} className="flex-1" style={{ background: color }} />
         ))}
       </div>
+
+      {/* Featured stamp — top-right, tilted */}
+      {isFeatured && (
+        <span
+          className="absolute right-2 top-[20px] z-30 inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--yuzu),black_30%)] bg-white px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[color-mix(in_oklch,var(--yuzu),black_35%)] shadow-[0_1px_0_rgba(30,35,45,0.08)]"
+          style={{ transform: "rotate(3deg)" }}
+        >
+          <FeaturedStar />
+          featured
+        </span>
+      )}
 
       {/* Washi tapes */}
       <span
@@ -430,6 +452,22 @@ function Sparkle() {
         d="M6 0.5 L6.8 4.6 L11 5.4 L6.8 6.2 L6 10.5 L5.2 6.2 L1 5.4 L5.2 4.6 Z"
         fill="currentColor"
       />
+    </svg>
+  );
+}
+
+function FeaturedStar() {
+  return (
+    <svg
+      viewBox="0 0 10 10"
+      aria-hidden
+      className="h-2.5 w-2.5 shrink-0"
+      fill="var(--yuzu)"
+      stroke="currentColor"
+      strokeWidth="0.6"
+      strokeLinejoin="round"
+    >
+      <path d="M5 0.5 L6.4 3.7 L10 4.1 L7.3 6.5 L8 10 L5 8.2 L2 10 L2.7 6.5 L0 4.1 L3.6 3.7 Z" />
     </svg>
   );
 }

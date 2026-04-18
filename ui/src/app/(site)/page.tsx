@@ -60,6 +60,18 @@ async function GalleryGrid({
     );
   }
 
+  // Sort: featured languages first (by display_order asc), then the rest
+  // (by display_order asc, then by entity_id for stability).
+  languages.sort((a, b) => {
+    const fa = a.booleans?.featured ? 1 : 0;
+    const fb = b.booleans?.featured ? 1 : 0;
+    if (fa !== fb) return fb - fa;
+    const oa = a.counters?.display_order ?? 0;
+    const ob = b.counters?.display_order ?? 0;
+    if (oa !== ob) return oa - ob;
+    return a.entity_id.localeCompare(b.entity_id);
+  });
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {languages.map((lang) => (
