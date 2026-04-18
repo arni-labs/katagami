@@ -195,35 +195,42 @@ const FullCard = memo(function FullCard({
     <article
       className="sticker-card relative h-full overflow-hidden"
       style={{
-        background: isFeatured
-          ? `color-mix(in srgb, var(--yuzu) 14%, rgba(255, 255, 255, 0.92))`
-          : `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
-        // Featured cards get a slightly more pronounced shadow + gold outline
-        boxShadow: isFeatured
-          ? "0 0 0 1px color-mix(in oklch, var(--yuzu) 70%, white), 0 2px 6px rgba(30,35,45,0.06), 0 12px 28px rgba(30,35,45,0.08)"
-          : undefined,
+        background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
       }}
     >
-      {/* Palette ribbon — thicker when featured */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 z-10 flex"
-        style={{ height: isFeatured ? "14px" : "10px" }}
-      >
+      {/* Palette ribbon */}
+      <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[10px]">
         {ribbonStripes.map((color, i) => (
           <span key={i} className="flex-1" style={{ background: color }} />
         ))}
       </div>
 
-      {/* Featured stamp — top-right, tilted */}
+      {/* Featured stamp — big round red-ink seal in the top-right corner,
+          fully standalone. No color override on the card, no ring. */}
       {isFeatured && (
-        <span
-          className="absolute right-2 top-[20px] z-30 inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--yuzu),black_30%)] bg-white px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[color-mix(in_oklch,var(--yuzu),black_35%)] shadow-[0_1px_0_rgba(30,35,45,0.08)]"
-          style={{ transform: "rotate(3deg)" }}
+        <div
+          className="pointer-events-none absolute -right-2 top-6 z-30"
+          style={{ transform: "rotate(-8deg)" }}
         >
-          <FeaturedStar />
-          featured
-        </span>
+          <span
+            className="relative inline-flex flex-col items-center justify-center"
+            style={{
+              width: "54px",
+              height: "54px",
+              borderRadius: "999px",
+              border: "1.5px solid var(--beni)",
+              background: "rgba(255,255,255,0.8)",
+              boxShadow:
+                "0 1px 0 rgba(30,35,45,0.08), inset 0 0 0 2px rgba(255,255,255,0.6)",
+              color: "var(--beni)",
+            }}
+          >
+            <FeaturedStar />
+            <span className="mt-0.5 font-mono text-[8px] font-black uppercase tracking-[0.16em] leading-none">
+              featured
+            </span>
+          </span>
+        </div>
       )}
 
       {/* Washi tapes */}
@@ -473,10 +480,8 @@ function FeaturedStar() {
     <svg
       viewBox="0 0 10 10"
       aria-hidden
-      className="h-2.5 w-2.5 shrink-0"
-      fill="var(--yuzu)"
-      stroke="currentColor"
-      strokeWidth="0.6"
+      className="h-3.5 w-3.5 shrink-0"
+      fill="currentColor"
       strokeLinejoin="round"
     >
       <path d="M5 0.5 L6.4 3.7 L10 4.1 L7.3 6.5 L8 10 L5 8.2 L2 10 L2.7 6.5 L0 4.1 L3.6 3.7 Z" />
