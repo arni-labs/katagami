@@ -434,10 +434,8 @@ export default async function GalleryPage({
               sm–md:          2-col grid
               lg+:            4-col grid
             No gray borders anywhere. */}
-        <div
-          className="mt-5 flex gap-3 overflow-x-auto pb-3 [scrollbar-width:thin] snap-x snap-mandatory sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 lg:gap-4"
-          style={{ scrollPaddingLeft: "1rem" }}
-        >
+        {/* Mobile: single column stack. sm: 2-col grid. lg: 4-col grid. */}
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
           {(
             [
               {
@@ -480,7 +478,7 @@ export default async function GalleryPage({
           ).map((row, i) => (
             <article
               key={row.outcome}
-              className="relative w-[240px] shrink-0 snap-start sm:w-full sm:max-w-[360px] sm:shrink lg:max-w-none"
+              className="relative w-full sm:max-w-[360px] lg:max-w-none"
             >
               {/* Washi tape corner */}
               <span
