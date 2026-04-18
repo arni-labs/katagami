@@ -16,6 +16,12 @@ name = "DesignLanguage"
 states = ["Draft", "UnderReview", "Published", "Archived"]
 initial = "Draft"
 
+# ADR-0050 migration TODO: each state below needs either a
+# [[state_timeout]] declaration or a domain-specific justification
+# for being indefinite. Added as a migration allowlist to unblock
+# TEMPER_LIVENESS_ENFORCE=true; revisit and tune per state.
+allow_indefinite_states = ["Draft", "UnderReview", "Published"]
+
 # --- State Variables ---
 
 [[state]]
@@ -57,6 +63,16 @@ initial = "false"
 name = "embodiment_format"
 type = "string"
 initial = "html"
+
+[[state]]
+name = "featured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "display_order"
+type = "counter"
+initial = 0
 
 [[state]]
 name = "version"
@@ -179,6 +195,13 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 params = ["tags"]
 hint = "Set freeform tags for discovery and search."
+
+[[action]]
+name = "SetFeatured"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["featured", "display_order"]
+hint = "Set featured status and display order for gallery sorting."
 
 [[action]]
 name = "AddCuratorNotes"

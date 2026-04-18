@@ -43,6 +43,9 @@
         <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Gallery display -->
+        <Property Name="Featured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DisplayOrder" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <!-- Timestamps -->
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
