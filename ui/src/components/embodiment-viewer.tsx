@@ -106,6 +106,37 @@ function LivePreview({ fileId }: { fileId: string }) {
     return () => ro.disconnect();
   }, []);
 
+  function injectSafetyStyles() {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      // Inject hard caps + animation kill inside the iframe. Prevents:
+      //   - runaway body height from 100vh-based CSS (we set iframe height,
+      //     iframe internal 100vh = that, body fills it, content grows)
+      //   - continuous GPU work from CSS animations / transitions
+      //   - internal scrollbars causing reflow thrash
+      const style = doc.createElement("style");
+      style.textContent = `
+        html, body {
+          max-height: ${MAX_HEIGHT}px !important;
+          overflow: hidden !important;
+        }
+        *, *::before, *::after {
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0s !important;
+          transition-delay: 0s !important;
+        }
+      `;
+      doc.head.appendChild(style);
+    } catch {
+      // Cross-origin or other error — skip
+    }
+  }
+
   function measureContent() {
     if (measuredRef.current) return;
     const iframe = iframeRef.current;
@@ -127,6 +158,8 @@ function LivePreview({ fileId }: { fileId: string }) {
   }
 
   function onIframeLoad() {
+    // Cap the embodiment's internal layout BEFORE we measure / render.
+    injectSafetyStyles();
     setTimeout(measureContent, 400);
   }
 
