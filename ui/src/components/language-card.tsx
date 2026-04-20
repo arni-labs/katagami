@@ -300,7 +300,7 @@ const FullCard = memo(function FullCard({
                 {/* soft bottom fade */}
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white/55 to-transparent"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card/55 to-transparent"
                 />
                 {/* event blocker so card click goes to the Link */}
                 <span
@@ -368,7 +368,7 @@ const FullCard = memo(function FullCard({
         {(headingFont || bodyFont) && (
           <section className="space-y-1.5">
             <SectionLabel>type</SectionLabel>
-            <div className="flex items-center gap-3 rounded-[4px] border border-dashed border-border bg-[color-mix(in_oklch,var(--yuzu)_8%,white)] px-3 py-2">
+            <div className="flex items-center gap-3 rounded-[4px] border border-dashed border-border bg-[color-mix(in_oklch,var(--yuzu)_8%,var(--paper-tape-mix))] px-3 py-2">
               <span className="font-display text-2xl font-bold leading-none text-foreground">
                 Aa
               </span>

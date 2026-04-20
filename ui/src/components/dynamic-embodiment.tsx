@@ -84,7 +84,7 @@ function HtmlEmbodiment({
   return (
     <div
       ref={ref}
-      className={`relative w-full overflow-hidden bg-white ${className ?? ""}`}
+      className={`relative w-full overflow-hidden bg-card ${className ?? ""}`}
       style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${VIEWPORT_HEIGHT}` }}
     >
       <iframe

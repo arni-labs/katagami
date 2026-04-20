@@ -159,7 +159,7 @@ function SafePreview({ fileId, url }: { fileId: string; url: string }) {
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden bg-white"
+        className="relative w-full overflow-hidden bg-card"
         style={{ height: scaledHeight }}
       >
         <iframe
