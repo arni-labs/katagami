@@ -158,7 +158,7 @@ function LineageCard({
       <article
         className="relative p-3.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_4px_12px_rgba(30,35,45,0.06)] transition-shadow duration-200 group-hover:shadow-[0_2px_4px_rgba(30,35,45,0.06),0_12px_24px_rgba(30,35,45,0.09)]"
         style={{
-          background: `color-mix(in srgb, var(--${tint}) 10%, rgba(255, 255, 255, 0.78))`,
+          background: `color-mix(in srgb, var(--${tint}) 10%, var(--paper-tint-base))`,
         }}
       >
         {/* highlighted = yuzu marker wash behind everything */}
@@ -193,7 +193,7 @@ function LineageCard({
           <span
             className="inline-flex items-center gap-1 rounded-[3px] border border-border px-1.5 py-0.5 font-mono uppercase tracking-[0.1em]"
             style={{
-              background: `color-mix(in oklch, var(--${tint}) 30%, white)`,
+              background: `color-mix(in oklch, var(--${tint}) 30%, var(--paper-tape-mix))`,
             }}
           >
             {node.lineageType}
@@ -243,7 +243,7 @@ function LineageCard({
 function LegendChip({ label, color }: { label: string; color: AccentColor }) {
   return (
     <span
-      className="inline-flex items-center gap-2 border border-border bg-white/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/80"
+      className="inline-flex items-center gap-2 border border-border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/80"
       style={{ boxShadow: "0 1px 2px rgba(30,35,45,0.04)" }}
     >
       <span

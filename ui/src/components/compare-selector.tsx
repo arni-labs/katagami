@@ -32,14 +32,14 @@ export function CompareSelector({
   }
 
   return (
-    <div className="relative z-50 flex flex-wrap items-center gap-x-4 gap-y-3 bg-white/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
+    <div className="relative z-50 flex flex-wrap items-center gap-x-4 gap-y-3 bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
       {/* washi tapes pinning the card */}
       <span
         aria-hidden
         className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
         style={{
           background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, white) 0 6px, color-mix(in oklch, var(--sakura) 35%, white) 6px 12px)",
+            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--sakura) 35%, var(--paper-tape-mix)) 6px 12px)",
           transform: "rotate(-6deg)",
         }}
       />
@@ -48,7 +48,7 @@ export function CompareSelector({
         className="pointer-events-none absolute -right-3 -bottom-2 h-[12px] w-12 rounded-[1px] opacity-75 shadow-[0_1px_2px_rgba(30,35,45,0.05)]"
         style={{
           background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--teal) 70%, white) 0 6px, color-mix(in oklch, var(--teal) 30%, white) 6px 12px)",
+            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--teal) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--teal) 30%, var(--paper-tape-mix)) 6px 12px)",
           transform: "rotate(4deg)",
         }}
       />
@@ -133,7 +133,7 @@ function LangSearch({
       <span
         aria-hidden
         className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-foreground/15 font-mono text-[9px] font-bold uppercase text-foreground/70"
-        style={{ background: `color-mix(in oklch, var(--${dotColor}) 45%, white)` }}
+        style={{ background: `color-mix(in oklch, var(--${dotColor}) 45%, var(--paper-tape-mix))` }}
       >
         {sideLabel}
       </span>
@@ -189,7 +189,7 @@ function LangSearch({
         {open && filtered.length > 0 && (
           <ul
             role="listbox"
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto border border-border bg-white shadow-[0_4px_16px_rgba(30,35,45,0.1)]"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto border border-border bg-card shadow-[0_4px_16px_rgba(30,35,45,0.1)]"
           >
             {filtered.map((l, i) => {
               const isActive = i === active;
@@ -215,7 +215,7 @@ function LangSearch({
                       aria-hidden
                       className="absolute inset-0 opacity-30"
                       style={{
-                        background: `color-mix(in oklch, var(--${dotColor}) 55%, white)`,
+                        background: `color-mix(in oklch, var(--${dotColor}) 55%, var(--paper-tape-mix))`,
                       }}
                     />
                   )}
@@ -239,7 +239,7 @@ function LangSearch({
         )}
 
         {open && filtered.length === 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-dashed border-border bg-white/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-dashed border-border bg-card/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground">
             no matches for &ldquo;{query}&rdquo;
           </div>
         )}

@@ -83,6 +83,21 @@
   --sumire: oklch(0.75 0.16 300);              /* violet */
   --beni: oklch(0.65 0.2 25);                  /* destructive */
 
+  /* Scrapbook surface abstractions — flip in .dark */
+  --paper-sticker: rgba(255, 255, 255, 0.85);  /* sticker-card bg */
+  --paper-sticker-hover: rgba(255, 255, 255, 0.95);
+  --paper-tape-mix: white;                     /* mixed into washi-tape gradient */
+  --paper-stamp-mix: white;                    /* mixed into stamp bg */
+  --paper-tint-base: rgba(255, 255, 255, 0.78); /* color-mix base for tinted cards */
+  --paper-dot: oklch(0.65 0.008 260 / 0.08);   /* body dot-grid color */
+  --marker-opacity: 0.85;                      /* highlighter tint alpha */
+  --shadow-card:
+    0 1px 2px rgba(30, 35, 45, 0.04),
+    0 6px 18px rgba(30, 35, 45, 0.06);
+  --shadow-card-hover:
+    0 2px 4px rgba(30, 35, 45, 0.06),
+    0 18px 36px rgba(30, 35, 45, 0.09);
+
   --background: var(--washi);
   --foreground: var(--sumi);
   --card: oklch(1 0 0);
@@ -118,24 +133,56 @@
 }
 
 .dark {
-  --washi: oklch(0.2 0.008 260);
-  --sumi: oklch(0.95 0.005 85);
-  --graphite: oklch(0.7 0.01 260);
+  /* Night paper — warm deep ink, not pure black. Text is warm off-white. */
+  --washi: oklch(0.19 0.012 265);
+  --sumi: oklch(0.94 0.006 85);
+  --graphite: oklch(0.7 0.012 260);
+
+  /* Desaturated parallel palette — bright pastels glow on dark,
+     so we drop chroma ~35-45% while keeping hue & similar lightness.
+     Result: same "family" of colors, readable on dark paper. */
+  --sakura: oklch(0.72 0.1 12);
+  --yuzu: oklch(0.85 0.12 98);
+  --salad: oklch(0.78 0.14 135);
+  --matcha: oklch(0.7 0.11 155);
+  --shiso: oklch(0.76 0.09 170);
+  --teal: oklch(0.72 0.09 200);
+  --ramune: oklch(0.72 0.11 235);
+  --sumire: oklch(0.7 0.12 300);
+  --beni: oklch(0.7 0.17 25);
+
+  /* Scrapbook surfaces on dark — cards are LIFTED (slightly lighter than body),
+     not white-translucent. Tape & stamp mixes use a mid-dark tone so tints
+     don't bleach to white. Dot grid flips to faint light specks. */
+  --paper-sticker: oklch(0.24 0.013 265 / 0.78);
+  --paper-sticker-hover: oklch(0.27 0.014 265 / 0.88);
+  --paper-tape-mix: oklch(0.3 0.012 265);
+  --paper-stamp-mix: oklch(0.22 0.012 265);
+  --paper-tint-base: oklch(0.24 0.013 265 / 0.82);
+  --paper-dot: oklch(0.88 0.012 85 / 0.05);
+  --marker-opacity: 0.55;                      /* dim the highlighter on dark */
+  --shadow-card:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 36px rgba(0, 0, 0, 0.55);
+
   --background: var(--washi);
   --foreground: var(--sumi);
-  --card: oklch(0.24 0.008 260);
+  --card: oklch(0.23 0.013 265);
   --card-foreground: var(--sumi);
-  --popover: oklch(0.24 0.008 260);
+  --popover: oklch(0.23 0.013 265);
   --popover-foreground: var(--sumi);
   --primary: var(--sumi);
   --primary-foreground: var(--washi);
-  --secondary: oklch(0.28 0.01 260);
+  --secondary: oklch(0.27 0.013 265);
   --secondary-foreground: var(--sumi);
-  --muted: oklch(0.28 0.01 260);
-  --muted-foreground: oklch(0.7 0.01 260);
-  --accent: oklch(0.3 0.03 200);
+  --muted: oklch(0.27 0.013 265);
+  --muted-foreground: oklch(0.72 0.012 260);
+  --accent: oklch(0.3 0.035 200);
   --accent-foreground: var(--sumi);
-  --destructive: oklch(0.7 0.19 25);
+  --destructive: oklch(0.7 0.18 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
   --ring: var(--sumire);
@@ -143,7 +190,7 @@
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
   --sidebar-primary-foreground: var(--washi);
-  --sidebar-accent: oklch(0.3 0.03 200);
+  --sidebar-accent: oklch(0.3 0.035 200);
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: var(--sumire);
@@ -159,11 +206,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* faint Hobonichi-style grid-paper dots */
+    /* faint Hobonichi-style grid-paper dots — flips to light specks in .dark */
     background-image:
       radial-gradient(
         circle at 1px 1px,
-        oklch(0.65 0.008 260 / 0.08) 1px,
+        var(--paper-dot) 1px,
         transparent 0
       );
     background-size: 24px 24px;
@@ -186,20 +233,18 @@
      GPU compositing layers and contributed to scroll crashes. The
      translucent bg + soft shadow reads "sticky note" on its own. */
   .sticker-card {
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--paper-sticker);
     border: none;
     border-radius: 0;
-    box-shadow:
-      0 1px 2px rgba(30, 35, 45, 0.04),
-      0 6px 18px rgba(30, 35, 45, 0.06);
+    box-shadow: var(--shadow-card);
     transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 220ms ease;
+                box-shadow 220ms ease,
+                background-color 220ms ease;
   }
   .sticker-card:hover {
     transform: translateY(-3px) rotate(-0.4deg);
-    box-shadow:
-      0 2px 4px rgba(30, 35, 45, 0.06),
-      0 18px 36px rgba(30, 35, 45, 0.09);
+    background: var(--paper-sticker-hover);
+    box-shadow: var(--shadow-card-hover);
   }
 
   /* Thicker marker highlight (behind text) */
@@ -214,7 +259,7 @@
     z-index: 0;
     border-radius: 2px;
     transform: rotate(-0.3deg);
-    opacity: 0.85;
+    opacity: var(--marker-opacity);
   }
   .marker > .marker-text {
     position: relative;
@@ -239,15 +284,16 @@
     opacity: 0.9;
   }
 
-  /* Washi tape — bright & airy */
+  /* Washi tape — bright & airy. Tape-mix flips from white to dark paper
+     in .dark so the tint reads against the night surface. */
   .washi-tape {
     position: absolute;
     width: 70px;
     height: 18px;
     background: repeating-linear-gradient(
       45deg,
-      color-mix(in oklch, var(--sakura) 75%, white) 0 7px,
-      color-mix(in oklch, var(--sakura) 40%, white) 7px 14px
+      color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 7px,
+      color-mix(in oklch, var(--sakura) 40%, var(--paper-tape-mix)) 7px 14px
     );
     opacity: 0.85;
     border-radius: 1px;
@@ -268,7 +314,7 @@
     text-transform: uppercase;
     transform: rotate(-2deg);
     opacity: 0.95;
-    background: color-mix(in oklch, currentColor 10%, white);
+    background: color-mix(in oklch, currentColor 10%, var(--paper-stamp-mix));
   }
 
   /* Dashed sticker die-cut */

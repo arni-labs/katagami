@@ -48,14 +48,14 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
       <button
         type="button"
         onClick={handleCopy}
-        className="group relative inline-flex items-center gap-1.5 border border-border bg-white/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-colors hover:bg-white hover:text-foreground"
+        className="group relative inline-flex items-center gap-1.5 border border-border bg-card/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-colors hover:bg-card hover:text-foreground"
         style={{ transform: "rotate(-1deg)" }}
       >
         <span
           aria-hidden
           className="absolute inset-0 opacity-30 transition-opacity group-hover:opacity-40"
           style={{
-            background: "color-mix(in oklch, var(--yuzu) 55%, white)",
+            background: "color-mix(in oklch, var(--yuzu) 55%, var(--paper-tape-mix))",
           }}
         />
         <span className="relative flex items-center gap-1.5">
@@ -70,14 +70,14 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
       <button
         type="button"
         onClick={handleDownload}
-        className="group relative inline-flex items-center gap-1.5 border border-border bg-white/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-colors hover:bg-white hover:text-foreground"
+        className="group relative inline-flex items-center gap-1.5 border border-border bg-card/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-colors hover:bg-card hover:text-foreground"
         style={{ transform: "rotate(1deg)" }}
       >
         <span
           aria-hidden
           className="absolute inset-0 opacity-30 transition-opacity group-hover:opacity-40"
           style={{
-            background: "color-mix(in oklch, var(--teal) 55%, white)",
+            background: "color-mix(in oklch, var(--teal) 55%, var(--paper-tape-mix))",
           }}
         />
         <span className="relative flex items-center gap-1.5">

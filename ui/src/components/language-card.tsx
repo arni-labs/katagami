@@ -195,7 +195,7 @@ const FullCard = memo(function FullCard({
     <article
       className="sticker-card relative h-full overflow-hidden"
       style={{
-        background: `color-mix(in srgb, ${stickyTint} 9%, rgba(255, 255, 255, 0.85))`,
+        background: `color-mix(in srgb, ${stickyTint} 9%, var(--paper-tint-base))`,
       }}
     >
       {/* Palette ribbon */}
@@ -215,7 +215,7 @@ const FullCard = memo(function FullCard({
             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
             style={{
               background: "color-mix(in oklch, var(--sakura) 18%, transparent)",
-              border: "1px solid color-mix(in oklch, var(--sumire) 70%, white)",
+              border: "1px solid color-mix(in oklch, var(--sumire) 70%, var(--paper-tape-mix))",
               color: "color-mix(in oklch, var(--sumire), black 15%)",
             }}
           >
@@ -230,7 +230,7 @@ const FullCard = memo(function FullCard({
         aria-hidden
         className="pointer-events-none absolute -left-3 top-3 z-20 h-[18px] w-20 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
         style={{
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeAColor} 78%, white) 0 7px, color-mix(in oklch, ${tapeAColor} 40%, white) 7px 14px)`,
+          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeAColor} 78%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, ${tapeAColor} 40%, var(--paper-tape-mix)) 7px 14px)`,
           transform: `rotate(${tapeARot}deg)`,
         }}
       />
@@ -238,7 +238,7 @@ const FullCard = memo(function FullCard({
         aria-hidden
         className="pointer-events-none absolute -right-3 bottom-4 z-20 h-[14px] w-14 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
         style={{
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeBColor} 72%, white) 0 6px, color-mix(in oklch, ${tapeBColor} 35%, white) 6px 12px)`,
+          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeBColor} 72%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, ${tapeBColor} 35%, var(--paper-tape-mix)) 6px 12px)`,
           transform: `rotate(${tapeBRot}deg)`,
         }}
       />
@@ -250,7 +250,7 @@ const FullCard = memo(function FullCard({
             className="relative mx-auto w-[94%] rotate-[-1deg] transition-transform duration-300 ease-out group-hover:rotate-0"
             style={{ transformOrigin: "center top" }}
           >
-            <div className="relative rounded-[2px] border border-border bg-white p-1.5 pb-5 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
+            <div className="relative rounded-[2px] border border-border bg-card p-1.5 pb-5 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
               <div
                 ref={previewRef}
                 className="relative w-full overflow-hidden rounded-[1px] bg-muted"
@@ -278,7 +278,7 @@ const FullCard = memo(function FullCard({
                     aria-hidden
                     className="absolute inset-0 flex items-center justify-center"
                     style={{
-                      background: `color-mix(in srgb, ${stickyTint} 6%, white)`,
+                      background: `color-mix(in srgb, ${stickyTint} 6%, var(--paper-tape-mix))`,
                     }}
                   >
                     <div className="flex gap-1">
@@ -396,7 +396,7 @@ const FullCard = memo(function FullCard({
             <span
               className="inline-flex items-center gap-1 rounded-[3px] border border-border px-2 py-0.5 font-mono text-foreground/80"
               style={{
-                background: "color-mix(in oklch, var(--sumire) 22%, white)",
+                background: "color-mix(in oklch, var(--sumire) 22%, var(--paper-tape-mix))",
               }}
             >
               gen {f.generation_number ?? "?"}
@@ -419,7 +419,7 @@ const FullCard = memo(function FullCard({
                   className="rounded-[3px] px-1.5 py-0.5 text-[10px] font-medium text-foreground/85 shadow-[0_1px_0_rgba(30,35,45,0.05)]"
                   style={{
                     transform: `rotate(${rot}deg)`,
-                    background: `color-mix(in oklch, ${accentColors[i % accentColors.length]} 38%, white)`,
+                    background: `color-mix(in oklch, ${accentColors[i % accentColors.length]} 38%, var(--paper-tape-mix))`,
                   }}
                 >
                   {t}
@@ -496,7 +496,7 @@ function TsxPlaceholder({
 }) {
   const stripes = paletteColors.length > 0 ? paletteColors : ["#e5e5e5"];
   return (
-    <div className="absolute inset-0 flex flex-col bg-white">
+    <div className="absolute inset-0 flex flex-col bg-card">
       <div className="flex h-[55%]">
         {stripes.map((c, i) => (
           <span key={i} className="flex-1" style={{ background: c }} />

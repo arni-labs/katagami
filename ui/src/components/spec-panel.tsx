@@ -71,7 +71,7 @@ function PeeledLabel({
       className="inline-flex rounded-[3px] px-2 py-0.5 text-[11px] font-medium text-foreground/85 shadow-[0_1px_0_rgba(30,35,45,0.04)]"
       style={{
         transform: `rotate(${rot}deg)`,
-        background: `color-mix(in oklch, var(--${color}) 32%, white)`,
+        background: `color-mix(in oklch, var(--${color}) 32%, var(--paper-tape-mix))`,
       }}
     >
       {children}
@@ -136,7 +136,7 @@ function PhilosophyView({ raw }: { raw?: string }) {
       {lineage && (
         <section>
           <SectionRule label="lineage" color="ramune" />
-          <blockquote className="border-l-2 border-[var(--ramune)] bg-white/40 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/80">
+          <blockquote className="border-l-2 border-[var(--ramune)] bg-card/40 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/80">
             {lineage}
           </blockquote>
         </section>
@@ -212,7 +212,7 @@ function ColorsGrid({ values }: { values: Record<string, unknown> }) {
         return (
           <div
             key={k}
-            className="flex items-center gap-2.5 border border-border bg-white/55 p-2"
+            className="flex items-center gap-2.5 border border-border bg-card/55 p-2"
           >
             <span
               className="h-8 w-8 shrink-0 rounded-[2px] border border-border shadow-[0_1px_0_rgba(30,35,45,0.06)]"
@@ -382,7 +382,7 @@ function RichKeyValueView({ raw }: { raw?: string }) {
               <section key={key}>
                 <SectionRule label={label} color={color} />
                 <blockquote
-                  className="bg-white/40 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/85"
+                  className="bg-card/40 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/85"
                   style={{ borderLeft: `2px solid var(--${color})` }}
                 >
                   {val}

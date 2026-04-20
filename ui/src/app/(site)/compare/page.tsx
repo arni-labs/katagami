@@ -118,7 +118,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 className={i === 0 ? "-left-3 -top-3" : "-right-3 -top-3"}
                 width={90}
               />
-              <div className="relative rounded-[2px] border border-border bg-white p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
+              <div className="relative rounded-[2px] border border-border bg-card p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
                 {lang.fields.embodiment_file_id &&
                 (lang.fields.embodiment_format ?? "html") !== "tsx" ? (
                   <EmbodimentViewer fileId={lang.fields.embodiment_file_id} />

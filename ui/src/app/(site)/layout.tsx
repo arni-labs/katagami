@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SiteLayout({
   children,
@@ -19,15 +20,15 @@ export default function SiteLayout({
             <span className="relative block h-8 w-9 sm:h-9 sm:w-10">
               <span
                 aria-hidden
-                className="absolute left-0 top-0 h-5 w-5 rounded-full bg-[var(--sakura)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg] sm:h-6 sm:w-6"
+                className="absolute left-0 top-0 h-5 w-5 rounded-full bg-[var(--sakura)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg] dark:mix-blend-screen sm:h-6 sm:w-6"
               />
               <span
                 aria-hidden
-                className="absolute right-0 top-0 h-5 w-5 rounded-full bg-[var(--yuzu)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg] sm:h-6 sm:w-6"
+                className="absolute right-0 top-0 h-5 w-5 rounded-full bg-[var(--yuzu)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg] dark:mix-blend-screen sm:h-6 sm:w-6"
               />
               <span
                 aria-hidden
-                className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-[var(--sumire)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-y-[3px] sm:h-6 sm:w-6"
+                className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-[var(--sumire)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-y-[3px] dark:mix-blend-screen sm:h-6 sm:w-6"
               />
             </span>
             <span className="text-[18px] font-semibold leading-none tracking-[-0.02em] sm:text-[22px]">
@@ -36,14 +37,18 @@ export default function SiteLayout({
           </Link>
           <HeaderNav />
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            <ThemeToggle />
             <span className="stamp text-[var(--teal)]">v0.1.0</span>
+          </div>
+          <div className="ml-auto flex items-center md:hidden">
+            <ThemeToggle />
           </div>
         </nav>
         <span
           className="washi-tape absolute -top-2 right-24 hidden rotate-[-6deg] md:block"
           style={{
             background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, white) 0 7px, color-mix(in oklch, var(--salad) 40%, white) 7px 14px)",
+              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--salad) 40%, var(--paper-tape-mix)) 7px 14px)",
           }}
         />
         <span
@@ -51,7 +56,7 @@ export default function SiteLayout({
           style={{
             width: "48px",
             background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sumire) 70%, white) 0 7px, color-mix(in oklch, var(--sumire) 30%, white) 7px 14px)",
+              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sumire) 70%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--sumire) 30%, var(--paper-tape-mix)) 7px 14px)",
           }}
         />
       </header>
@@ -62,7 +67,7 @@ export default function SiteLayout({
           className="washi-tape absolute -top-2 left-[12%] hidden rotate-[-5deg] md:block"
           style={{
             background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--matcha) 75%, white) 0 7px, color-mix(in oklch, var(--matcha) 40%, white) 7px 14px)",
+              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--matcha) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--matcha) 40%, var(--paper-tape-mix)) 7px 14px)",
           }}
         />
         <span
@@ -71,7 +76,7 @@ export default function SiteLayout({
           style={{
             width: "52px",
             background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, white) 0 7px, color-mix(in oklch, var(--sakura) 35%, white) 7px 14px)",
+              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--sakura) 35%, var(--paper-tape-mix)) 7px 14px)",
           }}
         />
 
@@ -165,7 +170,7 @@ function SocialSticker({
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className="group relative inline-flex h-10 w-10 items-center justify-center border border-border bg-white/70 text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-4deg] hover:text-foreground"
+      className="group relative inline-flex h-10 w-10 items-center justify-center border border-border bg-card/70 text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-4deg] hover:text-foreground"
       style={{
         ["--accent" as string]: accent,
       }}

@@ -22,8 +22,8 @@ export function StickyNote({
   style?: CSSProperties;
 }) {
   const tintBg = tint
-    ? `color-mix(in srgb, var(--${tint}) 9%, rgba(255, 255, 255, 0.75))`
-    : "rgba(255, 255, 255, 0.72)";
+    ? `color-mix(in srgb, var(--${tint}) 9%, var(--paper-tint-base))`
+    : "var(--paper-tint-base)";
   return (
     <div
       className={`relative ${className}`}
@@ -64,7 +64,7 @@ export function WashiTape({
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${color}) 75%, white) 0 6px, color-mix(in oklch, var(--${color}) 35%, white) 6px 12px)`,
+        background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${color}) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${color}) 35%, var(--paper-tape-mix)) 6px 12px)`,
         transform: `rotate(${rotate}deg)`,
         ...style,
       }}

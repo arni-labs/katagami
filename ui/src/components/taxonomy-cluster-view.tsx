@@ -251,7 +251,7 @@ function TaxonomyCard({
                 className="rounded-[3px] px-1.5 py-0.5 text-[10px] font-medium text-foreground/85"
                 style={{
                   transform: `rotate(${r}deg)`,
-                  background: `color-mix(in oklch, var(--${accentCycle[(i + hashInt(tax.entity_id)) % accentCycle.length]}) 32%, white)`,
+                  background: `color-mix(in oklch, var(--${accentCycle[(i + hashInt(tax.entity_id)) % accentCycle.length]}) 32%, var(--paper-tape-mix))`,
                 }}
               >
                 {t}
@@ -263,7 +263,7 @@ function TaxonomyCard({
 
       {isAnchor && tax.fields.historical_context && (
         <blockquote
-          className="mt-3 bg-white/40 py-1.5 pl-3 pr-2 text-[12px] italic leading-relaxed text-foreground/75"
+          className="mt-3 bg-card/40 py-1.5 pl-3 pr-2 text-[12px] italic leading-relaxed text-foreground/75"
           style={{ borderLeft: `2px solid var(--${tint})` }}
         >
           {tax.fields.historical_context}
@@ -306,7 +306,7 @@ function TaxonomyCard({
             {langs.length > (isAnchor ? 14 : 6) && (
               <Link
                 href={`/?taxonomy=${tax.entity_id}`}
-                className="inline-flex items-center gap-1 border border-dashed border-border bg-white/40 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-solid hover:bg-white hover:text-foreground"
+                className="inline-flex items-center gap-1 border border-dashed border-border bg-card/40 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-solid hover:bg-card hover:text-foreground"
               >
                 +{langs.length - (isAnchor ? 14 : 6)} more
                 <ArrowUpRight className="h-3 w-3" />
@@ -327,14 +327,14 @@ function LanguageChip({ lang }: { lang: DesignLanguage }) {
   return (
     <Link
       href={`/language/${lang.entity_id}`}
-      className="group/chip relative inline-flex items-center gap-1.5 border border-border bg-white px-2 py-1 text-[11px] font-medium text-foreground/85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-all duration-200 hover:-translate-y-[1.5px] hover:text-foreground hover:shadow-[0_3px_6px_rgba(30,35,45,0.1)]"
+      className="group/chip relative inline-flex items-center gap-1.5 border border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground/85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-all duration-200 hover:-translate-y-[1.5px] hover:text-foreground hover:shadow-[0_3px_6px_rgba(30,35,45,0.1)]"
     >
       {/* color wash on hover */}
       <span
         aria-hidden
         className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover/chip:opacity-35"
         style={{
-          background: `color-mix(in oklch, var(--${dotColor}) 60%, white)`,
+          background: `color-mix(in oklch, var(--${dotColor}) 60%, var(--paper-tape-mix))`,
         }}
       />
       {/* palette dot */}
@@ -367,14 +367,14 @@ function UnfoldButton({
       />
       {/* central button floating over the line */}
       <span
-        className="relative inline-flex items-center gap-2.5 border border-border bg-white px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/80 shadow-[0_2px_6px_rgba(30,35,45,0.08)] transition-all duration-200 group-hover/unfold:-translate-y-[2px] group-hover/unfold:text-foreground group-hover/unfold:shadow-[0_4px_12px_rgba(30,35,45,0.12)]"
+        className="relative inline-flex items-center gap-2.5 border border-border bg-card px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/80 shadow-[0_2px_6px_rgba(30,35,45,0.08)] transition-all duration-200 group-hover/unfold:-translate-y-[2px] group-hover/unfold:text-foreground group-hover/unfold:shadow-[0_4px_12px_rgba(30,35,45,0.12)]"
       >
         {/* accent wash on hover + when open */}
         <span
           aria-hidden
           className="absolute inset-0 opacity-0 transition-opacity duration-200 group-hover/unfold:opacity-40 group-open/cluster:opacity-25"
           style={{
-            background: `color-mix(in oklch, var(--${color}) 60%, white)`,
+            background: `color-mix(in oklch, var(--${color}) 60%, var(--paper-tape-mix))`,
           }}
         />
         <ChevronDown className="relative h-4 w-4 transition-transform duration-200 group-open/cluster:rotate-180" />

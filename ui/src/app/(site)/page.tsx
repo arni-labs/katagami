@@ -409,7 +409,7 @@ export default async function GalleryPage({
                   border: "1.5px solid var(--sumire)",
                   color: "var(--sumire)",
                   background:
-                    "color-mix(in oklch, var(--sumire) 8%, white)",
+                    "color-mix(in oklch, var(--sumire) 8%, var(--paper-tape-mix))",
                   padding: "4px 10px",
                   borderRadius: 2,
                 }}
@@ -485,14 +485,14 @@ export default async function GalleryPage({
                 aria-hidden
                 className="pointer-events-none absolute -left-1.5 -top-1.5 z-20 h-[13px] w-[62px] rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
                 style={{
-                  background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${row.tape}) 78%, white) 0 6px, color-mix(in oklch, var(--${row.tape}) 42%, white) 6px 12px)`,
+                  background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${row.tape}) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${row.tape}) 42%, var(--paper-tape-mix)) 6px 12px)`,
                   transform: `rotate(${row.tapeRot}deg)`,
                 }}
               />
               {/* Index sticker — small round, in card corner */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute -right-2 -top-2.5 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white font-mono text-[11px] font-black text-foreground shadow-[1px_1px_0_rgba(30,35,45,0.1)]"
+                className="pointer-events-none absolute -right-2 -top-2.5 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full bg-card font-mono text-[11px] font-black text-foreground shadow-[1px_1px_0_rgba(30,35,45,0.1)]"
                 style={{
                   transform: "rotate(6deg)",
                   border: `1.5px solid var(--${row.tint})`,
@@ -505,7 +505,7 @@ export default async function GalleryPage({
               <div
                 className="relative flex h-full flex-col overflow-hidden px-4 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_6px_18px_rgba(30,35,45,0.06)]"
                 style={{
-                  background: `color-mix(in srgb, var(--${row.tint}) 10%, rgba(255, 255, 255, 0.92))`,
+                  background: `color-mix(in srgb, var(--${row.tint}) 10%, var(--paper-tint-base))`,
                 }}
               >
                 {/* Thin colored top ribbon — card identity */}
@@ -565,7 +565,7 @@ export default async function GalleryPage({
                     className="flex-1 font-mono text-[10.5px] italic leading-snug text-foreground/75"
                     style={{
                       background:
-                        "linear-gradient(transparent 68%, color-mix(in oklch, var(--yuzu) 60%, white) 68%)",
+                        "linear-gradient(transparent 68%, color-mix(in oklch, var(--yuzu) 60%, var(--paper-tape-mix)) 68%)",
                       padding: "0 2px",
                     }}
                   >
@@ -589,7 +589,7 @@ export default async function GalleryPage({
             className="pointer-events-none absolute left-[18%] top-1/2 hidden h-[12px] w-[52px] -translate-y-1/2 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] sm:block"
             style={{
               background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 78%, white) 0 6px, color-mix(in oklch, var(--salad) 42%, white) 6px 12px)",
+                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--salad) 42%, var(--paper-tape-mix)) 6px 12px)",
               transform: "translateY(-50%) rotate(-6deg)",
             }}
           />
@@ -598,7 +598,7 @@ export default async function GalleryPage({
             className="pointer-events-none absolute right-[18%] top-1/2 hidden h-[12px] w-[52px] -translate-y-1/2 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] sm:block"
             style={{
               background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 78%, white) 0 6px, color-mix(in oklch, var(--yuzu) 42%, white) 6px 12px)",
+                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--yuzu) 42%, var(--paper-tape-mix)) 6px 12px)",
               transform: "translateY(-50%) rotate(5deg)",
             }}
           />

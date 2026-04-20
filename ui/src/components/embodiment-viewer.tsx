@@ -182,7 +182,7 @@ function SafePreview({ fileId, url }: { fileId: string; url: string }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-[3px] border border-border bg-white/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:text-foreground"
+        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-[3px] border border-border bg-card/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:text-foreground"
       >
         <span className="hidden sm:inline">open full</span>
         <span className="sm:hidden">full</span>

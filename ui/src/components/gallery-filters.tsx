@@ -43,14 +43,14 @@ export function GalleryFilters({
   );
 
   return (
-    <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-white/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
+    <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
       {/* washi tape corner */}
       <span
         aria-hidden
         className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
         style={{
           background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, white) 0 6px, color-mix(in oklch, var(--salad) 35%, white) 6px 12px)",
+            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--salad) 35%, var(--paper-tape-mix)) 6px 12px)",
           transform: "rotate(-6deg)",
         }}
       />
@@ -59,7 +59,7 @@ export function GalleryFilters({
         className="pointer-events-none absolute -right-3 -bottom-2 h-[12px] w-12 rounded-[1px] opacity-75 shadow-[0_1px_2px_rgba(30,35,45,0.05)]"
         style={{
           background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 70%, white) 0 6px, color-mix(in oklch, var(--sakura) 30%, white) 6px 12px)",
+            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--sakura) 30%, var(--paper-tape-mix)) 6px 12px)",
           transform: "rotate(4deg)",
         }}
       />

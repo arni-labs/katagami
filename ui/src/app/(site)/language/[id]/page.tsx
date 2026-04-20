@@ -188,7 +188,7 @@ export default async function LanguageDetailPage({
                           transform: `rotate(${rot}deg)`,
                           background: `color-mix(in oklch, var(--${
                             ["salad", "teal", "sumire", "sakura", "yuzu"][i % 5]
-                          }) 36%, white)`,
+                          }) 36%, var(--paper-tape-mix))`,
                         }}
                       >
                         {t.name}
@@ -225,7 +225,7 @@ export default async function LanguageDetailPage({
                               "ramune",
                               "sumire",
                             ][i % 6]
-                          }) 36%, white)`,
+                          }) 36%, var(--paper-tape-mix))`,
                         }}
                       >
                         {t}
@@ -285,7 +285,7 @@ export default async function LanguageDetailPage({
                 className="-right-4 -top-3"
                 width={80}
               />
-              <div className="relative rounded-[2px] border border-border bg-white p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
+              <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
                 <EmbodimentViewer fileId={f.embodiment_file_id} />
                 <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   preview · {f.slug || id.slice(0, 12)}
@@ -321,7 +321,7 @@ function ActionButton({
   return (
     <Link
       href={href}
-      className="group relative inline-flex items-center gap-1.5 border border-border bg-white/70 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg] hover:text-foreground"
+      className="group relative inline-flex items-center gap-1.5 border border-border bg-card/70 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg] hover:text-foreground"
     >
       <span
         aria-hidden
