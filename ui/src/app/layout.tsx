@@ -25,14 +25,15 @@ export const metadata: Metadata = {
     "A versioned, agent-maintained library of complete design languages.",
 };
 
-// Runs before first paint so the `.dark` class is set from saved pref (or OS)
-// before any CSS applies — prevents a flash of the wrong theme.
+// Runs before first paint so the `.dark` class is set from saved pref before
+// any CSS applies — prevents a flash of the wrong theme. Default is day;
+// dark only applies when the user has explicitly opted in (OS pref is ignored).
 const THEME_INIT_SCRIPT = `
 (function(){
   try{
-    var s = localStorage.getItem('katagami-theme');
-    var d = s ? s === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (d) document.documentElement.classList.add('dark');
+    if (localStorage.getItem('katagami-theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
   }catch(e){}
 })();
 `;
