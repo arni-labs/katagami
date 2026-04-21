@@ -15,6 +15,8 @@ async function GalleryGrid({
   let filter: string | undefined;
   if (status && status !== "all") {
     filter = `Status eq '${status}'`;
+  } else {
+    filter = `Status ne 'Archived'`;
   }
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
