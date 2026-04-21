@@ -161,6 +161,49 @@ params = ["output"]
 hint = "Mark job as successfully completed with output summary."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046 (nerdsane/temper feat/action-triggers-unified): inline the
+# reactions from specs/reactions.toml. All three rules target
+# CurationQuery via query_id — each corresponds to one stage of the
+# curation pipeline (research → synthesis → organize). The target
+# CurationQuery's own guards decide which of these three advances apply.
+#
+# Requires temper-server branch feat/action-triggers-unified to land
+# before this file can be authoritative; until then the old
+# reactions.toml stays on disk as dual-source.
+
+[[action.triggers]]
+name = "research_complete_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "ResearchComplete"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action.triggers]]
+name = "synthesis_complete_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "SynthesisComplete"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action.triggers]]
+name = "organize_complete_finishes_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "OrganizationComplete"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "Fail"
 kind = "input"
@@ -169,6 +212,17 @@ to = "Failed"
 params = ["error_message"]
 hint = "Mark job as failed with error details."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "job_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 # --- Retry ---
 
