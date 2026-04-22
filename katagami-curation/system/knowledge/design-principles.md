@@ -25,16 +25,60 @@ Design a plausible application screen where all required UI elements appear NATU
 **BAD**: Sections labeled "Buttons", "Inputs", "Cards", "Tables" with components lined up for display.
 **GOOD**: A "Library Overview" dashboard where KPIs, a chart, a data table, a form, alerts, and a modal all serve the editorial workflow.
 
-## Typography Is Identity (Mandatory)
+## Typography Is Identity (Mandatory — 50% of the Design)
 
-Typography defines the language more than color or layout.
+Typography defines the language more than color or layout. **A good font choice does 50% of the work.**
 
+- **Letter-spacing: `-0.02em` on ALL text.** This is mandatory. Negative letter-spacing is the single biggest anti-slop fix. Apply to headings, body, UI labels — everything.
 - **Use Google Fonts** via `<link>` tags. Include `rel="preconnect"` for performance.
 - **Choose fonts that embody the philosophy.** Swiss demands a mechanical neo-grotesk. Art Deco demands a geometric display face + high-contrast serif. Retro Computing demands a pixel/monospace face.
-- **No LLM defaults.** Do NOT use Inter, Space Grotesk, Poppins, DM Sans, Roboto, or Montserrat unless genuinely the best choice AND you can justify why.
+- **Approved body fonts**: IBM Plex Sans, Satoshi, Inter, General Sans, Instrument Sans. These are clean and professional.
+- **No LLM defaults.** Do NOT use Poppins, DM Sans, Roboto, Montserrat, or Space Grotesk — these are AI-generated-design tells.
 - **Two languages must never share a primary typeface.** Each language's display font must be unique across the library.
 - **Define 2-3 font roles**: display (headlines/poster), body (UI text/paragraphs), data (monospace/tabular).
 - **Use variable fonts** when available.
+
+## Color Discipline (Mandatory)
+
+Start simple. Most AI-generated designs fail because they use too many colors and pastels.
+
+- **White backgrounds: `#FFFFFF` only.** Not cream, not off-white `#FAFAFA`, not light blue. Pure white.
+- **Dark mode: `#000000` or `#121212` only.** Not blue-grey, not charcoal-blue, not dark navy. True black.
+- **One accent color.** Add it sparingly — a link color, a primary button, a highlight. Not everywhere.
+- **No pastel backgrounds** (cream, lavender, mint, light pink) — these scream "AI template."
+
+## Gradients — Almost Always Wrong (Mandatory)
+
+- **Avoid gradients by default.** Good gradients are extremely difficult. Bad gradients look dated and crypto.
+- **No gradient buttons, no gradient text, no gradient cards.**
+- **For accent color presence, use off-viewport blobs instead:**
+  ```css
+  .accent-blob {
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: var(--accent);
+    filter: blur(120px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+  ```
+  This creates subtle, professional color wash without looking like a crypto landing page.
+- **Exception:** Only use gradients if the design language's philosophy SPECIFICALLY demands them AND you can execute them with restraint (subtle angle, close hues, not rainbow).
+
+## Border Radius — Strict Scale (Mandatory)
+
+- `0px` — serious, editorial, brutalist
+- `16px` — standard cards and boxes
+- `24px` — maximum for large containers
+- `9999px` — fully rounded for pills, avatars, tags, small buttons
+- **NEVER use values between 24px and 9999px** (no 32px, 48px, 64px)
+- **NEVER mix random values** within one language (no 8px here, 12px there, 20px elsewhere)
+- Pick ONE radius from {0, 16, 24} as your primary and use it consistently across all containers
 
 ## Responsive Design (Mandatory)
 
@@ -87,9 +131,9 @@ Each embodiment is a single, self-contained HTML file:
 
 Each design language's tokens must include:
 - **colors**: primary, secondary, accent, background, surface, text, muted, border, error, success, warning, info
-- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing, google_fonts_url
+- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing (`-0.02em` default), google_fonts_url
 - **spacing**: base unit (typically 4 or 8px), scale array
-- **radii**: none, sm, md, lg, full
+- **radii**: none (0px), md (16px), lg (24px), full (9999px) — NO values between 24px and 9999px
 - **shadows**: sm, md, lg (with color, offset, blur)
 - **surfaces**: treatment (flat, glass, gradient, noise, paper), card_style, bg_pattern
 - **borders**: default_width, accent_width, style, character
