@@ -38,17 +38,51 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .unwrap_or("curator")
             .to_string();
 
+        // --- Config (needed early for secret lookups) ---
+        let api_url = ctx
+            .config
+            .get("temper_api_url")
+            .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+            .cloned()
+            .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());
+
+        let tenant = &ctx.tenant;
+
+        let headers = vec![
+            ("Content-Type".to_string(), "application/json".to_string()),
+            ("X-Tenant-Id".to_string(), tenant.to_string()),
+            ("x-temper-principal-kind".to_string(), "agent".to_string()),
+            ("x-temper-principal-id".to_string(), "system".to_string()),
+            ("x-temper-agent-type".to_string(), "system".to_string()),
+        ];
+
         let model = fields
             .get("model")
             .and_then(|v| v.as_str())
-            .unwrap_or("claude-sonnet-4-20250514")
-            .to_string();
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                ctx.config
+                    .get("llm_model")
+                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                    .cloned()
+            })
+            .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_model"))
+            .ok_or("No model configured: set llm_model in vault or pass model on CurationJob")?;
 
         let provider = fields
             .get("provider")
             .and_then(|v| v.as_str())
-            .unwrap_or("anthropic")
-            .to_string();
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                ctx.config
+                    .get("llm_provider")
+                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                    .cloned()
+            })
+            .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_provider"))
+            .ok_or("No provider configured: set llm_provider in vault or pass provider on CurationJob")?;
 
         let tools_enabled = fields
             .get("tools_enabled")
@@ -69,24 +103,6 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .unwrap_or(&ctx.entity_id)
             .to_string();
 
-        // --- Config ---
-        let api_url = ctx
-            .config
-            .get("temper_api_url")
-            .filter(|s| !s.is_empty() && !s.contains("{secret:"))
-            .cloned()
-            .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());
-
-        let tenant = &ctx.tenant;
-
-        let headers = vec![
-            ("Content-Type".to_string(), "application/json".to_string()),
-            ("X-Tenant-Id".to_string(), tenant.to_string()),
-            ("x-temper-principal-kind".to_string(), "agent".to_string()),
-            ("x-temper-principal-id".to_string(), "system".to_string()),
-            ("x-temper-agent-type".to_string(), "system".to_string()),
-        ];
-
         // --- Map job_type to skill ---
         let skill = match job_type.as_str() {
             "source_search" => "research-direction",
@@ -103,7 +119,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         };
 
         // Sandbox-capable skills need bash/read/write/edit tools
-        let tools_enabled = if skill == "synthesize-language" {
+        let needs_sandbox_tools = skill == "synthesize-language" || skill == "review-quality";
+        let tools_enabled = if needs_sandbox_tools {
             if tools_enabled.contains("bash") {
                 tools_enabled
             } else {
@@ -265,7 +282,7 @@ temper.done("{job_type} failed")
 
         // --- Configure the Session ---
         // Sandbox-capable skills need a provisioned sandbox for compile + screenshot loop
-        let needs_sandbox = skill == "synthesize-language";
+        let needs_sandbox = skill == "synthesize-language" || skill == "review-quality";
 
         let mut config_body = json!({
             "soul_id": soul_id,
@@ -410,6 +427,21 @@ fn ensure_workspace(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .ok_or_else(|| "Created workspace has no entity_id".to_string())
+}
+
+fn read_secret(ctx: &Context, api_url: &str, headers: &[(String, String)], key: &str) -> Option<String> {
+    let resp = ctx
+        .http_call("GET", &format!("{api_url}/paw/setup/secrets/{key}"), headers, "")
+        .ok()?;
+    if resp.status != 200 {
+        return None;
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).ok()?;
+    parsed
+        .get("value")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
 }
 
 fn urlenc(s: &str) -> String {

@@ -54,9 +54,14 @@ For each language specified in the job input (or ALL languages if none specified
        'embodiment_format': 'html'
    })
    ```
-7. **After ALL languages are fixed:**
+7. **Mark reviewed and publish each language:**
    ```python
-   temper.action('CurationJobs', job_id, 'Complete', {'output': json.dumps({'fixed': fixed_ids})})
+   temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
+   temper.action('DesignLanguages', lang_id, 'Publish', {})
+   ```
+8. **After ALL languages are reviewed and published:**
+   ```python
+   temper.action('CurationJobs', job_id, 'Complete', {'output': json.dumps({'fixed': fixed_ids, 'language_ids': fixed_ids})})
    temper.done("quality_review complete")
    ```
 

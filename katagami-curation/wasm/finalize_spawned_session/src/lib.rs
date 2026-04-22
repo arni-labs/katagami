@@ -104,9 +104,9 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         }
                         synth_id
                     }
-                    // synthesize -> organize_taxonomy
+                    // synthesize -> quality_review
                     "synthesize" => {
-                        let organize_id = spawn_organize_followup(
+                        let review_id = spawn_quality_review_followup(
                             &ctx,
                             &api_url,
                             &headers,
@@ -123,9 +123,25 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             advance_query(&ctx, &api_url, &headers, &query_id,
                                 "SynthesisComplete", &json!({
                                     "design_language_ids": language_ids,
-                                    "organize_job_id": organize_id.as_deref().unwrap_or("")
                                 }));
                         }
+                        review_id
+                    }
+                    // quality_review -> organize_taxonomy
+                    "quality_review" => {
+                        // Quality review output has "fixed" array — map to language_ids for organize
+                        let review_output = output_json.as_ref().map(|v| {
+                            let fixed = v.get("fixed").cloned().unwrap_or(json!([]));
+                            json!({"language_ids": fixed})
+                        });
+                        let organize_id = spawn_organize_followup(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &workspace_id,
+                            &query_id,
+                            review_output.as_ref(),
+                        )?;
                         organize_id
                     }
                     // organize_taxonomy -> pipeline complete
@@ -444,6 +460,98 @@ fn spawn_synth_followup(
     }
 
     Ok(first_job_id)
+}
+
+/// Spawn a quality_review CurationJob after a successful synthesize.
+fn spawn_quality_review_followup(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    query_id: &str,
+    output_json: Option<&serde_json::Value>,
+) -> Result<Option<String>, String> {
+    let language_ids = string_array(
+        output_json.and_then(|v| v.get("language_ids")),
+    );
+    if language_ids.is_empty() {
+        ctx.log("info", "spawn_quality_review_followup: no language_ids in output, skipping");
+        return Ok(None);
+    }
+
+    let review_input = json!({
+        "language_ids": language_ids,
+        "query_id": query_id
+    });
+
+    // Create new CurationJob
+    let create_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs"),
+        headers,
+        r#"{"fields":{}}"#,
+    )?;
+    if !(200..300).contains(&create_resp.status) {
+        return Err(format!(
+            "Failed to create quality_review CurationJob: HTTP {}: {}",
+            create_resp.status,
+            &create_resp.body[..create_resp.body.len().min(300)]
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
+        .map_err(|e| format!("Failed to parse quality_review CurationJob creation response: {e}"))?;
+    let review_job_id = created
+        .get("entity_id")
+        .and_then(|v| v.as_str())
+        .ok_or("Created quality_review CurationJob has no entity_id")?
+        .to_string();
+
+    // Configure
+    let configure_body = json!({
+        "job_type": "quality_review",
+        "workspace_id": workspace_id,
+        "input": review_input.to_string(),
+        "query_id": query_id
+    });
+    let configure_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Configure"
+        ),
+        headers,
+        &configure_body.to_string(),
+    )?;
+    if !(200..300).contains(&configure_resp.status) {
+        return Err(format!(
+            "Failed to configure quality_review CurationJob '{review_job_id}': HTTP {}: {}",
+            configure_resp.status,
+            &configure_resp.body[..configure_resp.body.len().min(300)]
+        ));
+    }
+
+    // Submit
+    let submit_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Submit"
+        ),
+        headers,
+        "{}",
+    )?;
+    if !(200..300).contains(&submit_resp.status) {
+        return Err(format!(
+            "Failed to submit quality_review CurationJob '{review_job_id}': HTTP {}: {}",
+            submit_resp.status,
+            &submit_resp.body[..submit_resp.body.len().min(300)]
+        ));
+    }
+
+    ctx.log(
+        "info",
+        &format!("spawn_quality_review_followup: submitted quality_review job '{review_job_id}'"),
+    );
+
+    Ok(Some(review_job_id))
 }
 
 /// Spawn an organize_taxonomy CurationJob after a successful synthesize.
