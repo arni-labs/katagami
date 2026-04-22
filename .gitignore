@@ -1,6 +1,6 @@
 # WASM build artifacts
-os-apps/*/wasm/*/target/
-os-apps/*/wasm/*/Cargo.lock
+**/wasm/*/target/
+**/wasm/*/Cargo.lock
 
 # Local database
 .data/
