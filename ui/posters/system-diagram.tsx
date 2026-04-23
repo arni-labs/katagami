@@ -1,10 +1,11 @@
 /**
- * Katagami — System Diagram (scrapbook, diagram-only)
+ * Katagami — System Diagram (minimalistic)
  *
- * Human → Any agent → (Katagami ⇄ OpenPaw → Modal Sandbox) → Temper → Datadog.
- * Styled to match the Katagami front-page: Bricolage / Nunito / Geist Mono,
- * translucent sticker cards (no borders) with palette tints + top ribbons,
- * washi tape corners, colorful squiggly arrows, stamps, dot-grid paper.
+ * Human → Any agent → (Katagami ⇄ TemperPaw → Modal / TensorLake) → Temper → Datadog.
+ * Minimalistic Hobonichi feel: Bricolage / Nunito / Geist Mono,
+ * palette-tinted cards with thin top ribbons, STRAIGHT connectors,
+ * readable stamp labels, dot-grid paper. Only two washi strips pinning
+ * the canvas corners — no per-card tape or sparkles.
  *
  * Render with:
  *   npx poster-ai export posters/system-diagram.tsx -o posters/system-diagram.png
@@ -25,8 +26,6 @@ const C = {
   beni: "oklch(0.65 0.2 25)",
 } as const;
 
-type Tint = keyof typeof C;
-
 const FONT_DISPLAY =
   '"Bricolage Grotesque", "Nunito", ui-sans-serif, system-ui, sans-serif';
 const FONT_SANS =
@@ -37,8 +36,23 @@ const FONT_MONO =
 const SHADOW_PAPER =
   "0 1px 2px rgba(30,35,45,0.04), 0 6px 18px rgba(30,35,45,0.06)";
 
-// ── Atoms ─────────────────────────────────────────────────────────
+// Unified, readable type scale — sizes bumped so body text reads at
+// poster scale, not just titles.
+const T = {
+  eyebrow: 14, // uppercase mono
+  body: 19, // bullet rows (sans for legibility)
+  chip: 18, // Temper chips (mono)
+  titleBig: 44, // major node titles
+  titleMed: 24, // secondary node titles (Modal / TensorLake)
+  quote: 26, // human card
+  label: 24, // arrow stamp labels — all the same size everywhere
+} as const;
 
+// Darker "muted" for eyebrow labels — the default muted grey was too
+// faint to read at poster scale.
+const EYEBROW_COLOR = "oklch(0.38 0.018 260)";
+
+// ── Atoms ─────────────────────────────────────────────────────────
 function FontsAndVars() {
   return (
     <style>{`
@@ -83,8 +97,8 @@ function WashiTape({
 function Stamp({
   children,
   color = C.sumire,
-  rotate = -2,
-  size = 10,
+  rotate = 0,
+  size = T.label,
 }: {
   children: React.ReactNode;
   color?: string;
@@ -97,19 +111,19 @@ function Stamp({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        border: `1.5px solid ${color}`,
+        border: `1.6px solid ${color}`,
         borderRadius: 3,
-        padding: "2px 9px",
+        padding: "5px 12px",
         fontFamily: FONT_MONO,
         fontSize: size,
         fontWeight: 700,
-        letterSpacing: "0.1em",
+        letterSpacing: "0.08em",
         textTransform: "uppercase",
         color,
         background: `color-mix(in oklch, ${color} 10%, white)`,
-        transform: `rotate(${rotate}deg)`,
+        transform: rotate ? `rotate(${rotate}deg)` : undefined,
         whiteSpace: "nowrap",
-        lineHeight: 1,
+        lineHeight: 1.05,
       }}
     >
       {children}
@@ -117,55 +131,14 @@ function Stamp({
   );
 }
 
-function Sparkle({
-  x,
-  y,
-  size = 12,
-  color = C.sumire,
-  rotate = 0,
-  opacity = 0.6,
-}: {
-  x: number;
-  y: number;
-  size?: number;
-  color?: string;
-  rotate?: number;
-  opacity?: number;
-}) {
-  return (
-    <svg
-      style={{
-        position: "absolute",
-        left: x,
-        top: y,
-        width: size,
-        height: size,
-        transform: `rotate(${rotate}deg)`,
-        color,
-        opacity,
-      }}
-      viewBox="0 0 12 12"
-      fill="currentColor"
-    >
-      <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
-    </svg>
-  );
-}
-
-// Sticker card — matches the front-page sticker-card / "what you can do"
-// cards: translucent-white with palette tint, NO border, soft shadow,
-// thin colored top ribbon, optional washi tape corner and index sticker.
 function Card({
   x,
   y,
   w,
   h,
   tint,
-  rotate = 0,
-  tape,
-  tapeRot = -4,
-  tapePos = "tl" as "tl" | "tr",
   showRibbon = true,
+  padding = "24px 28px",
   children,
 }: {
   x: number;
@@ -173,11 +146,8 @@ function Card({
   w: number;
   h: number;
   tint: string;
-  rotate?: number;
-  tape?: string;
-  tapeRot?: number;
-  tapePos?: "tl" | "tr";
   showRibbon?: boolean;
+  padding?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -190,13 +160,11 @@ function Card({
         height: h,
         background: `color-mix(in srgb, ${tint} 12%, rgba(255,255,255,0.92))`,
         boxShadow: SHADOW_PAPER,
-        transform: `rotate(${rotate}deg)`,
         overflow: "visible",
         boxSizing: "border-box",
         color: C.ink,
       }}
     >
-      {/* thin top ribbon — card identity */}
       {showRibbon && (
         <div
           style={{
@@ -209,72 +177,64 @@ function Card({
           }}
         />
       )}
-      {/* washi tape corner */}
-      {tape && (
-        <WashiTape
-          x={tapePos === "tl" ? -10 : w - 80}
-          y={-8}
-          w={90}
-          h={16}
-          rotate={tapeRot}
-          color={tape}
-        />
-      )}
-      <div style={{ padding: "20px 22px", height: "100%" }}>{children}</div>
+      <div
+        style={{
+          padding,
+          height: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-// Squiggly vertical arrow — hand-drawn wavy path, colorful.
+// Straight vertical connector with optional stamp label to the right.
 function VArrow({
   x,
   y1,
   y2,
   color = C.ink,
-  amp = 10,
   label,
   labelColor,
-  labelOffsetX = 16,
+  labelOffsetX = 22,
 }: {
   x: number;
   y1: number;
   y2: number;
   color?: string;
-  amp?: number;
   label?: string;
   labelColor?: string;
   labelOffsetX?: number;
 }) {
   const h = y2 - y1;
-  const cx = 20;
-  // 3 waves: Q + T + T + T, alternating amplitude via the first Q
-  const d = `M ${cx} 2 Q ${cx + amp} ${h * 0.18} ${cx} ${h * 0.33} T ${cx} ${
-    h * 0.66
-  } T ${cx} ${h - 10}`;
   return (
     <>
       <svg
         style={{
           position: "absolute",
-          left: x - cx,
+          left: x - 10,
           top: y1,
-          width: 40,
+          width: 20,
           height: h,
           overflow: "visible",
         }}
       >
-        <path
-          d={d}
-          fill="none"
+        <line
+          x1="10"
+          y1="0"
+          x2="10"
+          y2={h - 9}
           stroke={color}
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
         />
-        <path
-          d={`M ${cx - 6} ${h - 10} L ${cx} ${h - 1} L ${cx + 6} ${h - 10}`}
+        <polyline
+          points={`4,${h - 9} 10,${h - 1} 16,${h - 9}`}
           fill="none"
           stroke={color}
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -284,77 +244,70 @@ function VArrow({
           style={{
             position: "absolute",
             left: x + labelOffsetX,
-            top: y1 + h / 2 - 10,
+            top: y1 + h / 2 - 14,
           }}
         >
-          <Stamp color={labelColor ?? color} rotate={-3}>
-            {label}
-          </Stamp>
+          <Stamp color={labelColor ?? color}>{label}</Stamp>
         </div>
       )}
     </>
   );
 }
 
-// Squiggly horizontal arrow.
+// Straight horizontal connector with optional stamp label above/below.
 function HArrow({
   x1,
   x2,
   y,
   color = C.ink,
-  amp = 8,
   label,
   labelColor,
-  labelYOffset = -22,
+  labelSize,
+  labelYOffset = -32,
   direction = "right" as "right" | "left",
 }: {
   x1: number;
   x2: number;
   y: number;
   color?: string;
-  amp?: number;
   label?: string;
   labelColor?: string;
+  labelSize?: number;
   labelYOffset?: number;
   direction?: "right" | "left";
 }) {
   const w = x2 - x1;
-  const cy = 10;
   const right = direction === "right";
-  const path = right
-    ? `M 2 ${cy} Q ${w * 0.2} ${cy - amp} ${w * 0.33} ${cy} T ${w * 0.66} ${cy} T ${
-        w - 10
-      } ${cy}`
-    : `M ${w - 2} ${cy} Q ${w * 0.8} ${cy - amp} ${w * 0.66} ${cy} T ${w * 0.33} ${
-        cy
-      } T 10 ${cy}`;
-  const head = right
-    ? `M ${w - 10} ${cy - 6} L ${w - 1} ${cy} L ${w - 10} ${cy + 6}`
-    : `M 10 ${cy - 6} L 1 ${cy} L 10 ${cy + 6}`;
   return (
     <>
       <svg
         style={{
           position: "absolute",
           left: x1,
-          top: y - cy,
+          top: y - 10,
           width: w,
           height: 20,
           overflow: "visible",
         }}
       >
-        <path
-          d={path}
-          fill="none"
+        <line
+          x1={right ? "2" : String(w - 2)}
+          y1="10"
+          x2={right ? String(w - 9) : "9"}
+          y2="10"
           stroke={color}
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
         />
-        <path
-          d={head}
+        <polyline
+          points={
+            right
+              ? `${w - 9},4 ${w - 1},10 ${w - 9},16`
+              : `9,4 1,10 9,16`
+          }
           fill="none"
           stroke={color}
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -368,7 +321,7 @@ function HArrow({
             top: y + labelYOffset,
           }}
         >
-          <Stamp color={labelColor ?? color} rotate={-2}>
+          <Stamp color={labelColor ?? color} size={labelSize}>
             {label}
           </Stamp>
         </div>
@@ -377,56 +330,15 @@ function HArrow({
   );
 }
 
-// Small round index / badge sticker, optionally numbered.
-function IndexBadge({
-  x,
-  y,
-  tint,
-  children,
-  rotate = 6,
-}: {
-  x: number;
-  y: number;
-  tint: string;
-  children: React.ReactNode;
-  rotate?: number;
-}) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: x,
-        top: y,
-        width: 30,
-        height: 30,
-        borderRadius: 999,
-        background: "white",
-        border: `1.5px solid ${tint}`,
-        color: `color-mix(in oklch, ${tint}, black 30%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: FONT_MONO,
-        fontSize: 11,
-        fontWeight: 800,
-        transform: `rotate(${rotate}deg)`,
-        boxShadow: "1px 1px 0 rgba(30,35,45,0.10)",
-        zIndex: 3,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 // ── Poster ────────────────────────────────────────────────────────
 export default function SystemDiagramPoster() {
   const eyebrow: React.CSSProperties = {
     fontFamily: FONT_MONO,
-    fontSize: 10,
-    letterSpacing: "0.2em",
+    fontSize: T.eyebrow,
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
-    color: C.muted,
+    color: EYEBROW_COLOR,
+    fontWeight: 700,
   };
   const title: React.CSSProperties = {
     fontFamily: FONT_DISPLAY,
@@ -436,6 +348,8 @@ export default function SystemDiagramPoster() {
     fontFeatureSettings: '"ss02", "ss04"',
   };
 
+  // Bullet rows use Nunito sans — mono was hurting legibility at poster
+  // size, especially for longer phrases.
   const bulletRow = (
     label: string,
     glyph: React.ReactNode,
@@ -446,10 +360,11 @@ export default function SystemDiagramPoster() {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        fontFamily: FONT_MONO,
-        fontSize: 14,
+        gap: 14,
+        fontFamily: FONT_SANS,
+        fontSize: T.body,
         color: C.ink,
+        fontWeight: 600,
       }}
     >
       {glyph}
@@ -472,27 +387,28 @@ export default function SystemDiagramPoster() {
     >
       <FontsAndVars />
 
+      {/* Canvas-corner washi tapes — the only scrapbook flourish */}
+      <WashiTape x={-20} y={40} w={180} h={22} rotate={-6} color={C.sakura} />
+      <WashiTape
+        x={1200}
+        y={1440}
+        w={180}
+        h={22}
+        rotate={-5}
+        color={C.yuzu}
+      />
+
       {/* ─────── HUMAN ─────── */}
-      <Card
-        x={460}
-        y={60}
-        w={360}
-        h={120}
-        tint={C.teal}
-        rotate={-1}
-        tape={C.sakura}
-        tapeRot={-6}
-        tapePos="tl"
-      >
+      <Card x={475} y={70} w={400} h={140} tint={C.teal}>
         <div style={eyebrow}>human</div>
         <div
           style={{
             ...title,
-            fontSize: 20,
+            fontSize: T.quote,
             fontWeight: 600,
             fontStyle: "italic",
-            marginTop: 10,
-            lineHeight: 1.2,
+            marginTop: 14,
+            lineHeight: 1.25,
           }}
         >
           &ldquo;research sci-fi × editorial typography&rdquo;
@@ -501,91 +417,63 @@ export default function SystemDiagramPoster() {
 
       {/* asks ↓ */}
       <VArrow
-        x={640}
-        y1={185}
-        y2={260}
+        x={675}
+        y1={220}
+        y2={290}
         color={C.sumire}
         label="asks"
         labelColor={C.sumire}
       />
 
       {/* ─────── ANY AGENT ─────── */}
-      <Card
-        x={420}
-        y={270}
-        w={440}
-        h={120}
-        tint={C.sumire}
-        rotate={0.8}
-        tape={C.yuzu}
-        tapeRot={5}
-        tapePos="tr"
-      >
+      <Card x={455} y={300} w={440} h={120} tint={C.sumire}>
         <div style={eyebrow}>any agent</div>
         <div
           style={{
             ...title,
-            fontSize: 28,
-            fontWeight: 800,
-            marginTop: 6,
+            fontSize: 30,
+            marginTop: 10,
           }}
         >
           uses Katagami as a tool
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <Stamp color={C.teal} rotate={-3}>
-            tool user
-          </Stamp>
         </div>
       </Card>
 
       {/* submits CurationJob ↓ */}
       <VArrow
-        x={640}
-        y1={395}
-        y2={470}
+        x={675}
+        y1={430}
+        y2={505}
         color={C.beni}
-        label="submits CurationJob"
+        label="submits curationjob"
         labelColor={C.beni}
       />
 
       {/* ─────── KATAGAMI ─────── */}
-      <Card
-        x={90}
-        y={480}
-        w={460}
-        h={320}
-        tint={C.sakura}
-        rotate={-0.6}
-        tape={C.yuzu}
-        tapeRot={-7}
-        tapePos="tl"
-      >
-        <IndexBadge x={420} y={-10} tint={C.sakura} rotate={8}>
-          ◆
-        </IndexBadge>
+      <Card x={80} y={515} w={360} h={300} tint={C.sakura}>
         <div style={eyebrow}>app layer · curation</div>
-        <div style={{ ...title, fontSize: 40, marginTop: 2 }}>Katagami</div>
+        <div style={{ ...title, fontSize: T.titleBig, marginTop: 4 }}>
+          Katagami
+        </div>
         <div
           style={{
-            marginTop: 16,
+            marginTop: 22,
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: 14,
           }}
         >
           {[
             ["CurationJob", C.beni],
             ["DesignLanguage", C.sakura],
-            ["DesignSource", C.yuzu],
             ["Taxonomy", C.matcha],
           ].map(([n, col]) =>
             bulletRow(
               n as string,
               <span
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 12,
+                  height: 12,
                   borderRadius: 2,
                   background: col as string,
                   boxShadow: "0 1px 0 rgba(30,35,45,0.08)",
@@ -597,36 +485,24 @@ export default function SystemDiagramPoster() {
         </div>
       </Card>
 
-      {/* ─────── OPENPAW ─────── */}
-      <Card
-        x={630}
-        y={480}
-        w={460}
-        h={320}
-        tint={C.matcha}
-        rotate={0.7}
-        tape={C.sumire}
-        tapeRot={6}
-        tapePos="tr"
-      >
-        <IndexBadge x={-10} y={-10} tint={C.matcha} rotate={-8}>
-          ✦
-        </IndexBadge>
-        <div style={eyebrow}>runtime · opus</div>
-        <div style={{ ...title, fontSize: 40, marginTop: 2 }}>OpenPaw</div>
+      {/* ─────── TEMPERPAW ─────── */}
+      <Card x={710} y={515} w={360} h={300} tint={C.matcha}>
+        <div style={eyebrow}>agent runtime</div>
+        <div style={{ ...title, fontSize: T.titleBig, marginTop: 4 }}>
+          TemperPaw
+        </div>
         <div
           style={{
-            marginTop: 16,
+            marginTop: 22,
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: 14,
           }}
         >
           {[
             ["scans the web", C.teal],
-            ["pulls directions", C.ramune],
-            ["fans out", C.sumire],
-            ["writes via .action()", C.beni],
+            ["synthesizes directions", C.ramune],
+            ["writes via .action()", C.sumire],
           ].map(([n, col]) =>
             bulletRow(
               n as string,
@@ -634,7 +510,7 @@ export default function SystemDiagramPoster() {
                 style={{
                   color: col as string,
                   fontWeight: 800,
-                  fontSize: 15,
+                  fontSize: T.body,
                   lineHeight: 1,
                 }}
               >
@@ -647,83 +523,93 @@ export default function SystemDiagramPoster() {
       </Card>
 
       {/* ─────── MODAL SANDBOX ─────── */}
-      <Card
-        x={1120}
-        y={555}
-        w={140}
-        h={120}
-        tint={C.yuzu}
-        rotate={3}
-        tape={C.teal}
-        tapeRot={-10}
-        tapePos="tl"
-      >
-        <div style={{ ...eyebrow, fontSize: 9 }}>runtime</div>
+      <Card x={1100} y={525} w={170} h={118} tint={C.yuzu} padding="20px 16px">
+        <div style={eyebrow}>sandbox</div>
         <div
           style={{
             ...title,
-            fontSize: 20,
-            marginTop: 8,
+            fontSize: T.titleMed,
+            marginTop: 12,
             lineHeight: 1.05,
           }}
         >
           Modal
-          <br />
-          Sandbox
         </div>
       </Card>
 
-      {/* Katagami → OpenPaw: triggers agent */}
+      {/* "and" connector between the two sandboxes */}
+      <div
+        style={{
+          position: "absolute",
+          left: 1165,
+          top: 652,
+          fontFamily: FONT_DISPLAY,
+          fontSize: 22,
+          fontStyle: "italic",
+          fontWeight: 600,
+          color: C.sumire,
+          lineHeight: 1,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        and
+      </div>
+
+      {/* ─────── TENSORLAKE SANDBOX ─────── */}
+      <Card x={1100} y={697} w={170} h={118} tint={C.sakura} padding="20px 16px">
+        <div style={eyebrow}>sandbox</div>
+        <div
+          style={{
+            ...title,
+            fontSize: T.titleMed,
+            marginTop: 12,
+            lineHeight: 1.05,
+          }}
+        >
+          TensorLake
+        </div>
+      </Card>
+
+      {/* Katagami ↔ TemperPaw — labels now live entirely inside the 270-px
+          gap between the two cards, centered on the arrow line. No bullet
+          overlap anywhere. */}
       <HArrow
-        x1={556}
-        x2={626}
-        y={565}
+        x1={442}
+        x2={708}
+        y={640}
         color={C.teal}
         label="triggers agent"
         labelColor={C.teal}
-        labelYOffset={-30}
+        labelYOffset={-17}
         direction="right"
       />
-      {/* OpenPaw → Katagami: writes back */}
       <HArrow
-        x1={556}
-        x2={626}
-        y={715}
+        x1={442}
+        x2={708}
+        y={700}
         color={C.sakura}
         label="writes back"
         labelColor={C.sakura}
-        labelYOffset={14}
+        labelYOffset={-17}
         direction="left"
       />
-      {/* OpenPaw → Modal Sandbox */}
-      <HArrow x1={1092} x2={1122} y={590} color={C.yuzu} direction="right" />
+      {/* TemperPaw → sandboxes */}
+      <HArrow x1={1072} x2={1102} y={580} color={C.yuzu} direction="right" />
+      <HArrow x1={1072} x2={1102} y={755} color={C.ramune} direction="right" />
 
-      {/* ↓ convergence to Temper */}
-      <VArrow x={320} y1={810} y2={905} color={C.matcha} amp={9} />
-      <VArrow x={860} y1={810} y2={905} color={C.ramune} amp={9} />
+      {/* Convergence → Temper */}
+      <VArrow x={260} y1={825} y2={920} color={C.matcha} />
+      <VArrow x={890} y1={825} y2={920} color={C.ramune} />
 
       {/* ─────── TEMPER ─────── */}
-      <Card
-        x={90}
-        y={915}
-        w={1100}
-        h={180}
-        tint={C.sumire}
-        rotate={-0.3}
-        tape={C.sakura}
-        tapeRot={-3}
-        tapePos="tl"
-      >
-        <IndexBadge x={1050} y={-12} tint={C.sumire} rotate={6}>
-          ✦
-        </IndexBadge>
+      <Card x={80} y={930} w={1190} h={185} tint={C.sumire}>
         <div style={eyebrow}>platform · governed runtime</div>
-        <div style={{ ...title, fontSize: 46, marginTop: 0 }}>Temper</div>
+        <div style={{ ...title, fontSize: 48, marginTop: 2 }}>Temper</div>
         <div
           style={{
-            marginTop: 16,
+            marginTop: 18,
             display: "flex",
-            gap: 14,
+            gap: 16,
             flexWrap: "wrap",
           }}
         >
@@ -735,13 +621,13 @@ export default function SystemDiagramPoster() {
             <span
               key={n as string}
               style={{
-                padding: "6px 14px",
-                border: `1.5px dashed ${col}`,
+                padding: "9px 16px",
+                border: `1.6px dashed ${col}`,
                 background: `color-mix(in oklch, ${col} 8%, white)`,
                 borderRadius: 3,
                 fontFamily: FONT_MONO,
-                fontSize: 13,
-                fontWeight: 600,
+                fontSize: T.chip,
+                fontWeight: 700,
                 color: C.ink,
               }}
             >
@@ -751,75 +637,88 @@ export default function SystemDiagramPoster() {
         </div>
       </Card>
 
-      {/* Temper → Datadog */}
+      {/* Temper → Railway (deploy) / Turso (db) / Cloudflare (R2) /
+          Datadog (observability) — four infrastructure dependencies/outputs. */}
       <VArrow
-        x={640}
-        y1={1105}
-        y2={1200}
+        x={190}
+        y1={1125}
+        y2={1220}
+        color={C.sakura}
+        label="deploy"
+        labelColor={C.sakura}
+      />
+      <VArrow
+        x={513}
+        y1={1125}
+        y2={1220}
+        color={C.teal}
+        label="db"
+        labelColor={C.teal}
+      />
+      <VArrow
+        x={836}
+        y1={1125}
+        y2={1220}
+        color={C.ramune}
+        label="R2"
+        labelColor={C.ramune}
+      />
+      <VArrow
+        x={1159}
+        y1={1125}
+        y2={1220}
         color={C.salad}
-        label="traces · metrics"
+        label="observability"
         labelColor={C.matcha}
       />
 
-      {/* ─────── DATADOG ─────── */}
+      {/* ─────── RAILWAY ─────── */}
       <Card
-        x={490}
-        y={1210}
-        w={300}
-        h={150}
-        tint={C.salad}
-        rotate={1.5}
-        tape={C.sumire}
-        tapeRot={4}
-        tapePos="tr"
+        x={80}
+        y={1230}
+        w={220}
+        h={88}
+        tint={C.sakura}
+        padding="20px 24px"
       >
-        <div style={eyebrow}>observability</div>
-        <div style={{ ...title, fontSize: 32, marginTop: 4 }}>Datadog</div>
-        <div
-          style={{
-            marginTop: 8,
-            fontFamily: FONT_MONO,
-            fontSize: 13,
-            color: C.muted,
-          }}
-        >
-          traces · metrics
-        </div>
-        <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-          <Stamp color={C.matcha}>live</Stamp>
-          <Stamp color={C.teal} rotate={3}>
-            trace
-          </Stamp>
-        </div>
+        <div style={{ ...title, fontSize: 30 }}>Railway</div>
       </Card>
 
-      {/* Scrapbook flourishes */}
-      <Sparkle x={48} y={70} size={13} color={C.sumire} rotate={-15} />
-      <Sparkle x={1290} y={100} size={15} color={C.teal} rotate={10} />
-      <Sparkle x={58} y={850} size={11} color={C.beni} rotate={22} />
-      <Sparkle x={1295} y={880} size={12} color={C.matcha} rotate={-10} />
-      <Sparkle x={50} y={1200} size={10} color={C.yuzu} rotate={14} />
-      <Sparkle x={1300} y={1290} size={13} color={C.sakura} rotate={-12} />
-      <Sparkle x={820} y={1430} size={14} color={C.sumire} rotate={10} />
-      <Sparkle x={260} y={1430} size={11} color={C.ramune} rotate={-5} />
+      {/* ─────── TURSO ─────── */}
+      <Card
+        x={403}
+        y={1230}
+        w={220}
+        h={88}
+        tint={C.teal}
+        padding="20px 24px"
+      >
+        <div style={{ ...title, fontSize: 30 }}>Turso</div>
+      </Card>
 
-      {/* Small washi strips in empty areas */}
-      <WashiTape
-        x={40}
-        y={1420}
-        w={170}
-        h={18}
-        rotate={4}
-        color={C.yuzu}
-      />
-      <WashiTape
-        x={1130}
-        y={1410}
-        w={150}
-        h={16}
-        rotate={-5}
-        color={C.sakura}
-      />
+      {/* ─────── CLOUDFLARE ─────── */}
+      <Card
+        x={726}
+        y={1230}
+        w={220}
+        h={88}
+        tint={C.ramune}
+        padding="20px 24px"
+      >
+        <div style={{ ...title, fontSize: 30 }}>Cloudflare</div>
+      </Card>
+
+      {/* ─────── DATADOG ─────── */}
+      <Card
+        x={1049}
+        y={1230}
+        w={220}
+        h={88}
+        tint={C.salad}
+        padding="20px 24px"
+      >
+        <div style={{ ...title, fontSize: 30 }}>Datadog</div>
+      </Card>
     </div>
   );
 }

@@ -26,7 +26,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    - Re-validate until all sections pass
 6. Go to the **EMBODIMENT PHASE** — generate HTML from the now-complete spec
 7. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the HTML
-8. After `AttachEmbodiment`, call `SubmitForReview` + `Publish` to re-publish
+8. After `AttachEmbodiment`, call `SubmitForReview` (pipeline will auto-review and publish)
 
 **NEVER skip to embodiment generation with empty or skeleton specs. The spec IS the identity.**
 
@@ -293,9 +293,8 @@ temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })
-# Auto-publish: guards verify all sections + embodiment exist
+# Submit for quality review (pipeline will auto-review and publish)
 temper.action('DesignLanguages', eid, 'SubmitForReview', {})
-temper.action('DesignLanguages', eid, 'Publish', {})
 ```
 
 For `evolve_language` jobs: read the parent language first, inherit base tokens, apply the requested modifications, and set lineage_type to 'evolution' with the parent's ID.

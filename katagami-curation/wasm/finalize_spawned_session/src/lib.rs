@@ -61,13 +61,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let session: serde_json::Value = serde_json::from_str(&session_resp.body)
             .map_err(|e| format!("Failed to parse Session response: {e}"))?;
         let session_status = session.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        if matches!(session_status, "Completed" | "Failed" | "Cancelled") {
-            set_success_result(
-                "",
-                &json!({"status": "noop", "reason": "session already terminal", "session_status": session_status}),
-            );
-            return Ok(());
-        }
+        let session_already_terminal = matches!(session_status, "Completed" | "Failed" | "Cancelled");
 
         let job_status = ctx
             .entity_state
@@ -110,9 +104,9 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         }
                         synth_id
                     }
-                    // synthesize -> organize_taxonomy
+                    // synthesize -> quality_review
                     "synthesize" => {
-                        let organize_id = spawn_organize_followup(
+                        let review_id = spawn_quality_review_followup(
                             &ctx,
                             &api_url,
                             &headers,
@@ -129,9 +123,25 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             advance_query(&ctx, &api_url, &headers, &query_id,
                                 "SynthesisComplete", &json!({
                                     "design_language_ids": language_ids,
-                                    "organize_job_id": organize_id.as_deref().unwrap_or("")
                                 }));
                         }
+                        review_id
+                    }
+                    // quality_review -> organize_taxonomy
+                    "quality_review" => {
+                        // Quality review output has "fixed" array — map to language_ids for organize
+                        let review_output = output_json.as_ref().map(|v| {
+                            let fixed = v.get("fixed").cloned().unwrap_or(json!([]));
+                            json!({"language_ids": fixed})
+                        });
+                        let organize_id = spawn_organize_followup(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &workspace_id,
+                            &query_id,
+                            review_output.as_ref(),
+                        )?;
                         organize_id
                     }
                     // organize_taxonomy -> pipeline complete
@@ -151,13 +161,24 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 };
                 let synth_job_id = followup_job_id;
 
-                // Finalize the Session if it's in a finalizable state
+                // Finalize the Session if it's still in a finalizable state
+                if session_already_terminal {
+                    set_success_result(
+                        "",
+                        &json!({
+                            "status": "cascade complete, session already terminal",
+                            "session_status": session_status,
+                            "synth_job_id": synth_job_id
+                        }),
+                    );
+                    return Ok(());
+                }
+
                 if !matches!(session_status, "Thinking" | "Executing") {
                     set_success_result(
                         "",
                         &json!({
-                            "status": "noop",
-                            "reason": "session not finalizable from current state",
+                            "status": "cascade complete, session not finalizable",
                             "session_status": session_status,
                             "synth_job_id": synth_job_id
                         }),
@@ -264,7 +285,7 @@ fn string_array(value: Option<&serde_json::Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Spawn a synthesize CurationJob after a successful source_search.
+/// Spawn one synthesize CurationJob per discovered movement after a successful source_search.
 fn spawn_synth_followup(
     ctx: &Context,
     api_url: &str,
@@ -300,17 +321,166 @@ fn spawn_synth_followup(
             .and_then(|v| v.get("topic_allowlist"))
             .or_else(|| input_json.and_then(|v| v.get("topic_allowlist"))),
     );
-    let discovered_movements = string_array(
-        output_json.and_then(|v| v.get("discovered_movements")),
-    );
 
-    let synth_input = json!({
-        "task": task,
-        "scope": scope,
-        "topic_allowlist": topic_allowlist,
-        "source_ids": source_ids,
-        "discovered_movements": discovered_movements,
-        "priority": "high",
+    // Parse discovered_movements — supports both object format [{name, palette_direction}]
+    // and legacy string format ["direction name"]
+    let raw_movements = output_json
+        .and_then(|v| v.get("discovered_movements"))
+        .and_then(|v| v.as_array());
+    let directions: Vec<(String, String)> = match raw_movements {
+        Some(arr) => arr
+            .iter()
+            .filter_map(|item| {
+                if let Some(obj) = item.as_object() {
+                    let name = obj
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let palette = obj
+                        .get("palette_direction")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    if name.is_empty() {
+                        None
+                    } else {
+                        Some((name, palette))
+                    }
+                } else if let Some(s) = item.as_str() {
+                    if s.is_empty() {
+                        None
+                    } else {
+                        Some((s.to_string(), String::new()))
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect(),
+        None => vec![(task.clone(), String::new())],
+    };
+
+    if directions.is_empty() {
+        return Ok(None);
+    }
+
+    // Fan out: one synth job per direction
+    let mut first_job_id: Option<String> = None;
+    for (direction, palette) in &directions {
+        let synth_input = json!({
+            "task": task,
+            "scope": scope,
+            "target_direction": direction,
+            "palette_direction": palette,
+            "topic_allowlist": topic_allowlist,
+            "source_ids": source_ids,
+            "priority": "high",
+            "query_id": query_id
+        });
+
+        // Create new CurationJob
+        let create_resp = ctx.http_call(
+            "POST",
+            &format!("{api_url}/tdata/CurationJobs"),
+            headers,
+            r#"{"fields":{}}"#,
+        )?;
+        if !(200..300).contains(&create_resp.status) {
+            ctx.log(
+                "error",
+                &format!(
+                    "Failed to create synth job for '{}': HTTP {}",
+                    direction, create_resp.status
+                ),
+            );
+            continue;
+        }
+        let created: serde_json::Value = serde_json::from_str(&create_resp.body)
+            .map_err(|e| format!("Failed to parse synth job creation response: {e}"))?;
+        let synth_job_id = created
+            .get("entity_id")
+            .and_then(|v| v.as_str())
+            .ok_or("Created synth CurationJob has no entity_id")?
+            .to_string();
+
+        // Configure with synthesize job_type
+        let configure_body = json!({
+            "job_type": "synthesize",
+            "workspace_id": workspace_id,
+            "input": synth_input.to_string(),
+            "query_id": query_id
+        });
+        let configure_resp = ctx.http_call(
+            "POST",
+            &format!(
+                "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Configure"
+            ),
+            headers,
+            &configure_body.to_string(),
+        )?;
+        if !(200..300).contains(&configure_resp.status) {
+            ctx.log(
+                "error",
+                &format!(
+                    "Failed to configure synth job '{}' for '{}': HTTP {}",
+                    synth_job_id, direction, configure_resp.status
+                ),
+            );
+            continue;
+        }
+
+        // Submit to trigger build_session_message
+        let submit_resp = ctx.http_call(
+            "POST",
+            &format!(
+                "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Submit"
+            ),
+            headers,
+            "{}",
+        )?;
+        if !(200..300).contains(&submit_resp.status) {
+            ctx.log(
+                "error",
+                &format!(
+                    "Failed to submit synth job '{}' for '{}': HTTP {}",
+                    synth_job_id, direction, submit_resp.status
+                ),
+            );
+            continue;
+        }
+
+        ctx.log(
+            "info",
+            &format!("Spawned synth job '{}' for direction '{}'", synth_job_id, direction),
+        );
+        if first_job_id.is_none() {
+            first_job_id = Some(synth_job_id);
+        }
+    }
+
+    Ok(first_job_id)
+}
+
+/// Spawn a quality_review CurationJob after a successful synthesize.
+fn spawn_quality_review_followup(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    query_id: &str,
+    output_json: Option<&serde_json::Value>,
+) -> Result<Option<String>, String> {
+    let language_ids = string_array(
+        output_json.and_then(|v| v.get("language_ids")),
+    );
+    if language_ids.is_empty() {
+        ctx.log("info", "spawn_quality_review_followup: no language_ids in output, skipping");
+        return Ok(None);
+    }
+
+    let review_input = json!({
+        "language_ids": language_ids,
         "query_id": query_id
     });
 
@@ -323,60 +493,65 @@ fn spawn_synth_followup(
     )?;
     if !(200..300).contains(&create_resp.status) {
         return Err(format!(
-            "Failed to create synth CurationJob: HTTP {}: {}",
+            "Failed to create quality_review CurationJob: HTTP {}: {}",
             create_resp.status,
             &create_resp.body[..create_resp.body.len().min(300)]
         ));
     }
     let created: serde_json::Value = serde_json::from_str(&create_resp.body)
-        .map_err(|e| format!("Failed to parse synth CurationJob creation response: {e}"))?;
-    let synth_job_id = created
+        .map_err(|e| format!("Failed to parse quality_review CurationJob creation response: {e}"))?;
+    let review_job_id = created
         .get("entity_id")
         .and_then(|v| v.as_str())
-        .ok_or("Created synth CurationJob has no entity_id")?
+        .ok_or("Created quality_review CurationJob has no entity_id")?
         .to_string();
 
-    // Configure with synthesize job_type
+    // Configure
     let configure_body = json!({
-        "job_type": "synthesize",
+        "job_type": "quality_review",
         "workspace_id": workspace_id,
-        "input": synth_input.to_string(),
+        "input": review_input.to_string(),
         "query_id": query_id
     });
     let configure_resp = ctx.http_call(
         "POST",
         &format!(
-            "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Configure"
+            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Configure"
         ),
         headers,
         &configure_body.to_string(),
     )?;
     if !(200..300).contains(&configure_resp.status) {
         return Err(format!(
-            "Failed to configure synth CurationJob '{synth_job_id}': HTTP {}: {}",
+            "Failed to configure quality_review CurationJob '{review_job_id}': HTTP {}: {}",
             configure_resp.status,
             &configure_resp.body[..configure_resp.body.len().min(300)]
         ));
     }
 
-    // Submit to trigger build_session_message
+    // Submit
     let submit_resp = ctx.http_call(
         "POST",
         &format!(
-            "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Submit"
+            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Submit"
         ),
         headers,
         "{}",
     )?;
     if !(200..300).contains(&submit_resp.status) {
         return Err(format!(
-            "Failed to submit synth CurationJob '{synth_job_id}': HTTP {}: {}",
+            "Failed to submit quality_review CurationJob '{review_job_id}': HTTP {}: {}",
             submit_resp.status,
             &submit_resp.body[..submit_resp.body.len().min(300)]
         ));
     }
 
-    Ok(Some(synth_job_id))
+    ctx.log(
+        "info",
+        &format!("spawn_quality_review_followup: submitted quality_review job '{review_job_id}'"),
+    );
+
+    Ok(Some(review_job_id))
 }
 
 /// Spawn an organize_taxonomy CurationJob after a successful synthesize.

@@ -253,6 +253,8 @@ on_failure = "Fail"
 [integration.config]
 temper_api_url = "{secret:temper_api_url}"
 sandbox_provider = "{secret:sandbox_provider}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
 
 [[integration]]
 name = "finalize_spawned_session"

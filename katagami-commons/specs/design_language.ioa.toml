@@ -65,6 +65,11 @@ type = "string"
 initial = "html"
 
 [[state]]
+name = "review_status"
+type = "string"
+initial = "unreviewed"
+
+[[state]]
 name = "featured"
 type = "bool"
 initial = "false"
@@ -265,8 +270,8 @@ hint = "Archive a published design language. Terminal state."
 name = "UpdateQuality"
 kind = "input"
 from = ["UnderReview", "Published"]
-params = ["quality_score"]
-hint = "Update multi-dimensional quality score (spec_completeness, embodiment_fidelity, token_consistency)."
+params = ["quality_score", "review_status"]
+hint = "Update quality score and/or review status (unreviewed, reviewed, needs_revision)."
 
 [[action]]
 name = "IncrementUsage"

@@ -22,30 +22,51 @@ Minimum quality thresholds for design language specs and embodiments.
 - Must be a plausible application screen, NOT a component catalog
 - If sections are labeled "Controls", "Feedback", "Data" — that IS a failure
 
-### Typography
+### Typography (50% of quality)
 - Must use Google Fonts (not system fonts or LLM defaults)
 - Display font must be unique across the library
 - 2-3 font roles defined and used consistently
+- **`letter-spacing: -0.02em` on ALL text** — headings, body, labels. This is mandatory.
+- Approved body fonts: IBM Plex Sans, Satoshi, Inter, General Sans, Instrument Sans
+- Reject: Poppins, Montserrat, DM Sans, Space Grotesk (AI tells)
 
 ### Responsiveness
 - 3 breakpoints minimum (~1024, ~768, ~480)
 - No inline layout styles (grid/flex must be in CSS classes)
 - Reflow, scroll, and stack behaviors at each breakpoint
 
+### Colors & Backgrounds
+- White backgrounds must be `#FFFFFF` — not cream, off-white, or tinted
+- Dark mode must be `#000000` or `#121212` — not blue-grey or charcoal-blue
+- No pastel backgrounds (cream, lavender, mint, light pink)
+- One accent color, used sparingly
+
+### Gradients
+- **No gradients by default.** Reject gradient buttons, gradient text, gradient cards.
+- For color accent presence: use off-viewport blobs with `filter: blur(120px)` instead
+- Exception only if the language philosophy specifically demands gradients
+
+### Border Radius
+- Only allowed values: `0px`, `16px`, `24px`, `9999px` (fully round)
+- NEVER values between 24px and 9999px (no 32px, 48px, 64px)
+- Must be consistent — one primary radius used across all containers
+
 ### Polish
 - No unstyled browser defaults on ANY form element
 - All buttons match each other
 - Consistent spacing and alignment
 - Interactive states (hover, focus, disabled) on all interactive elements
-- Professional front-end designer quality bar
+- Professional front-end designer quality bar — NOT "AI template" quality
 
 ## Failure Modes (Ranked by Frequency)
 
-1. **Catalog layout** — component inventory instead of application scene
-2. **Missing structural identity** — generic template with color swaps
-3. **Generic typography** — Inter, Poppins, Roboto defaults
-4. **Not responsive** — no media queries or inline layout styles
-5. **Unstyled form elements** — raw browser chrome visible
-6. **Missing surface/border/motion** — spec tokens not used in embodiment
-7. **Inconsistent styling** — mix of styled and unstyled components
-8. **Alignment issues** — off-grid, uneven spacing
+1. **AI-slop look** — gradients everywhere, pastel backgrounds, inconsistent border-radius, default letter-spacing. Looks like a crypto landing page or AI demo.
+2. **Catalog layout** — component inventory instead of application scene
+3. **Missing structural identity** — generic template with color swaps
+4. **Generic typography** — Poppins, Montserrat, DM Sans defaults with 0 letter-spacing
+5. **Gradient abuse** — gradient buttons, gradient text, gradient backgrounds. Use blobs instead.
+6. **Wrong backgrounds** — cream, off-white, light blue instead of pure #FFFFFF
+7. **Not responsive** — no media queries or inline layout styles
+8. **Unstyled form elements** — raw browser chrome visible
+9. **Random border-radius** — mixing 8px, 12px, 20px, 32px. Pick from {0, 16, 24, 9999}.
+10. **Missing surface/border/motion** — spec tokens not used in embodiment
