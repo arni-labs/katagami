@@ -198,6 +198,42 @@ Write HTML to sandbox, screenshot at all 3 viewports, evaluate, iterate until po
 
 After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
 "#,
+            "quality_review" => r#"
+## CRITICAL: Spec Validation Gate (MANDATORY — DO THIS FIRST)
+
+**STOP. Before you touch the embodiment, you MUST validate and fix the spec.**
+
+For each language in the job input:
+
+1. `temper.get('DesignLanguages', lang_id)` — read ALL fields.
+2. Parse every JSON spec section and check completeness:
+   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
+   - `philosophy.summary` non-empty, `philosophy.values` >= 3 items
+   - `tokens.colors` must have all 12 keys with real hex values (not empty or placeholder)
+   - `tokens.typography` must have real font names and a google_fonts_url
+   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must all be populated
+   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
+   - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
+   - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
+   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
+
+3. **If ANY section is empty or skeleton — you MUST fix it before proceeding.**
+   a. Search for existing research: `temper.list('DesignSources', "$filter=contains(name,'<language_name>')")`
+   b. If no sources exist, research the design direction:
+      `temper.web_search('<language_name> design system UI patterns typography')` and
+      `temper.web_fetch(url)` on the best results.
+   c. Write concrete, research-backed content for each failing section.
+   d. Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance).
+   e. Re-validate until ALL sections pass.
+   **NEVER generate an embodiment from empty or skeleton specs.**
+
+4. Only AFTER all specs pass validation: evaluate and regenerate the embodiment HTML.
+5. Use sandbox for visual verification: `sandbox.write()`, `sandbox.bash()` (Playwright screenshots at 1440px, 768px, 375px).
+6. Call `AttachEmbodiment` with the fixed HTML.
+7. Call `UpdateQuality` then `Publish`.
+
+**The spec is the primary artifact. An embodiment built on an empty spec is worthless.**
+"#,
             _ => "",
         };
 
