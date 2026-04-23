@@ -73,6 +73,19 @@ to = "Researching"
 hint = "Launch the automated pipeline. Triggers launch_research WASM."
 effect = [{ type = "trigger", name = "launch_research" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM/webhook runtime handles execution unchanged.
+[[action.triggers]]
+name = "launch_research"
+kind = "wasm"
+module = "launch_research"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
+
 [[action]]
 name = "ResearchComplete"
 kind = "input"
@@ -117,13 +130,3 @@ when = ["Failed"]
 assert = "no_further_transitions"
 
 # --- Integrations ---
-
-[[integration]]
-name = "launch_research"
-trigger = "launch_research"
-type = "wasm"
-module = "launch_research"
-on_failure = "Fail"
-
-[integration.config]
-temper_api_url = "{secret:temper_api_url}"

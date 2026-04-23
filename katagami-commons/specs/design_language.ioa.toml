@@ -316,14 +316,3 @@ name = "PublishedRequiresAllSections"
 when = ["Published"]
 assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidance"
 
-# --- Integrations ---
-
-[[integration]]
-name = "notify_published"
-trigger = "Publish"
-type = "webhook"
-
-[[integration]]
-name = "notify_archived"
-trigger = "Archive"
-type = "webhook"
