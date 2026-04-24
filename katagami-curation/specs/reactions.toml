@@ -22,7 +22,7 @@ entity_type = "CurationQuery"
 action = "ResearchComplete"
 
 [reaction.resolve_target]
-type = "Field"
+type = "field"
 field = "query_id"
 
 # When a synthesize CurationJob completes, the organize follow-up has
@@ -40,7 +40,7 @@ entity_type = "CurationQuery"
 action = "SynthesisComplete"
 
 [reaction.resolve_target]
-type = "Field"
+type = "field"
 field = "query_id"
 
 # When an organize_taxonomy CurationJob completes, the full pipeline is done.
@@ -57,7 +57,7 @@ entity_type = "CurationQuery"
 action = "OrganizationComplete"
 
 [reaction.resolve_target]
-type = "Field"
+type = "field"
 field = "query_id"
 
 # When a CurationJob fails, propagate the failure to the CurationQuery.
@@ -73,5 +73,5 @@ entity_type = "CurationQuery"
 action = "Fail"
 
 [reaction.resolve_target]
-type = "Field"
+type = "field"
 field = "query_id"
