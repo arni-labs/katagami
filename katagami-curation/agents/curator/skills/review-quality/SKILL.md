@@ -1,6 +1,6 @@
 # Review Quality
 
-Review and FIX embodiment HTML for design languages. Do not write reports — read the spec, evaluate the embodiment, then regenerate the HTML fixing every issue.
+Review and FIX embodiment HTML for design languages when the underlying spec is already valid. Do not write reports — read the spec, evaluate the embodiment, then regenerate the HTML fixing every issue.
 
 ## When to Use
 
@@ -28,7 +28,7 @@ For each language specified in the job input (or ALL languages if none specified
    - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
    - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
 
-   **If ANY section is empty or skeleton**: the spec must be fixed through research, not CSS extraction. Search for DesignSources related to this language (`temper.list('DesignSources', ...)`), and if none exist, research the design direction via `temper.web_search()` and `temper.web_fetch()`. Write concrete, research-backed content for each failing section and call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance). The spec is the primary artifact — it must be grounded in real design knowledge.
+   **If ANY section is empty or skeleton**: STOP. Do NOT repair the spec in this job. Fail the job with a concrete error_message naming the invalid sections and instruct the caller to run `regenerate_embodiment` or `synthesize` first. Spec repair belongs in those upstream jobs, not in `quality_review`.
 5. **Evaluate against the spec.** Common failures to fix:
    - **Catalog layout**: Organized as a component inventory with sections labeled "Controls", "Feedback", "Data" instead of a plausible application scene. This is the #1 failure — redesign the scene entirely.
    - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` must ALL manifest in CSS. Check each one — if it's not visible, the structure is wrong.

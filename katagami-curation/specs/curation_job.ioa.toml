@@ -84,17 +84,17 @@ name = "soul_id"
 type = "string"
 initial = "curator"
 
-# LLM model identifier
+# LLM model identifier (empty = read from vault)
 [[state]]
 name = "model"
 type = "string"
-initial = "claude-sonnet-4-20250514"
+initial = ""
 
-# LLM provider
+# LLM provider (empty = read from vault)
 [[state]]
 name = "provider"
 type = "string"
-initial = "anthropic"
+initial = ""
 
 # Comma-separated tool list for the session
 [[state]]
