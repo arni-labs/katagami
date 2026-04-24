@@ -37,6 +37,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .and_then(|v| v.as_str())
             .unwrap_or("curator")
             .to_string();
+        let stable_soul_id = normalize_bootstrapped_soul_id(&soul_id);
 
         // --- Config (needed early for secret lookups) ---
         let api_url = ctx
@@ -285,7 +286,8 @@ temper.done("{job_type} failed")
         let needs_sandbox = skill == "synthesize-language" || skill == "review-quality";
 
         let mut config_body = json!({
-            "soul_id": soul_id,
+            "soul_id": stable_soul_id,
+            "agent_id": stable_soul_id,
             "user_message": user_message,
             "model": model,
             "provider": provider,
@@ -444,6 +446,16 @@ fn read_secret(ctx: &Context, api_url: &str, headers: &[(String, String)], key: 
         .map(|s| s.to_string())
 }
 
+fn normalize_bootstrapped_soul_id(soul_ref: &str) -> String {
+    if soul_ref.starts_with("sl-bootstrap-agent-soul-") {
+        return soul_ref.to_string();
+    }
+    format!(
+        "sl-bootstrap-agent-soul-{}",
+        soul_ref.trim().to_lowercase().replace(' ', "-")
+    )
+}
+
 fn urlenc(s: &str) -> String {
     s.replace('%', "%25")
         .replace(' ', "%20")
@@ -452,4 +464,25 @@ fn urlenc(s: &str) -> String {
         .replace('?', "%3F")
         .replace('#', "%23")
         .replace('\'', "%27")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_bootstrapped_soul_id_maps_agent_name_to_stable_id() {
+        assert_eq!(
+            normalize_bootstrapped_soul_id("curator"),
+            "sl-bootstrap-agent-soul-curator"
+        );
+    }
+
+    #[test]
+    fn normalize_bootstrapped_soul_id_preserves_existing_stable_id() {
+        assert_eq!(
+            normalize_bootstrapped_soul_id("sl-bootstrap-agent-soul-curator"),
+            "sl-bootstrap-agent-soul-curator"
+        );
+    }
 }
