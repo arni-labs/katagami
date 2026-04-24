@@ -24,8 +24,8 @@
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Session spawning fields -->
         <Property Name="SoulId" Type="Edm.String" Nullable="false" DefaultValue="app-agent-bootstrap" />
-        <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="claude-sonnet-4-20250514" />
-        <Property Name="Provider" Type="Edm.String" Nullable="false" DefaultValue="anthropic" />
+        <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Provider" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ToolsEnabled" Type="Edm.String" Nullable="false" DefaultValue="temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch" />
         <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
         <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
