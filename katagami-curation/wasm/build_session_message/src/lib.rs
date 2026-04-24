@@ -82,7 +82,9 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     .cloned()
             })
             .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_provider"))
-            .ok_or("No provider configured: set llm_provider in vault or pass provider on CurationJob")?;
+            .ok_or(
+                "No provider configured: set llm_provider in vault or pass provider on CurationJob",
+            )?;
 
         let tools_enabled = fields
             .get("tools_enabled")
@@ -144,62 +146,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         };
 
         // --- Build user_message ---
-        let extra_instructions = match job_type.as_str() {
-            "regenerate_embodiment" => r#"
-## Regeneration Mode
-
-You are regenerating the embodiment for an EXISTING design language as self-contained HTML.
-
-1. Read the existing language entity specified in the input (`existing_language_id`).
-2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
-3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment HTML"`.
-4. **MANDATORY: Run the Spec Validation Gate from your skill instructions.**
-   Parse each JSON field and verify completeness:
-   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
-   - `philosophy.summary` non-empty, `philosophy.values` >= 3 items
-   - `tokens.colors` must have all 12 keys with real hex values (not empty or placeholder)
-   - `tokens.typography` must have real font names and a google_fonts_url
-   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must all be populated
-   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
-   - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
-   - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
-   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
-5. **If ANY section fails validation — RESEARCH and rewrite it before generating the embodiment.**
-   The spec is the primary artifact. It must come from research, not from reverse-engineering existing CSS.
-   a. Search for existing research: `temper.list('DesignSources', "$filter=contains(name,'<language_name>')")`
-   b. If no sources exist, research the design direction:
-      `temper.web_search('<language_name> design system UI patterns typography')` and
-      `temper.web_fetch(url)` on the best results.
-   c. Study real-world references: what makes this design movement distinctive? What are the defining
-      structural choices, typography conventions, color palettes, spatial relationships?
-   d. Rewrite each failing section with concrete, research-backed content — specific CSS techniques
-      and design decisions grounded in real references, not vague adjectives.
-   e. Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance).
-   f. Re-validate until all sections pass.
-   **NEVER generate an embodiment from empty or skeleton specs — the spec defines the identity.**
-6. Generate a self-contained HTML embodiment using the now-complete spec's visual_character, signature_patterns, and tokens.
-7. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
-8. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
-9. Call `SubmitForReview` then `Publish` to re-publish the language.
-"#,
-            "synthesize" | "evolve_language" => r#"
-## CRITICAL: Self-Contained HTML + Visual Verification Required
-
-**You MUST produce a single self-contained HTML file with embedded CSS.**
-
-The embodiment MUST be:
-1. A complete HTML file with all CSS in a `<style>` block — no external stylesheets except Google Fonts
-2. Responsive with media queries for desktop, tablet, and mobile
-3. Visually validated via Playwright screenshots at 3 viewports (desktop 1440px, tablet 768px, mobile 375px)
-4. Published with `embodiment_format: 'html'` in the AttachEmbodiment call
-
-**You MUST use `sandbox.write()`, `sandbox.bash()`, and `sandbox.read()` for screenshots.**
-Write HTML to sandbox, screenshot at all 3 viewports, evaluate, iterate until polished.
-
-After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
-"#,
-            _ => "",
-        };
+        let extra_instructions = extra_instructions_for_job_type(&job_type);
 
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
@@ -429,9 +376,19 @@ fn ensure_workspace(
         .ok_or_else(|| "Created workspace has no entity_id".to_string())
 }
 
-fn read_secret(ctx: &Context, api_url: &str, headers: &[(String, String)], key: &str) -> Option<String> {
+fn read_secret(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    key: &str,
+) -> Option<String> {
     let resp = ctx
-        .http_call("GET", &format!("{api_url}/paw/setup/secrets/{key}"), headers, "")
+        .http_call(
+            "GET",
+            &format!("{api_url}/paw/setup/secrets/{key}"),
+            headers,
+            "",
+        )
         .ok()?;
     if resp.status != 200 {
         return None;
@@ -452,4 +409,117 @@ fn urlenc(s: &str) -> String {
         .replace('?', "%3F")
         .replace('#', "%23")
         .replace('\'', "%27")
+}
+
+fn extra_instructions_for_job_type(job_type: &str) -> &'static str {
+    match job_type {
+        "quality_review" => {
+            r#"
+## Review Boundary
+
+This job is a QUALITY REVIEW, not a research-and-rewrite spec synthesis pass.
+
+1. Validate the spec sections before reviewing the embodiment.
+2. If the spec is incomplete, empty, or skeleton-quality, STOP.
+3. Do NOT repair the spec inside this quality_review job.
+4. Fail the job with a concrete error_message explaining which sections are invalid and instruct the caller to run `regenerate_embodiment` or `synthesize` first.
+
+The embodiment review should stay fast and bounded. Invalid specs are an upstream workflow problem, not review-time work.
+"#
+        }
+        "regenerate_embodiment" => {
+            r#"
+## Regeneration Mode
+
+You are regenerating the embodiment for an EXISTING design language as self-contained HTML.
+
+1. Read the existing language entity specified in the input (`existing_language_id`).
+2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
+3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment HTML"`.
+4. **MANDATORY: Run the Spec Validation Gate from your skill instructions.**
+   Parse each JSON field and verify completeness:
+   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
+   - `philosophy.summary` non-empty, `philosophy.values` >= 3 items
+   - `tokens.colors` must have all 12 keys with real hex values (not empty or placeholder)
+   - `tokens.typography` must have real font names and a google_fonts_url
+   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must all be populated
+   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
+   - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
+   - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
+   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
+5. **If ANY section fails validation — RESEARCH and rewrite it before generating the embodiment.**
+   The spec is the primary artifact. It must come from research, not from reverse-engineering existing CSS.
+   a. Search for existing research: `temper.list('DesignSources', "$filter=contains(name,'<language_name>')")`
+   b. If no sources exist, research the design direction:
+      `temper.web_search('<language_name> design system UI patterns typography')` and
+      `temper.web_fetch(url)` on the best results.
+   c. Study real-world references: what makes this design movement distinctive? What are the defining
+      structural choices, typography conventions, color palettes, spatial relationships?
+   d. Rewrite each failing section with concrete, research-backed content — specific CSS techniques
+      and design decisions grounded in real references, not vague adjectives.
+   e. Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance).
+   f. Re-validate until all sections pass.
+   **NEVER generate an embodiment from empty or skeleton specs — the spec defines the identity.**
+6. Generate a self-contained HTML embodiment using the now-complete spec's visual_character, signature_patterns, and tokens.
+7. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
+8. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
+9. Call `SubmitForReview` then `Publish` to re-publish the language.
+"#
+        }
+        "synthesize" | "evolve_language" => {
+            r#"
+## CRITICAL: Self-Contained HTML + Visual Verification Required
+
+**You MUST produce a single self-contained HTML file with embedded CSS.**
+
+The embodiment MUST be:
+1. A complete HTML file with all CSS in a `<style>` block — no external stylesheets except Google Fonts
+2. Responsive with media queries for desktop, tablet, and mobile
+3. Visually validated via Playwright screenshots at 3 viewports (desktop 1440px, tablet 768px, mobile 375px)
+4. Published with `embodiment_format: 'html'` in the AttachEmbodiment call
+
+**You MUST use `sandbox.write()`, `sandbox.bash()`, and `sandbox.read()` for screenshots.**
+Write HTML to sandbox, screenshot at all 3 viewports, evaluate, iterate until polished.
+
+After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
+"#
+        }
+        _ => "",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use super::extra_instructions_for_job_type;
+
+    #[test]
+    fn quality_review_instructions_fail_fast_on_invalid_specs() {
+        let instructions = extra_instructions_for_job_type("quality_review");
+
+        assert!(instructions.contains("Do NOT repair the spec inside this quality_review job."));
+        assert!(instructions.contains("Fail the job"));
+        assert!(instructions.contains("regenerate_embodiment"));
+    }
+
+    #[test]
+    fn regenerate_embodiment_instructions_keep_spec_repair_loop() {
+        let instructions = extra_instructions_for_job_type("regenerate_embodiment");
+
+        assert!(instructions.contains("If ANY section fails validation"));
+        assert!(instructions.contains("RESEARCH and rewrite it"));
+    }
+
+    #[test]
+    fn quality_review_skill_fails_fast_on_invalid_specs() {
+        let skill_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../agents/curator/skills/review-quality/SKILL.md");
+        let skill = fs::read_to_string(skill_path).expect("skill file should load");
+
+        assert!(skill.contains("Do NOT repair the spec in this job."));
+        assert!(skill.contains("Fail the job"));
+        assert!(skill.contains("regenerate_embodiment"));
+    }
 }
