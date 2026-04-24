@@ -76,9 +76,15 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let job_id = ctx
+            .entity_state
+            .get("entity_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&ctx.entity_id)
+            .to_string();
 
         match job_status {
-            "Completed" => {
+            "Finalizing" => {
                 // Cascade logic: spawn follow-up jobs based on job_type
                 let followup_job_id = match job_type.as_str() {
                     // source_search -> synthesize
@@ -92,15 +98,32 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             input_json.as_ref(),
                             output_json.as_ref(),
                         )?;
-                        // Advance CurationQuery: Researching -> Synthesizing
                         if !query_id.is_empty() {
-                            let job_id = ctx.entity_state.get("entity_id")
-                                .and_then(|v| v.as_str()).unwrap_or("").to_string();
-                            advance_query(&ctx, &api_url, &headers, &query_id,
-                                "ResearchComplete", &json!({
-                                    "source_search_job_id": job_id,
-                                    "synthesize_job_id": synth_id.as_deref().unwrap_or("")
-                                }));
+                            let synth_job_id = synth_id
+                                .as_deref()
+                                .ok_or("source_search completed without a synth follow-up job")?;
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "PublishResearchCompletion",
+                                &json!({
+                                    "followup_job_id": synth_job_id,
+                                }),
+                            )?;
+                        } else {
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "FinalizeCompletion",
+                                &json!({
+                                    "followup_job_id": synth_id.as_deref().unwrap_or(""),
+                                    "design_language_ids": "[]",
+                                }),
+                            )?;
                         }
                         synth_id
                     }
@@ -114,16 +137,41 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &query_id,
                             output_json.as_ref(),
                         )?;
-                        // Advance CurationQuery: Synthesizing -> Organizing
                         if !query_id.is_empty() {
                             let language_ids = output_json.as_ref()
                                 .and_then(|v| v.get("language_ids"))
                                 .map(|v| v.to_string())
                                 .unwrap_or_else(|| "[]".to_string());
-                            advance_query(&ctx, &api_url, &headers, &query_id,
-                                "SynthesisComplete", &json!({
+                            let organize_stage_job_id = review_id
+                                .as_deref()
+                                .ok_or("synthesize completed without an organizing-stage follow-up job")?;
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "PublishSynthesisCompletion",
+                                &json!({
                                     "design_language_ids": language_ids,
-                                }));
+                                    "followup_job_id": organize_stage_job_id,
+                                }),
+                            )?;
+                        } else {
+                            let language_ids = output_json.as_ref()
+                                .and_then(|v| v.get("language_ids"))
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "[]".to_string());
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "FinalizeCompletion",
+                                &json!({
+                                    "design_language_ids": language_ids,
+                                    "followup_job_id": review_id.as_deref().unwrap_or(""),
+                                }),
+                            )?;
                         }
                         review_id
                     }
@@ -142,22 +190,76 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &query_id,
                             review_output.as_ref(),
                         )?;
+                        publish_job_progression(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &job_id,
+                            "FinalizeCompletion",
+                            &json!({
+                                "followup_job_id": organize_id.as_deref().unwrap_or(""),
+                                "design_language_ids": "[]",
+                            }),
+                        )?;
                         organize_id
                     }
                     // organize_taxonomy -> pipeline complete
                     "organize_taxonomy" => {
-                        // Advance CurationQuery: Organizing -> Completed
                         if !query_id.is_empty() {
-                            advance_query(&ctx, &api_url, &headers, &query_id,
-                                "OrganizationComplete", &json!({}));
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "PublishOrganizationCompletion",
+                                &json!({}),
+                            )?;
+                        } else {
+                            publish_job_progression(
+                                &ctx,
+                                &api_url,
+                                &headers,
+                                &job_id,
+                                "FinalizeCompletion",
+                                &json!({
+                                    "followup_job_id": "",
+                                    "design_language_ids": "[]",
+                                }),
+                            )?;
                         }
                         None
                     }
                     // regenerate_embodiment -> submit next queued regen job
                     "regenerate_embodiment" => {
-                        submit_next_queued_regeneration(&ctx, &api_url, &headers)?
+                        let next_job_id =
+                            submit_next_queued_regeneration(&ctx, &api_url, &headers)?;
+                        publish_job_progression(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &job_id,
+                            "FinalizeCompletion",
+                            &json!({
+                                "followup_job_id": next_job_id.as_deref().unwrap_or(""),
+                                "design_language_ids": "[]",
+                            }),
+                        )?;
+                        next_job_id
                     }
-                    _ => None,
+                    _ => {
+                        publish_job_progression(
+                            &ctx,
+                            &api_url,
+                            &headers,
+                            &job_id,
+                            "FinalizeCompletion",
+                            &json!({
+                                "followup_job_id": "",
+                                "design_language_ids": "[]",
+                            }),
+                        )?;
+                        None
+                    }
                 };
                 let synth_job_id = followup_job_id;
 
@@ -235,13 +337,6 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         resp.status,
                         &resp.body[..resp.body.len().min(300)]
                     ));
-                }
-                // Advance CurationQuery to Failed if query_id is present
-                if !query_id.is_empty() {
-                    advance_query(&ctx, &api_url, &headers, &query_id,
-                        "Fail", &json!({
-                            "error_message": format!("{} job failed: {}", job_type, error_message)
-                        }));
                 }
                 set_success_result(
                     "",
@@ -709,34 +804,36 @@ fn submit_next_queued_regeneration(
     Ok(None)
 }
 
-/// Advance the CurationQuery state machine. Best-effort — failures are logged but don't block.
-fn advance_query(
+/// Dispatch a local completion-publish action so inline entity triggers can
+/// advance the parent CurationQuery declaratively.
+fn publish_job_progression(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    query_id: &str,
+    job_id: &str,
     action: &str,
     params: &serde_json::Value,
-) {
+) -> Result<(), String> {
     let url = format!(
-        "{api_url}/tdata/CurationQueries('{query_id}')/Katagami.Curation.{action}"
+        "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.{action}"
     );
     match ctx.http_call("POST", &url, headers, &params.to_string()) {
         Ok(resp) if (200..300).contains(&resp.status) => {
-            ctx.log("info", &format!(
-                "advance_query: {action} succeeded for query '{query_id}'"
-            ));
+            ctx.log(
+                "info",
+                &format!("publish_job_progression: {action} succeeded for job '{job_id}'"),
+            );
+            Ok(())
         }
         Ok(resp) => {
-            ctx.log("warn", &format!(
-                "advance_query: {action} failed for query '{query_id}': HTTP {} — {}",
-                resp.status, &resp.body[..resp.body.len().min(200)]
-            ));
+            Err(format!(
+                "publish_job_progression: {action} failed for job '{job_id}': HTTP {} — {}",
+                resp.status,
+                &resp.body[..resp.body.len().min(200)]
+            ))
         }
-        Err(e) => {
-            ctx.log("warn", &format!(
-                "advance_query: {action} error for query '{query_id}': {e}"
-            ));
-        }
+        Err(e) => Err(format!(
+            "publish_job_progression: {action} error for job '{job_id}': {e}"
+        )),
     }
 }

@@ -2,7 +2,7 @@ name = "katagami-curation"
 description = "Agent work layer for katagami — CurationJob queue, bootstrap and curator agents, source search and synthesis pipeline."
 version = "0.1.0"
 startup_install = "core"
-dependencies = ["paw-agent", "paw-fs", "katagami-commons"]
+dependencies = ["paw-agent", "paw-fs", "paw-research", "katagami-commons"]
 
 # These declarations are REQUIRED — the installer only uploads WASM
 # artifacts listed here. Without them, even if the compiled `.wasm`

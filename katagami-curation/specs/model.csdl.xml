@@ -18,6 +18,8 @@
         <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Input" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="Output" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="FollowupJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Session spawning fields -->
