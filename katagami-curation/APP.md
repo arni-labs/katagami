@@ -1,34 +1,57 @@
 # katagami-curation
 
-Agent work layer for the Katagami Design Language Commons, following the koto-wiki pattern. Provides a CurationJob queue that orchestrates bootstrap and curator agent sessions.
+Agent work layer for the Katagami Design Language Commons. Provides a
+CurationJob queue, template-owned session bootstrapping, and Temper-native
+curation workflow triggers.
 
 ## Entity Types
 
 ### CurationJob
 
-Trackable unit of work for agents. Structurally identical to koto-wiki's WikiJob — same states, same session-spawning fields, same WASM triggers. Will be refactored into a shared core later.
+Trackable unit of work for curator agents. It owns session spawning fields and
+typed completion actions; follow-up jobs and parent-query transitions are
+declared as Temper reactions.
 
-**States:** `Queued` -> `Ready` -> `Running` -> `Completed` | `Failed`
+**States:** `Queued` -> `Ready` -> `Running` -> `Finalizing` -> `Completed` | `Failed`
 
 **Job Types:**
-- `source_search` — Research design movements, store authoritative sources
-- `synthesize` — Create DesignLanguage specs from indexed sources
-- `generate_embodiment` — Render all canonical elements for a design language
-- `review` — Quality check: spec completeness, embodiment fidelity
-- `organize` — Taxonomy maintenance, cross-referencing
-- `evolve` — Create child DesignLanguage from parent
-- `remix` — Create child from multiple parents
+- `source_search` — Research design movements and store authoritative sources
+- `synthesize` — Create DesignLanguage specs with embodiments
+- `quality_review` — Fix embodiment fidelity against a valid spec, then publish
+- `organize_taxonomy` — Taxonomy maintenance and cross-referencing
+- `regenerate_embodiment` — Rebuild embodiment HTML for an existing language
+- `evolve_language` — Create a child DesignLanguage from a parent
+
+### CurationDirection
+
+One researched direction created by a `source_search` job. `QueueSynthesis`
+uses a reaction to create and submit the matching `synthesize`
+CurationJob.
+
+### CurationJobTemplate
+
+Active job configuration for session bootstrapping. Templates map job types to
+skills, instruction paths, tool profiles, sandbox needs, and typed completion
+actions.
 
 ## Agents
 
-### Bootstrap (`agents/bootstrap/AGENT.md`)
-Handles `source_search` and `synthesize` jobs. Researches via web search, evaluates sources, creates DesignSource entities. Synthesizes DesignLanguage specs from sources, generates HTML embodiments.
-
 ### Curator (`agents/curator/AGENT.md`)
-Handles `review`, `organize`, and `lint` jobs. Evaluates quality, maintains taxonomy, cross-references. The quality gate — nothing gets Published without curator approval.
+
+Handles all active curation job types. Researches sources, creates
+DesignSource and CurationDirection entities, synthesizes DesignLanguage specs,
+repairs embodiments, and maintains taxonomy. The quality gate keeps generated
+languages out of `Published` until review passes.
 
 ## Pipeline
 
-`source_search` -> `synthesize` -> `review` -> Published
+`source_search` -> `CurationDirection` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
 
-Each job spawns an agent session via WASM integration. `build_session_message` constructs the prompt, `finalize_spawned_session` processes results back into entity actions.
+Each job spawns an agent session through a small WASM runtime bridge.
+`build_session_message` reads `CurationJobTemplate` records, loads the
+referenced skill and knowledge files from TemperFS, and creates OpenPaw
+sessions. Follow-up jobs and parent-query transitions are declared as Temper
+reactions. `finalize_spawned_session` records session results for typed jobs,
+keeps a legacy completion path for already-running old sessions, and contains
+an idempotent fallback while the OpenPaw OS app installer catches up to app
+reaction loading.

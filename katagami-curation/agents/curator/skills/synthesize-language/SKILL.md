@@ -302,9 +302,28 @@ For `evolve_language` jobs: read the parent language first, inherit base tokens,
 ### Final Tool Call
 
 ```python
-output = json.dumps({'language_ids': created_ids}, ensure_ascii=False)
-temper.action('CurationJobs', job_id, 'Complete', {'output': output})
-temper.done("synthesize complete")
+if job_type == 'regenerate_embodiment':
+    temper.action('CurationJobs', job_id, 'CompleteRegeneration', {
+        'design_language_ids': json.dumps(created_ids),
+        'output': json.dumps({'language_ids': created_ids}, ensure_ascii=False)
+    })
+    temper.done("regenerate_embodiment complete")
+elif job_type == 'evolve_language':
+    temper.action('CurationJobs', job_id, 'CompleteEvolution', {
+        'design_language_ids': json.dumps(created_ids),
+        'output': json.dumps({'language_ids': created_ids}, ensure_ascii=False)
+    })
+    temper.done("evolve_language complete")
+else:
+    review_input = json.dumps({
+        'language_ids': created_ids,
+        'query_id': query_id
+    }, ensure_ascii=False)
+    temper.action('CurationJobs', job_id, 'CompleteSynthesis', {
+        'design_language_ids': json.dumps(created_ids),
+        'review_input': review_input
+    })
+    temper.done("synthesize complete")
 ```
 
 ## Tooling Rules
@@ -319,3 +338,8 @@ temper.done("synthesize complete")
 
 Job output JSON must include:
 - `language_ids` — array of created DesignLanguage entity IDs
+
+Typed completion params:
+- `synthesize` uses `CompleteSynthesis` with `design_language_ids` and `review_input`
+- `regenerate_embodiment` uses `CompleteRegeneration`
+- `evolve_language` uses `CompleteEvolution`

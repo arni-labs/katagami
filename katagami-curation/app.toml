@@ -1,5 +1,5 @@
 name = "katagami-curation"
-description = "Agent work layer for katagami — CurationJob queue, bootstrap and curator agents, source search and synthesis pipeline."
+description = "Agent work layer for katagami — CurationJob queue, curator sessions, CurationDirection fan-out, and template-owned curation pipeline."
 version = "0.1.0"
 startup_install = "core"
 dependencies = ["paw-agent", "paw-fs", "paw-research", "katagami-commons"]
@@ -7,7 +7,7 @@ dependencies = ["paw-agent", "paw-fs", "paw-research", "katagami-commons"]
 # These declarations are REQUIRED — the installer only uploads WASM
 # artifacts listed here. Without them, even if the compiled `.wasm`
 # files are shipped in the image, `wasm_modules: []` comes back empty
-# at tenant install and every integration trigger (build_session_message,
+# at tenant install and every WASM trigger (build_session_message,
 # finalize_spawned_session, launch_research) fails with
 # "WASM module not found". Same trap that hit paw-research on
 # 2026-04-18.

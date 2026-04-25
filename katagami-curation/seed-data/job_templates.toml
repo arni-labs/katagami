@@ -1,0 +1,128 @@
+# Seed data: active CurationJobTemplate records.
+# These keep job routing and completion contracts out of WASM source.
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-source-search-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "source_search"
+skill_id = "research-direction"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch"
+requires_sandbox = false
+max_turns_default = "250"
+completion_action = "CompleteResearch"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-synthesize-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "synthesize"
+skill_id = "synthesize-language"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompleteSynthesis"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-quality-review-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "quality_review"
+skill_id = "review-quality"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompleteQualityReview"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-organize-taxonomy-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "organize_taxonomy"
+skill_id = "organize-taxonomy"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/organize-taxonomy/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read"
+requires_sandbox = false
+max_turns_default = "250"
+completion_action = "CompleteOrganization"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-regenerate-embodiment-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "regenerate_embodiment"
+skill_id = "synthesize-language"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompleteRegeneration"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-evolve-language-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "evolve_language"
+skill_id = "synthesize-language"
+instruction_path = "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompleteEvolution"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"

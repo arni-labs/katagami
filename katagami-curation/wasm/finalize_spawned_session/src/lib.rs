@@ -1,7 +1,11 @@
 use temper_wasm_sdk::prelude::*;
 
-/// Finalize a CurationJob's spawned session. On Complete for source_search jobs,
-/// spawns a follow-up synthesize job. Also finalizes the Session entity.
+/// Finalize a CurationJob's spawned session.
+///
+/// Typed-v1 jobs use entity triggers for follow-up orchestration, so this
+/// module only records the OpenPaw session result and moves the job to
+/// Completed. Legacy Complete(output) jobs keep the old cascade path for one
+/// compatibility window so already-running sessions can finish.
 #[unsafe(no_mangle)]
 pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
     let result = (|| -> Result<(), String> {
@@ -24,10 +28,26 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        if session_id.is_empty() {
-            set_success_result("", &json!({"status": "noop", "reason": "no session_id"}));
-            return Ok(());
-        }
+        let job_status = ctx
+            .entity_state
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let completion_contract = fields
+            .get("completion_contract")
+            .and_then(|v| v.as_str())
+            .unwrap_or("legacy-json-v1");
+        let query_id = fields
+            .get("query_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let job_id = ctx
+            .entity_state
+            .get("entity_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&ctx.entity_id)
+            .to_string();
 
         let api_url = ctx
             .config
@@ -42,6 +62,46 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             ("x-temper-principal-id".to_string(), "system".to_string()),
             ("x-temper-agent-type".to_string(), "system".to_string()),
         ];
+
+        if session_id.is_empty() {
+            if job_status == "Finalizing" && completion_contract == "typed-v1" {
+                let fallback = run_typed_completion_fallback(
+                    &ctx,
+                    &api_url,
+                    &headers,
+                    &job_id,
+                    &job_type,
+                    &fields,
+                    &workspace_id,
+                    &query_id,
+                )?;
+                publish_job_progression(
+                    &ctx,
+                    &api_url,
+                    &headers,
+                    &job_id,
+                    "FinalizeCompletion",
+                    &json!({
+                        "followup_job_id": "",
+                        "design_language_ids": fields
+                            .get("design_language_ids")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("[]"),
+                    }),
+                )?;
+                set_success_result(
+                    "",
+                    &json!({
+                        "status": "typed job finalized without session_id",
+                        "completion_contract": completion_contract,
+                        "fallback": fallback,
+                    }),
+                );
+            } else {
+                set_success_result("", &json!({"status": "noop", "reason": "no session_id"}));
+            }
+            return Ok(());
+        }
 
         // Load Session to check its status
         let session_resp = ctx.http_call(
@@ -61,30 +121,65 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let session: serde_json::Value = serde_json::from_str(&session_resp.body)
             .map_err(|e| format!("Failed to parse Session response: {e}"))?;
         let session_status = session.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        let session_already_terminal = matches!(session_status, "Completed" | "Failed" | "Cancelled");
-
-        let job_status = ctx
-            .entity_state
-            .get("status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let session_already_terminal =
+            matches!(session_status, "Completed" | "Failed" | "Cancelled");
         let session_fields = session.get("fields").cloned().unwrap_or(json!({}));
         let session_counters = session.get("counters").cloned().unwrap_or(json!({}));
 
-        let query_id = fields
-            .get("query_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let job_id = ctx
-            .entity_state
-            .get("entity_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or(&ctx.entity_id)
-            .to_string();
-
         match job_status {
             "Finalizing" => {
+                if completion_contract == "typed-v1" {
+                    let result_text = fields
+                        .get("output")
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or("CurationJob completed");
+                    let record_status = record_session_success(
+                        &ctx,
+                        &api_url,
+                        &headers,
+                        &session_id,
+                        session_status,
+                        &session_fields,
+                        &session_counters,
+                        result_text,
+                    )?;
+                    let fallback = run_typed_completion_fallback(
+                        &ctx,
+                        &api_url,
+                        &headers,
+                        &job_id,
+                        &job_type,
+                        &fields,
+                        &workspace_id,
+                        &query_id,
+                    )?;
+                    publish_job_progression(
+                        &ctx,
+                        &api_url,
+                        &headers,
+                        &job_id,
+                        "FinalizeCompletion",
+                        &json!({
+                            "followup_job_id": "",
+                            "design_language_ids": fields
+                                .get("design_language_ids")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("[]"),
+                        }),
+                    )?;
+                    set_success_result(
+                        "",
+                        &json!({
+                            "status": record_status,
+                            "session_id": session_id,
+                            "completion_contract": completion_contract,
+                            "fallback": fallback,
+                        }),
+                    );
+                    return Ok(());
+                }
+
                 // Cascade logic: spawn follow-up jobs based on job_type
                 let followup_job_id = match job_type.as_str() {
                     // source_search -> synthesize
@@ -138,13 +233,14 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             output_json.as_ref(),
                         )?;
                         if !query_id.is_empty() {
-                            let language_ids = output_json.as_ref()
+                            let language_ids = output_json
+                                .as_ref()
                                 .and_then(|v| v.get("language_ids"))
                                 .map(|v| v.to_string())
                                 .unwrap_or_else(|| "[]".to_string());
-                            let organize_stage_job_id = review_id
-                                .as_deref()
-                                .ok_or("synthesize completed without an organizing-stage follow-up job")?;
+                            let organize_stage_job_id = review_id.as_deref().ok_or(
+                                "synthesize completed without an organizing-stage follow-up job",
+                            )?;
                             publish_job_progression(
                                 &ctx,
                                 &api_url,
@@ -157,7 +253,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                                 }),
                             )?;
                         } else {
-                            let language_ids = output_json.as_ref()
+                            let language_ids = output_json
+                                .as_ref()
                                 .and_then(|v| v.get("language_ids"))
                                 .map(|v| v.to_string())
                                 .unwrap_or_else(|| "[]".to_string());
@@ -368,6 +465,438 @@ fn parse_json_field(value: Option<&serde_json::Value>) -> Option<serde_json::Val
     serde_json::from_str::<serde_json::Value>(raw).ok()
 }
 
+fn record_session_success(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    session_id: &str,
+    session_status: &str,
+    session_fields: &serde_json::Value,
+    session_counters: &serde_json::Value,
+    result_text: &str,
+) -> Result<&'static str, String> {
+    if matches!(session_status, "Completed" | "Failed" | "Cancelled") {
+        return Ok("session already terminal");
+    }
+
+    if !matches!(session_status, "Thinking" | "Executing") {
+        return Ok("session not finalizable");
+    }
+
+    let body = json!({
+        "result": result_text,
+        "conversation": session_fields.get("conversation").and_then(|v| v.as_str()).unwrap_or(""),
+        "session_leaf_id": session_fields.get("session_leaf_id").and_then(|v| v.as_str()).unwrap_or(""),
+        "repl_file_id": session_fields.get("repl_file_id").and_then(|v| v.as_str()).unwrap_or(""),
+        "input_tokens": session_counters.get("input_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
+        "output_tokens": session_counters.get("output_tokens").and_then(|v| v.as_i64()).unwrap_or(0)
+    });
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.RecordResult"),
+        headers,
+        &body.to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to finalize Session '{session_id}': HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+
+    Ok("session finalized")
+}
+
+fn run_typed_completion_fallback(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    workspace_id: &str,
+    query_id: &str,
+) -> Result<serde_json::Value, String> {
+    let mut actions = Vec::new();
+
+    match job_type {
+        "source_search" => {
+            let direction_ids = parse_json_string_array(fields.get("direction_ids"));
+            for direction_id in &direction_ids {
+                if job_exists(
+                    ctx,
+                    api_url,
+                    headers,
+                    "synthesize",
+                    query_id,
+                    Some(direction_id),
+                )? {
+                    continue;
+                }
+
+                let Some(direction) =
+                    load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
+                else {
+                    continue;
+                };
+                let direction_fields = direction.get("fields").cloned().unwrap_or(json!({}));
+                let synth_input = string_field(&direction_fields, "synth_input", "{}");
+                let direction_workspace =
+                    string_field(&direction_fields, "workspace_id", workspace_id);
+                let direction_query = string_field(&direction_fields, "query_id", query_id);
+                let synth_job_id = create_configure_submit_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    "synthesize",
+                    &direction_workspace,
+                    &direction_query,
+                    Some(direction_id),
+                    &synth_input,
+                )?;
+                actions.push(json!({
+                    "action": "created_synthesis_job",
+                    "direction_id": direction_id,
+                    "job_id": synth_job_id,
+                }));
+            }
+
+            if !query_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
+                    == Some("Researching".to_string())
+            {
+                dispatch_action(
+                    ctx,
+                    api_url,
+                    headers,
+                    "CurationQueries",
+                    query_id,
+                    "ResearchComplete",
+                    &json!({
+                        "source_search_job_id": job_id,
+                        "synthesize_job_id": "",
+                        "direction_ids": fields
+                            .get("direction_ids")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("[]"),
+                        "synthesize_job_ids": "[]",
+                    }),
+                )?;
+                actions.push(json!({"action": "query_research_complete", "query_id": query_id}));
+            }
+        }
+        "synthesize" => {
+            let direction_id = string_field(fields, "direction_id", "");
+            if !direction_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
+                    == Some("Synthesizing".to_string())
+            {
+                dispatch_action(
+                    ctx,
+                    api_url,
+                    headers,
+                    "CurationDirections",
+                    &direction_id,
+                    "Complete",
+                    &json!({
+                        "design_language_ids": fields
+                            .get("design_language_ids")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("[]"),
+                    }),
+                )?;
+                actions.push(json!({"action": "direction_complete", "direction_id": direction_id}));
+            }
+
+            let query_status = if query_id.is_empty() {
+                None
+            } else {
+                entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
+            };
+            if query_status.as_deref() == Some("Synthesizing")
+                && !job_exists(ctx, api_url, headers, "quality_review", query_id, None)?
+            {
+                let review_input = string_field(fields, "review_input", "{}");
+                let review_job_id = create_configure_submit_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    "quality_review",
+                    workspace_id,
+                    query_id,
+                    None,
+                    &review_input,
+                )?;
+                actions
+                    .push(json!({"action": "created_quality_review_job", "job_id": review_job_id}));
+            }
+            if query_status.as_deref() == Some("Synthesizing") {
+                dispatch_action(
+                    ctx,
+                    api_url,
+                    headers,
+                    "CurationQueries",
+                    query_id,
+                    "SynthesisComplete",
+                    &json!({
+                        "design_language_ids": fields
+                            .get("design_language_ids")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("[]"),
+                        "organize_job_id": "",
+                        "quality_review_job_ids": "[]",
+                    }),
+                )?;
+                actions.push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
+            }
+        }
+        "quality_review" => {
+            if !query_id.is_empty()
+                && !job_exists(ctx, api_url, headers, "organize_taxonomy", query_id, None)?
+            {
+                let organize_input = string_field(fields, "organize_input", "{}");
+                let organize_job_id = create_configure_submit_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    "organize_taxonomy",
+                    workspace_id,
+                    query_id,
+                    None,
+                    &organize_input,
+                )?;
+                actions
+                    .push(json!({"action": "created_organization_job", "job_id": organize_job_id}));
+            }
+        }
+        "organize_taxonomy" => {
+            if !query_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
+                    == Some("Organizing".to_string())
+            {
+                dispatch_action(
+                    ctx,
+                    api_url,
+                    headers,
+                    "CurationQueries",
+                    query_id,
+                    "OrganizationComplete",
+                    &json!({}),
+                )?;
+                actions
+                    .push(json!({"action": "query_organization_complete", "query_id": query_id}));
+            }
+        }
+        _ => {}
+    }
+
+    Ok(json!(actions))
+}
+
+fn string_field(fields: &serde_json::Value, name: &str, default: &str) -> String {
+    fields
+        .get(name)
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or(default)
+        .to_string()
+}
+
+fn parse_json_string_array(value: Option<&serde_json::Value>) -> Vec<String> {
+    value
+        .and_then(|v| v.as_str())
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+        .and_then(|v| {
+            v.as_array().map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                    .collect::<Vec<_>>()
+            })
+        })
+        .unwrap_or_default()
+}
+
+fn load_entity(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    entity_id: &str,
+) -> Result<Option<serde_json::Value>, String> {
+    if entity_id.is_empty() {
+        return Ok(None);
+    }
+    let resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/{set_name}('{entity_id}')"),
+        headers,
+        "",
+    )?;
+    if resp.status == 404 {
+        return Ok(None);
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to load {set_name}('{entity_id}'): HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    serde_json::from_str::<serde_json::Value>(&resp.body)
+        .map(Some)
+        .map_err(|e| format!("Failed to parse {set_name}('{entity_id}') response: {e}"))
+}
+
+fn entity_status(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    entity_id: &str,
+) -> Result<Option<String>, String> {
+    Ok(
+        load_entity(ctx, api_url, headers, set_name, entity_id)?.and_then(|entity| {
+            entity
+                .get("status")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        }),
+    )
+}
+
+fn list_curation_jobs(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+) -> Result<Vec<serde_json::Value>, String> {
+    let resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/CurationJobs?$top=200"),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to list CurationJobs: HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    let body: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse CurationJobs response: {e}"))?;
+    Ok(body
+        .get("value")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default())
+}
+
+fn job_exists(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_type: &str,
+    query_id: &str,
+    direction_id: Option<&str>,
+) -> Result<bool, String> {
+    Ok(list_curation_jobs(ctx, api_url, headers)?
+        .iter()
+        .any(|job| {
+            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
+            let matches_type = fields.get("job_type").and_then(|v| v.as_str()) == Some(job_type);
+            let matches_query = query_id.is_empty()
+                || fields.get("query_id").and_then(|v| v.as_str()) == Some(query_id);
+            let matches_direction = match direction_id {
+                Some(expected) => {
+                    fields.get("direction_id").and_then(|v| v.as_str()) == Some(expected)
+                }
+                None => true,
+            };
+            matches_type && matches_query && matches_direction
+        }))
+}
+
+fn create_configure_submit_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_type: &str,
+    workspace_id: &str,
+    query_id: &str,
+    direction_id: Option<&str>,
+    input: &str,
+) -> Result<String, String> {
+    let create_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs"),
+        headers,
+        "{}",
+    )?;
+    if !(200..300).contains(&create_resp.status) {
+        return Err(format!(
+            "Failed to create {job_type} CurationJob: HTTP {}: {}",
+            create_resp.status,
+            &create_resp.body[..create_resp.body.len().min(300)]
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
+        .map_err(|e| format!("Failed to parse CurationJob creation response: {e}"))?;
+    let job_id = created
+        .get("entity_id")
+        .and_then(|v| v.as_str())
+        .ok_or("Created CurationJob has no entity_id")?
+        .to_string();
+
+    let mut body = json!({
+        "job_type": job_type,
+        "workspace_id": workspace_id,
+        "input": input,
+        "query_id": query_id,
+        "completion_contract": "typed-v1",
+    });
+    if let Some(direction_id) = direction_id.filter(|id| !id.is_empty()) {
+        body["direction_id"] = serde_json::Value::String(direction_id.to_string());
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "CurationJobs",
+        &job_id,
+        "ConfigureAndSubmit",
+        &body,
+    )?;
+    Ok(job_id)
+}
+
+fn dispatch_action(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    entity_id: &str,
+    action: &str,
+    params: &serde_json::Value,
+) -> Result<(), String> {
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/{set_name}('{entity_id}')/Temper.{action}"),
+        headers,
+        &params.to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to dispatch {set_name}('{entity_id}').{action}: HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    Ok(())
+}
+
 fn string_array(value: Option<&serde_json::Value>) -> Vec<String> {
     value
         .and_then(|v| v.as_array())
@@ -402,13 +931,21 @@ fn spawn_synth_followup(
     let task = output_json
         .and_then(|v| v.get("task"))
         .and_then(|v| v.as_str())
-        .or_else(|| input_json.and_then(|v| v.get("task")).and_then(|v| v.as_str()))
+        .or_else(|| {
+            input_json
+                .and_then(|v| v.get("task"))
+                .and_then(|v| v.as_str())
+        })
         .unwrap_or("")
         .to_string();
     let scope = output_json
         .and_then(|v| v.get("scope"))
         .and_then(|v| v.as_str())
-        .or_else(|| input_json.and_then(|v| v.get("scope")).and_then(|v| v.as_str()))
+        .or_else(|| {
+            input_json
+                .and_then(|v| v.get("scope"))
+                .and_then(|v| v.as_str())
+        })
         .unwrap_or("")
         .to_string();
     let topic_allowlist = string_array(
@@ -508,9 +1045,7 @@ fn spawn_synth_followup(
         });
         let configure_resp = ctx.http_call(
             "POST",
-            &format!(
-                "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Configure"
-            ),
+            &format!("{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Configure"),
             headers,
             &configure_body.to_string(),
         )?;
@@ -528,9 +1063,7 @@ fn spawn_synth_followup(
         // Submit to trigger build_session_message
         let submit_resp = ctx.http_call(
             "POST",
-            &format!(
-                "{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Submit"
-            ),
+            &format!("{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Submit"),
             headers,
             "{}",
         )?;
@@ -547,7 +1080,10 @@ fn spawn_synth_followup(
 
         ctx.log(
             "info",
-            &format!("Spawned synth job '{}' for direction '{}'", synth_job_id, direction),
+            &format!(
+                "Spawned synth job '{}' for direction '{}'",
+                synth_job_id, direction
+            ),
         );
         if first_job_id.is_none() {
             first_job_id = Some(synth_job_id);
@@ -566,11 +1102,12 @@ fn spawn_quality_review_followup(
     query_id: &str,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
-    let language_ids = string_array(
-        output_json.and_then(|v| v.get("language_ids")),
-    );
+    let language_ids = string_array(output_json.and_then(|v| v.get("language_ids")));
     if language_ids.is_empty() {
-        ctx.log("info", "spawn_quality_review_followup: no language_ids in output, skipping");
+        ctx.log(
+            "info",
+            "spawn_quality_review_followup: no language_ids in output, skipping",
+        );
         return Ok(None);
     }
 
@@ -593,8 +1130,9 @@ fn spawn_quality_review_followup(
             &create_resp.body[..create_resp.body.len().min(300)]
         ));
     }
-    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
-        .map_err(|e| format!("Failed to parse quality_review CurationJob creation response: {e}"))?;
+    let created: serde_json::Value = serde_json::from_str(&create_resp.body).map_err(|e| {
+        format!("Failed to parse quality_review CurationJob creation response: {e}")
+    })?;
     let review_job_id = created
         .get("entity_id")
         .and_then(|v| v.as_str())
@@ -610,9 +1148,7 @@ fn spawn_quality_review_followup(
     });
     let configure_resp = ctx.http_call(
         "POST",
-        &format!(
-            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Configure"
-        ),
+        &format!("{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Configure"),
         headers,
         &configure_body.to_string(),
     )?;
@@ -627,9 +1163,7 @@ fn spawn_quality_review_followup(
     // Submit
     let submit_resp = ctx.http_call(
         "POST",
-        &format!(
-            "{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Submit"
-        ),
+        &format!("{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Submit"),
         headers,
         "{}",
     )?;
@@ -658,11 +1192,12 @@ fn spawn_organize_followup(
     query_id: &str,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
-    let language_ids = string_array(
-        output_json.and_then(|v| v.get("language_ids")),
-    );
+    let language_ids = string_array(output_json.and_then(|v| v.get("language_ids")));
     if language_ids.is_empty() {
-        ctx.log("info", "spawn_organize_followup: no language_ids in output, skipping");
+        ctx.log(
+            "info",
+            "spawn_organize_followup: no language_ids in output, skipping",
+        );
         return Ok(None);
     }
 
@@ -702,9 +1237,7 @@ fn spawn_organize_followup(
     });
     let configure_resp = ctx.http_call(
         "POST",
-        &format!(
-            "{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Configure"
-        ),
+        &format!("{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Configure"),
         headers,
         &configure_body.to_string(),
     )?;
@@ -719,9 +1252,7 @@ fn spawn_organize_followup(
     // Submit
     let submit_resp = ctx.http_call(
         "POST",
-        &format!(
-            "{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Submit"
-        ),
+        &format!("{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Submit"),
         headers,
         "{}",
     )?;
@@ -756,10 +1287,13 @@ fn submit_next_queued_regeneration(
         "",
     )?;
     if !(200..300).contains(&list_resp.status) {
-        ctx.log("warn", &format!(
-            "submit_next_queued_regeneration: failed to list jobs: HTTP {}",
-            list_resp.status
-        ));
+        ctx.log(
+            "warn",
+            &format!(
+                "submit_next_queued_regeneration: failed to list jobs: HTTP {}",
+                list_resp.status
+            ),
+        );
         return Ok(None);
     }
 
@@ -775,10 +1309,7 @@ fn submit_next_queued_regeneration(
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             if job_type == "regenerate_embodiment" {
-                let job_id = job
-                    .get("entity_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let job_id = job.get("entity_id").and_then(|v| v.as_str()).unwrap_or("");
                 if !job_id.is_empty() {
                     let submit_resp = ctx.http_call(
                         "POST",
@@ -800,7 +1331,10 @@ fn submit_next_queued_regeneration(
         }
     }
 
-    ctx.log("info", "submit_next_queued_regeneration: no more queued regeneration jobs");
+    ctx.log(
+        "info",
+        "submit_next_queued_regeneration: no more queued regeneration jobs",
+    );
     Ok(None)
 }
 
@@ -814,9 +1348,7 @@ fn publish_job_progression(
     action: &str,
     params: &serde_json::Value,
 ) -> Result<(), String> {
-    let url = format!(
-        "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.{action}"
-    );
+    let url = format!("{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.{action}");
     match ctx.http_call("POST", &url, headers, &params.to_string()) {
         Ok(resp) if (200..300).contains(&resp.status) => {
             ctx.log(
@@ -825,13 +1357,11 @@ fn publish_job_progression(
             );
             Ok(())
         }
-        Ok(resp) => {
-            Err(format!(
-                "publish_job_progression: {action} failed for job '{job_id}': HTTP {} — {}",
-                resp.status,
-                &resp.body[..resp.body.len().min(200)]
-            ))
-        }
+        Ok(resp) => Err(format!(
+            "publish_job_progression: {action} failed for job '{job_id}': HTTP {} — {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(200)]
+        )),
         Err(e) => Err(format!(
             "publish_job_progression: {action} error for job '{job_id}': {e}"
         )),

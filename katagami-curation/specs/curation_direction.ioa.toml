@@ -1,0 +1,111 @@
+# CurationDirection - I/O Automaton Specification
+#
+# One research-discovered direction that should become one synthesize job.
+# This models source-search fan-out as Temper entities instead of a Rust loop.
+
+[automaton]
+name = "CurationDirection"
+states = ["Discovered", "Synthesizing", "Completed", "Failed"]
+initial = "Discovered"
+allow_indefinite_states = ["Discovered", "Synthesizing"]
+
+[[state]]
+name = "query_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "source_search_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "workspace_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "task"
+type = "string"
+initial = ""
+
+[[state]]
+name = "scope"
+type = "string"
+initial = ""
+
+[[state]]
+name = "target_direction"
+type = "string"
+initial = ""
+
+[[state]]
+name = "palette_direction"
+type = "string"
+initial = ""
+
+[[state]]
+name = "source_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "topic_allowlist"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "synth_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "error_message"
+type = "string"
+initial = ""
+
+[[action]]
+name = "Configure"
+kind = "input"
+from = ["Discovered"]
+params = ["query_id", "source_search_job_id", "workspace_id", "task", "scope", "target_direction", "palette_direction", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Record the researched direction and the exact synthesize input payload."
+
+[[action]]
+name = "QueueSynthesis"
+kind = "input"
+from = ["Discovered"]
+to = "Synthesizing"
+params = []
+hint = "Create and start the synthesize CurationJob for this direction."
+
+[[action]]
+name = "Complete"
+kind = "input"
+from = ["Synthesizing"]
+to = "Completed"
+params = ["design_language_ids"]
+hint = "The synthesize job for this direction completed."
+
+[[action]]
+name = "Fail"
+kind = "input"
+from = ["Discovered", "Synthesizing"]
+to = "Failed"
+params = ["error_message"]
+hint = "The direction could not be synthesized."
+
+[[invariant]]
+name = "CompletedIsFinal"
+when = ["Completed"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "FailedIsFinal"
+when = ["Failed"]
+assert = "no_further_transitions"
