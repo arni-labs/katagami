@@ -11,14 +11,14 @@ Katagami curation originally used WASM as both runtime glue and workflow brain.
 `finalize_spawned_session` parsed generic JSON output, spawned follow-up
 `CurationJob` entities, and advanced the parent `CurationQuery`.
 
-Current upstream Temper supports app `reactions/reactions.toml` rules with:
+Current upstream Temper supports inline `[[action.triggers]]` blocks on IOA
+actions for cross-entity workflow with:
 
 - `resolve_target` modes `field`, `same_id`, `static`, `create_if_missing`, and `create`
-- static `params`, dynamic `params_from`, source/cross-entity guards, and bounded reaction depth
+- static `params` and dynamic `params_from`
 
 WASM runtime effects remain declared as IOA `effect = [{ type = "trigger", ... }]`
-plus `[[integration]]` entries. Current Temper does not parse nested
-`[[action.triggers]]` blocks inside IOA actions.
+plus `[[integration]]` entries.
 
 That means Katagami can express most cross-entity workflow directly in app data.
 The remaining imperative boundary is external runtime integration: OpenPaw
@@ -35,8 +35,8 @@ The implementation adds:
   instruction path, tools profile, sandbox requirement, and completion action
 - `CurationDirection`, one entity per researched direction, so research fan-out
   becomes entity-triggered job creation instead of a Rust loop
-- `katagami-curation/reactions/reactions.toml`, the native Temper declaration
-  of direction/job/query choreography
+- inline `[[action.triggers]]` declarations in the Curation IOA specs for
+  direction/job/query choreography
 - typed `CurationJob` completion actions for research, synthesis, quality
   review, organization, regeneration, and evolution
 - `CurationJob.ConfigureAndSubmit`, so reactions can create, configure, and
@@ -44,10 +44,9 @@ The implementation adds:
 
 New jobs use `completion_contract = "typed-v1"`. For those jobs,
 `finalize_spawned_session` records the OpenPaw session result and finalizes the
-job. It also carries an idempotent compatibility fallback for today's OpenPaw
-OS app installer, which does not yet register app reaction files during install.
-When reactions are registered by the platform, the fallback checks existing
-query/direction/job state and stands down rather than duplicating the cascade.
+job. It also carries an idempotent compatibility fallback for already-running
+legacy jobs. The fallback checks existing query/direction/job state and stands
+down rather than duplicating the inline-trigger cascade.
 
 The legacy `Complete(output)` action stays for one compatibility window. Jobs
 already running against the old prompt contract can still complete and use the
@@ -76,7 +75,7 @@ Keep orchestration in `finalize_spawned_session`.
 Rejected because it duplicates capabilities now available in Temper specs and
 keeps cross-entity workflow hidden in Rust.
 
-Move every runtime effect into reactions immediately.
+Move every runtime effect into inline triggers immediately.
 
 Rejected because OpenPaw session creation/finalization and workspace ensuring
 are still external runtime effects. Those stay in small WASM bridges until

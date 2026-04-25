@@ -4,26 +4,29 @@ import tomllib
 
 
 class ReactionResolverTypeTests(unittest.TestCase):
-    def test_specs_do_not_use_nested_action_triggers(self):
+    def test_legacy_reactions_file_is_not_shipped(self):
         root = Path(__file__).resolve().parents[1]
-        for path in (root / "specs").glob("*.ioa.toml"):
-            spec = tomllib.loads(path.read_text())
-            for action in spec.get("action", []):
-                self.assertNotIn(
-                    "triggers",
-                    action,
-                    f"{path.name} uses nested action.triggers, which current Temper does not parse",
-                )
+        self.assertFalse(
+            (root / "reactions" / "reactions.toml").exists(),
+            "katagami-curation must not ship legacy reactions.toml",
+        )
 
-    def test_temper_native_create_reactions_exist_for_followup_jobs(self):
+    def test_inline_create_triggers_exist_for_followup_jobs(self):
         root = Path(__file__).resolve().parents[1]
-        reactions = tomllib.loads((root / "reactions" / "reactions.toml").read_text())
+        direction_spec = tomllib.loads(
+            (root / "specs" / "curation_direction.ioa.toml").read_text()
+        )
+        job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
 
-        create_reactions = [
-            reaction
-            for reaction in reactions["reaction"]
-            if reaction["then"]["entity_type"] == "CurationJob"
-            and reaction["resolve_target"]["type"] == "create"
+        create_triggers = [
+            trigger
+            for spec in [direction_spec, job_spec]
+            for action in spec["action"]
+            for trigger in action.get("triggers", [])
+            if trigger["kind"] == "entity"
+            and trigger["target_entity"] == "CurationJob"
+            and trigger["target_action"] == "ConfigureAndSubmit"
+            and trigger["resolve_target"]["type"] == "create"
         ]
 
         self.assertEqual(
@@ -32,12 +35,34 @@ class ReactionResolverTypeTests(unittest.TestCase):
                 "synthesis_creates_quality_review_job",
                 "review_creates_organization_job",
             },
-            {reaction["name"] for reaction in create_reactions},
+            {trigger["name"] for trigger in create_triggers},
         )
 
-        for reaction in create_reactions:
-            self.assertEqual(reaction["then"]["action"], "ConfigureAndSubmit")
-            self.assertEqual(reaction["then"]["params"]["completion_contract"], "typed-v1")
+        for trigger in create_triggers:
+            self.assertEqual(trigger["params"]["completion_contract"], "typed-v1")
+
+    def test_inline_query_advancement_triggers_exist(self):
+        root = Path(__file__).resolve().parents[1]
+        job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
+        triggers = {
+            trigger["name"]: trigger
+            for action in job_spec["action"]
+            for trigger in action.get("triggers", [])
+            if trigger.get("kind") == "entity"
+        }
+
+        for name, target_action in {
+            "research_completion_advances_query": "ResearchComplete",
+            "synthesis_completion_advances_query": "SynthesisComplete",
+            "organization_completion_finishes_query": "OrganizationComplete",
+            "legacy_research_completion_advances_query": "ResearchComplete",
+            "legacy_synthesis_completion_advances_query": "SynthesisComplete",
+            "legacy_organization_completion_finishes_query": "OrganizationComplete",
+            "job_failure_fails_query": "Fail",
+        }.items():
+            self.assertIn(name, triggers)
+            self.assertEqual(triggers[name]["target_entity"], "CurationQuery")
+            self.assertEqual(triggers[name]["target_action"], target_action)
 
     def test_typed_completion_actions_keep_legacy_complete_compatibility(self):
         root = Path(__file__).resolve().parents[1]
