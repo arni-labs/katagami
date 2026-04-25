@@ -33,7 +33,7 @@ export async function GET(
     generativeCanvas: f.generative_canvas,
   });
 
-  const filename = f.slug ? `${f.slug}-DESIGN.md` : "DESIGN.md";
+  const filename = f.slug ? `${f.slug}-SPEC.md` : "SPEC.md";
 
   return new NextResponse(markdown, {
     status: 200,

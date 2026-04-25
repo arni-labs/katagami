@@ -22,7 +22,7 @@ const bricolage = Bricolage_Grotesque({
 export const metadata: Metadata = {
   title: "katagami",
   description:
-    "A versioned, agent-maintained library of complete design languages.",
+    "A SPEC.md-compatible library of agent-curated design languages.",
 };
 
 // Runs before first paint so the `.dark` class is set from saved pref before

@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Download, Copy, Link2, Check } from "lucide-react";
 
 interface SpecActionsProps {
-  designMd: string;
+  specMd: string;
   slug?: string;
 }
 
-type CopyKind = "design-md" | "link";
+type CopyKind = "spec-md" | "link";
 
 const PROMPT_PREAMBLE =
-  "Use the following DESIGN.md as the source of truth for every UI we build. " +
+  "Use the following SPEC.md as the source of truth for every UI we build. " +
   "Follow its tokens, component guidance, layout rules, and do/don't guardrails.";
 
 async function writeClipboard(text: string) {
@@ -29,7 +29,7 @@ async function writeClipboard(text: string) {
   }
 }
 
-export function SpecActions({ designMd, slug }: SpecActionsProps) {
+export function SpecActions({ specMd, slug }: SpecActionsProps) {
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -37,34 +37,34 @@ export function SpecActions({ designMd, slug }: SpecActionsProps) {
     setTimeout(() => setJustCopied(null), 2000);
   };
 
-  const designMdUrl = () => {
+  const specMdUrl = () => {
     if (typeof window === "undefined") return "";
     const path = window.location.pathname.replace(/\/+$/, "");
-    return `${window.location.origin}${path}/DESIGN.md`;
+    return `${window.location.origin}${path}/SPEC.md`;
   };
 
-  const handleCopyDesignMd = async () => {
-    const url = designMdUrl();
+  const handleCopySpecMd = async () => {
+    const url = specMdUrl();
     const body = url
-      ? `${PROMPT_PREAMBLE}\n\nSource: ${url}\n\n${designMd}`
-      : `${PROMPT_PREAMBLE}\n\n${designMd}`;
+      ? `${PROMPT_PREAMBLE}\n\nSource: ${url}\n\n${specMd}`
+      : `${PROMPT_PREAMBLE}\n\n${specMd}`;
     await writeClipboard(body);
-    flash("design-md");
+    flash("spec-md");
   };
 
   const handleCopyLink = async () => {
-    const url = designMdUrl();
+    const url = specMdUrl();
     if (!url) return;
     await writeClipboard(url);
     flash("link");
   };
 
   const handleDownload = () => {
-    const blob = new Blob([designMd], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([specMd], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = slug ? `${slug}-DESIGN.md` : "DESIGN.md";
+    a.download = slug ? `${slug}-SPEC.md` : "SPEC.md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -74,18 +74,18 @@ export function SpecActions({ designMd, slug }: SpecActionsProps) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <ActionStamp
-        onClick={handleCopyDesignMd}
+        onClick={handleCopySpecMd}
         tint="yuzu"
         rotate={-1.5}
         icon={
-          justCopied === "design-md" ? (
+          justCopied === "spec-md" ? (
             <Check className="h-3 w-3 text-[var(--salad)]" />
           ) : (
             <Copy className="h-3 w-3" />
           )
         }
-        label={justCopied === "design-md" ? "copied" : "copy DESIGN.md"}
-        title="Copy the Google DESIGN.md-compatible export for agent chats"
+        label={justCopied === "spec-md" ? "copied" : "copy SPEC.md"}
+        title="Copy the SPEC.md export with a preamble for agent chats"
       />
       <ActionStamp
         onClick={handleCopyLink}
@@ -99,7 +99,7 @@ export function SpecActions({ designMd, slug }: SpecActionsProps) {
           )
         }
         label={justCopied === "link" ? "link copied" : "copy link"}
-        title="Copy raw DESIGN.md URL — agents can fetch it directly"
+        title="Copy raw SPEC.md URL — agents can fetch it directly"
       />
       <ActionStamp
         onClick={handleDownload}
@@ -107,7 +107,7 @@ export function SpecActions({ designMd, slug }: SpecActionsProps) {
         rotate={1}
         icon={<Download className="h-3 w-3" />}
         label="download"
-        title="Download DESIGN.md"
+        title="Download SPEC.md"
       />
     </div>
   );

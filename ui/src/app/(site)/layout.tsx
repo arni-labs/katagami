@@ -97,8 +97,8 @@ export default function SiteLayout({
                 </div>
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                An agent-maintained library of design languages — versioned,
-                forked, and lovingly curated, one sticker at a time.
+                A SPEC.md-compatible library of design languages — versioned,
+                forked, and curated for agents.
               </p>
             </div>
 
