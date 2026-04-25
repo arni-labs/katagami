@@ -370,6 +370,15 @@ temper.done("{job_type} failed")
             ));
         }
 
+        if let Err(link_error) =
+            create_session_link(&ctx, &api_url, &headers, &entity_id, &session_id)
+        {
+            let message =
+                format!("SessionLink setup failed for child Session '{session_id}': {link_error}");
+            dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
+            return Err(message);
+        }
+
         ctx.log("info", "build_session_message: completed successfully");
 
         set_success_result(
@@ -389,6 +398,89 @@ temper.done("{job_type} failed")
         set_error_result(&e);
     }
     0
+}
+
+fn create_session_link(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    parent_job_id: &str,
+    child_session_id: &str,
+) -> Result<(), String> {
+    let create_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/SessionLinks"),
+        headers,
+        "{}",
+    )?;
+    if create_resp.status < 200 || create_resp.status >= 300 {
+        return Err(format!(
+            "Failed to create SessionLink: HTTP {}: {}",
+            create_resp.status,
+            &create_resp.body[..create_resp.body.len().min(500)]
+        ));
+    }
+    let created: Value = serde_json::from_str(&create_resp.body)
+        .map_err(|err| format!("Failed to parse SessionLink creation response: {err}"))?;
+    let link_id = created
+        .get("entity_id")
+        .or_else(|| created.get("Id"))
+        .and_then(|value| value.as_str())
+        .ok_or("Created SessionLink has no entity_id")?;
+
+    let configure_body = json!({
+        "ParentEntitySet": "CurationJobs",
+        "ParentEntityId": parent_job_id,
+        "ParentActionNamespace": "Katagami.Curation",
+        "ChildSessionId": child_session_id,
+        "OnCompletedAction": "",
+        "OnFailureAction": "Fail",
+        "MaxChecks": "180",
+    });
+    let configure_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/SessionLinks('{link_id}')/TemperPaw.Configure"),
+        headers,
+        &configure_body.to_string(),
+    )?;
+    if configure_resp.status < 200 || configure_resp.status >= 300 {
+        return Err(format!(
+            "Failed to configure SessionLink: HTTP {}: {}",
+            configure_resp.status,
+            &configure_resp.body[..configure_resp.body.len().min(500)]
+        ));
+    }
+
+    ctx.log(
+        "info",
+        &format!(
+            "build_session_message: linked CurationJob '{parent_job_id}' to Session '{child_session_id}'"
+        ),
+    );
+    Ok(())
+}
+
+fn dispatch_curation_job_failure(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    curation_job_id: &str,
+    message: &str,
+) -> Result<(), String> {
+    let fail_resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs('{curation_job_id}')/Katagami.Curation.Fail"),
+        headers,
+        &json!({ "error_message": message }).to_string(),
+    )?;
+    if fail_resp.status < 200 || fail_resp.status >= 300 {
+        return Err(format!(
+            "Failed to dispatch CurationJob.Fail after SessionLink setup failure: HTTP {}: {}",
+            fail_resp.status,
+            &fail_resp.body[..fail_resp.body.len().min(500)]
+        ));
+    }
+    Ok(())
 }
 
 fn lookup_active_template(
