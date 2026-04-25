@@ -196,6 +196,25 @@ params = ["direction_ids"]
 hint = "Research completed after creating and queueing CurationDirection records."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+[[action.triggers]]
+name = "research_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "ResearchComplete"
+
+[action.triggers.params]
+synthesize_job_id = ""
+synthesize_job_ids = "[]"
+
+[action.triggers.params_from]
+source_search_job_id = "Id"
+direction_ids = "direction_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "CompleteSynthesis"
 kind = "input"
@@ -204,6 +223,57 @@ to = "Finalizing"
 params = ["design_language_ids", "review_input"]
 hint = "Synthesis completed and a quality review job should be created by trigger."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "synthesis_creates_quality_review_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.params]
+job_type = "quality_review"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+workspace_id = "workspace_id"
+query_id = "query_id"
+input = "review_input"
+
+[action.triggers.resolve_target]
+type = "create"
+
+[[action.triggers]]
+name = "synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Complete"
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "synthesis_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "SynthesisComplete"
+
+[action.triggers.params]
+organize_job_id = ""
+quality_review_job_ids = "[]"
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[action]]
 name = "CompleteQualityReview"
@@ -214,6 +284,25 @@ params = ["design_language_ids", "organize_input"]
 hint = "Quality review completed and taxonomy organization should be created by trigger."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+[[action.triggers]]
+name = "review_creates_organization_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.params]
+job_type = "organize_taxonomy"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+workspace_id = "workspace_id"
+query_id = "query_id"
+input = "organize_input"
+
+[action.triggers.resolve_target]
+type = "create"
+
 [[action]]
 name = "CompleteOrganization"
 kind = "input"
@@ -222,6 +311,17 @@ to = "Finalizing"
 params = ["output"]
 hint = "Taxonomy organization completed."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "organization_completion_finishes_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "OrganizationComplete"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[action]]
 name = "CompleteRegeneration"
@@ -251,6 +351,25 @@ to = "Completed"
 params = ["followup_job_id"]
 hint = "Legacy compatibility: record first synthesize follow-up and advance parent query."
 
+[[action.triggers]]
+name = "legacy_research_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "ResearchComplete"
+
+[action.triggers.params]
+direction_ids = "[]"
+synthesize_job_ids = "[]"
+
+[action.triggers.params_from]
+source_search_job_id = "Id"
+synthesize_job_id = "followup_job_id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "PublishSynthesisCompletion"
 kind = "internal"
@@ -259,6 +378,24 @@ to = "Completed"
 params = ["design_language_ids", "followup_job_id"]
 hint = "Legacy compatibility: record review/organize follow-up and advance parent query."
 
+[[action.triggers]]
+name = "legacy_synthesis_completion_advances_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "SynthesisComplete"
+
+[action.triggers.params]
+quality_review_job_ids = "[]"
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+organize_job_id = "followup_job_id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "PublishOrganizationCompletion"
 kind = "internal"
@@ -266,6 +403,17 @@ from = ["Finalizing"]
 to = "Completed"
 params = []
 hint = "Legacy compatibility: advance the parent query once organizing finishes."
+
+[[action.triggers]]
+name = "legacy_organization_completion_finishes_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "OrganizationComplete"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[action]]
 name = "FinalizeCompletion"
@@ -283,6 +431,34 @@ to = "Failed"
 params = ["error_message"]
 hint = "Mark job as failed with error details."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "job_failure_fails_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Fail"
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "job_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 # --- Retry ---
 
