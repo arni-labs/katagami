@@ -84,6 +84,26 @@ to = "Synthesizing"
 params = []
 hint = "Create and start the synthesize CurationJob for this direction."
 
+[[action.triggers]]
+name = "direction_queue_synthesis_creates_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.params]
+job_type = "synthesize"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+direction_id = "Id"
+workspace_id = "workspace_id"
+query_id = "query_id"
+input = "synth_input"
+
+[action.triggers.resolve_target]
+type = "create"
+
 [[action]]
 name = "Complete"
 kind = "input"
