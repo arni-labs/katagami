@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { parseJson } from "@/lib/odata";
 import { SpecActions } from "./spec-actions";
 
-interface SpecPanelProps {
+export interface SpecPanelProps {
   name?: string;
   slug?: string;
   philosophy?: string;
@@ -432,14 +432,110 @@ function SpecMarkdownView({ markdown }: { markdown: string }) {
   );
 }
 
-// ── Markdown generation ───────────────────────────────────────────
+// ── DESIGN.md generation ──────────────────────────────────────────
+
+type JsonRecord = Record<string, unknown>;
 
 function titleCase(s: string) {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function asRecord(value: unknown): JsonRecord | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) =>
+      typeof item === "object" && item !== null
+        ? JSON.stringify(item)
+        : String(item),
+    )
+    .filter((item) => item.trim().length > 0);
+}
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value);
+}
+
+function toDimension(value: unknown, fallback = "16px"): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `${value}px`;
+  }
+
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  if (trimmed === "0") return "0px";
+  if (/^-?\d*\.?\d+(px|em|rem)$/.test(trimmed)) return trimmed;
+  if (/^-?\d*\.?\d+$/.test(trimmed)) return `${trimmed}px`;
+  return fallback;
+}
+
+function scaledRem(base: unknown, ratio: unknown, power: number): string {
+  const baseValue = typeof base === "string" ? base.trim() : "16px";
+  const match = baseValue.match(/^(\d*\.?\d+)(px|rem)$/);
+  const scale = typeof ratio === "number" && ratio > 0 ? ratio : 1.25;
+  if (!match) return power >= 3 ? "2.5rem" : "1.75rem";
+
+  const amount = Number(match[1]);
+  const remBase = match[2] === "px" ? amount / 16 : amount;
+  return `${Number((remBase * scale ** power).toFixed(3))}rem`;
+}
+
+function yamlKey(key: string): string {
+  return /^[A-Za-z0-9_-]+$/.test(key) ? key : JSON.stringify(key);
+}
+
+function yamlScalar(value: unknown): string {
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return JSON.stringify(text);
+}
+
+function hasContent(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return String(value).trim().length > 0;
+}
+
+function appendYamlObject(lines: string[], data: JsonRecord, indent = 0) {
+  const pad = " ".repeat(indent);
+
+  for (const [key, value] of Object.entries(data)) {
+    if (!hasContent(value)) continue;
+
+    if (Array.isArray(value)) {
+      lines.push(`${pad}${yamlKey(key)}:`);
+      for (const item of value) {
+        lines.push(`${pad}  - ${yamlScalar(item)}`);
+      }
+      continue;
+    }
+
+    const nested = asRecord(value);
+    if (nested) {
+      lines.push(`${pad}${yamlKey(key)}:`);
+      appendYamlObject(lines, nested, indent + 2);
+      continue;
+    }
+
+    lines.push(`${pad}${yamlKey(key)}: ${yamlScalar(value)}`);
+  }
+}
+
 function renderKvSection(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   lines: string[],
   depth: "##" | "###" = "###",
 ) {
@@ -454,7 +550,7 @@ function renderKvSection(
       lines.push("");
     } else if (typeof val === "object" && val !== null) {
       lines.push(`${depth} ${titleCase(key)}`, "");
-      for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      for (const [k, v] of Object.entries(val as JsonRecord)) {
         const display = typeof v === "object" ? JSON.stringify(v) : String(v);
         lines.push(`- **${titleCase(k)}**: ${display}`);
       }
@@ -465,105 +561,337 @@ function renderKvSection(
   }
 }
 
-function specToMarkdown(props: SpecPanelProps): string {
+function extractColors(tokens: JsonRecord | null): JsonRecord {
+  const rawColors = asRecord(tokens?.colors);
+  if (!rawColors) return {};
+
+  return Object.fromEntries(
+    Object.entries(rawColors).filter(([, value]) => isHexColor(value)),
+  );
+}
+
+function extractSpacing(tokens: JsonRecord | null): JsonRecord {
+  const spacing = asRecord(tokens?.spacing);
+  if (!spacing) return {};
+
+  const result: JsonRecord = {};
+  const base = spacing.base;
+  if (base !== undefined) result.base = toDimension(base);
+
+  const scale = Array.isArray(spacing.scale) ? spacing.scale : [];
+  const names = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
+  scale.forEach((value, index) => {
+    result[names[index] ?? `step-${index}`] = toDimension(value);
+  });
+
+  for (const [key, value] of Object.entries(spacing)) {
+    if (key === "base" || key === "scale") continue;
+    if (typeof value === "number") {
+      result[key] = toDimension(value);
+    } else if (typeof value === "string") {
+      result[key] = toDimension(value, value);
+    }
+  }
+
+  return result;
+}
+
+function extractRounded(tokens: JsonRecord | null): JsonRecord {
+  const radii = asRecord(tokens?.radii);
+  if (!radii) return {};
+
+  return Object.fromEntries(
+    Object.entries(radii).map(([key, value]) => [key, toDimension(value, "0px")]),
+  );
+}
+
+function extractTypography(tokens: JsonRecord | null): JsonRecord {
+  const typography = asRecord(tokens?.typography);
+  if (!typography) return {};
+
+  const structuredEntries = Object.entries(typography).filter(([, value]) => {
+    const token = asRecord(value);
+    return token && ("fontFamily" in token || "fontSize" in token);
+  });
+
+  if (structuredEntries.length > 0) {
+    return Object.fromEntries(structuredEntries);
+  }
+
+  const headingFont = asString(typography.heading_font) ?? "Inter";
+  const bodyFont = asString(typography.body_font) ?? headingFont;
+  const monoFont = asString(typography.mono_font) ?? bodyFont;
+  const baseSize = toDimension(typography.base_size);
+  const lineHeight =
+    typeof typography.line_height === "number" ? typography.line_height : 1.5;
+  const rawLetterSpacing = asString(typography.letter_spacing);
+  const letterSpacing =
+    rawLetterSpacing && rawLetterSpacing !== "normal"
+      ? toDimension(rawLetterSpacing, rawLetterSpacing)
+      : "-0.02em";
+
+  return {
+    "headline-lg": {
+      fontFamily: headingFont,
+      fontSize: scaledRem(typography.base_size, typography.scale_ratio, 3),
+      fontWeight: 700,
+      lineHeight: 1.1,
+      letterSpacing,
+    },
+    "headline-md": {
+      fontFamily: headingFont,
+      fontSize: scaledRem(typography.base_size, typography.scale_ratio, 2),
+      fontWeight: 600,
+      lineHeight: 1.15,
+      letterSpacing,
+    },
+    "body-md": {
+      fontFamily: bodyFont,
+      fontSize: baseSize,
+      fontWeight: 400,
+      lineHeight,
+      letterSpacing,
+    },
+    "label-md": {
+      fontFamily: monoFont,
+      fontSize: "0.75rem",
+      fontWeight: 600,
+      lineHeight: 1,
+      letterSpacing: "0.08em",
+    },
+  };
+}
+
+function ref(group: string, key: string): string {
+  return `{${group}.${key}}`;
+}
+
+function firstExisting(record: JsonRecord, keys: string[]): string | null {
+  return keys.find((key) => key in record) ?? null;
+}
+
+function buildComponentTokens(
+  colors: JsonRecord,
+  typography: JsonRecord,
+  rounded: JsonRecord,
+  spacing: JsonRecord,
+): JsonRecord {
+  if (Object.keys(colors).length === 0) return {};
+
+  const primary = firstExisting(colors, ["primary", "accent", "tertiary"]);
+  const surface = firstExisting(colors, ["surface", "background", "neutral"]);
+  const text = firstExisting(colors, ["text", "on-surface", "primary"]);
+  const bg = firstExisting(colors, ["background", "surface", "neutral"]);
+  const roundedKey = firstExisting(rounded, ["md", "lg", "sm", "none"]);
+  const paddingKey = firstExisting(spacing, ["md", "sm", "base"]);
+  const label = firstExisting(typography, ["label-md", "body-md"]);
+
+  const roundedValue = roundedKey ? ref("rounded", roundedKey) : "16px";
+  const paddingValue = paddingKey ? ref("spacing", paddingKey) : "12px";
+  const labelValue = label ? ref("typography", label) : undefined;
+
+  return {
+    ...(primary && {
+      "button-primary": {
+        backgroundColor: ref("colors", primary),
+        textColor: bg ? ref("colors", bg) : "#ffffff",
+        ...(labelValue ? { typography: labelValue } : {}),
+        rounded: roundedValue,
+        padding: paddingValue,
+      },
+    }),
+    ...(surface &&
+      text && {
+        "card-surface": {
+          backgroundColor: ref("colors", surface),
+          textColor: ref("colors", text),
+          rounded: roundedValue,
+          padding: paddingKey ? ref("spacing", paddingKey) : "16px",
+        },
+        "input-default": {
+          backgroundColor: ref("colors", surface),
+          textColor: ref("colors", text),
+          rounded: roundedValue,
+          height: "44px",
+        },
+      }),
+  };
+}
+
+function buildDesignMdFrontMatter(
+  props: SpecPanelProps,
+  tokens: JsonRecord | null,
+): JsonRecord {
+  const colors = extractColors(tokens);
+  const typography = extractTypography(tokens);
+  const spacing = extractSpacing(tokens);
+  const rounded = extractRounded(tokens);
+  const components = buildComponentTokens(colors, typography, rounded, spacing);
+
+  return {
+    version: "alpha",
+    name: props.name ?? "Katagami Design Language",
+    description:
+      "Agent-curated design language exported from Katagami as DESIGN.md.",
+    colors,
+    typography,
+    rounded,
+    spacing,
+    components,
+  };
+}
+
+function appendList(
+  lines: string[],
+  title: string,
+  items: string[],
+  prefix?: string,
+) {
+  if (items.length === 0) return;
+  lines.push(`### ${title}`, "");
+  for (const item of items) lines.push(`- ${prefix ?? ""}${item}`);
+  lines.push("");
+}
+
+function appendColors(lines: string[], colors: JsonRecord) {
+  if (Object.keys(colors).length === 0) return;
+  lines.push("## Colors", "");
+  lines.push(
+    "Use the YAML color tokens as the normative palette. The prose below names the roles agents should preserve when generating UI.",
+    "",
+    "| Token | Value |",
+    "|-------|-------|",
+  );
+  for (const [key, value] of Object.entries(colors)) {
+    lines.push(`| ${key} | \`${String(value)}\` |`);
+  }
+  lines.push("");
+}
+
+function appendTypography(lines: string[], typography: JsonRecord) {
+  if (Object.keys(typography).length === 0) return;
+  lines.push("## Typography", "");
+  for (const [key, value] of Object.entries(typography)) {
+    const token = asRecord(value);
+    if (!token) continue;
+    const family = asString(token.fontFamily) ?? "system-ui";
+    const size = token.fontSize ? String(token.fontSize) : "16px";
+    const weight = token.fontWeight ? String(token.fontWeight) : "400";
+    const lineHeight = token.lineHeight ? String(token.lineHeight) : "1.5";
+    lines.push(
+      `- **${titleCase(key)}**: ${family}, ${size}, weight ${weight}, line-height ${lineHeight}.`,
+    );
+  }
+  lines.push("");
+}
+
+export function specToMarkdown(props: SpecPanelProps): string {
   const lines: string[] = [];
+  const phil = parseJson<JsonRecord>(props.philosophy);
+  const tok = parseJson<JsonRecord>(props.tokens);
+  const rul = parseJson<JsonRecord>(props.rules);
+  const lay = parseJson<JsonRecord>(props.layout);
+  const gui = parseJson<JsonRecord>(props.guidance);
+  const img = parseJson<JsonRecord>(props.imageryDirection);
+  const gen = parseJson<JsonRecord>(props.generativeCanvas);
 
-  if (props.name) {
-    lines.push(`# ${props.name}`, "");
-  }
+  const frontMatter = buildDesignMdFrontMatter(props, tok);
+  const colors = asRecord(frontMatter.colors) ?? {};
+  const typography = asRecord(frontMatter.typography) ?? {};
+  const spacing = asRecord(frontMatter.spacing) ?? {};
+  const rounded = asRecord(frontMatter.rounded) ?? {};
 
-  // Philosophy
-  const phil = parseJson<Record<string, unknown>>(props.philosophy);
-  if (phil) {
-    lines.push("## Philosophy", "");
-    if (phil.summary) lines.push(String(phil.summary), "");
-    const listSections: [string, string][] = [
-      ["values", "Values"],
-      ["anti_values", "Anti-Values"],
-      ["visual_character", "Visual Character"],
-    ];
-    for (const [field, label] of listSections) {
-      const arr = phil[field] as string[] | undefined;
-      if (Array.isArray(arr) && arr.length > 0) {
-        lines.push(`### ${label}`, "");
-        for (const v of arr) lines.push(`- ${v}`);
-        lines.push("");
-      }
+  lines.push("---");
+  appendYamlObject(lines, frontMatter);
+  lines.push("---", "", `# ${props.name ?? "Katagami Design Language"}`, "");
+
+  if (phil || props.name) {
+    lines.push("## Overview", "");
+    if (phil?.summary) {
+      lines.push(String(phil.summary), "");
+    } else if (props.name) {
+      lines.push(
+        `${props.name} is an agent-curated design language from Katagami.`,
+        "",
+      );
     }
-    if (phil.lineage) lines.push("### Lineage", "", `> ${phil.lineage}`, "");
-  }
-
-  // Tokens
-  const tok = parseJson<Record<string, unknown>>(props.tokens);
-  if (tok) {
-    lines.push("## Tokens", "");
-    for (const [group, values] of Object.entries(tok)) {
-      lines.push(`### ${titleCase(group)}`, "");
-      if (
-        group === "colors" &&
-        typeof values === "object" &&
-        values !== null
-      ) {
-        lines.push("| Name | Value |", "|------|-------|");
-        for (const [k, v] of Object.entries(
-          values as Record<string, unknown>,
-        )) {
-          lines.push(`| ${k} | \`${v}\` |`);
-        }
-        lines.push("");
-      } else if (typeof values === "object" && values !== null) {
-        for (const [k, v] of Object.entries(
-          values as Record<string, unknown>,
-        )) {
-          const display = typeof v === "object" ? JSON.stringify(v) : String(v);
-          lines.push(`- **${titleCase(k)}**: ${display}`);
-        }
-        lines.push("");
-      } else {
-        lines.push(String(values), "");
-      }
+    appendList(lines, "Values", toStringArray(phil?.values));
+    appendList(lines, "Anti-Values", toStringArray(phil?.anti_values));
+    appendList(
+      lines,
+      "Visual Character",
+      toStringArray(phil?.visual_character),
+    );
+    if (phil?.lineage) {
+      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
     }
   }
 
-  // Rules
-  const rul = parseJson<Record<string, unknown>>(props.rules);
+  appendColors(lines, colors);
+  appendTypography(lines, typography);
+
+  if (lay || Object.keys(spacing).length > 0) {
+    lines.push("## Layout", "");
+    if (Object.keys(spacing).length > 0) {
+      lines.push("### Spacing Tokens", "");
+      for (const [key, value] of Object.entries(spacing)) {
+        lines.push(`- **${titleCase(key)}**: \`${String(value)}\``);
+      }
+      lines.push("");
+    }
+    if (lay) renderKvSection(lay, lines);
+  }
+
+  const shadows = asRecord(tok?.shadows);
+  const elevation = asRecord(tok?.elevation);
+  if (shadows || elevation) {
+    lines.push("## Elevation & Depth", "");
+    if (shadows) renderKvSection({ shadows }, lines);
+    if (elevation) renderKvSection({ elevation }, lines);
+  }
+
+  const surfaces = asRecord(tok?.surfaces);
+  const borders = asRecord(tok?.borders);
+  if (Object.keys(rounded).length > 0 || surfaces || borders) {
+    lines.push("## Shapes", "");
+    if (Object.keys(rounded).length > 0) {
+      lines.push("### Rounded", "");
+      for (const [key, value] of Object.entries(rounded)) {
+        lines.push(`- **${titleCase(key)}**: \`${String(value)}\``);
+      }
+      lines.push("");
+    }
+    if (surfaces) renderKvSection({ surfaces }, lines);
+    if (borders) renderKvSection({ borders }, lines);
+  }
+
   if (rul) {
-    lines.push("## Rules", "");
+    lines.push("## Components", "");
     renderKvSection(rul, lines);
   }
 
-  // Layout
-  const lay = parseJson<Record<string, unknown>>(props.layout);
-  if (lay) {
-    lines.push("## Layout", "");
-    renderKvSection(lay, lines);
-  }
-
-  // Guidance
-  const gui = parseJson<Record<string, unknown>>(props.guidance);
   if (gui) {
-    lines.push("## Guidance", "");
-    if (Array.isArray(gui.do) && gui.do.length > 0) {
-      lines.push("### Do", "");
-      for (const d of gui.do as string[]) lines.push(`- ${d}`);
+    const dos = toStringArray(gui.do ?? gui.dos);
+    const donts = toStringArray(gui.dont ?? gui.donts);
+    if (dos.length > 0 || donts.length > 0) {
+      lines.push("## Do's and Don'ts", "");
+      for (const item of dos) lines.push(`- Do ${item}`);
+      for (const item of donts) lines.push(`- Don't ${item}`);
       lines.push("");
     }
-    if (Array.isArray(gui.dont) && gui.dont.length > 0) {
-      lines.push("### Don't", "");
-      for (const d of gui.dont as string[]) lines.push(`- ${d}`);
-      lines.push("");
-    }
+    const rest = Object.fromEntries(
+      Object.entries(gui).filter(
+        ([key]) => !["do", "dos", "dont", "donts"].includes(key),
+      ),
+    );
+    if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
   }
 
-  // Imagery Direction
-  const img = parseJson<Record<string, unknown>>(props.imageryDirection);
   if (img) {
     lines.push("## Imagery Direction", "");
     renderKvSection(img, lines);
   }
 
-  // Generative Canvas
-  const gen = parseJson<Record<string, unknown>>(props.generativeCanvas);
   if (gen) {
     lines.push("## Generative Canvas", "");
     renderKvSection(gen, lines);
@@ -623,7 +951,7 @@ export function SpecPanel(props: SpecPanelProps) {
     <div className="relative">
       {/* Copy + download — inline on mobile, floating on sm+ */}
       <div className="mb-4 flex items-center justify-end sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
-        <SpecActions markdown={markdown} slug={props.slug} />
+        <SpecActions designMd={markdown} slug={props.slug} />
       </div>
 
       {/* Spacer on sm+ so floating chips don't collide with first section */}
@@ -655,7 +983,7 @@ export function SpecPanel(props: SpecPanelProps) {
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
-        <Section label="spec.md" color="sumire">
+        <Section label="DESIGN.md" color="sumire">
           <SpecMarkdownView markdown={markdown} />
         </Section>
       </div>
