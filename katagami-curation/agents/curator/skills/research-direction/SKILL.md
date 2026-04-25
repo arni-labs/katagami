@@ -35,21 +35,49 @@ Job type: `source_search`
    })
    ```
    `source_type` must be one of: "article", "style_guide", "design_system_docs", "reference"
-7. **Update workspace**: Update `/katagami/log.md` and `/katagami/index.md` with findings.
-8. **Complete the job**:
+7. **Create CurationDirection entities for fan-out**: For each discovered movement, create one direction and queue it. Do not create `CurationJob` entities yourself; `QueueSynthesis` triggers the synthesize job.
    ```python
-   output = json.dumps({
-       'task': task_description,
-       'scope': scope_description,
-       'source_ids': [list_of_source_entity_ids],
-       'discovered_movements': [list_of_movement_names],
-       'topic_allowlist': [list_of_topics_to_synthesize]
-   }, ensure_ascii=False)
-   temper.action('CurationJobs', job_id, 'Complete', {'output': output})
+   direction_ids = []
+   for movement in discovered_movements:
+       name = movement if isinstance(movement, str) else movement.get('name', '')
+       palette = '' if isinstance(movement, str) else movement.get('palette_direction', '')
+       synth_input = json.dumps({
+           'task': task_description,
+           'scope': scope_description,
+           'target_direction': name,
+           'palette_direction': palette,
+           'topic_allowlist': topics,
+           'source_ids': source_ids,
+           'priority': 'high',
+           'query_id': query_id
+       }, ensure_ascii=False)
+       direction = temper.create('CurationDirections', {})
+       direction_id = direction['entity_id']
+       temper.action('CurationDirections', direction_id, 'Configure', {
+           'query_id': query_id,
+           'source_search_job_id': job_id,
+           'workspace_id': workspace_id,
+           'task': task_description,
+           'scope': scope_description,
+           'target_direction': name,
+           'palette_direction': palette,
+           'source_ids': json.dumps(source_ids),
+           'topic_allowlist': json.dumps(topics),
+           'synth_input': synth_input
+       })
+       temper.action('CurationDirections', direction_id, 'QueueSynthesis', {})
+       direction_ids.append(direction_id)
+   ```
+8. **Update workspace**: Update `/katagami/log.md` and `/katagami/index.md` with findings.
+9. **Complete the job**:
+   ```python
+   temper.action('CurationJobs', job_id, 'CompleteResearch', {
+       'direction_ids': json.dumps(direction_ids)
+   })
    temper.done("source_search complete")
    ```
 
-Do NOT create synthesize jobs yourself. The system handles that.
+Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles that through a Temper entity trigger.
 
 ## Source Quality Standards
 
@@ -75,3 +103,4 @@ Job output JSON must include:
 - `source_ids` — array of DesignSource entity IDs
 - `discovered_movements` — array of movement names found
 - `topic_allowlist` — topics ready for synthesis
+- `direction_ids` — array of CurationDirection entity IDs queued for synthesis

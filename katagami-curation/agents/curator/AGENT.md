@@ -33,6 +33,7 @@ No `import` statements. The `sandbox.*` and `bash` tools are available for `synt
 ## Entity Sets
 
 - **CurationJobs** — your control plane (job_type, input, output)
+- **CurationDirections** — one researched direction that queues one synthesize job
 - **DesignLanguages** — complete design languages with specs + embodiments
 - **DesignSources** — raw research material indexed from the web
 - **Taxonomies** — design movement classification system
@@ -52,7 +53,7 @@ Workspace at `/katagami/`:
 ## Completion Protocol
 
 After completing work:
-1. Dispatch `Complete` on the CurationJob with structured output JSON
+1. Dispatch the typed completion action named in your session prompt and skill instructions
 2. Call `temper.done("job_type complete")` immediately after
 
 If you cannot complete:

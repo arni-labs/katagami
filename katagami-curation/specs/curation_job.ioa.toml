@@ -1,120 +1,125 @@
-# CurationJob — I/O Automaton Specification
+# CurationJob - I/O Automaton Specification
 #
-# Task queue entry for the curator agent. Structurally identical
-# to koto-wiki's WikiJob — same states, same session-spawning fields, same
-# WASM triggers. Will be refactored into shared core later.
-#
-# Lifecycle: Queued -> Ready -> Running -> Completed | Failed
-#
-# Submit triggers build_session_message WASM which constructs a
-# domain-specific prompt and spawns an agent session.
+# Agent task queue for Katagami curation. New jobs use typed completion
+# actions and reactions for follow-up orchestration. The legacy
+# Complete(output) action remains for one compatibility window so already
+# running sessions can finish safely.
 
 [automaton]
 name = "CurationJob"
 states = ["Queued", "Ready", "Running", "Finalizing", "Completed", "Failed"]
 initial = "Queued"
+allow_indefinite_states = ["Queued", "Ready", "Running", "Finalizing", "Failed"]
 
 # --- State Variables ---
 
-# Job classification: source_search, synthesize, generate_embodiment, review, organize, evolve, remix
 [[state]]
 name = "job_type"
 type = "string"
 initial = ""
 
-# Which design language this job operates on (empty for discovery jobs)
 [[state]]
 name = "design_language_id"
 type = "string"
 initial = ""
 
-# Shared workspace root for this curation run
+[[state]]
+name = "direction_id"
+type = "string"
+initial = ""
+
 [[state]]
 name = "workspace_id"
 type = "string"
 initial = ""
 
-# JSON: what to do (search queries, source IDs, language IDs, scope, etc.)
 [[state]]
 name = "input"
 type = "string"
 initial = "{}"
 
-# JSON: what happened (languages created, sources indexed, issues found, etc.)
 [[state]]
 name = "output"
 type = "string"
 initial = "{}"
 
-# Follow-up job created by completion handling (synthesize, quality_review, organize)
 [[state]]
 name = "followup_job_id"
 type = "string"
 initial = ""
 
-# JSON array of language IDs produced by synthesis and published into query state
+[[state]]
+name = "direction_ids"
+type = "string"
+initial = "[]"
+
 [[state]]
 name = "design_language_ids"
 type = "string"
 initial = "[]"
 
-# JSON array of incremental progress entries
+[[state]]
+name = "review_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "organize_input"
+type = "string"
+initial = "{}"
+
 [[state]]
 name = "progress_log"
 type = "string"
 initial = "[]"
 
-# Error details if job failed
 [[state]]
 name = "error_message"
 type = "string"
 initial = ""
 
-# Link back to parent CurationQuery for automated pipeline tracking
 [[state]]
 name = "query_id"
 type = "string"
 initial = ""
 
+[[state]]
+name = "completion_contract"
+type = "string"
+initial = "legacy-json-v1"
+
 # --- Session spawning fields ---
 
-# Agent identity for the session
 [[state]]
 name = "soul_id"
 type = "string"
 initial = "curator"
 
-# LLM model identifier (empty = read from vault)
 [[state]]
 name = "model"
 type = "string"
 initial = ""
 
-# LLM provider (empty = read from vault)
 [[state]]
 name = "provider"
 type = "string"
 initial = ""
 
-# Comma-separated tool list for the session
 [[state]]
 name = "tools_enabled"
 type = "string"
 initial = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch"
 
-# Maximum conversation turns
 [[state]]
 name = "max_turns"
 type = "string"
 initial = "250"
 
-# Constructed prompt for the session (built by WASM)
 [[state]]
 name = "user_message"
 type = "string"
 initial = ""
 
-# ID of the spawned agent session
 [[state]]
 name = "session_id"
 type = "string"
@@ -126,32 +131,25 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract"]
 hint = "Set or update job parameters before execution."
+
+[[action]]
+name = "ConfigureAndSubmit"
+kind = "internal"
+from = ["Queued"]
+to = "Ready"
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract"]
+hint = "Configure a trigger-created job and start session spawning in one transition."
+effect = [{ type = "trigger", name = "build_session_message" }]
 
 [[action]]
 name = "Submit"
 kind = "input"
 from = ["Queued"]
 to = "Ready"
-hint = "Validate and prepare job for execution. Triggers message builder WASM."
+hint = "Legacy/manual start path. Triggers message builder WASM."
 effect = [{ type = "trigger", name = "build_session_message" }]
-
-# ADR-0046: inline trigger — migrated from [[integration]] below.
-# Post-parse expansion re-synthesizes the equivalent Integration so
-# the existing WASM/webhook runtime handles execution unchanged.
-[[action.triggers]]
-name = "build_session_message"
-kind = "wasm"
-module = "build_session_message"
-on_failure = "Fail"
-
-[action.triggers.config]
-temper_api_url = "{secret:temper_api_url}"
-sandbox_provider = "{secret:sandbox_provider}"
-llm_model = "{secret:llm_model}"
-llm_provider = "{secret:llm_provider}"
-
 
 [[action]]
 name = "Start"
@@ -159,9 +157,9 @@ kind = "input"
 from = ["Queued"]
 to = "Running"
 params = []
-hint = "Begin executing this job (direct start without session spawning)."
+hint = "Begin executing this job directly without session spawning."
 
-# --- Ready (session spawned, waiting for confirmation) ---
+# --- Ready ---
 
 [[action]]
 name = "SessionSpawned"
@@ -186,23 +184,64 @@ kind = "input"
 from = ["Running"]
 to = "Finalizing"
 params = ["output"]
-hint = "Mark job as successfully completed and enter finalization."
+hint = "Legacy compatibility completion. New jobs should use typed completion actions."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
-# ADR-0046: inline triggers are the single source of truth for advancing
-# the parent CurationQuery via query_id as the pipeline progresses.
+[[action]]
+name = "CompleteResearch"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["direction_ids"]
+hint = "Research completed after creating and queueing CurationDirection records."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
-# ADR-0046: inline trigger — migrated from [[integration]] below.
-# Post-parse expansion re-synthesizes the equivalent Integration so
-# the existing WASM/webhook runtime handles execution unchanged.
-[[action.triggers]]
-name = "finalize_spawned_session"
-kind = "wasm"
-module = "finalize_spawned_session"
+[[action]]
+name = "CompleteSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "review_input"]
+hint = "Synthesis completed and a quality review job should be created by trigger."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
-[action.triggers.config]
-temper_api_url = "{secret:temper_api_url}"
+[[action]]
+name = "CompleteQualityReview"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "organize_input"]
+hint = "Quality review completed and taxonomy organization should be created by trigger."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+[[action]]
+name = "CompleteOrganization"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["output"]
+hint = "Taxonomy organization completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action]]
+name = "CompleteRegeneration"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "output"]
+hint = "Embodiment regeneration completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action]]
+name = "CompleteEvolution"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["design_language_ids", "output"]
+hint = "Language evolution completed."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# --- Finalizing ---
 
 [[action]]
 name = "PublishResearchCompletion"
@@ -210,22 +249,7 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = ["followup_job_id"]
-hint = "Record synthesized follow-up job metadata before advancing the parent query."
-
-[[action.triggers]]
-name = "publish_research_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "ResearchComplete"
-
-[action.triggers.params_from]
-source_search_job_id = "Id"
-synthesize_job_id = "followup_job_id"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
+hint = "Legacy compatibility: record first synthesize follow-up and advance parent query."
 
 [[action]]
 name = "PublishSynthesisCompletion"
@@ -233,22 +257,7 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = ["design_language_ids", "followup_job_id"]
-hint = "Record organizing-stage metadata before advancing the parent query."
-
-[[action.triggers]]
-name = "publish_synthesis_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-organize_job_id = "followup_job_id"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
+hint = "Legacy compatibility: record review/organize follow-up and advance parent query."
 
 [[action]]
 name = "PublishOrganizationCompletion"
@@ -256,18 +265,7 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = []
-hint = "Advance the parent query once organizing finishes."
-
-[[action.triggers]]
-name = "publish_organization_completion_finishes_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "OrganizationComplete"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
+hint = "Legacy compatibility: advance the parent query once organizing finishes."
 
 [[action]]
 name = "FinalizeCompletion"
@@ -275,30 +273,16 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = ["followup_job_id", "design_language_ids"]
-hint = "Finalize completion when no parent-query transition is needed."
+hint = "Finalize job completion after session recording and trigger-native follow-up dispatch."
 
 [[action]]
 name = "Fail"
 kind = "input"
-from = ["Ready", "Running"]
+from = ["Ready", "Running", "Finalizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "Mark job as failed with error details."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
-
-[[action.triggers]]
-name = "job_failure_fails_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "Fail"
-
-[action.triggers.params_from]
-error_message = "error_message"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
 
 # --- Retry ---
 
@@ -318,3 +302,25 @@ when = ["Completed"]
 assert = "no_further_transitions"
 
 # --- Integrations ---
+
+[[integration]]
+name = "build_session_message"
+trigger = "build_session_message"
+type = "wasm"
+module = "build_session_message"
+on_failure = "Fail"
+
+[integration.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
+
+[[integration]]
+name = "finalize_spawned_session"
+trigger = "finalize_spawned_session"
+type = "wasm"
+module = "finalize_spawned_session"
+
+[integration.config]
+temper_api_url = "{secret:temper_api_url}"

@@ -7,12 +7,14 @@
 # Lifecycle: Submitted -> Researching -> Synthesizing -> Organizing -> Completed | Failed
 #
 # Submit triggers launch_research WASM which creates the first CurationJob.
-# Subsequent state transitions are driven by reactions on CurationJob.Complete.
+# Subsequent state transitions are driven by reactions on typed CurationJob
+# completion actions.
 
 [automaton]
 name = "CurationQuery"
 states = ["Submitted", "Researching", "Synthesizing", "Organizing", "Completed", "Failed"]
 initial = "Submitted"
+allow_indefinite_states = ["Submitted", "Researching", "Synthesizing", "Organizing"]
 
 # --- State Variables ---
 
@@ -32,6 +34,26 @@ initial = ""
 name = "synthesize_job_id"
 type = "string"
 initial = ""
+
+[[state]]
+name = "direction_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "synthesize_job_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "quality_review_job_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "organize_job_ids"
+type = "string"
+initial = "[]"
 
 # Tracks the job currently driving the organizing stage, which may start
 # with a quality review job before taxonomy organization completes.
@@ -75,34 +97,21 @@ to = "Researching"
 hint = "Launch the automated pipeline. Triggers launch_research WASM."
 effect = [{ type = "trigger", name = "launch_research" }]
 
-# ADR-0046: inline trigger — migrated from [[integration]] below.
-# Post-parse expansion re-synthesizes the equivalent Integration so
-# the existing WASM/webhook runtime handles execution unchanged.
-[[action.triggers]]
-name = "launch_research"
-kind = "wasm"
-module = "launch_research"
-on_failure = "Fail"
-
-[action.triggers.config]
-temper_api_url = "{secret:temper_api_url}"
-
-
 [[action]]
 name = "ResearchComplete"
 kind = "input"
 from = ["Researching"]
 to = "Synthesizing"
-params = ["source_search_job_id", "synthesize_job_id"]
-hint = "Research phase completed. Synthesis has been auto-spawned."
+params = ["source_search_job_id", "synthesize_job_id", "direction_ids", "synthesize_job_ids"]
+hint = "Research phase completed. CurationDirection records have queued synthesis jobs."
 
 [[action]]
 name = "SynthesisComplete"
 kind = "input"
 from = ["Synthesizing"]
 to = "Organizing"
-params = ["design_language_ids", "organize_job_id"]
-hint = "Synthesis completed. Languages were published and the organizing stage was queued."
+params = ["design_language_ids", "organize_job_id", "quality_review_job_ids"]
+hint = "Synthesis completed. Quality review is now driving the organizing stage."
 
 [[action]]
 name = "OrganizationComplete"
@@ -132,3 +141,13 @@ when = ["Failed"]
 assert = "no_further_transitions"
 
 # --- Integrations ---
+
+[[integration]]
+name = "launch_research"
+trigger = "launch_research"
+type = "wasm"
+module = "launch_research"
+on_failure = "Fail"
+
+[integration.config]
+temper_api_url = "{secret:temper_api_url}"

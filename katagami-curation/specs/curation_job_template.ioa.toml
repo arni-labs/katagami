@@ -1,0 +1,83 @@
+# CurationJobTemplate - I/O Automaton Specification
+#
+# Data-owned job configuration for CurationJob session bootstrapping. This
+# keeps skill routing and completion contracts out of WASM source.
+
+[automaton]
+name = "CurationJobTemplate"
+states = ["Draft", "Active", "Superseded"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "Active"]
+
+[[state]]
+name = "job_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "skill_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "instruction_path"
+type = "string"
+initial = ""
+
+[[state]]
+name = "tools_profile"
+type = "string"
+initial = ""
+
+[[state]]
+name = "requires_sandbox"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "max_turns_default"
+type = "string"
+initial = "250"
+
+[[state]]
+name = "completion_action"
+type = "string"
+initial = ""
+
+[[state]]
+name = "completion_contract"
+type = "string"
+initial = "typed-v1"
+
+[[state]]
+name = "template_version"
+type = "string"
+initial = "1"
+
+[[action]]
+name = "Configure"
+kind = "input"
+from = ["Draft", "Active"]
+params = ["job_type", "skill_id", "instruction_path", "tools_profile", "requires_sandbox", "max_turns_default", "completion_action", "completion_contract", "template_version"]
+hint = "Configure the job template fields."
+
+[[action]]
+name = "Activate"
+kind = "input"
+from = ["Draft"]
+to = "Active"
+params = []
+hint = "Make this template available for session spawning."
+
+[[action]]
+name = "Supersede"
+kind = "input"
+from = ["Active"]
+to = "Superseded"
+params = []
+hint = "Retire this template without deleting it."
+
+[[invariant]]
+name = "SupersededIsFinal"
+when = ["Superseded"]
+assert = "no_further_transitions"

@@ -124,7 +124,9 @@ Read the knowledge files in your workspace:
 
 13. **Complete the job**:
     ```python
-    temper.action('CurationJobs', job_id, 'Complete', {'output': json.dumps(summary)})
+    temper.action('CurationJobs', job_id, 'CompleteOrganization', {
+        'output': json.dumps(summary, ensure_ascii=False)
+    })
     temper.done("organize_taxonomy complete")
     ```
 
