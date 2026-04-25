@@ -61,7 +61,14 @@ For each language specified in the job input (or ALL languages if none specified
    ```
 8. **After ALL languages are reviewed and published:**
    ```python
-   temper.action('CurationJobs', job_id, 'Complete', {'output': json.dumps({'fixed': fixed_ids, 'language_ids': fixed_ids})})
+   organize_input = json.dumps({
+       'language_ids': fixed_ids,
+       'query_id': query_id
+   }, ensure_ascii=False)
+   temper.action('CurationJobs', job_id, 'CompleteQualityReview', {
+       'design_language_ids': json.dumps(fixed_ids),
+       'organize_input': organize_input
+   })
    temper.done("quality_review complete")
    ```
 
@@ -75,3 +82,4 @@ For each language specified in the job input (or ALL languages if none specified
 
 Job output JSON must include:
 - `fixed` — array of DesignLanguage entity IDs that were reviewed and fixed
+- `language_ids` — same IDs, passed as `design_language_ids` to `CompleteQualityReview`

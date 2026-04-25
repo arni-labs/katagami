@@ -1,17 +1,37 @@
 use temper_wasm_sdk::prelude::*;
 
-/// On CurationJob.Submit: maps job_type to a skill, builds a minimal
-/// user_message, spawns a Session, and dispatches Configure.
+const DEFAULT_TOOLS_ENABLED: &str = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch";
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct JobTemplate {
+    skill_id: String,
+    instruction_path: String,
+    tools_profile: String,
+    requires_sandbox: bool,
+    max_turns_default: String,
+    completion_action: String,
+    completion_contract: String,
+    template_version: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct LoadedDoc {
+    path: String,
+    workspace_id: String,
+    content: String,
+}
+
+/// On CurationJob.Submit/ConfigureAndSubmit: loads the active
+/// CurationJobTemplate, builds the user_message, spawns a Session, and
+/// dispatches Configure.
 ///
-/// All domain knowledge lives in SKILL.md files and workspace knowledge
-/// files — this module is a thin bootloader only.
+/// Domain knowledge lives in SKILL.md and knowledge files. This module loads
+/// those TemperFS files at runtime so prompt policy is app data, not Rust
+/// source.
 ///
-/// Maps job_type to skill:
-///   source_search      -> research-direction
-///   synthesize         -> synthesize-language
-///   quality_review     -> review-quality
-///   organize_taxonomy  -> organize-taxonomy
-///   evolve_language    -> synthesize-language
+/// Job routing, completion actions, and tool profiles live in
+/// CurationJobTemplate entities so WASM stays a runtime bridge rather than a
+/// prompt-policy module.
 #[unsafe(no_mangle)]
 pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
     let result = (|| -> Result<(), String> {
@@ -87,18 +107,6 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 "No provider configured: set llm_provider in vault or pass provider on CurationJob",
             )?;
 
-        let tools_enabled = fields
-            .get("tools_enabled")
-            .and_then(|v| v.as_str())
-            .unwrap_or("temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch")
-            .to_string();
-
-        let max_turns = fields
-            .get("max_turns")
-            .and_then(|v| v.as_str())
-            .unwrap_or("250")
-            .to_string();
-
         let entity_id = ctx
             .entity_state
             .get("entity_id")
@@ -106,31 +114,79 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .unwrap_or(&ctx.entity_id)
             .to_string();
 
-        // --- Map job_type to skill ---
-        let skill = match job_type.as_str() {
-            "source_search" => "research-direction",
-            "synthesize" => "synthesize-language",
-            "quality_review" => "review-quality",
-            "organize_taxonomy" => "organize-taxonomy",
-            "evolve_language" => "synthesize-language",
-            "regenerate_embodiment" => "synthesize-language",
-            other => {
-                return Err(format!(
-                    "build_session_message: unsupported job_type '{other}'"
-                ));
-            }
+        let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
+        let skill = template.skill_id.as_str();
+        let instruction_doc = load_instruction_doc(
+            &ctx,
+            &api_url,
+            &headers,
+            &template.instruction_path,
+            &stable_soul_id,
+        );
+        let effective_instruction_path = instruction_doc
+            .as_ref()
+            .map(|doc| doc.path.as_str())
+            .unwrap_or(template.instruction_path.as_str());
+        let knowledge_docs = [
+            "/system/knowledge/design-principles.md",
+            "/system/knowledge/quality-standards.md",
+            "/system/knowledge/feedback-log.md",
+        ]
+        .iter()
+        .filter_map(|path| load_doc_file(&ctx, &api_url, &headers, path))
+        .collect::<Vec<_>>();
+        let instruction_read_command =
+            temper_read_command(effective_instruction_path, instruction_doc.as_ref());
+        let knowledge_read_commands = render_read_commands(
+            &[
+                (
+                    "/system/knowledge/design-principles.md",
+                    "embodiment standards",
+                ),
+                (
+                    "/system/knowledge/quality-standards.md",
+                    "quality thresholds",
+                ),
+                (
+                    "/system/knowledge/feedback-log.md",
+                    "human feedback to incorporate",
+                ),
+            ],
+            &knowledge_docs,
+        );
+        let loaded_instruction_block =
+            render_loaded_doc("Loaded Skill Instructions", instruction_doc.as_ref());
+        let loaded_knowledge_block = render_loaded_docs("Loaded Knowledge Files", &knowledge_docs);
+
+        let job_tools = fields
+            .get("tools_enabled")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let mut tools_enabled = if job_tools.is_empty() || job_tools == DEFAULT_TOOLS_ENABLED {
+            template.tools_profile.clone()
+        } else {
+            job_tools.to_string()
         };
 
-        // Sandbox-capable skills need bash/read/write/edit tools
-        let needs_sandbox_tools = skill == "synthesize-language" || skill == "review-quality";
-        let tools_enabled = if needs_sandbox_tools {
-            if tools_enabled.contains("bash") {
-                tools_enabled
-            } else {
-                format!("{},bash,read,write,edit", tools_enabled)
+        if template.requires_sandbox {
+            for tool in ["bash", "read", "write", "edit"] {
+                if !tools_enabled
+                    .split(',')
+                    .any(|candidate| candidate.trim() == tool)
+                {
+                    tools_enabled = format!("{tools_enabled},{tool}");
+                }
             }
+        }
+
+        let job_max_turns = fields
+            .get("max_turns")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let max_turns = if job_max_turns.is_empty() || job_max_turns == "250" {
+            template.max_turns_default.clone()
         } else {
-            tools_enabled
+            job_max_turns.to_string()
         };
 
         // --- Ensure workspace ---
@@ -147,38 +203,43 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         };
 
         // --- Build user_message ---
-        let extra_instructions = extra_instructions_for_job_type(&job_type);
-
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
 Skill: {skill}
+Instruction path: {effective_instruction_path}
+Completion action: {completion_action}
+Completion contract: {completion_contract}
 Workspace ID: {workspace_id}
 
 ## Input
 
 {input}
-{extra_instructions}
 ## Instructions
 
-Execute this job using your `{skill}` skill. Read your skill instructions
-carefully and follow them step by step.
+Execute this job using your `{skill}` skill. The current skill and knowledge
+files are loaded below from TemperFS. Follow them step by step.
 
-Read the knowledge files for design standards and quality thresholds:
-- `temper.read("/system/knowledge/design-principles.md")` — embodiment standards
-- `temper.read("/system/knowledge/quality-standards.md")` — quality thresholds
-- `temper.read("/system/knowledge/feedback-log.md")` — human feedback to incorporate
+Use these read commands only if you need to refresh source files. If a read
+fails, continue with the loaded copy below:
+- `{instruction_read_command}` — exact job procedure and output contract
+{knowledge_read_commands}
 
-When done, dispatch Complete on this CurationJob with structured output JSON.
-If you cannot complete, dispatch Fail with error_message.
+{loaded_instruction_block}
+
+{loaded_knowledge_block}
+
+When done, dispatch `{completion_action}` on this CurationJob with the params
+specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
+If you cannot complete, dispatch `Fail` with `error_message`.
 
 Entity set: CurationJobs
 Job entity ID: {entity_id}
 
 To complete:
 ```
-output_json = json.dumps(result, ensure_ascii=False)
-temper.action('CurationJobs', '{entity_id}', 'Complete', {{'output': output_json}})
+params = {{...}}  # use the params required by {completion_action}
+temper.action('CurationJobs', '{entity_id}', '{completion_action}', params)
 temper.done("{job_type} complete")
 ```
 
@@ -187,15 +248,19 @@ To fail:
 temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}})
 temper.done("{job_type} failed")
 ```
-"#
+"#,
+            effective_instruction_path = effective_instruction_path,
+            completion_action = template.completion_action.as_str(),
+            completion_contract = template.completion_contract.as_str(),
         );
 
         ctx.log(
             "info",
             &format!(
-                "build_session_message: skill='{}' prompt_len={}",
+                "build_session_message: skill='{}' prompt_len={} docs_loaded={}",
                 skill,
-                user_message.len()
+                user_message.len(),
+                usize::from(instruction_doc.is_some()) + knowledge_docs.len()
             ),
         );
 
@@ -230,7 +295,7 @@ temper.done("{job_type} failed")
 
         // --- Configure the Session ---
         // Sandbox-capable skills need a provisioned sandbox for compile + screenshot loop
-        let needs_sandbox = skill == "synthesize-language" || skill == "review-quality";
+        let needs_sandbox = template.requires_sandbox;
 
         let mut config_body = json!({
             "soul_id": stable_soul_id,
@@ -314,6 +379,7 @@ temper.done("{job_type} failed")
                 "session_id": session_id,
                 "job_type": job_type,
                 "skill": skill,
+                "template_version": template.template_version,
             }),
         );
         Ok(())
@@ -323,6 +389,280 @@ temper.done("{job_type} failed")
         set_error_result(&e);
     }
     0
+}
+
+fn lookup_active_template(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_type: &str,
+) -> Result<JobTemplate, String> {
+    if job_type.trim().is_empty() {
+        return Err("build_session_message: job_type is empty".to_string());
+    }
+
+    let resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/CurationJobTemplates?$top=100"),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to list CurationJobTemplates: HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(500)]
+        ));
+    }
+
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse CurationJobTemplates response: {e}"))?;
+    let values = parsed
+        .get("value")
+        .and_then(|v| v.as_array())
+        .ok_or("CurationJobTemplates response has no value array")?;
+
+    for item in values {
+        if entity_status(item) != "Active" {
+            continue;
+        }
+        let fields = item.get("fields").unwrap_or(item);
+        if field_str(fields, &["job_type", "JobType"]).as_deref() != Some(job_type) {
+            continue;
+        }
+        let template = parse_template(fields)?;
+        if template.completion_action.is_empty() {
+            return Err(format!(
+                "CurationJobTemplate for '{job_type}' has empty completion_action"
+            ));
+        }
+        return Ok(template);
+    }
+
+    Err(format!(
+        "No active CurationJobTemplate found for job_type '{job_type}'"
+    ))
+}
+
+fn parse_template(fields: &serde_json::Value) -> Result<JobTemplate, String> {
+    let skill_id = require_field(fields, &["skill_id", "SkillId"], "skill_id")?;
+    Ok(JobTemplate {
+        skill_id,
+        instruction_path: require_field(
+            fields,
+            &["instruction_path", "InstructionPath"],
+            "instruction_path",
+        )?,
+        tools_profile: field_str(fields, &["tools_profile", "ToolsProfile"])
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| DEFAULT_TOOLS_ENABLED.to_string()),
+        requires_sandbox: field_bool(fields, &["requires_sandbox", "RequiresSandbox"]),
+        max_turns_default: field_str(fields, &["max_turns_default", "MaxTurnsDefault"])
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "250".to_string()),
+        completion_action: require_field(
+            fields,
+            &["completion_action", "CompletionAction"],
+            "completion_action",
+        )?,
+        completion_contract: field_str(fields, &["completion_contract", "CompletionContract"])
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "typed-v1".to_string()),
+        template_version: field_str(fields, &["template_version", "TemplateVersion"])
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "1".to_string()),
+    })
+}
+
+fn require_field(fields: &serde_json::Value, keys: &[&str], label: &str) -> Result<String, String> {
+    field_str(fields, keys)
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| format!("CurationJobTemplate missing required {label}"))
+}
+
+fn field_str(fields: &serde_json::Value, keys: &[&str]) -> Option<String> {
+    keys.iter().find_map(|key| {
+        fields
+            .get(*key)
+            .and_then(|value| value.as_str())
+            .map(|value| value.to_string())
+    })
+}
+
+fn field_bool(fields: &serde_json::Value, keys: &[&str]) -> bool {
+    keys.iter()
+        .find_map(|key| fields.get(*key))
+        .and_then(|value| {
+            value
+                .as_bool()
+                .or_else(|| value.as_str().map(|s| matches!(s, "true" | "1" | "yes")))
+        })
+        .unwrap_or(false)
+}
+
+fn entity_status(item: &serde_json::Value) -> &str {
+    item.get("status")
+        .or_else(|| item.get("State"))
+        .or_else(|| item.get("state"))
+        .or_else(|| item.get("fields").and_then(|f| f.get("state")))
+        .or_else(|| item.get("fields").and_then(|f| f.get("State")))
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+}
+
+fn load_instruction_doc(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    configured_path: &str,
+    stable_soul_id: &str,
+) -> Option<LoadedDoc> {
+    for path in instruction_path_candidates(configured_path, stable_soul_id) {
+        if let Some(doc) = load_doc_file(ctx, api_url, headers, &path) {
+            return Some(doc);
+        }
+    }
+    None
+}
+
+fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
+    let mut candidates = vec![configured_path.to_string()];
+    if let Some(rest) = configured_path.strip_prefix("/agents/curator/") {
+        candidates.push(format!("/agents/{stable_soul_id}/{rest}"));
+    }
+    candidates.sort();
+    candidates.dedup();
+    candidates
+}
+
+fn load_doc_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Option<LoadedDoc> {
+    let filter = format!("path eq '{}'", odata_string_literal(path));
+    let resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files?$filter={}&$top=5", urlenc(&filter)),
+            headers,
+            "",
+        )
+        .ok()?;
+    if resp.status != 200 {
+        ctx.log(
+            "warn",
+            &format!(
+                "build_session_message: doc lookup for '{path}' returned HTTP {}",
+                resp.status
+            ),
+        );
+        return None;
+    }
+
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).ok()?;
+    let item = parsed
+        .get("value")
+        .and_then(|v| v.as_array())
+        .and_then(|items| {
+            items
+                .iter()
+                .find(|item| json_field_str(item, &["Path", "path"]).as_deref() == Some(path))
+        })?;
+    let file_id = json_field_str(item, &["Id", "entity_id"])?;
+    let workspace_id = json_field_str(item, &["WorkspaceId", "workspace_id"]).unwrap_or_default();
+    let content_resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+            headers,
+            "",
+        )
+        .ok()?;
+    if content_resp.status != 200 || content_resp.body.trim().is_empty() {
+        return None;
+    }
+
+    Some(LoadedDoc {
+        path: path.to_string(),
+        workspace_id,
+        content: content_resp.body,
+    })
+}
+
+fn json_field_str(item: &serde_json::Value, keys: &[&str]) -> Option<String> {
+    keys.iter().find_map(|key| {
+        item.get(*key)
+            .or_else(|| item.get("fields").and_then(|fields| fields.get(*key)))
+            .and_then(|value| value.as_str())
+            .map(|value| value.to_string())
+    })
+}
+
+fn temper_read_command(path: &str, loaded: Option<&LoadedDoc>) -> String {
+    match loaded.and_then(|doc| {
+        if doc.workspace_id.is_empty() {
+            None
+        } else {
+            Some(doc.workspace_id.as_str())
+        }
+    }) {
+        Some(workspace_id) => format!(
+            "temper.read(\"{}\", {{\"workspace_id\": \"{}\"}})",
+            escape_prompt_string(path),
+            escape_prompt_string(workspace_id)
+        ),
+        None => format!("temper.read(\"{}\")", escape_prompt_string(path)),
+    }
+}
+
+fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> String {
+    paths
+        .iter()
+        .map(|(path, label)| {
+            let loaded = loaded_docs.iter().find(|doc| doc.path == *path);
+            format!("- `{}` - {label}", temper_read_command(path, loaded))
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn render_loaded_doc(title: &str, doc: Option<&LoadedDoc>) -> String {
+    match doc {
+        Some(doc) => format!(
+            "## {title}\n\nPath: `{}`\n\n````markdown\n{}\n````",
+            doc.path, doc.content
+        ),
+        None => format!(
+            "## {title}\n\nThe configured file was not available in TemperFS when this session was created. Use the read command above if it becomes available."
+        ),
+    }
+}
+
+fn render_loaded_docs(title: &str, docs: &[LoadedDoc]) -> String {
+    if docs.is_empty() {
+        return format!(
+            "## {title}\n\nNo knowledge files were available in TemperFS when this session was created. Use the read commands above if they become available."
+        );
+    }
+
+    let mut out = format!("## {title}");
+    for doc in docs {
+        out.push_str(&format!(
+            "\n\n### `{}`\n\n````markdown\n{}\n````",
+            doc.path, doc.content
+        ));
+    }
+    out
+}
+
+fn odata_string_literal(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
+fn escape_prompt_string(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 fn ensure_workspace(
@@ -423,89 +763,14 @@ fn urlenc(s: &str) -> String {
         .replace('\'', "%27")
 }
 
-fn extra_instructions_for_job_type(job_type: &str) -> &'static str {
-    match job_type {
-        "quality_review" => {
-            r#"
-## Review Boundary
-
-This job is a QUALITY REVIEW, not a research-and-rewrite spec synthesis pass.
-
-1. Validate the spec sections before reviewing the embodiment.
-2. If the spec is incomplete, empty, or skeleton-quality, STOP.
-3. Do NOT repair the spec inside this quality_review job.
-4. Fail the job with a concrete error_message explaining which sections are invalid and instruct the caller to run `regenerate_embodiment` or `synthesize` first.
-
-The embodiment review should stay fast and bounded. Invalid specs are an upstream workflow problem, not review-time work.
-"#
-        }
-        "regenerate_embodiment" => {
-            r#"
-## Regeneration Mode
-
-You are regenerating the embodiment for an EXISTING design language as self-contained HTML.
-
-1. Read the existing language entity specified in the input (`existing_language_id`).
-2. Read ALL its spec sections (Philosophy, Tokens, Rules, Layout, Guidance).
-3. If the language is in Published state, call `Revise` first with `curator_notes: "Regenerating embodiment HTML"`.
-4. **MANDATORY: Run the Spec Validation Gate from your skill instructions.**
-   Parse each JSON field and verify completeness:
-   - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
-   - `philosophy.summary` non-empty, `philosophy.values` >= 3 items
-   - `tokens.colors` must have all 12 keys with real hex values (not empty or placeholder)
-   - `tokens.typography` must have real font names and a google_fonts_url
-   - `tokens.surfaces`, `tokens.borders`, `tokens.motion` must all be populated
-   - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
-   - `rules.composition`, `rules.hierarchy`, `rules.density` must be non-empty
-   - `layout_principles.grid`, `layout_principles.breakpoints` must be non-empty
-   - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
-5. **If ANY section fails validation — RESEARCH and rewrite it before generating the embodiment.**
-   The spec is the primary artifact. It must come from research, not from reverse-engineering existing CSS.
-   a. Search for existing research: `temper.list('DesignSources', "$filter=contains(name,'<language_name>')")`
-   b. If no sources exist, research the design direction:
-      `temper.web_search('<language_name> design system UI patterns typography')` and
-      `temper.web_fetch(url)` on the best results.
-   c. Study real-world references: what makes this design movement distinctive? What are the defining
-      structural choices, typography conventions, color palettes, spatial relationships?
-   d. Rewrite each failing section with concrete, research-backed content — specific CSS techniques
-      and design decisions grounded in real references, not vague adjectives.
-   e. Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance).
-   f. Re-validate until all sections pass.
-   **NEVER generate an embodiment from empty or skeleton specs — the spec defines the identity.**
-6. Generate a self-contained HTML embodiment using the now-complete spec's visual_character, signature_patterns, and tokens.
-7. Visually verify at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) via Playwright screenshots in the sandbox.
-8. Call `AttachEmbodiment` with `embodiment_format: 'html'`.
-9. Call `SubmitForReview` then `Publish` to re-publish the language.
-"#
-        }
-        "synthesize" | "evolve_language" => {
-            r#"
-## CRITICAL: Self-Contained HTML + Visual Verification Required
-
-**You MUST produce a single self-contained HTML file with embedded CSS.**
-
-The embodiment MUST be:
-1. A complete HTML file with all CSS in a `<style>` block — no external stylesheets except Google Fonts
-2. Responsive with media queries for desktop, tablet, and mobile
-3. Visually validated via Playwright screenshots at 3 viewports (desktop 1440px, tablet 768px, mobile 375px)
-4. Published with `embodiment_format: 'html'` in the AttachEmbodiment call
-
-**You MUST use `sandbox.write()`, `sandbox.bash()`, and `sandbox.read()` for screenshots.**
-Write HTML to sandbox, screenshot at all 3 viewports, evaluate, iterate until polished.
-
-After AttachEmbodiment, call SubmitForReview then Publish on the DesignLanguage.
-"#
-        }
-        _ => "",
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use std::path::PathBuf;
+    use serde_json::json;
 
-    use super::{extra_instructions_for_job_type, normalize_bootstrapped_soul_id};
+    use super::{
+        field_bool, instruction_path_candidates, normalize_bootstrapped_soul_id, parse_template,
+        temper_read_command, LoadedDoc,
+    };
 
     #[test]
     fn normalize_bootstrapped_soul_id_maps_agent_name_to_stable_id() {
@@ -524,30 +789,62 @@ mod tests {
     }
 
     #[test]
-    fn quality_review_instructions_fail_fast_on_invalid_specs() {
-        let instructions = extra_instructions_for_job_type("quality_review");
+    fn parse_template_accepts_snake_case_fields() {
+        let template = parse_template(&json!({
+            "job_type": "synthesize",
+            "skill_id": "synthesize-language",
+            "instruction_path": "/agents/curator/skills/synthesize-language/SKILL.md",
+            "tools_profile": "temper_get,bash",
+            "requires_sandbox": true,
+            "max_turns_default": "42",
+            "completion_action": "CompleteSynthesis",
+            "completion_contract": "typed-v1",
+            "template_version": "7"
+        }))
+        .expect("template should parse");
 
-        assert!(instructions.contains("Do NOT repair the spec inside this quality_review job."));
-        assert!(instructions.contains("Fail the job"));
-        assert!(instructions.contains("regenerate_embodiment"));
+        assert_eq!(template.skill_id, "synthesize-language");
+        assert!(template.requires_sandbox);
+        assert_eq!(template.max_turns_default, "42");
+        assert_eq!(template.completion_action, "CompleteSynthesis");
+        assert_eq!(template.template_version, "7");
     }
 
     #[test]
-    fn regenerate_embodiment_instructions_keep_spec_repair_loop() {
-        let instructions = extra_instructions_for_job_type("regenerate_embodiment");
-
-        assert!(instructions.contains("If ANY section fails validation"));
-        assert!(instructions.contains("RESEARCH and rewrite it"));
+    fn parse_template_accepts_pascal_case_boolean_strings() {
+        let fields = json!({"RequiresSandbox": "true"});
+        assert!(field_bool(
+            &fields,
+            &["requires_sandbox", "RequiresSandbox"]
+        ));
     }
 
     #[test]
-    fn quality_review_skill_fails_fast_on_invalid_specs() {
-        let skill_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../agents/curator/skills/review-quality/SKILL.md");
-        let skill = fs::read_to_string(skill_path).expect("skill file should load");
+    fn read_command_includes_doc_workspace_when_available() {
+        let doc = LoadedDoc {
+            path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
+            workspace_id: "os-app-docs".to_string(),
+            content: "# Synthesize".to_string(),
+        };
 
-        assert!(skill.contains("Do NOT repair the spec in this job."));
-        assert!(skill.contains("Fail the job"));
-        assert!(skill.contains("regenerate_embodiment"));
+        assert_eq!(
+            temper_read_command(&doc.path, Some(&doc)),
+            "temper.read(\"/agents/curator/skills/synthesize-language/SKILL.md\", {\"workspace_id\": \"os-app-docs\"})"
+        );
+    }
+
+    #[test]
+    fn instruction_path_candidates_include_stable_bootstrap_agent_path() {
+        assert_eq!(
+            instruction_path_candidates(
+                "/agents/curator/skills/research-direction/SKILL.md",
+                "sl-bootstrap-agent-soul-curator"
+            ),
+            vec![
+                "/agents/curator/skills/research-direction/SKILL.md".to_string(),
+                "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md"
+                    .to_string(),
+            ]
+        );
     }
 }

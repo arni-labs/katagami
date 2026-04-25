@@ -13,6 +13,7 @@ name = "Configure"
 
 [instance.actions.params]
 job_type = "source_search"
+completion_contract = "typed-v1"
 input = '''
 {
   "task": "Survey all major UI/UX design movements, schools, and aesthetic directions used in digital interfaces. Cover historical (Bauhaus, Swiss, Art Deco), contemporary (Material, Flat, Glassmorphism, Neumorphism), and emerging trends. For each movement, find authoritative sources: design system documentation, foundational articles, style guides, academic references. Store each source as a DesignSource entity. Catalog what exists comprehensively before synthesizing.",
