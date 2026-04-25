@@ -4,16 +4,15 @@ import { useState } from "react";
 import { Download, Copy, Link2, Check } from "lucide-react";
 
 interface SpecActionsProps {
-  markdown: string;
+  designMd: string;
   slug?: string;
 }
 
-type CopyKind = "prompt" | "link";
+type CopyKind = "design-md" | "link";
 
 const PROMPT_PREAMBLE =
-  "Use the following design language for everything we build in this chat. " +
-  "Follow its tokens, rules, and guidance strictly. When in doubt, defer to " +
-  "the spec over your defaults.";
+  "Use the following DESIGN.md as the source of truth for every UI we build. " +
+  "Follow its tokens, component guidance, layout rules, and do/don't guardrails.";
 
 async function writeClipboard(text: string) {
   try {
@@ -30,7 +29,7 @@ async function writeClipboard(text: string) {
   }
 }
 
-export function SpecActions({ markdown, slug }: SpecActionsProps) {
+export function SpecActions({ designMd, slug }: SpecActionsProps) {
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -38,31 +37,34 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
     setTimeout(() => setJustCopied(null), 2000);
   };
 
-  const handleCopyPrompt = async () => {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}`
-        : "";
+  const designMdUrl = () => {
+    if (typeof window === "undefined") return "";
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return `${window.location.origin}${path}/DESIGN.md`;
+  };
+
+  const handleCopyDesignMd = async () => {
+    const url = designMdUrl();
     const body = url
-      ? `${PROMPT_PREAMBLE}\n\nSource: ${url}\n\n---\n\n${markdown}`
-      : `${PROMPT_PREAMBLE}\n\n---\n\n${markdown}`;
+      ? `${PROMPT_PREAMBLE}\n\nSource: ${url}\n\n${designMd}`
+      : `${PROMPT_PREAMBLE}\n\n${designMd}`;
     await writeClipboard(body);
-    flash("prompt");
+    flash("design-md");
   };
 
   const handleCopyLink = async () => {
-    if (typeof window === "undefined") return;
-    const url = `${window.location.origin}${window.location.pathname}`;
+    const url = designMdUrl();
+    if (!url) return;
     await writeClipboard(url);
     flash("link");
   };
 
   const handleDownload = () => {
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([designMd], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${slug || "spec"}.md`;
+    a.download = slug ? `${slug}-DESIGN.md` : "DESIGN.md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -72,18 +74,18 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <ActionStamp
-        onClick={handleCopyPrompt}
+        onClick={handleCopyDesignMd}
         tint="yuzu"
         rotate={-1.5}
         icon={
-          justCopied === "prompt" ? (
+          justCopied === "design-md" ? (
             <Check className="h-3 w-3 text-[var(--salad)]" />
           ) : (
             <Copy className="h-3 w-3" />
           )
         }
-        label={justCopied === "prompt" ? "prompt copied" : "copy as prompt"}
-        title="Copy spec with a short preamble — paste into any agent chat"
+        label={justCopied === "design-md" ? "copied" : "copy DESIGN.md"}
+        title="Copy the Google DESIGN.md-compatible export for agent chats"
       />
       <ActionStamp
         onClick={handleCopyLink}
@@ -97,7 +99,7 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
           )
         }
         label={justCopied === "link" ? "link copied" : "copy link"}
-        title="Copy this page URL — agents can fetch it directly"
+        title="Copy raw DESIGN.md URL — agents can fetch it directly"
       />
       <ActionStamp
         onClick={handleDownload}
@@ -105,7 +107,7 @@ export function SpecActions({ markdown, slug }: SpecActionsProps) {
         rotate={1}
         icon={<Download className="h-3 w-3" />}
         label="download"
-        title="Download spec.md"
+        title="Download DESIGN.md"
       />
     </div>
   );
