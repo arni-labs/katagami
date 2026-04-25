@@ -89,9 +89,9 @@ export default async function LanguageDetailPage({
         title={<Marker color={accent as never}>{name}</Marker>}
         description={
           <>
-            A complete design system — philosophy, tokens, rules, imagery, and
-            an embodied preview. Edit curator notes below, or open side-by-side
-            comparison to see how it relates.
+            A complete design system with a SPEC.md export — philosophy,
+            tokens, rules, imagery, and an embodied preview. Edit curator notes
+            below, or open side-by-side comparison to see how it relates.
           </>
         }
         rightSlot={

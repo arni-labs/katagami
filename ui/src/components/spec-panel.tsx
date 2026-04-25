@@ -432,7 +432,7 @@ function SpecMarkdownView({ markdown }: { markdown: string }) {
   );
 }
 
-// ── DESIGN.md generation ──────────────────────────────────────────
+// ── SPEC.md generation ────────────────────────────────────────────
 
 type JsonRecord = Record<string, unknown>;
 
@@ -718,7 +718,7 @@ function buildComponentTokens(
   };
 }
 
-function buildDesignMdFrontMatter(
+function buildSpecMdFrontMatter(
   props: SpecPanelProps,
   tokens: JsonRecord | null,
 ): JsonRecord {
@@ -732,7 +732,7 @@ function buildDesignMdFrontMatter(
     version: "alpha",
     name: props.name ?? "Katagami Design Language",
     description:
-      "Agent-curated design language exported from Katagami as DESIGN.md.",
+      "Agent-curated design language exported from Katagami as SPEC.md.",
     colors,
     typography,
     rounded,
@@ -795,7 +795,7 @@ export function specToMarkdown(props: SpecPanelProps): string {
   const img = parseJson<JsonRecord>(props.imageryDirection);
   const gen = parseJson<JsonRecord>(props.generativeCanvas);
 
-  const frontMatter = buildDesignMdFrontMatter(props, tok);
+  const frontMatter = buildSpecMdFrontMatter(props, tok);
   const colors = asRecord(frontMatter.colors) ?? {};
   const typography = asRecord(frontMatter.typography) ?? {};
   const spacing = asRecord(frontMatter.spacing) ?? {};
@@ -951,7 +951,7 @@ export function SpecPanel(props: SpecPanelProps) {
     <div className="relative">
       {/* Copy + download — inline on mobile, floating on sm+ */}
       <div className="mb-4 flex items-center justify-end sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
-        <SpecActions designMd={markdown} slug={props.slug} />
+        <SpecActions specMd={markdown} slug={props.slug} />
       </div>
 
       {/* Spacer on sm+ so floating chips don't collide with first section */}
@@ -983,7 +983,7 @@ export function SpecPanel(props: SpecPanelProps) {
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
-        <Section label="DESIGN.md" color="sumire">
+        <Section label="SPEC.md" color="sumire">
           <SpecMarkdownView markdown={markdown} />
         </Section>
       </div>
