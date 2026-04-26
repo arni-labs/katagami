@@ -143,6 +143,21 @@ params = ["job_type", "design_language_id", "direction_id", "workspace_id", "inp
 hint = "Configure a trigger-created job and start session spawning in one transition."
 effect = [{ type = "trigger", name = "build_session_message" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "build_session_message"
+kind = "wasm"
+module = "build_session_message"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
+
 [[action]]
 name = "Submit"
 kind = "input"
@@ -150,6 +165,21 @@ from = ["Queued"]
 to = "Ready"
 hint = "Legacy/manual start path. Triggers message builder WASM."
 effect = [{ type = "trigger", name = "build_session_message" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "build_session_message"
+kind = "wasm"
+module = "build_session_message"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
 
 [[action]]
 name = "Start"
@@ -187,6 +217,17 @@ params = ["output"]
 hint = "Legacy compatibility completion. New jobs should use typed completion actions."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 [[action]]
 name = "CompleteResearch"
 kind = "input"
@@ -195,6 +236,17 @@ to = "Finalizing"
 params = ["direction_ids"]
 hint = "Research completed after creating and queueing CurationDirection records."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
 
 [[action.triggers]]
 name = "research_completion_advances_query"
@@ -223,6 +275,17 @@ to = "Finalizing"
 params = ["design_language_ids", "review_input"]
 hint = "Synthesis completed and a quality review job should be created by trigger."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
 
 [[action.triggers]]
 name = "synthesis_creates_quality_review_job"
@@ -284,6 +347,17 @@ params = ["design_language_ids", "organize_input"]
 hint = "Quality review completed and taxonomy organization should be created by trigger."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 [[action.triggers]]
 name = "review_creates_organization_job"
 kind = "entity"
@@ -312,6 +386,17 @@ params = ["output"]
 hint = "Taxonomy organization completed."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 [[action.triggers]]
 name = "organization_completion_finishes_query"
 kind = "entity"
@@ -332,6 +417,17 @@ params = ["design_language_ids", "output"]
 hint = "Embodiment regeneration completed."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 [[action]]
 name = "CompleteEvolution"
 kind = "input"
@@ -340,6 +436,17 @@ to = "Finalizing"
 params = ["design_language_ids", "output"]
 hint = "Language evolution completed."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
 
 # --- Finalizing ---
 
@@ -432,6 +539,17 @@ params = ["error_message"]
 hint = "Mark job as failed with error details."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 [[action.triggers]]
 name = "job_failure_fails_direction"
 kind = "entity"
@@ -476,27 +594,3 @@ hint = "Retry a failed job. Resets to Queued for re-submission."
 name = "CompletedIsFinal"
 when = ["Completed"]
 assert = "no_further_transitions"
-
-# --- Integrations ---
-
-[[integration]]
-name = "build_session_message"
-trigger = "build_session_message"
-type = "wasm"
-module = "build_session_message"
-on_failure = "Fail"
-
-[integration.config]
-temper_api_url = "{secret:temper_api_url}"
-sandbox_provider = "{secret:sandbox_provider}"
-llm_model = "{secret:llm_model}"
-llm_provider = "{secret:llm_provider}"
-
-[[integration]]
-name = "finalize_spawned_session"
-trigger = "finalize_spawned_session"
-type = "wasm"
-module = "finalize_spawned_session"
-
-[integration.config]
-temper_api_url = "{secret:temper_api_url}"
