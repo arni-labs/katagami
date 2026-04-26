@@ -22,14 +22,14 @@ const PREAMBLE: Record<Format, string> = {
     "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.",
 };
 
-const FORMAT_LABEL: Record<Format, string> = {
-  katagami: "katagami",
-  "design-md": "DESIGN.md",
-};
-
 const FILENAME_SUFFIX: Record<Format, string> = {
   katagami: "katagami-spec",
   "design-md": "DESIGN",
+};
+
+const URL_SUFFIX: Record<Format, string> = {
+  katagami: "SPEC.md",
+  "design-md": "DESIGN.md",
 };
 
 async function writeClipboard(text: string) {
@@ -53,7 +53,7 @@ export function SpecActions({
   designMd,
   slug,
 }: SpecActionsProps) {
-  const [format, setFormat] = useState<Format>("design-md");
+  const [format, setFormat] = useState<Format>("katagami");
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -61,13 +61,14 @@ export function SpecActions({
     setTimeout(() => setJustCopied(null), 2000);
   };
 
-  const designMdUrl = () => {
+  const urlFor = (f: Format) => {
     if (typeof window === "undefined") return "";
+    const suffix = URL_SUFFIX[f];
     if (languageId) {
-      return `${window.location.origin}/language/${encodeURIComponent(languageId)}/DESIGN.md`;
+      return `${window.location.origin}/language/${encodeURIComponent(languageId)}/${suffix}`;
     }
     const path = window.location.pathname.replace(/\/+$/, "");
-    return `${window.location.origin}${path}/DESIGN.md`;
+    return `${window.location.origin}${path}/${suffix}`;
   };
 
   const markdownFor = (f: Format) =>
@@ -75,14 +76,14 @@ export function SpecActions({
 
   const handleCopy = async () => {
     const md = markdownFor(format);
-    const url = designMdUrl();
+    const url = urlFor(format);
     const refLine = url ? `\n\nSource: ${url}` : "";
     await writeClipboard(`${PREAMBLE[format]}${refLine}\n\n${md}`);
     flash("copy");
   };
 
   const handleCopyLink = async () => {
-    const url = designMdUrl();
+    const url = urlFor(format);
     if (!url) return;
     await writeClipboard(url);
     flash("link");
@@ -105,10 +106,9 @@ export function SpecActions({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <FormatToggle value={format} onChange={setFormat} />
-      <span aria-hidden className="hidden h-4 w-px bg-border sm:block" />
-      <div className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-3">
+      <FormatSelector value={format} onChange={setFormat} />
+      <div className="flex flex-wrap items-center gap-1.5">
         <ActionStamp
           onClick={handleCopy}
           tint="yuzu"
@@ -121,72 +121,127 @@ export function SpecActions({
             )
           }
           label={justCopied === "copy" ? "copied" : "copy"}
-          title={`Copy ${FORMAT_LABEL[format]} with a prompt preamble`}
+          title="Copy with prompt preamble — paste into any agent chat"
         />
-        {format === "design-md" && (
-          <ActionStamp
-            onClick={handleCopyLink}
-            tint="sumire"
-            rotate={0.5}
-            icon={
-              justCopied === "link" ? (
-                <Check className="h-3 w-3 text-[var(--salad)]" />
-              ) : (
-                <Link2 className="h-3 w-3" />
-              )
-            }
-            label={justCopied === "link" ? "link copied" : "link"}
-            title="Copy raw DESIGN.md URL — agents can fetch it directly"
-          />
-        )}
+        <ActionStamp
+          onClick={handleCopyLink}
+          tint="sumire"
+          rotate={0.5}
+          icon={
+            justCopied === "link" ? (
+              <Check className="h-3 w-3 text-[var(--salad)]" />
+            ) : (
+              <Link2 className="h-3 w-3" />
+            )
+          }
+          label={justCopied === "link" ? "link copied" : "link"}
+          title="Copy raw markdown URL — agents can fetch it directly"
+        />
         <ActionStamp
           onClick={handleDownload}
           tint="teal"
           rotate={1}
           icon={<Download className="h-3 w-3" />}
           label="download"
-          title={`Download ${FORMAT_LABEL[format]}`}
+          title="Download .md file"
         />
       </div>
     </div>
   );
 }
 
-function FormatToggle({
+// Two-tab format selector. Katagami tab gets the 型紙 kanji + a sparkle,
+// active state shows a marker wash behind the label.
+function FormatSelector({
   value,
   onChange,
 }: {
   value: Format;
   onChange: (v: Format) => void;
 }) {
-  const options: Format[] = ["katagami", "design-md"];
   return (
-    <div className="inline-flex items-center gap-1 border border-border bg-card/85 px-1 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] shadow-[0_1px_2px_rgba(30,35,45,0.06)]">
-      <span className="px-1.5 text-muted-foreground/80">format</span>
-      {options.map((opt) => {
-        const active = value === opt;
-        return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(opt)}
-            aria-pressed={active}
-            className={`relative px-2 py-0.5 transition-colors ${
-              active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {active && (
-              <span
-                aria-hidden
-                className="absolute inset-x-0 bottom-[1px] -z-0 h-[5px] rounded-[1px] bg-[var(--yuzu)]"
-                style={{ transform: "rotate(-0.6deg)", opacity: 0.85 }}
-              />
-            )}
-            <span className="relative">{FORMAT_LABEL[opt]}</span>
-          </button>
-        );
-      })}
+    <div className="inline-flex items-stretch self-start border border-border bg-card/85 shadow-[0_1px_2px_rgba(30,35,45,0.06)]">
+      <span className="flex items-center px-3 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80">
+        format
+      </span>
+      <span aria-hidden className="w-px self-stretch bg-border" />
+      <FormatTab
+        active={value === "katagami"}
+        onClick={() => onChange("katagami")}
+        markerColor="sumire"
+      >
+        <span
+          aria-hidden
+          className="font-display text-[14px] font-bold leading-none text-[var(--sumire)]"
+          style={{ fontFamily: '"Noto Serif JP", "Bricolage Grotesque", serif' }}
+        >
+          型紙
+        </span>
+        <span className="font-display text-[12px] font-semibold leading-none">
+          katagami
+        </span>
+        <Sparkle />
+      </FormatTab>
+      <span aria-hidden className="w-px self-stretch bg-border" />
+      <FormatTab
+        active={value === "design-md"}
+        onClick={() => onChange("design-md")}
+        markerColor="salad"
+      >
+        <span className="font-mono text-[12px] font-semibold leading-none tracking-tight">
+          DESIGN.md
+        </span>
+      </FormatTab>
     </div>
+  );
+}
+
+function FormatTab({
+  active,
+  onClick,
+  markerColor,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  markerColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`relative flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {active && (
+        <span
+          aria-hidden
+          className="absolute inset-x-1 bottom-[3px] -z-0 h-[6px] rounded-[1px]"
+          style={{
+            background: `var(--${markerColor})`,
+            opacity: 0.85,
+            transform: "rotate(-0.4deg)",
+          }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
+    </button>
+  );
+}
+
+function Sparkle() {
+  return (
+    <svg
+      viewBox="0 0 12 12"
+      className="h-2.5 w-2.5 text-[var(--yuzu)]"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
+    </svg>
   );
 }
 
