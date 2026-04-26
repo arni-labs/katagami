@@ -102,7 +102,8 @@ class DesignMdContractTests(unittest.TestCase):
             "@google/design.md lint",
             "AttachDesignMd",
             "/katagami/design-md/",
-            "ZERO lint errors",
+            "ZERO lint errors and ZERO lint warnings",
+            "Warnings are blocking",
         ]:
             self.assertIn(fragment, review_skill)
 

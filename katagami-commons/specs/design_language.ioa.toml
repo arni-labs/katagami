@@ -196,7 +196,7 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }]
 params = ["design_md_file_id", "design_md_lint_result", "design_md_format_version"]
-hint = "Attach a generated DESIGN.md artifact that passed @google/design.md lint with zero errors."
+hint = "Attach a generated DESIGN.md artifact that passed @google/design.md lint with zero errors and zero warnings."
 
 [[action]]
 name = "AttachThumbnail"
