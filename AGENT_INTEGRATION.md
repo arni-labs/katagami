@@ -57,7 +57,7 @@ The generated `DESIGN.md` contains:
 - Canonical `DESIGN.md` sections: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts
 - Katagami extensions preserved as markdown sections, such as imagery direction and generative canvas guidance
 
-Published languages are expected to have a stored `DESIGN.md` artifact that passed `@google/design.md lint` with zero errors.
+Published languages are expected to have a stored `DESIGN.md` artifact that passed `@google/design.md lint` with zero errors and zero warnings.
 
 Raw DESIGN.md route:
 

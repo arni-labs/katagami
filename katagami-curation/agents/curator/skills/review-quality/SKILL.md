@@ -38,9 +38,9 @@ For each language specified in the job input (or ALL languages if none specified
      ```python
      lint_json = sandbox.bash('npx @google/design.md lint --format=json /tmp/DESIGN.md')
      ```
-   - Parse the linter JSON. If `summary.errors > 0`, repair the Katagami source fields causing the invalid projection, then regenerate and relint.
-   - Fix warnings when the correction is straightforward. Remaining warnings may be kept, but must be recorded in `design_md_lint_result`.
-   - Repeat until there are ZERO lint errors.
+   - Parse the linter JSON. If `summary.errors > 0` or `summary.warnings > 0`, repair the Katagami source fields causing the invalid projection, then regenerate and relint.
+   - Warnings are blocking. Do not keep, record-and-continue, attach, or publish a DESIGN.md artifact with any lint warnings.
+   - Repeat until there are ZERO lint errors and ZERO lint warnings.
    - Store the validated artifact:
      ```python
      design_md_result = temper.write('/katagami/design-md/' + slug + '/DESIGN.md', design_md)
