@@ -4,7 +4,9 @@ Date: 2026-04-25
 
 ## Status
 
-Accepted for immediate unblock. The final storage architecture remains a follow-up PR.
+Accepted for immediate unblock. Clean target implementation proposed in
+TemperPaw PR https://github.com/nerdsane/temperpaw/pull/140 and intentionally
+not merged yet.
 
 ## Context
 
@@ -109,6 +111,19 @@ The clean target is still Temper-native:
   deployment choice, not a rewrite of Katagami domain logic.
 - Object/blob storage is the byte data plane for large immutable payloads.
 - PawFS remains the governed file/artifact plane, not the hot agent memory loop.
+
+## Follow-Up Implementation
+
+The clean architecture PR tightens the immediate unblock in four ways:
+
+- SessionEntry entities use deterministic entity ids derived from
+  `(session_id, entry_id)` so retries are idempotent.
+- Entity-backed sessions append only the new SessionEntry instead of
+  reconstructing and syncing the whole logical JSONL tree.
+- SessionEntry content keeps a bounded inline ceiling; larger operational
+  payloads spill through Temper blob-ref overflow instead of PawFS versioning.
+- Agent-facing storage rules are installed as system guidance so agents know
+  when to use Temper entities, blob-backed fields, PawFS, and sandbox files.
 
 ## Consequences
 
