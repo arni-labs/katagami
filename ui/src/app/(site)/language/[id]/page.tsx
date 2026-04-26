@@ -89,9 +89,10 @@ export default async function LanguageDetailPage({
         title={<Marker color={accent as never}>{name}</Marker>}
         description={
           <>
-            A complete design system with a SPEC.md export — philosophy,
-            tokens, rules, imagery, and an embodied preview. Edit curator notes
-            below, or open side-by-side comparison to see how it relates.
+            A complete design system with a Katagami spec and DESIGN.md export
+            — philosophy, tokens, rules, imagery, and an embodied preview. Edit
+            curator notes below, or open side-by-side comparison to see how it
+            relates.
           </>
         }
         rightSlot={
@@ -253,6 +254,7 @@ export default async function LanguageDetailPage({
           </SectionHeading>
           <StickyNote className="p-5">
             <SpecPanel
+              languageId={id}
               name={name}
               slug={f.slug}
               philosophy={f.philosophy}
@@ -262,6 +264,10 @@ export default async function LanguageDetailPage({
               guidance={f.guidance}
               imageryDirection={f.imagery_direction}
               generativeCanvas={f.generative_canvas}
+              designMdFileId={f.design_md_file_id}
+              designMdLintResult={f.design_md_lint_result}
+              hasDesignMd={lang.booleans.has_design_md}
+              hasValidDesignMd={lang.booleans.has_valid_design_md}
             />
           </StickyNote>
         </section>

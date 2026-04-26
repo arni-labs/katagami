@@ -1,6 +1,6 @@
 # Katagami Agent Integration Guide
 
-Pull design specs from the Katagami library to build UIs with consistent, curated aesthetics.
+Pull rich Katagami specs or validated `DESIGN.md` exports from the Katagami library to build UIs with consistent, curated aesthetics.
 
 ## Connection
 
@@ -43,6 +43,31 @@ Key fields (all JSON strings, parse before use):
 - `fields.layout_principles` — density, grid, whitespace
 - `fields.guidance` — do's and don'ts
 - `fields.philosophy` — values, anti-values, aesthetic lineage
+- `fields.design_md_file_id` — stored validated DESIGN.md artifact when review has passed
+- `fields.design_md_lint_result` — JSON linter output from `@google/design.md`
+
+The Katagami gallery exposes two agent handoff formats for each language:
+
+- **copy Katagami spec** — the full native markdown handoff, best for rich prompting.
+- **copy DESIGN.md** / **download DESIGN.md** — Google's portable format, best for agents and tooling that understand `DESIGN.md`.
+
+The generated `DESIGN.md` contains:
+
+- YAML front matter for machine-readable tokens
+- Canonical `DESIGN.md` sections: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts
+- Katagami extensions preserved as markdown sections, such as imagery direction and generative canvas guidance
+
+Published languages are expected to have a stored `DESIGN.md` artifact that passed `@google/design.md lint` with zero errors.
+
+Raw DESIGN.md route:
+
+```
+GET /language/<entity_id>/DESIGN.md
+```
+
+This returns the stored validated artifact when available, or a generated preview for drafts and languages that have not been backfilled yet.
+
+Official format reference: https://github.com/google-labs-code/design.md
 
 ### 4. Generate a Tailwind config from tokens
 

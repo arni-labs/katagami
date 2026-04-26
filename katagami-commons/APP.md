@@ -6,7 +6,7 @@ Core data layer for the Katagami Design Language Commons. Stores design language
 
 ### DesignLanguage
 
-A complete design language with structured spec (Philosophy, Tokens, Rules, LayoutPrinciples, Guidance) and a self-contained HTML embodiment rendering all canonical elements.
+A complete design language with structured spec (Philosophy, Tokens, Rules, LayoutPrinciples, Guidance), a self-contained HTML embodiment rendering all canonical elements, and a generated DESIGN.md artifact for portable agent handoff.
 
 **States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
 
@@ -38,7 +38,7 @@ Agent-maintained hierarchical classification of design movements and schools.
 
 ## Storage Model
 
-Entity metadata lives in Temper entities. Large content (embodiment HTML, source text) lives in paw-fs File entities, referenced by `FileId` fields. This keeps entity payloads small.
+Entity metadata lives in Temper entities. Large content (embodiment HTML, source text, generated DESIGN.md files) lives in paw-fs File entities, referenced by `FileId` fields. This keeps entity payloads small.
 
 ## Integration with katagami-curation
 

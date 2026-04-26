@@ -12,7 +12,7 @@ Each language has philosophy, design tokens, compositional rules, layout princip
 
 Every time you start a new project, you hit the same cold start: "make it look clean and modern." You know what you like when you see it, but you can't name it. You might know "brutalism" or "neo-editorial" exist, but how many movements are you missing? Without the vocabulary, you can't ask for it.
 
-Katagami fixes this. Browse the gallery, pick a language, copy the spec, hand it to whatever agent is building your UI. No more reinventing from scratch.
+Katagami fixes this. Browse the gallery, pick a language, copy the rich Katagami spec for full-fidelity prompting, or export a validated `DESIGN.md` for portable agent/tool compatibility. No more reinventing from scratch.
 
 ## How it works
 
@@ -50,11 +50,15 @@ Philosophy   What this style believes — and what it rejects
 Tokens       Colors, typography, spacing, shadows, motion
 Rules        How tokens combine into elements
 Layout       Grids, breakpoints, density, whitespace
-Guidance     Do's, don'ts, usage context
-Embodiment   Rendered page of ~15 canonical UI elements in that style
+Guidance      Do's, don'ts, usage context
+Embodiment    Rendered page of ~15 canonical UI elements in that style
+Katagami spec Rich markdown handoff with the full native spec
+DESIGN.md     Validated portable export with YAML design-token front matter
 ```
 
-Copy the spec, drop it into your agent's context, and it shares a vocabulary with you.
+Copy the Katagami spec when you want the richest prompt context. Copy or download `DESIGN.md` when you want Google's alpha format and tooling compatibility.
+
+Katagami's internal model is richer than `DESIGN.md`: it stores curated research sources, lineage, taxonomy, quality review state, and rendered embodiments. Published languages must generate a valid `DESIGN.md` projection, but the native Katagami spec remains the source of truth.
 
 ## Architecture
 
@@ -159,6 +163,7 @@ The gallery runs on `localhost:3000` and talks to the Temper OData API.
 
 - [Temper](https://github.com/nerdsane/temper) — Policy-driven runtime for governed state machines
 - [TemperPaw](https://github.com/nerdsane/temper) (OpenPaw) — Agent platform built on Temper
+- [DESIGN.md](https://github.com/google-labs-code/design.md) — Google's alpha format for design-system context in coding agents
 - [Blog post](https://x.com/) — "Katagami: Organizing the Chaos of Design with Agents"
 
 ## License

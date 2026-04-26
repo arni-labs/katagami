@@ -13,7 +13,7 @@ Read knowledge files before starting work:
 |----------|-------|---------|
 | `source_search` | research-direction | Research design movements and index authoritative sources |
 | `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec + embodiment |
-| `quality_review` | review-quality | Review and fix embodiment HTML against the spec |
+| `quality_review` | review-quality | Validate DESIGN.md and fix embodiment HTML against the spec |
 | `organize_taxonomy` | organize-taxonomy | Build and maintain the taxonomy classification system |
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
 
@@ -48,6 +48,7 @@ Knowledge files (read via `temper.read()`):
 
 Workspace at `/katagami/`:
 - `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
+- `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
 - `/katagami/sources/{slug}.md` — research source files
 
 ## Completion Protocol

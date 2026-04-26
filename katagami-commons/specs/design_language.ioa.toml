@@ -55,6 +55,16 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "has_design_md"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_valid_design_md"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "has_thumbnail"
 type = "bool"
 initial = "false"
@@ -110,6 +120,7 @@ initial = 0
 name = "SetName"
 kind = "input"
 from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["name", "slug"]
 hint = "Set the design language name and URL-safe slug."
 
@@ -117,7 +128,7 @@ hint = "Set the design language name and URL-safe slug."
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_philosophy true"
+effect = [{ type = "set_bool", var = "has_philosophy", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["philosophy"]
 hint = "Write or update the Philosophy section (values, anti-values, aesthetic lineage)."
 
@@ -125,7 +136,7 @@ hint = "Write or update the Philosophy section (values, anti-values, aesthetic l
 name = "SetTokens"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_tokens true"
+effect = [{ type = "set_bool", var = "has_tokens", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["tokens"]
 hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevation, motion, opacity)."
 
@@ -133,7 +144,7 @@ hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevatio
 name = "SetRules"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_rules true"
+effect = [{ type = "set_bool", var = "has_rules", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["rules"]
 hint = "Set compositional rules (how tokens combine to form elements)."
 
@@ -141,7 +152,7 @@ hint = "Set compositional rules (how tokens combine to form elements)."
 name = "SetLayout"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_layout true"
+effect = [{ type = "set_bool", var = "has_layout", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["layout_principles"]
 hint = "Set layout principles (density, grid, whitespace, responsive)."
 
@@ -149,7 +160,7 @@ hint = "Set layout principles (density, grid, whitespace, responsive)."
 name = "SetGuidance"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_guidance true"
+effect = [{ type = "set_bool", var = "has_guidance", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["guidance"]
 hint = "Set guidance section (do's, don'ts, usage context)."
 
@@ -157,6 +168,7 @@ hint = "Set guidance section (do's, don'ts, usage context)."
 name = "SetImageryDirection"
 kind = "input"
 from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["imagery_direction"]
 hint = "Set imagery & illustration direction (illustration_style, hero_image_direction, icon_style, image_gen_prompts)."
 
@@ -164,6 +176,7 @@ hint = "Set imagery & illustration direction (illustration_style, hero_image_dir
 name = "SetGenerativeCanvas"
 kind = "input"
 from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["generative_canvas"]
 hint = "Set generative/interactive canvas direction (WebGL techniques, canvas effects, shader palette, animation philosophy)."
 
@@ -173,9 +186,17 @@ hint = "Set generative/interactive canvas direction (WebGL techniques, canvas ef
 name = "AttachEmbodiment"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = "set has_embodiment true"
+effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
 params = ["embodiment_file_id", "element_count", "composition_count", "embodiment_format"]
 hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML."
+
+[[action]]
+name = "AttachDesignMd"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }]
+params = ["design_md_file_id", "design_md_lint_result", "design_md_format_version"]
+hint = "Attach a generated DESIGN.md artifact that passed @google/design.md lint with zero errors."
 
 [[action]]
 name = "AttachThumbnail"
@@ -246,8 +267,9 @@ name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
+guard = [{ type = "is_true", var = "has_valid_design_md" }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Increments version."
+hint = "Curator approves and publishes. Requires a valid attached DESIGN.md artifact and increments version."
 
 [[action]]
 name = "Revise"
@@ -316,3 +338,7 @@ name = "PublishedRequiresAllSections"
 when = ["Published"]
 assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidance"
 
+[[invariant]]
+name = "PublishedRequiresValidDesignMd"
+when = ["Published"]
+assert = "has_valid_design_md"
