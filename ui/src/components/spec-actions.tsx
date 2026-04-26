@@ -10,15 +10,27 @@ interface SpecActionsProps {
   slug?: string;
 }
 
-type CopyKind = "katagami" | "design-md" | "link";
+type Format = "katagami" | "design-md";
+type CopyKind = "copy" | "link";
 
-const KATAGAMI_PREAMBLE =
-  "Use the following Katagami design-language spec as the source of truth for every UI we build. " +
-  "Follow its philosophy, tokens, rules, layout guidance, and do/don't guardrails.";
+const PREAMBLE: Record<Format, string> = {
+  katagami:
+    "Use the following Katagami design-language spec as the source of truth for every UI we build. " +
+    "Follow its philosophy, tokens, rules, layout guidance, and do/don't guardrails.",
+  "design-md":
+    "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
+    "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.",
+};
 
-const DESIGN_MD_PREAMBLE =
-  "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
-  "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.";
+const FORMAT_LABEL: Record<Format, string> = {
+  katagami: "katagami",
+  "design-md": "DESIGN.md",
+};
+
+const FILENAME_SUFFIX: Record<Format, string> = {
+  katagami: "katagami-spec",
+  "design-md": "DESIGN",
+};
 
 async function writeClipboard(text: string) {
   try {
@@ -41,6 +53,7 @@ export function SpecActions({
   designMd,
   slug,
 }: SpecActionsProps) {
+  const [format, setFormat] = useState<Format>("design-md");
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -57,25 +70,15 @@ export function SpecActions({
     return `${window.location.origin}${path}/DESIGN.md`;
   };
 
-  const handleCopyKatagamiSpec = async () => {
-    const source =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}`
-        : "";
-    const body = source
-      ? `${KATAGAMI_PREAMBLE}\n\nSource: ${source}\n\n${katagamiSpec}`
-      : `${KATAGAMI_PREAMBLE}\n\n${katagamiSpec}`;
-    await writeClipboard(body);
-    flash("katagami");
-  };
+  const markdownFor = (f: Format) =>
+    f === "katagami" ? katagamiSpec : designMd;
 
-  const handleCopyDesignMd = async () => {
+  const handleCopy = async () => {
+    const md = markdownFor(format);
     const url = designMdUrl();
-    const body = url
-      ? `${DESIGN_MD_PREAMBLE}\n\nSource: ${url}\n\n${designMd}`
-      : `${DESIGN_MD_PREAMBLE}\n\n${designMd}`;
-    await writeClipboard(body);
-    flash("design-md");
+    const refLine = url ? `\n\nSource: ${url}` : "";
+    await writeClipboard(`${PREAMBLE[format]}${refLine}\n\n${md}`);
+    flash("copy");
   };
 
   const handleCopyLink = async () => {
@@ -85,14 +88,16 @@ export function SpecActions({
     flash("link");
   };
 
-  const handleDownload = (kind: "katagami" | "design-md") => {
-    const markdown = kind === "katagami" ? katagamiSpec : designMd;
-    const suffix = kind === "katagami" ? "katagami-spec" : "DESIGN";
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const handleDownload = () => {
+    const blob = new Blob([markdownFor(format)], {
+      type: "text/markdown;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = slug ? `${slug}-${suffix}.md` : `${suffix}.md`;
+    a.download = slug
+      ? `${slug}-${FILENAME_SUFFIX[format]}.md`
+      : `${FILENAME_SUFFIX[format]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -100,65 +105,87 @@ export function SpecActions({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <ActionStamp
-        onClick={handleCopyKatagamiSpec}
-        tint="yuzu"
-        rotate={-1.5}
-        icon={
-          justCopied === "katagami" ? (
-            <Check className="h-3 w-3 text-[var(--salad)]" />
-          ) : (
-            <Copy className="h-3 w-3" />
-          )
-        }
-        label={justCopied === "katagami" ? "copied" : "copy Katagami spec"}
-        title="Copy the rich Katagami spec for agent chats"
-      />
-      <ActionStamp
-        onClick={handleCopyDesignMd}
-        tint="salad"
-        rotate={1}
-        icon={
-          justCopied === "design-md" ? (
-            <Check className="h-3 w-3 text-[var(--salad)]" />
-          ) : (
-            <Copy className="h-3 w-3" />
-          )
-        }
-        label={justCopied === "design-md" ? "copied" : "copy DESIGN.md"}
-        title="Copy the Google-compatible DESIGN.md handoff"
-      />
-      <ActionStamp
-        onClick={handleCopyLink}
-        tint="sumire"
-        rotate={0.5}
-        icon={
-          justCopied === "link" ? (
-            <Check className="h-3 w-3 text-[var(--salad)]" />
-          ) : (
-            <Link2 className="h-3 w-3" />
-          )
-        }
-        label={justCopied === "link" ? "link copied" : "copy link"}
-        title="Copy raw DESIGN.md URL — agents can fetch it directly"
-      />
-      <ActionStamp
-        onClick={() => handleDownload("katagami")}
-        tint="teal"
-        rotate={0.8}
-        icon={<Download className="h-3 w-3" />}
-        label="katagami .md"
-        title="Download the rich Katagami spec"
-      />
-      <ActionStamp
-        onClick={() => handleDownload("design-md")}
-        tint="sumire"
-        rotate={-0.8}
-        icon={<Download className="h-3 w-3" />}
-        label="DESIGN.md"
-        title="Download DESIGN.md"
-      />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <FormatToggle value={format} onChange={setFormat} />
+      <span aria-hidden className="hidden h-4 w-px bg-border sm:block" />
+      <div className="flex items-center gap-1.5">
+        <ActionStamp
+          onClick={handleCopy}
+          tint="yuzu"
+          rotate={-1.5}
+          icon={
+            justCopied === "copy" ? (
+              <Check className="h-3 w-3 text-[var(--salad)]" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )
+          }
+          label={justCopied === "copy" ? "copied" : "copy"}
+          title={`Copy ${FORMAT_LABEL[format]} with a prompt preamble`}
+        />
+        {format === "design-md" && (
+          <ActionStamp
+            onClick={handleCopyLink}
+            tint="sumire"
+            rotate={0.5}
+            icon={
+              justCopied === "link" ? (
+                <Check className="h-3 w-3 text-[var(--salad)]" />
+              ) : (
+                <Link2 className="h-3 w-3" />
+              )
+            }
+            label={justCopied === "link" ? "link copied" : "link"}
+            title="Copy raw DESIGN.md URL — agents can fetch it directly"
+          />
+        )}
+        <ActionStamp
+          onClick={handleDownload}
+          tint="teal"
+          rotate={1}
+          icon={<Download className="h-3 w-3" />}
+          label="download"
+          title={`Download ${FORMAT_LABEL[format]}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FormatToggle({
+  value,
+  onChange,
+}: {
+  value: Format;
+  onChange: (v: Format) => void;
+}) {
+  const options: Format[] = ["katagami", "design-md"];
+  return (
+    <div className="inline-flex items-center gap-1 border border-border bg-card/85 px-1 py-0.5 font-mono text-[10px] uppercase tracking-[0.15em] shadow-[0_1px_2px_rgba(30,35,45,0.06)]">
+      <span className="px-1.5 text-muted-foreground/80">format</span>
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            aria-pressed={active}
+            className={`relative px-2 py-0.5 transition-colors ${
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {active && (
+              <span
+                aria-hidden
+                className="absolute inset-x-0 bottom-[1px] -z-0 h-[5px] rounded-[1px] bg-[var(--yuzu)]"
+                style={{ transform: "rotate(-0.6deg)", opacity: 0.85 }}
+              />
+            )}
+            <span className="relative">{FORMAT_LABEL[opt]}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
