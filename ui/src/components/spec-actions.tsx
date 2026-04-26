@@ -110,159 +110,136 @@ export function SpecActions({
     URL.revokeObjectURL(url);
   };
 
+  const accent = ACCENT[format];
+  const filename = URL_SUFFIX[format];
+
   return (
-    <div className="flex flex-col gap-3">
-      <FormatSelector value={format} onChange={setFormat} />
-      <div
-        key={format}
-        className="anim-format-row relative flex flex-wrap items-center gap-2 pl-2.5"
+    <div className="relative inline-block">
+      {/* Washi tape pinning the packet's top-left corner */}
+      <span
+        aria-hidden
+        className="washi-tape absolute -left-3 -top-2 z-10"
         style={{
-          borderLeft: `2px solid var(--${ACCENT[format]})`,
+          width: "62px",
+          height: "14px",
+          transform: "rotate(-6deg)",
+          background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${accent}) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${accent}) 30%, var(--paper-tape-mix)) 6px 12px)`,
         }}
-      >
-        <FormatTarget format={format} />
-        <span aria-hidden className="hidden h-4 w-px bg-border sm:block" />
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ActionStamp
-            onClick={handleCopy}
-            tint="yuzu"
-            rotate={-1.5}
-            icon={
-              justCopied === "copy" ? (
-                <Check className="h-3 w-3 text-[var(--salad)]" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )
-            }
-            label={justCopied === "copy" ? "copied" : "copy"}
-            title="Copy with prompt preamble — paste into any agent chat"
-          />
-          <ActionStamp
-            onClick={handleCopyLink}
-            tint="sumire"
-            rotate={0.5}
-            icon={
-              justCopied === "link" ? (
-                <Check className="h-3 w-3 text-[var(--salad)]" />
-              ) : (
-                <Link2 className="h-3 w-3" />
-              )
-            }
-            label={justCopied === "link" ? "link copied" : "link"}
-            title="Copy raw markdown URL — agents can fetch it directly"
-          />
-          <ActionStamp
-            onClick={handleDownload}
-            tint="teal"
-            rotate={1}
-            icon={<Download className="h-3 w-3" />}
-            label="download"
-            title="Download .md file"
-          />
+      />
+
+      <div className="relative flex flex-col gap-0 border border-border bg-card/70 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">
+        {/* Tab strip — two filing tabs, active one tilts forward */}
+        <div className="flex items-end gap-1 px-2 pt-2">
+          <FormatTab
+            active={format === "katagami"}
+            onClick={() => setFormat("katagami")}
+            accent="sumire"
+            kanji
+          >
+            katagami
+          </FormatTab>
+          <FormatTab
+            active={format === "design-md"}
+            onClick={() => setFormat("design-md")}
+            accent="salad"
+          >
+            DESIGN.md
+          </FormatTab>
+          <span className="ml-auto pb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground/60">
+            spec
+          </span>
+        </div>
+
+        {/* Perforation between tabs and actions */}
+        <div className="sticker-perforation mx-3" />
+
+        {/* Target line + action stamps — re-keys on format change */}
+        <div
+          key={format}
+          className="anim-packet-body flex flex-col gap-2 px-3 py-3"
+        >
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/85">
+            <HandArrow accent={accent} />
+            <span className="relative inline-flex items-center font-semibold text-foreground">
+              <span
+                aria-hidden
+                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px]"
+                style={{
+                  background: `var(--${accent})`,
+                  opacity: 0.85,
+                  transform: "rotate(-0.4deg)",
+                }}
+              />
+              <span className="relative z-10">{filename}</span>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ActionStamp
+              onClick={handleCopy}
+              tint="yuzu"
+              rotate={-1.5}
+              icon={
+                justCopied === "copy" ? (
+                  <Check className="h-3 w-3 text-[var(--salad)]" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )
+              }
+              label={justCopied === "copy" ? "copied" : "copy"}
+              title="Copy with prompt preamble — paste into any agent chat"
+            />
+            <ActionStamp
+              onClick={handleCopyLink}
+              tint="sumire"
+              rotate={0.5}
+              icon={
+                justCopied === "link" ? (
+                  <Check className="h-3 w-3 text-[var(--salad)]" />
+                ) : (
+                  <Link2 className="h-3 w-3" />
+                )
+              }
+              label={justCopied === "link" ? "link copied" : "link"}
+              title="Copy raw markdown URL — agents can fetch it directly"
+            />
+            <ActionStamp
+              onClick={handleDownload}
+              tint="teal"
+              rotate={1}
+              icon={<Download className="h-3 w-3" />}
+              label="download"
+              title="Download .md file"
+            />
+          </div>
         </div>
       </div>
+
       <style>{`
-        @keyframes katagami-format-pop {
-          0% { opacity: 0; transform: translateY(-2px) scale(0.97); }
-          60% { opacity: 1; transform: translateY(0) scale(1.01); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes katagami-packet-pop {
+          0% { opacity: 0; transform: translateY(-3px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
-        .anim-format-row { animation: katagami-format-pop 280ms cubic-bezier(0.22, 1, 0.36, 1); }
-        @keyframes katagami-target-pulse {
-          0% { opacity: 0; transform: translateX(-3px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        .anim-format-target { animation: katagami-target-pulse 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+        .anim-packet-body { animation: katagami-packet-pop 280ms cubic-bezier(0.22, 1, 0.36, 1); }
       `}</style>
     </div>
   );
 }
 
-// Persistent target indicator: shows what file the action stamps will produce.
-// Re-keyed via parent's `key={format}` so the entrance animation re-runs
-// every time the format flips.
-function FormatTarget({ format }: { format: Format }) {
-  const filename = URL_SUFFIX[format];
-  const accent = ACCENT[format];
-  return (
-    <span
-      className="anim-format-target inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em]"
-      title={`Actions target the ${filename} format`}
-    >
-      <span className="text-muted-foreground/70" aria-hidden>
-        →
-      </span>
-      <span className="relative inline-flex items-center font-semibold text-foreground">
-        <span
-          aria-hidden
-          className="absolute inset-x-[-2px] bottom-0 z-0 h-[5px] rounded-[1px]"
-          style={{
-            background: `var(--${accent})`,
-            opacity: 0.85,
-            transform: "rotate(-0.4deg)",
-          }}
-        />
-        <span className="relative z-10">{filename}</span>
-      </span>
-    </span>
-  );
-}
-
-// Two-tab format selector. Katagami tab gets the 型紙 kanji + a sparkle,
-// active state shows a marker wash behind the label.
-function FormatSelector({
-  value,
-  onChange,
-}: {
-  value: Format;
-  onChange: (v: Format) => void;
-}) {
-  return (
-    <div className="inline-flex items-stretch self-start border border-border bg-card/85 shadow-[0_1px_2px_rgba(30,35,45,0.06)]">
-      <span className="flex items-center px-3 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80">
-        format
-      </span>
-      <span aria-hidden className="w-px self-stretch bg-border" />
-      <FormatTab
-        active={value === "katagami"}
-        onClick={() => onChange("katagami")}
-        markerColor="sumire"
-      >
-        <span
-          aria-hidden
-          className="font-display text-[14px] font-bold leading-none text-[var(--sumire)]"
-          style={{ fontFamily: '"Noto Serif JP", "Bricolage Grotesque", serif' }}
-        >
-          型紙
-        </span>
-        <span className="font-display text-[12px] font-semibold leading-none">
-          katagami
-        </span>
-        <Sparkle />
-      </FormatTab>
-      <span aria-hidden className="w-px self-stretch bg-border" />
-      <FormatTab
-        active={value === "design-md"}
-        onClick={() => onChange("design-md")}
-        markerColor="salad"
-      >
-        <span className="font-mono text-[12px] font-semibold leading-none tracking-tight">
-          DESIGN.md
-        </span>
-      </FormatTab>
-    </div>
-  );
-}
-
+// A filing-tab style toggle button. Active tab tilts forward with a
+// marker wash; inactive tab sits back, muted. Katagami tab gets the
+// 型紙 kanji prefix.
 function FormatTab({
   active,
   onClick,
-  markerColor,
+  accent,
+  kanji,
   children,
 }: {
   active: boolean;
   onClick: () => void;
-  markerColor: string;
+  accent: string;
+  kanji?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -270,35 +247,75 @@ function FormatTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`relative flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
-        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      className={`relative inline-flex items-center gap-1.5 border px-2.5 py-1 transition-all duration-200 ${
+        active
+          ? "z-10 border-border bg-card text-foreground shadow-[0_-1px_2px_rgba(30,35,45,0.04)]"
+          : "border-border/60 bg-card/40 text-muted-foreground hover:bg-card/70 hover:text-foreground"
       }`}
+      style={{
+        transform: active ? "translateY(0) rotate(-0.5deg)" : "translateY(2px)",
+        borderBottom: active ? "1px solid transparent" : undefined,
+      }}
     >
       {active && (
         <span
           aria-hidden
-          className="absolute inset-x-1 bottom-[3px] -z-0 h-[6px] rounded-[1px]"
+          className="absolute inset-x-1 bottom-[3px] z-0 h-[5px] rounded-[1px]"
           style={{
-            background: `var(--${markerColor})`,
+            background: `var(--${accent})`,
             opacity: 0.85,
-            transform: "rotate(-0.4deg)",
+            transform: "rotate(-0.5deg)",
           }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
+      <span className="relative z-10 inline-flex items-center gap-1.5">
+        {kanji && (
+          <span
+            aria-hidden
+            className="font-bold leading-none"
+            style={{
+              fontFamily: '"Noto Serif JP", "Bricolage Grotesque", serif',
+              fontSize: 13,
+              color: active ? "var(--sumire)" : "var(--muted-foreground)",
+            }}
+          >
+            型紙
+          </span>
+        )}
+        <span className="font-display text-[12px] font-semibold leading-none">
+          {children}
+        </span>
+        {kanji && active && (
+          <svg
+            viewBox="0 0 12 12"
+            className="h-2.5 w-2.5 text-[var(--yuzu)]"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
+          </svg>
+        )}
+      </span>
     </button>
   );
 }
 
-function Sparkle() {
+// Hand-drawn squiggle arrow pointing from tabs down to the filename.
+// Re-renders via the parent's `key={format}` so it re-animates on switch.
+function HandArrow({ accent }: { accent: string }) {
   return (
     <svg
-      viewBox="0 0 12 12"
-      className="h-2.5 w-2.5 text-[var(--yuzu)]"
-      fill="currentColor"
+      viewBox="0 0 24 14"
+      className="h-3 w-5"
+      fill="none"
+      stroke={`var(--${accent})`}
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
+      <path d="M 2 2 Q 7 4, 9 7 T 18 11" />
+      <path d="M 16 8 L 18 11 L 14 11" />
     </svg>
   );
 }
