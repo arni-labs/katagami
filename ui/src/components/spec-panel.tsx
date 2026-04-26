@@ -1043,21 +1043,6 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
 
 export const specToMarkdown = katagamiSpecToMarkdown;
 
-function designMdStatus(props: SpecPanelProps): {
-  label: string;
-  color: AccentColor;
-} {
-  if (props.hasValidDesignMd) {
-    return { label: "DESIGN.md valid", color: "salad" };
-  }
-
-  if (props.hasDesignMd || props.designMdFileId) {
-    return { label: "DESIGN.md stale", color: "yuzu" };
-  }
-
-  return { label: "DESIGN.md preview", color: "sumire" };
-}
-
 // ── Accordion row ──────────────────────────────────────────────────
 
 function Section({
@@ -1105,20 +1090,11 @@ export function SpecPanel(props: SpecPanelProps) {
 
   const katagamiMarkdown = katagamiSpecToMarkdown(props);
   const designMd = designMdToMarkdown(props);
-  const status = designMdStatus(props);
 
   return (
     <div className="relative">
       {/* Copy + download — inline on mobile, floating on sm+ */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0 sm:justify-end">
-        <span
-          className="inline-flex items-center border border-border bg-card/70 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/70"
-          style={{
-            borderColor: `color-mix(in oklch, var(--${status.color}) 64%, var(--border))`,
-          }}
-        >
-          {status.label}
-        </span>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
         <SpecActions
           languageId={props.languageId}
           katagamiSpec={katagamiMarkdown}
