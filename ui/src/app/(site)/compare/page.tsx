@@ -72,6 +72,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
           {sides.map(({ lang }) => (
             <StickyNote key={lang.entity_id} className="p-5">
               <SpecPanel
+                languageId={lang.entity_id}
                 name={lang.fields.name}
                 slug={lang.fields.slug}
                 philosophy={lang.fields.philosophy}
@@ -79,6 +80,10 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 rules={lang.fields.rules}
                 layout={lang.fields.layout_principles}
                 guidance={lang.fields.guidance}
+                designMdFileId={lang.fields.design_md_file_id}
+                designMdLintResult={lang.fields.design_md_lint_result}
+                hasDesignMd={lang.booleans.has_design_md}
+                hasValidDesignMd={lang.booleans.has_valid_design_md}
               />
             </StickyNote>
           ))}

@@ -97,7 +97,7 @@ export default function SiteLayout({
                 </div>
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                A SPEC.md-compatible library of design languages — versioned,
+                A DESIGN.md-compatible library of design languages — versioned,
                 forked, and curated for agents.
               </p>
             </div>

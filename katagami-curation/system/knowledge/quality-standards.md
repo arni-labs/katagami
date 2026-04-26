@@ -10,6 +10,14 @@ Minimum quality thresholds for design language specs and embodiments.
 - **Layout** (min 600 chars): Must include `density` with rationale, `grid` with specific column count/gutter/max-width, `whitespace` philosophy, `responsive` breakpoints with pixel values.
 - **Guidance** (min 800 chars): Must include `dos` (6-10 specific instructions), `donts` (6-10 prohibitions), `usage_context`, `accessibility`.
 
+## DESIGN.md Quality Gate
+
+- Every published language must have a generated DESIGN.md artifact.
+- DESIGN.md must pass `npx @google/design.md lint` with zero errors.
+- Katagami remains the source of truth; repair source fields, then regenerate DESIGN.md.
+- DESIGN.md warnings should be fixed when straightforward and recorded when retained.
+- The rich Katagami spec must not be flattened to only the DESIGN.md subset.
+
 ## Embodiment Quality Checks
 
 ### Structural Identity (Critical)

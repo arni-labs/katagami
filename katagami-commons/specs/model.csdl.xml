@@ -25,6 +25,10 @@
         <!-- Imagery & generative direction (JSON) -->
         <Property Name="ImageryDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="GenerativeCanvas" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- DESIGN.md: generated portable agent handoff artifact -->
+        <Property Name="DesignMdFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="DesignMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="alpha" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />

@@ -1,6 +1,6 @@
 # Synthesize Language
 
-Create a complete DesignLanguage entity with all spec sections and a self-contained HTML embodiment, visually verified at three viewport sizes.
+Create a complete DesignLanguage entity with all spec sections and a self-contained HTML embodiment, visually verified at three viewport sizes. The native Katagami spec is the source of truth, but it must be complete enough for quality_review to generate and validate DESIGN.md.
 
 ## When to Use
 
@@ -87,6 +87,12 @@ tokens = {
 temper.action('DesignLanguages', eid, 'SetTokens', {'tokens': json.dumps(tokens)})
 ```
 
+Tokens must also be DESIGN.md-projectable:
+- color tokens must use real hex values
+- typography tokens must include concrete font names, font sizes, line heights, and letter spacing
+- spacing and radii must be valid CSS dimensions
+- rules/guidance must contain enough component semantics for quality_review to generate a `components` map with `{colors.*}`, `{typography.*}`, `{rounded.*}`, and `{spacing.*}` references
+
 **Rules** — must include `signature_patterns`: 3-5 unique CSS techniques that define this language structurally. Every signature_pattern MUST appear in the embodiment HTML.
 
 ```python
@@ -108,6 +114,8 @@ temper.action('DesignLanguages', eid, 'SetLayout', {'layout_principles': json.du
 guidance = {"do": [...], "dont": [...]}
 temper.action('DesignLanguages', eid, 'SetGuidance', {'guidance': json.dumps(guidance)})
 ```
+
+Guidance should be phrased so it can become DESIGN.md Do's and Don'ts without losing meaning.
 
 **Tags** — set 5-10 specific, searchable tags describing the language's visual/structural properties. These help with gallery search and filtering. Use concrete descriptors, not abstract art history terms.
 
@@ -152,6 +160,11 @@ temper.action('DesignLanguages', eid, 'SetTags', {
 **Guidance:**
 - `do` has >= 3 items
 - `dont` has >= 3 items
+
+**DESIGN.md projection readiness:**
+- colors, typography, spacing, radii, and components can be expressed in YAML front matter
+- component guidance can reference existing tokens without broken `{group.key}` references
+- markdown sections map cleanly to Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, and Do's and Don'ts
 
 **If ANY check fails**: rewrite that section immediately. Do NOT proceed with incomplete specs — they produce generic, indistinguishable embodiments. The spec is the identity of the language; a weak spec means a weak embodiment.
 
@@ -296,6 +309,8 @@ temper.action('DesignLanguages', eid, 'SetLineage', {
 # Submit for quality review (pipeline will auto-review and publish)
 temper.action('DesignLanguages', eid, 'SubmitForReview', {})
 ```
+
+Do not call `AttachDesignMd` in synthesize jobs. The quality_review job owns DESIGN.md linting, storage, and the publish gate.
 
 For `evolve_language` jobs: read the parent language first, inherit base tokens, apply the requested modifications, and set lineage_type to 'evolution' with the parent's ID.
 

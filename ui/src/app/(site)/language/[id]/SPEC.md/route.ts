@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
-import { specToMarkdown } from "@/components/spec-panel";
+import { katagamiSpecToMarkdown } from "@/components/spec-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export async function GET(
   }
 
   const f = lang.fields;
-  const markdown = specToMarkdown({
+  const markdown = katagamiSpecToMarkdown({
     name: f.name,
     slug: f.slug,
     philosophy: f.philosophy,
@@ -33,7 +33,7 @@ export async function GET(
     generativeCanvas: f.generative_canvas,
   });
 
-  const filename = f.slug ? `${f.slug}-SPEC.md` : "SPEC.md";
+  const filename = f.slug ? `${f.slug}-katagami-spec.md` : "katagami-spec.md";
 
   return new NextResponse(markdown, {
     status: 200,

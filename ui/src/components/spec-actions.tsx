@@ -4,15 +4,21 @@ import { useState } from "react";
 import { Download, Copy, Link2, Check } from "lucide-react";
 
 interface SpecActionsProps {
-  specMd: string;
+  languageId?: string;
+  katagamiSpec: string;
+  designMd: string;
   slug?: string;
 }
 
-type CopyKind = "spec-md" | "link";
+type CopyKind = "katagami" | "design-md" | "link";
 
-const PROMPT_PREAMBLE =
-  "Use the following SPEC.md as the source of truth for every UI we build. " +
-  "Follow its tokens, component guidance, layout rules, and do/don't guardrails.";
+const KATAGAMI_PREAMBLE =
+  "Use the following Katagami design-language spec as the source of truth for every UI we build. " +
+  "Follow its philosophy, tokens, rules, layout guidance, and do/don't guardrails.";
+
+const DESIGN_MD_PREAMBLE =
+  "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
+  "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.";
 
 async function writeClipboard(text: string) {
   try {
@@ -29,7 +35,12 @@ async function writeClipboard(text: string) {
   }
 }
 
-export function SpecActions({ specMd, slug }: SpecActionsProps) {
+export function SpecActions({
+  languageId,
+  katagamiSpec,
+  designMd,
+  slug,
+}: SpecActionsProps) {
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -37,34 +48,51 @@ export function SpecActions({ specMd, slug }: SpecActionsProps) {
     setTimeout(() => setJustCopied(null), 2000);
   };
 
-  const specMdUrl = () => {
+  const designMdUrl = () => {
     if (typeof window === "undefined") return "";
+    if (languageId) {
+      return `${window.location.origin}/language/${encodeURIComponent(languageId)}/DESIGN.md`;
+    }
     const path = window.location.pathname.replace(/\/+$/, "");
-    return `${window.location.origin}${path}/SPEC.md`;
+    return `${window.location.origin}${path}/DESIGN.md`;
   };
 
-  const handleCopySpecMd = async () => {
-    const url = specMdUrl();
-    const body = url
-      ? `${PROMPT_PREAMBLE}\n\nSource: ${url}\n\n${specMd}`
-      : `${PROMPT_PREAMBLE}\n\n${specMd}`;
+  const handleCopyKatagamiSpec = async () => {
+    const source =
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}`
+        : "";
+    const body = source
+      ? `${KATAGAMI_PREAMBLE}\n\nSource: ${source}\n\n${katagamiSpec}`
+      : `${KATAGAMI_PREAMBLE}\n\n${katagamiSpec}`;
     await writeClipboard(body);
-    flash("spec-md");
+    flash("katagami");
+  };
+
+  const handleCopyDesignMd = async () => {
+    const url = designMdUrl();
+    const body = url
+      ? `${DESIGN_MD_PREAMBLE}\n\nSource: ${url}\n\n${designMd}`
+      : `${DESIGN_MD_PREAMBLE}\n\n${designMd}`;
+    await writeClipboard(body);
+    flash("design-md");
   };
 
   const handleCopyLink = async () => {
-    const url = specMdUrl();
+    const url = designMdUrl();
     if (!url) return;
     await writeClipboard(url);
     flash("link");
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([specMd], { type: "text/markdown;charset=utf-8" });
+  const handleDownload = (kind: "katagami" | "design-md") => {
+    const markdown = kind === "katagami" ? katagamiSpec : designMd;
+    const suffix = kind === "katagami" ? "katagami-spec" : "DESIGN";
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = slug ? `${slug}-SPEC.md` : "SPEC.md";
+    a.download = slug ? `${slug}-${suffix}.md` : `${suffix}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -74,18 +102,32 @@ export function SpecActions({ specMd, slug }: SpecActionsProps) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <ActionStamp
-        onClick={handleCopySpecMd}
+        onClick={handleCopyKatagamiSpec}
         tint="yuzu"
         rotate={-1.5}
         icon={
-          justCopied === "spec-md" ? (
+          justCopied === "katagami" ? (
             <Check className="h-3 w-3 text-[var(--salad)]" />
           ) : (
             <Copy className="h-3 w-3" />
           )
         }
-        label={justCopied === "spec-md" ? "copied" : "copy SPEC.md"}
-        title="Copy the SPEC.md export with a preamble for agent chats"
+        label={justCopied === "katagami" ? "copied" : "copy Katagami spec"}
+        title="Copy the rich Katagami spec for agent chats"
+      />
+      <ActionStamp
+        onClick={handleCopyDesignMd}
+        tint="salad"
+        rotate={1}
+        icon={
+          justCopied === "design-md" ? (
+            <Check className="h-3 w-3 text-[var(--salad)]" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )
+        }
+        label={justCopied === "design-md" ? "copied" : "copy DESIGN.md"}
+        title="Copy the Google-compatible DESIGN.md handoff"
       />
       <ActionStamp
         onClick={handleCopyLink}
@@ -99,15 +141,23 @@ export function SpecActions({ specMd, slug }: SpecActionsProps) {
           )
         }
         label={justCopied === "link" ? "link copied" : "copy link"}
-        title="Copy raw SPEC.md URL — agents can fetch it directly"
+        title="Copy raw DESIGN.md URL — agents can fetch it directly"
       />
       <ActionStamp
-        onClick={handleDownload}
+        onClick={() => handleDownload("katagami")}
         tint="teal"
-        rotate={1}
+        rotate={0.8}
         icon={<Download className="h-3 w-3" />}
-        label="download"
-        title="Download SPEC.md"
+        label="katagami .md"
+        title="Download the rich Katagami spec"
+      />
+      <ActionStamp
+        onClick={() => handleDownload("design-md")}
+        tint="sumire"
+        rotate={-0.8}
+        icon={<Download className="h-3 w-3" />}
+        label="DESIGN.md"
+        title="Download DESIGN.md"
       />
     </div>
   );

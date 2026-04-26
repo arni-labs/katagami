@@ -17,7 +17,7 @@ declared as Temper reactions.
 **Job Types:**
 - `source_search` — Research design movements and store authoritative sources
 - `synthesize` — Create DesignLanguage specs with embodiments
-- `quality_review` — Fix embodiment fidelity against a valid spec, then publish
+- `quality_review` — Validate DESIGN.md, fix embodiment fidelity against the spec, then publish
 - `organize_taxonomy` — Taxonomy maintenance and cross-referencing
 - `regenerate_embodiment` — Rebuild embodiment HTML for an existing language
 - `evolve_language` — Create a child DesignLanguage from a parent
@@ -41,7 +41,8 @@ actions.
 Handles all active curation job types. Researches sources, creates
 DesignSource and CurationDirection entities, synthesizes DesignLanguage specs,
 repairs embodiments, and maintains taxonomy. The quality gate keeps generated
-languages out of `Published` until review passes.
+languages out of `Published` until embodiment review and DESIGN.md validation
+both pass.
 
 ## Pipeline
 

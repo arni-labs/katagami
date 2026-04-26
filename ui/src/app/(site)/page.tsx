@@ -229,7 +229,7 @@ export default async function GalleryPage({
 
             {/* "Give your agent taste" — styled like a handwritten planner
                 note in the margin: tiny sparkle, wavy underline doodle,
-                hand-drawn circle around SPEC.md, slight card tilt. */}
+                hand-drawn circle around DESIGN.md, slight card tilt. */}
             <div
               className="relative mt-6 max-w-xl"
               style={{ transform: "rotate(-0.4deg)" }}
@@ -297,7 +297,7 @@ export default async function GalleryPage({
                   </span>
                   <br />
                   you can hand off as{" "}
-                  {/* SPEC.md — wrapped in a slightly-irregular SVG circle,
+                  {/* DESIGN.md — wrapped in a slightly-irregular SVG circle,
                       no border/chip, the doodle IS the highlight */}
                   <span className="relative inline-block px-2.5">
                     <svg
@@ -315,13 +315,13 @@ export default async function GalleryPage({
                       />
                     </svg>
                     <span className="relative font-semibold text-foreground">
-                      SPEC.md
+                      DESIGN.md
                     </span>
                   </span>
                   .
                 </p>
 
-                {/* Bottom corner doodle — curly arrow pointing to SPEC.md */}
+                {/* Bottom corner doodle — curly arrow pointing to DESIGN.md */}
                 <svg
                   aria-hidden
                   viewBox="0 0 60 40"

@@ -3,6 +3,7 @@ import { parseJson } from "@/lib/odata";
 import { SpecActions } from "./spec-actions";
 
 export interface SpecPanelProps {
+  languageId?: string;
   name?: string;
   slug?: string;
   philosophy?: string;
@@ -12,6 +13,10 @@ export interface SpecPanelProps {
   guidance?: string;
   imageryDirection?: string;
   generativeCanvas?: string;
+  designMdFileId?: string;
+  designMdLintResult?: string;
+  hasDesignMd?: boolean;
+  hasValidDesignMd?: boolean;
 }
 
 type AccentColor =
@@ -432,7 +437,7 @@ function SpecMarkdownView({ markdown }: { markdown: string }) {
   );
 }
 
-// ── SPEC.md generation ────────────────────────────────────────────
+// ── Markdown generation ───────────────────────────────────────────
 
 type JsonRecord = Record<string, unknown>;
 
@@ -718,7 +723,7 @@ function buildComponentTokens(
   };
 }
 
-function buildSpecMdFrontMatter(
+function buildDesignMdFrontMatter(
   props: SpecPanelProps,
   tokens: JsonRecord | null,
 ): JsonRecord {
@@ -732,7 +737,7 @@ function buildSpecMdFrontMatter(
     version: "alpha",
     name: props.name ?? "Katagami Design Language",
     description:
-      "Agent-curated design language exported from Katagami as SPEC.md.",
+      "Agent-curated design language exported from Katagami as DESIGN.md.",
     colors,
     typography,
     rounded,
@@ -785,7 +790,7 @@ function appendTypography(lines: string[], typography: JsonRecord) {
   lines.push("");
 }
 
-export function specToMarkdown(props: SpecPanelProps): string {
+export function katagamiSpecToMarkdown(props: SpecPanelProps): string {
   const lines: string[] = [];
   const phil = parseJson<JsonRecord>(props.philosophy);
   const tok = parseJson<JsonRecord>(props.tokens);
@@ -795,7 +800,94 @@ export function specToMarkdown(props: SpecPanelProps): string {
   const img = parseJson<JsonRecord>(props.imageryDirection);
   const gen = parseJson<JsonRecord>(props.generativeCanvas);
 
-  const frontMatter = buildSpecMdFrontMatter(props, tok);
+  lines.push(`# ${props.name ?? "Katagami Design Language"}`, "");
+
+  if (phil) {
+    lines.push("## Philosophy", "");
+    if (phil.summary) lines.push(String(phil.summary), "");
+    appendList(lines, "Values", toStringArray(phil.values));
+    appendList(lines, "Anti-Values", toStringArray(phil.anti_values));
+    appendList(lines, "Visual Character", toStringArray(phil.visual_character));
+    if (phil.lineage) {
+      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
+    }
+  }
+
+  if (tok) {
+    lines.push("## Tokens", "");
+    for (const [group, values] of Object.entries(tok)) {
+      lines.push(`### ${titleCase(group)}`, "");
+      if (
+        group === "colors" &&
+        typeof values === "object" &&
+        values !== null
+      ) {
+        lines.push("| Name | Value |", "|------|-------|");
+        for (const [key, value] of Object.entries(values as JsonRecord)) {
+          lines.push(`| ${key} | \`${String(value)}\` |`);
+        }
+        lines.push("");
+      } else if (typeof values === "object" && values !== null) {
+        for (const [key, value] of Object.entries(values as JsonRecord)) {
+          const display =
+            typeof value === "object" ? JSON.stringify(value) : String(value);
+          lines.push(`- **${titleCase(key)}**: ${display}`);
+        }
+        lines.push("");
+      } else {
+        lines.push(String(values), "");
+      }
+    }
+  }
+
+  if (rul) {
+    lines.push("## Rules", "");
+    renderKvSection(rul, lines);
+  }
+
+  if (lay) {
+    lines.push("## Layout", "");
+    renderKvSection(lay, lines);
+  }
+
+  if (gui) {
+    lines.push("## Guidance", "");
+    const dos = toStringArray(gui.do ?? gui.dos);
+    const donts = toStringArray(gui.dont ?? gui.donts);
+    appendList(lines, "Do", dos);
+    appendList(lines, "Don't", donts);
+    const rest = Object.fromEntries(
+      Object.entries(gui).filter(
+        ([key]) => !["do", "dos", "dont", "donts"].includes(key),
+      ),
+    );
+    if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
+  }
+
+  if (img) {
+    lines.push("## Imagery Direction", "");
+    renderKvSection(img, lines);
+  }
+
+  if (gen) {
+    lines.push("## Generative Canvas", "");
+    renderKvSection(gen, lines);
+  }
+
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+export function designMdToMarkdown(props: SpecPanelProps): string {
+  const lines: string[] = [];
+  const phil = parseJson<JsonRecord>(props.philosophy);
+  const tok = parseJson<JsonRecord>(props.tokens);
+  const rul = parseJson<JsonRecord>(props.rules);
+  const lay = parseJson<JsonRecord>(props.layout);
+  const gui = parseJson<JsonRecord>(props.guidance);
+  const img = parseJson<JsonRecord>(props.imageryDirection);
+  const gen = parseJson<JsonRecord>(props.generativeCanvas);
+
+  const frontMatter = buildDesignMdFrontMatter(props, tok);
   const colors = asRecord(frontMatter.colors) ?? {};
   const typography = asRecord(frontMatter.typography) ?? {};
   const spacing = asRecord(frontMatter.spacing) ?? {};
@@ -900,6 +992,30 @@ export function specToMarkdown(props: SpecPanelProps): string {
   return lines.join("\n").trimEnd() + "\n";
 }
 
+export const specToMarkdown = katagamiSpecToMarkdown;
+
+function designMdStatus(props: SpecPanelProps): {
+  label: string;
+  color: AccentColor;
+} {
+  const lint = parseJson<{ summary?: { warnings?: number } }>(
+    props.designMdLintResult,
+  );
+  const warnings = lint?.summary?.warnings ?? 0;
+
+  if (props.hasValidDesignMd) {
+    return warnings > 0
+      ? { label: `DESIGN.md valid, ${warnings} warning${warnings === 1 ? "" : "s"}`, color: "yuzu" }
+      : { label: "DESIGN.md valid", color: "salad" };
+  }
+
+  if (props.hasDesignMd || props.designMdFileId) {
+    return { label: "DESIGN.md stale", color: "yuzu" };
+  }
+
+  return { label: "DESIGN.md preview", color: "sumire" };
+}
+
 // ── Accordion row ──────────────────────────────────────────────────
 
 function Section({
@@ -945,17 +1061,32 @@ export function SpecPanel(props: SpecPanelProps) {
     generativeCanvas,
   } = props;
 
-  const markdown = specToMarkdown(props);
+  const katagamiMarkdown = katagamiSpecToMarkdown(props);
+  const designMd = designMdToMarkdown(props);
+  const status = designMdStatus(props);
 
   return (
     <div className="relative">
       {/* Copy + download — inline on mobile, floating on sm+ */}
-      <div className="mb-4 flex items-center justify-end sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
-        <SpecActions specMd={markdown} slug={props.slug} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0 sm:justify-end">
+        <span
+          className="inline-flex items-center border border-border bg-card/70 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-foreground/70"
+          style={{
+            borderColor: `color-mix(in oklch, var(--${status.color}) 64%, var(--border))`,
+          }}
+        >
+          {status.label}
+        </span>
+        <SpecActions
+          languageId={props.languageId}
+          katagamiSpec={katagamiMarkdown}
+          designMd={designMd}
+          slug={props.slug}
+        />
       </div>
 
       {/* Spacer on sm+ so floating chips don't collide with first section */}
-      <div className="hidden h-8 sm:block" />
+      <div className="hidden h-16 sm:block" />
 
       <div className="divide-y divide-dashed divide-border">
         <Section label="philosophy" color="teal" defaultOpen>
@@ -983,8 +1114,11 @@ export function SpecPanel(props: SpecPanelProps) {
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
-        <Section label="SPEC.md" color="sumire">
-          <SpecMarkdownView markdown={markdown} />
+        <Section label="katagami spec" color="teal">
+          <SpecMarkdownView markdown={katagamiMarkdown} />
+        </Section>
+        <Section label="DESIGN.md" color="sumire">
+          <SpecMarkdownView markdown={designMd} />
         </Section>
       </div>
     </div>
