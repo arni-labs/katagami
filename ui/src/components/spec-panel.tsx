@@ -467,7 +467,10 @@ function toStringArray(value: unknown): string[] {
 }
 
 function isHexColor(value: unknown): value is string {
-  return typeof value === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value);
+  return (
+    typeof value === "string" &&
+    /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(value)
+  );
 }
 
 function toDimension(value: unknown, fallback = "16px"): string {
@@ -632,7 +635,7 @@ function extractTypography(tokens: JsonRecord | null): JsonRecord {
   const rawLetterSpacing = asString(typography.letter_spacing);
   const letterSpacing =
     rawLetterSpacing && rawLetterSpacing !== "normal"
-      ? toDimension(rawLetterSpacing, rawLetterSpacing)
+      ? toDimension(rawLetterSpacing, "-0.02em")
       : "-0.02em";
 
   return {
@@ -671,8 +674,54 @@ function ref(group: string, key: string): string {
   return `{${group}.${key}}`;
 }
 
+function hexToRgb(hex: string): [number, number, number] | null {
+  if (!isHexColor(hex)) return null;
+  const normalized =
+    hex.length === 4
+      ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+      : hex;
+  const value = Number.parseInt(normalized.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb.map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928
+      ? value / 12.92
+      : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: string, b: string): number {
+  const l1 = relativeLuminance(a);
+  const l2 = relativeLuminance(b);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function readableTextColor(background: unknown): string {
+  const bg = isHexColor(background) ? background : "#000000";
+  return contrastRatio(bg, "#000000") >= contrastRatio(bg, "#ffffff")
+    ? "#000000"
+    : "#ffffff";
+}
+
 function firstExisting(record: JsonRecord, keys: string[]): string | null {
   return keys.find((key) => key in record) ?? null;
+}
+
+function componentColorRefs(colors: JsonRecord): JsonRecord {
+  return Object.fromEntries(
+    Object.keys(colors).map((key) => [
+      `color-reference-${key.replace(/[^A-Za-z0-9_-]/g, "-")}`,
+      { backgroundColor: ref("colors", key) },
+    ]),
+  );
 }
 
 function buildComponentTokens(
@@ -686,7 +735,6 @@ function buildComponentTokens(
   const primary = firstExisting(colors, ["primary", "accent", "tertiary"]);
   const surface = firstExisting(colors, ["surface", "background", "neutral"]);
   const text = firstExisting(colors, ["text", "on-surface", "primary"]);
-  const bg = firstExisting(colors, ["background", "surface", "neutral"]);
   const roundedKey = firstExisting(rounded, ["md", "lg", "sm", "none"]);
   const paddingKey = firstExisting(spacing, ["md", "sm", "base"]);
   const label = firstExisting(typography, ["label-md", "body-md"]);
@@ -696,10 +744,11 @@ function buildComponentTokens(
   const labelValue = label ? ref("typography", label) : undefined;
 
   return {
+    ...componentColorRefs(colors),
     ...(primary && {
       "button-primary": {
         backgroundColor: ref("colors", primary),
-        textColor: bg ? ref("colors", bg) : "#ffffff",
+        textColor: readableTextColor(colors[primary]),
         ...(labelValue ? { typography: labelValue } : {}),
         rounded: roundedValue,
         padding: paddingValue,
@@ -998,15 +1047,8 @@ function designMdStatus(props: SpecPanelProps): {
   label: string;
   color: AccentColor;
 } {
-  const lint = parseJson<{ summary?: { warnings?: number } }>(
-    props.designMdLintResult,
-  );
-  const warnings = lint?.summary?.warnings ?? 0;
-
   if (props.hasValidDesignMd) {
-    return warnings > 0
-      ? { label: `DESIGN.md valid, ${warnings} warning${warnings === 1 ? "" : "s"}`, color: "yuzu" }
-      : { label: "DESIGN.md valid", color: "salad" };
+    return { label: "DESIGN.md valid", color: "salad" };
   }
 
   if (props.hasDesignMd || props.designMdFileId) {
