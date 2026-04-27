@@ -20,7 +20,10 @@ One canonical element within one DesignLanguage. Created from the ElementManifes
 
 ### DesignSource
 
-Raw research material (articles, style guides, design system docs) about design movements. Follows the koto-wiki WikiSource pattern.
+Research references (articles, style guides, design system docs) about design
+movements. Source-search jobs index compact metadata, topics, summaries, and
+short excerpts synchronously. Full source-page archival is deferred so research
+does not block on governed file writes.
 
 **States:** `Submitted` -> `Indexed` | `Failed`
 
@@ -38,7 +41,13 @@ Agent-maintained hierarchical classification of design movements and schools.
 
 ## Storage Model
 
-Entity metadata lives in Temper entities. Large content (embodiment HTML, source text, generated DESIGN.md files) lives in paw-fs File entities, referenced by `FileId` fields. This keeps entity payloads small.
+Entity metadata lives in Temper entities. Hot operational state should remain
+small and queryable. Large governed artifacts (embodiment HTML, generated
+DESIGN.md files, published snapshots, and operator-requested source archives)
+live in paw-fs File entities referenced by `FileId` fields. Source-search jobs
+must not synchronously write every fetched page to paw-fs; they store compact
+source summaries/excerpts in `DesignSource.Metadata` and leave `FileId` empty
+until a later archival step creates a governed artifact.
 
 ## Integration with katagami-curation
 

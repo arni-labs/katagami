@@ -15,7 +15,7 @@ declared as Temper reactions.
 **States:** `Queued` -> `Ready` -> `Running` -> `Finalizing` -> `Completed` | `Failed`
 
 **Job Types:**
-- `source_search` — Research design movements and store authoritative sources
+- `source_search` — Research design movements and index compact authoritative source metadata
 - `synthesize` — Create DesignLanguage specs with embodiments
 - `quality_review` — Validate DESIGN.md, fix embodiment fidelity against the spec, then publish
 - `organize_taxonomy` — Taxonomy maintenance and cross-referencing
@@ -43,6 +43,11 @@ DesignSource and CurationDirection entities, synthesizes DesignLanguage specs,
 repairs embodiments, and maintains taxonomy. The quality gate keeps generated
 languages out of `Published` until embodiment review and DESIGN.md validation
 both pass.
+
+`source_search` is a hot operational workflow. It should create DesignSource
+and CurationDirection entities synchronously, but it must not write every
+fetched source page into paw-fs while the job is waiting. Full source archival
+belongs in a later artifact step.
 
 ## Pipeline
 
