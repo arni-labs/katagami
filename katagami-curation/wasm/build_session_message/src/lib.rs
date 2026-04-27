@@ -18,7 +18,7 @@ struct JobTemplate {
 struct LoadedDoc {
     path: String,
     workspace_id: String,
-    content: String,
+    content: Option<String>,
 }
 
 /// On CurationJob.Submit/ConfigureAndSubmit: loads the active
@@ -116,12 +116,14 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
 
         let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
         let skill = template.skill_id.as_str();
+        let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
         let instruction_doc = load_instruction_doc(
             &ctx,
             &api_url,
             &headers,
             &template.instruction_path,
             &stable_soul_id,
+            inline_job_docs,
         );
         let effective_instruction_path = instruction_doc
             .as_ref()
@@ -133,7 +135,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "/system/knowledge/feedback-log.md",
         ]
         .iter()
-        .filter_map(|path| load_doc_file(&ctx, &api_url, &headers, path))
+        .filter_map(|path| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
         .collect::<Vec<_>>();
         let instruction_read_command =
             temper_read_command(effective_instruction_path, instruction_doc.as_ref());
@@ -154,9 +156,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             ],
             &knowledge_docs,
         );
-        let loaded_instruction_block =
-            render_loaded_doc("Loaded Skill Instructions", instruction_doc.as_ref());
-        let loaded_knowledge_block = render_loaded_docs("Loaded Knowledge Files", &knowledge_docs);
+        let loaded_reference_block = render_loaded_reference_block(
+            instruction_doc.as_ref(),
+            &knowledge_docs,
+            inline_job_docs,
+        );
 
         let job_tools = fields
             .get("tools_enabled")
@@ -218,16 +222,14 @@ Workspace ID: {workspace_id}
 ## Instructions
 
 Execute this job using your `{skill}` skill. The current skill and knowledge
-files are loaded below from TemperFS. Follow them step by step.
+files are available in TemperFS. Read the exact files you need before using
+them, starting with the skill instruction file for this job.
 
-Use these read commands only if you need to refresh source files. If a read
-fails, continue with the loaded copy below:
+Use these read commands:
 - `{instruction_read_command}` — exact job procedure and output contract
 {knowledge_read_commands}
 
-{loaded_instruction_block}
-
-{loaded_knowledge_block}
+{loaded_reference_block}
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
@@ -257,10 +259,11 @@ temper.done("{job_type} failed")
         ctx.log(
             "info",
             &format!(
-                "build_session_message: skill='{}' prompt_len={} docs_loaded={}",
+                "build_session_message: skill='{}' prompt_len={} docs_resolved={} inline_docs={}",
                 skill,
                 user_message.len(),
-                usize::from(instruction_doc.is_some()) + knowledge_docs.len()
+                usize::from(instruction_doc.is_some()) + knowledge_docs.len(),
+                inline_job_docs
             ),
         );
 
@@ -592,6 +595,24 @@ fn field_bool(fields: &serde_json::Value, keys: &[&str]) -> bool {
         .unwrap_or(false)
 }
 
+fn inline_job_docs_enabled(ctx: &Context, fields: &serde_json::Value) -> bool {
+    field_bool(fields, &["inline_job_docs", "InlineJobDocs"])
+        .then_some(true)
+        .or_else(|| {
+            ctx.config
+                .get("katagami_inline_job_docs")
+                .map(|value| config_bool(value))
+        })
+        .unwrap_or(false)
+}
+
+fn config_bool(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "true" | "1" | "yes" | "on"
+    )
+}
+
 fn entity_status(item: &serde_json::Value) -> &str {
     item.get("status")
         .or_else(|| item.get("State"))
@@ -608,9 +629,10 @@ fn load_instruction_doc(
     headers: &[(String, String)],
     configured_path: &str,
     stable_soul_id: &str,
+    inline_content: bool,
 ) -> Option<LoadedDoc> {
     for path in instruction_path_candidates(configured_path, stable_soul_id) {
-        if let Some(doc) = load_doc_file(ctx, api_url, headers, &path) {
+        if let Some(doc) = load_doc_file(ctx, api_url, headers, &path, inline_content) {
             return Some(doc);
         }
     }
@@ -632,6 +654,7 @@ fn load_doc_file(
     api_url: &str,
     headers: &[(String, String)],
     path: &str,
+    inline_content: bool,
 ) -> Option<LoadedDoc> {
     let filter = format!("path eq '{}'", odata_string_literal(path));
     let resp = ctx
@@ -664,22 +687,27 @@ fn load_doc_file(
         })?;
     let file_id = json_field_str(item, &["Id", "entity_id"])?;
     let workspace_id = json_field_str(item, &["WorkspaceId", "workspace_id"]).unwrap_or_default();
-    let content_resp = ctx
-        .http_call(
-            "GET",
-            &format!("{api_url}/tdata/Files('{file_id}')/$value"),
-            headers,
-            "",
-        )
-        .ok()?;
-    if content_resp.status != 200 || content_resp.body.trim().is_empty() {
-        return None;
-    }
+    let content = if inline_content {
+        let content_resp = ctx
+            .http_call(
+                "GET",
+                &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+                headers,
+                "",
+            )
+            .ok()?;
+        if content_resp.status != 200 || content_resp.body.trim().is_empty() {
+            return None;
+        }
+        Some(content_resp.body)
+    } else {
+        None
+    };
 
     Some(LoadedDoc {
         path: path.to_string(),
         workspace_id,
-        content: content_resp.body,
+        content,
     })
 }
 
@@ -720,31 +748,34 @@ fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> St
         .join("\n")
 }
 
-fn render_loaded_doc(title: &str, doc: Option<&LoadedDoc>) -> String {
-    match doc {
-        Some(doc) => format!(
-            "## {title}\n\nPath: `{}`\n\n````markdown\n{}\n````",
-            doc.path, doc.content
-        ),
-        None => format!(
-            "## {title}\n\nThe configured file was not available in TemperFS when this session was created. Use the read command above if it becomes available."
-        ),
-    }
-}
-
-fn render_loaded_docs(title: &str, docs: &[LoadedDoc]) -> String {
-    if docs.is_empty() {
-        return format!(
-            "## {title}\n\nNo knowledge files were available in TemperFS when this session was created. Use the read commands above if they become available."
-        );
+fn render_loaded_reference_block(
+    instruction_doc: Option<&LoadedDoc>,
+    knowledge_docs: &[LoadedDoc],
+    inline_content: bool,
+) -> String {
+    if !inline_content {
+        return String::new();
     }
 
-    let mut out = format!("## {title}");
-    for doc in docs {
-        out.push_str(&format!(
-            "\n\n### `{}`\n\n````markdown\n{}\n````",
-            doc.path, doc.content
-        ));
+    let mut out = String::new();
+    out.push_str("## Loaded Reference Files\n\n");
+    match instruction_doc.and_then(|doc| doc.content.as_ref().map(|content| (doc, content))) {
+        Some((doc, content)) => out.push_str(&format!(
+            "### `{}`\n\n````markdown\n{}\n````\n",
+            doc.path, content
+        )),
+        None => out.push_str(
+            "The configured skill instruction file was not available in TemperFS when this session was created.\n",
+        ),
+    }
+
+    for doc in knowledge_docs {
+        if let Some(content) = &doc.content {
+            out.push_str(&format!(
+                "\n### `{}`\n\n````markdown\n{}\n````\n",
+                doc.path, content
+            ));
+        }
     }
     out
 }
@@ -860,8 +891,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        field_bool, instruction_path_candidates, normalize_bootstrapped_soul_id, parse_template,
-        temper_read_command, LoadedDoc,
+        config_bool, field_bool, instruction_path_candidates, normalize_bootstrapped_soul_id,
+        parse_template, render_loaded_reference_block, temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -916,7 +947,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
-            content: "# Synthesize".to_string(),
+            content: None,
         };
 
         assert_eq!(
@@ -938,5 +969,36 @@ mod tests {
                     .to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn config_bool_accepts_common_truthy_values() {
+        assert!(config_bool("true"));
+        assert!(config_bool("1"));
+        assert!(config_bool("YES"));
+        assert!(config_bool("on"));
+        assert!(!config_bool("false"));
+    }
+
+    #[test]
+    fn loaded_reference_block_is_empty_when_inline_docs_disabled() {
+        let doc = LoadedDoc {
+            path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
+            workspace_id: "os-app-docs".to_string(),
+            content: None,
+        };
+
+        assert_eq!(render_loaded_reference_block(Some(&doc), &[], false), "");
+    }
+
+    #[test]
+    fn loaded_reference_block_renders_content_when_inline_docs_enabled() {
+        let doc = LoadedDoc {
+            path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
+            workspace_id: "os-app-docs".to_string(),
+            content: Some("# Synthesize".to_string()),
+        };
+
+        assert!(render_loaded_reference_block(Some(&doc), &[], true).contains("# Synthesize"));
     }
 }
