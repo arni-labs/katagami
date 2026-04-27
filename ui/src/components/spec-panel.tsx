@@ -1093,8 +1093,8 @@ export function SpecPanel(props: SpecPanelProps) {
 
   return (
     <div className="relative">
-      {/* Copy + download — inline on mobile, floating on sm+ */}
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-2 sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
+      {/* Spec packet — flows inline so it never covers section chevrons */}
+      <div className="mb-5 flex flex-wrap items-start justify-end gap-2">
         <SpecActions
           languageId={props.languageId}
           katagamiSpec={katagamiMarkdown}
@@ -1102,9 +1102,6 @@ export function SpecPanel(props: SpecPanelProps) {
           slug={props.slug}
         />
       </div>
-
-      {/* Spacer on sm+ so floating chips don't collide with first section */}
-      <div className="hidden h-16 sm:block" />
 
       <div className="divide-y divide-dashed divide-border">
         <Section label="philosophy" color="teal" defaultOpen>

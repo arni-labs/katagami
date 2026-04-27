@@ -147,16 +147,6 @@ export function SpecActions({
           </FormatTab>
         </div>
 
-        {/* Marker-stripe divider — flips with format accent */}
-        <span
-          aria-hidden
-          className="block h-[3px] w-full rounded-[1px]"
-          style={{
-            background: `linear-gradient(90deg, var(--${accent}) 0%, var(--${accent}) 70%, transparent 100%)`,
-            opacity: 0.55,
-          }}
-        />
-
         {/* Target line + action stamps — re-keys on format change */}
         <div
           key={format}
