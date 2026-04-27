@@ -127,9 +127,9 @@ export function SpecActions({
         }}
       />
 
-      <div className="relative flex flex-col gap-0 border border-border bg-card/70 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">
+      <div className="relative flex flex-col gap-2 bg-card/70 px-3 pb-3 pt-2 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">
         {/* Tab strip — two filing tabs, active one tilts forward */}
-        <div className="flex items-end gap-1 px-2 pt-2">
+        <div className="flex items-end gap-2">
           <FormatTab
             active={format === "katagami"}
             onClick={() => setFormat("katagami")}
@@ -145,18 +145,22 @@ export function SpecActions({
           >
             DESIGN.md
           </FormatTab>
-          <span className="ml-auto pb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground/60">
-            spec
-          </span>
         </div>
 
-        {/* Perforation between tabs and actions */}
-        <div className="sticker-perforation mx-3" />
+        {/* Marker-stripe divider — flips with format accent */}
+        <span
+          aria-hidden
+          className="block h-[3px] w-full rounded-[1px]"
+          style={{
+            background: `linear-gradient(90deg, var(--${accent}) 0%, var(--${accent}) 70%, transparent 100%)`,
+            opacity: 0.55,
+          }}
+        />
 
         {/* Target line + action stamps — re-keys on format change */}
         <div
           key={format}
-          className="anim-packet-body flex flex-col gap-2 px-3 py-3"
+          className="anim-packet-body flex flex-col gap-2.5"
         >
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/85">
             <HandArrow accent={accent} />
@@ -247,14 +251,13 @@ function FormatTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`relative inline-flex items-center gap-1.5 border px-2.5 py-1 transition-all duration-200 ${
+      className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 transition-all duration-200 ${
         active
-          ? "z-10 border-border bg-card text-foreground shadow-[0_-1px_2px_rgba(30,35,45,0.04)]"
-          : "border-border/60 bg-card/40 text-muted-foreground hover:bg-card/70 hover:text-foreground"
+          ? "z-10 text-foreground"
+          : "text-muted-foreground/80 hover:text-foreground"
       }`}
       style={{
-        transform: active ? "translateY(0) rotate(-0.5deg)" : "translateY(2px)",
-        borderBottom: active ? "1px solid transparent" : undefined,
+        transform: active ? "rotate(-0.6deg)" : undefined,
       }}
     >
       {active && (
@@ -340,7 +343,7 @@ function ActionStamp({
       type="button"
       onClick={onClick}
       title={title}
-      className="group relative inline-flex items-center gap-1.5 border border-border bg-card/85 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/70 shadow-[0_1px_2px_rgba(30,35,45,0.06)] transition-colors hover:bg-card hover:text-foreground"
+      className="group relative inline-flex items-center gap-1.5 bg-card/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/75 shadow-[0_1px_0_rgba(30,35,45,0.06),0_2px_6px_rgba(30,35,45,0.05)] transition-colors hover:text-foreground"
       style={{ transform: `rotate(${rotate}deg)` }}
     >
       <span
