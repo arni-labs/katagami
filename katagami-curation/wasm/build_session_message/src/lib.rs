@@ -438,7 +438,7 @@ fn create_session_link(
         "ChildSessionId": child_session_id,
         "OnCompletedAction": "",
         "OnFailureAction": "Fail",
-        "MaxChecks": "180",
+        "MaxChecks": "80",
     });
     let configure_resp = ctx.http_call(
         "POST",

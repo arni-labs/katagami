@@ -23,7 +23,7 @@ Read knowledge files before starting work:
 - `temper.get(entity_set, entity_id)` — get a single entity
 - `temper.create(entity_set, fields)` — create an entity
 - `temper.action(entity_set, entity_id, action, params)` — dispatch an action
-- `temper.write(path, content)` — write to workspace file
+- `temper.write(path, content)` — write governed artifacts to workspace files
 - `temper.read(path)` — read a workspace file
 - `temper.web_search(query)` — search the web
 - `temper.web_fetch(url)` — fetch a URL
@@ -35,7 +35,7 @@ No `import` statements. The `sandbox.*` and `bash` tools are available for `synt
 - **CurationJobs** — your control plane (job_type, input, output)
 - **CurationDirections** — one researched direction that queues one synthesize job
 - **DesignLanguages** — complete design languages with specs + embodiments
-- **DesignSources** — raw research material indexed from the web
+- **DesignSources** — compact research references indexed from the web
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
 
@@ -49,7 +49,12 @@ Knowledge files (read via `temper.read()`):
 Workspace at `/katagami/`:
 - `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
 - `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
-- `/katagami/sources/{slug}.md` — research source files
+- `/katagami/sources/{slug}.md` — deferred source archives, not the source-search hot path
+
+Use PawFS for governed artifacts: embodiments, DESIGN.md exports, published
+snapshots, and explicitly requested source archives. During `source_search`,
+store source title, URL, type, topics, summary, and short excerpts on
+DesignSource entities; do not write full fetched pages to PawFS.
 
 ## Completion Protocol
 
