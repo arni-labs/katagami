@@ -44,6 +44,17 @@ Katagami synthesis writes the core language spec as one coherent transition.
   readiness.
 - Narrow setter actions remain valid for small edits and repair jobs.
 
+Katagami quality finalization verifies and repairs the artifact boundary.
+
+- Quality agents should generate and attach DESIGN.md, but publication does not
+  trust the agent's story.
+- If the language is otherwise valid and DESIGN.md is missing, the finalizer
+  renders a deterministic DESIGN.md projection from the verified Katagami fields,
+  writes it as a governed PawFS artifact, attaches it, verifies it, then
+  publishes.
+- This keeps DESIGN.md as a derived portable artifact instead of making every
+  agent run depend on a long prompt faithfully performing artifact bookkeeping.
+
 Agent tool instructions must match runtime reality.
 
 - Monty `execute` calls are treated as self-contained because production
