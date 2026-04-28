@@ -13,8 +13,26 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn("deferred", skill)
         self.assertIn("'file_id': ''", skill)
         self.assertIn("Do not use `temper.write(...)` during `source_search`", skill)
+        self.assertIn("Do not call `temper.list('DesignSources', '')`", skill)
+        self.assertIn("For targeted requests, create 1-2 directions", skill)
+        self.assertIn("Treat each `execute` call as self-contained", skill)
+        self.assertIn("fetch at most the top 3", skill)
+        self.assertIn("isinstance(fetched, str)", skill)
         self.assertNotIn("temper.write('/katagami/sources/'", skill)
         self.assertNotIn('temper.write("/katagami/sources/', skill)
+
+    def test_synthesis_uses_single_spec_transition_for_new_languages(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (
+            root / "agents" / "curator" / "skills" / "synthesize-language" / "SKILL.md"
+        ).read_text()
+
+        self.assertIn("use `SetSpec` once", skill)
+        self.assertIn("'SetSpec'", skill)
+        self.assertIn("'philosophy': json.dumps(philosophy", skill)
+        self.assertIn("'tags': json.dumps(tags", skill)
+        self.assertNotIn("'WritePhilosophy'", skill)
+        self.assertNotIn("'SetTokens'", skill)
 
     def test_storage_model_documents_pawfs_artifact_boundary(self):
         root = Path(__file__).resolve().parents[2]

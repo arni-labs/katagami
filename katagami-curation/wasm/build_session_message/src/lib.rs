@@ -129,33 +129,14 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .as_ref()
             .map(|doc| doc.path.as_str())
             .unwrap_or(template.instruction_path.as_str());
-        let knowledge_docs = [
-            "/system/knowledge/design-principles.md",
-            "/system/knowledge/quality-standards.md",
-            "/system/knowledge/feedback-log.md",
-        ]
-        .iter()
-        .filter_map(|path| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
-        .collect::<Vec<_>>();
+        let knowledge_specs = knowledge_read_specs_for_skill(skill);
+        let knowledge_docs = knowledge_specs
+            .iter()
+            .filter_map(|(path, _)| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
+            .collect::<Vec<_>>();
         let instruction_read_command =
             temper_read_command(effective_instruction_path, instruction_doc.as_ref());
-        let knowledge_read_commands = render_read_commands(
-            &[
-                (
-                    "/system/knowledge/design-principles.md",
-                    "embodiment standards",
-                ),
-                (
-                    "/system/knowledge/quality-standards.md",
-                    "quality thresholds",
-                ),
-                (
-                    "/system/knowledge/feedback-log.md",
-                    "human feedback to incorporate",
-                ),
-            ],
-            &knowledge_docs,
-        );
+        let knowledge_read_commands = render_read_commands(knowledge_specs, &knowledge_docs);
         let loaded_reference_block = render_loaded_reference_block(
             instruction_doc.as_ref(),
             &knowledge_docs,
@@ -737,6 +718,31 @@ fn temper_read_command(path: &str, loaded: Option<&LoadedDoc>) -> String {
     }
 }
 
+fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'static str)] {
+    const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
+        (
+            "/system/knowledge/design-principles.md",
+            "embodiment standards",
+        ),
+        (
+            "/system/knowledge/quality-standards.md",
+            "quality thresholds",
+        ),
+        (
+            "/system/knowledge/feedback-log.md",
+            "human feedback to incorporate",
+        ),
+    ];
+
+    match skill {
+        // Source search needs the research-direction skill contract and web
+        // search/fetch tools. Embodiment and quality docs are for synthesis and
+        // review; loading them here adds turns and context without helping.
+        "research-direction" => &[],
+        _ => FULL_CURATION_KNOWLEDGE,
+    }
+}
+
 fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> String {
     paths
         .iter()
@@ -891,8 +897,9 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        config_bool, field_bool, instruction_path_candidates, normalize_bootstrapped_soul_id,
-        parse_template, render_loaded_reference_block, temper_read_command, LoadedDoc,
+        config_bool, field_bool, instruction_path_candidates, knowledge_read_specs_for_skill,
+        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
+        temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -969,6 +976,14 @@ mod tests {
                     .to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn source_search_uses_only_skill_doc_by_default() {
+        assert!(knowledge_read_specs_for_skill("research-direction").is_empty());
+        assert!(knowledge_read_specs_for_skill("synthesize-language")
+            .iter()
+            .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
     }
 
     #[test]
