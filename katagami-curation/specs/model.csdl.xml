@@ -27,6 +27,7 @@
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="legacy-json-v1" />
+        <Property Name="InlineJobDocs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Session spawning fields -->
         <Property Name="SoulId" Type="Edm.String" Nullable="false" DefaultValue="app-agent-bootstrap" />
         <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="" />
