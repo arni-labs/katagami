@@ -88,6 +88,11 @@ name = "completion_contract"
 type = "string"
 initial = "legacy-json-v1"
 
+[[state]]
+name = "inline_job_docs"
+type = "bool"
+initial = "false"
+
 # --- Session spawning fields ---
 
 [[state]]
@@ -131,7 +136,7 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
 hint = "Set or update job parameters before execution."
 
 [[action]]
@@ -139,7 +144,7 @@ name = "ConfigureAndSubmit"
 kind = "internal"
 from = ["Queued"]
 to = "Ready"
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
 hint = "Configure a trigger-created job and start session spawning in one transition."
 effect = [{ type = "trigger", name = "build_session_message" }]
 

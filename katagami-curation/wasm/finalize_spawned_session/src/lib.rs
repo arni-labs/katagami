@@ -1041,7 +1041,8 @@ fn spawn_synth_followup(
             "job_type": "synthesize",
             "workspace_id": workspace_id,
             "input": synth_input.to_string(),
-            "query_id": query_id
+            "query_id": query_id,
+            "inline_job_docs": true
         });
         let configure_resp = ctx.http_call(
             "POST",
@@ -1144,7 +1145,8 @@ fn spawn_quality_review_followup(
         "job_type": "quality_review",
         "workspace_id": workspace_id,
         "input": review_input.to_string(),
-        "query_id": query_id
+        "query_id": query_id,
+        "inline_job_docs": true
     });
     let configure_resp = ctx.http_call(
         "POST",
