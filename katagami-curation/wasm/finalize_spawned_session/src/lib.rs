@@ -65,6 +65,19 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
 
         if session_id.is_empty() {
             if job_status == "Finalizing" && completion_contract == "typed-v1" {
+                let validation = match verify_typed_completion(
+                    &ctx, &api_url, &headers, &job_id, &job_type, &fields,
+                ) {
+                    Ok(validation) => validation,
+                    Err(error) => {
+                        fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
+                        set_success_result(
+                            "",
+                            &json!({"status": "job failed during typed finalization", "error": error}),
+                        );
+                        return Ok(());
+                    }
+                };
                 let fallback = run_typed_completion_fallback(
                     &ctx,
                     &api_url,
@@ -94,6 +107,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &json!({
                         "status": "typed job finalized without session_id",
                         "completion_contract": completion_contract,
+                        "validation": validation,
                         "fallback": fallback,
                     }),
                 );
@@ -111,11 +125,20 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "",
         )?;
         if !(200..300).contains(&session_resp.status) {
-            return Err(format!(
+            let error = format!(
                 "Failed to load Session '{session_id}': HTTP {}: {}",
                 session_resp.status,
                 &session_resp.body[..session_resp.body.len().min(300)]
-            ));
+            );
+            if job_status == "Finalizing" {
+                fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
+                set_success_result(
+                    "",
+                    &json!({"status": "job failed because spawned session could not be loaded", "error": error}),
+                );
+                return Ok(());
+            }
+            return Err(error);
         }
 
         let session: serde_json::Value = serde_json::from_str(&session_resp.body)
@@ -134,7 +157,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         .and_then(|v| v.as_str())
                         .filter(|s| !s.is_empty())
                         .unwrap_or("CurationJob completed");
-                    let record_status = record_session_success(
+                    let record_status = match record_session_success(
                         &ctx,
                         &api_url,
                         &headers,
@@ -143,7 +166,30 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &session_fields,
                         &session_counters,
                         result_text,
-                    )?;
+                    ) {
+                        Ok(record_status) => record_status,
+                        Err(error) => {
+                            fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
+                            set_success_result(
+                                "",
+                                &json!({"status": "job failed while recording spawned session result", "error": error}),
+                            );
+                            return Ok(());
+                        }
+                    };
+                    let validation = match verify_typed_completion(
+                        &ctx, &api_url, &headers, &job_id, &job_type, &fields,
+                    ) {
+                        Ok(validation) => validation,
+                        Err(error) => {
+                            fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
+                            set_success_result(
+                                "",
+                                &json!({"status": "job failed during typed finalization", "error": error}),
+                            );
+                            return Ok(());
+                        }
+                    };
                     let fallback = run_typed_completion_fallback(
                         &ctx,
                         &api_url,
@@ -174,6 +220,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             "status": record_status,
                             "session_id": session_id,
                             "completion_contract": completion_contract,
+                            "validation": validation,
                             "fallback": fallback,
                         }),
                     );
@@ -506,6 +553,380 @@ fn record_session_success(
     }
 
     Ok("session finalized")
+}
+
+fn fail_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    error_message: &str,
+) -> Result<(), String> {
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.Fail"),
+        headers,
+        &json!({"error_message": error_message}).to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to fail CurationJob '{job_id}': HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    Ok(())
+}
+
+fn verify_typed_completion(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    _job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    match job_type {
+        "synthesize" | "regenerate_embodiment" | "evolve_language" => {
+            verify_synthesized_languages(ctx, api_url, headers, fields)
+        }
+        "quality_review" => verify_quality_reviewed_languages(ctx, api_url, headers, fields),
+        "organize_taxonomy" => Ok(json!({
+            "validated": true,
+            "job_type": job_type,
+            "scope": "taxonomy organization"
+        })),
+        "source_search" => Ok(json!({
+            "validated": true,
+            "job_type": job_type,
+            "scope": "source metadata and direction fan-out"
+        })),
+        _ => Ok(json!({"validated": true, "job_type": job_type})),
+    }
+}
+
+fn verify_synthesized_languages(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let language_ids = design_language_ids_from_job(fields);
+    if language_ids.is_empty() {
+        return Err("synthesis completed without any design_language_ids".to_string());
+    }
+
+    let mut verified = Vec::new();
+    for language_id in &language_ids {
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
+        verify_language_core(ctx, api_url, headers, language_id, &language)?;
+        verified.push(language_id.clone());
+    }
+
+    Ok(json!({
+        "validated": true,
+        "job_type": "synthesize",
+        "verified_language_ids": verified
+    }))
+}
+
+fn verify_quality_reviewed_languages(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let language_ids = design_language_ids_from_job(fields);
+    if language_ids.is_empty() {
+        return Err("quality_review completed without any design_language_ids".to_string());
+    }
+
+    let mut published = Vec::new();
+    for language_id in &language_ids {
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
+        let status = entity_status_value(&language);
+        if !matches!(status.as_str(), "UnderReview" | "Published") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' is in state '{status}', expected UnderReview or Published before quality_review finalization"
+            ));
+        }
+
+        verify_language_core(ctx, api_url, headers, language_id, &language)?;
+        verify_design_md(ctx, api_url, headers, language_id, &language)?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "MarkQualityPassed",
+            &json!({}),
+        )?;
+
+        if status == "UnderReview" {
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "DesignLanguages",
+                language_id,
+                "Publish",
+                &json!({}),
+            )?;
+        }
+        published.push(language_id.clone());
+    }
+
+    Ok(json!({
+        "validated": true,
+        "job_type": "quality_review",
+        "published_language_ids": published
+    }))
+}
+
+fn verify_language_core(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let mut missing = Vec::new();
+    for (bool_name, data_name) in [
+        ("has_philosophy", "philosophy"),
+        ("has_tokens", "tokens"),
+        ("has_rules", "rules"),
+        ("has_layout", "layout_principles"),
+        ("has_guidance", "guidance"),
+    ] {
+        if !section_present(&fields, bool_name, data_name) {
+            missing.push(bool_name.trim_start_matches("has_").to_string());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is missing required spec sections: {}",
+            missing.join(", ")
+        ));
+    }
+
+    let embodiment_file_id = string_field_any(&fields, "embodiment_file_id", "");
+    if embodiment_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no embodiment_file_id"
+        ));
+    }
+    let embodiment_format = string_field_any(&fields, "embodiment_format", "html");
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &embodiment_file_id,
+        "embodiment",
+        Some(&embodiment_format),
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyEmbodiment",
+        &json!({}),
+    )?;
+    Ok(())
+}
+
+fn verify_design_md(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+    if design_md_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no design_md_file_id"
+        ));
+    }
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &design_md_file_id,
+        "design_md",
+        None,
+    )?;
+    verify_design_md_lint_result(language_id, &fields)?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyDesignMd",
+        &json!({}),
+    )?;
+    Ok(())
+}
+
+fn verify_file_value(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    file_id: &str,
+    artifact_kind: &str,
+    embodiment_format: Option<&str>,
+) -> Result<(), String> {
+    let body = read_file_value(ctx, api_url, headers, file_id)?;
+    let trimmed = body.trim();
+    if trimmed.len() < 64 {
+        return Err(format!(
+            "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is empty or too small"
+        ));
+    }
+
+    if artifact_kind == "embodiment" {
+        let lower = trimmed.to_ascii_lowercase();
+        match embodiment_format.unwrap_or("html") {
+            "html" if !lower.contains("<html") && !lower.contains("<!doctype") => {
+                return Err(format!(
+                    "DesignLanguage '{language_id}' embodiment file '{file_id}' is not self-contained HTML"
+                ));
+            }
+            "tsx" if !trimmed.contains("export") && !trimmed.contains("function") => {
+                return Err(format!(
+                    "DesignLanguage '{language_id}' embodiment file '{file_id}' is not recognizable TSX"
+                ));
+            }
+            _ => {}
+        }
+    } else if artifact_kind == "design_md"
+        && (!trimmed.contains("version:") || !trimmed.contains("components"))
+    {
+        return Err(format!(
+            "DesignLanguage '{language_id}' DESIGN.md file '{file_id}' is missing required design.md front matter"
+        ));
+    }
+
+    Ok(())
+}
+
+fn read_file_value(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    file_id: &str,
+) -> Result<String, String> {
+    let resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to read Files('{file_id}')/$value: HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    Ok(resp.body)
+}
+
+fn verify_design_md_lint_result(
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), String> {
+    let raw = string_field_any(fields, "design_md_lint_result", "");
+    if raw.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no DESIGN.md lint result"
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&raw).map_err(|e| {
+        format!("DesignLanguage '{language_id}' has invalid DESIGN.md lint JSON: {e}")
+    })?;
+    let errors = parsed
+        .get("summary")
+        .and_then(|summary| summary.get("errors"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let warnings = parsed
+        .get("summary")
+        .and_then(|summary| summary.get("warnings"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    if errors != 0 || warnings != 0 {
+        return Err(format!(
+            "DesignLanguage '{language_id}' DESIGN.md lint result is not clean: errors={errors}, warnings={warnings}"
+        ));
+    }
+    Ok(())
+}
+
+fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
+    let mut ids = parse_json_string_array(fields.get("design_language_ids"));
+    if ids.is_empty() {
+        if let Some(output) = parse_json_field(fields.get("output")) {
+            ids.extend(string_array(output.get("language_ids")));
+            ids.extend(string_array(output.get("fixed")));
+        }
+    }
+    if ids.is_empty() {
+        if let Some(input) = parse_json_field(fields.get("input")) {
+            ids.extend(string_array(input.get("language_ids")));
+        }
+    }
+
+    let mut deduped = Vec::new();
+    for id in ids {
+        if !id.is_empty() && !deduped.contains(&id) {
+            deduped.push(id);
+        }
+    }
+    deduped
+}
+
+fn entity_fields(entity: &serde_json::Value) -> serde_json::Value {
+    entity.get("fields").cloned().unwrap_or_else(|| json!({}))
+}
+
+fn entity_status_value(entity: &serde_json::Value) -> String {
+    entity
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string()
+}
+
+fn section_present(fields: &serde_json::Value, bool_name: &str, data_name: &str) -> bool {
+    bool_field(fields, bool_name) || !string_field_any(fields, data_name, "").trim().is_empty()
+}
+
+fn bool_field(fields: &serde_json::Value, name: &str) -> bool {
+    fields.get(name).is_some_and(|value| {
+        value
+            .as_bool()
+            .unwrap_or_else(|| value.as_str().is_some_and(|s| s == "true"))
+    })
+}
+
+fn string_field_any(fields: &serde_json::Value, name: &str, default: &str) -> String {
+    fields
+        .get(name)
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or(default)
+        .to_string()
 }
 
 fn run_typed_completion_fallback(
