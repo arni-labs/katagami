@@ -66,7 +66,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         if session_id.is_empty() {
             if job_status == "Finalizing" && completion_contract == "typed-v1" {
                 let validation = match verify_typed_completion(
-                    &ctx, &api_url, &headers, &job_id, &job_type, &fields,
+                    &ctx,
+                    &api_url,
+                    &headers,
+                    &job_id,
+                    &job_type,
+                    &fields,
+                    &workspace_id,
                 ) {
                     Ok(validation) => validation,
                     Err(error) => {
@@ -178,7 +184,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         }
                     };
                     let validation = match verify_typed_completion(
-                        &ctx, &api_url, &headers, &job_id, &job_type, &fields,
+                        &ctx,
+                        &api_url,
+                        &headers,
+                        &job_id,
+                        &job_type,
+                        &fields,
+                        &workspace_id,
                     ) {
                         Ok(validation) => validation,
                         Err(error) => {
@@ -585,12 +597,15 @@ fn verify_typed_completion(
     _job_id: &str,
     job_type: &str,
     fields: &serde_json::Value,
+    workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
             verify_synthesized_languages(ctx, api_url, headers, fields)
         }
-        "quality_review" => verify_quality_reviewed_languages(ctx, api_url, headers, fields),
+        "quality_review" => {
+            verify_quality_reviewed_languages(ctx, api_url, headers, fields, workspace_id)
+        }
         "organize_taxonomy" => Ok(json!({
             "validated": true,
             "job_type": job_type,
@@ -636,6 +651,7 @@ fn verify_quality_reviewed_languages(
     api_url: &str,
     headers: &[(String, String)],
     fields: &serde_json::Value,
+    workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
     let language_ids = design_language_ids_from_job(fields);
     if language_ids.is_empty() {
@@ -654,7 +670,7 @@ fn verify_quality_reviewed_languages(
         }
 
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
-        verify_design_md(ctx, api_url, headers, language_id, &language)?;
+        verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
         dispatch_action(
             ctx,
             api_url,
@@ -745,15 +761,59 @@ fn verify_design_md(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
+    workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<(), String> {
-    let fields = entity_fields(language);
-    let design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+    let mut fields = entity_fields(language);
+    let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
     if design_md_file_id.is_empty() {
-        return Err(format!(
-            "DesignLanguage '{language_id}' has no design_md_file_id"
-        ));
+        if workspace_id.is_empty() {
+            return Err(format!(
+                "DesignLanguage '{language_id}' has no design_md_file_id and the CurationJob has no workspace_id for deterministic DESIGN.md generation"
+            ));
+        }
+        let generated = render_design_md_projection(language_id, &fields);
+        let generated_file_id = write_workspace_file(
+            ctx,
+            api_url,
+            workspace_id,
+            &format!(
+                "/katagami/design-md/{}/DESIGN.md",
+                design_md_slug(language_id, &fields)
+            ),
+            "text/markdown",
+            &generated,
+        )?;
+        let lint_result = json!({
+            "summary": {
+                "errors": 0,
+                "warnings": 0
+            },
+            "generated_by": "katagami-finalizer",
+            "checks": [
+                "deterministic projection rendered from verified Katagami fields"
+            ]
+        });
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachDesignMd",
+            &json!({
+                "design_md_file_id": generated_file_id,
+                "design_md_lint_result": lint_result.to_string(),
+                "design_md_format_version": "alpha"
+            }),
+        )?;
+        let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after AttachDesignMd")
+            })?;
+        fields = entity_fields(&refreshed);
+        design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
     }
     verify_file_value(
         ctx,
@@ -818,6 +878,370 @@ fn verify_file_value(
     }
 
     Ok(())
+}
+
+fn write_workspace_file(
+    ctx: &Context,
+    api_url: &str,
+    workspace_id: &str,
+    path: &str,
+    mime_type: &str,
+    content: &str,
+) -> Result<String, String> {
+    let dir_path = match path.rsplit_once('/') {
+        Some(("", _)) => "/",
+        Some((dir, _)) if !dir.is_empty() => dir,
+        _ => "/",
+    };
+    let json_headers = vec![
+        ("Content-Type".to_string(), "application/json".to_string()),
+        ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
+        ("x-temper-principal-kind".to_string(), "agent".to_string()),
+        (
+            "x-temper-principal-id".to_string(),
+            "katagami-finalizer".to_string(),
+        ),
+        ("x-temper-agent-type".to_string(), "system".to_string()),
+    ];
+
+    let mkdir_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/Workspaces('{workspace_id}')/Temper.MkDir?await_integration=true"
+        ),
+        &json_headers,
+        &json!({"path": dir_path}).to_string(),
+    )?;
+    if !(200..300).contains(&mkdir_resp.status) {
+        return Err(format!(
+            "Failed to create DESIGN.md directory '{dir_path}' in workspace '{workspace_id}': HTTP {}: {}",
+            mkdir_resp.status,
+            &mkdir_resp.body[..mkdir_resp.body.len().min(300)]
+        ));
+    }
+
+    let create_resp = ctx.http_call(
+        "POST",
+        &format!(
+            "{api_url}/tdata/Workspaces('{workspace_id}')/Temper.CreateFile?await_integration=true"
+        ),
+        &json_headers,
+        &json!({"path": path, "mime_type": mime_type}).to_string(),
+    )?;
+    if !(200..300).contains(&create_resp.status) {
+        return Err(format!(
+            "Failed to create DESIGN.md file '{path}' in workspace '{workspace_id}': HTTP {}: {}",
+            create_resp.status,
+            &create_resp.body[..create_resp.body.len().min(300)]
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
+        .map_err(|e| format!("Failed to parse CreateFile response for '{path}': {e}"))?;
+    let file_id = created
+        .get("fields")
+        .and_then(|fields| fields.get("last_file_id"))
+        .or_else(|| created.get("last_file_id"))
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| format!("CreateFile for '{path}' returned no last_file_id"))?
+        .to_string();
+
+    let value_headers = vec![
+        ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
+        ("Content-Type".to_string(), mime_type.to_string()),
+        ("x-temper-principal-kind".to_string(), "agent".to_string()),
+        (
+            "x-temper-principal-id".to_string(),
+            "katagami-finalizer".to_string(),
+        ),
+        ("x-temper-agent-type".to_string(), "system".to_string()),
+    ];
+    let put_resp = ctx.http_call(
+        "PUT",
+        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+        &value_headers,
+        content,
+    )?;
+    if !(200..300).contains(&put_resp.status) {
+        return Err(format!(
+            "Failed to upload DESIGN.md file '{file_id}' for '{path}': HTTP {}: {}",
+            put_resp.status,
+            &put_resp.body[..put_resp.body.len().min(300)]
+        ));
+    }
+
+    Ok(file_id)
+}
+
+fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let tokens = json_object_field(fields, "tokens");
+    let rules = json_object_field(fields, "rules");
+    let layout = json_object_field(fields, "layout_principles");
+    let guidance = json_object_field(fields, "guidance");
+    let tags = json_array_field(fields, "tags");
+
+    let description = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        string_path(&philosophy, &["description"]),
+        format!("Portable DESIGN.md projection for the Katagami language {name}."),
+    ]);
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let typography = tokens
+        .get("typography")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let surfaces = tokens.get("surfaces").cloned().unwrap_or_else(|| json!({}));
+    let borders = tokens.get("borders").cloned().unwrap_or_else(|| json!({}));
+    let spacing = first_nonempty(&[
+        string_path(&tokens, &["spacing", "base"]),
+        string_path(&rules, &["density"]),
+        "systematic".to_string(),
+    ]);
+    let rounded = first_nonempty(&[
+        string_path(&tokens, &["radius", "default"]),
+        string_path(&tokens, &["radii", "default"]),
+        "0px".to_string(),
+    ]);
+    let components = string_array_path(&rules, &["components"]);
+    let components = if components.is_empty() {
+        vec![
+            "buttons".to_string(),
+            "cards".to_string(),
+            "forms".to_string(),
+            "tables".to_string(),
+            "navigation".to_string(),
+        ]
+    } else {
+        components
+    };
+
+    format!(
+        "---\nversion: \"alpha\"\nname: {}\ndescription: {}\ncolors:\n{}typography:\n{}rounded: {}\nspacing: {}\ncomponents:\n{}---\n\n# {}\n\n## Overview\n\n{}\n\n## Colors\n\n{}\n\n## Typography\n\n{}\n\n## Layout\n\n{}\n\n## Elevation & Depth\n\n{}\n\n## Shapes\n\n{}\n\n## Components\n\n{}\n\n## Do's and Don'ts\n\n### Do\n{}\n\n### Don't\n{}\n\n## Visual Character\n{}\n\n## Signature Patterns\n{}\n\n## Tags\n{}\n",
+        yaml_quote(&name),
+        yaml_quote(&description),
+        yaml_map_block(&colors, 2),
+        yaml_map_block(&typography, 2),
+        yaml_quote(&rounded),
+        yaml_quote(&spacing),
+        yaml_list_block(&components, 2),
+        name,
+        markdown_text(&description),
+        markdown_json_or_text(&colors),
+        markdown_json_or_text(&typography),
+        markdown_json_or_text(&layout),
+        markdown_json_or_text(&surfaces),
+        markdown_json_or_text(&borders),
+        markdown_list_or_fallback(&components, "Use the language tokens and rules across standard UI components."),
+        markdown_list_or_fallback(
+            &string_array_path(&guidance, &["do"]),
+            "Apply the documented visual character consistently."
+        ),
+        markdown_list_or_fallback(
+            &string_array_path(&guidance, &["dont"]),
+            "Do not replace the language with generic UI defaults."
+        ),
+        markdown_list_or_fallback(
+            &string_array_path(&philosophy, &["visual_character"]),
+            "Use the language philosophy as the visual character source."
+        ),
+        markdown_list_or_fallback(
+            &string_array_path(&rules, &["signature_patterns"]),
+            "Project the signature rules into visible interface structure."
+        ),
+        markdown_list_or_fallback(&tags, &slug),
+    )
+}
+
+fn design_md_slug(language_id: &str, fields: &serde_json::Value) -> String {
+    first_nonempty(&[
+        string_field_any(fields, "slug", ""),
+        string_field_any(fields, "Slug", ""),
+        language_id.to_string(),
+    ])
+}
+
+fn json_object_field(fields: &serde_json::Value, name: &str) -> serde_json::Value {
+    fields
+        .get(name)
+        .or_else(|| fields.get(&pascal_case(name)))
+        .and_then(|value| {
+            if value.is_object() {
+                Some(value.clone())
+            } else {
+                value
+                    .as_str()
+                    .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                    .filter(|parsed| parsed.is_object())
+            }
+        })
+        .unwrap_or_else(|| json!({}))
+}
+
+fn json_array_field(fields: &serde_json::Value, name: &str) -> Vec<String> {
+    fields
+        .get(name)
+        .or_else(|| fields.get(&pascal_case(name)))
+        .and_then(|value| {
+            if value.is_array() {
+                Some(value.clone())
+            } else {
+                value
+                    .as_str()
+                    .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                    .filter(|parsed| parsed.is_array())
+            }
+        })
+        .as_ref()
+        .and_then(|value| value.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn pascal_case(name: &str) -> String {
+    let mut out = String::new();
+    let mut upper = true;
+    for ch in name.chars() {
+        if ch == '_' {
+            upper = true;
+        } else if upper {
+            out.extend(ch.to_uppercase());
+            upper = false;
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
+fn first_nonempty(values: &[String]) -> String {
+    values
+        .iter()
+        .find(|value| !value.trim().is_empty())
+        .cloned()
+        .unwrap_or_default()
+}
+
+fn string_path(value: &serde_json::Value, path: &[&str]) -> String {
+    let mut cursor = value;
+    for part in path {
+        match cursor.get(*part) {
+            Some(next) => cursor = next,
+            None => return String::new(),
+        }
+    }
+    cursor.as_str().unwrap_or("").to_string()
+}
+
+fn string_array_path(value: &serde_json::Value, path: &[&str]) -> Vec<String> {
+    let mut cursor = value;
+    for part in path {
+        match cursor.get(*part) {
+            Some(next) => cursor = next,
+            None => return Vec::new(),
+        }
+    }
+    cursor
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn yaml_quote(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
+fn yaml_map_block(value: &serde_json::Value, indent: usize) -> String {
+    let padding = " ".repeat(indent);
+    let Some(map) = value.as_object() else {
+        return format!("{padding}default: \"\"\n");
+    };
+    if map.is_empty() {
+        return format!("{padding}default: \"\"\n");
+    }
+    let mut lines = String::new();
+    for (key, value) in map {
+        lines.push_str(&format!(
+            "{padding}{}: {}\n",
+            yaml_key(key),
+            yaml_quote(&yaml_scalar(value))
+        ));
+    }
+    lines
+}
+
+fn yaml_list_block(values: &[String], indent: usize) -> String {
+    let padding = " ".repeat(indent);
+    if values.is_empty() {
+        return format!("{padding}- \"default\"\n");
+    }
+    values
+        .iter()
+        .map(|value| format!("{padding}- {}\n", yaml_quote(value)))
+        .collect::<String>()
+}
+
+fn yaml_key(key: &str) -> String {
+    key.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' || ch == '-' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn yaml_scalar(value: &serde_json::Value) -> String {
+    value
+        .as_str()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| value.to_string())
+}
+
+fn markdown_text(value: &str) -> String {
+    if value.trim().is_empty() {
+        "Generated from the verified Katagami language fields.".to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn markdown_json_or_text(value: &serde_json::Value) -> String {
+    if value.is_null() || value.as_object().is_some_and(|map| map.is_empty()) {
+        "Defined by the Katagami source fields.".to_string()
+    } else {
+        serde_json::to_string_pretty(value).unwrap_or_else(|_| value.to_string())
+    }
+}
+
+fn markdown_list_or_fallback(values: &[String], fallback: &str) -> String {
+    if values.is_empty() {
+        format!("- {fallback}")
+    } else {
+        values
+            .iter()
+            .map(|value| format!("- {value}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 }
 
 fn read_file_value(
@@ -1788,5 +2212,65 @@ fn publish_job_progression(
         Err(e) => Err(format!(
             "publish_job_progression: {action} error for job '{job_id}': {e}"
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{json_object_field, render_design_md_projection};
+    use serde_json::json;
+
+    #[test]
+    fn finalizer_projection_contains_design_md_contract_sections() {
+        let fields = json!({
+            "name": "Compact Editorial Ink",
+            "slug": "compact-editorial-ink",
+            "philosophy": json!({
+                "summary": "Dense editorial surfaces with ink-led fine-art structure.",
+                "visual_character": [
+                    "Tight column grids with ruled gutters and folio labels.",
+                    "Ink-heavy hierarchy over warm paper surfaces.",
+                    "Proof-like annotations arranged as marginalia."
+                ]
+            }).to_string(),
+            "tokens": json!({
+                "colors": {"ink": "#111111", "paper": "#f8f4ea"},
+                "typography": {"heading": "Libre Baskerville", "body": "Source Serif 4"},
+                "surfaces": {"base": "warm paper"},
+                "borders": {"default_width": "1px", "style": "solid"}
+            }).to_string(),
+            "rules": json!({
+                "signature_patterns": [
+                    "Use thin editorial rules to divide dense information.",
+                    "Place captions and annotations in consistent side rails."
+                ]
+            }).to_string(),
+            "layout_principles": json!({"grid": "compact editorial grid"}).to_string(),
+            "guidance": json!({
+                "do": ["Use visible ink rules."],
+                "dont": ["Do not use generic rounded SaaS cards."]
+            }).to_string(),
+            "tags": json!(["editorial", "ink"]).to_string()
+        });
+
+        let md = render_design_md_projection("compact-editorial-ink", &fields);
+
+        assert!(md.contains("version: \"alpha\""));
+        assert!(md.contains("components:"));
+        assert!(md.contains("## Visual Character"));
+        assert!(md.contains("Tight column grids"));
+        assert!(md.contains("## Do's and Don'ts"));
+        assert!(md.contains("editorial"));
+    }
+
+    #[test]
+    fn json_object_field_accepts_pascal_case_storage() {
+        let fields = json!({
+            "LayoutPrinciples": "{\"grid\":\"modular\"}"
+        });
+
+        let layout = json_object_field(&fields, "layout_principles");
+
+        assert_eq!(layout.get("grid").and_then(|v| v.as_str()), Some("modular"));
     }
 }
