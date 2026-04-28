@@ -140,6 +140,24 @@ params = ["name", "slug"]
 hint = "Set the design language name and URL-safe slug."
 
 [[action]]
+name = "SetSpec"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [
+  { type = "set_bool", var = "has_philosophy", value = "true" },
+  { type = "set_bool", var = "has_tokens", value = "true" },
+  { type = "set_bool", var = "has_rules", value = "true" },
+  { type = "set_bool", var = "has_layout", value = "true" },
+  { type = "set_bool", var = "has_guidance", value = "true" },
+  { type = "set_bool", var = "has_design_md", value = "false" },
+  { type = "set_bool", var = "has_valid_design_md", value = "false" },
+  { type = "set_bool", var = "design_md_verified", value = "false" },
+  { type = "set_bool", var = "quality_review_passed", value = "false" }
+]
+params = ["name", "slug", "philosophy", "tokens", "rules", "layout_principles", "guidance", "tags"]
+hint = "Set the complete core spec for a newly synthesized or substantially revised language in one coherent hot-path transition."
+
+[[action]]
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]

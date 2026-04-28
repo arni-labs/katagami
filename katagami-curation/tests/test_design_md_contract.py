@@ -81,6 +81,7 @@ class DesignMdContractTests(unittest.TestCase):
     def test_source_spec_changes_invalidate_design_md(self):
         for action_name in [
             "SetName",
+            "SetSpec",
             "WritePhilosophy",
             "SetTokens",
             "SetRules",
@@ -103,6 +104,31 @@ class DesignMdContractTests(unittest.TestCase):
                 self.assertTrue(
                     self._sets_bool(action_name, "quality_review_passed", "false")
                 )
+
+    def test_set_spec_is_complete_hot_path_transition(self):
+        set_spec = self.actions["SetSpec"]
+        self.assertEqual(set_spec["from"], ["Draft", "UnderReview"])
+        self.assertEqual(
+            set_spec["params"],
+            [
+                "name",
+                "slug",
+                "philosophy",
+                "tokens",
+                "rules",
+                "layout_principles",
+                "guidance",
+                "tags",
+            ],
+        )
+        for var in [
+            "has_philosophy",
+            "has_tokens",
+            "has_rules",
+            "has_layout",
+            "has_guidance",
+        ]:
+            self.assertTrue(self._sets_bool("SetSpec", var, "true"))
 
     def test_review_skill_owns_design_md_gate(self):
         review_skill = (

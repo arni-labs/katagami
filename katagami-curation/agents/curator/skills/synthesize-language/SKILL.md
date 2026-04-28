@@ -22,7 +22,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    - If no sources exist, research the design direction: `temper.web_search(language_name + ' design system UI patterns')` and `temper.web_fetch(url)` on the best results
    - Study the real-world references: what makes this design movement distinctive? What are the defining structural choices, typography conventions, color palettes, spatial relationships?
    - Rewrite each failing section with concrete, research-backed content — not vague adjectives, but specific CSS techniques and design decisions grounded in real references
-   - Call the appropriate Set action (WritePhilosophy, SetTokens, SetRules, SetLayout, SetGuidance)
+   - Call `SetSpec` when rewriting multiple spec sections, or the narrow Set action for one isolated section
    - Re-validate until all sections pass
 6. Go to the **EMBODIMENT PHASE** — generate HTML from the now-complete spec
 7. Use the entity's `visual_character`, `signature_patterns`, and all tokens to generate the HTML
@@ -49,14 +49,13 @@ Read the knowledge files in your workspace:
 
 ### Tool Call 1 — SPEC PHASE
 
-Create the DesignLanguage entity and write ALL spec sections. This is where you make the structural decisions.
+Create the DesignLanguage entity and write ALL spec sections. This is where you make the structural decisions. For new synthesis jobs, use `SetSpec` once after constructing every section; do not split the core spec across `SetName`, `WritePhilosophy`, `SetTokens`, `SetRules`, `SetLayout`, `SetGuidance`, and `SetTags`.
 
 ```python
 slug = 'my-language-slug'
 name = 'My Language Name'
 lang = temper.create('DesignLanguages', {'Id': slug})
 eid = lang['entity_id']
-temper.action('DesignLanguages', eid, 'SetName', {'name': name, 'slug': slug})
 ```
 
 **Philosophy** — must include `visual_character`: 3-5 CONCRETE visual traits unique to this language. Not design platitudes like "clean and minimal" but structural choices like "thick 4px solid black borders on every container", "uppercase monospace section labels", "asymmetric grid with oversized left gutter", "diagonal clip-path corners on cards".
@@ -68,7 +67,6 @@ philosophy = {
     "anti_values": [...],
     "visual_character": ["3-5 CONCRETE visual traits — these become the structural blueprint for the embodiment"]
 }
-temper.action('DesignLanguages', eid, 'WritePhilosophy', {'philosophy': json.dumps(philosophy)})
 ```
 
 **Tokens** — must include surfaces, borders, and motion:
@@ -84,7 +82,6 @@ tokens = {
     "borders": {"default_width": "...", "accent_width": "...", "style": "solid|dashed|double|groove|none", "character": "describe the border personality"},
     "motion": {"duration": "...", "easing": "...", "philosophy": "snappy|elastic|deliberate|none"}
 }
-temper.action('DesignLanguages', eid, 'SetTokens', {'tokens': json.dumps(tokens)})
 ```
 
 Tokens must also be DESIGN.md-projectable:
@@ -102,17 +99,13 @@ rules = {
     "density": "...",
     "signature_patterns": ["3-5 unique CSS techniques, e.g. 'every card has a 4px left-border color accent', 'section headers use decorative double-underline', 'all containers use clip-path for angled corners'"]
 }
-temper.action('DesignLanguages', eid, 'SetRules', {'rules': json.dumps(rules)})
 ```
 
 **Layout and Guidance:**
 
 ```python
 layout = {"grid": "...", "breakpoints": "...", "whitespace": "..."}
-temper.action('DesignLanguages', eid, 'SetLayout', {'layout_principles': json.dumps(layout)})
-
 guidance = {"do": [...], "dont": [...]}
-temper.action('DesignLanguages', eid, 'SetGuidance', {'guidance': json.dumps(guidance)})
 ```
 
 Guidance should be phrased so it can become DESIGN.md Do's and Don'ts without losing meaning.
@@ -120,8 +113,16 @@ Guidance should be phrased so it can become DESIGN.md Do's and Don'ts without lo
 **Tags** — set 5-10 specific, searchable tags describing the language's visual/structural properties. These help with gallery search and filtering. Use concrete descriptors, not abstract art history terms.
 
 ```python
-temper.action('DesignLanguages', eid, 'SetTags', {
-    'tags': json.dumps(['serif-editorial', 'high-contrast', 'dark-mode', 'column-grid', 'long-form-reading'])
+tags = ['serif-editorial', 'high-contrast', 'dark-mode', 'column-grid', 'long-form-reading']
+temper.action('DesignLanguages', eid, 'SetSpec', {
+    'name': name,
+    'slug': slug,
+    'philosophy': json.dumps(philosophy, ensure_ascii=False),
+    'tokens': json.dumps(tokens, ensure_ascii=False),
+    'rules': json.dumps(rules, ensure_ascii=False),
+    'layout_principles': json.dumps(layout, ensure_ascii=False),
+    'guidance': json.dumps(guidance, ensure_ascii=False),
+    'tags': json.dumps(tags, ensure_ascii=False)
 })
 ```
 
