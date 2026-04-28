@@ -49,16 +49,22 @@ class DesignMdContractTests(unittest.TestCase):
         )
         self.assertTrue(self._sets_bool("AttachDesignMd", "has_design_md", "true"))
         self.assertTrue(
-            self._sets_bool("AttachDesignMd", "has_valid_design_md", "true")
+            self._sets_bool("AttachDesignMd", "has_valid_design_md", "false")
+        )
+        self.assertTrue(
+            self._sets_bool("AttachDesignMd", "design_md_verified", "false")
         )
 
     def test_publish_requires_valid_design_md(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
-        self.assertIn(
-            {"type": "is_true", "var": "has_valid_design_md"},
-            guards,
-        )
+        for var in [
+            "has_valid_design_md",
+            "design_md_verified",
+            "embodiment_verified",
+            "quality_review_passed",
+        ]:
+            self.assertIn({"type": "is_true", "var": var}, guards)
 
         invariants = {
             invariant["name"]: invariant for invariant in self.spec["invariant"]
@@ -66,6 +72,10 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertEqual(
             invariants["PublishedRequiresValidDesignMd"]["assert"],
             "has_valid_design_md",
+        )
+        self.assertEqual(
+            invariants["PublishedRequiresVerifiedDesignMd"]["assert"],
+            "design_md_verified",
         )
 
     def test_source_spec_changes_invalidate_design_md(self):
@@ -86,6 +96,12 @@ class DesignMdContractTests(unittest.TestCase):
                 )
                 self.assertTrue(
                     self._sets_bool(action_name, "has_valid_design_md", "false")
+                )
+                self.assertTrue(
+                    self._sets_bool(action_name, "design_md_verified", "false")
+                )
+                self.assertTrue(
+                    self._sets_bool(action_name, "quality_review_passed", "false")
                 )
 
     def test_review_skill_owns_design_md_gate(self):
@@ -121,6 +137,9 @@ class DesignMdContractTests(unittest.TestCase):
             "DesignMdFileId",
             "DesignMdLintResult",
             "DesignMdFormatVersion",
+            "DesignMdVerified",
+            "EmbodimentVerified",
+            "QualityReviewPassed",
         ]:
             self.assertIn(prop, props)
 

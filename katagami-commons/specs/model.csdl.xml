@@ -29,8 +29,10 @@
         <Property Name="DesignMdFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="DesignMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="alpha" />
+        <Property Name="DesignMdVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
@@ -44,6 +46,7 @@
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />

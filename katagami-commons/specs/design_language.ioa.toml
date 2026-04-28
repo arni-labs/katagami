@@ -55,12 +55,22 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "embodiment_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "has_design_md"
 type = "bool"
 initial = "false"
 
 [[state]]
 name = "has_valid_design_md"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "design_md_verified"
 type = "bool"
 initial = "false"
 
@@ -78,6 +88,11 @@ initial = "html"
 name = "review_status"
 type = "string"
 initial = "unreviewed"
+
+[[state]]
+name = "quality_review_passed"
+type = "bool"
+initial = "false"
 
 [[state]]
 name = "featured"
@@ -120,7 +135,7 @@ initial = 0
 name = "SetName"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["name", "slug"]
 hint = "Set the design language name and URL-safe slug."
 
@@ -128,7 +143,7 @@ hint = "Set the design language name and URL-safe slug."
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_philosophy", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_philosophy", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["philosophy"]
 hint = "Write or update the Philosophy section (values, anti-values, aesthetic lineage)."
 
@@ -136,7 +151,7 @@ hint = "Write or update the Philosophy section (values, anti-values, aesthetic l
 name = "SetTokens"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_tokens", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_tokens", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["tokens"]
 hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevation, motion, opacity)."
 
@@ -144,7 +159,7 @@ hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevatio
 name = "SetRules"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_rules", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_rules", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["rules"]
 hint = "Set compositional rules (how tokens combine to form elements)."
 
@@ -152,7 +167,7 @@ hint = "Set compositional rules (how tokens combine to form elements)."
 name = "SetLayout"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_layout", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_layout", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["layout_principles"]
 hint = "Set layout principles (density, grid, whitespace, responsive)."
 
@@ -160,7 +175,7 @@ hint = "Set layout principles (density, grid, whitespace, responsive)."
 name = "SetGuidance"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_guidance", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_guidance", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["guidance"]
 hint = "Set guidance section (do's, don'ts, usage context)."
 
@@ -168,7 +183,7 @@ hint = "Set guidance section (do's, don'ts, usage context)."
 name = "SetImageryDirection"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["imagery_direction"]
 hint = "Set imagery & illustration direction (illustration_style, hero_image_direction, icon_style, image_gen_prompts)."
 
@@ -176,7 +191,7 @@ hint = "Set imagery & illustration direction (illustration_style, hero_image_dir
 name = "SetGenerativeCanvas"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["generative_canvas"]
 hint = "Set generative/interactive canvas direction (WebGL techniques, canvas effects, shader palette, animation philosophy)."
 
@@ -186,17 +201,33 @@ hint = "Set generative/interactive canvas direction (WebGL techniques, canvas ef
 name = "AttachEmbodiment"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }]
+effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "embodiment_verified", value = "false" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["embodiment_file_id", "element_count", "composition_count", "embodiment_format"]
 hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML."
+
+[[action]]
+name = "VerifyEmbodiment"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "embodiment_verified", value = "true" }]
+params = []
+hint = "Mark the attached embodiment as verified after the finalizer has read the referenced file and checked that it is non-empty."
 
 [[action]]
 name = "AttachDesignMd"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["design_md_file_id", "design_md_lint_result", "design_md_format_version"]
-hint = "Attach a generated DESIGN.md artifact that passed @google/design.md lint with zero errors and zero warnings."
+hint = "Attach a generated DESIGN.md artifact candidate. The finalizer must verify the referenced file before it becomes valid for publish."
+
+[[action]]
+name = "VerifyDesignMd"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_valid_design_md", value = "true" }, { type = "set_bool", var = "design_md_verified", value = "true" }]
+params = []
+hint = "Mark the attached DESIGN.md as verified after the finalizer has read the referenced file and confirmed the lint metadata."
 
 [[action]]
 name = "AttachThumbnail"
@@ -267,9 +298,9 @@ name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_valid_design_md" }]
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "quality_review_passed" }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Requires a valid attached DESIGN.md artifact and increments version."
+hint = "Curator approves and publishes. Requires verified spec sections, embodiment, DESIGN.md, and quality review."
 
 [[action]]
 name = "Revise"
@@ -294,6 +325,14 @@ kind = "input"
 from = ["UnderReview", "Published"]
 params = ["quality_score", "review_status"]
 hint = "Update quality score and/or review status (unreviewed, reviewed, needs_revision)."
+
+[[action]]
+name = "MarkQualityPassed"
+kind = "internal"
+from = ["UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "quality_review_passed", value = "true" }]
+params = []
+hint = "Mark quality review as passed after finalizer-side artifact and state validation."
 
 [[action]]
 name = "IncrementUsage"
@@ -334,6 +373,11 @@ when = ["Published"]
 assert = "has_embodiment"
 
 [[invariant]]
+name = "PublishedRequiresVerifiedEmbodiment"
+when = ["Published"]
+assert = "embodiment_verified"
+
+[[invariant]]
 name = "PublishedRequiresAllSections"
 when = ["Published"]
 assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidance"
@@ -342,3 +386,13 @@ assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidanc
 name = "PublishedRequiresValidDesignMd"
 when = ["Published"]
 assert = "has_valid_design_md"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedDesignMd"
+when = ["Published"]
+assert = "design_md_verified"
+
+[[invariant]]
+name = "PublishedRequiresQualityReview"
+when = ["Published"]
+assert = "quality_review_passed"

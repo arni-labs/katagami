@@ -76,10 +76,12 @@ For each language specified in the job input (or ALL languages if none specified
    })
    ```
 9. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
-10. **Mark reviewed and publish each language:**
+10. **Mark reviewed after all artifacts are attached. Do not publish directly.**
+    The CurationJob finalizer reads the referenced embodiment and DESIGN.md
+    files, marks verified fields through internal actions, marks quality as
+    passed, and publishes only if the entity/file world is actually valid.
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
-   temper.action('DesignLanguages', lang_id, 'Publish', {})
    ```
 11. **After ALL languages are reviewed and published:**
    ```python
