@@ -109,12 +109,13 @@ Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles
 
 ## Tooling Rules
 
-- No `import` statements
+- No `import` statements. A safe `json` helper is preloaded in the Monty REPL;
+  use `json.dumps(...)` and `json.loads(...)` without importing.
 - Available tools: `temper.web_search(query)`, `temper.web_fetch(url)`, `temper.write(path, content)`, `temper.read(path)`, `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`
 - Do not use `temper.write(...)` during `source_search` except for an explicit
   operator-requested artifact. Research source text belongs in compact
   DesignSource metadata during this job; full PawFS archival is deferred.
-- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI.
+- **ALL array and object parameters MUST use the preloaded `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI.
 - `temper.web_fetch(url)` returns a structured object. Read with `fetched.get("text", "")`
 
 ## Output

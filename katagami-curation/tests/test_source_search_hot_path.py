@@ -36,6 +36,20 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn('"MaxChecks": "80"', builder)
         self.assertNotIn('"MaxChecks": "180"', builder)
 
+    def test_curator_skills_use_preloaded_json_helper_contract(self):
+        root = Path(__file__).resolve().parents[1]
+        curator_root = root / "agents" / "curator"
+        docs = [curator_root / "AGENT.md"]
+        docs.extend((curator_root / "skills").glob("*/SKILL.md"))
+
+        for doc in docs:
+            text = doc.read_text()
+            with self.subTest(doc=doc.relative_to(root)):
+                self.assertIn("json.dumps", text)
+                self.assertIn("without importing", text)
+                self.assertNotIn("import json", text)
+                self.assertNotIn("from json", text)
+
 
 if __name__ == "__main__":
     unittest.main()
