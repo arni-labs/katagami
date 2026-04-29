@@ -370,6 +370,14 @@ principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
 
+[action.triggers.guard]
+type = "not"
+
+[action.triggers.guard.guard]
+type = "field_equals"
+field = "query_id"
+value = ""
+
 [action.triggers.params]
 job_type = "organize_taxonomy"
 completion_contract = "typed-v1"
