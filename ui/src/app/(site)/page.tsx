@@ -129,10 +129,21 @@ async function GalleryGrid({
     }
     return 0;
   }
+  // Display order: featured first, then by status
+  // (Published → UnderReview → Draft → Archived), then display_order.
+  const STATUS_PRIORITY: Record<string, number> = {
+    Published: 0,
+    UnderReview: 1,
+    Draft: 2,
+    Archived: 3,
+  };
   languages.sort((a, b) => {
-    const fa = isFeatured(a) ? 1 : 0;
-    const fb = isFeatured(b) ? 1 : 0;
-    if (fa !== fb) return fb - fa;
+    const fa = isFeatured(a) ? 0 : 1;
+    const fb = isFeatured(b) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
+    const sa = STATUS_PRIORITY[a.status] ?? 99;
+    const sb = STATUS_PRIORITY[b.status] ?? 99;
+    if (sa !== sb) return sa - sb;
     const oa = displayOrder(a);
     const ob = displayOrder(b);
     if (oa !== ob) return oa - ob;
