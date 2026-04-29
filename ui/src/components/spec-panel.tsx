@@ -94,12 +94,19 @@ function Empty({ label = "not set" }: { label?: string }) {
 
 // ── Views ──────────────────────────────────────────────────────────
 
+function toLabel(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "object" && v !== null && "name" in v)
+    return String((v as Record<string, unknown>).name);
+  return JSON.stringify(v);
+}
+
 function PhilosophyView({ raw }: { raw?: string }) {
   const data = parseJson<Record<string, unknown>>(raw);
   if (!data) return <Empty />;
 
-  const values = (data.values as string[]) ?? [];
-  const antiValues = (data.anti_values as string[]) ?? [];
+  const values = (Array.isArray(data.values) ? data.values : []) as unknown[];
+  const antiValues = (Array.isArray(data.anti_values) ? data.anti_values : []) as unknown[];
   const lineage = (data.lineage as string) ?? "";
   const summary = (data.summary as string) ?? "";
 
@@ -118,8 +125,8 @@ function PhilosophyView({ raw }: { raw?: string }) {
           <SectionRule label="values" color="salad" />
           <div className="flex flex-wrap gap-1.5">
             {values.map((v, i) => (
-              <PeeledLabel key={v} index={i} color="salad">
-                {v}
+              <PeeledLabel key={toLabel(v)} index={i} color="salad">
+                {toLabel(v)}
               </PeeledLabel>
             ))}
           </div>
@@ -130,9 +137,9 @@ function PhilosophyView({ raw }: { raw?: string }) {
           <SectionRule label="anti-values" color="sakura" />
           <div className="flex flex-wrap gap-1.5">
             {antiValues.map((v, i) => (
-              <PeeledLabel key={v} index={i} color="sakura">
+              <PeeledLabel key={toLabel(v)} index={i} color="sakura">
                 <span className="mr-1 font-bold text-[var(--beni)]">×</span>
-                {v}
+                {toLabel(v)}
               </PeeledLabel>
             ))}
           </div>
