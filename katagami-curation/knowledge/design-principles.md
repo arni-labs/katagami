@@ -1,154 +1,83 @@
 # Katagami Design Principles
 
-These principles govern how design language embodiments are created and evaluated. Every embodiment must follow all of these.
+A design language is a complete visual identity. It should feel like it was created by a specific designer with a specific point of view — not generated from a template. These principles guide that work.
 
-## Structural Identity — The Spec-to-Embodiment Bridge
+## Taste
 
-Your spec sections ARE the structural blueprint. Before writing any HTML, review what you defined:
+The difference between good and generic design is intentionality. Every choice — typeface, color, spacing, border treatment, surface texture — should trace back to the language's philosophy. If you can't explain why you chose something, you chose it by default, and defaults produce forgettable work.
 
-1. **Philosophy -> visual_character**: You listed 3-5 concrete visual traits. EVERY ONE must manifest in the CSS. If you wrote "thick 4px solid borders on all containers," then every card, panel, dialog gets `border: 4px solid`. If you wrote "oversized negative space," your padding/gap values must be dramatically larger than a typical UI.
+Study real design systems, editorial layouts, product interfaces, print design, and architecture before making choices. The best design languages feel like they belong to a tradition — a lineage of visual thinking — not like they emerged from a prompt.
 
-2. **Tokens -> surfaces, borders, motion**: These define the tactile quality. Glass treatment -> use `backdrop-filter: blur()` and semi-transparent backgrounds. Paper texture -> use subtle `background-image` patterns. Heavy borders -> make them a dominant visual element, not an afterthought.
+## Uniqueness Across the Library
 
-3. **Rules -> signature_patterns**: These are your CSS fingerprint — the 3-5 techniques that ONLY this language uses. Every single signature_pattern MUST appear in the embodiment. If you wrote "angled corners via clip-path," apply `clip-path` to cards and panels. If you wrote "decorative double-underline on section headers," every `h2`/`h3` gets that treatment.
+Each language must be unmistakably itself. Before designing, check what already exists in the library. If your choices overlap with an existing language's typefaces, palette, surface treatment, or structural patterns, change direction.
 
-4. **Self-check before finishing**: If you could swap this embodiment's color palette for another language's palette and it would still look like the other language, your structure is too generic. The SHAPES, BORDER TREATMENTS, SPACING RHYTHM, DECORATIVE PATTERNS, and TYPOGRAPHIC HIERARCHY must be unmistakably this language.
+The **swap test**: if you replaced this language's color palette with another's and it still looked right, the structure is too generic. Identity lives in shapes, spacing rhythm, border treatments, typographic hierarchy, and decorative patterns — not just color.
 
-## Scene-First Design (Mandatory)
+## Typography
 
-Design a plausible application screen where all required UI elements appear NATURALLY within the scene. Do NOT create a component catalog or inventory organized by section labels.
+Type is the primary carrier of identity — it does more work than color or layout. Approach it as a typographer would:
 
-- Imagine a real app this design language would power. **Vary the scene type across the library** — don't make every embodiment an editorial dashboard. Consider:
-  - Editorial/publishing workspace
-  - Project management or task board
-  - Chat or messaging interface
-  - Media browser or gallery
-  - Commerce/checkout flow
-  - Data visualization or analytics console
-  - Reading or writing tool
-  - Calendar or scheduling app
-  - Music/audio player interface
-  - Developer tools or terminal
-- Buttons exist because the scene has actions. Tables exist because the scene shows data. Forms exist because the scene has input.
-- Components earn their place through the scene's narrative, not a completeness checklist.
+- **Hierarchy**: Establish clear roles — display, body, data/mono — and use contrast between them (scale, weight, width, case) to create visual rhythm.
+- **Personality**: The typeface should embody the philosophy. A humanist serif says something different from a geometric sans, a slab, or a compressed grotesque. Choose with intention.
+- **Craft**: Tight letter-spacing (`-0.02em`) on all text. Considered line-height. Proper optical sizing. These details separate professional typography from defaults.
+- **Originality**: No two languages in the library should share a heading or body typeface. Each language's type palette should be its own.
+- **Avoid AI tells**: A handful of typefaces appear in virtually all AI-generated design. Using them signals "this was not designed." Avoid Poppins, DM Sans, Roboto, Montserrat, and Space Grotesk.
+- Use **Google Fonts** via `<link>` tags with `rel="preconnect"`.
 
-**BAD**: Sections labeled "Buttons", "Inputs", "Cards", "Tables" with components lined up for display.
-**GOOD**: A "Library Overview" dashboard where KPIs, a chart, a data table, a form, alerts, and a modal all serve the editorial workflow.
-**ALSO GOOD**: A music streaming interface where cards show albums, a player bar has controls, tabs switch genres, and a modal shows track details.
+## Color
 
-## Typography Is Identity (Mandatory — 50% of the Design)
+Color sets mood, establishes hierarchy, and creates emotional resonance. Approach it with the discipline of color theory:
 
-Typography defines the language more than color or layout. **A good font choice does 50% of the work.**
+- **Intention over defaults.** Every color should have a reason. Background, surface, text, accent, muted, border, feedback states — each plays a role in the visual system.
+- **Palette diversity across the library.** The library should contain languages with light backgrounds, dark backgrounds, warm palettes, cool palettes, high-contrast and low-contrast approaches. Don't converge on one look.
+- **Harmony.** A focused palette (1-3 accent colors plus neutrals) reads as intentional. Too many colors reads as chaos.
+- **Contrast.** Text must be readable. Meet WCAG AA: 4.5:1 for body text, 3:1 for large text.
+- **Temperature.** Warm whites, cool grays, tinted blacks — these micro-decisions carry a lot of emotional weight. Use them.
 
-- **Letter-spacing: `-0.02em` on ALL text.** This is mandatory. Negative letter-spacing is the single biggest anti-slop fix. Apply to headings, body, UI labels — everything.
-- **Use Google Fonts** via `<link>` tags. Include `rel="preconnect"` for performance.
-- **Choose fonts that embody the philosophy.** You have full freedom to pick ANY Google Font that fits the design direction. Swiss demands a mechanical neo-grotesk. Art Deco demands a geometric display face + high-contrast serif. Japanese-inspired might use Noto Sans JP or Zen Kaku Gothic. Retro Computing demands a pixel/monospace face. Editorial might use a humanist sans or a transitional serif.
-- **Blocked fonts (LLM defaults).** Do NOT use Poppins, DM Sans, Roboto, Montserrat, or Space Grotesk — these are AI-generated-design tells that make everything look the same.
-- **Two languages must never share a heading OR body typeface.** Each language's display font AND body font must be unique across the library. Before choosing, check what existing languages already use.
-- **Define 2-3 font roles**: display (headlines/poster), body (UI text/paragraphs), data (monospace/tabular).
-- **Mono fonts need variety too.** Don't default to IBM Plex Mono for everything. Consider JetBrains Mono, Fira Code, Source Code Pro, Space Mono, Inconsolata, DM Mono, or any other monospace font that fits the language's personality.
-- **Use variable fonts** when available.
+## Structure & Surface
 
-## Color Discipline (Mandatory)
+The physical quality of a design — how elements feel on screen — comes from borders, shadows, radii, surfaces, and spacing.
 
-Color choices define the mood. You have full freedom to choose backgrounds, surfaces, and palettes — but they must be intentional, not accidental.
+- **Border radius scale**: `0px` (sharp/editorial), `16px` (standard), `24px` (soft containers), `9999px` (pills/avatars). Pick one primary radius and use it consistently. Don't mix arbitrary values.
+- **Surfaces**: flat, glass, paper, noise, textured — choose what fits the philosophy and commit to it.
+- **Borders**: weight, style, and character are identity markers. Hairline rules feel different from heavy 4px solids.
+- **Shadows**: restraint. One or two levels used consistently beats five levels used randomly.
+- **Motion**: snappy, elastic, deliberate, or none — the animation philosophy should match the language's personality.
 
-- **Background diversity is encouraged.** Pure white, off-white, warm cream, deep navy, charcoal, kraft brown, midnight black — choose what fits the language's philosophy. A Japanese wabi-sabi language might use warm paper tones. A terminal aesthetic might use dark backgrounds. An editorial language might use pure white. Don't default to the same background for every language.
-- **Text contrast must meet WCAG AA** (4.5:1 for body text, 3:1 for large text). Whatever palette you choose, readability is non-negotiable.
-- **Avoid muddy, unclear palettes.** Every color should have a purpose: primary action, secondary action, accent/highlight, text, muted, borders, feedback states (error/success/warning/info).
-- **Don't go rainbow.** Restrain yourself to a coherent palette — typically 1-2 accent colors plus neutrals. A focused palette reads as intentional; too many colors reads as chaos.
-- **No default grey-on-white blandness.** If your design looks like an unstyled template with a grey border, you haven't made enough color decisions.
+## Scene-First Embodiment
 
-## Gradients — Use with Care
+The embodiment is a plausible application screen, not a component catalog. UI elements appear because the scene's narrative demands them — buttons exist for actions, tables exist for data, forms exist for input.
 
-- **Bad gradients look dated and crypto.** Gradient buttons, gradient text, and rainbow gradient backgrounds are almost always wrong.
-- **Good gradients serve the philosophy.** A warm editorial glow, a subtle depth effect, a dramatic dark-mode atmosphere — these can work when executed with restraint (subtle angle, close hues).
-- **Off-viewport blobs are a great alternative** for ambient color presence:
-  ```css
-  .accent-blob {
-    position: absolute;
-    top: -50%;
-    right: -30%;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    background: var(--accent);
-    filter: blur(120px);
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 0;
-  }
-  ```
-- **The test:** Does the gradient add atmosphere and depth, or does it look like a Figma tutorial? If the latter, remove it.
+Vary scene types across the library: editorial workspace, messaging app, media browser, commerce flow, data visualization, developer tools, reading experience, scheduling interface. Different languages should feel like they power different kinds of software.
 
-## Border Radius — Strict Scale (Mandatory)
+Each embodiment must include at least 15 UI elements: buttons (primary/secondary/disabled), text input, select, checkbox, radio, toggle, card, modal/dialog, alert/toast, table, tabs, badges, avatar, pagination, accordion, progress bar. More elements are welcome if the scene calls for them.
 
-- `0px` — serious, editorial, brutalist
-- `16px` — standard cards and boxes
-- `24px` — maximum for large containers
-- `9999px` — fully rounded for pills, avatars, tags, small buttons
-- **NEVER use values between 24px and 9999px** (no 32px, 48px, 64px)
-- **NEVER mix random values** within one language (no 8px here, 12px there, 20px elsewhere)
-- Pick ONE radius from {0, 16, 24} as your primary and use it consistently across all containers
+## Structural Identity
 
-## Responsive Design (Mandatory)
+Your spec sections are the structural blueprint. Before writing HTML:
 
-Every embodiment must work from desktop (1440px) down to phone (375px). **Agents MUST visually verify all three viewports using Playwright screenshots in the sandbox.**
+1. **Philosophy → visual_character**: 3-5 concrete visual traits. Every one must manifest in the CSS.
+2. **Tokens → surfaces, borders, motion**: The tactile quality. These must be actively used, not just declared.
+3. **Rules → signature_patterns**: 3-5 CSS techniques unique to this language. Every one must appear in the embodiment.
+4. **Self-check**: Would this embodiment be recognizable with a different color palette? If not, the structure is too generic.
 
-- **Three breakpoints minimum**: ~1024px (tablet landscape), ~768px (tablet portrait), ~480px (phone).
-- **NEVER use inline `style` attributes for grid or flex layouts.** Inline styles override media queries and break responsiveness. ALL layout declarations must be in CSS classes.
-- Inline styles are ONLY acceptable for non-layout properties: colors, small margins, padding.
-- Grid columns must reduce: 12->8->4->1 or similar progression.
-- Section layouts must reflow: side-by-side on desktop -> stacked on mobile.
-- Tables must scroll horizontally on small viewports (wrap in `overflow-x:auto`).
-- Buttons must stack full-width on phone.
-- Typography must scale via `clamp()`.
+## Technical Requirements
 
-### Visual Verification Viewports
+**Responsive**: Every embodiment works from 1440px desktop to 375px mobile. Three breakpoints minimum. All layout in CSS classes (never inline styles for grid/flex). Verify all three viewports via Playwright screenshots.
 
-| Viewport | Width | Height | Key checks |
-|----------|-------|--------|------------|
-| Desktop  | 1440px | 900px | Full layout, all elements visible, design identity |
-| Tablet   | 768px  | 1024px | Reflow, touch targets, readability |
-| Mobile   | 375px  | 812px | Single column, no overflow, stacked buttons |
+**CSS reset**: `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }` plus explicit form element styling. No browser defaults visible.
 
-## CSS Reset Requirements
+**File format**: Single self-contained HTML file. CSS in `<style>`, Google Fonts via `<link>`, responsive media queries, CSS pseudo-class interactive states, vanilla JS only for behavior (tabs, modals, accordions).
 
-Every embodiment MUST include:
+## Token Structure
 
-```css
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-select, input, textarea, button { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; border: none; background: none; outline: none; }
-```
-
-Then style every form element explicitly. No browser defaults should be visible.
-
-## Required UI Elements
-
-Each embodiment must include AT LEAST these 15 elements: buttons (primary, secondary, disabled), text input, select, checkbox, radio, toggle, card, modal/dialog, alert/toast, table, tabs, badges, avatar, pagination, accordion, progress bar.
-
-You may include MORE elements beyond the 15 if the scene calls for them — charts, sliders, breadcrumbs, tooltips, steppers, color pickers, calendars, etc. The 15 are the minimum, not the ceiling.
-
-## File Format
-
-Each embodiment is a single, self-contained HTML file:
-- All CSS embedded in a `<style>` block within the `<head>`.
-- CSS class names prefixed per language (e.g., `.nk-*`, `.kp-*`) to avoid collisions.
-- Google Fonts loaded via `<link>` tags in the `<head>` with `rel="preconnect"`.
-- Responsive media queries for desktop, tablet, and mobile breakpoints.
-- Interactive states via CSS pseudo-classes (`:hover`, `:focus`, `:disabled`, `:checked`).
-- Vanilla JavaScript only — for interactive behaviors like tabs, modals, accordions, toggles. No frameworks.
-- Must be visually validated via Playwright screenshots at 3 viewports (desktop 1440px, tablet 768px, mobile 375px) in the sandbox before publishing.
-
-## Token Structure Reference
-
-Each design language's tokens must include:
+Each language's tokens must include:
 - **colors**: primary, secondary, accent, background, surface, text, muted, border, error, success, warning, info
-- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing (`-0.02em` default), google_fonts_url
-- **spacing**: base unit (typically 4 or 8px), scale array
-- **radii**: none (0px), md (16px), lg (24px), full (9999px) — NO values between 24px and 9999px
-- **shadows**: sm, md, lg (with color, offset, blur)
-- **surfaces**: treatment (flat, glass, gradient, noise, paper), card_style, bg_pattern
+- **typography**: heading_font, body_font, mono_font, base_size, scale_ratio, line_height, letter_spacing, google_fonts_url
+- **spacing**: base unit, scale array
+- **radii**: none, sm, md, lg, full
+- **shadows**: sm, md, lg
+- **surfaces**: treatment, card_style, bg_pattern
 - **borders**: default_width, accent_width, style, character
-- **motion**: duration, easing, philosophy (snappy, elastic, deliberate, none)
-- **responsive**: breakpoints array, column_progression
+- **motion**: duration, easing, philosophy

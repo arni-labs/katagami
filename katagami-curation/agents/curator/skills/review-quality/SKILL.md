@@ -53,7 +53,7 @@ For each language specified in the job input (or ALL languages if none specified
 6. **Evaluate against the spec.** Common failures to fix:
    - **Catalog layout**: Organized as a component inventory with sections labeled "Controls", "Feedback", "Data" instead of a plausible application scene. This is the #1 failure — redesign the scene entirely.
    - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` must ALL manifest in CSS. Check each one — if it's not visible, the structure is wrong.
-   - **Generic typography**: Using system fonts or LLM defaults (Inter, Poppins, Roboto, DM Sans, Montserrat) instead of distinctive Google Fonts. Switch to researched, unique typefaces.
+   - **Generic typography**: Using AI-tell fonts or sharing typefaces with another language. Each language's heading, body, and mono fonts should be unique across the library.
    - **Not responsive**: No media queries, or inline `style` attributes for grid/flex layout (which break media queries). Must have 3 breakpoints. Must pass visual verification at desktop (1440px), tablet (768px), and mobile (375px).
    - **Missing surface/border/motion tokens**: If the spec says "glass treatment," there must be `backdrop-filter` in the CSS. Heavy borders must be a dominant visual element.
    - **Browser default form elements**: Unstyled selects, checkboxes, radios. Every form element must be explicitly styled.
