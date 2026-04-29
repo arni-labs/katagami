@@ -32,11 +32,11 @@ Minimum quality thresholds for design language specs and embodiments.
 
 ### Typography (50% of quality)
 - Must use Google Fonts (not system fonts or LLM defaults)
-- Display font must be unique across the library
+- Display font AND body font must each be unique across the library
 - 2-3 font roles defined and used consistently
 - **`letter-spacing: -0.02em` on ALL text** — headings, body, labels. This is mandatory.
-- Approved body fonts: IBM Plex Sans, Satoshi, Inter, General Sans, Instrument Sans
-- Reject: Poppins, Montserrat, DM Sans, Space Grotesk (AI tells)
+- Blocked fonts (AI tells): Poppins, Montserrat, DM Sans, Roboto, Space Grotesk
+- Any other Google Font is fair game — choose what embodies the philosophy
 
 ### Responsiveness
 - 3 breakpoints minimum (~1024, ~768, ~480)
@@ -44,15 +44,16 @@ Minimum quality thresholds for design language specs and embodiments.
 - Reflow, scroll, and stack behaviors at each breakpoint
 
 ### Colors & Backgrounds
-- White backgrounds must be `#FFFFFF` — not cream, off-white, or tinted
-- Dark mode must be `#000000` or `#121212` — not blue-grey or charcoal-blue
-- No pastel backgrounds (cream, lavender, mint, light pink)
-- One accent color, used sparingly
+- Background color is a design choice — white, cream, dark, colored backgrounds are all valid if intentional
+- Text contrast must meet WCAG AA (4.5:1 body, 3:1 large text)
+- Palette should be focused: 1-2 accent colors plus neutrals, not rainbow
+- Every color must have a purpose — avoid muddy or unclear palettes
+- The library needs background diversity: if most existing languages use white, lean toward something different
 
 ### Gradients
-- **No gradients by default.** Reject gradient buttons, gradient text, gradient cards.
-- For color accent presence: use off-viewport blobs with `filter: blur(120px)` instead
-- Exception only if the language philosophy specifically demands gradients
+- Bad gradients (buttons, text, rainbow cards) are an instant reject
+- Good gradients that serve the philosophy are welcome — subtle depth, atmosphere, warmth
+- Off-viewport blobs with `filter: blur(120px)` remain a great alternative for ambient color
 
 ### Border Radius
 - Only allowed values: `0px`, `16px`, `24px`, `9999px` (fully round)
@@ -68,12 +69,12 @@ Minimum quality thresholds for design language specs and embodiments.
 
 ## Failure Modes (Ranked by Frequency)
 
-1. **AI-slop look** — gradients everywhere, pastel backgrounds, inconsistent border-radius, default letter-spacing. Looks like a crypto landing page or AI demo.
+1. **AI-slop look** — gratuitous gradients, inconsistent border-radius, default letter-spacing, blocked fonts. Looks like a crypto landing page or AI demo.
 2. **Catalog layout** — component inventory instead of application scene
 3. **Missing structural identity** — generic template with color swaps
-4. **Generic typography** — Poppins, Montserrat, DM Sans defaults with 0 letter-spacing
-5. **Gradient abuse** — gradient buttons, gradient text, gradient backgrounds. Use blobs instead.
-6. **Wrong backgrounds** — cream, off-white, light blue instead of pure #FFFFFF
+4. **Library sameness** — looks too similar to existing languages. If you could swap two languages' palettes and not tell them apart, the structures are too similar. Check existing fonts, backgrounds, scene types before designing.
+5. **Generic typography** — Poppins, Montserrat, DM Sans defaults with 0 letter-spacing, or reusing the same body font as another language
+6. **Gradient abuse** — gradient buttons, gradient text, rainbow gradient backgrounds
 7. **Not responsive** — no media queries or inline layout styles
 8. **Unstyled form elements** — raw browser chrome visible
 9. **Random border-radius** — mixing 8px, 12px, 20px, 32px. Pick from {0, 16, 24, 9999}.

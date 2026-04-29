@@ -69,12 +69,12 @@ philosophy = {
 }
 ```
 
-**Tokens** — must include surfaces, borders, and motion:
+**Tokens** — must include surfaces, borders, and motion. **Before choosing fonts, check existing languages** (`temper.list('DesignLanguages')`) and pick heading/body/mono fonts that NO other language uses:
 
 ```python
 tokens = {
     "colors": {"primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "surface": "#hex", "text": "#hex", "muted": "#hex", "border": "#hex", "error": "#hex", "success": "#hex", "warning": "#hex", "info": "#hex"},
-    "typography": {"heading_font": "...", "body_font": "...", "mono_font": "...", "base_size": "16px", "scale_ratio": 1.25, "line_height": 1.5, "letter_spacing": "normal", "google_fonts_url": "full <link> href for loading chosen fonts"},
+    "typography": {"heading_font": "...", "body_font": "...", "mono_font": "...", "base_size": "16px", "scale_ratio": 1.25, "line_height": 1.5, "letter_spacing": "-0.02em", "google_fonts_url": "full <link> href for loading chosen fonts"},
     "spacing": {"base": "8px", "scale": [4, 8, 12, 16, 24, 32, 48, 64]},
     "radii": {"none": "0", "sm": "...", "md": "...", "lg": "...", "full": "9999px"},
     "shadows": {"sm": "...", "md": "...", "lg": "..."},
