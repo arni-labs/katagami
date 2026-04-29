@@ -86,7 +86,7 @@ initial = ""
 [[state]]
 name = "completion_contract"
 type = "string"
-initial = "legacy-json-v1"
+initial = "typed-v1"
 
 [[state]]
 name = "inline_job_docs"

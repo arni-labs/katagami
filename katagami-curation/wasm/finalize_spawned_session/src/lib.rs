@@ -36,7 +36,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let completion_contract = fields
             .get("completion_contract")
             .and_then(|v| v.as_str())
-            .unwrap_or("legacy-json-v1");
+            .unwrap_or("typed-v1");
         let query_id = fields
             .get("query_id")
             .and_then(|v| v.as_str())
@@ -825,6 +825,31 @@ fn verify_design_md(
         None,
     )?;
     verify_design_md_lint_result(language_id, &fields)?;
+
+    // Revise resets has_design_md but leaves design_md_file_id intact.
+    // Re-attach if the boolean is false so the Publish guard passes.
+    let fresh = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyDesignMd")
+        })?;
+    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
+    if !bool_field(&fresh_bools, "has_design_md") {
+        let lint_result = string_field_any(&fields, "design_md_lint_result", "");
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachDesignMd",
+            &json!({
+                "design_md_file_id": design_md_file_id,
+                "design_md_lint_result": lint_result,
+                "design_md_format_version": "alpha"
+            }),
+        )?;
+    }
+
     dispatch_action(
         ctx,
         api_url,
