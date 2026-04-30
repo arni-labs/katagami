@@ -23,12 +23,12 @@ const PREAMBLE: Record<Format, string> = {
 };
 
 const FILENAME_SUFFIX: Record<Format, string> = {
-  katagami: "katagami-spec",
+  katagami: "KATAGAMI",
   "design-md": "DESIGN",
 };
 
 const URL_SUFFIX: Record<Format, string> = {
-  katagami: "SPEC.md",
+  katagami: "KATAGAMI.MD",
   "design-md": "DESIGN.md",
 };
 
@@ -147,27 +147,14 @@ export function SpecActions({
           </FormatTab>
         </div>
 
-        {/* Target line + action stamps — re-keys on format change */}
+        {/* Action stamps — re-keys on format change for the slide-in animation.
+            The filename is already in the active tab above; here we just use a
+            cute hand-drawn arrow pointing down to the stamps. */}
         <div
           key={format}
-          className="anim-packet-body flex flex-col gap-2.5"
+          className="anim-packet-body flex items-center gap-2.5"
         >
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/85">
-            <HandArrow accent={accent} />
-            <span className="relative inline-flex items-center font-semibold text-foreground">
-              <span
-                aria-hidden
-                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px]"
-                style={{
-                  background: `var(--${accent})`,
-                  opacity: 0.85,
-                  transform: "rotate(-0.4deg)",
-                }}
-              />
-              <span className="relative z-10">{filename}</span>
-            </span>
-          </div>
-
+          <HandArrow accent={accent} />
           <div className="flex flex-wrap items-center gap-1.5">
             <ActionStamp
               onClick={handleCopy}

@@ -31,8 +31,16 @@ export function DesignMdShowcase(props: SpecPanelProps) {
   const hasTypography = Object.keys(typography).length > 0;
   const hasSpacing = Object.keys(spacing).length > 0;
   const hasRounded = Object.keys(rounded).length > 0;
+  const hasComponents = hasColors && hasRounded;
 
-  if (!hasColors && !hasTypography && !hasSpacing && !hasRounded) return null;
+  if (
+    !hasColors &&
+    !hasTypography &&
+    !hasSpacing &&
+    !hasRounded &&
+    !hasComponents
+  )
+    return null;
 
   return (
     <>
@@ -46,6 +54,15 @@ export function DesignMdShowcase(props: SpecPanelProps) {
         {hasTypography && (
           <ShowcaseCard tape="sumire" title="Typography">
             <TypePreview typography={typography} />
+          </ShowcaseCard>
+        )}
+        {hasComponents && (
+          <ShowcaseCard tape="yuzu" title="Components">
+            <ComponentSamples
+              colors={colors}
+              rounded={rounded}
+              typography={typography}
+            />
           </ShowcaseCard>
         )}
         {hasSpacing && (
@@ -297,11 +314,8 @@ function SpacingScale({ spacing }: { spacing: Record<string, string> }) {
             <span className="flex-1">
               <span
                 aria-hidden
-                className="block h-2.5 rounded-[1px]"
-                style={{
-                  width: `${pct}%`,
-                  background: `color-mix(in oklch, var(--teal) 60%, var(--paper-tape-mix))`,
-                }}
+                className="block h-2.5 rounded-[1px] bg-foreground/70"
+                style={{ width: `${pct}%` }}
               />
             </span>
             <span className="w-14 shrink-0 text-right font-mono text-[11px] text-foreground/85">
@@ -314,6 +328,182 @@ function SpacingScale({ spacing }: { spacing: Record<string, string> }) {
   );
 }
 
+// ── Components ────────────────────────────────────────────────────
+
+function pickColor(
+  colors: Record<string, string>,
+  candidates: string[],
+): string | null {
+  for (const c of candidates) {
+    if (colors[c]) return colors[c];
+  }
+  return null;
+}
+
+function pickRounded(
+  rounded: Record<string, string>,
+  candidates: string[],
+): string {
+  for (const c of candidates) {
+    if (rounded[c]) return rounded[c];
+  }
+  const first = Object.values(rounded)[0];
+  return first ?? "4px";
+}
+
+function ComponentSamples({
+  colors,
+  rounded,
+  typography,
+}: {
+  colors: Record<string, string>;
+  rounded: Record<string, string>;
+  typography: Record<string, TypographyToken>;
+}) {
+  const colorList = Object.values(colors);
+  const primary =
+    pickColor(colors, ["primary", "accent", "brand"]) ?? colorList[0];
+  const accent =
+    pickColor(colors, ["accent", "secondary", "highlight"]) ??
+    colorList[1] ??
+    primary;
+  const surface =
+    pickColor(colors, ["surface", "background", "card", "paper"]) ?? "#ffffff";
+  const text =
+    pickColor(colors, ["text", "foreground", "ink", "primary_text"]) ??
+    "#1a1a1a";
+  const muted =
+    pickColor(colors, ["muted", "subtle", "secondary_text"]) ??
+    "color-mix(in oklch, " + text + " 60%, " + surface + ")";
+
+  const buttonRadius = pickRounded(rounded, ["md", "lg", "base"]);
+  const cardRadius = pickRounded(rounded, ["lg", "xl", "md"]);
+  const inputRadius = pickRounded(rounded, ["sm", "md", "base"]);
+  const badgeRadius = pickRounded(rounded, ["full", "pill", "xl", "lg"]);
+
+  const bodyFamily =
+    typography.body?.fontFamily ||
+    typography.text?.fontFamily ||
+    "inherit";
+  const headingFamily =
+    typography.heading?.fontFamily ||
+    typography.display?.fontFamily ||
+    typography.title?.fontFamily ||
+    bodyFamily;
+
+  // Pick a contrasting button text color: if surface is light, use text;
+  // otherwise use surface.
+  const buttonTextColor = isLight(primary) ? text : "#ffffff";
+
+  return (
+    <div
+      className="space-y-5 rounded-[2px] p-5"
+      style={{ background: surface, color: text, fontFamily: bodyFamily }}
+    >
+      {/* Buttons row */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          className="inline-flex items-center px-4 py-2 text-[13px] font-semibold transition-transform hover:-translate-y-[1px]"
+          style={{
+            background: primary,
+            color: buttonTextColor,
+            borderRadius: buttonRadius,
+          }}
+        >
+          Primary action
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center px-4 py-2 text-[13px] font-medium transition-transform hover:-translate-y-[1px]"
+          style={{
+            background: "transparent",
+            color: text,
+            border: `1px solid ${muted}`,
+            borderRadius: buttonRadius,
+          }}
+        >
+          Secondary
+        </button>
+        <span
+          className="inline-flex items-center px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+          style={{
+            background: accent,
+            color: isLight(accent) ? text : "#ffffff",
+            borderRadius: badgeRadius,
+          }}
+        >
+          New
+        </span>
+      </div>
+
+      {/* Input */}
+      <div className="space-y-1.5">
+        <label
+          className="block text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: muted }}
+        >
+          Email
+        </label>
+        <input
+          type="text"
+          readOnly
+          defaultValue="hello@example.com"
+          className="w-full px-3 py-2 text-[13px] focus:outline-none"
+          style={{
+            background: surface,
+            color: text,
+            border: `1px solid ${muted}`,
+            borderRadius: inputRadius,
+          }}
+        />
+      </div>
+
+      {/* Mini card */}
+      <div
+        className="px-4 py-3 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_12px_rgba(30,35,45,0.06)]"
+        style={{
+          background: surface,
+          borderRadius: cardRadius,
+          border: `1px solid ${muted}`,
+        }}
+      >
+        <div
+          className="text-[15px] font-bold leading-tight"
+          style={{ fontFamily: headingFamily, color: text }}
+        >
+          Card title
+        </div>
+        <p
+          className="mt-1 text-[12px] leading-relaxed"
+          style={{ color: muted }}
+        >
+          Components rendered with this language&rsquo;s tokens —
+          colors, type, and rounded corners as specified.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Rough perceived-lightness check on a hex color so we can pick a
+// readable text color for buttons / badges.
+function isLight(hex: string): boolean {
+  const m = hex.match(/^#([0-9a-fA-F]{3,8})$/);
+  if (!m) return false;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 4) h = h.slice(0, 3).split("").map((c) => c + c).join("");
+  if (h.length === 8) h = h.slice(0, 6);
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // sRGB luma
+  const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luma > 0.6;
+}
+
 // ── Rounded ───────────────────────────────────────────────────────
 
 function RoundedSamples({ rounded }: { rounded: Record<string, string> }) {
@@ -324,11 +514,8 @@ function RoundedSamples({ rounded }: { rounded: Record<string, string> }) {
         <div key={key} className="flex flex-col items-center gap-2">
           <span
             aria-hidden
-            className="block h-14 w-14 shadow-[inset_0_0_0_1px_rgba(30,35,45,0.08)]"
-            style={{
-              borderRadius: value,
-              background: `color-mix(in oklch, var(--salad) 30%, var(--paper-tape-mix))`,
-            }}
+            className="block h-14 w-14 bg-foreground/15 shadow-[inset_0_0_0_1px_rgba(30,35,45,0.12)]"
+            style={{ borderRadius: value }}
           />
           <span className="truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {key}

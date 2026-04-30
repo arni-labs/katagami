@@ -33,7 +33,7 @@ export async function GET(
     generativeCanvas: f.generative_canvas,
   });
 
-  const filename = f.slug ? `${f.slug}-katagami-spec.md` : "katagami-spec.md";
+  const filename = f.slug ? `${f.slug}-KATAGAMI.MD` : "KATAGAMI.MD";
 
   return new NextResponse(markdown, {
     status: 200,
