@@ -28,8 +28,8 @@ Read knowledge files before starting work:
 - `temper.web_search(query)` — search the web
 - `temper.web_fetch(url)` — fetch a URL
 
-No `import` statements. A safe `json` helper is preloaded in the Monty REPL;
-use `json.dumps(...)` and `json.loads(...)` without importing. The
+Use `import json` at the top of any code block that needs `json.dumps(...)` or
+`json.loads(...)`. Other imports are not available in the Monty REPL. The
 `sandbox.*` and `bash` tools are available for `synthesize`, `evolve_language`,
 and `regenerate_embodiment` jobs.
 
@@ -59,12 +59,27 @@ snapshots, and explicitly requested source archives. During `source_search`,
 store source title, URL, type, topics, summary, and short excerpts on
 DesignSource entities; do not write full fetched pages to PawFS.
 
+## Error Recovery
+
+When a tool call returns an error (NameError, TypeError, HTTP failure, etc.):
+1. **Read the error message** — understand what went wrong
+2. **Fix and retry** — correct the code and re-execute. Common fixes:
+   - Add `import json` if you get `name 'json' is not defined`
+   - Fix syntax errors, typos, wrong parameter names
+   - Retry HTTP failures (transient network errors)
+3. **Retry up to 3 times** for the same logical operation before giving up
+4. **Only fail the job** if the error is genuinely non-recoverable after retries
+   (e.g., entity doesn't exist, permission denied, spec violation)
+
+Do NOT immediately fail the job on the first code error. Code errors are
+normal — fix them and continue.
+
 ## Completion Protocol
 
 After completing work:
 1. Dispatch the typed completion action named in your session prompt and skill instructions
 2. Call `temper.done("job_type complete")` immediately after
 
-If you cannot complete:
+If you cannot complete after exhausting retries:
 1. Dispatch `Fail` on the CurationJob with `error_message`
 2. Call `temper.done("job_type failed")` immediately after

@@ -116,8 +116,8 @@ Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles
 
 ## Tooling Rules
 
-- No `import` statements. A safe `json` helper is preloaded in the Monty REPL;
-  use `json.dumps(...)` and `json.loads(...)` without importing.
+- Use `import json` at the top of any code block that needs `json.dumps(...)` or
+  `json.loads(...)`. Other imports are not available in the Monty REPL.
 - Treat each `execute` call as self-contained. Do not rely on Python variables
   created by a previous call; persist durable data into entities or include it
   in the current script.
@@ -129,7 +129,7 @@ Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles
   narrow filter tied to `query_id`, exact `source_url`, or a precise slug/title.
 - For targeted source-search jobs, do not fetch every shortlisted page. Fetch at
   most 3 pages and use web-search snippets for the rest.
-- **ALL array and object parameters MUST use the preloaded `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI.
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI.
 - `temper.web_fetch(url)` may return a text string or a structured object. For
   string results, use the value directly; for object results, read with
   `fetched.get("text", "")`.

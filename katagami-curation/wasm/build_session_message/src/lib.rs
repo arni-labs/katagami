@@ -214,7 +214,10 @@ Use these read commands:
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
-If you cannot complete, dispatch `Fail` with `error_message`.
+
+IMPORTANT: If a tool call returns an error (NameError, TypeError, HTTP failure),
+fix the code and retry. Add `import json` if you get a json NameError. Only fail
+the job after 3 failed attempts at the same operation.
 
 Entity set: CurationJobs
 Job entity ID: {entity_id}
@@ -226,7 +229,7 @@ temper.action('CurationJobs', '{entity_id}', '{completion_action}', params)
 temper.done("{job_type} complete")
 ```
 
-To fail:
+To fail (only after retries exhausted):
 ```
 temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}})
 temper.done("{job_type} failed")

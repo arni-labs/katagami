@@ -240,7 +240,7 @@ else:
 
 ## Tooling Rules
 
-- No `import` statements. `json` is preloaded.
+- Use `import json` at the top of any code block that needs `json.dumps(...)` or `json.loads(...)`. Other imports are not available.
 - No `enumerate(..., start=...)` — use `for i in range(len(items)):` instead
 - **ALL array/object params MUST use `json.dumps(...)`.** Never `str()` or Python repr.
 - String literals containing quotes must use proper escaping.

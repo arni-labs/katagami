@@ -632,17 +632,43 @@ fn verify_synthesized_languages(
     }
 
     let mut verified = Vec::new();
+    let mut incomplete = Vec::new();
     for language_id in &language_ids {
-        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
-            .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
-        verify_language_core(ctx, api_url, headers, language_id, &language)?;
-        verified.push(language_id.clone());
+        let language = match load_entity(ctx, api_url, headers, "DesignLanguages", language_id)? {
+            Some(l) => l,
+            None => {
+                ctx.log(
+                    "warn",
+                    &format!("verify_synthesized: DesignLanguage '{language_id}' does not exist, skipping"),
+                );
+                continue;
+            }
+        };
+        match verify_language_core(ctx, api_url, headers, language_id, &language) {
+            Ok(()) => {
+                verified.push(language_id.clone());
+            }
+            Err(e) => {
+                // Incomplete languages flow through to quality_review for fixing
+                ctx.log(
+                    "warn",
+                    &format!("verify_synthesized: {e} — passing to quality_review for remediation"),
+                );
+                incomplete.push(language_id.clone());
+            }
+        }
+    }
+
+    // Fatal only if zero languages exist at all
+    if verified.is_empty() && incomplete.is_empty() {
+        return Err("synthesis produced language IDs but none of them exist".to_string());
     }
 
     Ok(json!({
-        "validated": true,
+        "validated": verified.len() == language_ids.len() && incomplete.is_empty(),
         "job_type": "synthesize",
-        "verified_language_ids": verified
+        "verified_language_ids": verified,
+        "incomplete_language_ids": incomplete,
     }))
 }
 
