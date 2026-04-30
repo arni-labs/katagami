@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// One-shot migration: local OpenPaw/Temper -> Railway OpenPaw/Temper.
+// One-shot migration: local TemperPaw/Temper -> Railway TemperPaw/Temper.
 //
 // Usage:
 //   LOCAL_URL=http://localhost:3500 \

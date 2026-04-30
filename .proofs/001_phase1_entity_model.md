@@ -117,4 +117,4 @@ katagami/
 ```
 
 ## Known issues
-- `paw-agent`, `paw-fs`, `paw-pm` etc. lack `app.toml` files in OpenPaw, so katagami's dependencies on them fail at install time. When these are standalone (without paw-* apps), temporarily set `dependencies = []` / `["katagami-commons"]` in the app.toml files.
+- `paw-agent`, `paw-fs`, `paw-pm` etc. lack `app.toml` files in TemperPaw, so katagami's dependencies on them fail at install time. When these are standalone (without paw-* apps), temporarily set `dependencies = []` / `["katagami-commons"]` in the app.toml files.

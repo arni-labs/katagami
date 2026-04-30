@@ -753,7 +753,7 @@ export default function AgentFlowPoster() {
           >
             型紙
           </span>
-          <span>katagami.vercel.app</span>
+          <span>katagami.ai</span>
         </div>
       </div>
     </div>

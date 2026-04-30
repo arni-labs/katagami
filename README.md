@@ -62,7 +62,7 @@ Katagami's internal model is richer than `DESIGN.md`: it stores curated research
 
 ## Architecture
 
-Built on [Temper](https://github.com/nerdsane/temper) and [TemperPaw](https://github.com/nerdsane/temper) (OpenPaw).
+Built on [Temper](https://github.com/nerdsane/temper) and [TemperPaw](https://github.com/nerdsane/temperpaw).
 
 Temper is a policy-driven runtime where all state is expressed as communicating state machines (I/O Automata). Cross-entity workflow is declared with native reactions, and external runtime effects run inside WASM bridges with Cedar authorization policies deciding what's allowed. TemperPaw is the agent platform built on top of it.
 
@@ -138,7 +138,7 @@ from TemperFS at runtime, so prompt policy lives in Katagami files rather than
 Rust source. Follow-up jobs are created by Temper reactions; source-search
 fan-out is modeled as `CurationDirection` records instead of Rust spawning
 loops. The curation finalizer keeps a small idempotent fallback for current
-local OpenPaw installs that do not yet register app reaction files.
+local TemperPaw installs that do not yet register app reaction files.
 
 ## Running locally
 
@@ -162,7 +162,7 @@ The gallery runs on `localhost:3000` and talks to the Temper OData API.
 ## Related
 
 - [Temper](https://github.com/nerdsane/temper) — Policy-driven runtime for governed state machines
-- [TemperPaw](https://github.com/nerdsane/temper) (OpenPaw) — Agent platform built on Temper
+- [TemperPaw](https://github.com/nerdsane/temperpaw) — Agent platform built on Temper
 - [DESIGN.md](https://github.com/google-labs-code/design.md) — Google's alpha format for design-system context in coding agents
 - [Blog post](https://x.com/) — "Katagami: Organizing the Chaos of Design with Agents"
 

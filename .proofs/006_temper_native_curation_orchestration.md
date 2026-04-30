@@ -8,7 +8,7 @@ Branch: `codex/temper-native-curation`
 
 - Move Katagami curation choreography into Temper specs, template data, and
   cross-entity reaction declarations.
-- Keep WASM modules focused on OpenPaw runtime bridges:
+- Keep WASM modules focused on TemperPaw runtime bridges:
   `launch_research`, `build_session_message`, and `finalize_spawned_session`.
 - Preserve compatibility for already-running legacy jobs and existing saved
   design language data.
@@ -22,10 +22,10 @@ Branch: `codex/temper-native-curation`
 2. `bash /Users/seshendranalla/Development/katagami-worktrees/temper-native-curation/katagami-curation/wasm/build.sh`
    Result: rebuilt `build_session_message.wasm`,
    `finalize_spawned_session.wasm`, and `launch_research.wasm`.
-3. Repointed local OpenPaw app symlinks for the proof:
-   - `openpaw/os-apps/katagami-commons` -> this worktree's
+3. Repointed local TemperPaw app symlinks for the proof:
+   - `temperpaw/os-apps/katagami-commons` -> this worktree's
      `katagami-commons`
-   - `openpaw/os-apps/katagami-curation` -> this worktree's
+   - `temperpaw/os-apps/katagami-curation` -> this worktree's
      `katagami-curation`
 4. Started local TemperPaw:
    ```
@@ -83,7 +83,7 @@ Branch: `codex/temper-native-curation`
 
 - `katagami-curation/reactions/reactions.toml` is the Temper-native source of
   the intended cross-entity choreography.
-- Current local OpenPaw app install loads specs, policies, seed data, and WASM
+- Current local TemperPaw app install loads specs, policies, seed data, and WASM
   modules but does not yet register app reaction files. Until that platform
   path catches up, `finalize_spawned_session` includes an idempotent typed-v1
   fallback that performs the same transitions only when the target entity has

@@ -21,7 +21,7 @@ This violates the bitter lesson: hand-engineering knowledge into code scales wor
 
 Extract all domain knowledge from compiled WASM into two kinds of editable markdown files:
 
-**SKILL.md files** — one per job type, stored at `skills/{skill-id}/SKILL.md`. These are loaded by the OpenPaw agent framework at session time via TemperFS auto-discovery. Each skill contains the process, entity shapes, and quality standards for one type of work.
+**SKILL.md files** — one per job type, stored at `skills/{skill-id}/SKILL.md`. These are loaded by the TemperPaw agent framework at session time via TemperFS auto-discovery. Each skill contains the process, entity shapes, and quality standards for one type of work.
 
 **Workspace knowledge files** — stored at `/katagami/knowledge/` in TemperFS. These are read by agents via `temper.read()` and contain shared knowledge that spans skills: design principles, quality thresholds, and accumulated human feedback.
 
@@ -53,6 +53,6 @@ Two agents (bootstrap + curator) are consolidated into one (curator) with a skil
 ## References
 
 - Palimpsest `spawn_job_agent` pattern: `palimpsest/knowledge-bank/wasm/spawn_job_agent/src/lib.rs`
-- OpenPaw skill auto-discovery: `llm_caller` loads SKILL.md from TemperFS paths
+- TemperPaw skill auto-discovery: `llm_caller` loads SKILL.md from TemperFS paths
 - ADR-0005: Temper-Native Rule (stateful orchestration via entity state machines + WASM)
 - Sutton, R. "The Bitter Lesson" (2019) — general methods that leverage computation scale better than human-engineered knowledge

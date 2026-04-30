@@ -55,9 +55,9 @@ belongs in a later artifact step.
 
 Each job spawns an agent session through a small WASM runtime bridge.
 `build_session_message` reads `CurationJobTemplate` records, loads the
-referenced skill and knowledge files from TemperFS, and creates OpenPaw
+referenced skill and knowledge files from TemperFS, and creates TemperPaw
 sessions. Follow-up jobs and parent-query transitions are declared as Temper
 reactions. `finalize_spawned_session` records session results for typed jobs,
 keeps a legacy completion path for already-running old sessions, and contains
-an idempotent fallback while the OpenPaw OS app installer catches up to app
+an idempotent fallback while the TemperPaw OS app installer catches up to app
 reaction loading.

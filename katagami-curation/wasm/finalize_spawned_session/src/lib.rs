@@ -3,7 +3,7 @@ use temper_wasm_sdk::prelude::*;
 /// Finalize a CurationJob's spawned session.
 ///
 /// Typed-v1 jobs use entity triggers for follow-up orchestration, so this
-/// module only records the OpenPaw session result and moves the job to
+/// module only records the TemperPaw session result and moves the job to
 /// Completed. Legacy Complete(output) jobs keep the old cascade path for one
 /// compatibility window so already-running sessions can finish.
 #[unsafe(no_mangle)]
