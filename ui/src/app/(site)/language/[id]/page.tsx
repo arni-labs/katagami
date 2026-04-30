@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
 import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
 import { SpecPanel } from "@/components/spec-panel";
+import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
 import { PageHero, Marker } from "@/components/page-hero";
@@ -272,7 +273,7 @@ export default async function LanguageDetailPage({
           </StickyNote>
         </section>
 
-        <section className="lg:col-span-3">
+        <section className="lg:col-span-3 space-y-8">
           <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
             <Marker color="salad">design embodiment</Marker>
           </SectionHeading>
@@ -311,6 +312,26 @@ export default async function LanguageDetailPage({
           )}
         </section>
       </div>
+
+      <Perforation />
+
+      {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
+      <section>
+        <SectionHeading eyebrow="DESIGN.md" eyebrowColor="sumire">
+          <Marker color="sumire">at a glance</Marker>
+        </SectionHeading>
+        <DesignMdShowcase
+          name={name}
+          slug={f.slug}
+          philosophy={f.philosophy}
+          tokens={f.tokens}
+          rules={f.rules}
+          layout={f.layout_principles}
+          guidance={f.guidance}
+          imageryDirection={f.imagery_direction}
+          generativeCanvas={f.generative_canvas}
+        />
+      </section>
     </div>
   );
 }

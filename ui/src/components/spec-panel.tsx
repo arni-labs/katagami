@@ -779,7 +779,7 @@ function buildComponentTokens(
   };
 }
 
-function buildDesignMdFrontMatter(
+export function buildDesignMdFrontMatter(
   props: SpecPanelProps,
   tokens: JsonRecord | null,
 ): JsonRecord {
