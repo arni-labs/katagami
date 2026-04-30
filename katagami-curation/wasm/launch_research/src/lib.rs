@@ -1,9 +1,8 @@
 use temper_wasm_sdk::prelude::*;
 
-/// On CurationQuery.Submit: creates a source_search CurationJob,
-/// configures it with the query text, and submits it to start the
-/// automated pipeline. The query_id field links the job back to
-/// this CurationQuery for reaction-based state tracking.
+/// On CurationQuery.Submit: creates a source_search CurationJob and dispatches
+/// ConfigureAndSubmit so the spec-owned session trigger starts it. This module
+/// only bootstraps the first job and ensures the shared workspace exists.
 #[unsafe(no_mangle)]
 pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
     let result = (|| -> Result<(), String> {
@@ -86,50 +85,36 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &format!("launch_research: created CurationJob '{job_id}'"),
         );
 
-        // --- Configure the job ---
+        // --- Configure and submit the job through the spec-native action ---
         let configure_body = json!({
             "job_type": "source_search",
             "workspace_id": workspace_id,
             "input": input.to_string(),
-            "query_id": query_id
+            "query_id": query_id,
+            "completion_contract": "typed-v1"
         });
 
         let configure_resp = ctx.http_call(
             "POST",
             &format!(
-                "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.Configure"
+                "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.ConfigureAndSubmit"
             ),
             &headers,
             &configure_body.to_string(),
         )?;
         if !(200..300).contains(&configure_resp.status) {
             return Err(format!(
-                "Failed to configure CurationJob '{job_id}': HTTP {}: {}",
+                "Failed to configure and submit CurationJob '{job_id}': HTTP {}: {}",
                 configure_resp.status,
                 &configure_resp.body[..configure_resp.body.len().min(500)]
             ));
         }
 
-        // --- Submit to trigger build_session_message ---
-        let submit_resp = ctx.http_call(
-            "POST",
-            &format!(
-                "{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.Submit"
-            ),
-            &headers,
-            "{}",
-        )?;
-        if !(200..300).contains(&submit_resp.status) {
-            return Err(format!(
-                "Failed to submit CurationJob '{job_id}': HTTP {}: {}",
-                submit_resp.status,
-                &submit_resp.body[..submit_resp.body.len().min(500)]
-            ));
-        }
-
         ctx.log(
             "info",
-            &format!("launch_research: submitted source_search job '{job_id}' for query '{query_id}'"),
+            &format!(
+                "launch_research: submitted source_search job '{job_id}' for query '{query_id}'"
+            ),
         );
 
         set_success_result(

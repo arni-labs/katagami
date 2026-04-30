@@ -2,7 +2,8 @@ import { ChevronRight } from "lucide-react";
 import { parseJson } from "@/lib/odata";
 import { SpecActions } from "./spec-actions";
 
-interface SpecPanelProps {
+export interface SpecPanelProps {
+  languageId?: string;
   name?: string;
   slug?: string;
   philosophy?: string;
@@ -12,6 +13,10 @@ interface SpecPanelProps {
   guidance?: string;
   imageryDirection?: string;
   generativeCanvas?: string;
+  designMdFileId?: string;
+  designMdLintResult?: string;
+  hasDesignMd?: boolean;
+  hasValidDesignMd?: boolean;
 }
 
 type AccentColor =
@@ -89,12 +94,19 @@ function Empty({ label = "not set" }: { label?: string }) {
 
 // ── Views ──────────────────────────────────────────────────────────
 
+function toLabel(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "object" && v !== null && "name" in v)
+    return String((v as Record<string, unknown>).name);
+  return JSON.stringify(v);
+}
+
 function PhilosophyView({ raw }: { raw?: string }) {
   const data = parseJson<Record<string, unknown>>(raw);
   if (!data) return <Empty />;
 
-  const values = (data.values as string[]) ?? [];
-  const antiValues = (data.anti_values as string[]) ?? [];
+  const values = (Array.isArray(data.values) ? data.values : []) as unknown[];
+  const antiValues = (Array.isArray(data.anti_values) ? data.anti_values : []) as unknown[];
   const lineage = (data.lineage as string) ?? "";
   const summary = (data.summary as string) ?? "";
 
@@ -113,8 +125,8 @@ function PhilosophyView({ raw }: { raw?: string }) {
           <SectionRule label="values" color="salad" />
           <div className="flex flex-wrap gap-1.5">
             {values.map((v, i) => (
-              <PeeledLabel key={v} index={i} color="salad">
-                {v}
+              <PeeledLabel key={toLabel(v)} index={i} color="salad">
+                {toLabel(v)}
               </PeeledLabel>
             ))}
           </div>
@@ -125,9 +137,9 @@ function PhilosophyView({ raw }: { raw?: string }) {
           <SectionRule label="anti-values" color="sakura" />
           <div className="flex flex-wrap gap-1.5">
             {antiValues.map((v, i) => (
-              <PeeledLabel key={v} index={i} color="sakura">
+              <PeeledLabel key={toLabel(v)} index={i} color="sakura">
                 <span className="mr-1 font-bold text-[var(--beni)]">×</span>
-                {v}
+                {toLabel(v)}
               </PeeledLabel>
             ))}
           </div>
@@ -434,12 +446,111 @@ function SpecMarkdownView({ markdown }: { markdown: string }) {
 
 // ── Markdown generation ───────────────────────────────────────────
 
+type JsonRecord = Record<string, unknown>;
+
 function titleCase(s: string) {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function asRecord(value: unknown): JsonRecord | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) =>
+      typeof item === "object" && item !== null
+        ? JSON.stringify(item)
+        : String(item),
+    )
+    .filter((item) => item.trim().length > 0);
+}
+
+function isHexColor(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(value)
+  );
+}
+
+function toDimension(value: unknown, fallback = "16px"): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `${value}px`;
+  }
+
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  if (trimmed === "0") return "0px";
+  if (/^-?\d*\.?\d+(px|em|rem)$/.test(trimmed)) return trimmed;
+  if (/^-?\d*\.?\d+$/.test(trimmed)) return `${trimmed}px`;
+  return fallback;
+}
+
+function scaledRem(base: unknown, ratio: unknown, power: number): string {
+  const baseValue = typeof base === "string" ? base.trim() : "16px";
+  const match = baseValue.match(/^(\d*\.?\d+)(px|rem)$/);
+  const scale = typeof ratio === "number" && ratio > 0 ? ratio : 1.25;
+  if (!match) return power >= 3 ? "2.5rem" : "1.75rem";
+
+  const amount = Number(match[1]);
+  const remBase = match[2] === "px" ? amount / 16 : amount;
+  return `${Number((remBase * scale ** power).toFixed(3))}rem`;
+}
+
+function yamlKey(key: string): string {
+  return /^[A-Za-z0-9_-]+$/.test(key) ? key : JSON.stringify(key);
+}
+
+function yamlScalar(value: unknown): string {
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return JSON.stringify(text);
+}
+
+function hasContent(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return String(value).trim().length > 0;
+}
+
+function appendYamlObject(lines: string[], data: JsonRecord, indent = 0) {
+  const pad = " ".repeat(indent);
+
+  for (const [key, value] of Object.entries(data)) {
+    if (!hasContent(value)) continue;
+
+    if (Array.isArray(value)) {
+      lines.push(`${pad}${yamlKey(key)}:`);
+      for (const item of value) {
+        lines.push(`${pad}  - ${yamlScalar(item)}`);
+      }
+      continue;
+    }
+
+    const nested = asRecord(value);
+    if (nested) {
+      lines.push(`${pad}${yamlKey(key)}:`);
+      appendYamlObject(lines, nested, indent + 2);
+      continue;
+    }
+
+    lines.push(`${pad}${yamlKey(key)}: ${yamlScalar(value)}`);
+  }
+}
+
 function renderKvSection(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   lines: string[],
   depth: "##" | "###" = "###",
 ) {
@@ -454,7 +565,7 @@ function renderKvSection(
       lines.push("");
     } else if (typeof val === "object" && val !== null) {
       lines.push(`${depth} ${titleCase(key)}`, "");
-      for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      for (const [k, v] of Object.entries(val as JsonRecord)) {
         const display = typeof v === "object" ? JSON.stringify(v) : String(v);
         lines.push(`- **${titleCase(k)}**: ${display}`);
       }
@@ -465,36 +576,299 @@ function renderKvSection(
   }
 }
 
-function specToMarkdown(props: SpecPanelProps): string {
-  const lines: string[] = [];
+function extractColors(tokens: JsonRecord | null): JsonRecord {
+  const rawColors = asRecord(tokens?.colors);
+  if (!rawColors) return {};
 
-  if (props.name) {
-    lines.push(`# ${props.name}`, "");
+  return Object.fromEntries(
+    Object.entries(rawColors).filter(([, value]) => isHexColor(value)),
+  );
+}
+
+function extractSpacing(tokens: JsonRecord | null): JsonRecord {
+  const spacing = asRecord(tokens?.spacing);
+  if (!spacing) return {};
+
+  const result: JsonRecord = {};
+  const base = spacing.base;
+  if (base !== undefined) result.base = toDimension(base);
+
+  const scale = Array.isArray(spacing.scale) ? spacing.scale : [];
+  const names = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
+  scale.forEach((value, index) => {
+    result[names[index] ?? `step-${index}`] = toDimension(value);
+  });
+
+  for (const [key, value] of Object.entries(spacing)) {
+    if (key === "base" || key === "scale") continue;
+    if (typeof value === "number") {
+      result[key] = toDimension(value);
+    } else if (typeof value === "string") {
+      result[key] = toDimension(value, value);
+    }
   }
 
-  // Philosophy
-  const phil = parseJson<Record<string, unknown>>(props.philosophy);
+  return result;
+}
+
+function extractRounded(tokens: JsonRecord | null): JsonRecord {
+  const radii = asRecord(tokens?.radii);
+  if (!radii) return {};
+
+  return Object.fromEntries(
+    Object.entries(radii).map(([key, value]) => [key, toDimension(value, "0px")]),
+  );
+}
+
+function extractTypography(tokens: JsonRecord | null): JsonRecord {
+  const typography = asRecord(tokens?.typography);
+  if (!typography) return {};
+
+  const structuredEntries = Object.entries(typography).filter(([, value]) => {
+    const token = asRecord(value);
+    return token && ("fontFamily" in token || "fontSize" in token);
+  });
+
+  if (structuredEntries.length > 0) {
+    return Object.fromEntries(structuredEntries);
+  }
+
+  const headingFont = asString(typography.heading_font) ?? "Inter";
+  const bodyFont = asString(typography.body_font) ?? headingFont;
+  const monoFont = asString(typography.mono_font) ?? bodyFont;
+  const baseSize = toDimension(typography.base_size);
+  const lineHeight =
+    typeof typography.line_height === "number" ? typography.line_height : 1.5;
+  const rawLetterSpacing = asString(typography.letter_spacing);
+  const letterSpacing =
+    rawLetterSpacing && rawLetterSpacing !== "normal"
+      ? toDimension(rawLetterSpacing, "-0.02em")
+      : "-0.02em";
+
+  return {
+    "headline-lg": {
+      fontFamily: headingFont,
+      fontSize: scaledRem(typography.base_size, typography.scale_ratio, 3),
+      fontWeight: 700,
+      lineHeight: 1.1,
+      letterSpacing,
+    },
+    "headline-md": {
+      fontFamily: headingFont,
+      fontSize: scaledRem(typography.base_size, typography.scale_ratio, 2),
+      fontWeight: 600,
+      lineHeight: 1.15,
+      letterSpacing,
+    },
+    "body-md": {
+      fontFamily: bodyFont,
+      fontSize: baseSize,
+      fontWeight: 400,
+      lineHeight,
+      letterSpacing,
+    },
+    "label-md": {
+      fontFamily: monoFont,
+      fontSize: "0.75rem",
+      fontWeight: 600,
+      lineHeight: 1,
+      letterSpacing: "0.08em",
+    },
+  };
+}
+
+function ref(group: string, key: string): string {
+  return `{${group}.${key}}`;
+}
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  if (!isHexColor(hex)) return null;
+  const normalized =
+    hex.length === 4
+      ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+      : hex;
+  const value = Number.parseInt(normalized.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb.map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928
+      ? value / 12.92
+      : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: string, b: string): number {
+  const l1 = relativeLuminance(a);
+  const l2 = relativeLuminance(b);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function readableTextColor(background: unknown): string {
+  const bg = isHexColor(background) ? background : "#000000";
+  return contrastRatio(bg, "#000000") >= contrastRatio(bg, "#ffffff")
+    ? "#000000"
+    : "#ffffff";
+}
+
+function firstExisting(record: JsonRecord, keys: string[]): string | null {
+  return keys.find((key) => key in record) ?? null;
+}
+
+function componentColorRefs(colors: JsonRecord): JsonRecord {
+  return Object.fromEntries(
+    Object.keys(colors).map((key) => [
+      `color-reference-${key.replace(/[^A-Za-z0-9_-]/g, "-")}`,
+      { backgroundColor: ref("colors", key) },
+    ]),
+  );
+}
+
+function buildComponentTokens(
+  colors: JsonRecord,
+  typography: JsonRecord,
+  rounded: JsonRecord,
+  spacing: JsonRecord,
+): JsonRecord {
+  if (Object.keys(colors).length === 0) return {};
+
+  const primary = firstExisting(colors, ["primary", "accent", "tertiary"]);
+  const surface = firstExisting(colors, ["surface", "background", "neutral"]);
+  const text = firstExisting(colors, ["text", "on-surface", "primary"]);
+  const roundedKey = firstExisting(rounded, ["md", "lg", "sm", "none"]);
+  const paddingKey = firstExisting(spacing, ["md", "sm", "base"]);
+  const label = firstExisting(typography, ["label-md", "body-md"]);
+
+  const roundedValue = roundedKey ? ref("rounded", roundedKey) : "16px";
+  const paddingValue = paddingKey ? ref("spacing", paddingKey) : "12px";
+  const labelValue = label ? ref("typography", label) : undefined;
+
+  return {
+    ...componentColorRefs(colors),
+    ...(primary && {
+      "button-primary": {
+        backgroundColor: ref("colors", primary),
+        textColor: readableTextColor(colors[primary]),
+        ...(labelValue ? { typography: labelValue } : {}),
+        rounded: roundedValue,
+        padding: paddingValue,
+      },
+    }),
+    ...(surface &&
+      text && {
+        "card-surface": {
+          backgroundColor: ref("colors", surface),
+          textColor: ref("colors", text),
+          rounded: roundedValue,
+          padding: paddingKey ? ref("spacing", paddingKey) : "16px",
+        },
+        "input-default": {
+          backgroundColor: ref("colors", surface),
+          textColor: ref("colors", text),
+          rounded: roundedValue,
+          height: "44px",
+        },
+      }),
+  };
+}
+
+function buildDesignMdFrontMatter(
+  props: SpecPanelProps,
+  tokens: JsonRecord | null,
+): JsonRecord {
+  const colors = extractColors(tokens);
+  const typography = extractTypography(tokens);
+  const spacing = extractSpacing(tokens);
+  const rounded = extractRounded(tokens);
+  const components = buildComponentTokens(colors, typography, rounded, spacing);
+
+  return {
+    version: "alpha",
+    name: props.name ?? "Katagami Design Language",
+    description:
+      "Agent-curated design language exported from Katagami as DESIGN.md.",
+    colors,
+    typography,
+    rounded,
+    spacing,
+    components,
+  };
+}
+
+function appendList(
+  lines: string[],
+  title: string,
+  items: string[],
+  prefix?: string,
+) {
+  if (items.length === 0) return;
+  lines.push(`### ${title}`, "");
+  for (const item of items) lines.push(`- ${prefix ?? ""}${item}`);
+  lines.push("");
+}
+
+function appendColors(lines: string[], colors: JsonRecord) {
+  if (Object.keys(colors).length === 0) return;
+  lines.push("## Colors", "");
+  lines.push(
+    "Use the YAML color tokens as the normative palette. The prose below names the roles agents should preserve when generating UI.",
+    "",
+    "| Token | Value |",
+    "|-------|-------|",
+  );
+  for (const [key, value] of Object.entries(colors)) {
+    lines.push(`| ${key} | \`${String(value)}\` |`);
+  }
+  lines.push("");
+}
+
+function appendTypography(lines: string[], typography: JsonRecord) {
+  if (Object.keys(typography).length === 0) return;
+  lines.push("## Typography", "");
+  for (const [key, value] of Object.entries(typography)) {
+    const token = asRecord(value);
+    if (!token) continue;
+    const family = asString(token.fontFamily) ?? "system-ui";
+    const size = token.fontSize ? String(token.fontSize) : "16px";
+    const weight = token.fontWeight ? String(token.fontWeight) : "400";
+    const lineHeight = token.lineHeight ? String(token.lineHeight) : "1.5";
+    lines.push(
+      `- **${titleCase(key)}**: ${family}, ${size}, weight ${weight}, line-height ${lineHeight}.`,
+    );
+  }
+  lines.push("");
+}
+
+export function katagamiSpecToMarkdown(props: SpecPanelProps): string {
+  const lines: string[] = [];
+  const phil = parseJson<JsonRecord>(props.philosophy);
+  const tok = parseJson<JsonRecord>(props.tokens);
+  const rul = parseJson<JsonRecord>(props.rules);
+  const lay = parseJson<JsonRecord>(props.layout);
+  const gui = parseJson<JsonRecord>(props.guidance);
+  const img = parseJson<JsonRecord>(props.imageryDirection);
+  const gen = parseJson<JsonRecord>(props.generativeCanvas);
+
+  lines.push(`# ${props.name ?? "Katagami Design Language"}`, "");
+
   if (phil) {
     lines.push("## Philosophy", "");
     if (phil.summary) lines.push(String(phil.summary), "");
-    const listSections: [string, string][] = [
-      ["values", "Values"],
-      ["anti_values", "Anti-Values"],
-      ["visual_character", "Visual Character"],
-    ];
-    for (const [field, label] of listSections) {
-      const arr = phil[field] as string[] | undefined;
-      if (Array.isArray(arr) && arr.length > 0) {
-        lines.push(`### ${label}`, "");
-        for (const v of arr) lines.push(`- ${v}`);
-        lines.push("");
-      }
+    appendList(lines, "Values", toStringArray(phil.values));
+    appendList(lines, "Anti-Values", toStringArray(phil.anti_values));
+    appendList(lines, "Visual Character", toStringArray(phil.visual_character));
+    if (phil.lineage) {
+      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
     }
-    if (phil.lineage) lines.push("### Lineage", "", `> ${phil.lineage}`, "");
   }
 
-  // Tokens
-  const tok = parseJson<Record<string, unknown>>(props.tokens);
   if (tok) {
     lines.push("## Tokens", "");
     for (const [group, values] of Object.entries(tok)) {
@@ -505,18 +879,15 @@ function specToMarkdown(props: SpecPanelProps): string {
         values !== null
       ) {
         lines.push("| Name | Value |", "|------|-------|");
-        for (const [k, v] of Object.entries(
-          values as Record<string, unknown>,
-        )) {
-          lines.push(`| ${k} | \`${v}\` |`);
+        for (const [key, value] of Object.entries(values as JsonRecord)) {
+          lines.push(`| ${key} | \`${String(value)}\` |`);
         }
         lines.push("");
       } else if (typeof values === "object" && values !== null) {
-        for (const [k, v] of Object.entries(
-          values as Record<string, unknown>,
-        )) {
-          const display = typeof v === "object" ? JSON.stringify(v) : String(v);
-          lines.push(`- **${titleCase(k)}**: ${display}`);
+        for (const [key, value] of Object.entries(values as JsonRecord)) {
+          const display =
+            typeof value === "object" ? JSON.stringify(value) : String(value);
+          lines.push(`- **${titleCase(key)}**: ${display}`);
         }
         lines.push("");
       } else {
@@ -525,45 +896,35 @@ function specToMarkdown(props: SpecPanelProps): string {
     }
   }
 
-  // Rules
-  const rul = parseJson<Record<string, unknown>>(props.rules);
   if (rul) {
     lines.push("## Rules", "");
     renderKvSection(rul, lines);
   }
 
-  // Layout
-  const lay = parseJson<Record<string, unknown>>(props.layout);
   if (lay) {
     lines.push("## Layout", "");
     renderKvSection(lay, lines);
   }
 
-  // Guidance
-  const gui = parseJson<Record<string, unknown>>(props.guidance);
   if (gui) {
     lines.push("## Guidance", "");
-    if (Array.isArray(gui.do) && gui.do.length > 0) {
-      lines.push("### Do", "");
-      for (const d of gui.do as string[]) lines.push(`- ${d}`);
-      lines.push("");
-    }
-    if (Array.isArray(gui.dont) && gui.dont.length > 0) {
-      lines.push("### Don't", "");
-      for (const d of gui.dont as string[]) lines.push(`- ${d}`);
-      lines.push("");
-    }
+    const dos = toStringArray(gui.do ?? gui.dos);
+    const donts = toStringArray(gui.dont ?? gui.donts);
+    appendList(lines, "Do", dos);
+    appendList(lines, "Don't", donts);
+    const rest = Object.fromEntries(
+      Object.entries(gui).filter(
+        ([key]) => !["do", "dos", "dont", "donts"].includes(key),
+      ),
+    );
+    if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
   }
 
-  // Imagery Direction
-  const img = parseJson<Record<string, unknown>>(props.imageryDirection);
   if (img) {
     lines.push("## Imagery Direction", "");
     renderKvSection(img, lines);
   }
 
-  // Generative Canvas
-  const gen = parseJson<Record<string, unknown>>(props.generativeCanvas);
   if (gen) {
     lines.push("## Generative Canvas", "");
     renderKvSection(gen, lines);
@@ -571,6 +932,123 @@ function specToMarkdown(props: SpecPanelProps): string {
 
   return lines.join("\n").trimEnd() + "\n";
 }
+
+export function designMdToMarkdown(props: SpecPanelProps): string {
+  const lines: string[] = [];
+  const phil = parseJson<JsonRecord>(props.philosophy);
+  const tok = parseJson<JsonRecord>(props.tokens);
+  const rul = parseJson<JsonRecord>(props.rules);
+  const lay = parseJson<JsonRecord>(props.layout);
+  const gui = parseJson<JsonRecord>(props.guidance);
+  const img = parseJson<JsonRecord>(props.imageryDirection);
+  const gen = parseJson<JsonRecord>(props.generativeCanvas);
+
+  const frontMatter = buildDesignMdFrontMatter(props, tok);
+  const colors = asRecord(frontMatter.colors) ?? {};
+  const typography = asRecord(frontMatter.typography) ?? {};
+  const spacing = asRecord(frontMatter.spacing) ?? {};
+  const rounded = asRecord(frontMatter.rounded) ?? {};
+
+  lines.push("---");
+  appendYamlObject(lines, frontMatter);
+  lines.push("---", "", `# ${props.name ?? "Katagami Design Language"}`, "");
+
+  if (phil || props.name) {
+    lines.push("## Overview", "");
+    if (phil?.summary) {
+      lines.push(String(phil.summary), "");
+    } else if (props.name) {
+      lines.push(
+        `${props.name} is an agent-curated design language from Katagami.`,
+        "",
+      );
+    }
+    appendList(lines, "Values", toStringArray(phil?.values));
+    appendList(lines, "Anti-Values", toStringArray(phil?.anti_values));
+    appendList(
+      lines,
+      "Visual Character",
+      toStringArray(phil?.visual_character),
+    );
+    if (phil?.lineage) {
+      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
+    }
+  }
+
+  appendColors(lines, colors);
+  appendTypography(lines, typography);
+
+  if (lay || Object.keys(spacing).length > 0) {
+    lines.push("## Layout", "");
+    if (Object.keys(spacing).length > 0) {
+      lines.push("### Spacing Tokens", "");
+      for (const [key, value] of Object.entries(spacing)) {
+        lines.push(`- **${titleCase(key)}**: \`${String(value)}\``);
+      }
+      lines.push("");
+    }
+    if (lay) renderKvSection(lay, lines);
+  }
+
+  const shadows = asRecord(tok?.shadows);
+  const elevation = asRecord(tok?.elevation);
+  if (shadows || elevation) {
+    lines.push("## Elevation & Depth", "");
+    if (shadows) renderKvSection({ shadows }, lines);
+    if (elevation) renderKvSection({ elevation }, lines);
+  }
+
+  const surfaces = asRecord(tok?.surfaces);
+  const borders = asRecord(tok?.borders);
+  if (Object.keys(rounded).length > 0 || surfaces || borders) {
+    lines.push("## Shapes", "");
+    if (Object.keys(rounded).length > 0) {
+      lines.push("### Rounded", "");
+      for (const [key, value] of Object.entries(rounded)) {
+        lines.push(`- **${titleCase(key)}**: \`${String(value)}\``);
+      }
+      lines.push("");
+    }
+    if (surfaces) renderKvSection({ surfaces }, lines);
+    if (borders) renderKvSection({ borders }, lines);
+  }
+
+  if (rul) {
+    lines.push("## Components", "");
+    renderKvSection(rul, lines);
+  }
+
+  if (gui) {
+    const dos = toStringArray(gui.do ?? gui.dos);
+    const donts = toStringArray(gui.dont ?? gui.donts);
+    if (dos.length > 0 || donts.length > 0) {
+      lines.push("## Do's and Don'ts", "");
+      for (const item of dos) lines.push(`- Do ${item}`);
+      for (const item of donts) lines.push(`- Don't ${item}`);
+      lines.push("");
+    }
+    const rest = Object.fromEntries(
+      Object.entries(gui).filter(
+        ([key]) => !["do", "dos", "dont", "donts"].includes(key),
+      ),
+    );
+    if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
+  }
+
+  if (img) {
+    lines.push("## Imagery Direction", "");
+    renderKvSection(img, lines);
+  }
+
+  if (gen) {
+    lines.push("## Generative Canvas", "");
+    renderKvSection(gen, lines);
+  }
+
+  return lines.join("\n").trimEnd() + "\n";
+}
+
+export const specToMarkdown = katagamiSpecToMarkdown;
 
 // ── Accordion row ──────────────────────────────────────────────────
 
@@ -617,17 +1095,20 @@ export function SpecPanel(props: SpecPanelProps) {
     generativeCanvas,
   } = props;
 
-  const markdown = specToMarkdown(props);
+  const katagamiMarkdown = katagamiSpecToMarkdown(props);
+  const designMd = designMdToMarkdown(props);
 
   return (
     <div className="relative">
-      {/* Copy + download — inline on mobile, floating on sm+ */}
-      <div className="mb-4 flex items-center justify-end sm:absolute sm:-top-1 sm:right-0 sm:z-10 sm:mb-0">
-        <SpecActions markdown={markdown} slug={props.slug} />
+      {/* Spec packet — flows inline so it never covers section chevrons */}
+      <div className="mb-5 flex flex-wrap items-start justify-end gap-2">
+        <SpecActions
+          languageId={props.languageId}
+          katagamiSpec={katagamiMarkdown}
+          designMd={designMd}
+          slug={props.slug}
+        />
       </div>
-
-      {/* Spacer on sm+ so floating chips don't collide with first section */}
-      <div className="hidden h-8 sm:block" />
 
       <div className="divide-y divide-dashed divide-border">
         <Section label="philosophy" color="teal" defaultOpen>
@@ -655,8 +1136,11 @@ export function SpecPanel(props: SpecPanelProps) {
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
-        <Section label="spec.md" color="sumire">
-          <SpecMarkdownView markdown={markdown} />
+        <Section label="katagami spec" color="teal">
+          <SpecMarkdownView markdown={katagamiMarkdown} />
+        </Section>
+        <Section label="DESIGN.md" color="sumire">
+          <SpecMarkdownView markdown={designMd} />
         </Section>
       </div>
     </div>

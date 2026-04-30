@@ -13,7 +13,7 @@ Read knowledge files before starting work:
 |----------|-------|---------|
 | `source_search` | research-direction | Research design movements and index authoritative sources |
 | `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec + embodiment |
-| `quality_review` | review-quality | Review and fix embodiment HTML against the spec |
+| `quality_review` | review-quality | Validate DESIGN.md and fix embodiment HTML against the spec |
 | `organize_taxonomy` | organize-taxonomy | Build and maintain the taxonomy classification system |
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
 
@@ -23,18 +23,22 @@ Read knowledge files before starting work:
 - `temper.get(entity_set, entity_id)` — get a single entity
 - `temper.create(entity_set, fields)` — create an entity
 - `temper.action(entity_set, entity_id, action, params)` — dispatch an action
-- `temper.write(path, content)` — write to workspace file
+- `temper.write(path, content)` — write governed artifacts to workspace files
 - `temper.read(path)` — read a workspace file
 - `temper.web_search(query)` — search the web
 - `temper.web_fetch(url)` — fetch a URL
 
-No `import` statements. The `sandbox.*` and `bash` tools are available for `synthesize`, `evolve_language`, and `regenerate_embodiment` jobs. Always serialize JSON with `json.dumps(...)`.
+Use `import json` at the top of any code block that needs `json.dumps(...)` or
+`json.loads(...)`. Other imports are not available in the Monty REPL. The
+`sandbox.*` and `bash` tools are available for `synthesize`, `evolve_language`,
+and `regenerate_embodiment` jobs.
 
 ## Entity Sets
 
 - **CurationJobs** — your control plane (job_type, input, output)
+- **CurationDirections** — one researched direction that queues one synthesize job
 - **DesignLanguages** — complete design languages with specs + embodiments
-- **DesignSources** — raw research material indexed from the web
+- **DesignSources** — compact research references indexed from the web
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
 
@@ -47,14 +51,35 @@ Knowledge files (read via `temper.read()`):
 
 Workspace at `/katagami/`:
 - `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
-- `/katagami/sources/{slug}.md` — research source files
+- `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
+- `/katagami/sources/{slug}.md` — deferred source archives, not the source-search hot path
+
+Use PawFS for governed artifacts: embodiments, DESIGN.md exports, published
+snapshots, and explicitly requested source archives. During `source_search`,
+store source title, URL, type, topics, summary, and short excerpts on
+DesignSource entities; do not write full fetched pages to PawFS.
+
+## Error Recovery
+
+When a tool call returns an error (NameError, TypeError, HTTP failure, etc.):
+1. **Read the error message** — understand what went wrong
+2. **Fix and retry** — correct the code and re-execute. Common fixes:
+   - Add `import json` if you get `name 'json' is not defined`
+   - Fix syntax errors, typos, wrong parameter names
+   - Retry HTTP failures (transient network errors)
+3. **Retry up to 3 times** for the same logical operation before giving up
+4. **Only fail the job** if the error is genuinely non-recoverable after retries
+   (e.g., entity doesn't exist, permission denied, spec violation)
+
+Do NOT immediately fail the job on the first code error. Code errors are
+normal — fix them and continue.
 
 ## Completion Protocol
 
 After completing work:
-1. Dispatch `Complete` on the CurationJob with structured output JSON
+1. Dispatch the typed completion action named in your session prompt and skill instructions
 2. Call `temper.done("job_type complete")` immediately after
 
-If you cannot complete:
+If you cannot complete after exhausting retries:
 1. Dispatch `Fail` on the CurationJob with `error_message`
 2. Call `temper.done("job_type failed")` immediately after

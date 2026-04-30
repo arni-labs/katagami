@@ -124,15 +124,18 @@ Read the knowledge files in your workspace:
 
 13. **Complete the job**:
     ```python
-    temper.action('CurationJobs', job_id, 'Complete', {'output': json.dumps(summary)})
+    temper.action('CurationJobs', job_id, 'CompleteOrganization', {
+        'output': json.dumps(summary, ensure_ascii=False)
+    })
     temper.done("organize_taxonomy complete")
     ```
 
 ## Tooling Rules
 
-- No `import` statements
+- Use `import json` at the top of any code block that needs `json.dumps(...)` or
+  `json.loads(...)`. Other imports are not available in the Monty REPL.
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
-- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` → `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` → `"['a', 'b']"` (broken).
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
 
 ## Output
 

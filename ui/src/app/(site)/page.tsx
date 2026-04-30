@@ -129,10 +129,21 @@ async function GalleryGrid({
     }
     return 0;
   }
+  // Display order: featured first, then by status
+  // (Published → UnderReview → Draft → Archived), then display_order.
+  const STATUS_PRIORITY: Record<string, number> = {
+    Published: 0,
+    UnderReview: 1,
+    Draft: 2,
+    Archived: 3,
+  };
   languages.sort((a, b) => {
-    const fa = isFeatured(a) ? 1 : 0;
-    const fb = isFeatured(b) ? 1 : 0;
-    if (fa !== fb) return fb - fa;
+    const fa = isFeatured(a) ? 0 : 1;
+    const fb = isFeatured(b) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
+    const sa = STATUS_PRIORITY[a.status] ?? 99;
+    const sb = STATUS_PRIORITY[b.status] ?? 99;
+    if (sa !== sb) return sa - sb;
     const oa = displayOrder(a);
     const ob = displayOrder(b);
     if (oa !== ob) return oa - ob;
@@ -229,7 +240,7 @@ export default async function GalleryPage({
 
             {/* "Give your agent taste" — styled like a handwritten planner
                 note in the margin: tiny sparkle, wavy underline doodle,
-                hand-drawn circle around spec.md, slight card tilt. */}
+                hand-drawn circle around DESIGN.md, slight card tilt. */}
             <div
               className="relative mt-6 max-w-xl"
               style={{ transform: "rotate(-0.4deg)" }}
@@ -296,18 +307,18 @@ export default async function GalleryPage({
                     design movements
                   </span>
                   <br />
-                  you can hand off as a{" "}
-                  {/* spec.md — wrapped in a slightly-irregular SVG circle,
+                  you can hand off as{" "}
+                  {/* DESIGN.md — wrapped in a slightly-irregular SVG circle,
                       no border/chip, the doodle IS the highlight */}
-                  <span className="relative inline-block px-2">
+                  <span className="relative inline-block px-2.5">
                     <svg
                       aria-hidden
-                      viewBox="0 0 72 26"
+                      viewBox="0 0 96 26"
                       preserveAspectRatio="none"
                       className="absolute inset-0 h-full w-full text-[var(--teal)]"
                     >
                       <path
-                        d="M 10 4 C 2 6, 2 20, 14 22 C 28 25, 52 24, 64 20 C 74 17, 70 4, 58 3 C 42 1, 20 2, 10 4 Z"
+                        d="M 10 4 C 2 6, 2 20, 14 22 C 34 25, 72 24, 86 20 C 98 17, 94 4, 78 3 C 58 1, 20 2, 10 4 Z"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="1.6"
@@ -315,13 +326,13 @@ export default async function GalleryPage({
                       />
                     </svg>
                     <span className="relative font-semibold text-foreground">
-                      spec.md
+                      DESIGN.md
                     </span>
                   </span>
                   .
                 </p>
 
-                {/* Bottom corner doodle — curly arrow pointing to spec.md */}
+                {/* Bottom corner doodle — curly arrow pointing to DESIGN.md */}
                 <svg
                   aria-hidden
                   viewBox="0 0 60 40"

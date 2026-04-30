@@ -41,6 +41,9 @@ export interface DesignLanguage {
     guidance?: string;
     imagery_direction?: string;
     generative_canvas?: string;
+    design_md_file_id?: string;
+    design_md_lint_result?: string;
+    design_md_format_version?: string;
     embodiment_file_id?: string;
     thumbnail_file_id?: string;
     parent_ids?: string;
