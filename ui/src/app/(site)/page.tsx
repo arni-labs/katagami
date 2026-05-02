@@ -103,6 +103,9 @@ async function GalleryGrid({
         <div className="mt-1 font-mono text-[11px]">
           run the bootstrap pipeline
         </div>
+        <div className="mt-2 font-mono text-[10px] opacity-50">
+          BUILD-MARKER-NORMALIZER-V2
+        </div>
       </div>
     );
   }
