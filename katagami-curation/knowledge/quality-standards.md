@@ -81,6 +81,12 @@ Minimum quality thresholds for design language specs and embodiments.
 - **Must commit to ONE primary radius.** Editorial = all `0px`. Soft product = all `24px`. **Never mix `16px` and `24px` in the same language** — this reads as indecisive.
 - Must be consistent across all containers of the same type
 
+### One-Sided Accent Borders (Banned on Rounded Elements)
+- **Never combine a one-sided colored border (`border-left`, `border-top`, `box-shadow: inset 3px 0 0`) with `border-radius`.** The accent color wraps around the rounded corner creating an ugly crescent/moon shape. This is one of the most frequent AI design failures.
+- If an element has `border-radius > 0`, it must have either a full uniform border or no border — never a partial accent border on one side.
+- For accent indicators on rounded cards, use a **separate element** (`::before` with `border-radius: 0` positioned as a straight bar alongside), or use a flat-edged container for the accent.
+- Automatic fail if any rounded element has a visible one-sided accent border.
+
 ### Responsiveness
 - 3 breakpoints minimum (~1024, ~768, ~480)
 - No inline layout styles (grid/flex must be in CSS classes)

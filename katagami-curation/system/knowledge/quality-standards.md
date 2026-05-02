@@ -72,6 +72,12 @@ Measurable thresholds for specs and embodiments. Design philosophy lives in `des
 - **Must commit to ONE primary radius.** Never mix `16px` and `24px` in same language.
 - No values between 24px and 9999px.
 
+### One-Sided Accent Borders (Banned on Rounded Elements)
+- **Never combine one-sided colored border (`border-left`, `box-shadow: inset 3px 0 0`) with `border-radius`.** Creates ugly crescent wrapping around corners.
+- Rounded elements: full uniform border or no border. Never partial accent on one side.
+- Use a separate `::before` bar with `border-radius: 0`, or use flat-edged containers for accent indicators.
+- Automatic fail if any rounded element has a visible one-sided accent border.
+
 ### Responsiveness
 - 3 breakpoints, no inline layout styles, proper reflow.
 

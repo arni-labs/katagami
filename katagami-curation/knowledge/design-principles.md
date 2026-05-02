@@ -80,6 +80,7 @@ The physical quality of a design — how elements feel on screen — comes from 
 - **Surfaces**: flat, glass, paper, noise, textured — choose what fits the philosophy and commit to it.
 - **Borders**: weight, style, and character are identity markers. Hairline rules feel different from heavy 4px solids. Consider dashed, dotted, or double borders for distinctiveness.
 - **Shadows**: restraint. One or two levels used consistently beats five levels used randomly. Consider no shadows at all — many strong design systems use borders instead.
+- **No one-sided accent borders on rounded elements.** A `border-left: 3px solid var(--accent)` on a card or button with `border-radius` creates an ugly crescent that wraps around the corners. This is one of the most common AI design tells. If you need an accent indicator, use a separate inset `::before` pseudo-element with its own sharp geometry, or use a full border, or use a flat-edged (`border-radius: 0`) container. Never combine one-sided colored borders with rounded corners.
 - **Motion**: snappy, elastic, deliberate, or none — the animation philosophy should match the language's personality. Hover states should transform, not just fade. Scale, color shift, border appearance — something with intention.
 
 ## Signature Element
