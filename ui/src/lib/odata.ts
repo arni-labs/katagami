@@ -186,6 +186,13 @@ function normalizeDesignLanguageRow(
   } as unknown as DesignLanguage;
 }
 
+// OData defaults to a 100-row page when no $top is given. With NULL-last
+// sort behaviour for `Featured` / `DisplayOrder`, newly-published languages
+// (which have no explicit display_order) get pushed past the page boundary
+// and silently drop off the gallery + search. Always ask for the full
+// catalog — the table is on the order of a few hundred rows.
+const DESIGN_LANGUAGE_PAGE_SIZE = 500;
+
 export async function listDesignLanguages(
   filter?: string,
   orderby?: string,
@@ -195,6 +202,7 @@ export async function listDesignLanguages(
   if (filter) params.set("$filter", filter);
   if (orderby) params.set("$orderby", orderby);
   if (select && select.length > 0) params.set("$select", select.join(","));
+  params.set("$top", String(DESIGN_LANGUAGE_PAGE_SIZE));
   const q = params.toString();
   const resp = await odata<ODataResponse<Record<string, unknown>>>(
     `DesignLanguages${q ? `?${q}` : ""}`,
