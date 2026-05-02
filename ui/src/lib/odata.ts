@@ -69,13 +69,46 @@ export interface DesignLanguage {
   booleans: Record<string, boolean> & { featured?: boolean };
 }
 
+// The full set of fields needed to render a gallery card:
+// identifiers, status flags the badge/sort uses, embodiment pointers,
+// taxonomy/tags for filters, and the two heavy JSON blobs the card
+// actually reads (tokens for palette/typography, philosophy for the
+// summary line). Heavier blobs (rules, layout_principles, guidance,
+// generative_canvas, design_md_lint_result, curator_notes) are
+// detail-page-only and skipped here.
+export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
+  "Id",
+  "Status",
+  "slug",
+  "name",
+  "embodiment_file_id",
+  "embodiment_format",
+  "embodiment_verified",
+  "has_embodiment",
+  "taxonomy_ids",
+  "tags",
+  "tokens",
+  "philosophy",
+  "featured",
+  "display_order",
+  "fork_count",
+  "version",
+  "quality_review_passed",
+  "review_status",
+  "has_design_md",
+  "has_valid_design_md",
+  "design_md_verified",
+] as const;
+
 export async function listDesignLanguages(
   filter?: string,
   orderby?: string,
+  select?: readonly string[],
 ): Promise<DesignLanguage[]> {
   const params = new URLSearchParams();
   if (filter) params.set("$filter", filter);
   if (orderby) params.set("$orderby", orderby);
+  if (select && select.length > 0) params.set("$select", select.join(","));
   const q = params.toString();
   const resp = await odata<ODataResponse<DesignLanguage>>(
     `DesignLanguages${q ? `?${q}` : ""}`,

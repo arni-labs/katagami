@@ -1,5 +1,9 @@
 import { Suspense } from "react";
-import { listDesignLanguages, listTaxonomies } from "@/lib/odata";
+import {
+  DESIGN_LANGUAGE_GALLERY_FIELDS,
+  listDesignLanguages,
+  listTaxonomies,
+} from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
 import { DeferredLanguageCards } from "@/components/deferred-language-cards";
 import { GalleryFilters } from "@/components/gallery-filters";
@@ -35,6 +39,7 @@ async function GalleryGrid({
     languages = await listDesignLanguages(
       filter,
       "Featured desc,DisplayOrder asc",
+      DESIGN_LANGUAGE_GALLERY_FIELDS,
     );
   } catch {
     return (
