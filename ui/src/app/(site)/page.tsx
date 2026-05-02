@@ -1,7 +1,15 @@
 import { Suspense } from "react";
 import { listDesignLanguages, listTaxonomies } from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
+import { DeferredLanguageCards } from "@/components/deferred-language-cards";
 import { GalleryFilters } from "@/components/gallery-filters";
+
+// Eagerly render the first ~3 rows of cards; anything below the fold
+// renders a lightweight skeleton until it scrolls near the viewport,
+// at which point the real LanguageCard mounts and its embodiment
+// iframe begins fetching. Keeps initial DOM/iframe cost bounded while
+// the full catalog remains visible on scroll.
+const INITIAL_CARDS = 24;
 
 async function GalleryGrid({
   status,
@@ -150,11 +158,15 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
+  const eager = languages.slice(0, INITIAL_CARDS);
+  const deferred = languages.slice(INITIAL_CARDS);
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {languages.map((lang) => (
+      {eager.map((lang) => (
         <LanguageCard key={lang.entity_id} lang={lang} />
       ))}
+      {deferred.length > 0 ? <DeferredLanguageCards langs={deferred} /> : null}
     </div>
   );
 }
