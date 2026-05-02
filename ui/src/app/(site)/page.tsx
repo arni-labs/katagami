@@ -50,6 +50,34 @@ async function GalleryGrid({
     );
   }
 
+  // DIAG: track fresh-accent through each filter stage so we can see
+  // where it disappears. Surfaced into the empty-results panel and
+  // logged to Vercel function logs. Remove after triage.
+  const DIAG_SLUG = "fresh-accent-minimal-app-system";
+  const diag = {
+    raw: languages.length,
+    raw_has_fa: languages.some(
+      (l) => l.entity_id === DIAG_SLUG || l.fields.slug === DIAG_SLUG,
+    ),
+    fa_row: languages.find(
+      (l) => l.entity_id === DIAG_SLUG || l.fields.slug === DIAG_SLUG,
+    ),
+  };
+  console.log(
+    "[diag fresh-accent] raw_count=",
+    diag.raw,
+    "raw_has_fa=",
+    diag.raw_has_fa,
+    "fa_keys=",
+    diag.fa_row ? Object.keys(diag.fa_row) : null,
+    "fa_fields_keys=",
+    diag.fa_row?.fields ? Object.keys(diag.fa_row.fields) : null,
+    "fa_name=",
+    diag.fa_row?.fields?.name,
+    "fa_status=",
+    diag.fa_row?.status,
+  );
+
   // TEMP DEBUG: dump shape of first language so we can see how Temper
   // actually serializes `featured` / `display_order`. Safe to remove
   // after confirming.
@@ -105,6 +133,22 @@ async function GalleryGrid({
         </div>
         <div className="mt-2 font-mono text-[10px] opacity-50">
           BUILD-MARKER-NORMALIZER-V2
+        </div>
+        <div className="mt-3 font-mono text-[9px] opacity-60 text-left">
+          diag(fresh-accent):
+          <br />
+          raw_count={diag.raw}
+          <br />
+          raw_has_fa={String(diag.raw_has_fa)}
+          <br />
+          fa_name={String(diag.fa_row?.fields?.name)}
+          <br />
+          fa_keys={diag.fa_row ? Object.keys(diag.fa_row).join(",") : "null"}
+          <br />
+          fa_fields_keys=
+          {diag.fa_row?.fields
+            ? Object.keys(diag.fa_row.fields).join(",")
+            : "null"}
         </div>
       </div>
     );
