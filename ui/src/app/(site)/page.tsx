@@ -25,20 +25,19 @@ async function GalleryGrid({
   search?: string;
 }) {
   let filter: string | undefined;
-  if (status && status !== "all") {
+  if (status === "all") {
+    filter = `Status ne 'Archived'`;
+  } else if (status) {
     filter = `Status eq '${status}'`;
   } else {
-    filter = `Status ne 'Archived'`;
+    filter = `Status eq 'Published'`;
   }
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
   try {
-    // Order featured first, then by display_order. The client-side sort
-    // below is still applied as a safety net in case the backend ignores
-    // $orderby on these specific fields.
     languages = await listDesignLanguages(
       filter,
-      "Featured desc,DisplayOrder asc",
+      undefined,
       DESIGN_LANGUAGE_GALLERY_FIELDS,
     );
   } catch {
@@ -47,33 +46,6 @@ async function GalleryGrid({
         Could not load design languages.
         <div className="mt-1 font-mono text-[11px]">check the Temper server</div>
       </div>
-    );
-  }
-
-
-  // TEMP DEBUG: dump shape of first language so we can see how Temper
-  // actually serializes `featured` / `display_order`. Safe to remove
-  // after confirming.
-  if (languages[0]) {
-    console.log(
-      "[gallery] first language shape:",
-      JSON.stringify(
-        {
-          entity_id: languages[0].entity_id,
-          status: languages[0].status,
-          keys: Object.keys(languages[0]),
-          booleans: languages[0].booleans,
-          counters: languages[0].counters,
-          fields_featured: (
-            languages[0].fields as Record<string, unknown>
-          )?.featured,
-          fields_display_order: (
-            languages[0].fields as Record<string, unknown>
-          )?.display_order,
-        },
-        null,
-        0,
-      ),
     );
   }
 
@@ -108,7 +80,9 @@ async function GalleryGrid({
     );
   }
 
-  // Sort: featured languages first (by display_order asc), then the rest.
+  // Sort by recency first in every status view. The backend model defines
+  // timestamp fields, but older production rows often omit them; UUID-v7-ish
+  // Katagami entity ids carry a creation timestamp, so use that as fallback.
   // OData queries use PascalCase (Featured / DisplayOrder) but the JSON
   // response might put values in any of several shapes — check them all.
   function isFeatured(l: (typeof languages)[number]): boolean {
@@ -143,8 +117,31 @@ async function GalleryGrid({
     }
     return 0;
   }
-  // Display order: featured first, then by status
-  // (Published → UnderReview → Draft → Archived), then display_order.
+  function dateValue(raw?: string): number {
+    if (!raw) return 0;
+    const time = Date.parse(raw);
+    return Number.isNaN(time) ? 0 : time;
+  }
+  function uuidV7Time(id?: string): number {
+    const match = id?.match(/(?:^|-)0?([0-9a-f]{8})-([0-9a-f]{4})-/i);
+    if (!match) return 0;
+    return parseInt(`${match[1]}${match[2]}`, 16);
+  }
+  function recency(l: (typeof languages)[number]): number {
+    const f = l.fields;
+    return (
+      dateValue(f.UpdatedAt ?? f.updated_at) ||
+      dateValue(f.PublishedAt ?? f.published_at) ||
+      dateValue(f.CreatedAt ?? f.created_at) ||
+      uuidV7Time(l.entity_id) ||
+      uuidV7Time(f.Id) ||
+      l.sequence_nr ||
+      l.total_event_count ||
+      0
+    );
+  }
+  // Tie-breakers after recency: Published -> UnderReview -> Draft -> Archived,
+  // then featured/display order for intentional curation inside same recency.
   const STATUS_PRIORITY: Record<string, number> = {
     Published: 0,
     UnderReview: 1,
@@ -152,12 +149,15 @@ async function GalleryGrid({
     Archived: 3,
   };
   languages.sort((a, b) => {
-    const fa = isFeatured(a) ? 0 : 1;
-    const fb = isFeatured(b) ? 0 : 1;
-    if (fa !== fb) return fa - fb;
+    const ra = recency(a);
+    const rb = recency(b);
+    if (ra !== rb) return rb - ra;
     const sa = STATUS_PRIORITY[a.status] ?? 99;
     const sb = STATUS_PRIORITY[b.status] ?? 99;
     if (sa !== sb) return sa - sb;
+    const fa = isFeatured(a) ? 0 : 1;
+    const fb = isFeatured(b) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
     const oa = displayOrder(a);
     const ob = displayOrder(b);
     if (oa !== ob) return oa - ob;

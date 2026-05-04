@@ -23,6 +23,13 @@ const statusStamp: Record<string, string> = {
   Archived: "text-[var(--beni)]",
 };
 
+const statusLabel: Record<string, string> = {
+  Draft: "Draft",
+  UnderReview: "Under review",
+  Published: "Published",
+  Archived: "Archived",
+};
+
 const accentColors = [
   "var(--sakura)",
   "var(--yuzu)",
@@ -328,7 +335,7 @@ const FullCard = memo(function FullCard({
           </h3>
           <div className="flex shrink-0 items-center gap-1.5">
             <span className={`stamp ${statusStamp[lang.status] ?? ""}`}>
-              {lang.status}
+              {statusLabel[lang.status] ?? lang.status}
             </span>
           </div>
         </div>

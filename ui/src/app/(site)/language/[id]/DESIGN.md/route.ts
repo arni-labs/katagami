@@ -39,6 +39,10 @@ export async function GET(
 
   const f = lang.fields;
   const filename = f.slug ? `${f.slug}-DESIGN.md` : "DESIGN.md";
+  const storedDesignMdStatus =
+    lang.booleans?.has_valid_design_md && lang.booleans?.design_md_verified
+      ? "validated"
+      : "stored-unverified";
 
   if (f.design_md_file_id) {
     const stored = await readStoredFile(f.design_md_file_id);
@@ -49,7 +53,7 @@ export async function GET(
           "content-type": "text/markdown; charset=utf-8",
           "content-disposition": `inline; filename="${filename}"`,
           "cache-control": "public, max-age=60, s-maxage=300",
-          "x-katagami-design-md-status": "validated",
+          "x-katagami-design-md-status": storedDesignMdStatus,
         },
       });
     }

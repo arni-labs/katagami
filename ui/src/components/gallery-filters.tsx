@@ -23,7 +23,9 @@ export function GalleryFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [status, setStatus] = useState(searchParams.get("status") ?? "all");
+  const [status, setStatus] = useState(
+    searchParams.get("status") ?? "Published",
+  );
   const [taxonomy, setTaxonomy] = useState(
     searchParams.get("taxonomy") ?? "all",
   );
@@ -32,6 +34,15 @@ export function GalleryFilters({
   const navigate = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
+      if (key === "status") {
+        if (value && value !== "Published") {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+        router.push(`/?${params.toString()}`);
+        return;
+      }
       if (value && value !== "all") {
         params.set(key, value);
       } else {

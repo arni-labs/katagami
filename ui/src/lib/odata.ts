@@ -31,7 +31,17 @@ async function odata<T>(path: string, init?: RequestInit): Promise<T> {
 export interface DesignLanguage {
   entity_id: string;
   status: string;
+  sequence_nr?: number;
+  total_event_count?: number;
   fields: {
+    Id?: string;
+    Status?: string;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    PublishedAt?: string;
+    created_at?: string;
+    updated_at?: string;
+    published_at?: string;
     name?: string;
     slug?: string;
     philosophy?: string;
@@ -98,6 +108,11 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "has_design_md",
   "has_valid_design_md",
   "design_md_verified",
+  "CreatedAt",
+  "UpdatedAt",
+  "PublishedAt",
+  "sequence_nr",
+  "total_event_count",
 ] as const;
 
 // Booleans / counters that may arrive flattened on a $select response.
@@ -178,12 +193,20 @@ function normalizeDesignLanguageRow(
     }
     fields[k] = v;
   }
+  const canonicalId = parseODataEntityId(top["@odata.id"]);
+  if (canonicalId) top.entity_id = canonicalId;
   return {
     ...top,
     fields,
     booleans,
     counters,
   } as unknown as DesignLanguage;
+}
+
+function parseODataEntityId(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(/DesignLanguages\('([^']+)'\)/);
+  return match?.[1];
 }
 
 // OData defaults to a 100-row page when no $top is given. With NULL-last
