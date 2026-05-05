@@ -18,7 +18,7 @@ Read the knowledge files in your workspace:
 For each language specified in the job input (or ALL languages if none specified):
 
 1. **Load the DesignLanguage**: `temper.get('DesignLanguages', lang_id)`
-2. **Read its fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id.
+2. **Read its fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id, thumbnail_file_id.
 3. **Read the current embodiment**: `temper.read('/katagami/embodiments/' + slug + '.html')`
 4. **MANDATORY: Validate the native Katagami spec before evaluating the embodiment.** Parse each JSON field:
    - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
@@ -62,10 +62,69 @@ For each language specified in the job input (or ALL languages if none specified
    - **curator_notes**: If present, these are specific fix instructions from the human curator. Follow them first.
 7. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
    - Write HTML to sandbox
-   - Screenshot with Playwright at 3 viewports (desktop 1440px, tablet 768px, mobile 375px)
+   - Screenshot with Playwright at 3 viewports (desktop 1440x960, tablet 768px, mobile 375px)
    - Visually evaluate each viewport
    - Iterate until quality passes at all three sizes
-8. **Write and re-attach:**
+8. **Generate and verify the gallery thumbnail.** After the final HTML passes
+   review, create a static desktop thumbnail from the same `/tmp/embodiment.html`.
+   This is mandatory for every quality review that writes or re-attaches an
+   embodiment.
+
+   The thumbnail must be a stable desktop viewport crop, not a full-page strip:
+   - Capture viewport: `1440x960`
+   - Output file: `/tmp/thumbnail_desktop.jpg`
+   - Output dimensions: `960x640`
+   - Output format: JPEG, quality around `82`
+   - Stored PawFS file MIME metadata: `image/jpeg`
+   - Safety: disable animations/transitions before capture so the gallery image is deterministic
+
+   ```python
+   sandbox.bash('pip install pillow 2>&1 | tail -1')
+   sandbox.bash("""python3 -c "
+   from playwright.sync_api import sync_playwright
+   from PIL import Image
+
+   safety_css = '''
+   *, *::before, *::after {
+     animation-duration: 0s !important;
+     animation-delay: 0s !important;
+     animation-iteration-count: 1 !important;
+     transition-duration: 0s !important;
+     transition-delay: 0s !important;
+   }
+   html, body {
+     max-height: 1800px !important;
+     overflow: hidden !important;
+   }
+   '''
+
+   p = sync_playwright().start()
+   b = p.chromium.launch()
+   pg = b.new_page(viewport={'width': 1440, 'height': 960})
+   pg.goto('file:///tmp/embodiment.html')
+   pg.add_style_tag(content=safety_css)
+   pg.wait_for_timeout(1000)
+   pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=90, full_page=False)
+   pg.close()
+   b.close()
+   p.stop()
+
+   img = Image.open('/tmp/thumbnail_source.jpg')
+   img = img.resize((960, 640), Image.Resampling.LANCZOS)
+   img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=82, optimize=True)
+
+   check = Image.open('/tmp/thumbnail_desktop.jpg')
+   assert check.size == (960, 640), check.size
+   assert check.format == 'JPEG', check.format
+   print('thumbnail ok: 960x640 JPEG')
+   " 2>&1""")
+   thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
+   ```
+
+   If thumbnail generation, resizing, or verification fails, fix the embodiment
+   or screenshot command and retry. Do not attach a missing, blank, wrong-size,
+   or non-JPEG thumbnail.
+9. **Write and re-attach artifacts:**
    ```python
    result = temper.write('/katagami/embodiments/' + slug + '.html', new_html)
    temper.action('DesignLanguages', lang_id, 'AttachEmbodiment', {
@@ -74,16 +133,20 @@ For each language specified in the job input (or ALL languages if none specified
        'composition_count': '5',
        'embodiment_format': 'html'
    })
+   thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes)
+   temper.action('DesignLanguages', lang_id, 'AttachThumbnail', {
+       'thumbnail_file_id': thumbnail_result['file_id']
+   })
    ```
-9. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
-10. **Mark reviewed after all artifacts are attached. Do not publish directly.**
+10. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
+11. **Mark reviewed after all artifacts are attached. Do not publish directly.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
     files, marks verified fields through internal actions, marks quality as
     passed, and publishes only if the entity/file world is actually valid.
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
    ```
-11. **After ALL languages are reviewed and published:**
+12. **After ALL languages are reviewed and published:**
    ```python
    organize_input = json.dumps({
        'language_ids': fixed_ids,
@@ -98,8 +161,8 @@ For each language specified in the job input (or ALL languages if none specified
 
 ## Tooling Rules
 
-- Use `import json` at the top of any code block that needs `json.dumps(...)` or
-  `json.loads(...)`. Other imports are not available in the Monty REPL.
+- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
+  without importing it. Other imports are not available in the Monty REPL.
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`, `sandbox.bash(cmd)`, `sandbox.write(path, content)`, `sandbox.read(path)`
 - **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
 

@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment`, call `SubmitForReview`
+6. After `AttachEmbodiment` and `AttachThumbnail`, call `SubmitForReview`
 
 ## Before Starting
 
@@ -42,7 +42,8 @@ Note existing typefaces, palettes, scene types, and structural approaches. Your 
 
 ## SPEC PHASE
 
-Create the entity and write ALL spec sections via `SetSpec`:
+Create the entity and write ALL spec sections via `SetSpec`. New synthesis must
+use `SetSpec` once for the core spec instead of many small setter actions:
 
 ```python
 slug = 'my-language-slug'
@@ -162,7 +163,7 @@ sandbox.bash('playwright install chromium 2>&1 | tail -1')
 sandbox.bash("""python3 -c "
 from playwright.sync_api import sync_playwright
 viewports = [
-    {'name': 'desktop', 'width': 1440, 'height': 900},
+    {'name': 'desktop', 'width': 1440, 'height': 960},
     {'name': 'tablet',  'width': 768,  'height': 1024},
     {'name': 'mobile',  'width': 375,  'height': 812},
 ]
@@ -193,7 +194,70 @@ Check each viewport: layout integrity, all 15+ elements styled, visual_character
 
 Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three viewports look polished.
 
-### Step 5 — Publish
+### Step 5 — Generate and verify the gallery thumbnail
+
+After the final embodiment HTML passes all visual checks, generate a static
+desktop thumbnail from the same `/tmp/embodiment.html`. This is mandatory for
+`synthesize`, `regenerate_embodiment`, and `evolve_language`.
+
+The thumbnail must be a stable desktop viewport crop, not a full-page strip:
+
+- Capture viewport: `1440x960`
+- Output file: `/tmp/thumbnail_desktop.jpg`
+- Output dimensions: `960x640`
+- Output format: JPEG, quality around `82`
+- Stored PawFS file MIME metadata: `image/jpeg`
+- Safety: disable animations/transitions before capture so the gallery image is
+  deterministic.
+
+```python
+sandbox.bash('pip install pillow 2>&1 | tail -1')
+sandbox.bash("""python3 -c "
+from playwright.sync_api import sync_playwright
+from PIL import Image
+
+safety_css = '''
+*, *::before, *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+html, body {
+  max-height: 1800px !important;
+  overflow: hidden !important;
+}
+'''
+
+p = sync_playwright().start()
+b = p.chromium.launch()
+pg = b.new_page(viewport={'width': 1440, 'height': 960})
+pg.goto('file:///tmp/embodiment.html')
+pg.add_style_tag(content=safety_css)
+pg.wait_for_timeout(1000)
+pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=90, full_page=False)
+pg.close()
+b.close()
+p.stop()
+
+img = Image.open('/tmp/thumbnail_source.jpg')
+img = img.resize((960, 640), Image.Resampling.LANCZOS)
+img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=82, optimize=True)
+
+check = Image.open('/tmp/thumbnail_desktop.jpg')
+assert check.size == (960, 640), check.size
+assert check.format == 'JPEG', check.format
+print('thumbnail ok: 960x640 JPEG')
+" 2>&1""")
+thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
+```
+
+If thumbnail generation, resizing, or verification fails, fix the embodiment or
+the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
+non-JPEG thumbnail.
+
+### Step 6 — Publish artifacts
 
 ```python
 result = temper.write('/katagami/embodiments/' + slug + '.html', html_code)
@@ -202,6 +266,10 @@ temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
     'element_count': '15',
     'composition_count': '5',
     'embodiment_format': 'html'
+})
+thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes)
+temper.action('DesignLanguages', eid, 'AttachThumbnail', {
+    'thumbnail_file_id': thumbnail_result['file_id']
 })
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
@@ -240,7 +308,8 @@ else:
 
 ## Tooling Rules
 
-- Use `import json` at the top of any code block that needs `json.dumps(...)` or `json.loads(...)`. Other imports are not available.
+- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
+  without importing it. Other imports are not available.
 - No `enumerate(..., start=...)` — use `for i in range(len(items)):` instead
 - **ALL array/object params MUST use `json.dumps(...)`.** Never `str()` or Python repr.
 - String literals containing quotes must use proper escaping.

@@ -3,18 +3,11 @@
 import Link from "next/link";
 import {
   memo,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
-import { useIframeSlot } from "@/lib/iframe-slots";
-import { SafeEmbodimentFrame } from "@/components/safe-embodiment-frame";
-
-const PREVIEW_VIEWPORT_WIDTH = 1440;
-const PREVIEW_VIEWPORT_HEIGHT = 960;
 
 const statusStamp: Record<string, string> = {
   Draft: "text-muted-foreground",
@@ -81,28 +74,17 @@ function tintFor(lang: DesignLanguage): string {
   return accentColors[hashInt(id, "tint") % accentColors.length];
 }
 
-// ── Root card ──
-// The full chrome (palette ribbon, washi tapes, title, etc.) always renders
-// — it's cheap DOM. Only the iframe mounts/unmounts based on inView so
-// memory stays bounded. This avoids the skeleton-swap layout shift that was
-// causing scroll jank.
-
 export function LanguageCard({ lang }: { lang: DesignLanguage }) {
-  // hasSlot is gated by the global iframe cap (at most N iframes mount
-  // across the whole page, prioritised by viewport distance). This is
-  // the hard memory bound that stops scroll crashes.
-  const { ref, hasSlot } = useIframeSlot<HTMLAnchorElement>();
   const id = lang.entity_id;
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
 
   return (
     <Link
-      ref={ref}
       href={`/language/${id}`}
       prefetch={false}
       className="group relative block min-w-0"
     >
-      <FullCard lang={lang} stickyTint={stickyTint} iframeInView={hasSlot} />
+      <FullCard lang={lang} stickyTint={stickyTint} />
     </Link>
   );
 }
@@ -112,13 +94,11 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
 interface FullCardProps {
   lang: DesignLanguage;
   stickyTint: string;
-  iframeInView: boolean;
 }
 
 const FullCard = memo(function FullCard({
   lang,
   stickyTint,
-  iframeInView,
 }: FullCardProps) {
   // Defensive: check every plausible location for the `featured` flag.
   const isFeatured = (() => {
@@ -133,20 +113,6 @@ const FullCard = memo(function FullCard({
     }
     return false;
   })();
-  const previewRef = useRef<HTMLDivElement>(null);
-  const [previewScale, setPreviewScale] = useState(0.22);
-
-  useEffect(() => {
-    const el = previewRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setPreviewScale(w / PREVIEW_VIEWPORT_WIDTH);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   const f = lang.fields;
   const c = lang.counters;
   const id = lang.entity_id;
@@ -187,6 +153,8 @@ const FullCard = memo(function FullCard({
   const summary = philosophy?.summary;
   const embodimentFileId = f.embodiment_file_id;
   const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
+  const thumbnailFileId = f.thumbnail_file_id;
+  const hasPreviewSlot = Boolean(embodimentFileId || thumbnailFileId);
 
   const tapeAColor = accentColors[hashInt(id, "t1") % accentColors.length];
   const tapeBColor = accentColors[hashInt(id, "t2") % accentColors.length];
@@ -250,8 +218,8 @@ const FullCard = memo(function FullCard({
         }}
       />
 
-      {/* Embodiment preview — polaroid frame */}
-      {embodimentFileId ? (
+      {/* Embodiment preview — static thumbnail polaroid */}
+      {hasPreviewSlot ? (
         <div className="px-4 pb-1 pt-6">
           <div
             className="relative mx-auto w-[94%] rotate-[-1deg] transition-transform duration-300 ease-out group-hover:rotate-0"
@@ -259,50 +227,39 @@ const FullCard = memo(function FullCard({
           >
             <div className="relative rounded-[2px] border border-border bg-card p-1.5 pb-5 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
               <div
-                ref={previewRef}
                 className="relative w-full overflow-hidden rounded-[1px] bg-muted"
                 style={{ aspectRatio: "3 / 2" }}
               >
-                {embodimentFormat === "tsx" ? (
+                {thumbnailFileId ? (
+                  <ThumbnailPreview
+                    fileId={thumbnailFileId}
+                    alt={`${f.name || "Design language"} desktop embodiment preview`}
+                    fallback={
+                      embodimentFormat === "tsx" ? (
+                        <TsxPlaceholder
+                          paletteColors={paletteEntries.map((p) => p.color)}
+                          headingFont={headingFont}
+                          bodyFont={bodyFont}
+                        />
+                      ) : (
+                        <PreviewPlaceholder
+                          paletteColors={paletteEntries.map((p) => p.color)}
+                          stickyTint={stickyTint}
+                        />
+                      )
+                    }
+                  />
+                ) : embodimentFormat === "tsx" ? (
                   <TsxPlaceholder
                     paletteColors={paletteEntries.map((p) => p.color)}
                     headingFont={headingFont}
                     bodyFont={bodyFont}
                   />
-                ) : iframeInView ? (
-                  <SafeEmbodimentFrame
-                    fileId={embodimentFileId}
-                    url={getFileUrl(embodimentFileId)}
-                    width={PREVIEW_VIEWPORT_WIDTH}
-                    height={PREVIEW_VIEWPORT_HEIGHT}
-                    scale={previewScale}
-                    title={`${f.name} preview`}
-                  />
                 ) : (
-                  // Neutral placeholder in the preview while iframe waits to
-                  // mount — small palette-dot cluster on tinted bg.
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      background: `color-mix(in srgb, ${stickyTint} 6%, var(--paper-tape-mix))`,
-                    }}
-                  >
-                    <div className="flex gap-1">
-                      {(paletteEntries.length > 0
-                        ? paletteEntries
-                        : [{ color: stickyTint }]
-                      )
-                        .slice(0, 5)
-                        .map((p, i) => (
-                          <span
-                            key={i}
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: p.color }}
-                          />
-                        ))}
-                    </div>
-                  </div>
+                  <PreviewPlaceholder
+                    paletteColors={paletteEntries.map((p) => p.color)}
+                    stickyTint={stickyTint}
+                  />
                 )}
                 {/* soft bottom fade */}
                 <span
@@ -326,7 +283,7 @@ const FullCard = memo(function FullCard({
       )}
 
       <header
-        className={`space-y-1.5 px-4 pb-2 ${embodimentFileId ? "pt-3" : "pt-6"}`}
+        className={`space-y-1.5 px-4 pb-2 ${hasPreviewSlot ? "pt-3" : "pt-6"}`}
       >
         <div className="flex items-start justify-between gap-2">
           <h3 className="flex min-w-0 items-center gap-1.5 font-display text-lg font-bold leading-tight tracking-[-0.02em]">
@@ -484,6 +441,68 @@ function FeaturedSparkle() {
     >
       <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
     </svg>
+  );
+}
+
+function ThumbnailPreview({
+  fileId,
+  alt,
+  fallback,
+}: {
+  fileId: string;
+  alt: string;
+  fallback: React.ReactNode;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return <>{fallback}</>;
+
+  return (
+    // Direct file-proxy delivery is intentional: thumbnail_file_id already
+    // points at a generated, card-sized PawFS image.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={getFileUrl(fileId)}
+      alt={alt}
+      width={960}
+      height={640}
+      loading="lazy"
+      decoding="async"
+      className="absolute inset-0 h-full w-full object-cover"
+      data-katagami-thumbnail="true"
+      data-file-id={fileId}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function PreviewPlaceholder({
+  paletteColors,
+  stickyTint,
+}: {
+  paletteColors: string[];
+  stickyTint: string;
+}) {
+  const dots = paletteColors.length > 0 ? paletteColors : [stickyTint];
+  return (
+    <div
+      aria-hidden
+      data-katagami-preview-placeholder="true"
+      className="absolute inset-0 flex items-center justify-center"
+      style={{
+        background: `color-mix(in srgb, ${stickyTint} 6%, var(--paper-tape-mix))`,
+      }}
+    >
+      <div className="flex gap-1">
+        {dots.slice(0, 5).map((color, i) => (
+          <span
+            key={`${color}-${i}`}
+            className="h-2 w-2 rounded-full"
+            style={{ background: color }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -132,8 +132,8 @@ Read the knowledge files in your workspace:
 
 ## Tooling Rules
 
-- Use `import json` at the top of any code block that needs `json.dumps(...)` or
-  `json.loads(...)`. Other imports are not available in the Monty REPL.
+- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
+  without importing it. Other imports are not available in the Monty REPL.
 - Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
 - **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
 

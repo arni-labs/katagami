@@ -697,6 +697,7 @@ fn verify_quality_reviewed_languages(
 
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
         verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
+        verify_thumbnail(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
             ctx,
             api_url,
@@ -888,6 +889,64 @@ fn verify_design_md(
     Ok(())
 }
 
+fn verify_thumbnail(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let thumbnail_file_id = string_field_any(&fields, "thumbnail_file_id", "");
+    if thumbnail_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no thumbnail_file_id"
+        ));
+    }
+
+    let file = load_entity(ctx, api_url, headers, "Files", &thumbnail_file_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' does not exist")
+        })?;
+    let file_status = entity_status_value(&file);
+    if !file_status.is_empty() && !matches!(file_status.as_str(), "Ready" | "Locked") {
+        return Err(format!(
+            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' is in state '{file_status}', expected Ready"
+        ));
+    }
+
+    let file_fields = entity_fields(&file);
+    let mime_type = first_nonempty(&[
+        string_field_any(&file_fields, "mime_type", ""),
+        string_field_any(&file_fields, "MimeType", ""),
+    ])
+    .to_ascii_lowercase();
+    if mime_type != "image/jpeg" && mime_type != "image/jpg" {
+        return Err(format!(
+            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' has mime_type '{mime_type}', expected image/jpeg"
+        ));
+    }
+
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
+    if size_bytes > 0 && size_bytes < 1024 {
+        return Err(format!(
+            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' is too small ({size_bytes} bytes)"
+        ));
+    }
+
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &thumbnail_file_id,
+        "thumbnail",
+        None,
+    )?;
+
+    Ok(())
+}
+
 fn verify_file_value(
     ctx: &Context,
     api_url: &str,
@@ -926,6 +985,18 @@ fn verify_file_value(
         return Err(format!(
             "DesignLanguage '{language_id}' DESIGN.md file '{file_id}' is missing required design.md front matter"
         ));
+    } else if artifact_kind == "thumbnail" {
+        let lower = trimmed.to_ascii_lowercase();
+        if lower.contains("<html")
+            || lower.contains("<!doctype")
+            || lower.contains("version:")
+            || lower.contains("components:")
+            || lower.contains("{\"error\"")
+        {
+            return Err(format!(
+                "DesignLanguage '{language_id}' thumbnail file '{file_id}' looks like text or markup, not a JPEG image"
+            ));
+        }
     }
 
     Ok(())
@@ -1402,6 +1473,29 @@ fn string_field_any(fields: &serde_json::Value, name: &str, default: &str) -> St
         .filter(|s| !s.is_empty())
         .unwrap_or(default)
         .to_string()
+}
+
+fn numeric_field_any(entity: &serde_json::Value, names: &[&str]) -> i64 {
+    let bags = [
+        entity.get("fields"),
+        entity.get("counters"),
+        Some(entity),
+    ];
+    for bag in bags.into_iter().flatten() {
+        for name in names {
+            if let Some(value) = bag.get(*name) {
+                if let Some(number) = value.as_i64() {
+                    return number;
+                }
+                if let Some(text) = value.as_str() {
+                    if let Ok(number) = text.parse::<i64>() {
+                        return number;
+                    }
+                }
+            }
+        }
+    }
+    0
 }
 
 fn run_typed_completion_fallback(

@@ -116,8 +116,8 @@ Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles
 
 ## Tooling Rules
 
-- Use `import json` at the top of any code block that needs `json.dumps(...)` or
-  `json.loads(...)`. Other imports are not available in the Monty REPL.
+- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
+  without importing it. Other imports are not available in the Monty REPL.
 - Treat each `execute` call as self-contained. Do not rely on Python variables
   created by a previous call; persist durable data into entities or include it
   in the current script.

@@ -12,8 +12,8 @@ Read knowledge files before starting work:
 | Job Type | Skill | Purpose |
 |----------|-------|---------|
 | `source_search` | research-direction | Research design movements and index authoritative sources |
-| `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec + embodiment |
-| `quality_review` | review-quality | Validate DESIGN.md and fix embodiment HTML against the spec |
+| `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec, embodiment, and desktop thumbnail |
+| `quality_review` | review-quality | Validate DESIGN.md and fix embodiment HTML + desktop thumbnail against the spec |
 | `organize_taxonomy` | organize-taxonomy | Build and maintain the taxonomy classification system |
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
 
@@ -28,10 +28,10 @@ Read knowledge files before starting work:
 - `temper.web_search(query)` — search the web
 - `temper.web_fetch(url)` — fetch a URL
 
-Use `import json` at the top of any code block that needs `json.dumps(...)` or
-`json.loads(...)`. Other imports are not available in the Monty REPL. The
-`sandbox.*` and `bash` tools are available for `synthesize`, `evolve_language`,
-and `regenerate_embodiment` jobs.
+The `json` helper is preloaded in Monty. Use `json.dumps(...)` and
+`json.loads(...)` without importing it. Other imports are not available in the
+Monty REPL. The `sandbox.*` and `bash` tools are available for `synthesize`,
+`evolve_language`, and `regenerate_embodiment` jobs.
 
 ## Entity Sets
 
@@ -51,6 +51,7 @@ Knowledge files (read via `temper.read()`):
 
 Workspace at `/katagami/`:
 - `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
+- `/katagami/thumbnails/{slug}/desktop.jpg` — static desktop gallery thumbnails generated from verified embodiments
 - `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
 - `/katagami/sources/{slug}.md` — deferred source archives, not the source-search hot path
 
@@ -64,7 +65,8 @@ DesignSource entities; do not write full fetched pages to PawFS.
 When a tool call returns an error (NameError, TypeError, HTTP failure, etc.):
 1. **Read the error message** — understand what went wrong
 2. **Fix and retry** — correct the code and re-execute. Common fixes:
-   - Add `import json` if you get `name 'json' is not defined`
+   - If `json` is unavailable, retry with a fresh self-contained call that uses
+     the preloaded helper without importing it
    - Fix syntax errors, typos, wrong parameter names
    - Retry HTTP failures (transient network errors)
 3. **Retry up to 3 times** for the same logical operation before giving up

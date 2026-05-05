@@ -8,11 +8,10 @@ import { LanguageCard } from "@/components/language-card";
 import { DeferredLanguageCards } from "@/components/deferred-language-cards";
 import { GalleryFilters } from "@/components/gallery-filters";
 
-// Eagerly render the first ~3 rows of cards; anything below the fold
-// renders a lightweight skeleton until it scrolls near the viewport,
-// at which point the real LanguageCard mounts and its embodiment
-// iframe begins fetching. Keeps initial DOM/iframe cost bounded while
-// the full catalog remains visible on scroll.
+// Eagerly render the first ~3 rows of cards; anything below the fold renders a
+// lightweight skeleton until it scrolls near the viewport. Cards use static
+// PawFS thumbnails, so the gallery stays iframe-free even after deferred rows
+// mount.
 const INITIAL_CARDS = 24;
 
 async function GalleryGrid({
