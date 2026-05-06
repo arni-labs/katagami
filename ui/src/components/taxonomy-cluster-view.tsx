@@ -6,7 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { Taxonomy, DesignLanguage } from "@/lib/odata";
 import { parseJson } from "@/lib/odata";
 import { Marker } from "@/components/page-hero";
-import { Stamp } from "@/components/scrapbook";
+import { Perforation, Stamp, WashiTape } from "@/components/scrapbook";
 
 type AccentColor =
   | "sakura"
@@ -116,7 +116,9 @@ function buildFamilies(
       );
       const usefulTaxonomies = all
         .filter((tax) => tax.entity_id !== root.entity_id)
-        .filter((tax) => (langsByTaxonomy.get(tax.entity_id) ?? []).some(isVisibleLanguage))
+        .filter((tax) =>
+          (langsByTaxonomy.get(tax.entity_id) ?? []).some(isVisibleLanguage),
+        )
         .sort((a, b) => {
           const aCount = (langsByTaxonomy.get(a.entity_id) ?? []).filter(
             isVisibleLanguage,
@@ -129,7 +131,9 @@ function buildFamilies(
         });
       return { root, taxonomies: usefulTaxonomies, languages };
     })
-    .filter((family) => family.languages.length > 0 || family.taxonomies.length > 0)
+    .filter(
+      (family) => family.languages.length > 0 || family.taxonomies.length > 0,
+    )
     .sort((a, b) => {
       if (a.languages.length !== b.languages.length) {
         return b.languages.length - a.languages.length;
@@ -151,7 +155,7 @@ function TraitPills({
       {traits.map((trait) => (
         <span
           key={trait}
-          className="rounded-[4px] px-2 py-1 text-[11px] font-medium text-foreground/80"
+          className="px-2 py-1 text-[11px] font-medium text-foreground/80"
           style={{
             background: `color-mix(in oklch, var(--${tint}) 20%, var(--paper-tape-mix))`,
           }}
@@ -167,7 +171,7 @@ function LanguageChip({ lang }: { lang: DesignLanguage }) {
   return (
     <Link
       href={`/language/${lang.entity_id}`}
-      className="inline-flex max-w-full items-center gap-1 rounded-[4px] border border-border/70 bg-background/70 px-2 py-1 text-[11px] font-medium text-foreground/80 transition-colors hover:border-foreground/30 hover:text-foreground"
+      className="inline-flex max-w-full items-center gap-1 border border-border/70 bg-[var(--paper-sticker)] px-2 py-1 text-[11px] font-medium text-foreground/80 shadow-[0_1px_0_rgba(30,35,45,0.04)] transition-colors hover:border-foreground/30 hover:bg-[var(--paper-sticker-hover)] hover:text-foreground"
     >
       <span className="truncate">{languageName(lang)}</span>
       <ArrowUpRight className="h-3 w-3 shrink-0 text-muted-foreground" />
@@ -187,7 +191,12 @@ function TaxonomyCard({
   const traits = traitsFor(tax, 4);
 
   return (
-    <article className="rounded-[8px] border border-border/70 bg-card/60 p-4 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
+    <article className="sticker-card group/tax relative overflow-hidden p-4">
+      <span
+        aria-hidden
+        className="absolute left-0 top-0 h-[3px] w-14 opacity-80 transition-all duration-200 group-hover/tax:w-20"
+        style={{ background: `var(--${tint})` }}
+      />
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 text-[16px] font-bold leading-tight text-foreground">
           {tax.fields.name}
@@ -215,7 +224,7 @@ function TaxonomyCard({
           {visibleLangs.length > 5 && (
             <Link
               href={`/?taxonomy=${tax.entity_id}`}
-              className="inline-flex items-center gap-1 rounded-[4px] border border-dashed border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-solid hover:text-foreground"
+              className="inline-flex items-center gap-1 border border-dashed border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-solid hover:text-foreground"
             >
               +{visibleLangs.length - 5} more
               <ArrowUpRight className="h-3 w-3" />
@@ -240,9 +249,17 @@ function FamilySection({
   const traits = traitsFor(family.root, 6);
 
   return (
-    <section className="border-t border-border/70 pt-8">
+    <section className="relative pt-9">
+      <Perforation className="absolute inset-x-0 top-0" />
+      <WashiTape
+        color={tint}
+        rotate={index % 2 === 0 ? -3 : 3}
+        className="-top-2 left-3"
+        width={54}
+        height={12}
+      />
       <div className="grid gap-5 lg:grid-cols-[minmax(220px,0.72fr)_minmax(0,1.8fr)]">
-        <div className="space-y-4">
+        <div className="relative space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               family {String(index + 1).padStart(2, "0")}
@@ -326,7 +343,7 @@ export function TaxonomyClusterView({
 
   if (families.length === 0) {
     return (
-      <div className="flex items-center justify-center rounded-[8px] border border-border/70 p-12 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground/70">
+      <div className="sticker-card flex items-center justify-center p-12 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground/70">
         no published taxonomy families yet
       </div>
     );
@@ -334,10 +351,14 @@ export function TaxonomyClusterView({
 
   return (
     <div className="space-y-10">
-      <div className="grid gap-3 border-y border-border/70 py-4 sm:grid-cols-3">
-        <Stat label="families" value={families.length} />
-        <Stat label="active categories" value={categoryCount} />
-        <Stat label="visible languages" value={languageCount} />
+      <div className="relative py-5">
+        <Perforation className="absolute inset-x-0 top-0" />
+        <Perforation className="absolute inset-x-0 bottom-0" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Stat label="families" value={families.length} />
+          <Stat label="active categories" value={categoryCount} />
+          <Stat label="visible languages" value={languageCount} />
+        </div>
       </div>
 
       <div className="space-y-10">
@@ -356,7 +377,7 @@ export function TaxonomyClusterView({
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div>
+    <div className="flex items-baseline gap-3 sm:block">
       <div className="font-display text-[28px] font-bold leading-none text-foreground">
         {value}
       </div>
