@@ -253,7 +253,7 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 effect = "set has_thumbnail true"
 params = ["thumbnail_file_id"]
-hint = "Attach or update the preview thumbnail image."
+hint = "Attach or update the static desktop gallery thumbnail image."
 
 # --- Actions: Classification ---
 
