@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronDown } from "lucide-react";
 import type { Taxonomy, DesignLanguage } from "@/lib/odata";
 import { parseJson } from "@/lib/odata";
 import { Marker } from "@/components/page-hero";
@@ -240,13 +240,18 @@ function FamilySection({
   family,
   index,
   langsByTaxonomy,
+  collapsed,
+  onToggle,
 }: {
   family: TaxonomyFamily;
   index: number;
   langsByTaxonomy: Map<string, DesignLanguage[]>;
+  collapsed: boolean;
+  onToggle: () => void;
 }) {
   const tint = tintFor(family.root.entity_id);
   const traits = traitsFor(family.root, 6);
+  const contentId = `taxonomy-family-${family.root.entity_id}`;
 
   return (
     <section className="relative pt-9">
@@ -258,7 +263,13 @@ function FamilySection({
         width={54}
         height={12}
       />
-      <div className="grid gap-5 lg:grid-cols-[minmax(220px,0.72fr)_minmax(0,1.8fr)]">
+      <div
+        className={
+          collapsed
+            ? "flex flex-wrap items-start justify-between gap-4"
+            : "grid gap-5 lg:grid-cols-[minmax(220px,0.72fr)_minmax(0,1.8fr)]"
+        }
+      >
         <div className="relative space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -266,22 +277,45 @@ function FamilySection({
             </span>
             <Stamp color={tint}>{family.taxonomies.length} categories</Stamp>
             <Stamp color="teal">{family.languages.length} languages</Stamp>
+            <button
+              type="button"
+              aria-expanded={!collapsed}
+              aria-controls={contentId}
+              aria-label={`${collapsed ? "Open" : "Fold"} ${
+                family.root.fields.name ?? "taxonomy family"
+              }`}
+              onClick={onToggle}
+              className="inline-flex h-7 items-center gap-1 border border-border bg-[var(--paper-sticker)] px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-[0_1px_0_rgba(30,35,45,0.04)] transition-colors hover:border-foreground/30 hover:bg-[var(--paper-sticker-hover)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${
+                  collapsed ? "-rotate-90" : ""
+                }`}
+              />
+              {collapsed ? "open" : "fold"}
+            </button>
           </div>
 
           <div>
-            <h2 className="font-display text-[26px] font-bold leading-tight text-foreground sm:text-[32px]">
+            <h2
+              className={`font-display font-bold leading-tight text-foreground ${
+                collapsed
+                  ? "text-[24px] sm:text-[28px]"
+                  : "text-[26px] sm:text-[32px]"
+              }`}
+            >
               <Marker color={tint}>{family.root.fields.name}</Marker>
             </h2>
-            {family.root.fields.description && (
+            {!collapsed && family.root.fields.description && (
               <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
                 {family.root.fields.description}
               </p>
             )}
           </div>
 
-          <TraitPills traits={traits} tint={tint} />
+          {!collapsed && <TraitPills traits={traits} tint={tint} />}
 
-          {family.languages.length > 0 && (
+          {!collapsed && family.languages.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {family.languages.slice(0, 8).map((lang) => (
                 <LanguageChip key={lang.entity_id} lang={lang} />
@@ -290,7 +324,10 @@ function FamilySection({
           )}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          id={contentId}
+          className={collapsed ? "hidden" : "grid gap-3 sm:grid-cols-2"}
+        >
           {family.taxonomies.map((tax) => (
             <TaxonomyCard
               key={tax.entity_id}
@@ -333,6 +370,9 @@ export function TaxonomyClusterView({
     () => buildFamilies(taxonomies, langsByTaxonomy),
     [taxonomies, langsByTaxonomy],
   );
+  const [collapsedFamilyIds, setCollapsedFamilyIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const categoryCount = families.reduce(
     (total, family) => total + family.taxonomies.length,
@@ -368,6 +408,18 @@ export function TaxonomyClusterView({
             family={family}
             index={index}
             langsByTaxonomy={langsByTaxonomy}
+            collapsed={collapsedFamilyIds.has(family.root.entity_id)}
+            onToggle={() => {
+              setCollapsedFamilyIds((current) => {
+                const next = new Set(current);
+                if (next.has(family.root.entity_id)) {
+                  next.delete(family.root.entity_id);
+                } else {
+                  next.add(family.root.entity_id);
+                }
+                return next;
+              });
+            }}
           />
         ))}
       </div>
