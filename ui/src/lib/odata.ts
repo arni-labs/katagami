@@ -262,13 +262,29 @@ export interface Taxonomy {
 export async function listTaxonomies(
   filter?: string,
 ): Promise<Taxonomy[]> {
+  // Temper's filtered taxonomy fast-read path can return stale projection rows
+  // for lifecycle filters (for example old Draft "Untitled" test rows). Fetch
+  // the canonical page and apply the small public filters locally.
   const params = new URLSearchParams();
-  if (filter) params.set("$filter", filter);
+  params.set("$top", "500");
   const q = params.toString();
   const resp = await odata<ODataResponse<Taxonomy>>(
     `Taxonomies${q ? `?${q}` : ""}`,
   );
-  return resp.value;
+  let rows = resp.value;
+  if (filter) {
+    const match = filter.match(/^Status\s+(eq|ne)\s+'([^']+)'$/i);
+    if (match) {
+      const [, op, expected] = match;
+      rows = rows.filter((row) => {
+        const status = row.status ?? row.fields.Status;
+        return op.toLowerCase() === "eq"
+          ? status === expected
+          : status !== expected;
+      });
+    }
+  }
+  return rows.filter((row) => row.fields.name?.trim());
 }
 
 // ── Files (embodiment HTML) ──

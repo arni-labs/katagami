@@ -6,7 +6,7 @@ import { StickyNote, Stamp } from "@/components/scrapbook";
 export default async function TaxonomyPage() {
   let taxonomies;
   try {
-    taxonomies = await listTaxonomies("Status ne 'Archived'");
+    taxonomies = await listTaxonomies("Status eq 'Published'");
   } catch {
     return (
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10">
@@ -40,7 +40,7 @@ export default async function TaxonomyPage() {
             <Marker color="salad">taxonomy</Marker> browser
           </>
         }
-        description="Clusters of related movements and stylistic families. Each spread opens to the anchor taxonomy; unfold to see its siblings and all the languages within."
+        description="A cleaner map of the design-language library, grouped by browsing family and tuned for finding usable styles quickly."
         rightSlot={
           <>
             <Stamp color="salad">{taxonomies.length} categories</Stamp>
