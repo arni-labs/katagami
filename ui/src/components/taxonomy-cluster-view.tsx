@@ -236,6 +236,60 @@ function TaxonomyCard({
   );
 }
 
+function FoldControl({
+  collapsed,
+  contentId,
+  name,
+  tint,
+  onToggle,
+}: {
+  collapsed: boolean;
+  contentId: string;
+  name?: string;
+  tint: AccentColor;
+  onToggle: () => void;
+}) {
+  const action = collapsed ? "open" : "fold";
+  const labelName = name ?? "taxonomy family";
+
+  return (
+    <button
+      type="button"
+      aria-expanded={!collapsed}
+      aria-controls={contentId}
+      aria-label={`${collapsed ? "Open" : "Fold"} ${labelName}`}
+      onClick={onToggle}
+      className="group/fold relative isolate inline-flex h-8 -rotate-1 items-center gap-1.5 overflow-hidden border-[1.5px] border-current px-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] transition-all duration-200 hover:rotate-0 hover:-translate-y-[1px] hover:shadow-[var(--shadow-sticker-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      style={{
+        color: `var(--${tint})`,
+        background: `color-mix(in oklch, var(--${tint}) 9%, var(--paper-stamp-mix))`,
+      }}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-2 opacity-35 transition-opacity group-hover/fold:opacity-55"
+        style={{ background: `var(--${tint})` }}
+      />
+      <span
+        aria-hidden
+        className="absolute right-0 top-0 h-0 w-0 border-b-[9px] border-l-[9px] border-l-transparent"
+        style={{
+          borderBottomColor: `color-mix(in oklch, var(--${tint}) 30%, var(--paper-tape-mix))`,
+        }}
+      />
+      <ChevronDown
+        className={`relative h-3.5 w-3.5 text-foreground/70 transition-transform ${
+          collapsed ? "-rotate-90" : ""
+        }`}
+      />
+      <span className="relative text-foreground/85">{action}</span>
+      <span className="relative hidden text-[9px] text-muted-foreground sm:inline">
+        spread
+      </span>
+    </button>
+  );
+}
+
 function FamilySection({
   family,
   index,
@@ -277,23 +331,13 @@ function FamilySection({
             </span>
             <Stamp color={tint}>{family.taxonomies.length} categories</Stamp>
             <Stamp color="teal">{family.languages.length} languages</Stamp>
-            <button
-              type="button"
-              aria-expanded={!collapsed}
-              aria-controls={contentId}
-              aria-label={`${collapsed ? "Open" : "Fold"} ${
-                family.root.fields.name ?? "taxonomy family"
-              }`}
-              onClick={onToggle}
-              className="inline-flex h-7 items-center gap-1 border border-border bg-[var(--paper-sticker)] px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-[0_1px_0_rgba(30,35,45,0.04)] transition-colors hover:border-foreground/30 hover:bg-[var(--paper-sticker-hover)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              <ChevronDown
-                className={`h-3.5 w-3.5 transition-transform ${
-                  collapsed ? "-rotate-90" : ""
-                }`}
-              />
-              {collapsed ? "open" : "fold"}
-            </button>
+            <FoldControl
+              collapsed={collapsed}
+              contentId={contentId}
+              name={family.root.fields.name}
+              tint={tint}
+              onToggle={onToggle}
+            />
           </div>
 
           <div>
