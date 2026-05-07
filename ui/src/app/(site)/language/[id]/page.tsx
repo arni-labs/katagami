@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
@@ -24,11 +25,46 @@ const statusColor: Record<string, string> = {
   Archived: "sakura",
 };
 
+type LanguagePageProps = {
+  params: Promise<{ id: string }>;
+};
+
+function pageTitle(name?: string): string {
+  const trimmed = name?.trim();
+  return trimmed ? `katagami ✦ ${trimmed}` : "katagami ✦ language";
+}
+
+export async function generateMetadata({
+  params,
+}: LanguagePageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const lang = await getDesignLanguage(id);
+    const name = lang.fields.name || "Untitled";
+    return {
+      title: pageTitle(name),
+      description: `${name} in the Katagami design language library.`,
+      openGraph: {
+        title: pageTitle(name),
+        description: `${name} in the Katagami design language library.`,
+        url: `/language/${id}`,
+      },
+      twitter: {
+        title: pageTitle(name),
+        description: `${name} in the Katagami design language library.`,
+      },
+    };
+  } catch {
+    return {
+      title: pageTitle(),
+    };
+  }
+}
+
 export default async function LanguageDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: LanguagePageProps) {
   const { id } = await params;
 
   let lang;
