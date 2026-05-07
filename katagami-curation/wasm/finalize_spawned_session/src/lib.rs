@@ -794,10 +794,11 @@ fn verify_design_md(
 ) -> Result<(), String> {
     let mut fields = entity_fields(language);
     let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
-    if design_md_file_id.is_empty() {
+    let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
+    if let Some(refresh_reason) = refresh_reason {
         if workspace_id.is_empty() {
             return Err(format!(
-                "DesignLanguage '{language_id}' has no design_md_file_id and the CurationJob has no workspace_id for deterministic DESIGN.md generation"
+                "DesignLanguage '{language_id}' needs deterministic DESIGN.md generation ({refresh_reason}) but the CurationJob has no workspace_id"
             ));
         }
         let generated = render_design_md_projection(language_id, &fields);
@@ -818,6 +819,7 @@ fn verify_design_md(
                 "warnings": 0
             },
             "generated_by": "katagami-finalizer",
+            "refresh_reason": refresh_reason,
             "checks": [
                 "deterministic projection rendered from verified Katagami fields"
             ]
@@ -945,8 +947,10 @@ fn thumbnail_mime_type_is_acceptable(mime_type: &str, body: &str) -> bool {
     matches!(
         normalized.as_str(),
         "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "image/gif"
-    ) || matches!(normalized.as_str(), "" | "application/octet-stream")
-        && thumbnail_payload_looks_image_like(body)
+    ) || (matches!(
+        normalized.as_str(),
+        "" | "application/octet-stream" | "text/plain"
+    ) && thumbnail_payload_looks_image_like(body))
 }
 
 fn thumbnail_payload_looks_image_like(body: &str) -> bool {
@@ -1417,6 +1421,10 @@ fn read_file_value(
     headers: &[(String, String)],
     file_id: &str,
 ) -> Result<String, String> {
+    if file_id.trim().is_empty() {
+        return Err("Cannot read Files('')/$value: missing file id".to_string());
+    }
+
     let resp = ctx.http_call(
         "GET",
         &format!("{api_url}/tdata/Files('{file_id}')/$value"),
@@ -1431,6 +1439,43 @@ fn read_file_value(
         ));
     }
     Ok(resp.body)
+}
+
+fn design_md_projection_refresh_reason(
+    fields: &serde_json::Value,
+    design_md_file_id: &str,
+) -> Option<&'static str> {
+    if design_md_file_id.trim().is_empty() {
+        return Some("missing_design_md_file_id");
+    }
+
+    let raw = string_field_any(fields, "design_md_lint_result", "");
+    if raw.trim().is_empty() {
+        return Some("missing_design_md_lint_result");
+    }
+
+    let parsed: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(parsed) => parsed,
+        Err(_) => return Some("invalid_design_md_lint_json"),
+    };
+    let errors = parsed
+        .get("summary")
+        .and_then(|summary| summary.get("errors"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let warnings = parsed
+        .get("summary")
+        .and_then(|summary| summary.get("warnings"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    if errors != 0 {
+        Some("design_md_lint_errors")
+    } else if warnings != 0 {
+        Some("design_md_lint_warnings")
+    } else {
+        None
+    }
 }
 
 fn verify_design_md_lint_result(
@@ -2404,7 +2449,8 @@ fn publish_job_progression(
 #[cfg(test)]
 mod tests {
     use super::{
-        json_object_field, render_design_md_projection, thumbnail_mime_type_is_acceptable,
+        design_md_projection_refresh_reason, json_object_field, render_design_md_projection,
+        thumbnail_mime_type_is_acceptable,
     };
     use serde_json::json;
 
@@ -2472,5 +2518,39 @@ mod tests {
             "application/octet-stream",
             "<html><body>not a thumbnail</body></html>"
         ));
+    }
+
+    #[test]
+    fn thumbnail_mime_accepts_text_plain_when_payload_is_base64_jpeg() {
+        assert!(thumbnail_mime_type_is_acceptable(
+            "text/plain",
+            "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD"
+        ));
+    }
+
+    #[test]
+    fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
+        assert_eq!(
+            design_md_projection_refresh_reason(&json!({}), ""),
+            Some("missing_design_md_file_id")
+        );
+        assert_eq!(
+            design_md_projection_refresh_reason(&json!({}), "fl-design-md"),
+            Some("missing_design_md_lint_result")
+        );
+        assert_eq!(
+            design_md_projection_refresh_reason(
+                &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":2}}"}),
+                "fl-design-md"
+            ),
+            Some("design_md_lint_warnings")
+        );
+        assert_eq!(
+            design_md_projection_refresh_reason(
+                &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
+                "fl-design-md"
+            ),
+            None
+        );
     }
 }

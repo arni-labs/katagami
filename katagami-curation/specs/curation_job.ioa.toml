@@ -9,7 +9,7 @@
 name = "CurationJob"
 states = ["Queued", "Ready", "Running", "Finalizing", "Completed", "Failed"]
 initial = "Queued"
-allow_indefinite_states = ["Queued", "Ready", "Running", "Finalizing", "Failed"]
+allow_indefinite_states = ["Completed", "Failed"]
 
 # --- State Variables ---
 
@@ -546,7 +546,7 @@ hint = "Finalize job completion after session recording and trigger-native follo
 [[action]]
 name = "Fail"
 kind = "input"
-from = ["Ready", "Running", "Finalizing"]
+from = ["Queued", "Ready", "Running", "Finalizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "Mark job as failed with error details."
@@ -562,6 +562,30 @@ module = "finalize_spawned_session"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+
+[[state_timeout]]
+state = "Queued"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Queued for 15m without submission." }
+
+[[state_timeout]]
+state = "Ready"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Ready for 15m without a spawned Session." }
+
+[[state_timeout]]
+state = "Running"
+after_seconds = 7200
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Running for 2h without self-reporting completion." }
+
+[[state_timeout]]
+state = "Finalizing"
+after_seconds = 900
+on_timeout = "Fail"
+params = { error_message = "CurationJob remained Finalizing for 15m without completing finalization." }
 
 [[action.triggers]]
 name = "job_failure_fails_direction"

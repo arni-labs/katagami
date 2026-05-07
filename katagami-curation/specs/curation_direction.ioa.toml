@@ -7,7 +7,7 @@
 name = "CurationDirection"
 states = ["Discovered", "Synthesizing", "Completed", "Failed"]
 initial = "Discovered"
-allow_indefinite_states = ["Discovered", "Synthesizing"]
+allow_indefinite_states = ["Discovered", "Completed", "Failed"]
 
 [[state]]
 name = "query_id"
@@ -119,6 +119,12 @@ from = ["Discovered", "Synthesizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "The direction could not be synthesized."
+
+[[state_timeout]]
+state = "Synthesizing"
+after_seconds = 7200
+on_timeout = "Fail"
+params = { error_message = "CurationDirection remained Synthesizing for 2h without synthesis completion." }
 
 [[invariant]]
 name = "CompletedIsFinal"
