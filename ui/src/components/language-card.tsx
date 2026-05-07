@@ -86,13 +86,18 @@ export function LanguageCard({
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
 
   return (
-    <Link
-      href={`/language/${id}`}
-      prefetch={false}
-      className="group relative block min-w-0"
-    >
-      <FullCard lang={lang} stickyTint={stickyTint} canDelete={canDelete} />
-    </Link>
+    <div className="group relative min-w-0">
+      <Link href={`/language/${id}`} prefetch={false} className="block h-full">
+        <FullCard lang={lang} stickyTint={stickyTint} />
+      </Link>
+      {canDelete ? (
+        <DeleteLanguageButton
+          id={id}
+          name={lang.fields.name || "Untitled"}
+          variant="icon"
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -101,13 +106,11 @@ export function LanguageCard({
 interface FullCardProps {
   lang: DesignLanguage;
   stickyTint: string;
-  canDelete?: boolean;
 }
 
 const FullCard = memo(function FullCard({
   lang,
   stickyTint,
-  canDelete = false,
 }: FullCardProps) {
   // Defensive: check every plausible location for the `featured` flag.
   const isFeatured = (() => {
@@ -188,14 +191,6 @@ const FullCard = memo(function FullCard({
           <span key={i} className="flex-1" style={{ background: color }} />
         ))}
       </div>
-
-      {canDelete ? (
-        <DeleteLanguageButton
-          id={id}
-          name={f.name || "Untitled"}
-          variant="icon"
-        />
-      ) : null}
 
       {/* Featured — sakura/sumire sticker pill, pink fill nearly transparent */}
       {isFeatured && (
