@@ -855,8 +855,8 @@ fn verify_design_md(
 
     // Revise resets has_design_md but leaves design_md_file_id intact.
     // Re-attach if the boolean is false so the Publish guard passes.
-    let fresh = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
-        .ok_or_else(|| {
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyDesignMd")
         })?;
     let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
@@ -921,9 +921,10 @@ fn verify_thumbnail(
         string_field_any(&file_fields, "MimeType", ""),
     ])
     .to_ascii_lowercase();
-    if mime_type != "image/jpeg" && mime_type != "image/jpg" {
+    let body = read_file_value(ctx, api_url, headers, &thumbnail_file_id)?;
+    if !thumbnail_mime_type_is_acceptable(&mime_type, &body) {
         return Err(format!(
-            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' has mime_type '{mime_type}', expected image/jpeg"
+            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' has mime_type '{mime_type}', expected image/jpeg or image-like octet-stream payload"
         ));
     }
 
@@ -934,17 +935,45 @@ fn verify_thumbnail(
         ));
     }
 
-    verify_file_value(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &thumbnail_file_id,
-        "thumbnail",
-        None,
-    )?;
+    verify_file_body(language_id, &thumbnail_file_id, "thumbnail", None, &body)?;
 
     Ok(())
+}
+
+fn thumbnail_mime_type_is_acceptable(mime_type: &str, body: &str) -> bool {
+    let normalized = mime_type.trim().to_ascii_lowercase();
+    matches!(
+        normalized.as_str(),
+        "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "image/gif"
+    ) || matches!(normalized.as_str(), "" | "application/octet-stream")
+        && thumbnail_payload_looks_image_like(body)
+}
+
+fn thumbnail_payload_looks_image_like(body: &str) -> bool {
+    let trimmed = body.trim_start();
+    let payload = if let Some(tail) = base64_data_url_payload(trimmed) {
+        tail.trim_start()
+    } else {
+        trimmed
+    };
+    let bytes = payload.as_bytes();
+    bytes.starts_with(b"/9j/")
+        || bytes.starts_with(b"iVBORw0KGgo")
+        || bytes.starts_with(b"R0lGOD")
+        || bytes.starts_with(b"UklGR")
+        || bytes.starts_with(&[0xff, 0xd8, 0xff])
+        || bytes.starts_with(b"\x89PNG\r\n\x1a\n")
+        || bytes.starts_with(b"GIF87a")
+        || bytes.starts_with(b"GIF89a")
+        || (bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP")
+}
+
+fn base64_data_url_payload(value: &str) -> Option<&str> {
+    let lower = value.get(..value.len().min(64))?.to_ascii_lowercase();
+    if !lower.starts_with("data:image/") || !lower.contains(";base64,") {
+        return None;
+    }
+    value.split_once(',').map(|(_, payload)| payload)
 }
 
 fn verify_file_value(
@@ -957,6 +986,22 @@ fn verify_file_value(
     embodiment_format: Option<&str>,
 ) -> Result<(), String> {
     let body = read_file_value(ctx, api_url, headers, file_id)?;
+    verify_file_body(
+        language_id,
+        file_id,
+        artifact_kind,
+        embodiment_format,
+        &body,
+    )
+}
+
+fn verify_file_body(
+    language_id: &str,
+    file_id: &str,
+    artifact_kind: &str,
+    embodiment_format: Option<&str>,
+    body: &str,
+) -> Result<(), String> {
     let trimmed = body.trim();
     if trimmed.len() < 64 {
         return Err(format!(
@@ -1476,11 +1521,7 @@ fn string_field_any(fields: &serde_json::Value, name: &str, default: &str) -> St
 }
 
 fn numeric_field_any(entity: &serde_json::Value, names: &[&str]) -> i64 {
-    let bags = [
-        entity.get("fields"),
-        entity.get("counters"),
-        Some(entity),
-    ];
+    let bags = [entity.get("fields"), entity.get("counters"), Some(entity)];
     for bag in bags.into_iter().flatten() {
         for name in names {
             if let Some(value) = bag.get(*name) {
@@ -2362,7 +2403,9 @@ fn publish_job_progression(
 
 #[cfg(test)]
 mod tests {
-    use super::{json_object_field, render_design_md_projection};
+    use super::{
+        json_object_field, render_design_md_projection, thumbnail_mime_type_is_acceptable,
+    };
     use serde_json::json;
 
     #[test]
@@ -2417,5 +2460,17 @@ mod tests {
         let layout = json_object_field(&fields, "layout_principles");
 
         assert_eq!(layout.get("grid").and_then(|v| v.as_str()), Some("modular"));
+    }
+
+    #[test]
+    fn thumbnail_mime_accepts_octet_stream_when_payload_is_base64_jpeg() {
+        assert!(thumbnail_mime_type_is_acceptable(
+            "application/octet-stream",
+            "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD"
+        ));
+        assert!(!thumbnail_mime_type_is_acceptable(
+            "application/octet-stream",
+            "<html><body>not a thumbnail</body></html>"
+        ));
     }
 }
