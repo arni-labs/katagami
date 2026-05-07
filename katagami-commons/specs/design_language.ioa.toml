@@ -234,10 +234,10 @@ hint = "Mark the attached embodiment as verified after the finalizer has read th
 [[action]]
 name = "AttachDesignMd"
 kind = "input"
-from = ["Draft", "UnderReview", "Published"]
+from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["design_md_file_id", "design_md_lint_result", "design_md_format_version"]
-hint = "Attach a generated DESIGN.md artifact candidate. The finalizer must verify the referenced file before it becomes valid for publish."
+hint = "Attach a generated DESIGN.md artifact candidate. Published languages must Revise first because this invalidates publish-required verification booleans until the finalizer verifies the referenced file."
 
 [[action]]
 name = "VerifyDesignMd"

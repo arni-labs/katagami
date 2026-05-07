@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getDesignLanguage } from "@/lib/odata";
 import { deleteEntity, dispatchAction } from "@/lib/odata-mutations";
 import {
   assertOwner,
@@ -12,7 +13,12 @@ import {
 
 export async function deleteLanguage(id: string): Promise<void> {
   await assertOwner();
-  await deleteEntity("DesignLanguages", id);
+  const lang = await getDesignLanguage(id);
+  if (lang.status === "Published") {
+    await dispatchAction("DesignLanguages", id, "Archive", {});
+  } else {
+    await deleteEntity("DesignLanguages", id);
+  }
   revalidatePath("/");
   revalidatePath(`/language/${id}`);
 }

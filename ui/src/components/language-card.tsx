@@ -8,7 +8,10 @@ import {
 } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
-import { DeleteLanguageButton } from "@/components/delete-language-button";
+import {
+  DeleteLanguageButton,
+  type DeleteLanguageTarget,
+} from "@/components/delete-language-button";
 import { FeaturedLanguageButton } from "@/components/featured-language-button";
 
 const statusStamp: Record<string, string> = {
@@ -108,9 +111,11 @@ function displayOrder(lang: DesignLanguage): number {
 export function LanguageCard({
   lang,
   canDelete = false,
+  onRequestDelete,
 }: {
   lang: DesignLanguage;
   canDelete?: boolean;
+  onRequestDelete?: (target: DeleteLanguageTarget) => void;
 }) {
   const id = lang.entity_id;
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
@@ -123,15 +128,36 @@ export function LanguageCard({
         <FullCard lang={lang} stickyTint={stickyTint} />
       </Link>
       {canDelete ? (
-        <>
+        <div
+          className="absolute right-2 top-2 z-30 flex items-center gap-1 rounded-[4px] border border-[color-mix(in_oklch,var(--sumire)_26%,var(--border))] bg-[color-mix(in_oklch,var(--paper-sticker)_92%,transparent)] p-1 shadow-[0_2px_9px_rgba(30,35,45,0.14)] backdrop-blur-[2px]"
+          style={{ transform: "rotate(-1deg)" }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -left-2 -top-1.5 h-[9px] w-11 rounded-[1px] opacity-85 shadow-[0_1px_1px_rgba(30,35,45,0.08)]"
+            style={{
+              background:
+                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 72%, var(--paper-tape-mix)) 0 5px, color-mix(in oklch, var(--yuzu) 38%, var(--paper-tape-mix)) 5px 10px)",
+              transform: "rotate(-5deg)",
+            }}
+          />
           <FeaturedLanguageButton
             id={id}
             name={name}
             featured={featured}
             displayOrder={displayOrder(lang)}
           />
-          <DeleteLanguageButton id={id} name={name} variant="icon" />
-        </>
+          <DeleteLanguageButton
+            id={id}
+            name={name}
+            variant="icon"
+            onRequestDelete={onRequestDelete}
+          />
+        </div>
       ) : null}
     </div>
   );
@@ -219,7 +245,7 @@ const FullCard = memo(function FullCard({
       {/* Featured — sakura/sumire sticker pill, pink fill nearly transparent */}
       {isFeatured && (
         <div
-          className="pointer-events-none absolute right-2 top-12 z-20"
+          className="pointer-events-none absolute right-2 top-14 z-20"
           style={{ transform: "rotate(6deg)" }}
         >
           <span

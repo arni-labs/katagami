@@ -16,17 +16,22 @@ export async function dispatchAction(
   action: string,
   params: Record<string, string | number | boolean>,
 ): Promise<void> {
-  const res = await fetch(
-    `${API_BASE}/tdata/${entitySet}('${id}')/Temper.${action}`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify(params),
-    },
-  );
-  if (!res.ok) {
-    throw new Error(`Action ${action} failed ${res.status}: ${await res.text()}`);
+  const namespaces = ["KatagamiCommons", "Katagami", "Temper"];
+  let lastError = "";
+  for (const namespace of namespaces) {
+    const res = await fetch(
+      `${API_BASE}/tdata/${entitySet}('${id}')/${namespace}.${action}`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(params),
+      },
+    );
+    if (res.ok) return;
+    lastError = `Action ${namespace}.${action} failed ${res.status}: ${await res.text()}`;
+    if (res.status !== 404) break;
   }
+  throw new Error(lastError || `Action ${action} failed.`);
 }
 
 export async function deleteEntity(

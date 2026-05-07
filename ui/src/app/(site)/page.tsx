@@ -4,8 +4,8 @@ import {
   listDesignLanguages,
   listTaxonomies,
 } from "@/lib/odata";
-import { LanguageCard } from "@/components/language-card";
 import { GalleryFilters } from "@/components/gallery-filters";
+import { LanguageGallery } from "@/components/language-gallery";
 import { isOwner } from "@/lib/owner";
 
 async function GalleryGrid({
@@ -158,17 +158,7 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
-  return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {languages.map((lang) => (
-        <LanguageCard
-          key={lang.entity_id}
-          lang={lang}
-          canDelete={canDelete}
-        />
-      ))}
-    </div>
-  );
+  return <LanguageGallery languages={languages} canDelete={canDelete} />;
 }
 
 export default async function GalleryPage({

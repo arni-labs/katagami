@@ -39,6 +39,7 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertIn("has_valid_design_md", self.states)
 
         attach = self.actions["AttachDesignMd"]
+        self.assertEqual(attach["from"], ["Draft", "UnderReview"])
         self.assertEqual(
             attach["params"],
             [
@@ -54,6 +55,11 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertTrue(
             self._sets_bool("AttachDesignMd", "design_md_verified", "false")
         )
+
+    def test_published_languages_revise_before_design_md_reattach(self):
+        attach = self.actions["AttachDesignMd"]
+        self.assertNotIn("Published", attach["from"])
+        self.assertIn("Revise first", attach["hint"])
 
     def test_publish_requires_valid_design_md(self):
         publish = self.actions["Publish"]
