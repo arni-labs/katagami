@@ -92,7 +92,7 @@ export function DeleteLanguageButton({
   if (variant === "icon") {
     return (
       <button
-        className="absolute top-2 right-2 z-10 hidden group-hover:flex items-center justify-center w-7 h-7 rounded-md bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive hover:text-destructive-foreground transition-colors"
+        className="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-md border border-destructive/30 bg-background/90 text-destructive shadow-[0_2px_8px_rgba(30,35,45,0.12)] backdrop-blur-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
         aria-label={`Delete ${name}`}
         title={`Delete ${name}`}
         onClick={(e) => {

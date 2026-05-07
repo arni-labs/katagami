@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { deleteEntity, dispatchAction } from "@/lib/odata";
+import { deleteEntity, dispatchAction } from "@/lib/odata-mutations";
 import {
   assertOwner,
   grantOwnerSession,
