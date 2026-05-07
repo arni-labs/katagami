@@ -464,8 +464,8 @@ function ThumbnailPreview({
     <img
       src={getFileUrl(fileId)}
       alt={alt}
-      width={960}
-      height={640}
+      width={600}
+      height={400}
       loading="lazy"
       decoding="async"
       className="absolute inset-0 h-full w-full object-cover"

@@ -69,9 +69,9 @@ class ThumbnailContractTests(unittest.TestCase):
             "thumbnail_file_id",
             "/katagami/thumbnails/",
             "1440x960",
-            "960x640",
+            "600x400",
             "full_page=False",
-            "thumbnail ok: 960x640 JPEG",
+            "thumbnail ok: 600x400 JPEG",
         ]:
             self.assertIn(fragment, skill)
 
@@ -91,9 +91,9 @@ class ThumbnailContractTests(unittest.TestCase):
             "thumbnail_file_id",
             "/katagami/thumbnails/",
             "1440x960",
-            "960x640",
+            "600x400",
             "full_page=False",
-            "thumbnail ok: 960x640 JPEG",
+            "thumbnail ok: 600x400 JPEG",
         ]:
             self.assertIn(fragment, skill)
 

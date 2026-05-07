@@ -73,8 +73,8 @@ For each language specified in the job input (or ALL languages if none specified
    The thumbnail must be a stable desktop viewport crop, not a full-page strip:
    - Capture viewport: `1440x960`
    - Output file: `/tmp/thumbnail_desktop.jpg`
-   - Output dimensions: `960x640`
-   - Output format: JPEG, quality around `82`
+   - Output dimensions: `600x400`
+   - Output format: JPEG, quality around `74`
    - Stored PawFS file MIME metadata: `image/jpeg`
    - Safety: disable animations/transitions before capture so the gallery image is deterministic
 
@@ -104,19 +104,19 @@ For each language specified in the job input (or ALL languages if none specified
    pg.goto('file:///tmp/embodiment.html')
    pg.add_style_tag(content=safety_css)
    pg.wait_for_timeout(1000)
-   pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=90, full_page=False)
+   pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=84, full_page=False)
    pg.close()
    b.close()
    p.stop()
 
    img = Image.open('/tmp/thumbnail_source.jpg')
-   img = img.resize((960, 640), Image.Resampling.LANCZOS)
-   img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=82, optimize=True)
+   img = img.resize((600, 400), Image.Resampling.LANCZOS)
+   img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=74, optimize=True)
 
    check = Image.open('/tmp/thumbnail_desktop.jpg')
-   assert check.size == (960, 640), check.size
+   assert check.size == (600, 400), check.size
    assert check.format == 'JPEG', check.format
-   print('thumbnail ok: 960x640 JPEG')
+   print('thumbnail ok: 600x400 JPEG')
    " 2>&1""")
    thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
    ```
