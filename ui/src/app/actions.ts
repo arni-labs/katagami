@@ -1,11 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { deleteEntity, dispatchAction } from "@/lib/odata";
+import {
+  assertOwner,
+  grantOwnerSession,
+  isOwnerModeConfigured,
+  revokeOwnerSession,
+} from "@/lib/owner";
 
 export async function deleteLanguage(id: string): Promise<void> {
+  await assertOwner();
   await deleteEntity("DesignLanguages", id);
   revalidatePath("/");
+  revalidatePath(`/language/${id}`);
 }
 
 export async function addCuratorNotes(
@@ -19,6 +28,27 @@ export async function addCuratorNotes(
 }
 
 export async function deleteTaxonomy(id: string): Promise<void> {
+  await assertOwner();
   await deleteEntity("Taxonomies", id);
   revalidatePath("/taxonomy");
+}
+
+export async function unlockOwnerMode(formData: FormData): Promise<void> {
+  if (!isOwnerModeConfigured()) {
+    redirect("/owner?error=not-configured");
+  }
+
+  const passphrase = String(formData.get("passphrase") ?? "");
+  if (!(await grantOwnerSession(passphrase))) {
+    redirect("/owner?error=bad-passphrase");
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/owner?unlocked=1");
+}
+
+export async function lockOwnerMode(): Promise<void> {
+  await revokeOwnerSession();
+  revalidatePath("/", "layout");
+  redirect("/owner?locked=1");
 }

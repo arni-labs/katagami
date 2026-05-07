@@ -20,15 +20,21 @@ export function DeleteLanguageButton({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleDelete() {
+    setError(null);
     startTransition(async () => {
-      await deleteLanguage(id);
-      setConfirming(false);
-      if (redirectTo) {
-        router.push(redirectTo);
-      } else {
-        router.refresh();
+      try {
+        await deleteLanguage(id);
+        setConfirming(false);
+        if (redirectTo) {
+          router.push(redirectTo);
+        } else {
+          router.refresh();
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not delete.");
       }
     });
   }
@@ -55,6 +61,9 @@ export function DeleteLanguageButton({
                 This will permanently remove this design language and its spec.
                 This cannot be undone.
               </p>
+              {error ? (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              ) : null}
             </div>
             <div className="flex justify-end gap-2">
               <Button
@@ -84,9 +93,12 @@ export function DeleteLanguageButton({
     return (
       <button
         className="absolute top-2 right-2 z-10 hidden group-hover:flex items-center justify-center w-7 h-7 rounded-md bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive hover:text-destructive-foreground transition-colors"
+        aria-label={`Delete ${name}`}
+        title={`Delete ${name}`}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          setError(null);
           setConfirming(true);
         }}
       >
@@ -99,7 +111,10 @@ export function DeleteLanguageButton({
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => setConfirming(true)}
+      onClick={() => {
+        setError(null);
+        setConfirming(true);
+      }}
     >
       <Trash2 className="h-4 w-4 mr-1" />
       Delete

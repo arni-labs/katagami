@@ -2,10 +2,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, GitBranch, GitCompare } from "lucide-react";
 import { getDesignLanguage, listTaxonomies, parseJson } from "@/lib/odata";
+import { isOwner } from "@/lib/owner";
 import { SpecPanel } from "@/components/spec-panel";
 import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
+import { DeleteLanguageButton } from "@/components/delete-language-button";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
   StickyNote,
@@ -63,6 +65,7 @@ export default async function LanguageDetailPage({
 
   const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
+  const canDelete = await isOwner();
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
@@ -119,6 +122,9 @@ export default async function LanguageDetailPage({
           <GitBranch className="h-3.5 w-3.5" />
           Lineage
         </ActionButton>
+        {canDelete ? (
+          <DeleteLanguageButton id={id} name={name} redirectTo="/" />
+        ) : null}
       </div>
 
       {/* Meta strip — compact, divided, cute */}

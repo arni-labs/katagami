@@ -35,6 +35,7 @@ Set in Vercel project settings (Production + Preview):
 | `NEXT_PUBLIC_TEMPER_API_URL` | yes | Public Railway URL of the OpenPaw backend |
 | `NEXT_PUBLIC_TEMPER_TENANT` | yes | Tenant identifier passed as `X-Tenant-Id` |
 | `TEMPER_API_KEY` | **server-only** | Bearer token for Railway. Read only by Server Components, Server Actions, and the file-proxy route handler. No `NEXT_PUBLIC_` prefix → never shipped to the browser bundle |
+| `KATAGAMI_OWNER_SECRET` | **server-only** | Passphrase for `/owner`. When unlocked, Vercel sets an HTTP-only owner cookie that reveals delete controls and gates destructive Server Actions |
 
 The browser never sees the Bearer token. All Temper calls go through Vercel-side code:
 - Server Components in `ui/src/app/**/page.tsx` (e.g. the gallery, language detail, taxonomy, lineage, compare).

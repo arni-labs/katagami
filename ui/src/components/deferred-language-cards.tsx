@@ -6,17 +6,33 @@ import { LanguageCard } from "@/components/language-card";
 
 const ROOT_MARGIN = "600px";
 
-export function DeferredLanguageCards({ langs }: { langs: DesignLanguage[] }) {
+export function DeferredLanguageCards({
+  langs,
+  canDelete = false,
+}: {
+  langs: DesignLanguage[];
+  canDelete?: boolean;
+}) {
   return (
     <>
       {langs.map((lang) => (
-        <DeferredCard key={lang.entity_id} lang={lang} />
+        <DeferredCard
+          key={lang.entity_id}
+          lang={lang}
+          canDelete={canDelete}
+        />
       ))}
     </>
   );
 }
 
-function DeferredCard({ lang }: { lang: DesignLanguage }) {
+function DeferredCard({
+  lang,
+  canDelete,
+}: {
+  lang: DesignLanguage;
+  canDelete: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -39,7 +55,7 @@ function DeferredCard({ lang }: { lang: DesignLanguage }) {
     return () => observer.disconnect();
   }, [visible]);
 
-  if (visible) return <LanguageCard lang={lang} />;
+  if (visible) return <LanguageCard lang={lang} canDelete={canDelete} />;
   return (
     <div
       ref={ref}

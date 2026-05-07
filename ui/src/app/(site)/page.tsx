@@ -7,6 +7,7 @@ import {
 import { LanguageCard } from "@/components/language-card";
 import { DeferredLanguageCards } from "@/components/deferred-language-cards";
 import { GalleryFilters } from "@/components/gallery-filters";
+import { isOwner } from "@/lib/owner";
 
 // Eagerly render the first ~3 rows of cards; anything below the fold renders a
 // lightweight skeleton until it scrolls near the viewport. Cards use static
@@ -23,6 +24,7 @@ async function GalleryGrid({
   taxonomy?: string;
   search?: string;
 }) {
+  const canDelete = await isOwner();
   let filter: string | undefined;
   if (status === "all") {
     filter = `Status ne 'Archived'`;
@@ -169,9 +171,15 @@ async function GalleryGrid({
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {eager.map((lang) => (
-        <LanguageCard key={lang.entity_id} lang={lang} />
+        <LanguageCard
+          key={lang.entity_id}
+          lang={lang}
+          canDelete={canDelete}
+        />
       ))}
-      {deferred.length > 0 ? <DeferredLanguageCards langs={deferred} /> : null}
+      {deferred.length > 0 ? (
+        <DeferredLanguageCards langs={deferred} canDelete={canDelete} />
+      ) : null}
     </div>
   );
 }

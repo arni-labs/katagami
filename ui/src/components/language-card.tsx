@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
+import { DeleteLanguageButton } from "@/components/delete-language-button";
 
 const statusStamp: Record<string, string> = {
   Draft: "text-muted-foreground",
@@ -74,7 +75,13 @@ function tintFor(lang: DesignLanguage): string {
   return accentColors[hashInt(id, "tint") % accentColors.length];
 }
 
-export function LanguageCard({ lang }: { lang: DesignLanguage }) {
+export function LanguageCard({
+  lang,
+  canDelete = false,
+}: {
+  lang: DesignLanguage;
+  canDelete?: boolean;
+}) {
   const id = lang.entity_id;
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
 
@@ -84,7 +91,7 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
       prefetch={false}
       className="group relative block min-w-0"
     >
-      <FullCard lang={lang} stickyTint={stickyTint} />
+      <FullCard lang={lang} stickyTint={stickyTint} canDelete={canDelete} />
     </Link>
   );
 }
@@ -94,11 +101,13 @@ export function LanguageCard({ lang }: { lang: DesignLanguage }) {
 interface FullCardProps {
   lang: DesignLanguage;
   stickyTint: string;
+  canDelete?: boolean;
 }
 
 const FullCard = memo(function FullCard({
   lang,
   stickyTint,
+  canDelete = false,
 }: FullCardProps) {
   // Defensive: check every plausible location for the `featured` flag.
   const isFeatured = (() => {
@@ -179,6 +188,14 @@ const FullCard = memo(function FullCard({
           <span key={i} className="flex-1" style={{ background: color }} />
         ))}
       </div>
+
+      {canDelete ? (
+        <DeleteLanguageButton
+          id={id}
+          name={f.name || "Untitled"}
+          variant="icon"
+        />
+      ) : null}
 
       {/* Featured — sakura/sumire sticker pill, pink fill nearly transparent */}
       {isFeatured && (
