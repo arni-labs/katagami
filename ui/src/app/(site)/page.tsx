@@ -5,15 +5,8 @@ import {
   listTaxonomies,
 } from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
-import { DeferredLanguageCards } from "@/components/deferred-language-cards";
 import { GalleryFilters } from "@/components/gallery-filters";
 import { isOwner } from "@/lib/owner";
-
-// Eagerly render the first ~3 rows of cards; anything below the fold renders a
-// lightweight skeleton until it scrolls near the viewport. Cards use static
-// PawFS thumbnails, so the gallery stays iframe-free even after deferred rows
-// mount.
-const INITIAL_CARDS = 24;
 
 async function GalleryGrid({
   status,
@@ -165,21 +158,15 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
-  const eager = languages.slice(0, INITIAL_CARDS);
-  const deferred = languages.slice(INITIAL_CARDS);
-
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {eager.map((lang) => (
+      {languages.map((lang) => (
         <LanguageCard
           key={lang.entity_id}
           lang={lang}
           canDelete={canDelete}
         />
       ))}
-      {deferred.length > 0 ? (
-        <DeferredLanguageCards langs={deferred} canDelete={canDelete} />
-      ) : null}
     </div>
   );
 }
