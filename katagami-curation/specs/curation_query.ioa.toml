@@ -14,7 +14,7 @@
 name = "CurationQuery"
 states = ["Submitted", "Researching", "Synthesizing", "Organizing", "Completed", "Failed"]
 initial = "Submitted"
-allow_indefinite_states = ["Submitted", "Researching", "Synthesizing", "Organizing"]
+allow_indefinite_states = ["Submitted", "Completed", "Failed"]
 
 # --- State Variables ---
 
@@ -139,6 +139,24 @@ from = ["Submitted", "Researching", "Synthesizing", "Organizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "Pipeline failed at any stage."
+
+[[state_timeout]]
+state = "Researching"
+after_seconds = 7200
+on_timeout = "Fail"
+params = { error_message = "CurationQuery remained Researching for 2h without source-search completion." }
+
+[[state_timeout]]
+state = "Synthesizing"
+after_seconds = 14400
+on_timeout = "Fail"
+params = { error_message = "CurationQuery remained Synthesizing for 4h without synthesis completion." }
+
+[[state_timeout]]
+state = "Organizing"
+after_seconds = 14400
+on_timeout = "Fail"
+params = { error_message = "CurationQuery remained Organizing for 4h without organization completion." }
 
 # --- Invariants ---
 
