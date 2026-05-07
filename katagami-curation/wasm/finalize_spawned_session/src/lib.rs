@@ -601,7 +601,7 @@ fn verify_typed_completion(
 ) -> Result<serde_json::Value, String> {
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
-            verify_synthesized_languages(ctx, api_url, headers, fields)
+            verify_synthesized_languages(ctx, api_url, headers, fields, job_type)
         }
         "quality_review" => {
             verify_quality_reviewed_languages(ctx, api_url, headers, fields, workspace_id)
@@ -625,6 +625,7 @@ fn verify_synthesized_languages(
     api_url: &str,
     headers: &[(String, String)],
     fields: &serde_json::Value,
+    job_type: &str,
 ) -> Result<serde_json::Value, String> {
     let language_ids = design_language_ids_from_job(fields);
     if language_ids.is_empty() {
@@ -644,6 +645,11 @@ fn verify_synthesized_languages(
                 continue;
             }
         };
+        verify_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
+            format!(
+                "{job_type} completion requires a valid gallery thumbnail before review: {e}"
+            )
+        })?;
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
                 verified.push(language_id.clone());
@@ -666,7 +672,7 @@ fn verify_synthesized_languages(
 
     Ok(json!({
         "validated": verified.len() == language_ids.len() && incomplete.is_empty(),
-        "job_type": "synthesize",
+        "job_type": job_type,
         "verified_language_ids": verified,
         "incomplete_language_ids": incomplete,
     }))

@@ -31,6 +31,12 @@ class ThumbnailContractTests(unittest.TestCase):
         guards = publish.get("guard", [])
         self.assertNotIn({"type": "is_true", "var": "has_thumbnail"}, guards)
 
+    def test_submit_for_review_requires_thumbnail(self):
+        submit = self.actions["SubmitForReview"]
+        guards = submit.get("guard", [])
+        self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
+        self.assertIn("gallery thumbnail", submit["hint"])
+
     def test_quality_finalizer_gates_on_thumbnail(self):
         source = (
             self.curation_root
@@ -53,6 +59,29 @@ class ThumbnailContractTests(unittest.TestCase):
             "thumbnail verification must happen before quality can pass",
         )
 
+    def test_synthesis_finalizer_gates_on_thumbnail(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+        synth_fn = source[
+            source.index("fn verify_synthesized_languages") : source.index(
+                "fn verify_quality_reviewed_languages"
+            )
+        ]
+
+        self.assertIn(
+            "verify_thumbnail(ctx, api_url, headers, language_id, &language)",
+            synth_fn,
+        )
+        self.assertIn(
+            "completion requires a valid gallery thumbnail before review",
+            synth_fn,
+        )
+
     def test_synthesize_skill_generates_and_attaches_thumbnail(self):
         skill = (
             self.curation_root
@@ -72,6 +101,7 @@ class ThumbnailContractTests(unittest.TestCase):
             "600x400",
             "full_page=False",
             "thumbnail ok: 600x400 JPEG",
+            "Do not call `SubmitForReview` until `AttachThumbnail`",
         ]:
             self.assertIn(fragment, skill)
 

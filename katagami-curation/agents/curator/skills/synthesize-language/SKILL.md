@@ -255,7 +255,9 @@ thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
 
 If thumbnail generation, resizing, or verification fails, fix the embodiment or
 the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
-non-JPEG thumbnail.
+non-JPEG thumbnail. Do not call `SubmitForReview` until `AttachThumbnail` has
+successfully attached `thumbnail_file_id`; the review transition is blocked
+without a gallery thumbnail.
 
 ### Step 6 — Publish artifacts
 
