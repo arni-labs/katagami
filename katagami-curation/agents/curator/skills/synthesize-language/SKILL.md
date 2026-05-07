@@ -46,11 +46,19 @@ Create the entity and write ALL spec sections via `SetSpec`. New synthesis must
 use `SetSpec` once for the core spec instead of many small setter actions:
 
 ```python
+created_ids = []
 slug = 'my-language-slug'
 name = 'My Language Name'
-lang = temper.create('DesignLanguages', {'Id': slug})
+lang = temper.create('DesignLanguages', {})
 eid = lang['entity_id']
+created_ids.append(eid)
 ```
+
+`eid` is the DesignLanguage ID. Never pass `Id`, `slug`, or any other
+human-readable value when creating a DesignLanguage. Slugs can collide across
+parallel direction/query attempts and must stay in the `slug` field only.
+Every `created_ids`, `language_ids`, and `design_language_ids` value must use
+the returned `entity_id`, not the slug.
 
 **Philosophy** — the identity statement. `visual_character` must list 3-5 concrete structural CSS choices (not adjectives).
 
@@ -318,7 +326,7 @@ else:
 
 ## Output
 
-- `language_ids` — array of created DesignLanguage entity IDs
+- `language_ids` — array of created DesignLanguage entity IDs, never slugs
 - `synthesize` → `CompleteSynthesis` with `design_language_ids` and `review_input`
 - `regenerate_embodiment` → `CompleteRegeneration`
 - `evolve_language` → `CompleteEvolution`

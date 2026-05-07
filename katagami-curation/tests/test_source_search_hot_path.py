@@ -34,6 +34,23 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertNotIn("'WritePhilosophy'", skill)
         self.assertNotIn("'SetTokens'", skill)
 
+    def test_synthesis_uses_generated_entity_ids_not_slugs(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (
+            root / "agents" / "curator" / "skills" / "synthesize-language" / "SKILL.md"
+        ).read_text()
+        agent = (root / "agents" / "curator" / "AGENT.md").read_text()
+
+        self.assertIn("created_ids = []", skill)
+        self.assertIn("lang = temper.create('DesignLanguages', {})", skill)
+        self.assertIn("eid = lang['entity_id']", skill)
+        self.assertIn("created_ids.append(eid)", skill)
+        self.assertIn("not the slug", skill)
+        self.assertIn("DesignLanguage IDs are Temper entity IDs", agent)
+        self.assertIn("not slugs", agent)
+        self.assertNotIn("temper.create('DesignLanguages', {'Id': slug})", skill)
+        self.assertNotIn('temper.create("DesignLanguages", {"Id": slug})', skill)
+
     def test_storage_model_documents_pawfs_artifact_boundary(self):
         root = Path(__file__).resolve().parents[2]
         commons_app = (root / "katagami-commons" / "APP.md").read_text()

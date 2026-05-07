@@ -42,6 +42,12 @@ Monty REPL. The `sandbox.*` and `bash` tools are available for `synthesize`,
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
 
+DesignLanguage IDs are Temper entity IDs. Never use a slug, movement name, or
+other human-readable key as `Id` when creating a DesignLanguage; slugs belong in
+the `slug` field only. All `design_language_ids` / `language_ids` arrays must
+contain `entity_id` values returned by `temper.create(...)` or provided in job
+input, not slugs.
+
 ## Workspace
 
 Knowledge files (read via `temper.read()`):
