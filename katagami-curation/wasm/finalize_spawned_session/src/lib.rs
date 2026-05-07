@@ -645,6 +645,9 @@ fn verify_synthesized_languages(
                 continue;
             }
         };
+        if matches!(job_type, "synthesize" | "evolve_language") {
+            verify_generated_language_identity(language_id, &language)?;
+        }
         verify_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
             format!(
                 "{job_type} completion requires a valid gallery thumbnail before review: {e}"
@@ -676,6 +679,20 @@ fn verify_synthesized_languages(
         "verified_language_ids": verified,
         "incomplete_language_ids": incomplete,
     }))
+}
+
+fn verify_generated_language_identity(
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let slug = string_field_any(&fields, "slug", "");
+    if !slug.is_empty() && slug == language_id {
+        return Err(format!(
+            "DesignLanguage '{language_id}' uses its slug as the entity ID; synthesize/evolve_language must use the generated entity_id and store '{slug}' only in the slug field"
+        ));
+    }
+    Ok(())
 }
 
 fn verify_quality_reviewed_languages(

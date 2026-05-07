@@ -51,6 +51,22 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertNotIn("temper.create('DesignLanguages', {'Id': slug})", skill)
         self.assertNotIn('temper.create("DesignLanguages", {"Id": slug})', skill)
 
+    def test_synthesis_finalizer_rejects_slug_entity_ids(self):
+        root = Path(__file__).resolve().parents[1]
+        finalizer = (
+            root / "wasm" / "finalize_spawned_session" / "src" / "lib.rs"
+        ).read_text()
+        synth_fn = finalizer[
+            finalizer.index("fn verify_synthesized_languages") : finalizer.index(
+                "fn verify_quality_reviewed_languages"
+            )
+        ]
+
+        self.assertIn("verify_generated_language_identity", finalizer)
+        self.assertIn('matches!(job_type, "synthesize" | "evolve_language")', synth_fn)
+        self.assertIn("uses its slug as the entity ID", finalizer)
+        self.assertIn("generated entity_id", finalizer)
+
     def test_storage_model_documents_pawfs_artifact_boundary(self):
         root = Path(__file__).resolve().parents[2]
         commons_app = (root / "katagami-commons" / "APP.md").read_text()
