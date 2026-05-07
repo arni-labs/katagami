@@ -14,7 +14,7 @@ export async function dispatchAction(
   entitySet: string,
   id: string,
   action: string,
-  params: Record<string, string>,
+  params: Record<string, string | number | boolean>,
 ): Promise<void> {
   const res = await fetch(
     `${API_BASE}/tdata/${entitySet}('${id}')/Temper.${action}`,

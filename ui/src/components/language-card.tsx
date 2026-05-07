@@ -9,6 +9,7 @@ import {
 import type { DesignLanguage } from "@/lib/odata";
 import { parseJson, getFileUrl } from "@/lib/odata";
 import { DeleteLanguageButton } from "@/components/delete-language-button";
+import { FeaturedLanguageButton } from "@/components/featured-language-button";
 
 const statusStamp: Record<string, string> = {
   Draft: "text-muted-foreground",
@@ -75,6 +76,35 @@ function tintFor(lang: DesignLanguage): string {
   return accentColors[hashInt(id, "tint") % accentColors.length];
 }
 
+function isFeaturedLanguage(lang: DesignLanguage): boolean {
+  const bag = lang as unknown as Record<string, unknown>;
+  const bags = [bag.booleans, bag.fields, bag.counters, bag];
+  for (const b of bags) {
+    if (!b || typeof b !== "object") continue;
+    const rec = b as Record<string, unknown>;
+    const v = rec.featured ?? rec.Featured ?? rec.isFeatured;
+    if (v === true || v === 1) return true;
+    if (typeof v === "string" && v.toLowerCase() === "true") return true;
+  }
+  return false;
+}
+
+function displayOrder(lang: DesignLanguage): number {
+  const bag = lang as unknown as Record<string, unknown>;
+  const bags = [bag.counters, bag.fields, bag];
+  for (const b of bags) {
+    if (!b || typeof b !== "object") continue;
+    const rec = b as Record<string, unknown>;
+    const v = rec.display_order ?? rec.displayOrder ?? rec.DisplayOrder;
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const n = parseInt(v, 10);
+      if (!Number.isNaN(n)) return n;
+    }
+  }
+  return 0;
+}
+
 export function LanguageCard({
   lang,
   canDelete = false,
@@ -84,6 +114,8 @@ export function LanguageCard({
 }) {
   const id = lang.entity_id;
   const stickyTint = useMemo(() => tintFor(lang), [lang]);
+  const name = lang.fields.name || "Untitled";
+  const featured = isFeaturedLanguage(lang);
 
   return (
     <div className="group relative min-w-0">
@@ -91,11 +123,15 @@ export function LanguageCard({
         <FullCard lang={lang} stickyTint={stickyTint} />
       </Link>
       {canDelete ? (
-        <DeleteLanguageButton
-          id={id}
-          name={lang.fields.name || "Untitled"}
-          variant="icon"
-        />
+        <>
+          <FeaturedLanguageButton
+            id={id}
+            name={name}
+            featured={featured}
+            displayOrder={displayOrder(lang)}
+          />
+          <DeleteLanguageButton id={id} name={name} variant="icon" />
+        </>
       ) : null}
     </div>
   );
@@ -112,19 +148,7 @@ const FullCard = memo(function FullCard({
   lang,
   stickyTint,
 }: FullCardProps) {
-  // Defensive: check every plausible location for the `featured` flag.
-  const isFeatured = (() => {
-    const bag = lang as unknown as Record<string, unknown>;
-    const bags = [bag.booleans, bag.fields, bag.counters, bag];
-    for (const b of bags) {
-      if (!b || typeof b !== "object") continue;
-      const rec = b as Record<string, unknown>;
-      const v = rec.featured ?? rec.Featured ?? rec.isFeatured;
-      if (v === true || v === 1) return true;
-      if (typeof v === "string" && v.toLowerCase() === "true") return true;
-    }
-    return false;
-  })();
+  const isFeatured = isFeaturedLanguage(lang);
   const f = lang.fields;
   const c = lang.counters;
   const id = lang.entity_id;
@@ -195,7 +219,7 @@ const FullCard = memo(function FullCard({
       {/* Featured — sakura/sumire sticker pill, pink fill nearly transparent */}
       {isFeatured && (
         <div
-          className="pointer-events-none absolute right-2 top-4 z-30"
+          className="pointer-events-none absolute right-2 top-12 z-20"
           style={{ transform: "rotate(6deg)" }}
         >
           <span

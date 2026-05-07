@@ -17,6 +17,20 @@ export async function deleteLanguage(id: string): Promise<void> {
   revalidatePath(`/language/${id}`);
 }
 
+export async function setLanguageFeatured(
+  id: string,
+  featured: boolean,
+  displayOrder = 0,
+): Promise<void> {
+  await assertOwner();
+  await dispatchAction("DesignLanguages", id, "SetFeatured", {
+    featured,
+    display_order: displayOrder,
+  });
+  revalidatePath("/");
+  revalidatePath(`/language/${id}`);
+}
+
 export async function addCuratorNotes(
   id: string,
   notes: string,
