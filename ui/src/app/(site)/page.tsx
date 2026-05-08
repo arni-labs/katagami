@@ -74,11 +74,13 @@ async function GalleryGrid({
     );
   }
 
-  // Sort by recency first in every status view. The backend model defines
-  // timestamp fields, but older production rows often omit them; UUID-v7-ish
-  // Katagami entity ids carry a creation timestamp, so use that as fallback.
-  // OData queries use PascalCase (Featured / DisplayOrder) but the JSON
-  // response might put values in any of several shapes — check them all.
+  // Featured languages lead the main catalog. After that, published languages
+  // read newest-to-oldest by publish/create time; UpdatedAt is intentionally
+  // last so owner toggles don't reshuffle the public catalog. The backend model
+  // defines timestamp fields, but older production rows often omit them;
+  // UUID-v7-ish Katagami entity ids carry a creation timestamp, so use that as
+  // fallback. OData queries use PascalCase (Featured / DisplayOrder), but the
+  // JSON response might put values in any of several shapes — check them all.
   function isFeatured(l: (typeof languages)[number]): boolean {
     const bag = l as unknown as Record<string, unknown>;
     const candidates = [
@@ -124,18 +126,18 @@ async function GalleryGrid({
   function recency(l: (typeof languages)[number]): number {
     const f = l.fields;
     return (
-      dateValue(f.UpdatedAt ?? f.updated_at) ||
       dateValue(f.PublishedAt ?? f.published_at) ||
       dateValue(f.CreatedAt ?? f.created_at) ||
       uuidV7Time(l.entity_id) ||
       uuidV7Time(f.Id) ||
+      dateValue(f.UpdatedAt ?? f.updated_at) ||
       l.sequence_nr ||
       l.total_event_count ||
       0
     );
   }
-  // Tie-breakers after recency: Published -> UnderReview -> Draft -> Archived,
-  // then featured/display order for intentional curation inside same recency.
+  // Tie-breakers after featured: Published -> UnderReview -> Draft -> Archived,
+  // then recency. Featured languages still honor display_order when present.
   const STATUS_PRIORITY: Record<string, number> = {
     Published: 0,
     UnderReview: 1,
@@ -143,18 +145,20 @@ async function GalleryGrid({
     Archived: 3,
   };
   languages.sort((a, b) => {
-    const ra = recency(a);
-    const rb = recency(b);
-    if (ra !== rb) return rb - ra;
-    const sa = STATUS_PRIORITY[a.status] ?? 99;
-    const sb = STATUS_PRIORITY[b.status] ?? 99;
-    if (sa !== sb) return sa - sb;
     const fa = isFeatured(a) ? 0 : 1;
     const fb = isFeatured(b) ? 0 : 1;
     if (fa !== fb) return fa - fb;
-    const oa = displayOrder(a);
-    const ob = displayOrder(b);
-    if (oa !== ob) return oa - ob;
+    if (fa === 0) {
+      const oa = displayOrder(a);
+      const ob = displayOrder(b);
+      if (oa !== ob) return oa - ob;
+    }
+    const sa = STATUS_PRIORITY[a.status] ?? 99;
+    const sb = STATUS_PRIORITY[b.status] ?? 99;
+    if (sa !== sb) return sa - sb;
+    const ra = recency(a);
+    const rb = recency(b);
+    if (ra !== rb) return rb - ra;
     return a.entity_id.localeCompare(b.entity_id);
   });
 
