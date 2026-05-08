@@ -407,14 +407,14 @@ export default async function GalleryPage({
                 id="what-you-can-do"
                 className="font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]"
               >
-                Browse, inspect,{" "}
+                Browse and share with{" "}
                 <span className="marker">
                   <span
                     aria-hidden
                     className="marker-fill"
                     style={{ background: "var(--yuzu)" }}
                   />
-                  <span className="marker-text">download</span>
+                  <span className="marker-text">agents</span>
                 </span>{" "}
               </h2>
             </div>
