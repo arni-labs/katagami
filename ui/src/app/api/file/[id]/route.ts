@@ -8,6 +8,46 @@ const IMAGE_BROWSER_CACHE_CONTROL =
   "public, max-age=86400, stale-while-revalidate=604800";
 const IMAGE_VERCEL_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
+function decodeBase64ImageValue(
+  bytes: ArrayBuffer,
+  contentType: string,
+): ArrayBuffer {
+  const isImage = contentType.toLowerCase().startsWith("image/");
+  if (!isImage || bytes.byteLength < 4) return bytes;
+
+  const view = new Uint8Array(bytes);
+  const looksBinaryImage =
+    (view[0] === 0xff && view[1] === 0xd8 && view[2] === 0xff) ||
+    (view[0] === 0x89 &&
+      view[1] === 0x50 &&
+      view[2] === 0x4e &&
+      view[3] === 0x47) ||
+    (view[0] === 0x47 && view[1] === 0x49 && view[2] === 0x46) ||
+    (view[0] === 0x52 &&
+      view[1] === 0x49 &&
+      view[2] === 0x46 &&
+      view[3] === 0x46);
+  if (looksBinaryImage) return bytes;
+
+  const text = new TextDecoder("ascii", { fatal: false }).decode(view).trim();
+  const commaIndex = text.indexOf(",");
+  const payload =
+    text.startsWith("data:image/") && commaIndex >= 0
+      ? text.slice(commaIndex + 1)
+      : text;
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(payload)) return bytes;
+
+  try {
+    const decoded = Buffer.from(payload, "base64");
+    return decoded.buffer.slice(
+      decoded.byteOffset,
+      decoded.byteOffset + decoded.byteLength,
+    );
+  } catch {
+    return bytes;
+  }
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -31,15 +71,15 @@ export async function GET(
 
   const contentType = res.headers.get("content-type") || "text/html";
   const isImage = contentType.startsWith("image/");
-  const body = res.body ?? (await res.arrayBuffer());
+  const upstreamBody = await res.arrayBuffer();
+  const body = decodeBase64ImageValue(upstreamBody, contentType);
   const responseHeaders = new Headers({
     "Content-Type": contentType,
     "Cache-Control": isImage
       ? IMAGE_BROWSER_CACHE_CONTROL
       : DEFAULT_CACHE_CONTROL,
   });
-  const contentLength = res.headers.get("content-length");
-  if (contentLength) responseHeaders.set("Content-Length", contentLength);
+  responseHeaders.set("Content-Length", String(body.byteLength));
   if (isImage) {
     responseHeaders.set("Vercel-CDN-Cache-Control", IMAGE_VERCEL_CACHE_CONTROL);
   }
