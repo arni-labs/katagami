@@ -17,11 +17,20 @@ type QueueItem = {
 };
 
 const subscribers = new WeakMap<Element, Callback>();
+const preloadSubscribers = new WeakMap<Element, Callback>();
 let sharedObserver: IntersectionObserver | null = null;
+let sharedPreloadObserver: IntersectionObserver | null = null;
 const loadQueue: QueueItem[] = [];
+const preloadQueue: string[] = [];
+const preloadingUrls = new Set<string>();
+const preloadedUrls = new Set<string>();
 let activeLoads = 0;
-const MAX_CONCURRENT_THUMBNAILS = 3;
+let activePreloads = 0;
+const MAX_CONCURRENT_THUMBNAILS = 6;
+const MAX_CONCURRENT_PRELOADS = 4;
 const THUMBNAIL_LOAD_TIMEOUT_MS = 30000;
+const LOAD_ROOT_MARGIN = "3200px 0px 3200px 0px";
+const PRELOAD_ROOT_MARGIN = "12000px 0px 12000px 0px";
 
 function finishQueueItem(item: QueueItem) {
   if (!item.started || item.finished) return;
@@ -67,6 +76,37 @@ function enqueueThumbnailLoad(start: Callback): LoadTicket {
   };
 }
 
+function drainPreloadQueue() {
+  while (
+    activePreloads < MAX_CONCURRENT_PRELOADS &&
+    preloadQueue.length > 0
+  ) {
+    const url = preloadQueue.shift();
+    if (!url || preloadedUrls.has(url)) continue;
+    activePreloads += 1;
+    fetch(url, { cache: "force-cache" })
+      .then(async (res) => {
+        if (res.ok) {
+          await res.arrayBuffer();
+          preloadedUrls.add(url);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        preloadingUrls.delete(url);
+        activePreloads = Math.max(0, activePreloads - 1);
+        drainPreloadQueue();
+      });
+  }
+}
+
+function enqueueThumbnailPreload(url: string) {
+  if (preloadedUrls.has(url) || preloadingUrls.has(url)) return;
+  preloadingUrls.add(url);
+  preloadQueue.push(url);
+  drainPreloadQueue();
+}
+
 function getThumbnailObserver(): IntersectionObserver | null {
   if (typeof window === "undefined") return null;
   if (sharedObserver) return sharedObserver;
@@ -80,12 +120,33 @@ function getThumbnailObserver(): IntersectionObserver | null {
       }
     },
     {
-      rootMargin: "1200px 0px 1200px 0px",
+      rootMargin: LOAD_ROOT_MARGIN,
       threshold: 0,
     },
   );
 
   return sharedObserver;
+}
+
+function getThumbnailPreloadObserver(): IntersectionObserver | null {
+  if (typeof window === "undefined") return null;
+  if (sharedPreloadObserver) return sharedPreloadObserver;
+
+  sharedPreloadObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const cb = preloadSubscribers.get(entry.target);
+        if (cb) cb();
+      }
+    },
+    {
+      rootMargin: PRELOAD_ROOT_MARGIN,
+      threshold: 0,
+    },
+  );
+
+  return sharedPreloadObserver;
 }
 
 export function ThumbnailPreview({
@@ -106,6 +167,30 @@ export function ThumbnailPreview({
   const queuedRef = useRef(false);
   const [shouldLoad, setShouldLoad] = useState(eager);
   const [failed, setFailed] = useState(false);
+  const src = getFileUrl(fileId);
+
+  useEffect(() => {
+    if (eager) return;
+    const el = rootRef.current;
+    const observer = getThumbnailPreloadObserver();
+    if (!el || !observer) {
+      enqueueThumbnailPreload(src);
+      return;
+    }
+
+    const preload = () => {
+      preloadSubscribers.delete(el);
+      observer.unobserve(el);
+      enqueueThumbnailPreload(src);
+    };
+
+    preloadSubscribers.set(el, preload);
+    observer.observe(el);
+    return () => {
+      preloadSubscribers.delete(el);
+      observer.unobserve(el);
+    };
+  }, [eager, src]);
 
   useEffect(() => {
     if (eager) return;
@@ -151,7 +236,7 @@ export function ThumbnailPreview({
         // points at a generated, card-sized PawFS image.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={getFileUrl(fileId)}
+          src={src}
           alt={alt}
           width={600}
           height={400}
@@ -161,7 +246,10 @@ export function ThumbnailPreview({
           className="absolute inset-0 h-full w-full object-cover"
           data-katagami-thumbnail="true"
           data-file-id={fileId}
-          onLoad={() => finishThumbnailLoad()}
+          onLoad={() => {
+            preloadedUrls.add(src);
+            finishThumbnailLoad();
+          }}
           onError={() => {
             finishThumbnailLoad();
             setFailed(true);
