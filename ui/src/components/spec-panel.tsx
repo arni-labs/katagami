@@ -17,6 +17,7 @@ export interface SpecPanelProps {
   designMdLintResult?: string;
   hasDesignMd?: boolean;
   hasValidDesignMd?: boolean;
+  showActions?: boolean;
 }
 
 type AccentColor =
@@ -1093,6 +1094,7 @@ export function SpecPanel(props: SpecPanelProps) {
     guidance,
     imageryDirection,
     generativeCanvas,
+    showActions = true,
   } = props;
 
   const katagamiMarkdown = katagamiSpecToMarkdown(props);
@@ -1100,15 +1102,16 @@ export function SpecPanel(props: SpecPanelProps) {
 
   return (
     <div className="relative">
-      {/* Spec packet — flows inline so it never covers section chevrons */}
-      <div className="mb-5 flex flex-wrap items-start justify-end gap-2">
-        <SpecActions
-          languageId={props.languageId}
-          katagamiSpec={katagamiMarkdown}
-          designMd={designMd}
-          slug={props.slug}
-        />
-      </div>
+      {showActions && (
+        <div className="mb-5 flex flex-wrap items-start justify-end gap-2">
+          <SpecActions
+            languageId={props.languageId}
+            katagamiSpec={katagamiMarkdown}
+            designMd={designMd}
+            slug={props.slug}
+          />
+        </div>
+      )}
 
       <div className="divide-y divide-dashed divide-border">
         <Section label="philosophy" color="teal" defaultOpen>

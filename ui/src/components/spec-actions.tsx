@@ -8,6 +8,7 @@ interface SpecActionsProps {
   katagamiSpec: string;
   designMd: string;
   slug?: string;
+  variant?: "compact" | "hero";
 }
 
 type Format = "katagami" | "design-md";
@@ -57,8 +58,9 @@ export function SpecActions({
   katagamiSpec,
   designMd,
   slug,
+  variant = "compact",
 }: SpecActionsProps) {
-  const [format, setFormat] = useState<Format>("katagami");
+  const [format, setFormat] = useState<Format>("design-md");
   const [justCopied, setJustCopied] = useState<CopyKind | null>(null);
 
   const flash = (kind: CopyKind) => {
@@ -112,6 +114,100 @@ export function SpecActions({
 
   const accent = ACCENT[format];
   const filename = URL_SUFFIX[format];
+
+  if (variant === "hero") {
+    return (
+      <div className="relative">
+        <span
+          aria-hidden
+          className="washi-tape absolute -left-4 -top-2 z-10"
+          style={{
+            width: "86px",
+            height: "16px",
+            transform: "rotate(-5deg)",
+            background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${accent}) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${accent}) 30%, var(--paper-tape-mix)) 6px 12px)`,
+          }}
+        />
+
+        <div className="relative overflow-hidden bg-card/85 px-5 py-5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_10px_28px_rgba(30,35,45,0.08)] sm:px-6">
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-[5px]"
+            style={{ background: `var(--${accent})` }}
+          />
+
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <FormatTab
+                  active={format === "design-md"}
+                  onClick={() => setFormat("design-md")}
+                  accent="salad"
+                >
+                  DESIGN.md
+                </FormatTab>
+                <FormatTab
+                  active={format === "katagami"}
+                  onClick={() => setFormat("katagami")}
+                  accent="sumire"
+                  kanji
+                >
+                  katagami
+                </FormatTab>
+              </div>
+              <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.025em] sm:text-[32px]">
+                Download {filename}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                Take the portable markdown file now; the deeper spec,
+                preview, and tokens stay below for inspection.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="group inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
+                title={`Download ${filename}`}
+              >
+                <Download className="h-4 w-4" />
+                Download .md
+              </button>
+              <ActionStamp
+                onClick={handleCopy}
+                tint="yuzu"
+                rotate={0.5}
+                icon={
+                  justCopied === "copy" ? (
+                    <Check className="h-3 w-3 text-[var(--salad)]" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )
+                }
+                label={justCopied === "copy" ? "copied" : "copy"}
+                title="Copy with prompt preamble"
+              />
+              <ActionStamp
+                onClick={handleCopyLink}
+                tint="sumire"
+                rotate={-0.5}
+                icon={
+                  justCopied === "link" ? (
+                    <Check className="h-3 w-3 text-[var(--salad)]" />
+                  ) : (
+                    <Link2 className="h-3 w-3" />
+                  )
+                }
+                label={justCopied === "link" ? "link copied" : "link"}
+                title="Copy raw markdown URL"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative inline-block">

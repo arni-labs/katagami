@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Search } from "lucide-react";
 import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   listDesignLanguages,
@@ -369,6 +370,18 @@ export default async function GalleryPage({
                 </span>
               </div>
             </div>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <a
+                href="#gallery"
+                className="group relative inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
+              >
+                <Search className="h-3.5 w-3.5" />
+                Browse gallery
+              </a>
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                card → detail → DESIGN.md
+              </span>
+            </div>
           </div>
           <div className="relative hidden shrink-0 flex-col items-end gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:flex">
             <span className="stamp text-[var(--sakura)]">katagami</span>
@@ -383,7 +396,6 @@ export default async function GalleryPage({
       {/* Collapsible "What you can do" — compact 4-card row, scrapbook vibe.
           Folds up so the gallery below is always quick to reach. */}
       <details
-        open
         className="group/cando relative"
         aria-labelledby="what-you-can-do"
       >
@@ -395,16 +407,15 @@ export default async function GalleryPage({
                 id="what-you-can-do"
                 className="font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]"
               >
-                What you can{" "}
+                Browse, inspect,{" "}
                 <span className="marker">
                   <span
                     aria-hidden
                     className="marker-fill"
                     style={{ background: "var(--yuzu)" }}
                   />
-                  <span className="marker-text">do</span>
+                  <span className="marker-text">download</span>
                 </span>{" "}
-                with it
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -417,7 +428,7 @@ export default async function GalleryPage({
                   letterSpacing: "0.14em",
                 }}
               >
-                ✎ field guide
+                optional notes
               </span>
               {/* Fold/unfold toggle — styled as a stamp pill; rotates +
                   swaps its label based on open state */}
@@ -646,11 +657,25 @@ export default async function GalleryPage({
         </div>
       </details>
 
-      <GalleryFilters taxonomies={taxonomies} />
+      <section id="gallery" className="scroll-mt-20 space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--teal)]" />
+              choose a language
+            </div>
+            <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.02em]">
+              Gallery
+            </h2>
+          </div>
+          <span className="stamp text-[var(--salad)]">details inside</span>
+        </div>
+        <GalleryFilters taxonomies={taxonomies} />
+      </section>
 
       <Suspense
         fallback={
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
