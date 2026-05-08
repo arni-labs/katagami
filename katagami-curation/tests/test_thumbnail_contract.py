@@ -99,7 +99,8 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn('"thumbnail_file_id"', source)
         self.assertIn('"thumbnail"', source)
         self.assertIn('"image/jpeg"', source)
-        self.assertIn("looks like text or markup, not a JPEG image", source)
+        self.assertIn("upload decoded browser-renderable image bytes", source)
+        self.assertIn("not browser-renderable image bytes", source)
 
         self.assertLess(
             source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?"),
@@ -149,10 +150,14 @@ class ThumbnailContractTests(unittest.TestCase):
             "600x400",
             "full_page=False",
             "thumbnail ok: 600x400 JPEG",
+            "binary=True",
             "VerifyThumbnail",
-            "Do not call `SubmitForReview` until `VerifyThumbnail`",
+            "Do not call `VerifyThumbnail` or `SubmitForReview`",
         ]:
             self.assertIn(fragment, skill)
+
+        self.assertNotIn("'VerifyThumbnail', {})", skill)
+        self.assertNotIn("'SubmitForReview', {})", skill)
 
     def test_quality_review_skill_generates_and_attaches_thumbnail(self):
         skill = (
@@ -173,9 +178,11 @@ class ThumbnailContractTests(unittest.TestCase):
             "600x400",
             "full_page=False",
             "thumbnail ok: 600x400 JPEG",
-            "VerifyThumbnail",
+            "binary=True",
         ]:
             self.assertIn(fragment, skill)
+
+        self.assertNotIn("'VerifyThumbnail', {})", skill)
 
     def test_curator_agent_lists_thumbnail_artifact_path(self):
         agent = (self.curation_root / "agents" / "curator" / "AGENT.md").read_text()

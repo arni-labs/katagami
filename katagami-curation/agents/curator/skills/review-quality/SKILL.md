@@ -118,7 +118,11 @@ For each language specified in the job input (or ALL languages if none specified
    assert check.format == 'JPEG', check.format
    print('thumbnail ok: 600x400 JPEG')
    " 2>&1""")
-   thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
+   thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
+   assert not (
+       isinstance(thumbnail_bytes, str)
+       and thumbnail_bytes.lstrip().startswith('/9j/')
+   ), 'thumbnail read returned base64 text; use binary=True before temper.write'
    ```
 
    If thumbnail generation, resizing, or verification fails, fix the embodiment
@@ -137,13 +141,13 @@ For each language specified in the job input (or ALL languages if none specified
    temper.action('DesignLanguages', lang_id, 'AttachThumbnail', {
        'thumbnail_file_id': thumbnail_result['file_id']
    })
-   temper.action('DesignLanguages', lang_id, 'VerifyThumbnail', {})
    ```
 10. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
 11. **Mark reviewed after all artifacts are attached. Do not publish directly.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
-    files, marks verified fields through internal actions, marks quality as
-    passed, and publishes only if the entity/file world is actually valid.
+    files, rejects base64 text thumbnail payloads, marks verified fields through
+    internal actions, marks quality as passed, and publishes only if the
+    entity/file world is actually valid.
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
    ```
@@ -164,7 +168,7 @@ For each language specified in the job input (or ALL languages if none specified
 
 - The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
   without importing it. Other imports are not available in the Monty REPL.
-- Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`, `sandbox.bash(cmd)`, `sandbox.write(path, content)`, `sandbox.read(path)`
+- Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`, `sandbox.bash(cmd)`, `sandbox.write(path, content)`, `sandbox.read(path)` / `sandbox.read(path, binary=True)`
 - **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
 
 ## Output

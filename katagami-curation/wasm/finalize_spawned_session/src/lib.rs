@@ -649,9 +649,7 @@ fn verify_synthesized_languages(
             verify_generated_language_identity(language_id, &language)?;
         }
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
-            format!(
-                "{job_type} completion requires a valid gallery thumbnail before review: {e}"
-            )
+            format!("{job_type} completion requires a valid gallery thumbnail before review: {e}")
         })?;
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
@@ -978,6 +976,11 @@ fn verify_thumbnail(
     ])
     .to_ascii_lowercase();
     let body = read_file_value(ctx, api_url, headers, &thumbnail_file_id)?;
+    if thumbnail_payload_looks_text_encoded_image(&body) {
+        return Err(format!(
+            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' stores base64 text; upload decoded browser-renderable image bytes"
+        ));
+    }
     if !thumbnail_mime_type_is_acceptable(&mime_type, &body) {
         return Err(format!(
             "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' has mime_type '{mime_type}', expected image/jpeg or image-like octet-stream payload"
@@ -1018,6 +1021,9 @@ fn verify_and_mark_thumbnail(
 
 fn thumbnail_mime_type_is_acceptable(mime_type: &str, body: &str) -> bool {
     let normalized = mime_type.trim().to_ascii_lowercase();
+    if thumbnail_payload_looks_text_encoded_image(body) {
+        return false;
+    }
     matches!(
         normalized.as_str(),
         "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "image/gif"
@@ -1029,6 +1035,16 @@ fn thumbnail_mime_type_is_acceptable(mime_type: &str, body: &str) -> bool {
 
 fn thumbnail_payload_looks_image_like(body: &str) -> bool {
     let trimmed = body.trim_start();
+    let bytes = trimmed.as_bytes();
+    bytes.starts_with(&[0xff, 0xd8, 0xff])
+        || bytes.starts_with(b"\x89PNG\r\n\x1a\n")
+        || bytes.starts_with(b"GIF87a")
+        || bytes.starts_with(b"GIF89a")
+        || (bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP")
+}
+
+fn thumbnail_payload_looks_text_encoded_image(body: &str) -> bool {
+    let trimmed = body.trim_start();
     let payload = if let Some(tail) = base64_data_url_payload(trimmed) {
         tail.trim_start()
     } else {
@@ -1039,11 +1055,6 @@ fn thumbnail_payload_looks_image_like(body: &str) -> bool {
         || bytes.starts_with(b"iVBORw0KGgo")
         || bytes.starts_with(b"R0lGOD")
         || bytes.starts_with(b"UklGR")
-        || bytes.starts_with(&[0xff, 0xd8, 0xff])
-        || bytes.starts_with(b"\x89PNG\r\n\x1a\n")
-        || bytes.starts_with(b"GIF87a")
-        || bytes.starts_with(b"GIF89a")
-        || (bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP")
 }
 
 fn base64_data_url_payload(value: &str) -> Option<&str> {
@@ -1115,9 +1126,10 @@ fn verify_file_body(
             || lower.contains("version:")
             || lower.contains("components:")
             || lower.contains("{\"error\"")
+            || thumbnail_payload_looks_text_encoded_image(trimmed)
         {
             return Err(format!(
-                "DesignLanguage '{language_id}' thumbnail file '{file_id}' looks like text or markup, not a JPEG image"
+                "DesignLanguage '{language_id}' thumbnail file '{file_id}' looks like text-encoded image or markup, not browser-renderable image bytes"
             ));
         }
     }
@@ -2524,7 +2536,7 @@ fn publish_job_progression(
 mod tests {
     use super::{
         design_md_projection_refresh_reason, json_object_field, render_design_md_projection,
-        thumbnail_mime_type_is_acceptable,
+        thumbnail_mime_type_is_acceptable, verify_file_body,
     };
     use serde_json::json;
 
@@ -2583,8 +2595,8 @@ mod tests {
     }
 
     #[test]
-    fn thumbnail_mime_accepts_octet_stream_when_payload_is_base64_jpeg() {
-        assert!(thumbnail_mime_type_is_acceptable(
+    fn thumbnail_mime_rejects_octet_stream_when_payload_is_base64_text() {
+        assert!(!thumbnail_mime_type_is_acceptable(
             "application/octet-stream",
             "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD"
         ));
@@ -2595,11 +2607,27 @@ mod tests {
     }
 
     #[test]
-    fn thumbnail_mime_accepts_text_plain_when_payload_is_base64_jpeg() {
-        assert!(thumbnail_mime_type_is_acceptable(
+    fn thumbnail_mime_rejects_text_plain_when_payload_is_base64_text() {
+        assert!(!thumbnail_mime_type_is_acceptable(
             "text/plain",
             "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD"
         ));
+    }
+
+    #[test]
+    fn thumbnail_body_rejects_base64_text_even_with_image_mime() {
+        let result = verify_file_body(
+            "dl-test",
+            "fl-test",
+            "thumbnail",
+            None,
+            "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVF",
+        );
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("not browser-renderable image bytes"));
     }
 
     #[test]

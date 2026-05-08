@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment`, `AttachThumbnail`, and `VerifyThumbnail`, call `SubmitForReview`
+6. After `AttachEmbodiment` and `AttachThumbnail`, finish the job. The CurationJob finalizer verifies the thumbnail and submits for review.
 
 ## Before Starting
 
@@ -258,14 +258,19 @@ assert check.size == (600, 400), check.size
 assert check.format == 'JPEG', check.format
 print('thumbnail ok: 600x400 JPEG')
 " 2>&1""")
-thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
+thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
+assert not (
+    isinstance(thumbnail_bytes, str)
+    and thumbnail_bytes.lstrip().startswith('/9j/')
+), 'thumbnail read returned base64 text; use binary=True before temper.write'
 ```
 
 If thumbnail generation, resizing, or verification fails, fix the embodiment or
 the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
-non-JPEG thumbnail. Do not call `SubmitForReview` until `VerifyThumbnail` has
-successfully marked the attached `thumbnail_file_id`; the review transition is
-blocked without a verified gallery thumbnail.
+non-JPEG thumbnail. Do not call `VerifyThumbnail` or `SubmitForReview`
+directly; the CurationJob finalizer reads the attached `thumbnail_file_id`,
+rejects base64 text payloads, marks `VerifyThumbnail`, then submits the language
+for review.
 
 ### Step 6 — Publish artifacts
 
@@ -281,11 +286,9 @@ thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg',
 temper.action('DesignLanguages', eid, 'AttachThumbnail', {
     'thumbnail_file_id': thumbnail_result['file_id']
 })
-temper.action('DesignLanguages', eid, 'VerifyThumbnail', {})
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })
-temper.action('DesignLanguages', eid, 'SubmitForReview', {})
 ```
 
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
