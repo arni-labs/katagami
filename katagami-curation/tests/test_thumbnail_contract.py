@@ -16,26 +16,71 @@ class ThumbnailContractTests(unittest.TestCase):
 
     def test_design_language_tracks_thumbnail_attachment(self):
         self.assertIn("has_thumbnail", self.states)
+        self.assertIn("thumbnail_verified", self.states)
 
         attach = self.actions["AttachThumbnail"]
-        self.assertEqual(attach["from"], ["Draft", "UnderReview", "Published"])
+        self.assertEqual(attach["from"], ["Draft", "UnderReview"])
         self.assertEqual(attach["params"], ["thumbnail_file_id"])
-        self.assertEqual(attach["effect"], "set has_thumbnail true")
+        self.assertTrue(self._sets_bool("AttachThumbnail", "has_thumbnail", "true"))
+        self.assertTrue(
+            self._sets_bool("AttachThumbnail", "thumbnail_verified", "false")
+        )
+
+        verify = self.actions["VerifyThumbnail"]
+        self.assertEqual(verify["from"], ["Draft", "UnderReview", "Published"])
+        self.assertIn({"type": "is_true", "var": "has_thumbnail"}, verify["guard"])
+        self.assertTrue(
+            self._sets_bool("VerifyThumbnail", "thumbnail_verified", "true")
+        )
 
         csdl = (self.commons_root / "specs" / "model.csdl.xml").read_text()
         self.assertIn('Property Name="ThumbnailFileId"', csdl)
         self.assertIn('Property Name="HasThumbnail"', csdl)
+        self.assertIn('Property Name="ThumbnailVerified"', csdl)
 
-    def test_thumbnail_is_not_a_v1_publish_guard(self):
+    def _effect_entries(self, action_name):
+        effect = self.actions[action_name].get("effect", [])
+        if isinstance(effect, str):
+            return [effect]
+        return effect
+
+    def _sets_bool(self, action_name, var, value):
+        for effect in self._effect_entries(action_name):
+            if isinstance(effect, dict):
+                if (
+                    effect.get("type") == "set_bool"
+                    and effect.get("var") == var
+                    and effect.get("value") == value
+                ):
+                    return True
+            elif effect == f"set {var} {value}":
+                return True
+        return False
+
+    def test_publish_requires_verified_thumbnail(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
-        self.assertNotIn({"type": "is_true", "var": "has_thumbnail"}, guards)
+        self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
+        self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+
+        invariants = {
+            invariant["name"]: invariant for invariant in self.spec["invariant"]
+        }
+        self.assertEqual(
+            invariants["PublishedRequiresThumbnail"]["assert"],
+            "has_thumbnail",
+        )
+        self.assertEqual(
+            invariants["PublishedRequiresVerifiedThumbnail"]["assert"],
+            "thumbnail_verified",
+        )
 
     def test_submit_for_review_requires_thumbnail(self):
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
-        self.assertIn("gallery thumbnail", submit["hint"])
+        self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+        self.assertIn("verified gallery thumbnail", submit["hint"])
 
     def test_quality_finalizer_gates_on_thumbnail(self):
         source = (
@@ -47,14 +92,17 @@ class ThumbnailContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn("fn verify_thumbnail", source)
-        self.assertIn('verify_thumbnail(ctx, api_url, headers, language_id, &language)?', source)
+        self.assertIn("fn verify_and_mark_thumbnail", source)
+        self.assertIn('verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?', source)
+        self.assertIn('verify_thumbnail(ctx, api_url, headers, language_id, language)?', source)
+        self.assertIn('"VerifyThumbnail"', source)
         self.assertIn('"thumbnail_file_id"', source)
         self.assertIn('"thumbnail"', source)
         self.assertIn('"image/jpeg"', source)
         self.assertIn("looks like text or markup, not a JPEG image", source)
 
         self.assertLess(
-            source.index("verify_thumbnail(ctx, api_url, headers, language_id, &language)?"),
+            source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?"),
             source.index('"MarkQualityPassed"'),
             "thumbnail verification must happen before quality can pass",
         )
@@ -74,7 +122,7 @@ class ThumbnailContractTests(unittest.TestCase):
         ]
 
         self.assertIn(
-            "verify_thumbnail(ctx, api_url, headers, language_id, &language)",
+            "verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)",
             synth_fn,
         )
         self.assertIn(
@@ -101,7 +149,8 @@ class ThumbnailContractTests(unittest.TestCase):
             "600x400",
             "full_page=False",
             "thumbnail ok: 600x400 JPEG",
-            "Do not call `SubmitForReview` until `AttachThumbnail`",
+            "VerifyThumbnail",
+            "Do not call `SubmitForReview` until `VerifyThumbnail`",
         ]:
             self.assertIn(fragment, skill)
 
@@ -124,6 +173,7 @@ class ThumbnailContractTests(unittest.TestCase):
             "600x400",
             "full_page=False",
             "thumbnail ok: 600x400 JPEG",
+            "VerifyThumbnail",
         ]:
             self.assertIn(fragment, skill)
 

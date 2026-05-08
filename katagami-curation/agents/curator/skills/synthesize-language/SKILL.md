@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment` and `AttachThumbnail`, call `SubmitForReview`
+6. After `AttachEmbodiment`, `AttachThumbnail`, and `VerifyThumbnail`, call `SubmitForReview`
 
 ## Before Starting
 
@@ -263,9 +263,9 @@ thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg')
 
 If thumbnail generation, resizing, or verification fails, fix the embodiment or
 the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
-non-JPEG thumbnail. Do not call `SubmitForReview` until `AttachThumbnail` has
-successfully attached `thumbnail_file_id`; the review transition is blocked
-without a gallery thumbnail.
+non-JPEG thumbnail. Do not call `SubmitForReview` until `VerifyThumbnail` has
+successfully marked the attached `thumbnail_file_id`; the review transition is
+blocked without a verified gallery thumbnail.
 
 ### Step 6 — Publish artifacts
 
@@ -281,6 +281,7 @@ thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg',
 temper.action('DesignLanguages', eid, 'AttachThumbnail', {
     'thumbnail_file_id': thumbnail_result['file_id']
 })
+temper.action('DesignLanguages', eid, 'VerifyThumbnail', {})
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })

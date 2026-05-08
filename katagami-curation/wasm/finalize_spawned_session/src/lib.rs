@@ -648,13 +648,25 @@ fn verify_synthesized_languages(
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
         }
-        verify_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
+        verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
             format!(
                 "{job_type} completion requires a valid gallery thumbnail before review: {e}"
             )
         })?;
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
+                let status = entity_status_value(&language);
+                if status == "Draft" {
+                    dispatch_action(
+                        ctx,
+                        api_url,
+                        headers,
+                        "DesignLanguages",
+                        language_id,
+                        "SubmitForReview",
+                        &json!({}),
+                    )?;
+                }
                 verified.push(language_id.clone());
             }
             Err(e) => {
@@ -712,15 +724,15 @@ fn verify_quality_reviewed_languages(
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
         let status = entity_status_value(&language);
-        if !matches!(status.as_str(), "UnderReview" | "Published") {
+        if !matches!(status.as_str(), "Draft" | "UnderReview" | "Published") {
             return Err(format!(
-                "DesignLanguage '{language_id}' is in state '{status}', expected UnderReview or Published before quality_review finalization"
+                "DesignLanguage '{language_id}' is in state '{status}', expected Draft, UnderReview, or Published before quality_review finalization"
             ));
         }
 
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
         verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
-        verify_thumbnail(ctx, api_url, headers, language_id, &language)?;
+        verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
             ctx,
             api_url,
@@ -731,7 +743,26 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
 
-        if status == "UnderReview" {
+        if status == "Draft" {
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "DesignLanguages",
+                language_id,
+                "SubmitForReview",
+                &json!({}),
+            )?;
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "DesignLanguages",
+                language_id,
+                "Publish",
+                &json!({}),
+            )?;
+        } else if status == "UnderReview" {
             dispatch_action(
                 ctx,
                 api_url,
@@ -962,6 +993,26 @@ fn verify_thumbnail(
 
     verify_file_body(language_id, &thumbnail_file_id, "thumbnail", None, &body)?;
 
+    Ok(())
+}
+
+fn verify_and_mark_thumbnail(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    verify_thumbnail(ctx, api_url, headers, language_id, language)?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyThumbnail",
+        &json!({}),
+    )?;
     Ok(())
 }
 

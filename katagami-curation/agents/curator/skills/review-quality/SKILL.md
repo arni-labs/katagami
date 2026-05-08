@@ -137,6 +137,7 @@ For each language specified in the job input (or ALL languages if none specified
    temper.action('DesignLanguages', lang_id, 'AttachThumbnail', {
        'thumbnail_file_id': thumbnail_result['file_id']
    })
+   temper.action('DesignLanguages', lang_id, 'VerifyThumbnail', {})
    ```
 10. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
 11. **Mark reviewed after all artifacts are attached. Do not publish directly.**

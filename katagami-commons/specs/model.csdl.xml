@@ -35,6 +35,7 @@
         <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <!-- Lineage -->

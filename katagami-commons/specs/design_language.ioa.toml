@@ -80,6 +80,11 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "thumbnail_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "embodiment_format"
 type = "string"
 initial = "html"
@@ -219,9 +224,9 @@ hint = "Set generative/interactive canvas direction (WebGL techniques, canvas ef
 name = "AttachEmbodiment"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "embodiment_verified", value = "false" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "embodiment_verified", value = "false" }, { type = "set_bool", var = "has_thumbnail", value = "false" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["embodiment_file_id", "element_count", "composition_count", "embodiment_format"]
-hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML."
+hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML. Re-attaching an embodiment invalidates the derived gallery thumbnail until regenerated and verified."
 
 [[action]]
 name = "VerifyEmbodiment"
@@ -250,10 +255,27 @@ hint = "Mark the attached DESIGN.md as verified after the finalizer has read the
 [[action]]
 name = "AttachThumbnail"
 kind = "input"
-from = ["Draft", "UnderReview", "Published"]
-effect = "set has_thumbnail true"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach or update the static desktop gallery thumbnail image."
+hint = "Attach or update the static desktop gallery thumbnail image. The finalizer must VerifyThumbnail after it confirms the referenced file is an image payload."
+
+[[action]]
+name = "VerifyThumbnail"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+guard = [{ type = "is_true", var = "has_thumbnail" }]
+effect = [{ type = "set_bool", var = "thumbnail_verified", value = "true" }]
+params = []
+hint = "Mark the attached thumbnail as verified after the finalizer has read the referenced file and confirmed it is an image payload."
+
+[[action]]
+name = "AttachVerifiedThumbnail"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "true" }]
+params = ["thumbnail_file_id"]
+hint = "Attach a thumbnail that the finalizer or backfill job has already validated. Used for verified backfills and published-language repair without temporarily violating published thumbnail invariants."
 
 # --- Actions: Classification ---
 
@@ -308,17 +330,17 @@ name = "SubmitForReview"
 kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "has_thumbnail" }]
-hint = "Submit for curator review. Requires all five spec sections, an embodiment, and a gallery thumbnail."
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
+hint = "Submit for curator review. Requires all five spec sections, an embodiment, and a verified gallery thumbnail."
 
 [[action]]
 name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "quality_review_passed" }]
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "quality_review_passed" }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Requires verified spec sections, embodiment, DESIGN.md, and quality review."
+hint = "Curator approves and publishes. Requires verified spec sections, embodiment, thumbnail, DESIGN.md, and quality review."
 
 [[action]]
 name = "Revise"
@@ -394,6 +416,16 @@ assert = "has_embodiment"
 name = "PublishedRequiresVerifiedEmbodiment"
 when = ["Published"]
 assert = "embodiment_verified"
+
+[[invariant]]
+name = "PublishedRequiresThumbnail"
+when = ["Published"]
+assert = "has_thumbnail"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedThumbnail"
+when = ["Published"]
+assert = "thumbnail_verified"
 
 [[invariant]]
 name = "PublishedRequiresAllSections"
