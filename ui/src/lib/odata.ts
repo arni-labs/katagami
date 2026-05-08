@@ -1,6 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
+const FILE_PROXY_CACHE_VERSION = "thumbnail-binary-2026-05-08";
 
 interface ODataResponse<T> {
   value: T[];
@@ -15,7 +16,7 @@ const headers: Record<string, string> = {
 };
 
 async function odata<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}/tdata/${path}`, {
+  const res = await fetch(odataUrl(path), {
     ...init,
     headers: { ...headers, ...init?.headers },
     cache: "no-store",
@@ -24,6 +25,39 @@ async function odata<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`OData ${res.status}: ${await res.text()}`);
   }
   return res.json();
+}
+
+function odataUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    const url = new URL(path);
+    if (url.origin !== new URL(API_BASE).origin) {
+      throw new Error(`Refusing cross-origin OData nextLink: ${url.origin}`);
+    }
+    return url.toString();
+  }
+  const normalized = path.startsWith("/tdata/")
+    ? path.slice("/tdata/".length)
+    : path.replace(/^\/+/, "");
+  return `${API_BASE}/tdata/${normalized}`;
+}
+
+async function collectODataPages<T>(path: string): Promise<T[]> {
+  const rows: T[] = [];
+  let next: string | undefined = path;
+  let pageCount = 0;
+
+  while (next) {
+    pageCount += 1;
+    if (pageCount > 100) {
+      throw new Error(`OData pagination exceeded 100 pages for ${path}`);
+    }
+
+    const resp: ODataResponse<T> = await odata<ODataResponse<T>>(next);
+    rows.push(...resp.value);
+    next = resp["@odata.nextLink"];
+  }
+
+  return rows;
 }
 
 // ── Design Languages ──
@@ -214,11 +248,9 @@ function parseODataEntityId(value: unknown): string | undefined {
   return match?.[1];
 }
 
-// OData defaults to a 100-row page when no $top is given. With NULL-last
-// sort behaviour for `Featured` / `DisplayOrder`, newly-published languages
-// (which have no explicit display_order) get pushed past the page boundary
-// and silently drop off the gallery + search. Always ask for the full
-// catalog — the table is on the order of a few hundred rows.
+// OData defaults to a finite page when no $top is given. Ask for a large page
+// and still follow @odata.nextLink so the gallery cannot silently drop rows as
+// the catalog grows.
 const DESIGN_LANGUAGE_PAGE_SIZE = 500;
 
 export async function listDesignLanguages(
@@ -232,10 +264,10 @@ export async function listDesignLanguages(
   if (select && select.length > 0) params.set("$select", select.join(","));
   params.set("$top", String(DESIGN_LANGUAGE_PAGE_SIZE));
   const q = params.toString();
-  const resp = await odata<ODataResponse<Record<string, unknown>>>(
+  const rows = await collectODataPages<Record<string, unknown>>(
     `DesignLanguages${q ? `?${q}` : ""}`,
   );
-  return resp.value.map(normalizeDesignLanguageRow);
+  return rows.map(normalizeDesignLanguageRow);
 }
 
 export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
@@ -270,10 +302,9 @@ export async function listTaxonomies(
   const params = new URLSearchParams();
   params.set("$top", "500");
   const q = params.toString();
-  const resp = await odata<ODataResponse<Taxonomy>>(
+  let rows = await collectODataPages<Taxonomy>(
     `Taxonomies${q ? `?${q}` : ""}`,
   );
-  let rows = resp.value;
   if (filter) {
     const match = filter.match(/^Status\s+(eq|ne)\s+'([^']+)'$/i);
     if (match) {
@@ -293,7 +324,7 @@ export async function listTaxonomies(
 
 export function getFileUrl(fileId: string): string {
   // Use the Next.js API proxy which adds the X-Tenant-Id header
-  return `/api/file/${encodeURIComponent(fileId)}`;
+  return `/api/file/${encodeURIComponent(fileId)}?v=${FILE_PROXY_CACHE_VERSION}`;
 }
 
 // ── Helpers ──

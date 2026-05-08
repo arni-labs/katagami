@@ -6,7 +6,8 @@ const API_KEY = process.env.TEMPER_API_KEY || "";
 const DEFAULT_CACHE_CONTROL = "public, max-age=3600";
 const IMAGE_BROWSER_CACHE_CONTROL =
   "public, max-age=86400, stale-while-revalidate=604800";
-const IMAGE_VERCEL_CACHE_CONTROL = "public, max-age=31536000, immutable";
+const IMAGE_VERCEL_CACHE_CONTROL =
+  "public, max-age=86400, stale-while-revalidate=604800";
 
 function decodeBase64ImageValue(
   bytes: ArrayBuffer,
