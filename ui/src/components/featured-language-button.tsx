@@ -5,6 +5,39 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Star } from "lucide-react";
 import { setLanguageFeatured } from "@/app/actions";
 
+interface ViewportPosition {
+  left: number;
+  top: number;
+}
+
+function currentViewportPosition(): ViewportPosition {
+  return {
+    left: window.scrollX,
+    top: window.scrollY,
+  };
+}
+
+function restoreViewportPosition(position: ViewportPosition) {
+  const root = document.documentElement;
+  const body = document.body;
+  const previousRootBehavior = root.style.scrollBehavior;
+  const previousBodyBehavior = body.style.scrollBehavior;
+
+  root.style.scrollBehavior = "auto";
+  body.style.scrollBehavior = "auto";
+
+  const restore = () => window.scrollTo(position.left, position.top);
+  restore();
+  window.requestAnimationFrame(restore);
+  for (const delay of [80, 180, 360, 720]) {
+    window.setTimeout(restore, delay);
+  }
+  window.setTimeout(() => {
+    root.style.scrollBehavior = previousRootBehavior;
+    body.style.scrollBehavior = previousBodyBehavior;
+  }, 760);
+}
+
 export function FeaturedLanguageButton({
   id,
   name,
@@ -22,6 +55,7 @@ export function FeaturedLanguageButton({
   const nextFeatured = !featured;
 
   function toggleFeatured() {
+    const viewportPosition = currentViewportPosition();
     setError(null);
     startTransition(async () => {
       try {
@@ -31,6 +65,7 @@ export function FeaturedLanguageButton({
           nextFeatured ? displayOrder : 0,
         );
         router.refresh();
+        restoreViewportPosition(viewportPosition);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not update.");
       }
