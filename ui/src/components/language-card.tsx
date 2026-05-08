@@ -1,14 +1,10 @@
-"use client";
-
 import Link from "next/link";
-import { memo, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type { DesignLanguage } from "@/lib/odata";
-import { getFileUrl, parseJson } from "@/lib/odata";
-import {
-  DeleteLanguageButton,
-  type DeleteLanguageTarget,
-} from "@/components/delete-language-button";
+import { parseJson } from "@/lib/odata";
+import { DeleteLanguageButton } from "@/components/delete-language-button";
 import { FeaturedLanguageButton } from "@/components/featured-language-button";
+import { ThumbnailPreview } from "@/components/thumbnail-preview";
 
 const statusFallbackTone: Record<string, string> = {
   Draft: "var(--muted-foreground)",
@@ -118,22 +114,25 @@ function displayOrder(lang: DesignLanguage): number {
 
 export function LanguageCard({
   lang,
+  index = 0,
   canDelete = false,
-  onRequestDelete,
 }: {
   lang: DesignLanguage;
+  index?: number;
   canDelete?: boolean;
-  onRequestDelete?: (target: DeleteLanguageTarget) => void;
 }) {
   const id = lang.entity_id;
-  const stickyTint = useMemo(() => tintFor(lang), [lang]);
+  const stickyTint = tintFor(lang);
   const name = lang.fields.name || "Untitled";
   const featured = isFeaturedLanguage(lang);
 
   return (
-    <div className="group relative min-w-0">
+    <div
+      className="group relative min-w-0"
+      style={cardVisibilityStyle}
+    >
       <Link href={`/language/${id}`} prefetch={false} className="block h-full">
-        <FullCard lang={lang} stickyTint={stickyTint} />
+        <FullCard lang={lang} stickyTint={stickyTint} eagerThumbnail={index < 6} />
       </Link>
       {canDelete ? (
         <div
@@ -163,7 +162,6 @@ export function LanguageCard({
             id={id}
             name={name}
             variant="icon"
-            onRequestDelete={onRequestDelete}
           />
         </div>
       ) : null}
@@ -174,37 +172,46 @@ export function LanguageCard({
 interface FullCardProps {
   lang: DesignLanguage;
   stickyTint: string;
+  eagerThumbnail: boolean;
 }
 
-const FullCard = memo(function FullCard({
+const cardVisibilityStyle = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "430px",
+} as CSSProperties;
+
+function compactSummary(value?: string): string | undefined {
+  if (!value) return undefined;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 190) return normalized;
+  return `${normalized.slice(0, 187).trimEnd()}...`;
+}
+
+function FullCard({
   lang,
   stickyTint,
+  eagerThumbnail,
 }: FullCardProps) {
   const isFeatured = isFeaturedLanguage(lang);
   const f = lang.fields;
   const id = lang.entity_id;
 
-  const tags = useMemo(() => parseJson<string[]>(f.tags) ?? [], [f.tags]);
-  const tokens = useMemo(() => parseJson<Tokens>(f.tokens), [f.tokens]);
-  const philosophy = useMemo(
-    () => parseJson<Philosophy>(f.philosophy),
-    [f.philosophy],
-  );
+  const tags = parseJson<string[]>(f.tags) ?? [];
+  const tokens = parseJson<Tokens>(f.tokens);
+  const philosophy = parseJson<Philosophy>(f.philosophy);
 
-  const paletteColors = useMemo(() => {
-    const colors = tokens?.colors ?? {};
-    return [
-      colors.primary,
-      colors.accent,
-      colors.secondary,
-      colors.surface,
-      colors.background,
-    ].filter((color): color is string => Boolean(color));
-  }, [tokens]);
+  const colors = tokens?.colors ?? {};
+  const paletteColors = [
+    colors.primary,
+    colors.accent,
+    colors.secondary,
+    colors.surface,
+    colors.background,
+  ].filter((color): color is string => Boolean(color));
 
   const headingFont = tokens?.typography?.heading_font;
   const bodyFont = tokens?.typography?.body_font;
-  const summary = philosophy?.summary;
+  const summary = compactSummary(philosophy?.summary);
   const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
   const thumbnailFileId = f.thumbnail_file_id;
 
@@ -256,20 +263,9 @@ const FullCard = memo(function FullCard({
                 <ThumbnailPreview
                   fileId={thumbnailFileId}
                   alt={`${f.name || "Design language"} preview`}
-                  fallback={
-                    embodimentFormat === "tsx" ? (
-                      <TsxPlaceholder
-                        paletteColors={paletteColors}
-                        headingFont={headingFont}
-                        bodyFont={bodyFont}
-                      />
-                    ) : (
-                      <PreviewPlaceholder
-                        paletteColors={paletteColors}
-                        stickyTint={stickyTint}
-                      />
-                    )
-                  }
+                  eager={eagerThumbnail}
+                  placeholderTint={stickyTint}
+                  paletteColors={paletteColors.slice(0, 4)}
                 />
               ) : embodimentFormat === "tsx" ? (
                 <TsxPlaceholder
@@ -343,7 +339,7 @@ const FullCard = memo(function FullCard({
       </div>
     </article>
   );
-});
+}
 
 function StatusStamp({
   status,
@@ -415,38 +411,6 @@ function FeaturedSeal({ tint }: { tint: string }) {
         ))}
       </span>
     </span>
-  );
-}
-
-function ThumbnailPreview({
-  fileId,
-  alt,
-  fallback,
-}: {
-  fileId: string;
-  alt: string;
-  fallback: React.ReactNode;
-}) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) return <>{fallback}</>;
-
-  return (
-    // Direct file-proxy delivery is intentional: thumbnail_file_id already
-    // points at a generated, card-sized PawFS image.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={getFileUrl(fileId)}
-      alt={alt}
-      width={600}
-      height={400}
-      loading="lazy"
-      decoding="async"
-      className="absolute inset-0 h-full w-full object-cover"
-      data-katagami-thumbnail="true"
-      data-file-id={fileId}
-      onError={() => setFailed(true)}
-    />
   );
 }
 

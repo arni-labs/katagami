@@ -36,23 +36,34 @@ export function DeleteLanguageButton({
 
   if (variant === "icon") {
     return (
-      <button
-        type="button"
-        className="group/delete relative flex h-7 w-7 items-center justify-center rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_38%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_8%,var(--paper-tape-mix))] text-[color-mix(in_oklch,var(--beni),black_10%)] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[2deg] hover:bg-[var(--beni)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
-        aria-label={`Delete ${name}`}
-        title={`Delete ${name}`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          requestDelete();
-        }}
-      >
-        <span
-          aria-hidden
-          className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[var(--sakura)] opacity-0 transition-opacity group-hover/delete:opacity-100"
-        />
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      <>
+        <button
+          type="button"
+          className="group/delete relative flex h-7 w-7 items-center justify-center rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_38%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_8%,var(--paper-tape-mix))] text-[color-mix(in_oklch,var(--beni),black_10%)] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[2deg] hover:bg-[var(--beni)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
+          aria-label={`Delete ${name}`}
+          title={`Delete ${name}`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requestDelete();
+          }}
+        >
+          <span
+            aria-hidden
+            className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[var(--sakura)] opacity-0 transition-opacity group-hover/delete:opacity-100"
+          />
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+        {onRequestDelete ? null : (
+          <DeleteLanguageDialog
+            key={confirming ? id : "closed"}
+            target={{ id, name }}
+            open={confirming}
+            onOpenChange={setConfirming}
+            redirectTo={redirectTo}
+          />
+        )}
+      </>
     );
   }
 
