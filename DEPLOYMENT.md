@@ -10,6 +10,7 @@ Browser ──HTTPS──▶ Vercel (Next.js)  ──HTTPS + Bearer──▶  Ra
                    Server Actions                          /tdata/.../KatagamiCommons.X
                    /api/file/[id] proxy                    /tdata/Files('..')/$value
                                                            Turso ← entities · R2 ← file blobs
+Browser ──HTTPS──▶ assets.katagami.ai (Cloudflare Worker) ─▶ R2 published prefixes
                    DNS via Cloudflare (DNS-only, no proxy)
 ```
 
@@ -42,6 +43,8 @@ The browser never sees the Bearer token. All Temper calls go through Vercel-side
 - Server Actions in `ui/src/app/actions.ts` (delete, add curator notes).
 - File proxy at `ui/src/app/api/file/[id]/route.ts` — same-origin from the browser, server-side fetch with `Authorization` to Railway.
 
+Published thumbnails and embodiments should prefer immutable `*_asset_url` fields when present. Those URLs are produced by Temper's `POST /api/files/publish-asset` flow and served from `https://assets.katagami.ai/<content-addressed-key>` through the Cloudflare Worker in `infra/cloudflare/katagami-assets-worker`. The Worker only exposes allow-listed published prefixes from R2; raw PowerFS file paths remain private and governed.
+
 ### Rotating the Temper API key
 
 ```sh
@@ -70,6 +73,7 @@ Zone `katagami.ai` is on Cloudflare. The registrar's nameservers point at Cloudf
 | A | `@` | `216.150.1.1` | 60 | DNS only |
 | A | `@` | `216.150.16.1` | 60 | DNS only |
 | CNAME | `www` | `aa05af15fecbf657.vercel-dns-016.com` | 60 | DNS only |
+| Worker route | `assets` | `katagami-assets` → R2 published prefixes | Cloudflare | Proxied |
 
 The two apex IPs are Vercel's load-balancer pool. The CNAME target encodes the project's TLS material — don't reuse it for other projects. Both are public (Vercel surfaces them in its domain config endpoint).
 
