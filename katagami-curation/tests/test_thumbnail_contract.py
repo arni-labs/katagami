@@ -149,8 +149,12 @@ class ThumbnailContractTests(unittest.TestCase):
             "1440x960",
             "600x400",
             "full_page=False",
+            "playwright ready",
+            "[exit code: 0]",
             "thumbnail ok: 600x400 JPEG",
             "binary=True",
+            "__temperpaw_image",
+            "'mime_type': 'image/jpeg'",
             "VerifyThumbnail",
             "Do not call `VerifyThumbnail` or `SubmitForReview`",
         ]:
@@ -158,6 +162,8 @@ class ThumbnailContractTests(unittest.TestCase):
 
         self.assertNotIn("'VerifyThumbnail', {})", skill)
         self.assertNotIn("'SubmitForReview', {})", skill)
+        self.assertNotIn("lstrip().startswith('/9j/')", skill)
+        self.assertNotIn("thumbnail read returned base64 text", skill)
 
     def test_quality_review_skill_generates_and_attaches_thumbnail(self):
         skill = (
@@ -177,12 +183,18 @@ class ThumbnailContractTests(unittest.TestCase):
             "1440x960",
             "600x400",
             "full_page=False",
+            "playwright ready",
+            "[exit code: 0]",
             "thumbnail ok: 600x400 JPEG",
             "binary=True",
+            "__temperpaw_image",
+            "'mime_type': 'image/jpeg'",
         ]:
             self.assertIn(fragment, skill)
 
         self.assertNotIn("'VerifyThumbnail', {})", skill)
+        self.assertNotIn("lstrip().startswith('/9j/')", skill)
+        self.assertNotIn("thumbnail read returned base64 text", skill)
 
     def test_curator_agent_lists_thumbnail_artifact_path(self):
         agent = (self.curation_root / "agents" / "curator" / "AGENT.md").read_text()
