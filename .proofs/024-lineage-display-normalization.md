@@ -31,6 +31,8 @@ Resolution:
 - Recreated the fix in a clean Katagami worktree:
   `/Users/openclaw/Development/katagami-worktrees/lineage-display`
 - Branch: `codex/lineage-display-normalization`
+- Remote branch: `origin/codex/lineage-display-normalization`
+- Pull request: https://github.com/arni-labs/katagami/pull/26
 - Base: `origin/master` at `c57305d`
 - Kept the change set to Katagami UI files only.
 - Left the older dirty checkout at `/Users/openclaw/Development/katagami`
@@ -146,22 +148,37 @@ Focused checks:
 
 ```text
 $ npm run test:lineage
-passed
+> ui@0.1.0 test:lineage
+> node scripts/check-lineage-display.mjs
 
 $ npm run test:gallery
-passed
+> ui@0.1.0 test:gallery
+> node scripts/check-gallery-renders-all-cards.mjs
 
 $ npx eslint src/lib/odata.ts 'src/app/(site)/lineage/page.tsx' \
   'src/app/(site)/language/[id]/page.tsx' \
   scripts/check-lineage-display.mjs \
   scripts/check-lineage-display-e2e.mjs
-passed
+passed with no output
 
 $ npx tsc --noEmit
-passed
+passed with no output
 
 $ npm run build
 Next.js 16.2.3 production build passed.
+```
+
+Publish/review state:
+
+```text
+$ git push -u origin codex/lineage-display-normalization
+branch 'codex/lineage-display-normalization' set up to track 'origin/codex/lineage-display-normalization'.
+
+$ gh pr create --base master --head codex/lineage-display-normalization
+https://github.com/arni-labs/katagami/pull/26
+
+$ git status --short --branch
+## codex/lineage-display-normalization...origin/codex/lineage-display-normalization
 ```
 
 Full lint:
