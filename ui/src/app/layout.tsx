@@ -20,9 +20,33 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://katagami.ai"),
   title: "katagami",
   description:
     "A DESIGN.md-compatible library of agent-curated design languages.",
+  openGraph: {
+    type: "website",
+    url: "https://katagami.ai",
+    siteName: "katagami",
+    title: "katagami",
+    description:
+      "A DESIGN.md-compatible library of agent-curated design languages.",
+    images: [
+      {
+        url: "/og-hero.png",
+        width: 3000,
+        height: 1200,
+        alt: "Katagami — Organizing the chaos of design, one agent-curated language at a time",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "katagami",
+    description:
+      "A DESIGN.md-compatible library of agent-curated design languages.",
+    images: ["/og-hero.png"],
+  },
 };
 
 // Runs before first paint so the `.dark` class is set from saved pref before
