@@ -62,6 +62,24 @@ For each language specified in the job input (or ALL languages if none specified
    - **curator_notes**: If present, these are specific fix instructions from the human curator. Follow them first.
 7. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
    - Write HTML to sandbox
+   - Prepare and prove the browser runtime before any screenshot:
+
+```python
+browser_setup_log = sandbox.bash("""set -eu
+python3 -m pip install --quiet playwright pillow
+python3 -m playwright install chromium >/dev/null
+python3 - <<'PY'
+from playwright.sync_api import sync_playwright
+p = sync_playwright().start()
+b = p.chromium.launch()
+b.close()
+p.stop()
+print('playwright ready')
+PY
+""")
+assert '[exit code: 0]' in browser_setup_log and 'playwright ready' in browser_setup_log, browser_setup_log
+```
+
    - Screenshot with Playwright at 3 viewports (desktop 1440x960, tablet 768px, mobile 375px)
    - Visually evaluate each viewport
    - Iterate until quality passes at all three sizes
@@ -78,52 +96,51 @@ For each language specified in the job input (or ALL languages if none specified
    - Stored PawFS file MIME metadata: `image/jpeg`
    - Safety: disable animations/transitions before capture so the gallery image is deterministic
 
-   ```python
-   sandbox.bash('pip install pillow 2>&1 | tail -1')
-   sandbox.bash("""python3 -c "
-   from playwright.sync_api import sync_playwright
-   from PIL import Image
+```python
+thumb_log = sandbox.bash("""python3 - <<'PY'
+from playwright.sync_api import sync_playwright
+from PIL import Image
 
-   safety_css = '''
-   *, *::before, *::after {
-     animation-duration: 0s !important;
-     animation-delay: 0s !important;
-     animation-iteration-count: 1 !important;
-     transition-duration: 0s !important;
-     transition-delay: 0s !important;
-   }
-   html, body {
-     max-height: 1800px !important;
-     overflow: hidden !important;
-   }
-   '''
+safety_css = '''
+*, *::before, *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+html, body {
+  max-height: 1800px !important;
+  overflow: hidden !important;
+}
+'''
 
-   p = sync_playwright().start()
-   b = p.chromium.launch()
-   pg = b.new_page(viewport={'width': 1440, 'height': 960})
-   pg.goto('file:///tmp/embodiment.html')
-   pg.add_style_tag(content=safety_css)
-   pg.wait_for_timeout(1000)
-   pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=84, full_page=False)
-   pg.close()
-   b.close()
-   p.stop()
+p = sync_playwright().start()
+b = p.chromium.launch()
+pg = b.new_page(viewport={'width': 1440, 'height': 960})
+pg.goto('file:///tmp/embodiment.html')
+pg.add_style_tag(content=safety_css)
+pg.wait_for_timeout(1000)
+pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=84, full_page=False)
+pg.close()
+b.close()
+p.stop()
 
-   img = Image.open('/tmp/thumbnail_source.jpg')
-   img = img.resize((600, 400), Image.Resampling.LANCZOS)
-   img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=74, optimize=True)
+img = Image.open('/tmp/thumbnail_source.jpg')
+img = img.resize((600, 400), Image.Resampling.LANCZOS)
+img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=74, optimize=True)
 
-   check = Image.open('/tmp/thumbnail_desktop.jpg')
-   assert check.size == (600, 400), check.size
-   assert check.format == 'JPEG', check.format
-   print('thumbnail ok: 600x400 JPEG')
-   " 2>&1""")
-   thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
-   assert not (
-       isinstance(thumbnail_bytes, str)
-       and thumbnail_bytes.lstrip().startswith('/9j/')
-   ), 'thumbnail read returned base64 text; use binary=True before temper.write'
-   ```
+check = Image.open('/tmp/thumbnail_desktop.jpg')
+assert check.size == (600, 400), check.size
+assert check.format == 'JPEG', check.format
+print('thumbnail ok: 600x400 JPEG')
+PY
+""")
+assert '[exit code: 0]' in thumb_log and 'thumbnail ok: 600x400 JPEG' in thumb_log, thumb_log
+thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
+assert isinstance(thumbnail_bytes, dict) and thumbnail_bytes.get('__temperpaw_image') is True, 'thumbnail read must return a sandbox image result'
+assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
+```
 
    If thumbnail generation, resizing, or verification fails, fix the embodiment
    or screenshot command and retry. Do not attach a missing, blank, wrong-size,
@@ -137,7 +154,9 @@ For each language specified in the job input (or ALL languages if none specified
        'composition_count': '5',
        'embodiment_format': 'html'
    })
-   thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes)
+   thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes, {
+       'mime_type': 'image/jpeg'
+   })
    temper.action('DesignLanguages', lang_id, 'AttachThumbnail', {
        'thumbnail_file_id': thumbnail_result['file_id']
    })
