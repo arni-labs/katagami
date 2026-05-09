@@ -1,4 +1,4 @@
-import { listDesignLanguages, parseJson } from "@/lib/odata";
+import { lineageNodesFromLanguages, listDesignLanguages } from "@/lib/odata";
 import { LineageGraph } from "@/components/lineage-graph";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
@@ -33,14 +33,7 @@ export default async function LineagePage({
     );
   }
 
-  const nodes = languages.map((l) => ({
-    id: l.entity_id,
-    name: l.fields.name ?? l.entity_id.slice(0, 12),
-    status: l.status,
-    lineageType: l.fields.lineage_type ?? "original",
-    generation: parseInt(l.fields.generation_number ?? "0", 10),
-    parentIds: parseJson<string[]>(l.fields.parent_ids) ?? [],
-  }));
+  const nodes = lineageNodesFromLanguages(languages);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">

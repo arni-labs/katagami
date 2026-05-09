@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getDesignLanguage } from "@/lib/odata";
+import {
+  getDesignLanguage,
+  lineageMetadata,
+  type DesignLanguage,
+  type LineageMetadata,
+} from "@/lib/odata";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -78,6 +83,19 @@ export default async function LanguageDetailPage({
   }
 
   const f = lang.fields;
+  const lineage = lineageMetadata(lang);
+  const parentLanguages = await Promise.all(
+    lineage.parentIds.map(async (parentId) => {
+      try {
+        return await getDesignLanguage(parentId);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const parents = parentLanguages.filter(
+    (parent): parent is DesignLanguage => parent !== null,
+  );
 
   const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
@@ -136,6 +154,8 @@ export default async function LanguageDetailPage({
           </>
         }
       />
+
+      <LineageBand lineage={lineage} parents={parents} />
 
       <SpecActions
         languageId={id}
@@ -217,6 +237,63 @@ export default async function LanguageDetailPage({
           generativeCanvas={f.generative_canvas}
         />
       </section>
+    </div>
+  );
+}
+
+function LineageBand({
+  lineage,
+  parents,
+}: {
+  lineage: LineageMetadata;
+  parents: DesignLanguage[];
+}) {
+  const color =
+    lineage.lineageType === "evolution"
+      ? "salad"
+      : lineage.lineageType === "remix"
+        ? "sumire"
+        : "teal";
+  const parentNames = new Map(
+    parents.map((parent) => [
+      parent.entity_id,
+      parent.fields.name || parent.entity_id.slice(0, 12),
+    ]),
+  );
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-dashed border-border py-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        lineage
+      </span>
+      <Stamp color={color as never}>{lineage.lineageType}</Stamp>
+      <span className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-foreground">
+        gen {String(lineage.generation).padStart(2, "0")}
+      </span>
+      {lineage.parentIds.length > 0 ? (
+        <>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            from
+          </span>
+          <span className="flex flex-wrap items-center gap-2">
+            {lineage.parentIds.map((parentId, index) => (
+              <span key={parentId} className="inline-flex items-center gap-2">
+                {index > 0 ? (
+                  <span className="font-mono text-[10px] text-muted-foreground/60">
+                    +
+                  </span>
+                ) : null}
+                <Link
+                  href={`/language/${parentId}`}
+                  className="font-display text-sm font-bold leading-none text-foreground underline decoration-[var(--ramune)] decoration-2 underline-offset-4 transition-colors hover:text-[var(--sumire)]"
+                >
+                  {parentNames.get(parentId) ?? parentId.slice(0, 12)}
+                </Link>
+              </span>
+            ))}
+          </span>
+        </>
+      ) : null}
     </div>
   );
 }
