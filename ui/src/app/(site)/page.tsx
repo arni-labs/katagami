@@ -13,12 +13,14 @@ async function GalleryGrid({
   status,
   taxonomy,
   search,
+  demo,
 }: {
   status?: string;
   taxonomy?: string;
   search?: string;
+  demo?: boolean;
 }) {
-  const canDelete = await isOwner();
+  const canDelete = demo ? false : await isOwner();
   let filter: string | undefined;
   if (status === "all") {
     filter = `Status ne 'Archived'`;
@@ -169,9 +171,15 @@ async function GalleryGrid({
 export default async function GalleryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; taxonomy?: string; q?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    taxonomy?: string;
+    q?: string;
+    demo?: string;
+  }>;
 }) {
   const sp = await searchParams;
+  const demo = sp.demo !== undefined && sp.demo !== "0" && sp.demo !== "false";
   let taxonomies: { entity_id: string; fields: { name?: string } }[] = [];
   try {
     taxonomies = await listTaxonomies("Status eq 'Published'");
@@ -689,6 +697,7 @@ export default async function GalleryPage({
           status={sp.status}
           taxonomy={sp.taxonomy}
           search={sp.q}
+          demo={demo}
         />
       </Suspense>
     </div>
