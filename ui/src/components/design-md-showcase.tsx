@@ -11,7 +11,9 @@ import {
 // Katagami-styled DESIGN.md preview: large, airy sticker cards showing the
 // distilled palette / typography / spacing / shape so the rich JSON behind
 // the spec is visible at-a-glance, not just downloadable.
-export function DesignMdShowcase(props: SpecPanelProps) {
+export function DesignMdShowcase(
+  props: SpecPanelProps & { compact?: boolean },
+) {
   const tokens = parseJson<Record<string, unknown>>(props.tokens);
   const fm = buildDesignMdFrontMatter(props, tokens);
   const colors = (fm.colors as Record<string, string>) ?? {};
@@ -45,7 +47,9 @@ export function DesignMdShowcase(props: SpecPanelProps) {
   return (
     <>
       <FontLoader families={fontFamilies} />
-      <div className="grid gap-8 xl:grid-cols-2">
+      <div
+        className={props.compact ? "grid gap-5" : "grid gap-8 xl:grid-cols-2"}
+      >
         {hasColors && (
           <ShowcaseCard tape="sakura" title="Palette">
             <PaletteGrid colors={colors} />

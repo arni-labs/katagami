@@ -88,10 +88,12 @@ function PeeledLabel({
   children,
   index,
   color,
+  showDot = true,
 }: {
   children: React.ReactNode;
   index: number;
   color: string;
+  showDot?: boolean;
 }) {
   const rot = (((index * 13) % 7) - 3) * 0.4;
   return (
@@ -102,11 +104,13 @@ function PeeledLabel({
         background: `color-mix(in oklch, var(--${color}) 9%, transparent)`,
       }}
     >
-      <span
-        aria-hidden
-        className="h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ background: `var(--${color})` }}
-      />
+      {showDot && (
+        <span
+          aria-hidden
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: `var(--${color})` }}
+        />
+      )}
       {children}
     </span>
   );
@@ -163,8 +167,13 @@ function PhilosophyView({ raw }: { raw?: string }) {
           <SectionRule label="anti-values" color="sakura" />
           <div className="flex flex-wrap gap-1.5">
             {antiValues.map((v, i) => (
-              <PeeledLabel key={toLabel(v)} index={i} color="sakura">
-                <span className="mr-1 font-bold text-[var(--beni)]">×</span>
+              <PeeledLabel
+                key={toLabel(v)}
+                index={i}
+                color="sakura"
+                showDot={false}
+              >
+                <span className="font-bold text-[var(--beni)]">×</span>
                 {toLabel(v)}
               </PeeledLabel>
             ))}

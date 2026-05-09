@@ -147,9 +147,9 @@ export default async function LanguageDetailPage({
 
       <Perforation />
 
-      {/* Mobile leads with the visual preview; desktop keeps spec-first reading. */}
-      <div className="flex flex-col gap-8 sm:gap-10">
-        <section className="order-2 lg:order-1">
+      {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
+      <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
+        <section className="order-2 md:order-1 md:col-start-1">
           <SectionHeading eyebrow="the spec" eyebrowColor="teal">
             <Marker color="teal">specification</Marker>
           </SectionHeading>
@@ -158,65 +158,69 @@ export default async function LanguageDetailPage({
           </StickyNote>
         </section>
 
-        <section className="order-1 space-y-8 lg:order-2">
-          <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
-            <Marker color="salad">design embodiment</Marker>
-          </SectionHeading>
-          {f.embodiment_file_id &&
-          (f.embodiment_format ?? "html") !== "tsx" ? (
-            <div className="relative">
-              <WashiTape
-                color="sakura"
-                rotate={-4}
-                className="-left-4 -top-3"
-                width={100}
-              />
-              <WashiTape
-                color="salad"
-                rotate={5}
-                className="-right-4 -top-3"
-                width={80}
-              />
-              <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                <EmbodimentViewer fileId={f.embodiment_file_id} />
-                <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
-                  preview · {f.slug || id.slice(0, 12)}
-                </span>
+        <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
+          <section className="order-1 space-y-8 md:space-y-6">
+            <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
+              <Marker color="salad">design embodiment</Marker>
+            </SectionHeading>
+            {f.embodiment_file_id &&
+            (f.embodiment_format ?? "html") !== "tsx" ? (
+              <div className="relative">
+                <WashiTape
+                  color="sakura"
+                  rotate={-4}
+                  className="-left-4 -top-3"
+                  width={100}
+                />
+                <WashiTape
+                  color="salad"
+                  rotate={5}
+                  className="-right-4 -top-3"
+                  width={80}
+                />
+                <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
+                  <EmbodimentViewer
+                    fileId={f.embodiment_file_id}
+                    src={f.embodiment_asset_url}
+                  />
+                  <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
+                    preview · {f.slug || id.slice(0, 12)}
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : f.tokens ? (
-            <StickyNote tint="teal" className="p-6">
-              <DesignShowcase tokensRaw={f.tokens} languageName={name} />
-            </StickyNote>
-          ) : (
-            <StickyNote className="flex items-center justify-center p-16 text-center font-mono text-sm text-muted-foreground">
-              {f.embodiment_file_id
-                ? "tsx preview is not rendered — view the spec for details"
-                : "no embodiment or tokens defined yet"}
-            </StickyNote>
-          )}
-        </section>
+            ) : f.tokens ? (
+              <StickyNote tint="teal" className="p-6">
+                <DesignShowcase tokensRaw={f.tokens} languageName={name} />
+              </StickyNote>
+            ) : (
+              <StickyNote className="flex items-center justify-center p-16 text-center font-mono text-sm text-muted-foreground">
+                {f.embodiment_file_id
+                  ? "tsx preview is not rendered — view the spec for details"
+                  : "no embodiment or tokens defined yet"}
+              </StickyNote>
+            )}
+          </section>
+
+          {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
+          <section className="order-3">
+            <SectionHeading eyebrow="DESIGN.md" eyebrowColor="sumire">
+              <Marker color="sumire">at a glance</Marker>
+            </SectionHeading>
+            <DesignMdShowcase
+              name={name}
+              slug={f.slug}
+              philosophy={f.philosophy}
+              tokens={f.tokens}
+              rules={f.rules}
+              layout={f.layout_principles}
+              guidance={f.guidance}
+              imageryDirection={f.imagery_direction}
+              generativeCanvas={f.generative_canvas}
+              compact
+            />
+          </section>
+        </div>
       </div>
-
-      <Perforation />
-
-      {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
-      <section>
-        <SectionHeading eyebrow="DESIGN.md" eyebrowColor="sumire">
-          <Marker color="sumire">at a glance</Marker>
-        </SectionHeading>
-        <DesignMdShowcase
-          name={name}
-          slug={f.slug}
-          philosophy={f.philosophy}
-          tokens={f.tokens}
-          rules={f.rules}
-          layout={f.layout_principles}
-          guidance={f.guidance}
-          imageryDirection={f.imagery_direction}
-          generativeCanvas={f.generative_canvas}
-        />
-      </section>
     </div>
   );
 }
