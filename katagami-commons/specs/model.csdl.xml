@@ -32,8 +32,12 @@
         <Property Name="DesignMdVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EmbodimentAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EmbodimentAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />

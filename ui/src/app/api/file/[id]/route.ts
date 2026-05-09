@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
-const DEFAULT_CACHE_CONTROL = "public, max-age=3600";
-const IMAGE_BROWSER_CACHE_CONTROL =
-  "public, max-age=86400, stale-while-revalidate=604800";
-const IMAGE_VERCEL_CACHE_CONTROL =
-  "public, max-age=86400, stale-while-revalidate=604800";
+const ASSET_BROWSER_CACHE_CONTROL =
+  "public, max-age=3600, stale-while-revalidate=86400";
+const ASSET_CDN_CACHE_CONTROL =
+  "public, s-maxage=86400, stale-while-revalidate=604800";
 
 function decodeBase64ImageValue(
   bytes: ArrayBuffer,
@@ -71,19 +70,15 @@ export async function GET(
   }
 
   const contentType = res.headers.get("content-type") || "text/html";
-  const isImage = contentType.startsWith("image/");
   const upstreamBody = await res.arrayBuffer();
   const body = decodeBase64ImageValue(upstreamBody, contentType);
   const responseHeaders = new Headers({
     "Content-Type": contentType,
-    "Cache-Control": isImage
-      ? IMAGE_BROWSER_CACHE_CONTROL
-      : DEFAULT_CACHE_CONTROL,
+    "Cache-Control": ASSET_BROWSER_CACHE_CONTROL,
+    "CDN-Cache-Control": ASSET_CDN_CACHE_CONTROL,
+    "Vercel-CDN-Cache-Control": ASSET_CDN_CACHE_CONTROL,
   });
   responseHeaders.set("Content-Length", String(body.byteLength));
-  if (isImage) {
-    responseHeaders.set("Vercel-CDN-Cache-Control", IMAGE_VERCEL_CACHE_CONTROL);
-  }
 
   return new NextResponse(body, {
     headers: responseHeaders,

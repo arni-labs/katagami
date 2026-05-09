@@ -178,7 +178,10 @@ export default async function LanguageDetailPage({
                 width={80}
               />
               <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                <EmbodimentViewer fileId={f.embodiment_file_id} />
+                <EmbodimentViewer
+                  fileId={f.embodiment_file_id}
+                  src={f.embodiment_asset_url}
+                />
                 <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   preview · {f.slug || id.slice(0, 12)}
                 </span>

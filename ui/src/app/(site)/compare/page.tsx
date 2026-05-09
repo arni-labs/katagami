@@ -126,7 +126,10 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
               <div className="relative rounded-[2px] border border-border bg-card p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
                 {lang.fields.embodiment_file_id &&
                 (lang.fields.embodiment_format ?? "html") !== "tsx" ? (
-                  <EmbodimentViewer fileId={lang.fields.embodiment_file_id} />
+                  <EmbodimentViewer
+                    fileId={lang.fields.embodiment_file_id}
+                    src={lang.fields.embodiment_asset_url}
+                  />
                 ) : lang.fields.embodiment_file_id ? (
                   <div className="flex h-[500px] items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     tsx preview not rendered

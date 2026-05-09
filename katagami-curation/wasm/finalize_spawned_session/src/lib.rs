@@ -731,6 +731,7 @@ fn verify_quality_reviewed_languages(
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
         verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
+        publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
             ctx,
             api_url,
@@ -1015,6 +1016,56 @@ fn verify_and_mark_thumbnail(
         language_id,
         "VerifyThumbnail",
         &json!({}),
+    )?;
+    Ok(())
+}
+
+fn publish_public_assets(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let thumbnail_file_id = string_field_any(&fields, "thumbnail_file_id", "");
+    let embodiment_file_id = string_field_any(&fields, "embodiment_file_id", "");
+    if thumbnail_file_id.is_empty() || embodiment_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' cannot publish public assets without thumbnail_file_id and embodiment_file_id"
+        ));
+    }
+
+    let thumbnail = publish_file_asset(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &thumbnail_file_id,
+        "thumbnail",
+    )?;
+    let embodiment = publish_file_asset(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &embodiment_file_id,
+        "embodiment",
+    )?;
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachPublishedAssets",
+        &json!({
+            "thumbnail_asset_id": thumbnail.asset_id,
+            "thumbnail_asset_url": thumbnail.public_url,
+            "embodiment_asset_id": embodiment.asset_id,
+            "embodiment_asset_url": embodiment.public_url
+        }),
     )?;
     Ok(())
 }
@@ -1525,6 +1576,60 @@ fn read_file_value(
         ));
     }
     Ok(resp.body)
+}
+
+struct PublishedAssetRef {
+    asset_id: String,
+    public_url: String,
+}
+
+fn publish_file_asset(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    file_id: &str,
+    kind: &str,
+) -> Result<PublishedAssetRef, String> {
+    let body = json!({
+        "file_id": file_id,
+        "kind": kind,
+        "owner_entity_type": "DesignLanguage",
+        "owner_entity_id": language_id,
+        "public_key_prefix": "katagami/design-languages"
+    });
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/api/files/publish-asset"),
+        headers,
+        &body.to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to publish {kind} asset for DesignLanguage '{language_id}' from file '{file_id}': HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse publish-asset response: {e}"))?;
+    let asset = parsed
+        .get("asset")
+        .ok_or_else(|| "publish-asset response has no asset object".to_string())?;
+    let asset_id = asset
+        .get("id")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "publish-asset response asset has no id".to_string())?
+        .to_string();
+    let public_url = asset
+        .get("public_url")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "publish-asset response asset has no public_url".to_string())?
+        .to_string();
+    Ok(PublishedAssetRef {
+        asset_id,
+        public_url,
+    })
 }
 
 fn design_md_projection_refresh_reason(

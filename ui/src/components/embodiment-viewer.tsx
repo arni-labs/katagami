@@ -49,16 +49,22 @@ function patchHtml(html: string): string {
   return SAFETY_CSS + html;
 }
 
-export function EmbodimentViewer({ fileId }: { fileId: string }) {
+export function EmbodimentViewer({
+  fileId,
+  src,
+}: {
+  fileId: string;
+  src?: string;
+}) {
   // Auto-render the safety-patched preview by default. The srcdoc
   // injection caps layout from first paint, so mounting is safe.
-  const url = getFileUrl(fileId);
-  return <SafePreview fileId={fileId} url={url} />;
+  const url = src ?? getFileUrl(fileId);
+  return <SafePreview url={url} />;
 }
 
 // ── Safety-patched in-page preview ─────────────────────────────────
 
-function SafePreview({ fileId, url }: { fileId: string; url: string }) {
+function SafePreview({ url }: { url: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const measuredRef = useRef(false);
