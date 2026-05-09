@@ -147,18 +147,18 @@ export default async function LanguageDetailPage({
 
       <Perforation />
 
-      {/* Spec + Embodiment — side-by-side on lg+, narrower spec */}
-      <div className="grid gap-8 sm:gap-10 lg:grid-cols-5">
-        <section className="lg:col-span-2">
+      {/* Mobile leads with the visual preview; desktop keeps spec-first reading. */}
+      <div className="flex flex-col gap-8 sm:gap-10">
+        <section className="order-2 lg:order-1">
           <SectionHeading eyebrow="the spec" eyebrowColor="teal">
             <Marker color="teal">specification</Marker>
           </SectionHeading>
-          <StickyNote className="p-5">
+          <StickyNote className="p-4 sm:p-6">
             <SpecPanel {...specProps} showActions={false} />
           </StickyNote>
         </section>
 
-        <section className="lg:col-span-3 space-y-8">
+        <section className="order-1 space-y-8 lg:order-2">
           <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
             <Marker color="salad">design embodiment</Marker>
           </SectionHeading>

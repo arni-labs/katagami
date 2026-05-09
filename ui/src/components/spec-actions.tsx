@@ -168,7 +168,7 @@ export function SpecActions({
               <button
                 type="button"
                 onClick={handleDownload}
-                className="group inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
+                className="group inline-flex cursor-pointer items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
                 title={`Download ${filename}`}
               >
                 <Download className="h-4 w-4" />
@@ -416,8 +416,13 @@ function ActionStamp({
       type="button"
       onClick={onClick}
       title={title}
-      className="group relative inline-flex items-center gap-1.5 bg-card/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/75 shadow-[0_1px_0_rgba(30,35,45,0.06),0_2px_6px_rgba(30,35,45,0.05)] transition-colors hover:text-foreground"
-      style={{ transform: `rotate(${rotate}deg)` }}
+      className="group relative inline-flex cursor-pointer items-center gap-1.5 bg-card/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/75 shadow-[0_1px_0_rgba(30,35,45,0.06),0_2px_6px_rgba(30,35,45,0.05)] transition-all duration-200 [transform:rotate(var(--stamp-rotate))] hover:text-foreground hover:shadow-[0_2px_0_rgba(30,35,45,0.08),0_7px_14px_rgba(30,35,45,0.08)] hover:[transform:translateY(-2px)_rotate(var(--stamp-hover-rotate))]"
+      style={
+        {
+          "--stamp-rotate": `${rotate}deg`,
+          "--stamp-hover-rotate": `${rotate - 1}deg`,
+        } as React.CSSProperties
+      }
     >
       <span
         aria-hidden

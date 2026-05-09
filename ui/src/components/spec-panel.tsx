@@ -50,14 +50,36 @@ function SectionRule({
   color?: string;
 }) {
   return (
-    <div className="mb-3 flex items-center gap-2">
+    <div className="mb-2.5 flex items-center gap-2">
       <span
-        className="inline-block h-[2px] w-6 rounded-[1px]"
+        className="inline-block h-[2px] w-5 rounded-[1px]"
         style={{ background: `var(--${color})` }}
       />
-      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+      <span className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </span>
+    </div>
+  );
+}
+
+function SpecNote({
+  color,
+  children,
+  className = "",
+}: {
+  color: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative px-4 py-3 text-[14px] leading-relaxed text-foreground/88 ${className}`}
+      style={{
+        background: `color-mix(in oklch, var(--${color}) 6%, transparent)`,
+        boxShadow: `inset 3px 0 0 color-mix(in oklch, var(--${color}) 72%, var(--paper-tape-mix))`,
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -74,12 +96,17 @@ function PeeledLabel({
   const rot = (((index * 13) % 7) - 3) * 0.4;
   return (
     <span
-      className="inline-flex rounded-[3px] px-2 py-0.5 text-[11px] font-medium text-foreground/85 shadow-[0_1px_0_rgba(30,35,45,0.04)]"
+      className="inline-flex items-center gap-1.5 px-2 py-1 font-sans text-[11px] font-semibold leading-none text-foreground/78"
       style={{
-        transform: `rotate(${rot}deg)`,
-        background: `color-mix(in oklch, var(--${color}) 32%, var(--paper-tape-mix))`,
+        transform: `rotate(${rot * 0.35}deg)`,
+        background: `color-mix(in oklch, var(--${color}) 9%, transparent)`,
       }}
     >
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: `var(--${color})` }}
+      />
       {children}
     </span>
   );
@@ -116,9 +143,7 @@ function PhilosophyView({ raw }: { raw?: string }) {
       {summary && (
         <section>
           <SectionRule label="summary" color="teal" />
-          <p className="text-[14px] leading-relaxed text-foreground/90">
-            {summary}
-          </p>
+          <SpecNote color="teal">{summary}</SpecNote>
         </section>
       )}
       {values.length > 0 && (
@@ -149,7 +174,13 @@ function PhilosophyView({ raw }: { raw?: string }) {
       {lineage && (
         <section>
           <SectionRule label="lineage" color="ramune" />
-          <blockquote className="border-l-2 border-[var(--ramune)] bg-card/40 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/80">
+          <blockquote
+            className="bg-card/45 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/78"
+            style={{
+              boxShadow:
+                "inset 2px 0 0 color-mix(in oklch, var(--ramune) 72%, var(--paper-tape-mix))",
+            }}
+          >
             {lineage}
           </blockquote>
         </section>
@@ -177,7 +208,7 @@ function TokensView({ raw }: { raw?: string }) {
   const entries = Object.entries(data);
 
   return (
-    <div className="-my-1 divide-y divide-dotted divide-border/80 border-y border-dotted border-border/80">
+    <div className="-my-1 space-y-1">
       {entries.map(([group, values], i) => {
         const color: AccentColor = groupColor[group] ?? cycleColor(i);
         return (
@@ -186,13 +217,13 @@ function TokensView({ raw }: { raw?: string }) {
             open={i === 0}
             className="group/sub"
           >
-            <summary className="flex cursor-pointer list-none items-center gap-2.5 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-2.5 py-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
               <span
                 className="inline-block h-[2px] w-4 rounded-[1px]"
                 style={{ background: `var(--${color})` }}
               />
               <span className="flex-1">{group}</span>
-              <span className="font-mono text-[9px] normal-case tracking-normal text-muted-foreground/60">
+              <span className="font-mono text-[9px] font-normal normal-case tracking-normal text-muted-foreground/60">
                 {typeof values === "object" && values
                   ? `${Object.keys(values as object).length} items`
                   : "1"}
@@ -225,7 +256,7 @@ function ColorsGrid({ values }: { values: Record<string, unknown> }) {
         return (
           <div
             key={k}
-            className="flex items-center gap-2.5 border border-border bg-card/55 p-2"
+            className="flex items-center gap-2.5 bg-card/60 p-2"
           >
             <span
               className="h-8 w-8 shrink-0 rounded-[2px] border border-border shadow-[0_1px_0_rgba(30,35,45,0.06)]"
@@ -252,7 +283,7 @@ function KVList({ values }: { values: Record<string, unknown> }) {
       {Object.entries(values).map(([k, v]) => (
         <div
           key={k}
-          className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-dashed border-border py-1.5 last:border-b-0"
+          className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5"
         >
           <dt className="w-28 shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
             {k.replace(/_/g, " ")}
@@ -317,48 +348,74 @@ function RulesView({ raw }: { raw?: string }) {
     return (
       <div className="grid gap-5 md:grid-cols-2">
         {dos.length > 0 && (
-          <section>
-            <span className="stamp mb-2 inline-flex text-[var(--salad)]">
-              do
-            </span>
+          <RuleNote label="do" color="salad">
             <ul className="space-y-1.5">
               {dos.map((d) => (
                 <li
                   key={d}
-                  className="flex gap-2 text-[13px] leading-relaxed text-foreground/90"
+                  className="flex gap-2 text-[13px] leading-relaxed text-foreground/86"
                 >
-                  <span className="mt-0.5 font-bold text-[var(--salad)]">
-                    ✓
-                  </span>
+                  <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--salad)]" />
                   <span>{d}</span>
                 </li>
               ))}
             </ul>
-          </section>
+          </RuleNote>
         )}
         {donts.length > 0 && (
-          <section>
-            <span className="stamp mb-2 inline-flex text-[var(--beni)]">
-              don&rsquo;t
-            </span>
+          <RuleNote label="avoid" color="sakura">
             <ul className="space-y-1.5">
               {donts.map((d) => (
                 <li
                   key={d}
-                  className="flex gap-2 text-[13px] leading-relaxed text-foreground/90"
+                  className="flex gap-2 text-[13px] leading-relaxed text-foreground/86"
                 >
-                  <span className="mt-0.5 font-bold text-[var(--beni)]">✗</span>
+                  <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--beni)]" />
                   <span>{d}</span>
                 </li>
               ))}
             </ul>
-          </section>
+          </RuleNote>
         )}
       </div>
     );
   }
 
   return <RichKeyValueView raw={raw} />;
+}
+
+function RuleNote({
+  label,
+  color,
+  children,
+}: {
+  label: string;
+  color: "salad" | "sakura";
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className="relative px-4 pb-3 pt-8"
+      style={{
+        background: `color-mix(in oklch, var(--${color}) 5%, transparent)`,
+        boxShadow: `inset 3px 0 0 color-mix(in oklch, var(--${color}) 68%, var(--paper-tape-mix))`,
+      }}
+    >
+      <span
+        className="absolute left-4 top-3 inline-flex h-[18px] items-center rounded-[2px] px-2 font-sans text-[9px] font-bold uppercase leading-none tracking-[0.14em]"
+        style={{
+          color:
+            color === "salad"
+              ? "color-mix(in oklch, var(--salad), black 30%)"
+              : "var(--beni)",
+          background: `color-mix(in oklch, var(--${color}) 8%, var(--paper-stamp-mix))`,
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </section>
+  );
 }
 
 function RichKeyValueView({ raw }: { raw?: string }) {
@@ -395,8 +452,10 @@ function RichKeyValueView({ raw }: { raw?: string }) {
               <section key={key}>
                 <SectionRule label={label} color={color} />
                 <blockquote
-                  className="bg-card/40 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/85"
-                  style={{ borderLeft: `2px solid var(--${color})` }}
+                  className="bg-card/50 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/82"
+                  style={{
+                    boxShadow: `inset 2px 0 0 var(--${color})`,
+                  }}
                 >
                   {val}
                 </blockquote>
@@ -438,7 +497,7 @@ function RichKeyValueView({ raw }: { raw?: string }) {
 function SpecMarkdownView({ markdown }: { markdown: string }) {
   return (
     <div className="relative">
-      <pre className="max-h-[480px] overflow-auto rounded-[2px] border border-border bg-[#faf9f6] p-4 font-mono text-[11px] leading-[1.65] text-foreground/85 selection:bg-[var(--teal)]/20">
+      <pre className="max-h-[480px] overflow-auto rounded-[2px] bg-[#faf9f6] p-4 font-mono text-[11px] leading-[1.65] text-foreground/85 selection:bg-[var(--teal)]/20">
         {markdown}
       </pre>
     </div>
@@ -1067,7 +1126,7 @@ function Section({
   return (
     <details
       open={defaultOpen}
-      className="group border-b border-dashed border-border last:border-b-0"
+      className="group"
     >
       <summary className="flex cursor-pointer list-none items-center gap-2.5 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
         <span
@@ -1113,20 +1172,20 @@ export function SpecPanel(props: SpecPanelProps) {
         </div>
       )}
 
-      <div className="divide-y divide-dashed divide-border">
+      <div className="space-y-2">
         <Section label="philosophy" color="teal" defaultOpen>
           <PhilosophyView raw={philosophy} />
         </Section>
         <Section label="tokens" color="sakura">
           <TokensView raw={tokens} />
         </Section>
-        <Section label="rules" color="salad">
+        <Section label="rules" color="salad" defaultOpen>
           <RulesView raw={rules} />
         </Section>
         <Section label="layout" color="sumire">
           <RichKeyValueView raw={layout} />
         </Section>
-        <Section label="guidance" color="yuzu">
+        <Section label="guidance" color="yuzu" defaultOpen>
           <RulesView raw={guidance} />
         </Section>
         {imageryDirection && (
