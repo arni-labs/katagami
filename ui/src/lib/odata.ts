@@ -1,7 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
-const FILE_PROXY_CACHE_VERSION = "thumbnail-binary-2026-05-08";
+const FILE_PROXY_CACHE_VERSION = "asset-cdn-v2";
 
 interface ODataResponse<T> {
   value: T[];
@@ -89,7 +89,11 @@ export interface DesignLanguage {
     design_md_lint_result?: string;
     design_md_format_version?: string;
     embodiment_file_id?: string;
+    embodiment_asset_url?: string;
+    embodiment_asset_id?: string;
     thumbnail_file_id?: string;
+    thumbnail_asset_url?: string;
+    thumbnail_asset_id?: string;
     parent_ids?: string;
     lineage_type?: string;
     generation_number?: string;
@@ -126,10 +130,14 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "slug",
   "name",
   "embodiment_file_id",
+  "embodiment_asset_url",
+  "embodiment_asset_id",
   "embodiment_format",
   "embodiment_verified",
   "has_embodiment",
   "thumbnail_file_id",
+  "thumbnail_asset_url",
+  "thumbnail_asset_id",
   "has_thumbnail",
   "thumbnail_verified",
   "taxonomy_ids",

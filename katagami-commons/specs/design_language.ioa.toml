@@ -277,6 +277,13 @@ effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type =
 params = ["thumbnail_file_id"]
 hint = "Attach a thumbnail that the finalizer or backfill job has already validated. Used for verified backfills and published-language repair without temporarily violating published thumbnail invariants."
 
+[[action]]
+name = "AttachPublishedAssets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["thumbnail_asset_id", "thumbnail_asset_url", "embodiment_asset_id", "embodiment_asset_url"]
+hint = "Attach immutable public asset URLs created by the server-side publish-asset flow. PawFS file ids remain the governed source artifacts; asset URLs are the public serving plane for thumbnails and embodiments."
+
 # --- Actions: Classification ---
 
 [[action]]
