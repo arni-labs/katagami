@@ -1,0 +1,12 @@
+name = "katagami-assets"
+main = "src/index.js"
+compatibility_date = "2026-05-09"
+workers_dev = false
+
+routes = [
+  { pattern = "assets.katagami.ai/*", zone_name = "katagami.ai" },
+]
+
+[[r2_buckets]]
+binding = "PUBLISHED_ASSETS"
+bucket_name = "openpaw-fs-seshendranalla"
