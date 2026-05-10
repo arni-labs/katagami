@@ -76,15 +76,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 ) {
                     Ok(validation) => validation,
                     Err(error) => {
-                        fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
-                        set_success_result(
-                            "",
-                            &json!({"status": "job failed during typed finalization", "error": error}),
-                        );
+                        set_failed_job_callback(&ctx, &job_id, &error);
                         return Ok(());
                     }
                 };
-                let fallback = run_typed_completion_fallback(
+                let fallback = match run_typed_completion_fallback(
                     &ctx,
                     &api_url,
                     &headers,
@@ -93,28 +89,29 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &fields,
                     &workspace_id,
                     &query_id,
-                )?;
-                publish_job_progression(
+                ) {
+                    Ok(fallback) => fallback,
+                    Err(error) => {
+                        set_failed_job_callback(&ctx, &job_id, &error);
+                        return Ok(());
+                    }
+                };
+                ctx.log(
+                    "info",
+                    &format!(
+                        "finalize_spawned_session: typed no-session validation passed for job '{job_id}': {validation}; fallback: {fallback}"
+                    ),
+                );
+                set_terminal_job_callback(
                     &ctx,
-                    &api_url,
-                    &headers,
                     &job_id,
                     "FinalizeCompletion",
-                    &json!({
+                    json!({
                         "followup_job_id": "",
                         "design_language_ids": fields
                             .get("design_language_ids")
                             .and_then(|v| v.as_str())
                             .unwrap_or("[]"),
-                    }),
-                )?;
-                set_success_result(
-                    "",
-                    &json!({
-                        "status": "typed job finalized without session_id",
-                        "completion_contract": completion_contract,
-                        "validation": validation,
-                        "fallback": fallback,
                     }),
                 );
             } else {
@@ -137,11 +134,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 &session_resp.body[..session_resp.body.len().min(300)]
             );
             if job_status == "Finalizing" {
-                fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
-                set_success_result(
-                    "",
-                    &json!({"status": "job failed because spawned session could not be loaded", "error": error}),
-                );
+                set_failed_job_callback(&ctx, &job_id, &error);
                 return Ok(());
             }
             return Err(error);
@@ -150,8 +143,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let session: serde_json::Value = serde_json::from_str(&session_resp.body)
             .map_err(|e| format!("Failed to parse Session response: {e}"))?;
         let session_status = session.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        let session_already_terminal =
-            matches!(session_status, "Completed" | "Failed" | "Cancelled");
+        let session_already_terminal = session_is_terminal(session_status);
         let session_fields = session.get("fields").cloned().unwrap_or(json!({}));
         let session_counters = session.get("counters").cloned().unwrap_or(json!({}));
 
@@ -175,11 +167,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     ) {
                         Ok(record_status) => record_status,
                         Err(error) => {
-                            fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
-                            set_success_result(
-                                "",
-                                &json!({"status": "job failed while recording spawned session result", "error": error}),
-                            );
+                            set_failed_job_callback(&ctx, &job_id, &error);
                             return Ok(());
                         }
                     };
@@ -194,15 +182,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     ) {
                         Ok(validation) => validation,
                         Err(error) => {
-                            fail_job(&ctx, &api_url, &headers, &job_id, &error)?;
-                            set_success_result(
-                                "",
-                                &json!({"status": "job failed during typed finalization", "error": error}),
-                            );
+                            set_failed_job_callback(&ctx, &job_id, &error);
                             return Ok(());
                         }
                     };
-                    let fallback = run_typed_completion_fallback(
+                    let fallback = match run_typed_completion_fallback(
                         &ctx,
                         &api_url,
                         &headers,
@@ -211,36 +195,36 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &fields,
                         &workspace_id,
                         &query_id,
-                    )?;
-                    publish_job_progression(
+                    ) {
+                        Ok(fallback) => fallback,
+                        Err(error) => {
+                            set_failed_job_callback(&ctx, &job_id, &error);
+                            return Ok(());
+                        }
+                    };
+                    ctx.log(
+                        "info",
+                        &format!(
+                            "finalize_spawned_session: typed validation passed for job '{job_id}': {validation}; session: {record_status}; fallback: {fallback}"
+                        ),
+                    );
+                    set_terminal_job_callback(
                         &ctx,
-                        &api_url,
-                        &headers,
                         &job_id,
                         "FinalizeCompletion",
-                        &json!({
+                        json!({
                             "followup_job_id": "",
                             "design_language_ids": fields
                                 .get("design_language_ids")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("[]"),
                         }),
-                    )?;
-                    set_success_result(
-                        "",
-                        &json!({
-                            "status": record_status,
-                            "session_id": session_id,
-                            "completion_contract": completion_contract,
-                            "validation": validation,
-                            "fallback": fallback,
-                        }),
                     );
                     return Ok(());
                 }
 
                 // Cascade logic: spawn follow-up jobs based on job_type
-                let followup_job_id = match job_type.as_str() {
+                let progression = match job_type.as_str() {
                     // source_search -> synthesize
                     "source_search" => {
                         let synth_id = spawn_synth_followup(
@@ -256,30 +240,23 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             let synth_job_id = synth_id
                                 .as_deref()
                                 .ok_or("source_search completed without a synth follow-up job")?;
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "PublishResearchCompletion",
-                                &json!({
+                            JobProgression {
+                                action: "PublishResearchCompletion",
+                                params: json!({
                                     "followup_job_id": synth_job_id,
                                 }),
-                            )?;
+                                followup_job_id: synth_id,
+                            }
                         } else {
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "FinalizeCompletion",
-                                &json!({
+                            JobProgression {
+                                action: "FinalizeCompletion",
+                                params: json!({
                                     "followup_job_id": synth_id.as_deref().unwrap_or(""),
                                     "design_language_ids": "[]",
                                 }),
-                            )?;
+                                followup_job_id: synth_id,
+                            }
                         }
-                        synth_id
                     }
                     // synthesize -> quality_review
                     "synthesize" => {
@@ -300,36 +277,29 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             let organize_stage_job_id = review_id.as_deref().ok_or(
                                 "synthesize completed without an organizing-stage follow-up job",
                             )?;
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "PublishSynthesisCompletion",
-                                &json!({
+                            JobProgression {
+                                action: "PublishSynthesisCompletion",
+                                params: json!({
                                     "design_language_ids": language_ids,
                                     "followup_job_id": organize_stage_job_id,
                                 }),
-                            )?;
+                                followup_job_id: review_id,
+                            }
                         } else {
                             let language_ids = output_json
                                 .as_ref()
                                 .and_then(|v| v.get("language_ids"))
                                 .map(|v| v.to_string())
                                 .unwrap_or_else(|| "[]".to_string());
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "FinalizeCompletion",
-                                &json!({
+                            JobProgression {
+                                action: "FinalizeCompletion",
+                                params: json!({
                                     "design_language_ids": language_ids,
                                     "followup_job_id": review_id.as_deref().unwrap_or(""),
                                 }),
-                            )?;
+                                followup_job_id: review_id,
+                            }
                         }
-                        review_id
                     }
                     // quality_review -> organize_taxonomy
                     "quality_review" => {
@@ -346,100 +316,89 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &query_id,
                             review_output.as_ref(),
                         )?;
-                        publish_job_progression(
-                            &ctx,
-                            &api_url,
-                            &headers,
-                            &job_id,
-                            "FinalizeCompletion",
-                            &json!({
+                        JobProgression {
+                            action: "FinalizeCompletion",
+                            params: json!({
                                 "followup_job_id": organize_id.as_deref().unwrap_or(""),
                                 "design_language_ids": "[]",
                             }),
-                        )?;
-                        organize_id
+                            followup_job_id: organize_id,
+                        }
                     }
                     // organize_taxonomy -> pipeline complete
                     "organize_taxonomy" => {
                         if !query_id.is_empty() {
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "PublishOrganizationCompletion",
-                                &json!({}),
-                            )?;
+                            JobProgression {
+                                action: "PublishOrganizationCompletion",
+                                params: json!({}),
+                                followup_job_id: None,
+                            }
                         } else {
-                            publish_job_progression(
-                                &ctx,
-                                &api_url,
-                                &headers,
-                                &job_id,
-                                "FinalizeCompletion",
-                                &json!({
+                            JobProgression {
+                                action: "FinalizeCompletion",
+                                params: json!({
                                     "followup_job_id": "",
                                     "design_language_ids": "[]",
                                 }),
-                            )?;
+                                followup_job_id: None,
+                            }
                         }
-                        None
                     }
                     // regenerate_embodiment -> submit next queued regen job
                     "regenerate_embodiment" => {
                         let next_job_id =
                             submit_next_queued_regeneration(&ctx, &api_url, &headers)?;
-                        publish_job_progression(
-                            &ctx,
-                            &api_url,
-                            &headers,
-                            &job_id,
-                            "FinalizeCompletion",
-                            &json!({
+                        JobProgression {
+                            action: "FinalizeCompletion",
+                            params: json!({
                                 "followup_job_id": next_job_id.as_deref().unwrap_or(""),
                                 "design_language_ids": "[]",
                             }),
-                        )?;
-                        next_job_id
+                            followup_job_id: next_job_id,
+                        }
                     }
-                    _ => {
-                        publish_job_progression(
-                            &ctx,
-                            &api_url,
-                            &headers,
-                            &job_id,
-                            "FinalizeCompletion",
-                            &json!({
-                                "followup_job_id": "",
-                                "design_language_ids": "[]",
-                            }),
-                        )?;
-                        None
-                    }
+                    _ => JobProgression {
+                        action: "FinalizeCompletion",
+                        params: json!({
+                            "followup_job_id": "",
+                            "design_language_ids": "[]",
+                        }),
+                        followup_job_id: None,
+                    },
                 };
-                let synth_job_id = followup_job_id;
+                let terminal_action = progression.action;
+                let terminal_params = progression.params;
+                let synth_job_id = progression.followup_job_id;
 
                 // Finalize the Session if it's still in a finalizable state
                 if session_already_terminal {
-                    set_success_result(
-                        "",
-                        &json!({
-                            "status": "cascade complete, session already terminal",
-                            "session_status": session_status,
-                            "synth_job_id": synth_job_id
-                        }),
+                    ctx.log(
+                        "info",
+                        &format!(
+                            "finalize_spawned_session: legacy cascade complete for job '{job_id}', session already terminal ({session_status}), follow-up: {synth_job_id:?}"
+                        ),
+                    );
+                    set_terminal_job_callback(
+                        &ctx,
+                        &job_id,
+                        terminal_action,
+                        terminal_params.clone(),
                     );
                     return Ok(());
                 }
 
-                if !matches!(session_status, "Thinking" | "Executing") {
-                    set_success_result(
-                        "",
-                        &json!({
-                            "status": "cascade complete, session not finalizable",
-                            "session_status": session_status,
-                            "synth_job_id": synth_job_id
-                        }),
+                if !session_can_be_finalized(session_status) {
+                    ctx.log(
+                        "info",
+                        &format!(
+                            "finalize_spawned_session: legacy cascade complete for job '{job_id}', session not finalizable ({session_status}), follow-up: {synth_job_id:?}"
+                        ),
+                    );
+                    set_terminal_job_callback(
+                        &ctx,
+                        &job_id,
+                        terminal_action,
+                        terminal_params.clone(),
                     );
                     return Ok(());
                 }
@@ -464,16 +423,21 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &body.to_string(),
                 )?;
                 if !(200..300).contains(&resp.status) {
-                    return Err(format!(
+                    let error = format!(
                         "Failed to finalize Session '{session_id}': HTTP {}: {}",
                         resp.status,
                         &resp.body[..resp.body.len().min(300)]
-                    ));
+                    );
+                    set_failed_job_callback(&ctx, &job_id, &error);
+                    return Ok(());
                 }
-                set_success_result(
-                    "",
-                    &json!({"status": "session finalized", "session_id": session_id, "synth_job_id": synth_job_id}),
+                ctx.log(
+                    "info",
+                    &format!(
+                        "finalize_spawned_session: legacy session finalized for job '{job_id}', follow-up: {synth_job_id:?}"
+                    ),
                 );
+                set_terminal_job_callback(&ctx, &job_id, terminal_action, terminal_params);
             }
             "Failed" => {
                 let error_message = fields
@@ -481,22 +445,17 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     .and_then(|v| v.as_str())
                     .filter(|s| !s.is_empty())
                     .unwrap_or("CurationJob failed");
-                let resp = ctx.http_call(
-                    "POST",
-                    &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Fail"),
+                let record_status = record_session_failure(
+                    &ctx,
+                    &api_url,
                     &headers,
-                    &json!({"error_message": error_message}).to_string(),
+                    &session_id,
+                    session_status,
+                    error_message,
                 )?;
-                if !(200..300).contains(&resp.status) {
-                    return Err(format!(
-                        "Failed to fail Session '{session_id}': HTTP {}: {}",
-                        resp.status,
-                        &resp.body[..resp.body.len().min(300)]
-                    ));
-                }
                 set_success_result(
                     "",
-                    &json!({"status": "session failed", "session_id": session_id}),
+                    &json!({"status": record_status, "session_id": session_id}),
                 );
             }
             other => {
@@ -524,6 +483,12 @@ fn parse_json_field(value: Option<&serde_json::Value>) -> Option<serde_json::Val
     serde_json::from_str::<serde_json::Value>(raw).ok()
 }
 
+struct JobProgression {
+    action: &'static str,
+    params: serde_json::Value,
+    followup_job_id: Option<String>,
+}
+
 fn record_session_success(
     ctx: &Context,
     api_url: &str,
@@ -534,11 +499,11 @@ fn record_session_success(
     session_counters: &serde_json::Value,
     result_text: &str,
 ) -> Result<&'static str, String> {
-    if matches!(session_status, "Completed" | "Failed" | "Cancelled") {
+    if session_is_terminal(session_status) {
         return Ok("session already terminal");
     }
 
-    if !matches!(session_status, "Thinking" | "Executing") {
+    if !session_can_be_finalized(session_status) {
         return Ok("session not finalizable");
     }
 
@@ -567,27 +532,64 @@ fn record_session_success(
     Ok("session finalized")
 }
 
-fn fail_job(
+fn record_session_failure(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    job_id: &str,
+    session_id: &str,
+    session_status: &str,
     error_message: &str,
-) -> Result<(), String> {
+) -> Result<&'static str, String> {
+    if session_is_terminal(session_status) {
+        return Ok("session already terminal");
+    }
+
+    if !session_can_be_finalized(session_status) {
+        return Ok("session not finalizable");
+    }
+
     let resp = ctx.http_call(
         "POST",
-        &format!("{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.Fail"),
+        &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Fail"),
         headers,
         &json!({"error_message": error_message}).to_string(),
     )?;
     if !(200..300).contains(&resp.status) {
         return Err(format!(
-            "Failed to fail CurationJob '{job_id}': HTTP {}: {}",
+            "Failed to fail Session '{session_id}': HTTP {}: {}",
             resp.status,
             &resp.body[..resp.body.len().min(300)]
         ));
     }
-    Ok(())
+    Ok("session failed")
+}
+
+fn session_is_terminal(session_status: &str) -> bool {
+    matches!(session_status, "Completed" | "Failed" | "Cancelled")
+}
+
+fn session_can_be_finalized(session_status: &str) -> bool {
+    matches!(session_status, "Thinking" | "Executing")
+}
+
+fn set_terminal_job_callback(ctx: &Context, job_id: &str, action: &str, params: serde_json::Value) {
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: requesting CurationJob.{action} callback for job '{job_id}'"
+        ),
+    );
+    set_success_result(action, &params);
+}
+
+fn set_failed_job_callback(ctx: &Context, job_id: &str, error_message: &str) {
+    ctx.log(
+        "warn",
+        &format!(
+            "finalize_spawned_session: requesting CurationJob.Fail callback for job '{job_id}': {error_message}"
+        ),
+    );
+    set_success_result("Fail", &json!({"error_message": error_message}));
 }
 
 fn verify_typed_completion(
@@ -2502,41 +2504,12 @@ fn submit_next_queued_regeneration(
     Ok(None)
 }
 
-/// Dispatch a local completion-publish action so inline entity triggers can
-/// advance the parent CurationQuery declaratively.
-fn publish_job_progression(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    job_id: &str,
-    action: &str,
-    params: &serde_json::Value,
-) -> Result<(), String> {
-    let url = format!("{api_url}/tdata/CurationJobs('{job_id}')/Katagami.Curation.{action}");
-    match ctx.http_call("POST", &url, headers, &params.to_string()) {
-        Ok(resp) if (200..300).contains(&resp.status) => {
-            ctx.log(
-                "info",
-                &format!("publish_job_progression: {action} succeeded for job '{job_id}'"),
-            );
-            Ok(())
-        }
-        Ok(resp) => Err(format!(
-            "publish_job_progression: {action} failed for job '{job_id}': HTTP {} — {}",
-            resp.status,
-            &resp.body[..resp.body.len().min(200)]
-        )),
-        Err(e) => Err(format!(
-            "publish_job_progression: {action} error for job '{job_id}': {e}"
-        )),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
         design_md_projection_refresh_reason, json_object_field, render_design_md_projection,
-        thumbnail_mime_type_is_acceptable, verify_file_body,
+        session_can_be_finalized, session_is_terminal, thumbnail_mime_type_is_acceptable,
+        verify_file_body,
     };
     use serde_json::json;
 
@@ -2654,5 +2627,18 @@ mod tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn failed_job_session_cleanup_tolerates_terminal_sessions() {
+        for status in ["Completed", "Failed", "Cancelled"] {
+            assert!(session_is_terminal(status));
+            assert!(!session_can_be_finalized(status));
+        }
+
+        for status in ["Thinking", "Executing"] {
+            assert!(!session_is_terminal(status));
+            assert!(session_can_be_finalized(status));
+        }
     }
 }

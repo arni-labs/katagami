@@ -60,6 +60,58 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             source,
         )
 
+    def test_finalize_terminalizes_typed_jobs_with_wasm_callbacks(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn set_terminal_job_callback", source)
+        self.assertIn("set_success_result(action, &params);", source)
+        self.assertIn('fn set_failed_job_callback', source)
+        self.assertIn('set_success_result("Fail"', source)
+        self.assertNotIn("publish_job_progression", source)
+        self.assertNotIn("Katagami.Curation.FinalizeCompletion", source)
+        self.assertNotIn("Katagami.Curation.Fail", source)
+
+    def test_failed_job_session_cleanup_tolerates_completed_sessions(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn record_session_failure", source)
+        self.assertIn("if session_is_terminal(session_status)", source)
+        self.assertIn('Ok("session already terminal")', source)
+
+    def test_finalize_triggers_fail_job_on_wasm_failure(self):
+        spec = tomllib.loads(
+            (self.curation_root / "specs" / "curation_job.ioa.toml").read_text()
+        )
+        actions = {action["name"]: action for action in spec["action"]}
+
+        for name in [
+            "Complete",
+            "CompleteResearch",
+            "CompleteSynthesis",
+            "CompleteQualityReview",
+            "CompleteOrganization",
+            "CompleteRegeneration",
+            "CompleteEvolution",
+        ]:
+            trigger = next(
+                trigger
+                for trigger in actions[name]["triggers"]
+                if trigger["name"] == "finalize_spawned_session"
+            )
+            self.assertEqual(trigger["on_failure"], "Fail")
+
 
 if __name__ == "__main__":
     unittest.main()
