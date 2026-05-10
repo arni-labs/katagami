@@ -35,12 +35,22 @@ class CurationLivenessContractTest(unittest.TestCase):
     def test_curation_job_active_states_time_out_to_failed(self):
         spec = load_spec("curation_job.ioa.toml")
         timeouts = state_timeout_map(spec)
+        fail = action_by_name(spec, "Fail")
 
-        self.assertIn("Queued", action_by_name(spec, "Fail")["from"])
+        self.assertIn("Queued", fail["from"])
+        self.assertIn("Finalizing", fail["from"])
+        self.assertEqual(fail["to"], "Failed")
         for state in ["Queued", "Ready", "Running", "Finalizing"]:
             self.assertNotIn(state, indefinite_states(spec))
             self.assertEqual(timeouts[state]["on_timeout"], "Fail")
             self.assertIn("error_message", timeouts[state]["params"])
+
+    def test_curation_job_finalizing_has_terminal_completion_action(self):
+        spec = load_spec("curation_job.ioa.toml")
+        finalize = action_by_name(spec, "FinalizeCompletion")
+
+        self.assertEqual(finalize["from"], ["Finalizing"])
+        self.assertEqual(finalize["to"], "Completed")
 
     def test_curation_direction_synthesizing_times_out_to_failed(self):
         spec = load_spec("curation_direction.ioa.toml")
