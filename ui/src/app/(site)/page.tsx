@@ -4,10 +4,38 @@ import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   listDesignLanguages,
   listTaxonomies,
+  parseJson,
 } from "@/lib/odata";
 import { GalleryFilters } from "@/components/gallery-filters";
 import { LanguageGallery } from "@/components/language-gallery";
 import { isOwner } from "@/lib/owner";
+
+function parseMaybeJson(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return parseJson<unknown>(value) ?? value;
+}
+
+function searchText(value: unknown): string {
+  const parsed = parseMaybeJson(value);
+  if (parsed === null || parsed === undefined) return "";
+  if (typeof parsed === "string") return parsed;
+  if (typeof parsed === "number" || typeof parsed === "boolean") {
+    return String(parsed);
+  }
+  if (Array.isArray(parsed)) return parsed.map(searchText).join(" ");
+  if (typeof parsed === "object") {
+    return Object.values(parsed).map(searchText).join(" ");
+  }
+  return "";
+}
+
+function listFieldIncludes(value: unknown, expected: string): boolean {
+  const parsed = parseMaybeJson(value);
+  if (Array.isArray(parsed)) {
+    return parsed.some((item) => String(item) === expected);
+  }
+  return searchText(parsed).includes(expected);
+}
 
 async function GalleryGrid({
   status,
@@ -51,18 +79,19 @@ async function GalleryGrid({
 
   // Client-side filters for taxonomy and search (OData filter on JSON fields
   // is not yet reliable in Temper)
-  if (taxonomy) {
+  if (taxonomy && taxonomy !== "all") {
     languages = languages.filter((l) => {
-      const ids = l.fields.taxonomy_ids ?? "[]";
-      return ids.includes(taxonomy);
+      const fields = l.fields as Record<string, unknown>;
+      return listFieldIncludes(fields.taxonomy_ids, taxonomy);
     });
   }
-  if (search) {
-    const q = search.toLowerCase();
+  const normalizedSearch = search?.trim().toLowerCase();
+  if (normalizedSearch) {
     languages = languages.filter((l) => {
-      const name = (l.fields.name ?? "").toLowerCase();
-      const tags = (l.fields.tags ?? "").toLowerCase();
-      return name.includes(q) || tags.includes(q);
+      const fields = l.fields as Record<string, unknown>;
+      const name = searchText(fields.name).toLowerCase();
+      const tags = searchText(fields.tags).toLowerCase();
+      return name.includes(normalizedSearch) || tags.includes(normalizedSearch);
     });
   }
 

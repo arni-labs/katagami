@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Scissors, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,26 @@ export function DeleteLanguageDialog({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  if (!open || !target) return null;
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isPending) {
+        onOpenChange(false);
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isPending, onOpenChange, open]);
+
+  if (!open || !target || typeof document === "undefined") return null;
 
   function handleDelete() {
     if (!target) return;
@@ -119,7 +139,7 @@ export function DeleteLanguageDialog({
     });
   }
 
-  return (
+  const dialog = (
     <>
       <div
         className="fixed inset-0 z-[80] bg-[rgba(36,24,28,0.42)] backdrop-blur-[4px]"
@@ -133,7 +153,7 @@ export function DeleteLanguageDialog({
           aria-modal="true"
           aria-labelledby={`delete-language-${target.id}-title`}
           aria-describedby={`delete-language-${target.id}-description`}
-          className="relative w-full max-w-[420px] rotate-[-0.6deg] overflow-hidden rounded-[4px] border border-[color-mix(in_oklch,var(--beni)_22%,var(--border))] bg-[var(--paper-sticker)] p-5 text-foreground shadow-[0_22px_52px_rgba(30,35,45,0.26)] ring-1 ring-foreground/10 dark:bg-popover"
+          className="relative w-full max-w-[420px] overflow-hidden rounded-[4px] border border-[color-mix(in_oklch,var(--beni)_22%,var(--border))] bg-[var(--paper-sticker)] p-5 text-foreground shadow-[0_22px_52px_rgba(30,35,45,0.26)] ring-1 ring-foreground/10 dark:bg-popover"
           onClick={(e) => e.stopPropagation()}
         >
           <span
@@ -220,4 +240,6 @@ export function DeleteLanguageDialog({
       </div>
     </>
   );
+
+  return createPortal(dialog, document.body);
 }
