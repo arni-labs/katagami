@@ -1274,7 +1274,7 @@ export function NeoKawaiiTech() {
                         <div className="type-caption">Body / Inter or system-ui</div>
                       </div>
                       <div className="type-sample code-sample">
-                        const glow = \"pink + blue + blur(24px)\";
+                        const glow = &quot;pink + blue + blur(24px)&quot;;
                         <div className="type-caption">Code / JetBrains Mono</div>
                       </div>
                     </div>

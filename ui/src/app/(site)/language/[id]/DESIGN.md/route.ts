@@ -39,12 +39,23 @@ export async function GET(
 
   const f = lang.fields;
   const filename = f.slug ? `${f.slug}-DESIGN.md` : "DESIGN.md";
+  const isPublished = lang.status === "Published";
   const storedDesignMdStatus =
     lang.booleans?.has_valid_design_md && lang.booleans?.design_md_verified
       ? "validated"
       : "stored-unverified";
 
-  if (f.design_md_file_id) {
+  if (isPublished && f.design_md_asset_url) {
+    return NextResponse.redirect(f.design_md_asset_url, {
+      status: 307,
+      headers: {
+        "cache-control": "public, max-age=60, s-maxage=300",
+        "x-katagami-design-md-status": "public-artifact",
+      },
+    });
+  }
+
+  if (!isPublished && f.design_md_file_id) {
     const stored = await readStoredFile(f.design_md_file_id);
     if (stored) {
       return new NextResponse(stored, {
@@ -77,7 +88,9 @@ export async function GET(
       "content-type": "text/markdown; charset=utf-8",
       "content-disposition": `inline; filename="${filename}"`,
       "cache-control": "public, max-age=60, s-maxage=300",
-      "x-katagami-design-md-status": "generated-preview",
+      "x-katagami-design-md-status": isPublished
+        ? "missing-public-artifact-generated-preview"
+        : "generated-preview",
     },
   });
 }

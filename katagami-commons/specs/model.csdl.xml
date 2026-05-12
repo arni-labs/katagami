@@ -27,6 +27,8 @@
         <Property Name="GenerativeCanvas" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- DESIGN.md: generated portable agent handoff artifact -->
         <Property Name="DesignMdFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignMdAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignMdAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="DesignMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="alpha" />
         <Property Name="DesignMdVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
@@ -40,6 +42,7 @@
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <!-- Lineage -->

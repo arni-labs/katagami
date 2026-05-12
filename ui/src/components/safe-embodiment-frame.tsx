@@ -68,11 +68,16 @@ export function SafeEmbodimentFrame({
   );
 
   useEffect(() => {
-    if (patchedCache.has(fileId)) {
-      setSrcDoc(patchedCache.get(fileId)!);
-      return;
-    }
     let cancelled = false;
+    const cached = patchedCache.get(fileId);
+    if (cached !== undefined) {
+      queueMicrotask(() => {
+        if (!cancelled) setSrcDoc(cached);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     fetch(url)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
       .then((html) => {

@@ -1,7 +1,7 @@
 /**
  * Katagami — System Diagram (minimalistic)
  *
- * Human → Any agent → (Katagami ⇄ TemperPaw → Modal / TensorLake) → Temper → Datadog.
+ * Human → Any agent → (Katagami ⇄ temperpaw → Modal / TensorLake) → Temper → Datadog.
  * Minimalistic Hobonichi feel: Bricolage / Nunito / Geist Mono,
  * palette-tinted cards with thin top ribbons, STRAIGHT connectors,
  * readable stamp labels, dot-grid paper. Only two washi strips pinning
@@ -485,11 +485,11 @@ export default function SystemDiagramPoster() {
         </div>
       </Card>
 
-      {/* ─────── TEMPERPAW ─────── */}
+      {/* ─────── temperpaw ─────── */}
       <Card x={710} y={515} w={360} h={300} tint={C.matcha}>
         <div style={eyebrow}>agent runtime</div>
         <div style={{ ...title, fontSize: T.titleBig, marginTop: 4 }}>
-          TemperPaw
+          temperpaw
         </div>
         <div
           style={{
@@ -570,7 +570,7 @@ export default function SystemDiagramPoster() {
         </div>
       </Card>
 
-      {/* Katagami ↔ TemperPaw — labels now live entirely inside the 270-px
+      {/* Katagami ↔ temperpaw — labels now live entirely inside the 270-px
           gap between the two cards, centered on the arrow line. No bullet
           overlap anywhere. */}
       <HArrow
@@ -593,7 +593,7 @@ export default function SystemDiagramPoster() {
         labelYOffset={-17}
         direction="left"
       />
-      {/* TemperPaw → sandboxes */}
+      {/* temperpaw → sandboxes */}
       <HArrow x1={1072} x2={1102} y={580} color={C.yuzu} direction="right" />
       <HArrow x1={1072} x2={1102} y={755} color={C.ramune} direction="right" />
 

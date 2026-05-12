@@ -86,6 +86,8 @@ export interface DesignLanguage {
     imagery_direction?: string;
     generative_canvas?: string;
     design_md_file_id?: string;
+    design_md_asset_url?: string;
+    design_md_asset_id?: string;
     design_md_lint_result?: string;
     design_md_format_version?: string;
     embodiment_file_id?: string;
@@ -153,6 +155,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "has_design_md",
   "has_valid_design_md",
   "design_md_verified",
+  "has_published_assets",
   "CreatedAt",
   "UpdatedAt",
   "PublishedAt",
@@ -171,6 +174,7 @@ const FLAT_BOOLEAN_KEYS = new Set([
   "has_design_md",
   "has_valid_design_md",
   "design_md_verified",
+  "has_published_assets",
   "quality_review_passed",
 ]);
 // Counters used for sort/badge/usage:

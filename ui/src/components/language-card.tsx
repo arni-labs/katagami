@@ -191,6 +191,9 @@ function FullCard({
   const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
   const thumbnailFileId = f.thumbnail_file_id;
   const thumbnailAssetUrl = f.thumbnail_asset_url;
+  const isPublished = lang.status === "Published";
+  const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
+  const hasThumbnailPreview = Boolean(thumbnailAssetUrl || thumbnailProxyFileId);
 
   const tapeColor = tapeTintFor(paletteColors, id);
   const tapeRot = ((hashInt(id, "ra") % 11) - 5) * 0.55 - 3;
@@ -236,9 +239,9 @@ function FullCard({
               className="relative w-full overflow-hidden rounded-[1px] bg-muted"
               style={{ aspectRatio: "3 / 2" }}
             >
-              {thumbnailFileId || thumbnailAssetUrl ? (
+              {hasThumbnailPreview ? (
                 <ThumbnailPreview
-                  fileId={thumbnailFileId}
+                  fileId={thumbnailProxyFileId}
                   src={thumbnailAssetUrl}
                   alt={`${f.name || "Design language"} preview`}
                   eager={eagerThumbnail}

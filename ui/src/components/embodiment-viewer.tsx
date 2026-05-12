@@ -53,12 +53,13 @@ export function EmbodimentViewer({
   fileId,
   src,
 }: {
-  fileId: string;
+  fileId?: string;
   src?: string;
 }) {
   // Auto-render the safety-patched preview by default. The srcdoc
   // injection caps layout from first paint, so mounting is safe.
-  const url = src ?? getFileUrl(fileId);
+  const url = src ?? (fileId ? getFileUrl(fileId) : "");
+  if (!url) return <UnavailablePreview />;
   return <SafePreview url={url} />;
 }
 
@@ -149,14 +150,7 @@ function SafePreview({ url }: { url: string }) {
   }
 
   if (status === "failed") {
-    return (
-      <div
-        className="flex w-full items-center justify-center border border-dashed border-border bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
-        style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
-      >
-        embodiment not available
-      </div>
-    );
+    return <UnavailablePreview />;
   }
 
   const scaledHeight = contentHeight * scale;
@@ -194,6 +188,17 @@ function SafePreview({ url }: { url: string }) {
         <span className="sm:hidden">full</span>
         <ExternalLink className="h-3 w-3" />
       </a>
+    </div>
+  );
+}
+
+function UnavailablePreview() {
+  return (
+    <div
+      className="flex w-full items-center justify-center border border-dashed border-border bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
+      style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
+    >
+      embodiment not available
     </div>
   );
 }

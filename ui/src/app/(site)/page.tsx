@@ -4,64 +4,29 @@ import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   listDesignLanguages,
   listTaxonomies,
-  parseJson,
 } from "@/lib/odata";
-import { GalleryFilters } from "@/components/gallery-filters";
 import { LanguageGallery } from "@/components/language-gallery";
 import { isOwner } from "@/lib/owner";
-
-function parseMaybeJson(value: unknown): unknown {
-  if (typeof value !== "string") return value;
-  return parseJson<unknown>(value) ?? value;
-}
-
-function searchText(value: unknown): string {
-  const parsed = parseMaybeJson(value);
-  if (parsed === null || parsed === undefined) return "";
-  if (typeof parsed === "string") return parsed;
-  if (typeof parsed === "number" || typeof parsed === "boolean") {
-    return String(parsed);
-  }
-  if (Array.isArray(parsed)) return parsed.map(searchText).join(" ");
-  if (typeof parsed === "object") {
-    return Object.values(parsed).map(searchText).join(" ");
-  }
-  return "";
-}
-
-function listFieldIncludes(value: unknown, expected: string): boolean {
-  const parsed = parseMaybeJson(value);
-  if (Array.isArray(parsed)) {
-    return parsed.some((item) => String(item) === expected);
-  }
-  return searchText(parsed).includes(expected);
-}
 
 async function GalleryGrid({
   status,
   taxonomy,
   search,
   demo,
+  taxonomies,
 }: {
   status?: string;
   taxonomy?: string;
   search?: string;
   demo?: boolean;
+  taxonomies: { entity_id: string; fields: { name?: string } }[];
 }) {
   const canDelete = demo ? false : await isOwner();
-  let filter: string | undefined;
-  if (status === "all") {
-    filter = `Status ne 'Archived'`;
-  } else if (status) {
-    filter = `Status eq '${status}'`;
-  } else {
-    filter = `Status eq 'Published'`;
-  }
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
   try {
     languages = await listDesignLanguages(
-      filter,
+      undefined,
       undefined,
       DESIGN_LANGUAGE_GALLERY_FIELDS,
     );
@@ -76,24 +41,6 @@ async function GalleryGrid({
 
   // Filter out empty drafts (no name set = incomplete/abandoned)
   languages = languages.filter((l) => l.fields.name);
-
-  // Client-side filters for taxonomy and search (OData filter on JSON fields
-  // is not yet reliable in Temper)
-  if (taxonomy && taxonomy !== "all") {
-    languages = languages.filter((l) => {
-      const fields = l.fields as Record<string, unknown>;
-      return listFieldIncludes(fields.taxonomy_ids, taxonomy);
-    });
-  }
-  const normalizedSearch = search?.trim().toLowerCase();
-  if (normalizedSearch) {
-    languages = languages.filter((l) => {
-      const fields = l.fields as Record<string, unknown>;
-      const name = searchText(fields.name).toLowerCase();
-      const tags = searchText(fields.tags).toLowerCase();
-      return name.includes(normalizedSearch) || tags.includes(normalizedSearch);
-    });
-  }
 
   if (languages.length === 0) {
     return (
@@ -194,7 +141,18 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
-  return <LanguageGallery languages={languages} canDelete={canDelete} />;
+  return (
+    <LanguageGallery
+      languages={languages}
+      canDelete={canDelete}
+      taxonomies={taxonomies}
+      initialFilters={{
+        status: status ?? "Published",
+        taxonomy: taxonomy ?? "all",
+        search: search ?? "",
+      }}
+    />
+  );
 }
 
 export default async function GalleryPage({
@@ -707,7 +665,6 @@ export default async function GalleryPage({
           </div>
           <span className="stamp text-[var(--salad)]">details inside</span>
         </div>
-        <GalleryFilters taxonomies={taxonomies} />
       </section>
 
       <Suspense
@@ -727,6 +684,7 @@ export default async function GalleryPage({
           taxonomy={sp.taxonomy}
           search={sp.q}
           demo={demo}
+          taxonomies={taxonomies}
         />
       </Suspense>
     </div>

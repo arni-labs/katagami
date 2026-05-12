@@ -21,7 +21,7 @@ source-search smoke session confirmed that `json` was undefined.
 
 ## Decision
 
-OpenPaw preloads a safe `json` helper in every Monty REPL session. Katagami
+temperpaw preloads a safe `json` helper in every Monty REPL session. Katagami
 skills use `json.dumps(...)` and `json.loads(...)` without importing.
 
 Katagami skills must continue to serialize every array or object action

@@ -236,8 +236,8 @@ export function ThumbnailPreview({
           placeholderTint={placeholderTint}
         />
       ) : (
-        // Direct file-proxy delivery is intentional: thumbnail_file_id already
-        // points at a generated, card-sized PawFS image.
+        // Published cards pass immutable asset URLs; file ids are reserved for
+        // draft/admin previews where governed file access is still expected.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}

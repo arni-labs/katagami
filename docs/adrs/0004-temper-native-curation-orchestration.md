@@ -21,13 +21,13 @@ WASM runtime effects remain declared as IOA `effect = [{ type = "trigger", ... }
 plus `[[integration]]` entries.
 
 That means Katagami can express most cross-entity workflow directly in app data.
-The remaining imperative boundary is external runtime integration: OpenPaw
+The remaining imperative boundary is external runtime integration: temperpaw
 session creation, session finalization, and workspace provisioning.
 
 ## Decision
 
 Katagami curation workflow is modeled in Temper entities and reactions. WASM
-remains only where it bridges to OpenPaw runtime behavior.
+remains only where it bridges to temperpaw runtime behavior.
 
 The implementation adds:
 
@@ -43,7 +43,7 @@ The implementation adds:
   start a follow-up job in one target action
 
 New jobs use `completion_contract = "typed-v1"`. For those jobs,
-`finalize_spawned_session` records the OpenPaw session result and finalizes the
+`finalize_spawned_session` records the temperpaw session result and finalizes the
 job. It also carries an idempotent compatibility fallback for already-running
 legacy jobs. The fallback checks existing query/direction/job state and stands
 down rather than duplicating the inline-trigger cascade.
@@ -77,6 +77,6 @@ keeps cross-entity workflow hidden in Rust.
 
 Move every runtime effect into inline triggers immediately.
 
-Rejected because OpenPaw session creation/finalization and workspace ensuring
+Rejected because temperpaw session creation/finalization and workspace ensuring
 are still external runtime effects. Those stay in small WASM bridges until
 Temper has native replacements.

@@ -9,4 +9,4 @@ routes = [
 
 [[r2_buckets]]
 binding = "PUBLISHED_ASSETS"
-bucket_name = "openpaw-fs-seshendranalla"
+bucket_name = "temperpaw-public-artifacts-seshendranalla"

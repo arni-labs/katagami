@@ -17,9 +17,15 @@ const languages = await fetchPublishedLanguages();
 const candidates = languages
   .filter((language) => {
     const fields = language.fields ?? {};
-    if (!fields.thumbnail_file_id || !fields.embodiment_file_id) return false;
+    if (!fields.thumbnail_file_id || !fields.embodiment_file_id || !fields.design_md_file_id) {
+      return false;
+    }
     if (force) return true;
-    return !fields.thumbnail_asset_url || !fields.embodiment_asset_url;
+    return (
+      !fields.thumbnail_asset_url ||
+      !fields.embodiment_asset_url ||
+      !fields.design_md_asset_url
+    );
   })
   .slice(0, limit > 0 ? limit : undefined);
 
@@ -38,8 +44,9 @@ for (const language of candidates) {
   const languageId = language.entity_id;
   const name = fields.name ?? languageId;
 
-  const thumbnail = await publishAsset(languageId, fields.thumbnail_file_id, "thumbnail");
-  const embodiment = await publishAsset(languageId, fields.embodiment_file_id, "embodiment");
+  const thumbnail = await publishArtifact(languageId, fields.thumbnail_file_id, "thumbnail");
+  const embodiment = await publishArtifact(languageId, fields.embodiment_file_id, "embodiment");
+  const designMd = await publishArtifact(languageId, fields.design_md_file_id, "design_md");
 
   await postJson(
     `/tdata/DesignLanguages('${encodeODataKey(languageId)}')/Temper.AttachPublishedAssets`,
@@ -48,6 +55,8 @@ for (const language of candidates) {
       thumbnail_asset_url: thumbnail.public_url,
       embodiment_asset_id: embodiment.id,
       embodiment_asset_url: embodiment.public_url,
+      design_md_asset_id: designMd.id,
+      design_md_asset_url: designMd.public_url,
     },
   );
 
@@ -70,15 +79,15 @@ async function fetchPublishedLanguages() {
   return rows;
 }
 
-async function publishAsset(languageId, fileId, kind) {
-  const response = await postJson("/api/files/publish-asset", {
+async function publishArtifact(languageId, fileId, label) {
+  const response = await postJson("/api/files/publish-artifact", {
     file_id: fileId,
-    kind,
-    owner_entity_type: "DesignLanguage",
-    owner_entity_id: languageId,
-    public_key_prefix: "katagami/design-languages",
+    label,
+    owner_ref_type: "DesignLanguage",
+    owner_ref_id: languageId,
+    namespace: "katagami/design-languages",
   });
-  return response.asset;
+  return response.artifact;
 }
 
 async function getJson(path) {
