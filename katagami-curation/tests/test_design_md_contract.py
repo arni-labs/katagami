@@ -81,6 +81,17 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertNotIn("Published", attach["from"])
         self.assertIn("Revise first", attach["hint"])
 
+        finalizer = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+        self.assertIn("fn revise_published_for_design_md", finalizer)
+        self.assertIn('"Revise"', finalizer)
+        self.assertIn('status = "UnderReview".to_string();', finalizer)
+
     def test_publish_requires_valid_design_md(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])

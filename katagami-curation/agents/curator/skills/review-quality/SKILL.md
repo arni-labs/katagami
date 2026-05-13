@@ -18,9 +18,52 @@ Read the knowledge files in your workspace:
 For each language specified in the job input (or ALL languages if none specified):
 
 1. **Load the DesignLanguage**: `temper.get('DesignLanguages', lang_id)`
-2. **Read its fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id, thumbnail_file_id.
-3. **Read the current embodiment**: `temper.read('/katagami/embodiments/' + slug + '.html')`
-4. **MANDATORY: Validate the native Katagami spec before evaluating the embodiment.** Parse each JSON field:
+2. **Normalize its entity shape before making any quality decision.** `temper.get(...)` returns a nested entity: `{entity_id, status, fields, booleans, counters}`. Do not read language data from top-level keys like `lang['embodiment_file_id']`; they will be missing even when the language is valid. Use the normalized `fields` bag for spec/file fields and the `booleans` bag only as a fallback for boolean state:
+
+   ```python
+   def entity_fields(entity):
+       return entity.get('fields') or {}
+
+   def entity_booleans(entity):
+       return entity.get('booleans') or {}
+
+   def field(entity, name, default=''):
+       fields = entity_fields(entity)
+       value = fields.get(name)
+       if value is None:
+           value = fields.get(''.join(part.capitalize() for part in name.split('_')))
+       return default if value is None else value
+
+   def bool_state(entity, name):
+       fields = entity_fields(entity)
+       booleans = entity_booleans(entity)
+       value = fields.get(name)
+       if value is None:
+           value = fields.get(''.join(part.capitalize() for part in name.split('_')))
+       if value is None:
+           value = booleans.get(name)
+       if value is None:
+           value = booleans.get(''.join(part.capitalize() for part in name.split('_')))
+       if isinstance(value, bool):
+           return value
+       return str(value).lower() == 'true'
+
+   def json_field(entity, name, fallback):
+       value = field(entity, name, '')
+       if isinstance(value, dict) or isinstance(value, list):
+           return value
+       if not value:
+           return fallback
+       return json.loads(value)
+   ```
+3. **Read normalized fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id, thumbnail_file_id.
+4. **Fast path for already-reviewed languages**: If `bool_state(lang, 'quality_review_passed')` is true and both `field(lang, 'embodiment_file_id')` and `field(lang, 'thumbnail_file_id')` are present, first validate that the native spec fields are structurally coherent as described in the next step using `json_field(...)`. If the spec is coherent, do not regenerate the embodiment or thumbnail just to refresh derived artifacts. Do not call `temper.read` for the embodiment path, do not resolve TemperFS paths, do not run Playwright, and do not regenerate DESIGN.md on this path. Add the language to `fixed_ids` and continue to the next language. The CurationJob finalizer will verify the existing files by file ID, generate/verify deterministic DESIGN.md when needed, attach public assets, and publish through guarded internal actions.
+
+   If the spec is not coherent, do **not** take the fast path and do **not** fail merely because a nested token subsection is incomplete. Continue into normal repair. Partial drift such as missing `tokens.typography.heading_font`, `body_font`, `mono_font`, `google_fonts_url`, or sparse `tokens.surfaces`/`borders`/`motion` is repairable in this job when the language still has enough identity in `name`, `description`, `philosophy`, `rules`, `layout_principles`, `guidance`, or its existing embodiment. If the language is currently `Published`, first call `temper.action('DesignLanguages', lang_id, 'Revise', {'curator_notes': 'Repairing incomplete native spec before quality finalization'})`, then repair with `SetTokens` or `SetSpec`; the finalizer will publish after validation.
+5. **Published artifact review path**: If `lang['status'] == 'Published'`, treat the job as a review of existing artifacts unless you have found a concrete source-spec or embodiment defect that requires repair. A published language must not call `AttachDesignMd`, `AttachEmbodiment`, or `AttachThumbnail` directly. Those actions invalidate publish-required verification booleans and are not valid from `Published`. If the language has coherent native spec fields plus `embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`, and a clean `design_md_lint_result`, add the language to `fixed_ids` and continue; the finalizer will verify by file ID, mark quality, attach public assets, and leave it published. Only when an actual repair is required should you first call `Revise`, then use the normal Draft/UnderReview repair flow.
+6. **Artifact handoff path for partially completed retries**: If `quality_review_passed` is false but the language is already `Draft` or `UnderReview` and has all three artifact fields (`embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`) plus a `design_md_lint_result` whose summary has `errors == 0` and `warnings == 0`, validate that the native spec is structurally coherent and that the existing embodiment file is a valid browser artifact before taking the handoff. Resolve `embodiment_file_id` through `temper.get('Files', embodiment_file_id)`, read its `Path` from its `WorkspaceId`, and reject the handoff if `embodiment_format == 'html'` and the file body lacks `<html` or `<!doctype`. SVG recovery placeholders, JSON errors, tiny stubs, or any non-HTML body are not valid embodiments for HTML languages. If the file is invalid, continue into normal repair and regenerate the embodiment and thumbnail. If both the spec and file body are coherent, do not regenerate the embodiment, thumbnail, or DESIGN.md just to repeat work from an earlier failed retry. Add the language to `fixed_ids` and continue. The finalizer will read the referenced files, verify thumbnails/embodiment/DESIGN.md by file ID, mark quality, attach public assets, and publish through guarded internal actions.
+7. **Read the current embodiment when it exists**: If `embodiment_file_id` is present, resolve the `Files` entity and read its actual `Path` with its `WorkspaceId`; only fall back to `temper.read('/katagami/embodiments/' + slug + '.html')` when file metadata is unavailable. If it is missing, unreadable, or invalid for its `embodiment_format`, do not fail solely for that reason. Treat the embodiment as absent, validate the spec, and regenerate a fresh self-contained HTML embodiment from the Katagami fields.
+8. **MANDATORY: Validate the native Katagami spec before evaluating the embodiment.** Parse each JSON field:
    - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
    - `tokens.colors` must have all 12 keys with real hex values
    - `tokens.typography` must have real font names and a google_fonts_url
@@ -28,8 +71,11 @@ For each language specified in the job input (or ALL languages if none specified
    - `rules.signature_patterns` must have >= 3 items, each >= 30 chars with specific CSS techniques
    - `guidance.do` >= 3 items, `guidance.dont` >= 3 items
 
+   **Repair partial native spec drift in place**: When only nested fields are missing or too thin, preserve the existing language identity and fill the missing pieces with concrete tokens that match the already-authored spec and embodiment. Use `SetTokens` for token-only repairs; use `SetSpec` when multiple sections need coordinated updates. Do not invent a new language, rename it, or change its slug. After any spec repair, continue through DESIGN.md generation, embodiment/thumbnail verification, and typed completion normally.
    **If the spec is deeply empty or incoherent**: STOP. Do NOT invent a full language from nothing. Fail the job with a concrete error_message naming the invalid sections and instruct the caller to run `regenerate_embodiment` or `synthesize` first.
-5. **MANDATORY: Generate and validate DESIGN.md.** Katagami remains the source of truth; DESIGN.md is the required portable projection.
+   **If only `embodiment_file_id` is missing but the spec is valid**: continue. This quality-review job is allowed to repair missing embodiment artifacts by creating and attaching a new embodiment and thumbnail before completion.
+9. **MANDATORY: Generate and validate DESIGN.md when the language is Draft or UnderReview.** Katagami remains the source of truth; DESIGN.md is the required portable projection.
+   - If the language is `Published`, do not execute this step unless you have already called `Revise` for a concrete repair. Reviewing a published language with existing clean artifacts means using the published artifact review path above, not re-attaching DESIGN.md.
    - Generate a DESIGN.md markdown string from the current Katagami fields.
    - YAML front matter must include `version: "alpha"`, `name`, `description`, `colors`, `typography`, `rounded`, `spacing`, and `components`.
    - Markdown sections must include Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, and Do's and Don'ts when source data exists.
@@ -50,7 +96,7 @@ For each language specified in the job input (or ALL languages if none specified
          'design_md_format_version': 'alpha'
      })
      ```
-6. **Evaluate against the spec.** Common failures to fix:
+10. **Evaluate against the spec.** Common failures to fix:
    - **Catalog layout**: Organized as a component inventory with sections labeled "Controls", "Feedback", "Data" instead of a plausible application scene. This is the #1 failure — redesign the scene entirely.
    - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` must ALL manifest in CSS. Check each one — if it's not visible, the structure is wrong.
    - **Generic typography**: Using AI-tell fonts or sharing typefaces with another language. Each language's heading, body, and mono fonts should be unique across the library.
@@ -60,14 +106,19 @@ For each language specified in the job input (or ALL languages if none specified
    - **Inconsistent styling**: Buttons, inputs, cards not matching each other.
    - **Alignment**: Elements off-grid, uneven spacing, misaligned columns.
    - **curator_notes**: If present, these are specific fix instructions from the human curator. Follow them first.
-7. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
+11. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
    - Write HTML to sandbox
-   - Prepare and prove the browser runtime before any screenshot:
+   - Prepare and prove the browser runtime before any screenshot.
+   - Do not run monolithic review tool calls. Split the work into short calls: one call to inspect/repair spec, one call to write DESIGN.md, one call for each browser setup/screenshot/thumbnail step, one call to write artifacts, and one call to complete the CurationJob. A single tool call must not generate DESIGN.md, generate HTML, install browsers, screenshot, write files, and complete the job all at once.
+   - Do not run silent long commands. Any install, browser setup, screenshot, or lint command that might take more than 30 seconds must be split into smaller commands. Printing `echo` lines inside a long command is not enough if the tool only returns output after the command exits; each tool call must finish before the platform watchdog sees it as stalled with `tool execution made no progress`.
 
 ```python
-browser_setup_log = sandbox.bash("""set -eu
-python3 -m pip install --quiet playwright pillow
-python3 -m playwright install chromium >/dev/null
+browser_setup_log = sandbox.bash("""set -eux
+echo '[katagami] installing browser dependencies'
+python3 -m pip install playwright pillow
+echo '[katagami] installing chromium'
+python3 -m playwright install chromium
+echo '[katagami] proving chromium launch'
 python3 - <<'PY'
 from playwright.sync_api import sync_playwright
 p = sync_playwright().start()
@@ -76,6 +127,7 @@ b.close()
 p.stop()
 print('playwright ready')
 PY
+echo '[katagami] browser setup complete'
 """)
 assert '[exit code: 0]' in browser_setup_log and 'playwright ready' in browser_setup_log, browser_setup_log
 ```
@@ -83,7 +135,7 @@ assert '[exit code: 0]' in browser_setup_log and 'playwright ready' in browser_s
    - Screenshot with Playwright at 3 viewports (desktop 1440x960, tablet 768px, mobile 375px)
    - Visually evaluate each viewport
    - Iterate until quality passes at all three sizes
-8. **Generate and verify the gallery thumbnail.** After the final HTML passes
+12. **Generate and verify the gallery thumbnail.** After the final HTML passes
    review, create a static desktop thumbnail from the same `/tmp/embodiment.html`.
    This is mandatory for every quality review that writes or re-attaches an
    embodiment.
@@ -145,7 +197,7 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
    If thumbnail generation, resizing, or verification fails, fix the embodiment
    or screenshot command and retry. Do not attach a missing, blank, wrong-size,
    or non-JPEG thumbnail.
-9. **Write and re-attach artifacts:**
+13. **Write and re-attach artifacts:**
    ```python
    result = temper.write('/katagami/embodiments/' + slug + '.html', new_html)
    temper.action('DesignLanguages', lang_id, 'AttachEmbodiment', {
@@ -161,16 +213,20 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
        'thumbnail_file_id': thumbnail_result['file_id']
    })
    ```
-10. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish.
-11. **Mark reviewed after all artifacts are attached. Do not publish directly.**
+14. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish. This only applies after a language is in `Draft` or `UnderReview`; if the target is still `Published`, go back to the published artifact review path and do not re-attach DESIGN.md.
+15. **Mark reviewed after all artifacts are attached. Do not publish directly and do not archive.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
     files, rejects base64 text thumbnail payloads, marks verified fields through
     internal actions, marks quality as passed, and publishes only if the
     entity/file world is actually valid.
+    Never call `Archive` on a `DesignLanguage` during `quality_review` or public
+    asset backfill. If a language cannot pass, fail the job with a concrete
+    `error_message` so the pipeline can repair it through the normal governed
+    actions instead of hiding it in `Archived`.
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
    ```
-12. **After ALL languages are reviewed and published:**
+16. **After ALL languages are reviewed and ready for finalizer publish:**
    ```python
    organize_input = json.dumps({
        'language_ids': fixed_ids,
@@ -195,3 +251,9 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
 Job output JSON must include:
 - `fixed` — array of DesignLanguage entity IDs that were reviewed and fixed
 - `language_ids` — same IDs, passed as `design_language_ids` to `CompleteQualityReview`
+
+Keep the provider-facing final response tiny. Do not include regenerated HTML,
+DESIGN.md content, screenshots, full validation reports, or large JSON dumps in
+the assistant message. Artifacts belong in TemperFS and structured IDs belong in
+the `CompleteQualityReview` action params; after dispatching the action, call
+`temper.done("quality_review complete")`.

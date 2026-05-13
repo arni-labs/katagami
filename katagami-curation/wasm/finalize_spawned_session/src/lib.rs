@@ -723,7 +723,7 @@ fn verify_quality_reviewed_languages(
     for language_id in &language_ids {
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
-        let status = entity_status_value(&language);
+        let mut status = entity_status_value(&language);
         if !matches!(status.as_str(), "Draft" | "UnderReview" | "Published") {
             return Err(format!(
                 "DesignLanguage '{language_id}' is in state '{status}', expected Draft, UnderReview, or Published before quality_review finalization"
@@ -731,7 +731,11 @@ fn verify_quality_reviewed_languages(
         }
 
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
-        verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
+        if verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?
+            && status == "Published"
+        {
+            status = "UnderReview".to_string();
+        }
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
@@ -846,8 +850,10 @@ fn verify_design_md(
     workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let mut fields = entity_fields(language);
+    let mut status = entity_status_value(language);
+    let mut revised = false;
     let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
     let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
     if let Some(refresh_reason) = refresh_reason {
@@ -855,6 +861,10 @@ fn verify_design_md(
             return Err(format!(
                 "DesignLanguage '{language_id}' needs deterministic DESIGN.md generation ({refresh_reason}) but the CurationJob has no workspace_id"
             ));
+        }
+        if status == "Published" {
+            revise_published_for_design_md(ctx, api_url, headers, language_id)?;
+            revised = true;
         }
         let generated = render_design_md_projection(language_id, &fields);
         let generated_file_id = write_workspace_file(
@@ -918,6 +928,11 @@ fn verify_design_md(
         })?;
     let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
     if !bool_field(&fresh_bools, "has_design_md") {
+        status = entity_status_value(&fresh);
+        if status == "Published" {
+            revise_published_for_design_md(ctx, api_url, headers, language_id)?;
+            revised = true;
+        }
         let lint_result = string_field_any(&fields, "design_md_lint_result", "");
         dispatch_action(
             ctx,
@@ -943,7 +958,26 @@ fn verify_design_md(
         "VerifyDesignMd",
         &json!({}),
     )?;
-    Ok(())
+    Ok(revised)
+}
+
+fn revise_published_for_design_md(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing deterministic DESIGN.md projection during quality finalization"
+        }),
+    )
 }
 
 fn verify_thumbnail(

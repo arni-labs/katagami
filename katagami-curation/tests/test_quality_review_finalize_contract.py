@@ -112,6 +112,22 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             )
             self.assertEqual(trigger["on_failure"], "Fail")
 
+    def test_review_skill_reviews_published_artifacts_without_reattaching_design_md(self):
+        skill = (
+            self.curation_root
+            / "agents"
+            / "curator"
+            / "skills"
+            / "review-quality"
+            / "SKILL.md"
+        ).read_text()
+
+        self.assertIn("Published artifact review path", skill)
+        self.assertIn("A published language must not call `AttachDesignMd`", skill)
+        self.assertIn("If the language is `Published`, do not execute this step", skill)
+        self.assertIn("do not re-attach DESIGN.md", skill)
+        self.assertIn("fields.get(''.join(part.capitalize() for part in name.split('_')))", skill)
+
 
 if __name__ == "__main__":
     unittest.main()
