@@ -278,10 +278,10 @@ hint = "Mark the attached thumbnail as verified after the finalizer has read the
 [[action]]
 name = "AttachVerifiedThumbnail"
 kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
+from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach a thumbnail that the finalizer or backfill job has already validated. Used for verified backfills and published-language repair without temporarily violating published thumbnail invariants."
+hint = "Attach a thumbnail that the finalizer or backfill job has already validated. Published languages must Revise first because changing source media invalidates public artifacts."
 
 [[action]]
 name = "AttachPublishedAssets"

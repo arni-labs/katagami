@@ -33,6 +33,10 @@ class ThumbnailContractTests(unittest.TestCase):
             self._sets_bool("VerifyThumbnail", "thumbnail_verified", "true")
         )
 
+        attach_verified = self.actions["AttachVerifiedThumbnail"]
+        self.assertEqual(attach_verified["from"], ["Draft", "UnderReview"])
+        self.assertIn("Revise first", attach_verified["hint"])
+
         csdl = (self.commons_root / "specs" / "model.csdl.xml").read_text()
         self.assertIn('Property Name="ThumbnailFileId"', csdl)
         self.assertIn('Property Name="ThumbnailAssetId"', csdl)
