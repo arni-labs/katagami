@@ -9,4 +9,4 @@ routes = [
 
 [[r2_buckets]]
 binding = "PUBLISHED_ASSETS"
-bucket_name = "temperpaw-public-artifacts-seshendranalla"
+bucket_name = "katagami-published-assets"
