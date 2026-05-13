@@ -2,6 +2,10 @@
 **/wasm/*/target/
 **/wasm/*/Cargo.lock
 
+# Python test artifacts
+__pycache__/
+*.pyc
+
 # Local database
 .data/
 

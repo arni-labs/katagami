@@ -711,7 +711,7 @@ function KukanPressGrid() {
             <div className="scheduleHeader">
               <div>
                 <div className="kicker">Desk schedule / by district</div>
-                <h3>Tonight's field log</h3>
+                <h3>Tonight&rsquo;s field log</h3>
               </div>
               <span className="metaText">{activeDistrict.line}</span>
             </div>

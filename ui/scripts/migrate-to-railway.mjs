@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// One-shot migration: local OpenPaw/Temper -> Railway OpenPaw/Temper.
+// One-shot migration: local temperpaw/Temper -> Railway temperpaw/Temper.
 //
 // Usage:
 //   LOCAL_URL=http://localhost:3500 \
-//   RAILWAY_URL=https://openpaw-production.up.railway.app \
+//   RAILWAY_URL=https://temperpaw-production.up.railway.app \
 //   RAILWAY_TOKEN=<bearer> \
 //   TENANT=default \
 //   node ui/scripts/migrate-to-railway.mjs [--apply]
@@ -16,7 +16,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 const L  = process.env.LOCAL_URL  || "http://localhost:3500";
-const R  = process.env.RAILWAY_URL || "https://openpaw-production.up.railway.app";
+const R  = process.env.RAILWAY_URL || "https://temperpaw-production.up.railway.app";
 const LT = process.env.LOCAL_TENANT || "default";
 const RT = process.env.TENANT || "default";
 const TOKEN = process.env.RAILWAY_TOKEN || "";

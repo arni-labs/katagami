@@ -78,16 +78,19 @@ const lucideIconProxy = new Proxy(
   {
     get: () =>
       (props: Record<string, unknown>) =>
-        React.createElement("svg", {
-          ...props,
-          width: 16,
-          height: 16,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          children: React.createElement("circle", { cx: 12, cy: 12, r: 4 }),
-        }),
+        React.createElement(
+          "svg",
+          {
+            ...props,
+            width: 16,
+            height: 16,
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: 2,
+          },
+          React.createElement("circle", { cx: 12, cy: 12, r: 4 }),
+        ),
   },
 );
 
@@ -221,7 +224,6 @@ export async function compileTsx(
 `;
 
   // Step 4: Evaluate using Function constructor (safer than eval, same CSP requirements)
-  // eslint-disable-next-line no-new-func
   const factory = new Function("return " + wrappedCode)();
   // For unknown modules, return a Proxy so any named/default import still
   // resolves to *something* — a noop function that returns null React element.

@@ -101,7 +101,7 @@ export default function RadixTestPage() {
           </div>
 
           <span className="text-xs text-muted-foreground ml-auto">
-            {source === "agent" ? "Agent-generated (OpenPaw + gpt-5.4)" : "Manually crafted"} Radix embodiments
+            {source === "agent" ? "Agent-generated (temperpaw + gpt-5.4)" : "Manually crafted"} Radix embodiments
           </span>
         </div>
       </div>

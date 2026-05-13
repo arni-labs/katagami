@@ -37,6 +37,7 @@ class DesignMdContractTests(unittest.TestCase):
     def test_design_language_tracks_design_md_validity(self):
         self.assertIn("has_design_md", self.states)
         self.assertIn("has_valid_design_md", self.states)
+        self.assertIn("has_published_assets", self.states)
 
         attach = self.actions["AttachDesignMd"]
         self.assertEqual(attach["from"], ["Draft", "UnderReview"])
@@ -55,6 +56,25 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertTrue(
             self._sets_bool("AttachDesignMd", "design_md_verified", "false")
         )
+        self.assertTrue(
+            self._sets_bool("AttachDesignMd", "has_published_assets", "false")
+        )
+
+        attach_assets = self.actions["AttachPublishedAssets"]
+        self.assertEqual(
+            attach_assets["params"],
+            [
+                "thumbnail_asset_id",
+                "thumbnail_asset_url",
+                "embodiment_asset_id",
+                "embodiment_asset_url",
+                "design_md_asset_id",
+                "design_md_asset_url",
+            ],
+        )
+        self.assertTrue(
+            self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
+        )
 
     def test_published_languages_revise_before_design_md_reattach(self):
         attach = self.actions["AttachDesignMd"]
@@ -68,6 +88,7 @@ class DesignMdContractTests(unittest.TestCase):
             "has_valid_design_md",
             "design_md_verified",
             "embodiment_verified",
+            "has_published_assets",
             "quality_review_passed",
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
@@ -82,6 +103,10 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertEqual(
             invariants["PublishedRequiresVerifiedDesignMd"]["assert"],
             "design_md_verified",
+        )
+        self.assertEqual(
+            invariants["PublishedRequiresPublicAssets"]["assert"],
+            "has_published_assets",
         )
 
     def test_source_spec_changes_invalidate_design_md(self):
@@ -106,6 +131,9 @@ class DesignMdContractTests(unittest.TestCase):
                 )
                 self.assertTrue(
                     self._sets_bool(action_name, "design_md_verified", "false")
+                )
+                self.assertTrue(
+                    self._sets_bool(action_name, "has_published_assets", "false")
                 )
                 self.assertTrue(
                     self._sets_bool(action_name, "quality_review_passed", "false")
@@ -167,10 +195,13 @@ class DesignMdContractTests(unittest.TestCase):
 
         for prop in [
             "DesignMdFileId",
+            "DesignMdAssetId",
+            "DesignMdAssetUrl",
             "DesignMdLintResult",
             "DesignMdFormatVersion",
             "DesignMdVerified",
             "EmbodimentVerified",
+            "HasPublishedAssets",
             "QualityReviewPassed",
         ]:
             self.assertIn(prop, props)

@@ -8,7 +8,7 @@ Accepted for immediate unblock. The final storage architecture remains a follow-
 
 ## Context
 
-Katagami curation jobs depend on TemperPaw sessions. The old hot session path
+Katagami curation jobs depend on temperpaw sessions. The old hot session path
 stored every turn by rebuilding a session JSONL document and writing it through
 PawFS `Files('{id}')/$value`. That looked like an append, but it was a full
 versioned file replacement. The write synchronously waited for blob storage,
@@ -58,7 +58,7 @@ Katagami agents use these storage surfaces by intent:
 
 ## Immediate Implementation
 
-TemperPaw introduces `SessionEntry` as a Temper-native hot session log. New
+temperpaw introduces `SessionEntry` as a Temper-native hot session log. New
 sessions store the session tree as one small entity per entry rather than as a
 rewritten PawFS JSONL file. Existing sessions that already point at PawFS JSONL
 continue to read through the legacy path.

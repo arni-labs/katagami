@@ -5,15 +5,16 @@ How Katagami is hosted and served. No secrets in this file — env values, API t
 ## Architecture
 
 ```
-Browser ──HTTPS──▶ Vercel (Next.js)  ──HTTPS + Bearer──▶  Railway (OpenPaw / Temper)
+Browser ──HTTPS──▶ Vercel (Next.js)  ──HTTPS + Bearer──▶  Railway (temperpaw / Temper)
                    Server Components                       /tdata/{EntitySet}     ← reads/writes
                    Server Actions                          /tdata/.../KatagamiCommons.X
                    /api/file/[id] proxy                    /tdata/Files('..')/$value
                                                            Turso ← entities · R2 ← file blobs
+Browser ──HTTPS──▶ assets.katagami.ai (Cloudflare Worker) ─▶ R2 published prefixes
                    DNS via Cloudflare (DNS-only, no proxy)
 ```
 
-The frontend is the only thing on Vercel. The backend (entity store, agent runtime, file blobs) is the OpenPaw server on Railway, shared with other Temper apps.
+The frontend is the only thing on Vercel. The backend (entity store, agent runtime, file blobs) is the temperpaw server on Railway, shared with other Temper apps.
 
 ## Frontend (Vercel)
 
@@ -32,7 +33,7 @@ Set in Vercel project settings (Production + Preview):
 
 | Name | Public? | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_TEMPER_API_URL` | yes | Public Railway URL of the OpenPaw backend |
+| `NEXT_PUBLIC_TEMPER_API_URL` | yes | Public Railway URL of the temperpaw backend |
 | `NEXT_PUBLIC_TEMPER_TENANT` | yes | Tenant identifier passed as `X-Tenant-Id` |
 | `TEMPER_API_KEY` | **server-only** | Bearer token for Railway. Read only by Server Components, Server Actions, and the file-proxy route handler. No `NEXT_PUBLIC_` prefix → never shipped to the browser bundle |
 | `KATAGAMI_OWNER_SECRET` | **server-only** | Passphrase for `/owner`. When unlocked, Vercel sets an HTTP-only owner cookie that reveals delete controls and gates destructive Server Actions |
@@ -41,6 +42,8 @@ The browser never sees the Bearer token. All Temper calls go through Vercel-side
 - Server Components in `ui/src/app/**/page.tsx` (e.g. the gallery, language detail, taxonomy, lineage, compare).
 - Server Actions in `ui/src/app/actions.ts` (delete, add curator notes).
 - File proxy at `ui/src/app/api/file/[id]/route.ts` — same-origin from the browser, server-side fetch with `Authorization` to Railway.
+
+Published thumbnails, embodiments, and `DESIGN.md` exports should prefer immutable `*_asset_url` fields when present. Those URLs are produced by Temper's generic `POST /api/files/publish-artifact` flow and served from `https://assets.katagami.ai/<content-addressed-key>` through the Cloudflare Worker in `infra/cloudflare/katagami-assets-worker`. The Worker only exposes allow-listed published prefixes from R2; raw PowerFS file paths remain private and governed.
 
 ### Rotating the Temper API key
 
@@ -70,14 +73,15 @@ Zone `katagami.ai` is on Cloudflare. The registrar's nameservers point at Cloudf
 | A | `@` | `216.150.1.1` | 60 | DNS only |
 | A | `@` | `216.150.16.1` | 60 | DNS only |
 | CNAME | `www` | `aa05af15fecbf657.vercel-dns-016.com` | 60 | DNS only |
+| Worker route | `assets` | `katagami-assets` → R2 published prefixes | Cloudflare | Proxied |
 
 The two apex IPs are Vercel's load-balancer pool. The CNAME target encodes the project's TLS material — don't reuse it for other projects. Both are public (Vercel surfaces them in its domain config endpoint).
 
 ## Backend (Railway)
 
-The frontend talks to a separate Railway project (OpenPaw/Temper server, shared infra). From Vercel's perspective:
+The frontend talks to a separate Railway project (temperpaw/Temper server, shared infra). From Vercel's perspective:
 
-- **URL:** `https://openpaw-production.up.railway.app`
+- **URL:** `https://temperpaw-production.up.railway.app`
 - **Tenant:** `default`
 - **OData prefix:** `/tdata/`
 - **Auth:** `Authorization: Bearer <TEMPER_API_KEY>` + `X-Tenant-Id: default` on every request
@@ -105,7 +109,7 @@ To force-refresh stale unfurls:
 
 ## Migration tooling
 
-`ui/scripts/migrate-to-railway.mjs` — one-shot script for moving entities from a local OpenPaw to Railway. Dry-run by default; pass `--apply` to execute. Reads source URL, target URL, and Bearer token from env vars (`LOCAL_URL`, `RAILWAY_URL`, `RAILWAY_TOKEN`, `TENANT`). Header at the top of the file documents the exact invocation.
+`ui/scripts/migrate-to-railway.mjs` — one-shot script for moving entities from a local temperpaw/Temper server to Railway. Dry-run by default; pass `--apply` to execute. Reads source URL, target URL, and Bearer token from env vars (`LOCAL_URL`, `RAILWAY_URL`, `RAILWAY_TOKEN`, `TENANT`). Header at the top of the file documents the exact invocation.
 
 ## Useful URLs
 
@@ -113,10 +117,10 @@ To force-refresh stale unfurls:
 - Repo: https://github.com/arni-labs/katagami
 - Vercel project (team: `rita-agafonovas-projects`): https://vercel.com/dashboard
 - Cloudflare zone: https://dash.cloudflare.com/
-- Railway project (`openpaw-seshendranalla`): https://railway.com/dashboard
+- Railway project (`temperpaw-seshendranalla`): https://railway.com/dashboard
 
 ## Observability
 
 - Vercel runtime logs: `vercel logs <deployment-url>` or the Vercel dashboard.
-- Railway service logs: `railway service logs --service openpaw` (after `railway link --project openpaw-seshendranalla`).
-- Datadog has the deeper traces from the OpenPaw side; access lives on the Railway service env (not duplicated here).
+- Railway service logs: `railway service logs --service temperpaw` (after `railway link --project temperpaw-seshendranalla`).
+- Datadog has the deeper traces from the temperpaw side; access lives on the Railway service env (not duplicated here).

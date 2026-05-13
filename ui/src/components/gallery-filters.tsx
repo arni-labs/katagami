@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,41 +16,74 @@ const fieldBase =
 
 export function GalleryFilters({
   taxonomies,
+  initialStatus = "Published",
+  initialTaxonomy = "all",
+  initialSearch = "",
 }: {
   taxonomies: { entity_id: string; fields: { name?: string } }[];
+  initialStatus?: string;
+  initialTaxonomy?: string;
+  initialSearch?: string;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [status, setStatus] = useState(initialStatus);
+  const [taxonomy, setTaxonomy] = useState(initialTaxonomy);
+  const [search, setSearch] = useState(initialSearch);
 
-  const [status, setStatus] = useState(
-    searchParams.get("status") ?? "Published",
-  );
-  const [taxonomy, setTaxonomy] = useState(
-    searchParams.get("taxonomy") ?? "all",
-  );
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const applyFilters = useCallback(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-gallery-card]"),
+    );
+    let visibleCount = 0;
 
-  const navigate = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (key === "status") {
-        if (value && value !== "Published") {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
-        router.push(`/?${params.toString()}`);
-        return;
-      }
-      if (value && value !== "all") {
-        params.set(key, value);
+    for (const card of cards) {
+      const cardStatus = card.dataset.status ?? "";
+      const cardTaxonomies = (card.dataset.taxonomyIds ?? "")
+        .split("\t")
+        .filter(Boolean);
+      const cardSearch = card.dataset.searchText ?? "";
+      const matchesStatus = status === "all" || cardStatus === status;
+      const matchesTaxonomy =
+        taxonomy === "all" || cardTaxonomies.includes(taxonomy);
+      const matchesSearch =
+        !normalizedSearch || cardSearch.includes(normalizedSearch);
+      const visible = matchesStatus && matchesTaxonomy && matchesSearch;
+      card.hidden = !visible;
+      if (visible) visibleCount += 1;
+    }
+
+    const empty = document.querySelector<HTMLElement>("[data-gallery-empty]");
+    if (empty) empty.hidden = visibleCount > 0;
+  }, [status, taxonomy, search]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (status && status !== "Published") {
+        params.set("status", status);
       } else {
-        params.delete(key);
+        params.delete("status");
       }
-      router.push(`/?${params.toString()}`);
-    },
-    [router, searchParams],
-  );
+      if (taxonomy && taxonomy !== "all") {
+        params.set("taxonomy", taxonomy);
+      } else {
+        params.delete("taxonomy");
+      }
+      if (search.trim()) {
+        params.set("q", search.trim());
+      } else {
+        params.delete("q");
+      }
+      const query = params.toString();
+      const next = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+      window.history.replaceState(null, "", next);
+    }, 180);
+    return () => window.clearTimeout(handle);
+  }, [status, taxonomy, search]);
 
   return (
     <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
@@ -87,7 +119,6 @@ export function GalleryFilters({
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            navigate("q", e.target.value);
           }}
         />
       </div>
@@ -100,7 +131,6 @@ export function GalleryFilters({
           onValueChange={(v) => {
             const next = v ?? "all";
             setStatus(next);
-            navigate("status", next);
           }}
         >
           <SelectTrigger className={`${fieldBase} h-8 w-32 gap-2 sm:w-36`}>
@@ -123,7 +153,6 @@ export function GalleryFilters({
               onValueChange={(v) => {
                 const next = v ?? "all";
                 setTaxonomy(next);
-                navigate("taxonomy", next);
               }}
             >
               <SelectTrigger className={`${fieldBase} h-8 w-36 gap-2 sm:w-40`}>

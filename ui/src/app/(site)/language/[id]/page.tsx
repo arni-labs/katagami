@@ -81,6 +81,13 @@ export default async function LanguageDetailPage({
 
   const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
+  const isPublished = lang.status === "Published";
+  const embodimentFileId = isPublished ? undefined : f.embodiment_file_id;
+  const embodimentSrc = f.embodiment_asset_url;
+  const canRenderEmbodiment = Boolean(
+    (embodimentSrc || embodimentFileId) &&
+      (f.embodiment_format ?? "html") !== "tsx",
+  );
   const specProps = {
     languageId: id,
     name,
@@ -163,8 +170,7 @@ export default async function LanguageDetailPage({
             <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
               <Marker color="salad">design embodiment</Marker>
             </SectionHeading>
-            {f.embodiment_file_id &&
-            (f.embodiment_format ?? "html") !== "tsx" ? (
+            {canRenderEmbodiment ? (
               <div className="relative">
                 <WashiTape
                   color="sakura"
@@ -180,8 +186,8 @@ export default async function LanguageDetailPage({
                 />
                 <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
                   <EmbodimentViewer
-                    fileId={f.embodiment_file_id}
-                    src={f.embodiment_asset_url}
+                    fileId={embodimentFileId}
+                    src={embodimentSrc}
                   />
                   <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                     preview · {f.slug || id.slice(0, 12)}
@@ -195,7 +201,9 @@ export default async function LanguageDetailPage({
             ) : (
               <StickyNote className="flex items-center justify-center p-16 text-center font-mono text-sm text-muted-foreground">
                 {f.embodiment_file_id
-                  ? "tsx preview is not rendered — view the spec for details"
+                  ? isPublished && !embodimentSrc
+                    ? "public embodiment is still publishing"
+                    : "tsx preview is not rendered — view the spec for details"
                   : "no embodiment or tokens defined yet"}
               </StickyNote>
             )}

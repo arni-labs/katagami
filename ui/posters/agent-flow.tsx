@@ -355,7 +355,7 @@ export default function AgentFlowPoster() {
         >
           Agents fan out from one seed into parallel sessions — each writes a
           full spec and embodiment, organizes itself, and publishes to the
-          gallery. No human in the loop after "go".
+          gallery. No human in the loop after &quot;go&quot;.
         </p>
         <div
           style={{

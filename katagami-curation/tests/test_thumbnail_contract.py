@@ -33,8 +33,19 @@ class ThumbnailContractTests(unittest.TestCase):
             self._sets_bool("VerifyThumbnail", "thumbnail_verified", "true")
         )
 
+        attach_verified = self.actions["AttachVerifiedThumbnail"]
+        self.assertEqual(attach_verified["from"], ["Draft", "UnderReview"])
+        self.assertIn("Revise first", attach_verified["hint"])
+
         csdl = (self.commons_root / "specs" / "model.csdl.xml").read_text()
         self.assertIn('Property Name="ThumbnailFileId"', csdl)
+        self.assertIn('Property Name="ThumbnailAssetId"', csdl)
+        self.assertIn('Property Name="ThumbnailAssetUrl"', csdl)
+        self.assertIn('Property Name="EmbodimentAssetId"', csdl)
+        self.assertIn('Property Name="EmbodimentAssetUrl"', csdl)
+        self.assertIn('Property Name="DesignMdAssetId"', csdl)
+        self.assertIn('Property Name="DesignMdAssetUrl"', csdl)
+        self.assertIn('Property Name="HasPublishedAssets"', csdl)
         self.assertIn('Property Name="HasThumbnail"', csdl)
         self.assertIn('Property Name="ThumbnailVerified"', csdl)
 
@@ -62,6 +73,7 @@ class ThumbnailContractTests(unittest.TestCase):
         guards = publish.get("guard", [])
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
         self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+        self.assertIn({"type": "is_true", "var": "has_published_assets"}, guards)
 
         invariants = {
             invariant["name"]: invariant for invariant in self.spec["invariant"]
@@ -73,6 +85,10 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertEqual(
             invariants["PublishedRequiresVerifiedThumbnail"]["assert"],
             "thumbnail_verified",
+        )
+        self.assertEqual(
+            invariants["PublishedRequiresPublicAssets"]["assert"],
+            "has_published_assets",
         )
 
     def test_submit_for_review_requires_thumbnail(self):
@@ -98,14 +114,31 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn('"VerifyThumbnail"', source)
         self.assertIn('"thumbnail_file_id"', source)
         self.assertIn('"thumbnail"', source)
+        self.assertIn("fn publish_public_assets", source)
+        self.assertIn('"AttachPublishedAssets"', source)
+        self.assertIn("/api/files/publish-artifact", source)
+        self.assertNotIn("/api/files/publish-asset", source)
+        self.assertIn('"owner_ref_type": "DesignLanguage"', source)
+        self.assertIn('"owner_ref_id": language_id', source)
+        self.assertIn('"namespace": "katagami/design-languages"', source)
+        self.assertIn('"label": label', source)
+        self.assertIn('"artifact"', source)
+        self.assertIn('"design_md"', source)
+        self.assertIn('"design_md_asset_id"', source)
+        self.assertIn('"design_md_asset_url"', source)
         self.assertIn('"image/jpeg"', source)
         self.assertIn("upload decoded browser-renderable image bytes", source)
         self.assertIn("not browser-renderable image bytes", source)
 
         self.assertLess(
             source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?"),
+            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
+            "public assets must be published after thumbnail verification",
+        )
+        self.assertLess(
+            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
             source.index('"MarkQualityPassed"'),
-            "thumbnail verification must happen before quality can pass",
+            "public assets must be attached before quality can pass",
         )
 
     def test_synthesis_finalizer_gates_on_thumbnail(self):

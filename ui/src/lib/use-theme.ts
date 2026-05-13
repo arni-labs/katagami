@@ -16,8 +16,11 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setTheme(readInitial());
-    setMounted(true);
+    const frame = window.requestAnimationFrame(() => {
+      setTheme(readInitial());
+      setMounted(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const apply = useCallback((next: Theme) => {

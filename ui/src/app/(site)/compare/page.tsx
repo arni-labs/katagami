@@ -124,18 +124,38 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 width={90}
               />
               <div className="relative rounded-[2px] border border-border bg-card p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
-                {lang.fields.embodiment_file_id &&
-                (lang.fields.embodiment_format ?? "html") !== "tsx" ? (
-                  <EmbodimentViewer fileId={lang.fields.embodiment_file_id} />
-                ) : lang.fields.embodiment_file_id ? (
-                  <div className="flex h-[500px] items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    tsx preview not rendered
-                  </div>
-                ) : (
-                  <div className="flex h-[500px] items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    no embodiment
-                  </div>
-                )}
+                {(() => {
+                  const isPublished = lang.status === "Published";
+                  const embodimentFileId = isPublished
+                    ? undefined
+                    : lang.fields.embodiment_file_id;
+                  const embodimentSrc = lang.fields.embodiment_asset_url;
+                  if (
+                    (embodimentSrc || embodimentFileId) &&
+                    (lang.fields.embodiment_format ?? "html") !== "tsx"
+                  ) {
+                    return (
+                      <EmbodimentViewer
+                        fileId={embodimentFileId}
+                        src={embodimentSrc}
+                      />
+                    );
+                  }
+                  if (lang.fields.embodiment_file_id) {
+                    return (
+                      <div className="flex h-[500px] items-center justify-center p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                        {isPublished && !embodimentSrc
+                          ? "public embodiment is still publishing"
+                          : "tsx preview not rendered"}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="flex h-[500px] items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                      no embodiment
+                    </div>
+                  );
+                })()}
                 <span className="absolute bottom-2 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
                   {lang.fields.name ?? "side"}
                 </span>

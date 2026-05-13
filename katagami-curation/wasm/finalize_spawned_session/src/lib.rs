@@ -3,7 +3,7 @@ use temper_wasm_sdk::prelude::*;
 /// Finalize a CurationJob's spawned session.
 ///
 /// Typed-v1 jobs use entity triggers for follow-up orchestration, so this
-/// module only records the OpenPaw session result and moves the job to
+/// module only records the temperpaw session result and moves the job to
 /// Completed. Legacy Complete(output) jobs keep the old cascade path for one
 /// compatibility window so already-running sessions can finish.
 #[unsafe(no_mangle)]
@@ -733,6 +733,7 @@ fn verify_quality_reviewed_languages(
         verify_language_core(ctx, api_url, headers, language_id, &language)?;
         verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
+        publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
             ctx,
             api_url,
@@ -1017,6 +1018,68 @@ fn verify_and_mark_thumbnail(
         language_id,
         "VerifyThumbnail",
         &json!({}),
+    )?;
+    Ok(())
+}
+
+fn publish_public_assets(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let fields = entity_fields(language);
+    let thumbnail_file_id = string_field_any(&fields, "thumbnail_file_id", "");
+    let embodiment_file_id = string_field_any(&fields, "embodiment_file_id", "");
+    let design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+    if thumbnail_file_id.is_empty() || embodiment_file_id.is_empty() || design_md_file_id.is_empty()
+    {
+        return Err(format!(
+            "DesignLanguage '{language_id}' cannot publish public artifacts without thumbnail_file_id, embodiment_file_id, and design_md_file_id"
+        ));
+    }
+
+    let thumbnail = publish_file_artifact(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &thumbnail_file_id,
+        "thumbnail",
+    )?;
+    let embodiment = publish_file_artifact(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &embodiment_file_id,
+        "embodiment",
+    )?;
+    let design_md = publish_file_artifact(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &design_md_file_id,
+        "design_md",
+    )?;
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachPublishedAssets",
+        &json!({
+            "thumbnail_asset_id": thumbnail.asset_id,
+            "thumbnail_asset_url": thumbnail.public_url,
+            "embodiment_asset_id": embodiment.asset_id,
+            "embodiment_asset_url": embodiment.public_url,
+            "design_md_asset_id": design_md.asset_id,
+            "design_md_asset_url": design_md.public_url
+        }),
     )?;
     Ok(())
 }
@@ -1527,6 +1590,60 @@ fn read_file_value(
         ));
     }
     Ok(resp.body)
+}
+
+struct PublishedArtifactRef {
+    asset_id: String,
+    public_url: String,
+}
+
+fn publish_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    file_id: &str,
+    label: &str,
+) -> Result<PublishedArtifactRef, String> {
+    let body = json!({
+        "file_id": file_id,
+        "label": label,
+        "owner_ref_type": "DesignLanguage",
+        "owner_ref_id": language_id,
+        "namespace": "katagami/design-languages"
+    });
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/api/files/publish-artifact"),
+        headers,
+        &body.to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to publish {label} artifact for DesignLanguage '{language_id}' from file '{file_id}': HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse publish-artifact response: {e}"))?;
+    let artifact = parsed
+        .get("artifact")
+        .ok_or_else(|| "publish-artifact response has no artifact object".to_string())?;
+    let asset_id = artifact
+        .get("id")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "publish-artifact response artifact has no id".to_string())?
+        .to_string();
+    let public_url = artifact
+        .get("public_url")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "publish-artifact response artifact has no public_url".to_string())?
+        .to_string();
+    Ok(PublishedArtifactRef {
+        asset_id,
+        public_url,
+    })
 }
 
 fn design_md_projection_refresh_reason(

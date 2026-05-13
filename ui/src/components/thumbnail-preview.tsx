@@ -151,12 +151,14 @@ function getThumbnailPreloadObserver(): IntersectionObserver | null {
 
 export function ThumbnailPreview({
   fileId,
+  src: assetSrc,
   alt,
   placeholderTint,
   paletteColors = [],
   eager = false,
 }: {
-  fileId: string;
+  fileId?: string;
+  src?: string;
   alt: string;
   placeholderTint: string;
   paletteColors?: string[];
@@ -167,9 +169,10 @@ export function ThumbnailPreview({
   const queuedRef = useRef(false);
   const [shouldLoad, setShouldLoad] = useState(eager);
   const [failed, setFailed] = useState(false);
-  const src = getFileUrl(fileId);
+  const src = assetSrc ?? (fileId ? getFileUrl(fileId) : "");
 
   useEffect(() => {
+    if (!src) return;
     if (eager) return;
     const el = rootRef.current;
     const observer = getThumbnailPreloadObserver();
@@ -193,6 +196,7 @@ export function ThumbnailPreview({
   }, [eager, src]);
 
   useEffect(() => {
+    if (!src) return;
     if (eager) return;
     const el = rootRef.current;
     const observer = getThumbnailObserver();
@@ -217,7 +221,7 @@ export function ThumbnailPreview({
       loadTicketRef.current?.cancel();
       loadTicketRef.current = null;
     };
-  }, [eager]);
+  }, [eager, src]);
 
   const finishThumbnailLoad = () => {
     loadTicketRef.current?.finish();
@@ -226,14 +230,14 @@ export function ThumbnailPreview({
 
   return (
     <div ref={rootRef} className="absolute inset-0">
-      {failed || !shouldLoad ? (
+      {failed || !shouldLoad || !src ? (
         <ThumbnailPlaceholder
           paletteColors={paletteColors}
           placeholderTint={placeholderTint}
         />
       ) : (
-        // Direct file-proxy delivery is intentional: thumbnail_file_id already
-        // points at a generated, card-sized PawFS image.
+        // Published cards pass immutable asset URLs; file ids are reserved for
+        // draft/admin previews where governed file access is still expected.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
@@ -245,7 +249,7 @@ export function ThumbnailPreview({
           fetchPriority={eager ? "high" : "low"}
           className="absolute inset-0 h-full w-full object-cover"
           data-katagami-thumbnail="true"
-          data-file-id={fileId}
+          data-file-id={fileId ?? undefined}
           onLoad={() => {
             preloadedUrls.add(src);
             finishThumbnailLoad();
