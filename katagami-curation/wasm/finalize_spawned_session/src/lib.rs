@@ -1930,6 +1930,16 @@ struct PublishedArtifactRef {
     public_url: String,
 }
 
+const KATAGAMI_CANONICAL_ASSET_BASE_URL: &str = "https://assets.katagami.ai";
+const KATAGAMI_LEGACY_ASSET_BASE_URL: &str = "https://temperpaw-assets.katagami.ai";
+
+fn canonicalize_katagami_public_asset_url(public_url: &str) -> String {
+    public_url
+        .strip_prefix(KATAGAMI_LEGACY_ASSET_BASE_URL)
+        .map(|suffix| format!("{KATAGAMI_CANONICAL_ASSET_BASE_URL}{suffix}"))
+        .unwrap_or_else(|| public_url.to_string())
+}
+
 fn publish_file_artifact(
     ctx: &Context,
     api_url: &str,
@@ -1975,7 +1985,7 @@ fn publish_file_artifact(
         .to_string();
     Ok(PublishedArtifactRef {
         asset_id,
-        public_url,
+        public_url: canonicalize_katagami_public_asset_url(&public_url),
     })
 }
 
@@ -3018,11 +3028,11 @@ fn submit_next_queued_regeneration(
 #[cfg(test)]
 mod tests {
     use super::{
-        bool_field, design_language_ids_from_job, design_md_projection_refresh_reason,
-        entity_bool_any, json_object_field, normalize_pawfs_path, pawfs_filter_url,
-        render_design_md_projection, session_can_be_finalized, session_is_terminal,
-        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
-        verify_file_body,
+        bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
+        design_md_projection_refresh_reason, entity_bool_any, json_object_field,
+        normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
+        thumbnail_mime_type_is_acceptable, verify_file_body,
     };
     use serde_json::json;
 
@@ -3229,5 +3239,21 @@ mod tests {
             assert!(!session_is_terminal(status));
             assert!(session_can_be_finalized(status));
         }
+    }
+
+    #[test]
+    fn public_asset_urls_use_katagami_worker_host() {
+        assert_eq!(
+            canonicalize_katagami_public_asset_url(
+                "https://temperpaw-assets.katagami.ai/katagami/design-languages/x/embodiment.html"
+            ),
+            "https://assets.katagami.ai/katagami/design-languages/x/embodiment.html"
+        );
+        assert_eq!(
+            canonicalize_katagami_public_asset_url(
+                "https://assets.katagami.ai/katagami/design-languages/x/embodiment.html"
+            ),
+            "https://assets.katagami.ai/katagami/design-languages/x/embodiment.html"
+        );
     }
 }

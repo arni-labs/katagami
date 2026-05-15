@@ -6,6 +6,9 @@ const tenant = process.env.TEMPER_TENANT || "default";
 const limit = Number(process.env.KATAGAMI_BACKFILL_LIMIT || "0");
 const force = process.argv.includes("--force");
 const dryRun = process.argv.includes("--dry-run");
+const canonicalAssetBaseUrl =
+  process.env.KATAGAMI_PUBLIC_ASSET_BASE_URL || "https://assets.katagami.ai";
+const legacyAssetBaseUrls = ["https://temperpaw-assets.katagami.ai"];
 
 const headers = {
   "Authorization": `Bearer ${apiKey}`,
@@ -21,6 +24,7 @@ const candidates = languages
       return false;
     }
     if (force) return true;
+    if (needsAssetHostRepair(fields)) return true;
     return (
       !fields.thumbnail_asset_url ||
       !fields.embodiment_asset_url ||
@@ -87,6 +91,7 @@ async function publishArtifact(languageId, fileId, label) {
     owner_ref_id: languageId,
     namespace: "katagami/design-languages",
   });
+  response.artifact.public_url = canonicalizePublicUrl(response.artifact.public_url);
   return response.artifact;
 }
 
@@ -123,6 +128,26 @@ async function parseResponse(response, path) {
 
 function encodeODataKey(value) {
   return String(value).replaceAll("'", "''");
+}
+
+function needsAssetHostRepair(fields) {
+  return [
+    fields.thumbnail_asset_url,
+    fields.embodiment_asset_url,
+    fields.design_md_asset_url,
+  ].some((url) =>
+    legacyAssetBaseUrls.some((base) => String(url ?? "").startsWith(base)),
+  );
+}
+
+function canonicalizePublicUrl(url) {
+  const text = String(url ?? "");
+  for (const base of legacyAssetBaseUrls) {
+    if (text.startsWith(base)) {
+      return `${canonicalAssetBaseUrl}${text.slice(base.length)}`;
+    }
+  }
+  return text;
 }
 
 function requiredEnv(name) {
