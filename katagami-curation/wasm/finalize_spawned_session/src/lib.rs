@@ -984,6 +984,25 @@ fn revise_published_for_design_md(
     )
 }
 
+fn revise_published_for_thumbnail(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing verified thumbnail attachment during quality finalization"
+        }),
+    )
+}
+
 fn verify_thumbnail(
     ctx: &Context,
     api_url: &str,
@@ -1048,6 +1067,34 @@ fn verify_and_mark_thumbnail(
     language: &serde_json::Value,
 ) -> Result<(), String> {
     verify_thumbnail(ctx, api_url, headers, language_id, language)?;
+    let fields = entity_fields(language);
+    let thumbnail_file_id = string_field_any(&fields, "thumbnail_file_id", "");
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyThumbnail")
+        })?;
+    if !entity_bool_any(&fresh, "has_thumbnail") {
+        let status = entity_status_value(&fresh);
+        if status == "Published" {
+            revise_published_for_thumbnail(ctx, api_url, headers, language_id)?;
+        } else if !matches!(status.as_str(), "Draft" | "UnderReview") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' is in state '{status}', expected Draft, UnderReview, or Published before thumbnail attachment repair"
+            ));
+        }
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachVerifiedThumbnail",
+            &json!({
+                "thumbnail_file_id": thumbnail_file_id
+            }),
+        )?;
+        return Ok(());
+    }
     dispatch_action(
         ctx,
         api_url,
