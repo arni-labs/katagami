@@ -128,6 +128,23 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("do not re-attach DESIGN.md", skill)
         self.assertIn("fields.get(''.join(part.capitalize() for part in name.split('_')))", skill)
 
+    def test_finalizer_design_md_writer_bypasses_workspace_filesystem_actions(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertNotIn("Temper.MkDir", source)
+        self.assertNotIn("Temper.CreateFile", source)
+        self.assertNotIn("Temper.ResolvePath", source)
+        self.assertNotIn("Temper.IncrementFileCount", source)
+        self.assertIn('/tdata/Directories', source)
+        self.assertIn('/tdata/Files', source)
+        self.assertIn("Files('{file_id}')/$value", source)
+
 
 if __name__ == "__main__":
     unittest.main()

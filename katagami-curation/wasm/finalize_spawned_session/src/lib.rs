@@ -1244,11 +1244,8 @@ fn write_workspace_file(
     mime_type: &str,
     content: &str,
 ) -> Result<String, String> {
-    let dir_path = match path.rsplit_once('/') {
-        Some(("", _)) => "/",
-        Some((dir, _)) if !dir.is_empty() => dir,
-        _ => "/",
-    };
+    let normalized_path = normalize_pawfs_path(path)?;
+    let (dir_path, filename) = split_pawfs_file_path(&normalized_path)?;
     let json_headers = vec![
         ("Content-Type".to_string(), "application/json".to_string()),
         ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
@@ -1260,47 +1257,17 @@ fn write_workspace_file(
         ("x-temper-agent-type".to_string(), "system".to_string()),
     ];
 
-    let mkdir_resp = ctx.http_call(
-        "POST",
-        &format!(
-            "{api_url}/tdata/Workspaces('{workspace_id}')/Temper.MkDir?await_integration=true"
-        ),
+    let dir_id = ensure_pawfs_directory(ctx, api_url, &json_headers, workspace_id, &dir_path)?;
+    let file_id = ensure_pawfs_file(
+        ctx,
+        api_url,
         &json_headers,
-        &json!({"path": dir_path}).to_string(),
+        workspace_id,
+        &normalized_path,
+        &dir_id,
+        &filename,
+        mime_type,
     )?;
-    if !(200..300).contains(&mkdir_resp.status) {
-        return Err(format!(
-            "Failed to create DESIGN.md directory '{dir_path}' in workspace '{workspace_id}': HTTP {}: {}",
-            mkdir_resp.status,
-            &mkdir_resp.body[..mkdir_resp.body.len().min(300)]
-        ));
-    }
-
-    let create_resp = ctx.http_call(
-        "POST",
-        &format!(
-            "{api_url}/tdata/Workspaces('{workspace_id}')/Temper.CreateFile?await_integration=true"
-        ),
-        &json_headers,
-        &json!({"path": path, "mime_type": mime_type}).to_string(),
-    )?;
-    if !(200..300).contains(&create_resp.status) {
-        return Err(format!(
-            "Failed to create DESIGN.md file '{path}' in workspace '{workspace_id}': HTTP {}: {}",
-            create_resp.status,
-            &create_resp.body[..create_resp.body.len().min(300)]
-        ));
-    }
-    let created: serde_json::Value = serde_json::from_str(&create_resp.body)
-        .map_err(|e| format!("Failed to parse CreateFile response for '{path}': {e}"))?;
-    let file_id = created
-        .get("fields")
-        .and_then(|fields| fields.get("last_file_id"))
-        .or_else(|| created.get("last_file_id"))
-        .and_then(|value| value.as_str())
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| format!("CreateFile for '{path}' returned no last_file_id"))?
-        .to_string();
 
     let value_headers = vec![
         ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
@@ -1320,13 +1287,294 @@ fn write_workspace_file(
     )?;
     if !(200..300).contains(&put_resp.status) {
         return Err(format!(
-            "Failed to upload DESIGN.md file '{file_id}' for '{path}': HTTP {}: {}",
+            "Failed to upload DESIGN.md file '{file_id}' for '{normalized_path}': HTTP {}: {}",
             put_resp.status,
-            &put_resp.body[..put_resp.body.len().min(300)]
+            truncate_body(&put_resp.body, 300)
         ));
     }
 
     Ok(file_id)
+}
+
+fn ensure_pawfs_directory(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    dir_path: &str,
+) -> Result<String, String> {
+    let normalized = normalize_pawfs_path(dir_path)?;
+    if let Some(existing) = find_pawfs_directory(ctx, api_url, headers, workspace_id, &normalized)?
+    {
+        return Ok(existing);
+    }
+
+    let mut parent_id = match find_pawfs_directory(ctx, api_url, headers, workspace_id, "/")? {
+        Some(id) => id,
+        None => create_pawfs_directory(ctx, api_url, headers, workspace_id, "/", "/", None)?,
+    };
+    if normalized == "/" {
+        return Ok(parent_id);
+    }
+
+    let mut current_path = String::new();
+    for segment in normalized.trim_matches('/').split('/') {
+        if segment.is_empty() {
+            continue;
+        }
+        current_path.push('/');
+        current_path.push_str(segment);
+        if let Some(existing) =
+            find_pawfs_directory(ctx, api_url, headers, workspace_id, &current_path)?
+        {
+            parent_id = existing;
+            continue;
+        }
+        parent_id = create_pawfs_directory(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            segment,
+            &current_path,
+            Some(&parent_id),
+        )?;
+    }
+
+    Ok(parent_id)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn ensure_pawfs_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    file_path: &str,
+    directory_id: &str,
+    filename: &str,
+    mime_type: &str,
+) -> Result<String, String> {
+    if let Some(existing) = find_pawfs_file(ctx, api_url, headers, workspace_id, file_path)? {
+        return Ok(existing);
+    }
+
+    let body = json!({
+        "Name": filename,
+        "Path": file_path,
+        "DirectoryId": directory_id,
+        "WorkspaceId": workspace_id,
+        "MimeType": mime_type,
+    });
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/Files"),
+        headers,
+        &body.to_string(),
+    )?;
+    if resp.status == 409 {
+        return find_pawfs_file(ctx, api_url, headers, workspace_id, file_path)?
+            .ok_or_else(|| format!("File create raced for '{file_path}' but lookup still missed"));
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to create DESIGN.md file '{file_path}' in workspace '{workspace_id}': HTTP {}: {}",
+            resp.status,
+            truncate_body(&resp.body, 300)
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse File create response for '{file_path}': {e}"))?;
+    extract_entity_id(&created)
+        .ok_or_else(|| format!("File create for '{file_path}' returned no entity_id"))
+}
+
+fn find_pawfs_directory(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    path: &str,
+) -> Result<Option<String>, String> {
+    find_first_entity_id(
+        ctx,
+        api_url,
+        headers,
+        "Directories",
+        &format!(
+            "Path eq '{}' and WorkspaceId eq '{}' and Status ne 'Archived'",
+            odata_escape(path),
+            odata_escape(workspace_id)
+        ),
+    )
+}
+
+fn find_pawfs_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    path: &str,
+) -> Result<Option<String>, String> {
+    find_first_entity_id(
+        ctx,
+        api_url,
+        headers,
+        "Files",
+        &format!(
+            "Path eq '{}' and WorkspaceId eq '{}' and Status ne 'Archived'",
+            odata_escape(path),
+            odata_escape(workspace_id)
+        ),
+    )
+}
+
+fn find_first_entity_id(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    filter: &str,
+) -> Result<Option<String>, String> {
+    let url = pawfs_filter_url(api_url, set_name, filter);
+    let resp = ctx.http_call("GET", &url, headers, "")?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to query {set_name} with filter '{filter}': HTTP {}: {}",
+            resp.status,
+            truncate_body(&resp.body, 300)
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse {set_name} query response: {e}"))?;
+    Ok(parsed
+        .get("value")
+        .and_then(|value| value.as_array())
+        .and_then(|items| items.first())
+        .and_then(extract_entity_id))
+}
+
+fn create_pawfs_directory(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    name: &str,
+    path: &str,
+    parent_id: Option<&str>,
+) -> Result<String, String> {
+    let body = json!({
+        "Name": name,
+        "Path": path,
+        "ParentId": parent_id,
+        "WorkspaceId": workspace_id,
+    });
+    let resp = ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/Directories"),
+        headers,
+        &body.to_string(),
+    )?;
+    if resp.status == 409 {
+        return find_pawfs_directory(ctx, api_url, headers, workspace_id, path)?
+            .ok_or_else(|| format!("Directory create raced for '{path}' but lookup still missed"));
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to create DESIGN.md directory '{path}' in workspace '{workspace_id}': HTTP {}: {}",
+            resp.status,
+            truncate_body(&resp.body, 300)
+        ));
+    }
+    let created: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse Directory create response for '{path}': {e}"))?;
+    extract_entity_id(&created)
+        .ok_or_else(|| format!("Directory create for '{path}' returned no entity_id"))
+}
+
+fn normalize_pawfs_path(path: &str) -> Result<String, String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("PawFS path cannot be empty".to_string());
+    }
+
+    let mut segments = Vec::new();
+    for segment in trimmed.split('/') {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                return Err(format!(
+                    "PawFS path '{path}' cannot contain parent traversal"
+                ))
+            }
+            _ => segments.push(segment),
+        }
+    }
+
+    if segments.is_empty() {
+        Ok("/".to_string())
+    } else {
+        Ok(format!("/{}", segments.join("/")))
+    }
+}
+
+fn split_pawfs_file_path(path: &str) -> Result<(String, String), String> {
+    let normalized = normalize_pawfs_path(path)?;
+    let (dir, filename) = normalized
+        .rsplit_once('/')
+        .ok_or_else(|| format!("Invalid PawFS file path '{path}'"))?;
+    if filename.is_empty() {
+        return Err(format!("PawFS file path '{path}' has no file name"));
+    }
+    let dir_path = if dir.is_empty() { "/" } else { dir };
+    Ok((dir_path.to_string(), filename.to_string()))
+}
+
+fn pawfs_filter_url(api_url: &str, set_name: &str, filter: &str) -> String {
+    format!(
+        "{api_url}/tdata/{set_name}?$filter={}",
+        odata_filter_encode(filter)
+    )
+}
+
+fn odata_escape(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
+fn odata_filter_encode(filter: &str) -> String {
+    let mut encoded = String::new();
+    for byte in filter.bytes() {
+        match byte {
+            b'A'..=b'Z'
+            | b'a'..=b'z'
+            | b'0'..=b'9'
+            | b'-'
+            | b'_'
+            | b'.'
+            | b'~'
+            | b'/'
+            | b'('
+            | b')'
+            | b'$' => encoded.push(byte as char),
+            b' ' => encoded.push_str("%20"),
+            b'\'' => encoded.push_str("%27"),
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    encoded
+}
+
+fn extract_entity_id(entity: &serde_json::Value) -> Option<String> {
+    entity
+        .get("entity_id")
+        .or_else(|| entity.get("Id"))
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
+}
+
+fn truncate_body(body: &str, max_len: usize) -> &str {
+    &body[..body.len().min(max_len)]
 }
 
 fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) -> String {
@@ -1749,16 +1997,32 @@ fn verify_design_md_lint_result(
 }
 
 fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
-    let mut ids = parse_json_string_array(fields.get("design_language_ids"));
+    let mut ids = Vec::new();
+    for field_name in [
+        "design_language_ids",
+        "language_ids",
+        "reviewed_ids",
+        "fixed_ids",
+    ] {
+        ids.extend(string_array_flexible(fields.get(field_name)));
+    }
     if ids.is_empty() {
         if let Some(output) = parse_json_field(fields.get("output")) {
-            ids.extend(string_array(output.get("language_ids")));
-            ids.extend(string_array(output.get("fixed")));
+            for field_name in [
+                "design_language_ids",
+                "language_ids",
+                "reviewed_ids",
+                "fixed_ids",
+                "fixed",
+            ] {
+                ids.extend(string_array_flexible(output.get(field_name)));
+            }
         }
     }
     if ids.is_empty() {
         if let Some(input) = parse_json_field(fields.get("input")) {
-            ids.extend(string_array(input.get("language_ids")));
+            ids.extend(string_array_flexible(input.get("language_ids")));
+            ids.extend(string_array_flexible(input.get("design_language_ids")));
         }
     }
 
@@ -2022,14 +2286,7 @@ fn parse_json_string_array(value: Option<&serde_json::Value>) -> Vec<String> {
     value
         .and_then(|v| v.as_str())
         .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
-        .and_then(|v| {
-            v.as_array().map(|items| {
-                items
-                    .iter()
-                    .filter_map(|item| item.as_str().map(|s| s.to_string()))
-                    .collect::<Vec<_>>()
-            })
-        })
+        .map(|parsed| string_array_flexible(Some(&parsed)))
         .unwrap_or_default()
 }
 
@@ -2222,6 +2479,29 @@ fn string_array(value: Option<&serde_json::Value>) -> Vec<String> {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default()
+}
+
+fn string_array_flexible(value: Option<&serde_json::Value>) -> Vec<String> {
+    let Some(value) = value else {
+        return Vec::new();
+    };
+    if let Some(items) = value.as_array() {
+        return items
+            .iter()
+            .filter_map(|item| item.as_str().map(|s| s.trim().to_string()))
+            .filter(|item| !item.is_empty())
+            .collect();
+    }
+    if let Some(raw) = value.as_str().map(str::trim).filter(|raw| !raw.is_empty()) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
+            let parsed_ids = string_array_flexible(Some(&parsed));
+            if !parsed_ids.is_empty() {
+                return parsed_ids;
+            }
+        }
+        return vec![raw.to_string()];
+    }
+    Vec::new()
 }
 
 /// Spawn one synthesize CurationJob per discovered movement after a successful source_search.
@@ -2658,9 +2938,10 @@ fn submit_next_queued_regeneration(
 #[cfg(test)]
 mod tests {
     use super::{
-        design_md_projection_refresh_reason, json_object_field, render_design_md_projection,
-        session_can_be_finalized, session_is_terminal, thumbnail_mime_type_is_acceptable,
-        verify_file_body,
+        design_language_ids_from_job, design_md_projection_refresh_reason, json_object_field,
+        normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path,
+        thumbnail_mime_type_is_acceptable, verify_file_body,
     };
     use serde_json::json;
 
@@ -2778,6 +3059,60 @@ mod tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn design_language_ids_accept_direct_arrays_and_review_aliases() {
+        let fields = json!({
+            "design_language_ids": ["en-1", "en-2"],
+            "fixed_ids": ["en-2", "en-3"]
+        });
+
+        assert_eq!(
+            design_language_ids_from_job(&fields),
+            vec!["en-1", "en-2", "en-3"]
+        );
+    }
+
+    #[test]
+    fn design_language_ids_fall_back_to_json_output_aliases() {
+        let fields = json!({
+            "output": json!({
+                "reviewed_ids": ["en-reviewed"],
+                "fixed_ids": ["en-fixed"]
+            }).to_string()
+        });
+
+        assert_eq!(
+            design_language_ids_from_job(&fields),
+            vec!["en-reviewed", "en-fixed"]
+        );
+    }
+
+    #[test]
+    fn pawfs_path_helpers_normalize_and_build_exact_lookup_urls() {
+        assert_eq!(
+            normalize_pawfs_path("katagami//design-md/./slug/DESIGN.md").unwrap(),
+            "/katagami/design-md/slug/DESIGN.md"
+        );
+        assert!(normalize_pawfs_path("/katagami/../secret").is_err());
+        assert_eq!(
+            split_pawfs_file_path("/katagami/design-md/slug/DESIGN.md").unwrap(),
+            (
+                "/katagami/design-md/slug".to_string(),
+                "DESIGN.md".to_string()
+            )
+        );
+
+        let url = pawfs_filter_url(
+            "https://temper.example",
+            "Files",
+            "Path eq '/katagami/design-md/slug/DESIGN.md' and WorkspaceId eq 'ws-1'",
+        );
+
+        assert!(url.contains("/tdata/Files?$filter="));
+        assert!(url.contains("Path%20eq%20%27/katagami/design-md/slug/DESIGN.md%27"));
+        assert!(url.contains("WorkspaceId%20eq%20%27ws-1%27"));
     }
 
     #[test]
