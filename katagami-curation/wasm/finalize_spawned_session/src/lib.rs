@@ -855,6 +855,7 @@ fn verify_design_md(
     let mut status = entity_status_value(language);
     let mut revised = false;
     let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+    let mut attached_design_md_this_run = false;
     let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
     if let Some(refresh_reason) = refresh_reason {
         if workspace_id.is_empty() {
@@ -902,12 +903,16 @@ fn verify_design_md(
                 "design_md_format_version": "alpha"
             }),
         )?;
-        let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
-            .ok_or_else(|| {
-                format!("DesignLanguage '{language_id}' disappeared after AttachDesignMd")
-            })?;
-        fields = entity_fields(&refreshed);
-        design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+        attached_design_md_this_run = true;
+        design_md_file_id = generated_file_id;
+        set_string_field(&mut fields, "design_md_file_id", &design_md_file_id);
+        set_string_field(
+            &mut fields,
+            "design_md_lint_result",
+            &lint_result.to_string(),
+        );
+        set_string_field(&mut fields, "design_md_format_version", "alpha");
+        set_bool_field(&mut fields, "has_design_md", true);
     }
     verify_file_value(
         ctx,
@@ -926,8 +931,7 @@ fn verify_design_md(
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyDesignMd")
         })?;
-    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
-    if !bool_field(&fresh_bools, "has_design_md") {
+    if !attached_design_md_this_run && !entity_bool_any(&fresh, "has_design_md") {
         status = entity_status_value(&fresh);
         if status == "Published" {
             revise_published_for_design_md(ctx, api_url, headers, language_id)?;
@@ -2052,20 +2056,49 @@ fn section_present(fields: &serde_json::Value, bool_name: &str, data_name: &str)
 }
 
 fn bool_field(fields: &serde_json::Value, name: &str) -> bool {
-    fields.get(name).is_some_and(|value| {
-        value
-            .as_bool()
-            .unwrap_or_else(|| value.as_str().is_some_and(|s| s == "true"))
-    })
+    fields
+        .get(name)
+        .or_else(|| fields.get(&pascal_case(name)))
+        .is_some_and(|value| {
+            value
+                .as_bool()
+                .unwrap_or_else(|| value.as_str().is_some_and(|s| s == "true"))
+        })
 }
 
 fn string_field_any(fields: &serde_json::Value, name: &str, default: &str) -> String {
     fields
         .get(name)
+        .or_else(|| fields.get(&pascal_case(name)))
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
         .unwrap_or(default)
         .to_string()
+}
+
+fn set_string_field(fields: &mut serde_json::Value, name: &str, value: &str) {
+    if let Some(object) = fields.as_object_mut() {
+        object.insert(
+            name.to_string(),
+            serde_json::Value::String(value.to_string()),
+        );
+    }
+}
+
+fn set_bool_field(fields: &mut serde_json::Value, name: &str, value: bool) {
+    if let Some(object) = fields.as_object_mut() {
+        object.insert(name.to_string(), serde_json::Value::Bool(value));
+    }
+}
+
+fn entity_bool_any(entity: &serde_json::Value, name: &str) -> bool {
+    entity
+        .get("booleans")
+        .is_some_and(|booleans| bool_field(booleans, name))
+        || entity
+            .get("fields")
+            .is_some_and(|fields| bool_field(fields, name))
+        || bool_field(entity, name)
 }
 
 fn numeric_field_any(entity: &serde_json::Value, names: &[&str]) -> i64 {
@@ -2938,10 +2971,11 @@ fn submit_next_queued_regeneration(
 #[cfg(test)]
 mod tests {
     use super::{
-        design_language_ids_from_job, design_md_projection_refresh_reason, json_object_field,
-        normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
-        session_can_be_finalized, session_is_terminal, split_pawfs_file_path,
-        thumbnail_mime_type_is_acceptable, verify_file_body,
+        bool_field, design_language_ids_from_job, design_md_projection_refresh_reason,
+        entity_bool_any, json_object_field, normalize_pawfs_path, pawfs_filter_url,
+        render_design_md_projection, session_can_be_finalized, session_is_terminal,
+        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
+        verify_file_body,
     };
     use serde_json::json;
 
@@ -3000,6 +3034,21 @@ mod tests {
     }
 
     #[test]
+    fn scalar_helpers_accept_pascal_case_storage() {
+        let fields = json!({
+            "DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":0}}",
+            "HasDesignMd": true
+        });
+
+        assert_eq!(
+            string_field_any(&fields, "design_md_lint_result", ""),
+            "{\"summary\":{\"errors\":0,\"warnings\":0}}"
+        );
+        assert!(bool_field(&fields, "has_design_md"));
+        assert!(entity_bool_any(&json!({"fields": fields}), "has_design_md"));
+    }
+
+    #[test]
     fn thumbnail_mime_rejects_octet_stream_when_payload_is_base64_text() {
         assert!(!thumbnail_mime_type_is_acceptable(
             "application/octet-stream",
@@ -3055,6 +3104,13 @@ mod tests {
         assert_eq!(
             design_md_projection_refresh_reason(
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
+                "fl-design-md"
+            ),
+            None
+        );
+        assert_eq!(
+            design_md_projection_refresh_reason(
+                &json!({"DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
                 "fl-design-md"
             ),
             None

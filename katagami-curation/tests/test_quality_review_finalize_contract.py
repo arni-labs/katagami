@@ -53,7 +53,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn('bool_field(&fresh_bools, "has_design_md")', source)
+        self.assertIn('entity_bool_any(&fresh, "has_design_md")', source)
         self.assertIn('"AttachDesignMd"', source)
         self.assertIn(
             "Revise resets has_design_md but leaves design_md_file_id intact",
