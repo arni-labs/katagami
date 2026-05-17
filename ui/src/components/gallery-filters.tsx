@@ -86,7 +86,7 @@ export function GalleryFilters({
   }, [status, taxonomy, search]);
 
   return (
-    <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px]">
+    <div className="relative flex min-w-0 max-w-full flex-wrap items-center gap-x-5 gap-y-3 overflow-hidden bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px] sm:overflow-visible">
       {/* washi tape corner */}
       <span
         aria-hidden

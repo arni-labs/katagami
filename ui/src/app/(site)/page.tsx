@@ -175,10 +175,10 @@ export default async function GalleryPage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-8 sm:py-10">
-      <section className="relative">
-        <div className="flex items-end justify-between gap-6">
-          <div className="max-w-4xl">
+    <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden px-4 py-6 sm:space-y-8 sm:overflow-visible sm:py-10">
+      <section className="relative min-w-0 overflow-x-hidden sm:overflow-visible">
+        <div className="flex min-w-0 items-end justify-between gap-6">
+          <div className="min-w-0 max-w-4xl">
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
               <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--teal)]" />
               <span>agent-maintained · ideas by</span>
@@ -391,16 +391,16 @@ export default async function GalleryPage({
       {/* Collapsible "What you can do" — compact 4-card row, scrapbook vibe.
           Folds up so the gallery below is always quick to reach. */}
       <details
-        className="group/cando relative"
+        className="group/cando relative min-w-0 overflow-x-hidden sm:overflow-visible"
         aria-labelledby="what-you-can-do"
       >
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--sumire)]" />
               <h2
                 id="what-you-can-do"
-                className="font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]"
+                className="min-w-0 font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]"
               >
                 Browse and share with{" "}
                 <span className="marker">

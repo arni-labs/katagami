@@ -201,11 +201,18 @@
     @apply border-border outline-ring/50;
   }
   html {
-    /* stop rogue horizontal scroll at narrow widths (from rotated elements, tapes, etc.) */
-    overflow-x: clip;
+    /* Stop rogue horizontal scroll at narrow widths (rotated stamps/tapes).
+       Use hidden, not only clip: iOS Safari has been flaky here and can still
+       expose a right-side gutter when decorative elements protrude. */
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     /* faint Hobonichi-style grid-paper dots — flips to light specks in .dark */
     background-image:
       radial-gradient(

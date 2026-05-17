@@ -9,8 +9,8 @@ export default function SiteLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex min-h-full flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-      <header className="relative border-b border-border/70 bg-background/70 backdrop-blur-sm">
+    <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      <header className="relative max-w-full overflow-x-clip border-b border-border/70 bg-background/70 backdrop-blur-sm">
         <nav className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:gap-6 md:gap-8">
           <Link
             href="/"
@@ -60,8 +60,8 @@ export default function SiteLayout({
           }}
         />
       </header>
-      <main className="flex-1">{children}</main>
-      <footer className="relative mt-24 border-t border-border/70">
+      <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+      <footer className="relative mt-24 max-w-full overflow-x-clip border-t border-border/70">
         <span
           aria-hidden
           className="washi-tape absolute -top-2 left-[12%] hidden rotate-[-5deg] md:block"
