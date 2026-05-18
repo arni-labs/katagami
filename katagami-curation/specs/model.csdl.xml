@@ -24,6 +24,8 @@
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ReviewInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="OrganizeInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="TasteRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
@@ -106,11 +108,36 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- TasteRule: proposed or accepted taste guidance distilled from archive/featured signals -->
+      <EntityType Name="TasteRule">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Proposed" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Polarity" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PatternType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RuleText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Rationale" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ComparatorLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Confidence" Type="Edm.String" Nullable="false" DefaultValue="medium" />
+        <Property Name="SourceJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceFingerprint" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SupersededByRuleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <EntityContainer Name="KatagamiCurationContainer">
         <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
         <EntitySet Name="CurationDirections" EntityType="Katagami.Curation.CurationDirection" />
         <EntitySet Name="CurationJobTemplates" EntityType="Katagami.Curation.CurationJobTemplate" />
         <EntitySet Name="CurationQueries" EntityType="Katagami.Curation.CurationQuery" />
+        <EntitySet Name="TasteRules" EntityType="Katagami.Curation.TasteRule" />
       </EntityContainer>
 
     </Schema>

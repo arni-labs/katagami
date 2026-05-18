@@ -43,6 +43,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn('.unwrap_or("typed-v1")', source)
+        self.assertIn("let finalizing_fields =", source)
+        self.assertIn(
+            'load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)',
+            source,
+        )
+        self.assertIn("&finalizing_fields", source)
 
     def test_finalize_reattaches_design_md_after_revise_reset(self):
         source = (
@@ -60,7 +66,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             source,
         )
 
-    def test_finalize_terminalizes_typed_jobs_with_wasm_callbacks(self):
+    def test_finalize_refreshes_unreadable_design_md_reference(self):
         source = (
             self.curation_root
             / "wasm"
@@ -69,48 +75,118 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn set_terminal_job_callback", source)
-        self.assertIn("set_success_result(action, &params);", source)
-        self.assertIn('fn set_failed_job_callback', source)
-        self.assertIn('set_success_result("Fail"', source)
-        self.assertNotIn("publish_job_progression", source)
-        self.assertNotIn("Katagami.Curation.FinalizeCompletion", source)
-        self.assertNotIn("Katagami.Curation.Fail", source)
-
-    def test_failed_job_session_cleanup_tolerates_completed_sessions(self):
-        source = (
-            self.curation_root
-            / "wasm"
-            / "finalize_spawned_session"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn("fn record_session_failure", source)
-        self.assertIn("if session_is_terminal(session_status)", source)
-        self.assertIn('Ok("session already terminal")', source)
-
-    def test_finalize_triggers_fail_job_on_wasm_failure(self):
-        spec = tomllib.loads(
-            (self.curation_root / "specs" / "curation_job.ioa.toml").read_text()
+        self.assertIn("fn refresh_design_md_projection", source)
+        self.assertIn('"unreadable_design_md_file"', source)
+        self.assertIn('"invalid_design_md_file"', source)
+        self.assertLess(
+            source.index('"unreadable_design_md_file"'),
+            source.index("verify_design_md_lint_result(language_id, &fields)?"),
+            "stale DESIGN.md file references must refresh before lint verification",
         )
-        actions = {action["name"]: action for action in spec["action"]}
 
-        for name in [
-            "Complete",
-            "CompleteResearch",
-            "CompleteSynthesis",
-            "CompleteQualityReview",
-            "CompleteOrganization",
-            "CompleteRegeneration",
-            "CompleteEvolution",
-        ]:
-            trigger = next(
-                trigger
-                for trigger in actions[name]["triggers"]
-                if trigger["name"] == "finalize_spawned_session"
-            )
-            self.assertEqual(trigger["on_failure"], "Fail")
+    def test_quality_finalizer_verifies_publish_reached_terminal_state(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn ensure_language_published", source)
+        self.assertIn("publish_rejected_because_already_published", source)
+        self.assertIn("remained in state", source)
+        self.assertIn("after quality finalizer Publish", source)
+        self.assertLess(
+            source.index('"MarkQualityPassed"'),
+            source.index("ensure_language_published(ctx, api_url, headers, language_id, &status)?"),
+            "quality finalization must mark quality before verifying Publish completion",
+        )
+
+    def test_regeneration_typed_fallback_continues_pipeline(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn('"regenerate_embodiment" | "evolve_language"', source)
+        self.assertIn("created_quality_review_job_after_embodiment_repair", source)
+        self.assertIn("submitted_next_queued_regeneration", source)
+        self.assertIn("active_quality_review_job_exists_for_languages", source)
+        self.assertIn("fn design_md_workspace_id", source)
+        self.assertIn("os-app-docs", source)
+        self.assertIn("katagami_artifact_workspace_id", source)
+
+    def test_record_result_terminal_race_is_non_fatal(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("record_result_rejected_because_session_terminal", source)
+        self.assertIn("session became terminal before record", source)
+        self.assertIn("state 'failed'", source)
+        self.assertLess(
+            source.index("record_result_rejected_because_session_terminal(&resp.body)"),
+            source.index("Failed to finalize Session"),
+            "terminal Session state races should not fail typed CurationJob finalization",
+        )
+
+    def test_quality_review_can_repair_missing_embodiment_artifact(self):
+        skill = (
+            self.curation_root
+            / "agents"
+            / "curator"
+            / "skills"
+            / "review-quality"
+            / "SKILL.md"
+        ).read_text()
+
+        self.assertIn("If `embodiment_file_id` is present", skill)
+        self.assertIn("do not fail solely for that reason", skill)
+        self.assertIn("creating and attaching a new embodiment and thumbnail", skill)
+        self.assertIn("Fast path for already-reviewed languages", skill)
+        self.assertIn("bool_state(lang, 'quality_review_passed')` is true", skill)
+        self.assertIn("Do not call `temper.read`", skill)
+        self.assertIn("verify the existing files by file ID", skill)
+        self.assertIn("`temper.get(...)` returns a nested entity", skill)
+        self.assertIn("def entity_fields(entity):", skill)
+        self.assertIn("def bool_state(entity, name):", skill)
+        self.assertIn("fields.get(''.join(part.capitalize() for part in name.split('_')))", skill)
+        self.assertIn("field(lang, 'embodiment_file_id')", skill)
+        self.assertIn("json_field(...)", skill)
+        self.assertIn("do **not** take the fast path", skill)
+        self.assertIn("missing `tokens.typography.heading_font`", skill)
+        self.assertIn("Repair partial native spec drift in place", skill)
+        self.assertIn("Use `SetTokens` for token-only repairs", skill)
+        self.assertIn("first call `temper.action('DesignLanguages', lang_id, 'Revise'", skill)
+        self.assertIn("Published artifact review path", skill)
+        self.assertIn("A published language must not call `AttachDesignMd`", skill)
+        self.assertIn("If the language is `Published`, do not execute this step", skill)
+        self.assertIn("do not re-attach DESIGN.md", skill)
+        self.assertIn("Artifact handoff path for partially completed retries", skill)
+        self.assertIn("`quality_review_passed` is false", skill)
+        self.assertIn("has all three artifact fields", skill)
+        self.assertIn("valid browser artifact before taking the handoff", skill)
+        self.assertIn("SVG recovery placeholders", skill)
+        self.assertIn("file body lacks `<html` or `<!doctype`", skill)
+        self.assertIn("read its actual `Path` with its `WorkspaceId`", skill)
+        self.assertIn("do not regenerate the embodiment, thumbnail, or DESIGN.md", skill)
+        self.assertIn("Do not run silent long commands", skill)
+        self.assertIn("Do not run monolithic review tool calls", skill)
+        self.assertIn("tool execution made no progress", skill)
+        self.assertIn("echo '[katagami] installing browser dependencies'", skill)
+        self.assertIn("Keep the provider-facing final response tiny", skill)
+        self.assertIn("Do not include regenerated HTML", skill)
+        self.assertIn("do not archive", skill)
+        self.assertIn("Never call `Archive` on a `DesignLanguage`", skill)
+        self.assertIn("fail the job with a concrete", skill)
 
     def test_review_skill_reviews_published_artifacts_without_reattaching_design_md(self):
         skill = (

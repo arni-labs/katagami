@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Scissors, Trash2, X } from "lucide-react";
+import { AlertTriangle, Archive, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { deleteLanguage } from "@/app/actions";
 
@@ -41,8 +41,8 @@ export function DeleteLanguageButton({
         <button
           type="button"
           className="group/delete relative flex h-7 w-7 items-center justify-center rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_38%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_8%,var(--paper-tape-mix))] text-[color-mix(in_oklch,var(--beni),black_10%)] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[2deg] hover:bg-[var(--beni)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
-          aria-label={`Delete ${name}`}
-          title={`Delete ${name}`}
+          aria-label={`Archive ${name}`}
+          title={`Archive ${name}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -53,7 +53,7 @@ export function DeleteLanguageButton({
             aria-hidden
             className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[var(--sakura)] opacity-0 transition-opacity group-hover/delete:opacity-100"
           />
-          <Trash2 className="h-3.5 w-3.5" />
+          <Archive className="h-3.5 w-3.5" />
         </button>
         {onRequestDelete ? null : (
           <DeleteLanguageDialog
@@ -71,8 +71,8 @@ export function DeleteLanguageButton({
   return (
     <>
       <Button variant="destructive" size="sm" onClick={requestDelete}>
-        <Trash2 className="h-4 w-4 mr-1" />
-        Delete
+        <Archive className="h-4 w-4 mr-1" />
+        Archive
       </Button>
       <DeleteLanguageDialog
         key={confirming ? id : "closed"}
@@ -134,7 +134,7 @@ export function DeleteLanguageDialog({
           router.refresh();
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not delete.");
+        setError(err instanceof Error ? err.message : "Could not archive.");
       }
     });
   }
@@ -174,7 +174,7 @@ export function DeleteLanguageDialog({
           />
           <button
             type="button"
-            aria-label="Cancel delete"
+            aria-label="Cancel archive"
             disabled={isPending}
             onClick={() => onOpenChange(false)}
             className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
@@ -185,17 +185,17 @@ export function DeleteLanguageDialog({
           <div className="relative space-y-4 pt-5">
             <div className="flex items-start gap-3">
               <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] border border-destructive/25 bg-destructive/10 text-destructive shadow-[0_1px_0_rgba(30,35,45,0.08)]">
-                <Scissors className="h-5 w-5 rotate-[-8deg]" />
+                <Archive className="h-5 w-5 rotate-[-8deg]" />
               </span>
               <div className="min-w-0 space-y-1">
                 <div className="stamp inline-flex text-[var(--beni)]">
-                  catalog cut
+                  catalog archive
                 </div>
                 <h3
                   id={`delete-language-${target.id}-title`}
                   className="font-display text-[23px] font-bold leading-tight tracking-[-0.02em]"
                 >
-                  Delete &ldquo;{target.name}&rdquo;?
+                  Archive &ldquo;{target.name}&rdquo;?
                 </h3>
               </div>
             </div>
@@ -204,8 +204,9 @@ export function DeleteLanguageDialog({
               id={`delete-language-${target.id}-description`}
               className="text-sm leading-relaxed text-muted-foreground"
             >
-              This removes the language from the public catalog. The server
-              checks owner mode again before it changes anything.
+              This hides the language from the public catalog without deleting
+              its record. The server checks owner mode again before it changes
+              anything.
             </p>
 
             {error ? (
@@ -232,7 +233,7 @@ export function DeleteLanguageDialog({
                 disabled={isPending}
                 className="h-8 rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_58%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_13%,var(--paper-tape-mix))] px-3 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-[color-mix(in_oklch,var(--beni),black_12%)] shadow-[0_2px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[0.6deg] hover:bg-[var(--beni)] hover:text-white disabled:pointer-events-none disabled:opacity-60"
               >
-                {isPending ? "cutting..." : "delete"}
+                {isPending ? "archiving..." : "archive"}
               </button>
             </div>
           </div>

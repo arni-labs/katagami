@@ -7,11 +7,12 @@ interface SpecActionsProps {
   languageId?: string;
   katagamiSpec: string;
   designMd: string;
+  shadcnTheme: string;
   slug?: string;
   variant?: "compact" | "hero";
 }
 
-type Format = "katagami" | "design-md";
+type Format = "katagami" | "design-md" | "shadcn";
 type CopyKind = "copy" | "link";
 
 const PREAMBLE: Record<Format, string> = {
@@ -21,21 +22,27 @@ const PREAMBLE: Record<Format, string> = {
   "design-md":
     "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
     "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.",
+  shadcn:
+    "Use the following shadcn/ui registry theme as the component-theme projection of the Katagami design language. " +
+    "Apply the CSS variables to shadcn/ui primitives and keep the native Katagami spec as the source of truth.",
 };
 
 const FILENAME_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI",
   "design-md": "DESIGN",
+  shadcn: "SHADCN",
 };
 
 const URL_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI.MD",
   "design-md": "DESIGN.md",
+  shadcn: "shadcn.json",
 };
 
 const ACCENT: Record<Format, string> = {
   katagami: "sumire",
   "design-md": "salad",
+  shadcn: "teal",
 };
 
 async function writeClipboard(text: string) {
@@ -57,6 +64,7 @@ export function SpecActions({
   languageId,
   katagamiSpec,
   designMd,
+  shadcnTheme,
   slug,
   variant = "compact",
 }: SpecActionsProps) {
@@ -79,7 +87,7 @@ export function SpecActions({
   };
 
   const markdownFor = (f: Format) =>
-    f === "katagami" ? katagamiSpec : designMd;
+    f === "katagami" ? katagamiSpec : f === "design-md" ? designMd : shadcnTheme;
 
   const handleCopy = async () => {
     const md = markdownFor(format);
@@ -98,14 +106,21 @@ export function SpecActions({
 
   const handleDownload = () => {
     const blob = new Blob([markdownFor(format)], {
-      type: "text/markdown;charset=utf-8",
+      type:
+        format === "shadcn"
+          ? "application/json;charset=utf-8"
+          : "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = slug
-      ? `${slug}-${FILENAME_SUFFIX[format]}.md`
-      : `${FILENAME_SUFFIX[format]}.md`;
+      ? format === "shadcn"
+        ? `${slug}-${FILENAME_SUFFIX[format]}.json`
+        : `${slug}-${FILENAME_SUFFIX[format]}.md`
+      : format === "shadcn"
+        ? `${FILENAME_SUFFIX[format]}.json`
+        : `${FILENAME_SUFFIX[format]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -154,13 +169,20 @@ export function SpecActions({
                 >
                   katagami
                 </FormatTab>
+                <FormatTab
+                  active={format === "shadcn"}
+                  onClick={() => setFormat("shadcn")}
+                  accent="teal"
+                >
+                  shadcn
+                </FormatTab>
               </div>
               <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.025em] sm:text-[32px]">
                 Download {filename}
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Take the portable markdown file now; the deeper spec,
-                preview, and tokens stay below for inspection.
+                Take the selected artifact now; the deeper spec, preview, and
+                tokens stay below for inspection.
               </p>
             </div>
 
@@ -172,7 +194,7 @@ export function SpecActions({
                 title={`Download ${filename}`}
               >
                 <Download className="h-4 w-4" />
-                Download .md
+                download
               </button>
               <ActionStamp
                 onClick={handleCopy}
@@ -200,7 +222,7 @@ export function SpecActions({
                   )
                 }
                 label={justCopied === "link" ? "link copied" : "link"}
-                title="Copy raw markdown URL"
+                title="Copy raw artifact URL"
               />
             </div>
           </div>
@@ -241,6 +263,13 @@ export function SpecActions({
           >
             DESIGN.md
           </FormatTab>
+          <FormatTab
+            active={format === "shadcn"}
+            onClick={() => setFormat("shadcn")}
+            accent="teal"
+          >
+            shadcn
+          </FormatTab>
         </div>
 
         {/* Action stamps — re-keys on format change for the slide-in animation.
@@ -278,7 +307,7 @@ export function SpecActions({
                 )
               }
               label={justCopied === "link" ? "link copied" : "link"}
-              title="Copy raw markdown URL — agents can fetch it directly"
+              title="Copy raw artifact URL — agents can fetch it directly"
             />
             <ActionStamp
               onClick={handleDownload}
@@ -286,7 +315,7 @@ export function SpecActions({
               rotate={1}
               icon={<Download className="h-3 w-3" />}
               label="download"
-              title="Download .md file"
+              title="Download current artifact"
             />
           </div>
         </div>

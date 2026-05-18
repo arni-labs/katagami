@@ -65,13 +65,17 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
 
         if session_id.is_empty() {
             if job_status == "Finalizing" && completion_contract == "typed-v1" {
+                let finalizing_fields =
+                    load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)?
+                        .map(|job| entity_fields(&job))
+                        .unwrap_or_else(|| fields.clone());
                 let validation = match verify_typed_completion(
                     &ctx,
                     &api_url,
                     &headers,
                     &job_id,
                     &job_type,
-                    &fields,
+                    &finalizing_fields,
                     &workspace_id,
                 ) {
                     Ok(validation) => validation,
@@ -86,7 +90,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &headers,
                     &job_id,
                     &job_type,
-                    &fields,
+                    &finalizing_fields,
                     &workspace_id,
                     &query_id,
                 ) {
@@ -108,7 +112,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     "FinalizeCompletion",
                     json!({
                         "followup_job_id": "",
-                        "design_language_ids": fields
+                        "design_language_ids": finalizing_fields
                             .get("design_language_ids")
                             .and_then(|v| v.as_str())
                             .unwrap_or("[]"),
@@ -171,13 +175,17 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             return Ok(());
                         }
                     };
+                    let finalizing_fields =
+                        load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)?
+                            .map(|job| entity_fields(&job))
+                            .unwrap_or_else(|| fields.clone());
                     let validation = match verify_typed_completion(
                         &ctx,
                         &api_url,
                         &headers,
                         &job_id,
                         &job_type,
-                        &fields,
+                        &finalizing_fields,
                         &workspace_id,
                     ) {
                         Ok(validation) => validation,
@@ -192,7 +200,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &headers,
                         &job_id,
                         &job_type,
-                        &fields,
+                        &finalizing_fields,
                         &workspace_id,
                         &query_id,
                     ) {
@@ -214,7 +222,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         "FinalizeCompletion",
                         json!({
                             "followup_job_id": "",
-                            "design_language_ids": fields
+                            "design_language_ids": finalizing_fields
                                 .get("design_language_ids")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("[]"),
@@ -423,6 +431,21 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &body.to_string(),
                 )?;
                 if !(200..300).contains(&resp.status) {
+                    if record_result_rejected_because_session_terminal(&resp.body) {
+                        ctx.log(
+                            "info",
+                            &format!(
+                                "finalize_spawned_session: legacy session became terminal before record for job '{job_id}', follow-up: {synth_job_id:?}"
+                            ),
+                        );
+                        set_terminal_job_callback(
+                            &ctx,
+                            &job_id,
+                            terminal_action,
+                            terminal_params.clone(),
+                        );
+                        return Ok(());
+                    }
                     let error = format!(
                         "Failed to finalize Session '{session_id}': HTTP {}: {}",
                         resp.status,
@@ -522,6 +545,9 @@ fn record_session_success(
         &body.to_string(),
     )?;
     if !(200..300).contains(&resp.status) {
+        if record_result_rejected_because_session_terminal(&resp.body) {
+            return Ok("session became terminal before record");
+        }
         return Err(format!(
             "Failed to finalize Session '{session_id}': HTTP {}: {}",
             resp.status,
@@ -530,6 +556,18 @@ fn record_session_success(
     }
 
     Ok("session finalized")
+}
+
+fn record_result_rejected_because_session_terminal(body: &str) -> bool {
+    let lower = body.to_ascii_lowercase();
+    lower.contains("recordresult")
+        && lower.contains("not valid from state")
+        && (lower.contains("state 'completed'")
+            || lower.contains("state \"completed\"")
+            || lower.contains("state 'failed'")
+            || lower.contains("state \"failed\"")
+            || lower.contains("state 'cancelled'")
+            || lower.contains("state \"cancelled\""))
 }
 
 fn record_session_failure(
@@ -736,6 +774,45 @@ fn verify_quality_reviewed_languages(
         {
             status = "UnderReview".to_string();
         }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after DESIGN.md verification")
+            })?;
+        if verify_shadcn_export(ctx, api_url, headers, workspace_id, language_id, &language)?
+            && status == "Published"
+        {
+            status = "UnderReview".to_string();
+        }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!(
+                    "DesignLanguage '{language_id}' disappeared after shadcn export verification"
+                )
+            })?;
+        if verify_shadcn_component_spec(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            &language,
+        )? && status == "Published"
+        {
+            status = "UnderReview".to_string();
+        }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after shadcn component spec verification")
+            })?;
+        if verify_shadcn_preview_shots(ctx, api_url, headers, workspace_id, language_id, &language)?
+            && status == "Published"
+        {
+            status = "UnderReview".to_string();
+        }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after shadcn preview-shot verification")
+            })?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
@@ -748,36 +825,7 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
 
-        if status == "Draft" {
-            dispatch_action(
-                ctx,
-                api_url,
-                headers,
-                "DesignLanguages",
-                language_id,
-                "SubmitForReview",
-                &json!({}),
-            )?;
-            dispatch_action(
-                ctx,
-                api_url,
-                headers,
-                "DesignLanguages",
-                language_id,
-                "Publish",
-                &json!({}),
-            )?;
-        } else if status == "UnderReview" {
-            dispatch_action(
-                ctx,
-                api_url,
-                headers,
-                "DesignLanguages",
-                language_id,
-                "Publish",
-                &json!({}),
-            )?;
-        }
+        ensure_language_published(ctx, api_url, headers, language_id, &status)?;
         published.push(language_id.clone());
     }
 
@@ -786,6 +834,83 @@ fn verify_quality_reviewed_languages(
         "job_type": "quality_review",
         "published_language_ids": published
     }))
+}
+
+fn ensure_language_published(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    initial_status: &str,
+) -> Result<(), String> {
+    let mut status = initial_status.to_string();
+    if status == "Published" {
+        return Ok(());
+    }
+
+    if status == "Draft" {
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "SubmitForReview",
+            &json!({}),
+        )?;
+        let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after SubmitForReview")
+            })?;
+        status = entity_status_value(&refreshed);
+    }
+
+    if status == "UnderReview" {
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "Publish",
+            &json!({}),
+        )?;
+    }
+
+    let after_publish = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| format!("DesignLanguage '{language_id}' disappeared after Publish"))?;
+    if entity_status_value(&after_publish) == "Published" {
+        return Ok(());
+    }
+
+    match dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Publish",
+        &json!({}),
+    ) {
+        Ok(()) => {}
+        Err(error) if publish_rejected_because_already_published(&error) => return Ok(()),
+        Err(error) => return Err(error),
+    }
+    let retried = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| format!("DesignLanguage '{language_id}' disappeared after Publish retry"))?;
+    let final_status = entity_status_value(&retried);
+    if final_status != "Published" {
+        return Err(format!(
+            "DesignLanguage '{language_id}' remained in state '{final_status}' after quality finalizer Publish"
+        ));
+    }
+    Ok(())
+}
+
+fn publish_rejected_because_already_published(error: &str) -> bool {
+    error.contains("Publish")
+        && error.contains("not valid from state")
+        && error.contains("Published")
 }
 
 fn verify_language_core(
@@ -858,63 +983,22 @@ fn verify_design_md(
     let mut attached_design_md_this_run = false;
     let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
     if let Some(refresh_reason) = refresh_reason {
-        if workspace_id.is_empty() {
-            return Err(format!(
-                "DesignLanguage '{language_id}' needs deterministic DESIGN.md generation ({refresh_reason}) but the CurationJob has no workspace_id"
-            ));
-        }
-        if status == "Published" {
-            revise_published_for_design_md(ctx, api_url, headers, language_id)?;
-            revised = true;
-        }
-        let generated = render_design_md_projection(language_id, &fields);
-        let generated_file_id = write_workspace_file(
-            ctx,
-            api_url,
-            workspace_id,
-            &format!(
-                "/katagami/design-md/{}/DESIGN.md",
-                design_md_slug(language_id, &fields)
-            ),
-            "text/markdown",
-            &generated,
-        )?;
-        let lint_result = json!({
-            "summary": {
-                "errors": 0,
-                "warnings": 0
-            },
-            "generated_by": "katagami-finalizer",
-            "refresh_reason": refresh_reason,
-            "checks": [
-                "deterministic projection rendered from verified Katagami fields"
-            ]
-        });
-        dispatch_action(
+        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
             ctx,
             api_url,
             headers,
-            "DesignLanguages",
+            workspace_id,
             language_id,
-            "AttachDesignMd",
-            &json!({
-                "design_md_file_id": generated_file_id,
-                "design_md_lint_result": lint_result.to_string(),
-                "design_md_format_version": "alpha"
-            }),
+            &fields,
+            &status,
+            refresh_reason,
         )?;
+        fields = refreshed_fields;
+        design_md_file_id = refreshed_file_id;
+        revised = revised || did_revise;
         attached_design_md_this_run = true;
-        design_md_file_id = generated_file_id;
-        set_string_field(&mut fields, "design_md_file_id", &design_md_file_id);
-        set_string_field(
-            &mut fields,
-            "design_md_lint_result",
-            &lint_result.to_string(),
-        );
-        set_string_field(&mut fields, "design_md_format_version", "alpha");
-        set_bool_field(&mut fields, "has_design_md", true);
     }
-    verify_file_value(
+    if let Err(err) = verify_file_value(
         ctx,
         api_url,
         headers,
@@ -922,7 +1006,36 @@ fn verify_design_md(
         &design_md_file_id,
         "design_md",
         None,
-    )?;
+    ) {
+        let refresh_reason = if err.contains("Failed to read Files") {
+            "unreadable_design_md_file"
+        } else {
+            "invalid_design_md_file"
+        };
+        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            &fields,
+            &status,
+            refresh_reason,
+        )?;
+        fields = refreshed_fields;
+        design_md_file_id = refreshed_file_id;
+        revised = revised || did_revise;
+        attached_design_md_this_run = true;
+        verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &design_md_file_id,
+            "design_md",
+            None,
+        )?;
+    }
     verify_design_md_lint_result(language_id, &fields)?;
 
     // Revise resets has_design_md but leaves design_md_file_id intact.
@@ -965,6 +1078,73 @@ fn verify_design_md(
     Ok(revised)
 }
 
+fn refresh_design_md_projection(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    fields: &serde_json::Value,
+    status: &str,
+    refresh_reason: &str,
+) -> Result<(serde_json::Value, String, bool), String> {
+    if workspace_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' needs deterministic DESIGN.md generation ({refresh_reason}) but the CurationJob has no workspace_id"
+        ));
+    }
+
+    let mut revised = false;
+    if status == "Published" {
+        revise_published_for_design_md(ctx, api_url, headers, language_id)?;
+        revised = true;
+    }
+    let generated = render_design_md_projection(language_id, fields);
+    let artifact_workspace_id = design_md_workspace_id(ctx, workspace_id);
+    let generated_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!(
+            "/katagami/design-md/{}/DESIGN.md",
+            design_md_slug(language_id, fields)
+        ),
+        "text/markdown",
+        &generated,
+    )?;
+    let lint_result = json!({
+        "summary": {
+            "errors": 0,
+            "warnings": 0
+        },
+        "generated_by": "katagami-finalizer",
+        "refresh_reason": refresh_reason,
+        "checks": [
+            "deterministic projection rendered from verified Katagami fields"
+        ]
+    });
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachDesignMd",
+        &json!({
+            "design_md_file_id": generated_file_id,
+            "design_md_lint_result": lint_result.to_string(),
+            "design_md_format_version": "alpha"
+        }),
+    )?;
+    let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after AttachDesignMd")
+        })?;
+    let refreshed_fields = entity_fields(&refreshed);
+    let refreshed_file_id = string_field_any(&refreshed_fields, "design_md_file_id", "");
+    Ok((refreshed_fields, refreshed_file_id, revised))
+}
+
 fn revise_published_for_design_md(
     ctx: &Context,
     api_url: &str,
@@ -982,6 +1162,550 @@ fn revise_published_for_design_md(
             "curator_notes": "Refreshing deterministic DESIGN.md projection during quality finalization"
         }),
     )
+}
+
+fn verify_shadcn_export(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<bool, String> {
+    let mut fields = entity_fields(language);
+    let mut status = entity_status_value(language);
+    let mut revised = false;
+    let mut export_file_id = string_field_any(&fields, "shadcn_export_file_id", "");
+    let initial_bools = language
+        .get("booleans")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let source_invalidated_export = !bool_field(&initial_bools, "has_shadcn_export");
+    if source_invalidated_export
+        || shadcn_export_projection_refresh_reason(&fields, &export_file_id).is_some()
+    {
+        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_shadcn_export_projection(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            &fields,
+            &status,
+        )?;
+        fields = refreshed_fields;
+        export_file_id = refreshed_file_id;
+        revised = revised || did_revise;
+    }
+
+    if let Err(err) = verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &export_file_id,
+        "shadcn_export",
+        None,
+    ) {
+        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_shadcn_export_projection(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            &fields,
+            &status,
+        )?;
+        fields = refreshed_fields;
+        export_file_id = refreshed_file_id;
+        revised = revised || did_revise;
+        verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &export_file_id,
+            "shadcn_export",
+            None,
+        )
+        .map_err(|verify_err| format!("{verify_err}; initial shadcn export error: {err}"))?;
+    }
+
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnExport")
+        })?;
+    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
+    if !bool_field(&fresh_bools, "has_shadcn_export") {
+        status = entity_status_value(&fresh);
+        if status == "Published" {
+            revise_published_for_shadcn_export(ctx, api_url, headers, language_id)?;
+            revised = true;
+        }
+        let manifest = string_field_any(&fields, "shadcn_export_manifest", "{}");
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachShadcnExport",
+            &json!({
+                "shadcn_export_file_id": export_file_id,
+                "shadcn_export_format_version": "registry-theme-v1",
+                "shadcn_export_manifest": manifest
+            }),
+        )?;
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyShadcnExport",
+        &json!({}),
+    )?;
+    Ok(revised)
+}
+
+fn refresh_shadcn_export_projection(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    fields: &serde_json::Value,
+    status: &str,
+) -> Result<(serde_json::Value, String, bool), String> {
+    let mut revised = false;
+    if status == "Published" {
+        revise_published_for_shadcn_export(ctx, api_url, headers, language_id)?;
+        revised = true;
+    }
+    let generated = render_shadcn_export_projection(language_id, fields);
+    let artifact_workspace_id = shadcn_export_workspace_id(ctx, workspace_id);
+    let generated_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!(
+            "/katagami/shadcn/{}/registry-theme.json",
+            design_md_slug(language_id, fields)
+        ),
+        "application/json",
+        &generated,
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachShadcnExport",
+        &json!({
+            "shadcn_export_file_id": generated_file_id,
+            "shadcn_export_format_version": "registry-theme-v1",
+            "shadcn_export_manifest": render_shadcn_component_manifest().to_string()
+        }),
+    )?;
+    let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after AttachShadcnExport")
+        })?;
+    let refreshed_fields = entity_fields(&refreshed);
+    let refreshed_file_id = string_field_any(&refreshed_fields, "shadcn_export_file_id", "");
+    Ok((refreshed_fields, refreshed_file_id, revised))
+}
+
+fn revise_published_for_shadcn_export(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing deterministic shadcn/ui registry theme projection during quality finalization"
+        }),
+    )
+}
+
+fn verify_shadcn_component_spec(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<bool, String> {
+    let mut fields = entity_fields(language);
+    let mut status = entity_status_value(language);
+    let mut revised = false;
+    let mut file_id = string_field_any(&fields, "shadcn_component_spec_file_id", "");
+    let initial_bools = language
+        .get("booleans")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let source_invalidated_component_spec =
+        !bool_field(&initial_bools, "has_shadcn_component_spec");
+    if source_invalidated_component_spec
+        || shadcn_component_spec_projection_refresh_reason(&fields, &file_id).is_some()
+    {
+        let (refreshed_fields, refreshed_file_id, did_revise) =
+            refresh_shadcn_component_spec_projection(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                language_id,
+                &fields,
+                &status,
+            )?;
+        fields = refreshed_fields;
+        file_id = refreshed_file_id;
+        revised = revised || did_revise;
+    }
+
+    if let Err(err) = verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &file_id,
+        "shadcn_component_spec",
+        None,
+    ) {
+        let (refreshed_fields, refreshed_file_id, did_revise) =
+            refresh_shadcn_component_spec_projection(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                language_id,
+                &fields,
+                &status,
+            )?;
+        fields = refreshed_fields;
+        file_id = refreshed_file_id;
+        revised = revised || did_revise;
+        verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &file_id,
+            "shadcn_component_spec",
+            None,
+        )
+        .map_err(|verify_err| {
+            format!("{verify_err}; initial shadcn component spec error: {err}")
+        })?;
+    }
+
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnComponentSpec")
+        })?;
+    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
+    if !bool_field(&fresh_bools, "has_shadcn_component_spec") {
+        status = entity_status_value(&fresh);
+        if status == "Published" {
+            revise_published_for_shadcn_component_spec(ctx, api_url, headers, language_id)?;
+            revised = true;
+        }
+        let manifest = string_field_any(&fields, "shadcn_component_spec_manifest", "{}");
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachShadcnComponentSpec",
+            &json!({
+                "shadcn_component_spec_file_id": file_id,
+                "shadcn_component_spec_format_version": "component-recipes-v1",
+                "shadcn_component_spec_manifest": manifest
+            }),
+        )?;
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyShadcnComponentSpec",
+        &json!({}),
+    )?;
+    Ok(revised)
+}
+
+fn refresh_shadcn_component_spec_projection(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    fields: &serde_json::Value,
+    status: &str,
+) -> Result<(serde_json::Value, String, bool), String> {
+    let mut revised = false;
+    if status == "Published" {
+        revise_published_for_shadcn_component_spec(ctx, api_url, headers, language_id)?;
+        revised = true;
+    }
+    let generated = render_shadcn_component_spec_projection(language_id, fields);
+    let artifact_workspace_id = shadcn_export_workspace_id(ctx, workspace_id);
+    let generated_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!(
+            "/katagami/shadcn/{}/components.md",
+            design_md_slug(language_id, fields)
+        ),
+        "text/markdown",
+        &generated,
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachShadcnComponentSpec",
+        &json!({
+            "shadcn_component_spec_file_id": generated_file_id,
+            "shadcn_component_spec_format_version": "component-recipes-v1",
+            "shadcn_component_spec_manifest": render_shadcn_component_spec_manifest().to_string()
+        }),
+    )?;
+    let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after AttachShadcnComponentSpec")
+        })?;
+    let refreshed_fields = entity_fields(&refreshed);
+    let refreshed_file_id =
+        string_field_any(&refreshed_fields, "shadcn_component_spec_file_id", "");
+    Ok((refreshed_fields, refreshed_file_id, revised))
+}
+
+fn revise_published_for_shadcn_component_spec(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing shadcn/ui component recipe artifact during quality finalization"
+        }),
+    )
+}
+
+fn verify_shadcn_preview_shots(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<bool, String> {
+    let mut fields = entity_fields(language);
+    let mut status = entity_status_value(language);
+    let mut revised = false;
+    let mut file_id = string_field_any(&fields, "shadcn_preview_shots_file_id", "");
+    let initial_bools = language
+        .get("booleans")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let source_invalidated_preview_shots = !bool_field(&initial_bools, "has_shadcn_preview_shots");
+    if source_invalidated_preview_shots
+        || shadcn_preview_shots_projection_refresh_reason(&fields, &file_id).is_some()
+    {
+        let (refreshed_fields, refreshed_file_id, did_revise) =
+            refresh_shadcn_preview_shots_projection(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                language_id,
+                &fields,
+                &status,
+            )?;
+        fields = refreshed_fields;
+        file_id = refreshed_file_id;
+        revised = revised || did_revise;
+    }
+
+    if let Err(err) = verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &file_id,
+        "shadcn_preview_shots",
+        None,
+    ) {
+        let (refreshed_fields, refreshed_file_id, did_revise) =
+            refresh_shadcn_preview_shots_projection(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                language_id,
+                &fields,
+                &status,
+            )?;
+        fields = refreshed_fields;
+        file_id = refreshed_file_id;
+        revised = revised || did_revise;
+        verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &file_id,
+            "shadcn_preview_shots",
+            None,
+        )
+        .map_err(|verify_err| {
+            format!("{verify_err}; initial shadcn preview-shot manifest error: {err}")
+        })?;
+    }
+
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnPreviewShots")
+        })?;
+    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
+    if !bool_field(&fresh_bools, "has_shadcn_preview_shots") {
+        status = entity_status_value(&fresh);
+        if status == "Published" {
+            revise_published_for_shadcn_preview_shots(ctx, api_url, headers, language_id)?;
+            revised = true;
+        }
+        let manifest = string_field_any(&fields, "shadcn_preview_shots_manifest", "{}");
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachShadcnPreviewShots",
+            &json!({
+                "shadcn_preview_shots_file_id": file_id,
+                "shadcn_preview_shots_format_version": "preview-shots-v1",
+                "shadcn_preview_shots_manifest": manifest
+            }),
+        )?;
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyShadcnPreviewShots",
+        &json!({}),
+    )?;
+    Ok(revised)
+}
+
+fn refresh_shadcn_preview_shots_projection(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    fields: &serde_json::Value,
+    status: &str,
+) -> Result<(serde_json::Value, String, bool), String> {
+    let mut revised = false;
+    if status == "Published" {
+        revise_published_for_shadcn_preview_shots(ctx, api_url, headers, language_id)?;
+        revised = true;
+    }
+    let generated = render_shadcn_preview_shots_projection(language_id, fields);
+    let artifact_workspace_id = shadcn_export_workspace_id(ctx, workspace_id);
+    let generated_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!(
+            "/katagami/shadcn/{}/preview-shots.json",
+            design_md_slug(language_id, fields)
+        ),
+        "application/json",
+        &generated,
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachShadcnPreviewShots",
+        &json!({
+            "shadcn_preview_shots_file_id": generated_file_id,
+            "shadcn_preview_shots_format_version": "preview-shots-v1",
+            "shadcn_preview_shots_manifest": render_shadcn_preview_shots_manifest().to_string()
+        }),
+    )?;
+    let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after AttachShadcnPreviewShots")
+        })?;
+    let refreshed_fields = entity_fields(&refreshed);
+    let refreshed_file_id = string_field_any(&refreshed_fields, "shadcn_preview_shots_file_id", "");
+    Ok((refreshed_fields, refreshed_file_id, revised))
+}
+
+fn revise_published_for_shadcn_preview_shots(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing shadcn/ui preview-shot artifact during quality finalization"
+        }),
+    )
+}
+
+fn shadcn_export_workspace_id(ctx: &Context, job_workspace_id: &str) -> String {
+    design_md_workspace_id(ctx, job_workspace_id)
+}
+
+fn design_md_workspace_id(ctx: &Context, _job_workspace_id: &str) -> String {
+    ctx.config
+        .get("katagami_artifact_workspace_id")
+        .filter(|s| !s.trim().is_empty() && !s.contains("{secret:"))
+        .cloned()
+        .unwrap_or_else(|| "os-app-docs".to_string())
 }
 
 fn revise_published_for_thumbnail(
@@ -1269,6 +1993,51 @@ fn verify_file_body(
         return Err(format!(
             "DesignLanguage '{language_id}' DESIGN.md file '{file_id}' is missing required design.md front matter"
         ));
+    } else if artifact_kind == "shadcn_export"
+        && (!trimmed.contains("\"registry:theme\"")
+            || !trimmed.contains("\"cssVars\"")
+            || !trimmed.contains("\"componentManifest\""))
+    {
+        return Err(format!(
+            "DesignLanguage '{language_id}' shadcn export file '{file_id}' is missing required registry theme fields"
+        ));
+    } else if artifact_kind == "shadcn_component_spec"
+        && (!trimmed.contains("shadcn/ui Components")
+            || !trimmed.contains("Signature component recipes")
+            || !trimmed.contains("Preview shots")
+            || !trimmed.contains("button")
+            || !trimmed.contains("card")
+            || !trimmed.contains("input")
+            || !trimmed.contains("tabs"))
+    {
+        return Err(format!(
+            "DesignLanguage '{language_id}' shadcn component spec file '{file_id}' is missing required recipe sections"
+        ));
+    } else if artifact_kind == "shadcn_preview_shots" {
+        let parsed: serde_json::Value = serde_json::from_str(trimmed).map_err(|e| {
+            format!(
+                "DesignLanguage '{language_id}' shadcn preview-shot file '{file_id}' is invalid JSON: {e}"
+            )
+        })?;
+        let artifact = parsed
+            .get("artifact")
+            .and_then(|value| value.as_str())
+            .unwrap_or("");
+        let shots_len = parsed
+            .get("shots")
+            .and_then(|value| value.as_array())
+            .map(|items| items.len())
+            .unwrap_or(0);
+        let recipes_len = parsed
+            .get("componentRecipes")
+            .and_then(|value| value.as_array())
+            .map(|items| items.len())
+            .unwrap_or(0);
+        if artifact != "katagami:shadcn-preview-shots" || shots_len < 3 || recipes_len < 4 {
+            return Err(format!(
+                "DesignLanguage '{language_id}' shadcn preview-shot file '{file_id}' is missing required shots or component recipes"
+            ));
+        }
     } else if artifact_kind == "thumbnail" {
         let lower = trimmed.to_ascii_lowercase();
         if lower.contains("<html")
@@ -1678,7 +2447,7 @@ fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) ->
     };
 
     format!(
-        "---\nversion: \"alpha\"\nname: {}\ndescription: {}\ncolors:\n{}typography:\n{}rounded: {}\nspacing: {}\ncomponents:\n{}---\n\n# {}\n\n## Overview\n\n{}\n\n## Colors\n\n{}\n\n## Typography\n\n{}\n\n## Layout\n\n{}\n\n## Elevation & Depth\n\n{}\n\n## Shapes\n\n{}\n\n## Components\n\n{}\n\n## Do's and Don'ts\n\n### Do\n{}\n\n### Don't\n{}\n\n## Visual Character\n{}\n\n## Signature Patterns\n{}\n\n## Tags\n{}\n",
+        "---\nversion: \"alpha\"\nname: {}\ndescription: {}\ncolors:\n{}typography:\n{}rounded: {}\nspacing: {}\ncomponents:\n{}---\n\n# {}\n\n## Overview\n\n{}\n\n## Colors\n\n{}\n\n## Typography\n\n{}\n\n## Layout\n\n{}\n\n## Elevation & Depth\n\n{}\n\n## Shapes\n\n{}\n\n## Components\n\n{}\n\n## shadcn/ui Usage\n\n{}\n\n## Do's and Don'ts\n\n### Do\n{}\n\n### Don't\n{}\n\n## Visual Character\n{}\n\n## Signature Patterns\n{}\n\n## Tags\n{}\n",
         yaml_quote(&name),
         yaml_quote(&description),
         yaml_map_block(&colors, 2),
@@ -1694,6 +2463,7 @@ fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) ->
         markdown_json_or_text(&surfaces),
         markdown_json_or_text(&borders),
         markdown_list_or_fallback(&components, "Use the language tokens and rules across standard UI components."),
+        markdown_shadcn_usage(),
         markdown_list_or_fallback(
             &string_array_path(&guidance, &["do"]),
             "Apply the documented visual character consistently."
@@ -1712,6 +2482,445 @@ fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) ->
         ),
         markdown_list_or_fallback(&tags, &slug),
     )
+}
+
+const SHADCN_COMPONENTS: &[&str] = &[
+    "button",
+    "card",
+    "input",
+    "textarea",
+    "select",
+    "dialog",
+    "sheet",
+    "tabs",
+    "badge",
+    "separator",
+    "checkbox",
+    "switch",
+    "slider",
+    "tooltip",
+    "dropdown-menu",
+    "table",
+];
+
+fn markdown_shadcn_usage() -> String {
+    let components = SHADCN_COMPONENTS
+        .iter()
+        .map(|component| format!("- {component}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "Use shadcn/ui primitives as the component baseline, then apply this Katagami-generated theme through CSS variables.\n\nInstall recommended primitives with `{}`.\n\nRecommended primitives:\n{}",
+        shadcn_install_command(),
+        components
+    )
+}
+
+fn render_shadcn_export_projection(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let tokens = json_object_field(fields, "tokens");
+    let light = shadcn_light_vars(&tokens);
+    let dark = shadcn_dark_vars(&tokens, &light);
+    let registry = json!({
+        "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+        "name": slug,
+        "type": "registry:theme",
+        "title": format!("{name} shadcn Theme"),
+        "cssVars": {
+            "theme": {},
+            "light": light,
+            "dark": dark
+        },
+        "meta": {
+            "source": "katagami",
+            "languageId": language_id,
+            "slug": slug,
+            "componentManifest": SHADCN_COMPONENTS,
+            "installCommand": shadcn_install_command(),
+            "nativeTokenNames": native_token_names(&tokens)
+        }
+    });
+    serde_json::to_string_pretty(&registry).unwrap_or_else(|_| "{}".to_string()) + "\n"
+}
+
+fn render_shadcn_component_manifest() -> serde_json::Value {
+    json!({
+        "components": SHADCN_COMPONENTS,
+        "installCommand": shadcn_install_command(),
+        "artifact": "registry:theme"
+    })
+}
+
+fn render_shadcn_component_spec_projection(
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let rules = json_object_field(fields, "rules");
+    let layout = json_object_field(fields, "layout_principles");
+    let tokens = json_object_field(fields, "tokens");
+    let guidance = json_object_field(fields, "guidance");
+    let summary = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        format!("shadcn/ui component recipes for the Katagami language {name}."),
+    ]);
+    let visual_character = string_array_path(&philosophy, &["visual_character"]);
+    let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
+    let do_rules = string_array_path(&guidance, &["do"]);
+    let dont_rules = string_array_path(&guidance, &["dont"]);
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let typography = tokens
+        .get("typography")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+
+    format!(
+        "# {} shadcn/ui Components\n\nArtifact: `component-recipes-v1`\nLanguage ID: `{}`\nSlug: `{}`\n\n## Intent\n\n{}\n\n## Required primitives\n\n{}\n\nInstall with `{}`.\n\n## Token cues\n\nColors:\n\n{}\n\nTypography:\n\n{}\n\n## Visual character to preserve\n\n{}\n\n## Signature component recipes\n\n### Button\nUse `Button` for primary, secondary, outline, and ghost actions. Primary actions must expose the language's strongest contrast pair, while secondary and ghost actions should preserve the surface treatment instead of falling back to default neutral SaaS styling.\n\n### Card\nUse `Card`, `CardHeader`, `CardContent`, `CardFooter`, and `CardAction` as the main composition frame. Cards should demonstrate the language's surface, border, hierarchy, and density rules rather than appearing as generic rounded rectangles.\n\n### Input and Textarea\nUse `Input` and `Textarea` with visible focus rings, field labels, validation states, and the language's rhythm. Forms should show real product content, not placeholder-only controls.\n\n### Select, Tabs, and Table\nUse `Select`, `Tabs`, and `Table` to prove navigation, filtering, and dense data states. The table should show row rhythm, separators, hover/focus states, and an empty or status state when the language calls for it.\n\n### Dialog and Sheet\nUse `Dialog` for centered decisions and `Sheet` for contextual editing. Both should inherit the language's spacing, border, overlay, and motion rules.\n\n## Preview shots\n\n- `application-shell`: dashboard or workspace shell with navigation, cards, forms, and state badges.\n- `detail-editor`: focused editing flow using input, textarea, select, switch/checkbox, dialog or sheet, and action buttons.\n- `data-operations`: table-heavy operational view with tabs, dropdown menu affordances, badges, and destructive/empty states.\n\n## Implementation contract\n\n- Start from local `ui/src/components/ui` shadcn-style primitives; do not create a second component system.\n- Apply `/katagami/shadcn/{}/registry-theme.json` variables, then use these recipes for composition and state design.\n- Preserve Katagami token names as source metadata; shadcn semantic names are only the export surface.\n- Do: {}\n- Do not: {}\n\n## Layout notes\n\n{}\n",
+        name,
+        language_id,
+        slug,
+        markdown_text(&summary),
+        markdown_list_or_fallback(
+            &SHADCN_COMPONENTS
+                .iter()
+                .map(|component| component.to_string())
+                .collect::<Vec<_>>(),
+            "Use the core shadcn/ui primitives."
+        ),
+        shadcn_install_command(),
+        markdown_json_or_text(&colors),
+        markdown_json_or_text(&typography),
+        markdown_list_or_fallback(
+            &first_nonempty_list(vec![visual_character, signature_patterns.clone()]),
+            "Make the source language's structural identity visible in every component state."
+        ),
+        slug,
+        markdown_inline_list(&do_rules, "follow the Katagami source guidance"),
+        markdown_inline_list(&dont_rules, "do not collapse the language into generic defaults"),
+        markdown_json_or_text(&layout)
+    )
+}
+
+fn render_shadcn_component_spec_manifest() -> serde_json::Value {
+    json!({
+        "artifact": "katagami:shadcn-component-recipes",
+        "version": "component-recipes-v1",
+        "components": SHADCN_COMPONENTS,
+        "installCommand": shadcn_install_command(),
+        "requiredSections": [
+            "Intent",
+            "Required primitives",
+            "Signature component recipes",
+            "Preview shots",
+            "Implementation contract"
+        ]
+    })
+}
+
+fn render_shadcn_preview_shots_projection(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let rules = json_object_field(fields, "rules");
+    let guidance = json_object_field(fields, "guidance");
+    let visual_character = string_array_path(&philosophy, &["visual_character"]);
+    let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
+    let do_rules = string_array_path(&guidance, &["do"]);
+    let dont_rules = string_array_path(&guidance, &["dont"]);
+    let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
+
+    let manifest = json!({
+        "artifact": "katagami:shadcn-preview-shots",
+        "version": "preview-shots-v1",
+        "language": {
+            "id": language_id,
+            "name": name,
+            "slug": slug
+        },
+        "installCommand": shadcn_install_command(),
+        "primitives": SHADCN_COMPONENTS,
+        "identityNotes": identity_notes,
+        "shots": [
+            {
+                "id": "application-shell",
+                "title": "Application shell",
+                "viewport": "desktop",
+                "primitives": ["button", "card", "input", "select", "tabs", "badge", "separator", "table"],
+                "composition": "A real product workspace with navigation, summary cards, filtering controls, and one dense content region.",
+                "mustShow": ["primary and secondary actions", "card hierarchy", "filterable state", "table or list density"],
+                "avoid": ["component inventory walls", "placeholder-only content", "generic rounded SaaS chrome"]
+            },
+            {
+                "id": "detail-editor",
+                "title": "Detail editor",
+                "viewport": "tablet",
+                "primitives": ["button", "card", "input", "textarea", "select", "checkbox", "switch", "dialog", "sheet"],
+                "composition": "A focused editing flow with form fields, validation, confirmation, and a contextual side panel.",
+                "mustShow": ["focus ring", "error or destructive state", "dialog or sheet treatment", "written guidance content"],
+                "avoid": ["unstyled browser controls", "floating cards inside cards", "missing labels"]
+            },
+            {
+                "id": "data-operations",
+                "title": "Data operations",
+                "viewport": "mobile",
+                "primitives": ["button", "tabs", "badge", "dropdown-menu", "table", "tooltip", "separator"],
+                "composition": "A compact operational view proving row rhythm, stacked actions, menu states, badges, and empty/destructive states.",
+                "mustShow": ["responsive reflow", "dense row styling", "menu affordance", "status badge system"],
+                "avoid": ["desktop-only tables", "text overflow", "default shadcn spacing without Katagami character"]
+            }
+        ],
+        "componentRecipes": [
+            {"primitive": "button", "intent": "Prove action hierarchy, focus, disabled, and destructive states."},
+            {"primitive": "card", "intent": "Carry the language surface, border, elevation, and density rules."},
+            {"primitive": "input", "intent": "Show labels, focus rings, validation, and spacing rhythm."},
+            {"primitive": "tabs", "intent": "Show navigational structure and active/inactive contrast."},
+            {"primitive": "table", "intent": "Show dense operational data, separators, row states, and responsive behavior."}
+        ],
+        "qualityRules": {
+            "do": do_rules,
+            "dont": dont_rules
+        }
+    });
+    serde_json::to_string_pretty(&manifest).unwrap_or_else(|_| "{}".to_string()) + "\n"
+}
+
+fn render_shadcn_preview_shots_manifest() -> serde_json::Value {
+    json!({
+        "artifact": "katagami:shadcn-preview-shots",
+        "version": "preview-shots-v1",
+        "shotIds": ["application-shell", "detail-editor", "data-operations"],
+        "components": SHADCN_COMPONENTS
+    })
+}
+
+fn shadcn_install_command() -> String {
+    format!("npx shadcn@latest add {}", SHADCN_COMPONENTS.join(" "))
+}
+
+fn shadcn_light_vars(tokens: &serde_json::Value) -> serde_json::Value {
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let background = color_value(&colors, &["background", "bg"], "#ffffff");
+    let foreground = color_value(&colors, &["foreground", "text", "ink"], "#111111");
+    let surface = color_value(&colors, &["surface", "card"], &background);
+    let primary = color_value(&colors, &["primary"], &foreground);
+    let secondary = color_value(&colors, &["secondary"], "#f4f4f5");
+    let muted = color_value(&colors, &["muted"], "#f4f4f5");
+    let accent = color_value(&colors, &["accent", "info"], &primary);
+    let destructive = color_value(&colors, &["destructive", "error"], "#dc2626");
+    let border = color_value(&colors, &["border"], "#e4e4e7");
+    let success = color_value(&colors, &["success"], "#16a34a");
+    let warning = color_value(&colors, &["warning"], "#d97706");
+    let info = color_value(&colors, &["info"], &accent);
+    let radius = shadcn_radius(tokens);
+
+    json!({
+        "background": background,
+        "foreground": foreground,
+        "card": surface,
+        "card-foreground": foreground,
+        "popover": surface,
+        "popover-foreground": foreground,
+        "primary": primary,
+        "primary-foreground": readable_text_color(&primary, "#ffffff"),
+        "secondary": secondary,
+        "secondary-foreground": readable_text_color(&secondary, &foreground),
+        "muted": muted,
+        "muted-foreground": color_value(&colors, &["muted_foreground", "muted-foreground", "text_secondary"], &foreground),
+        "accent": accent,
+        "accent-foreground": readable_text_color(&accent, &foreground),
+        "destructive": destructive,
+        "border": border,
+        "input": color_value(&colors, &["input"], &border),
+        "ring": color_value(&colors, &["ring"], &accent),
+        "chart-1": primary,
+        "chart-2": secondary,
+        "chart-3": accent,
+        "chart-4": success,
+        "chart-5": warning,
+        "sidebar": color_value(&colors, &["sidebar"], &surface),
+        "sidebar-foreground": foreground,
+        "sidebar-primary": primary,
+        "sidebar-primary-foreground": readable_text_color(&primary, "#ffffff"),
+        "sidebar-accent": info,
+        "sidebar-accent-foreground": readable_text_color(&info, &foreground),
+        "sidebar-border": border,
+        "sidebar-ring": color_value(&colors, &["sidebar_ring", "sidebar-ring"], &accent),
+        "radius": radius
+    })
+}
+
+fn shadcn_dark_vars(tokens: &serde_json::Value, light: &serde_json::Value) -> serde_json::Value {
+    let dark_colors = tokens
+        .get("dark_colors")
+        .or_else(|| tokens.get("colors_dark"))
+        .cloned()
+        .or_else(|| {
+            tokens
+                .get("dark")
+                .and_then(|dark| dark.get("colors"))
+                .cloned()
+        })
+        .filter(|value| value.is_object())
+        .unwrap_or_else(|| json!({}));
+
+    if dark_colors
+        .as_object()
+        .map(|m| !m.is_empty())
+        .unwrap_or(false)
+    {
+        let mut dark_tokens = tokens.clone();
+        if let Some(obj) = dark_tokens.as_object_mut() {
+            obj.insert("colors".to_string(), dark_colors);
+        }
+        let mut dark = shadcn_light_vars(&dark_tokens);
+        if let Some(obj) = dark.as_object_mut() {
+            obj.insert(
+                "radius".to_string(),
+                light
+                    .get("radius")
+                    .cloned()
+                    .unwrap_or_else(|| json!("0.625rem")),
+            );
+        }
+        return dark;
+    }
+
+    let primary = light
+        .get("primary")
+        .and_then(|v| v.as_str())
+        .unwrap_or("#f8fafc");
+    let accent = light
+        .get("accent")
+        .and_then(|v| v.as_str())
+        .unwrap_or(primary);
+    let destructive = light
+        .get("destructive")
+        .and_then(|v| v.as_str())
+        .unwrap_or("#dc2626");
+    let radius = light
+        .get("radius")
+        .cloned()
+        .unwrap_or_else(|| json!("0.625rem"));
+
+    json!({
+        "background": "#0f1115",
+        "foreground": "#f8fafc",
+        "card": "#181b22",
+        "card-foreground": "#f8fafc",
+        "popover": "#181b22",
+        "popover-foreground": "#f8fafc",
+        "primary": primary,
+        "primary-foreground": readable_text_color(primary, "#0f1115"),
+        "secondary": "#252a33",
+        "secondary-foreground": "#f8fafc",
+        "muted": "#252a33",
+        "muted-foreground": "#a1a1aa",
+        "accent": accent,
+        "accent-foreground": readable_text_color(accent, "#0f1115"),
+        "destructive": destructive,
+        "border": "#303642",
+        "input": "#303642",
+        "ring": accent,
+        "chart-1": light.get("chart-1").cloned().unwrap_or_else(|| json!(primary)),
+        "chart-2": light.get("chart-2").cloned().unwrap_or_else(|| json!("#252a33")),
+        "chart-3": light.get("chart-3").cloned().unwrap_or_else(|| json!(accent)),
+        "chart-4": light.get("chart-4").cloned().unwrap_or_else(|| json!("#16a34a")),
+        "chart-5": light.get("chart-5").cloned().unwrap_or_else(|| json!("#d97706")),
+        "sidebar": "#181b22",
+        "sidebar-foreground": "#f8fafc",
+        "sidebar-primary": primary,
+        "sidebar-primary-foreground": readable_text_color(primary, "#0f1115"),
+        "sidebar-accent": accent,
+        "sidebar-accent-foreground": readable_text_color(accent, "#0f1115"),
+        "sidebar-border": "#303642",
+        "sidebar-ring": accent,
+        "radius": radius
+    })
+}
+
+fn color_value(colors: &serde_json::Value, keys: &[&str], fallback: &str) -> String {
+    for key in keys {
+        if let Some(value) = colors.get(*key).and_then(|value| value.as_str()) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    fallback.to_string()
+}
+
+fn shadcn_radius(tokens: &serde_json::Value) -> String {
+    let radii = tokens
+        .get("radii")
+        .or_else(|| tokens.get("radius"))
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    color_value(&radii, &["default", "md", "lg", "base"], "0.625rem")
+}
+
+fn readable_text_color(color: &str, fallback: &str) -> String {
+    let Some((r, g, b)) = hex_rgb(color) else {
+        return fallback.to_string();
+    };
+    let channel = |value: u8| {
+        let c = f64::from(value) / 255.0;
+        if c <= 0.03928 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    let luminance = 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    if luminance > 0.54 {
+        "#111111".to_string()
+    } else {
+        "#ffffff".to_string()
+    }
+}
+
+fn hex_rgb(color: &str) -> Option<(u8, u8, u8)> {
+    let raw = color.trim().trim_start_matches('#');
+    let expanded = match raw.len() {
+        3 => raw.chars().flat_map(|ch| [ch, ch]).collect::<String>(),
+        6 => raw.to_string(),
+        _ => return None,
+    };
+    let parsed = u32::from_str_radix(&expanded, 16).ok()?;
+    Some((
+        ((parsed >> 16) & 0xff) as u8,
+        ((parsed >> 8) & 0xff) as u8,
+        (parsed & 0xff) as u8,
+    ))
+}
+
+fn native_token_names(tokens: &serde_json::Value) -> serde_json::Value {
+    let mut out = serde_json::Map::new();
+    if let Some(map) = tokens.as_object() {
+        for (key, value) in map {
+            if let Some(nested) = value.as_object() {
+                let mut keys: Vec<_> = nested.keys().cloned().collect();
+                keys.sort();
+                out.insert(key.clone(), json!(keys));
+            }
+        }
+    }
+    serde_json::Value::Object(out)
 }
 
 fn design_md_slug(language_id: &str, fields: &serde_json::Value) -> String {
@@ -1899,6 +3108,21 @@ fn markdown_list_or_fallback(values: &[String], fallback: &str) -> String {
     }
 }
 
+fn markdown_inline_list(values: &[String], fallback: &str) -> String {
+    if values.is_empty() {
+        fallback.to_string()
+    } else {
+        values.join("; ")
+    }
+}
+
+fn first_nonempty_list(lists: Vec<Vec<String>>) -> Vec<String> {
+    lists
+        .into_iter()
+        .find(|items| !items.is_empty())
+        .unwrap_or_default()
+}
+
 fn read_file_value(
     ctx: &Context,
     api_url: &str,
@@ -2026,6 +3250,69 @@ fn design_md_projection_refresh_reason(
     }
 }
 
+fn shadcn_export_projection_refresh_reason(
+    fields: &serde_json::Value,
+    shadcn_export_file_id: &str,
+) -> Option<&'static str> {
+    if shadcn_export_file_id.trim().is_empty() {
+        return Some("missing_shadcn_export_file_id");
+    }
+
+    let format_version = string_field_any(fields, "shadcn_export_format_version", "");
+    if format_version.trim().is_empty() {
+        return Some("missing_shadcn_export_format_version");
+    }
+
+    let manifest = string_field_any(fields, "shadcn_export_manifest", "");
+    if manifest.trim().is_empty() {
+        return Some("missing_shadcn_export_manifest");
+    }
+
+    None
+}
+
+fn shadcn_component_spec_projection_refresh_reason(
+    fields: &serde_json::Value,
+    shadcn_component_spec_file_id: &str,
+) -> Option<&'static str> {
+    if shadcn_component_spec_file_id.trim().is_empty() {
+        return Some("missing_shadcn_component_spec_file_id");
+    }
+
+    let format_version = string_field_any(fields, "shadcn_component_spec_format_version", "");
+    if format_version.trim().is_empty() {
+        return Some("missing_shadcn_component_spec_format_version");
+    }
+
+    let manifest = string_field_any(fields, "shadcn_component_spec_manifest", "");
+    if manifest.trim().is_empty() {
+        return Some("missing_shadcn_component_spec_manifest");
+    }
+
+    None
+}
+
+fn shadcn_preview_shots_projection_refresh_reason(
+    fields: &serde_json::Value,
+    shadcn_preview_shots_file_id: &str,
+) -> Option<&'static str> {
+    if shadcn_preview_shots_file_id.trim().is_empty() {
+        return Some("missing_shadcn_preview_shots_file_id");
+    }
+
+    let format_version = string_field_any(fields, "shadcn_preview_shots_format_version", "");
+    if format_version.trim().is_empty() {
+        return Some("missing_shadcn_preview_shots_format_version");
+    }
+
+    let manifest = string_field_any(fields, "shadcn_preview_shots_manifest", "");
+    if manifest.trim().is_empty() {
+        return Some("missing_shadcn_preview_shots_manifest");
+    }
+
+    None
+}
+
 fn verify_design_md_lint_result(
     language_id: &str,
     fields: &serde_json::Value,
@@ -2131,21 +3418,6 @@ fn string_field_any(fields: &serde_json::Value, name: &str, default: &str) -> St
         .filter(|s| !s.is_empty())
         .unwrap_or(default)
         .to_string()
-}
-
-fn set_string_field(fields: &mut serde_json::Value, name: &str, value: &str) {
-    if let Some(object) = fields.as_object_mut() {
-        object.insert(
-            name.to_string(),
-            serde_json::Value::String(value.to_string()),
-        );
-    }
-}
-
-fn set_bool_field(fields: &mut serde_json::Value, name: &str, value: bool) {
-    if let Some(object) = fields.as_object_mut() {
-        object.insert(name.to_string(), serde_json::Value::Bool(value));
-    }
 }
 
 fn entity_bool_any(entity: &serde_json::Value, name: &str) -> bool {
@@ -2339,6 +3611,47 @@ fn run_typed_completion_fallback(
                     .push(json!({"action": "created_organization_job", "job_id": organize_job_id}));
             }
         }
+        "regenerate_embodiment" | "evolve_language" => {
+            let language_ids = design_language_ids_from_job(fields);
+            if !language_ids.is_empty()
+                && !active_quality_review_job_exists_for_languages(
+                    ctx,
+                    api_url,
+                    headers,
+                    query_id,
+                    &language_ids,
+                )?
+            {
+                let review_input = json!({
+                    "language_ids": language_ids,
+                    "query_id": query_id
+                })
+                .to_string();
+                let review_job_id = create_configure_submit_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    "quality_review",
+                    workspace_id,
+                    query_id,
+                    None,
+                    &review_input,
+                )?;
+                actions.push(json!({
+                    "action": "created_quality_review_job_after_embodiment_repair",
+                    "job_id": review_job_id,
+                }));
+            }
+
+            if job_type == "regenerate_embodiment" {
+                if let Some(next_job_id) = submit_next_queued_regeneration(ctx, api_url, headers)? {
+                    actions.push(json!({
+                        "action": "submitted_next_queued_regeneration",
+                        "job_id": next_job_id,
+                    }));
+                }
+            }
+        }
         "organize_taxonomy" => {
             if !query_id.is_empty()
                 && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
@@ -2477,6 +3790,38 @@ fn job_exists(
                 None => true,
             };
             matches_type && matches_query && matches_direction
+        }))
+}
+
+fn active_quality_review_job_exists_for_languages(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+    language_ids: &[String],
+) -> Result<bool, String> {
+    let mut expected = language_ids.to_vec();
+    expected.sort();
+    Ok(list_curation_jobs(ctx, api_url, headers)?
+        .iter()
+        .any(|job| {
+            let status = job.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            if matches!(status, "Completed" | "Failed") {
+                return false;
+            }
+            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
+            if fields.get("job_type").and_then(|v| v.as_str()) != Some("quality_review") {
+                return false;
+            }
+            if !query_id.is_empty()
+                && fields.get("query_id").and_then(|v| v.as_str()) != Some(query_id)
+            {
+                return false;
+            }
+            let input_json = parse_json_field(fields.get("input"));
+            let mut actual = string_array(input_json.as_ref().and_then(|v| v.get("language_ids")));
+            actual.sort();
+            actual == expected
         }))
 }
 

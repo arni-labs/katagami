@@ -16,11 +16,12 @@ declared as Temper reactions.
 
 **Job Types:**
 - `source_search` — Research design movements and index compact authoritative source metadata
-- `synthesize` — Create DesignLanguage specs with embodiments
-- `quality_review` — Validate DESIGN.md, fix embodiment fidelity against the spec, then publish
+- `synthesize` — Create DesignLanguage specs with embodiments and first-class shadcn/ui component artifacts
+- `quality_review` — Validate DESIGN.md, derive shadcn/ui export, author/verify shadcn/ui component recipes and preview shots, fix embodiment fidelity against the spec, then publish
 - `organize_taxonomy` — Taxonomy maintenance and cross-referencing
 - `regenerate_embodiment` — Rebuild embodiment HTML for an existing language
 - `evolve_language` — Create a child DesignLanguage from a parent
+- `taste_distillation` — Propose taste rules from archived and featured language signals
 
 ### CurationDirection
 
@@ -34,6 +35,12 @@ Active job configuration for session bootstrapping. Templates map job types to
 skills, instruction paths, tool profiles, sandbox needs, and typed completion
 actions.
 
+### TasteRule
+
+Human-approved taste guidance distilled from the catalog. `Proposed` rules are
+created by `taste_distillation`; only `Accepted` rules are loaded by synthesis
+and quality-review jobs.
+
 ## Agents
 
 ### Curator (`agents/curator/AGENT.md`)
@@ -41,8 +48,9 @@ actions.
 Handles all active curation job types. Researches sources, creates
 DesignSource and CurationDirection entities, synthesizes DesignLanguage specs,
 repairs embodiments, and maintains taxonomy. The quality gate keeps generated
-languages out of `Published` until embodiment review and DESIGN.md validation
-both pass.
+languages out of `Published` until embodiment review, DESIGN.md validation,
+shadcn/ui registry theme verification, and agent-authored shadcn/ui component
+recipe + preview-shot verification all pass.
 
 `source_search` is a hot operational workflow. It should create DesignSource
 and CurationDirection entities synchronously, but it must not write every

@@ -24,6 +24,27 @@ name = "Activate"
 
 [[instance]]
 type = "CurationJobTemplate"
+id = "template-taste-distillation-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "taste_distillation"
+skill_id = "taste-distillation"
+instruction_path = "/agents/curator/skills/taste-distillation/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read"
+requires_sandbox = false
+max_turns_default = "250"
+completion_action = "CompleteTasteDistillation"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
 id = "template-synthesize-v1"
 
 [[instance.actions]]

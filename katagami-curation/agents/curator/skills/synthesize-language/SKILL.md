@@ -1,6 +1,6 @@
 # Synthesize Language
 
-Create a complete DesignLanguage entity with all spec sections and a self-contained HTML embodiment, visually verified at three viewport sizes.
+Create a complete DesignLanguage entity with all spec sections, a self-contained HTML embodiment, a desktop thumbnail, and first-class shadcn/ui component artifacts, visually verified at three viewport sizes.
 
 ## When to Use
 
@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment` and `AttachThumbnail`, finish the job. The CurationJob finalizer verifies the thumbnail and submits for review.
+6. After `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnComponentSpec`, and `AttachShadcnPreviewShots`, finish the job. The CurationJob finalizer verifies the embodiment file, thumbnail, agent-authored shadcn component artifacts, deterministic DESIGN.md, and shadcn/ui registry-theme projection before publish.
 
 ## Before Starting
 
@@ -32,6 +32,14 @@ Also check what already exists in the library:
 existing = temper.list('DesignLanguages', '')
 ```
 Note existing typefaces, palettes, scene types, and structural approaches. Your language must be distinct from all of them.
+
+Load accepted taste rules:
+```python
+accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
+```
+Use only Accepted rules. Positive rules describe patterns to preserve or amplify;
+negative rules describe archive-derived anti-patterns to avoid. Ignore Proposed,
+Rejected, and Superseded rules entirely.
 
 ## Execution Discipline
 
@@ -308,6 +316,65 @@ temper.action('DesignLanguages', eid, 'SetLineage', {
 ```
 
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
+
+### Step 7 — Publish shadcn/ui component artifacts
+
+The shadcn registry theme is finalizer-owned, but the component recipes and
+preview shots are first-class, agent-authored language artifacts. They should
+make the shadcn preview feel designed, not merely token-mapped.
+
+Create `/katagami/shadcn/{slug}/components.md` with:
+
+- `# {Language Name} shadcn/ui Components`
+- `## Intent`
+- `## Required primitives`
+- `## Token cues`
+- `## Visual character to preserve`
+- `## Signature component recipes`
+- `## Preview shots`
+- `## Implementation contract`
+
+The recipes must cover `button`, `card`, `input`, `textarea`, `select`,
+`dialog`, `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`,
+`slider`, `tooltip`, `dropdown-menu`, and `table`. They must translate the
+language's actual `visual_character`, `signature_patterns`, surfaces, borders,
+density, focus, and motion into shadcn component usage.
+
+Create `/katagami/shadcn/{slug}/preview-shots.json` with artifact
+`katagami:shadcn-preview-shots`, version `preview-shots-v1`, at least three
+shots (`application-shell`, `detail-editor`, `data-operations`), and a
+`componentRecipes` array. Each shot must name the shadcn primitives used,
+composition, must-show states, and avoid rules.
+
+```python
+component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
+temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
+    'shadcn_component_spec_file_id': component_result['file_id'],
+    'shadcn_component_spec_format_version': 'component-recipes-v1',
+    'shadcn_component_spec_manifest': json.dumps({
+        'artifact': 'katagami:shadcn-component-recipes',
+        'version': 'component-recipes-v1',
+        'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table'],
+        'shots': ['application-shell', 'detail-editor', 'data-operations']
+    }, ensure_ascii=False)
+})
+
+shots_result = temper.write('/katagami/shadcn/' + slug + '/preview-shots.json', json.dumps(preview_shots, ensure_ascii=False, indent=2))
+temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
+    'shadcn_preview_shots_file_id': shots_result['file_id'],
+    'shadcn_preview_shots_format_version': 'preview-shots-v1',
+    'shadcn_preview_shots_manifest': json.dumps({
+        'artifact': 'katagami:shadcn-preview-shots',
+        'version': 'preview-shots-v1',
+        'shotIds': ['application-shell', 'detail-editor', 'data-operations']
+    }, ensure_ascii=False)
+})
+```
+
+The deterministic shadcn/ui registry theme is still finalizer-owned. Do not
+hand-write or attach `AttachShadcnExport` during synthesis; keep the native
+Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
+`/katagami/shadcn/{slug}/registry-theme.json`.
 
 ### Final Tool Call
 

@@ -1,5 +1,11 @@
 import { ChevronRight } from "lucide-react";
 import { parseJson } from "@/lib/odata";
+import {
+  buildShadcnRegistryTheme,
+  shadcnCssBlock,
+  shadcnThemeToJson,
+  shadcnUsageMarkdown,
+} from "@/lib/shadcn-export";
 import { SpecActions } from "./spec-actions";
 
 export interface SpecPanelProps {
@@ -15,8 +21,21 @@ export interface SpecPanelProps {
   generativeCanvas?: string;
   designMdFileId?: string;
   designMdLintResult?: string;
+  shadcnExportFileId?: string;
+  shadcnExportFormatVersion?: string;
+  shadcnExportManifest?: string;
+  shadcnComponentSpecFileId?: string;
+  shadcnComponentSpecManifest?: string;
+  shadcnPreviewShotsFileId?: string;
+  shadcnPreviewShotsManifest?: string;
   hasDesignMd?: boolean;
   hasValidDesignMd?: boolean;
+  hasShadcnExport?: boolean;
+  shadcnExportVerified?: boolean;
+  hasShadcnComponentSpec?: boolean;
+  shadcnComponentSpecVerified?: boolean;
+  hasShadcnPreviewShots?: boolean;
+  shadcnPreviewShotsVerified?: boolean;
   showActions?: boolean;
 }
 
@@ -1087,6 +1106,18 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
     renderKvSection(rul, lines);
   }
 
+  lines.push(
+    shadcnUsageMarkdown(
+      buildShadcnRegistryTheme({
+        languageId: props.languageId,
+        name: props.name,
+        slug: props.slug,
+        tokens: tok,
+      }),
+    ).trimEnd(),
+    "",
+  );
+
   if (gui) {
     const dos = toStringArray(gui.do ?? gui.dos);
     const donts = toStringArray(gui.dont ?? gui.donts);
@@ -1118,6 +1149,28 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
 }
 
 export const specToMarkdown = katagamiSpecToMarkdown;
+
+export function shadcnThemeJson(props: SpecPanelProps): string {
+  return shadcnThemeToJson(
+    buildShadcnRegistryTheme({
+      languageId: props.languageId,
+      name: props.name,
+      slug: props.slug,
+      tokens: props.tokens,
+    }),
+  );
+}
+
+export function shadcnThemeCss(props: SpecPanelProps): string {
+  return shadcnCssBlock(
+    buildShadcnRegistryTheme({
+      languageId: props.languageId,
+      name: props.name,
+      slug: props.slug,
+      tokens: props.tokens,
+    }),
+  );
+}
 
 // ── Accordion row ──────────────────────────────────────────────────
 
@@ -1167,6 +1220,7 @@ export function SpecPanel(props: SpecPanelProps) {
 
   const katagamiMarkdown = katagamiSpecToMarkdown(props);
   const designMd = designMdToMarkdown(props);
+  const shadcnJson = shadcnThemeJson(props);
 
   return (
     <div className="relative">
@@ -1176,6 +1230,7 @@ export function SpecPanel(props: SpecPanelProps) {
             languageId={props.languageId}
             katagamiSpec={katagamiMarkdown}
             designMd={designMd}
+            shadcnTheme={shadcnJson}
             slug={props.slug}
           />
         </div>
@@ -1212,6 +1267,9 @@ export function SpecPanel(props: SpecPanelProps) {
         </Section>
         <Section label="DESIGN.md" color="sumire">
           <SpecMarkdownView markdown={designMd} />
+        </Section>
+        <Section label="shadcn/ui theme" color="salad">
+          <SpecMarkdownView markdown={`\`\`\`json\n${shadcnJson}\`\`\``} />
         </Section>
       </div>
     </div>

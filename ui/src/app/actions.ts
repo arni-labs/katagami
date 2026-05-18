@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDesignLanguage } from "@/lib/odata";
-import { deleteEntity, dispatchAction } from "@/lib/odata-mutations";
+import { createEntity, deleteEntity, dispatchAction } from "@/lib/odata-mutations";
 import {
   assertOwner,
   grantOwnerSession,
@@ -11,13 +11,34 @@ import {
   revokeOwnerSession,
 } from "@/lib/owner";
 
+const OWNER_ARCHIVE_NOTE = "Archived from the owner gallery controls.";
+const OWNER_REVIEW_NOTE = "Sent back to review from owner controls.";
+const OWNER_TASTE_ACCEPT_NOTE = "Accepted from owner taste review.";
+const OWNER_TASTE_REJECT_NOTE = "Rejected from owner taste review.";
+
 export async function deleteLanguage(id: string): Promise<void> {
   await assertOwner();
   const lang = await getDesignLanguage(id);
-  if (lang.status === "Published") {
-    await dispatchAction("DesignLanguages", id, "Archive", {});
-  } else {
-    await deleteEntity("DesignLanguages", id);
+  const status = lang.status ?? lang.fields?.Status;
+  if (status !== "Archived") {
+    await dispatchAction("DesignLanguages", id, "Archive", {
+      curator_notes: OWNER_ARCHIVE_NOTE,
+    });
+  }
+  revalidatePath("/");
+  revalidatePath(`/language/${id}`);
+}
+
+export async function sendLanguageToReview(id: string): Promise<void> {
+  await assertOwner();
+  const lang = await getDesignLanguage(id);
+  const status = lang.status ?? lang.fields?.Status;
+  if (status === "Published") {
+    await dispatchAction("DesignLanguages", id, "Revise", {
+      curator_notes: OWNER_REVIEW_NOTE,
+    });
+  } else if (status !== "UnderReview") {
+    throw new Error("Only published languages can be sent back to review.");
   }
   revalidatePath("/");
   revalidatePath(`/language/${id}`);
@@ -51,6 +72,34 @@ export async function deleteTaxonomy(id: string): Promise<void> {
   await assertOwner();
   await deleteEntity("Taxonomies", id);
   revalidatePath("/taxonomy");
+}
+
+export async function queueTasteDistillation(): Promise<void> {
+  await assertOwner();
+  const job = await createEntity("CurationJobs");
+  await dispatchAction("CurationJobs", job.entity_id, "ConfigureAndSubmit", {
+    job_type: "taste_distillation",
+    input: JSON.stringify({ limit: 100 }),
+    completion_contract: "typed-v1",
+    inline_job_docs: true,
+  });
+  revalidatePath("/owner");
+}
+
+export async function acceptTasteRule(id: string): Promise<void> {
+  await assertOwner();
+  await dispatchAction("TasteRules", id, "Accept", {
+    curator_notes: OWNER_TASTE_ACCEPT_NOTE,
+  });
+  revalidatePath("/owner");
+}
+
+export async function rejectTasteRule(id: string): Promise<void> {
+  await assertOwner();
+  await dispatchAction("TasteRules", id, "Reject", {
+    curator_notes: OWNER_TASTE_REJECT_NOTE,
+  });
+  revalidatePath("/owner");
 }
 
 export async function unlockOwnerMode(formData: FormData): Promise<void> {

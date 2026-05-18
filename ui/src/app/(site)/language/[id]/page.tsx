@@ -6,12 +6,14 @@ import { getDesignLanguage } from "@/lib/odata";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
+  shadcnThemeJson,
   SpecPanel,
 } from "@/components/spec-panel";
 import { SpecActions } from "@/components/spec-actions";
 import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
+import { ShadcnPreview } from "@/components/shadcn-preview";
 import { PageHero, Marker } from "@/components/page-hero";
 import {
   StickyNote,
@@ -101,11 +103,25 @@ export default async function LanguageDetailPage({
     generativeCanvas: f.generative_canvas,
     designMdFileId: f.design_md_file_id,
     designMdLintResult: f.design_md_lint_result,
+    shadcnExportFileId: f.shadcn_export_file_id,
+    shadcnExportFormatVersion: f.shadcn_export_format_version,
+    shadcnExportManifest: f.shadcn_export_manifest,
+    shadcnComponentSpecFileId: f.shadcn_component_spec_file_id,
+    shadcnComponentSpecManifest: f.shadcn_component_spec_manifest,
+    shadcnPreviewShotsFileId: f.shadcn_preview_shots_file_id,
+    shadcnPreviewShotsManifest: f.shadcn_preview_shots_manifest,
     hasDesignMd: lang.booleans.has_design_md,
     hasValidDesignMd: lang.booleans.has_valid_design_md,
+    hasShadcnExport: lang.booleans.has_shadcn_export,
+    shadcnExportVerified: lang.booleans.shadcn_export_verified,
+    hasShadcnComponentSpec: lang.booleans.has_shadcn_component_spec,
+    shadcnComponentSpecVerified: lang.booleans.shadcn_component_spec_verified,
+    hasShadcnPreviewShots: lang.booleans.has_shadcn_preview_shots,
+    shadcnPreviewShotsVerified: lang.booleans.shadcn_preview_shots_verified,
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
+  const shadcnTheme = shadcnThemeJson(specProps);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
@@ -148,6 +164,7 @@ export default async function LanguageDetailPage({
         languageId={id}
         katagamiSpec={katagamiMarkdown}
         designMd={designMd}
+        shadcnTheme={shadcnTheme}
         slug={f.slug}
         variant="hero"
       />
@@ -226,6 +243,25 @@ export default async function LanguageDetailPage({
               generativeCanvas={f.generative_canvas}
               compact
             />
+          </section>
+
+          <section className="order-4">
+            <SectionHeading eyebrow="shadcn/ui" eyebrowColor="teal">
+              <Marker color="teal">component theme</Marker>
+            </SectionHeading>
+            <StickyNote tint="teal" className="p-4 sm:p-5">
+              <ShadcnPreview
+                languageId={id}
+                languageName={name}
+                slug={f.slug}
+                tokensRaw={f.tokens}
+                philosophyRaw={f.philosophy}
+                rulesRaw={f.rules}
+                layoutRaw={f.layout_principles}
+                guidanceRaw={f.guidance}
+                compact
+              />
+            </StickyNote>
           </section>
         </div>
       </div>

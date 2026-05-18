@@ -1,6 +1,14 @@
-const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
-const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
-const API_KEY = process.env.TEMPER_API_KEY || "";
+function cleanEnv(value: string | undefined, fallback: string): string {
+  const cleaned = (value ?? fallback).replace(/\\n/g, "").trim();
+  return cleaned || fallback;
+}
+
+const API_BASE = cleanEnv(
+  process.env.NEXT_PUBLIC_TEMPER_API_URL,
+  "http://localhost:3500",
+);
+const TENANT = cleanEnv(process.env.NEXT_PUBLIC_TEMPER_TENANT, "default");
+const API_KEY = cleanEnv(process.env.TEMPER_API_KEY, "");
 const FILE_PROXY_CACHE_VERSION = "asset-cdn-v2";
 
 interface ODataResponse<T> {
@@ -90,6 +98,15 @@ export interface DesignLanguage {
     design_md_asset_id?: string;
     design_md_lint_result?: string;
     design_md_format_version?: string;
+    shadcn_export_file_id?: string;
+    shadcn_export_format_version?: string;
+    shadcn_export_manifest?: string;
+    shadcn_component_spec_file_id?: string;
+    shadcn_component_spec_format_version?: string;
+    shadcn_component_spec_manifest?: string;
+    shadcn_preview_shots_file_id?: string;
+    shadcn_preview_shots_format_version?: string;
+    shadcn_preview_shots_manifest?: string;
     embodiment_file_id?: string;
     embodiment_asset_url?: string;
     embodiment_asset_id?: string;
@@ -156,6 +173,12 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "has_valid_design_md",
   "design_md_verified",
   "has_published_assets",
+  "has_shadcn_export",
+  "shadcn_export_verified",
+  "has_shadcn_component_spec",
+  "shadcn_component_spec_verified",
+  "has_shadcn_preview_shots",
+  "shadcn_preview_shots_verified",
   "CreatedAt",
   "UpdatedAt",
   "PublishedAt",
@@ -175,6 +198,12 @@ const FLAT_BOOLEAN_KEYS = new Set([
   "has_valid_design_md",
   "design_md_verified",
   "has_published_assets",
+  "has_shadcn_export",
+  "shadcn_export_verified",
+  "has_shadcn_component_spec",
+  "shadcn_component_spec_verified",
+  "has_shadcn_preview_shots",
+  "shadcn_preview_shots_verified",
   "quality_review_passed",
 ]);
 // Counters used for sort/badge/usage:
@@ -260,26 +289,67 @@ function parseODataEntityId(value: unknown): string | undefined {
   return match?.[1];
 }
 
+function parseEntitySetId(
+  value: unknown,
+  entitySet: string,
+): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const escaped = entitySet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = value.match(new RegExp(`${escaped}\\('([^']+)'\\)`));
+  return match?.[1];
+}
+
 // OData defaults to a finite page when no $top is given. Ask for a large page
 // and still follow @odata.nextLink so the gallery cannot silently drop rows as
 // the catalog grows.
 const DESIGN_LANGUAGE_PAGE_SIZE = 500;
+const DESIGN_LANGUAGE_LIFECYCLE_STATUSES = [
+  "Draft",
+  "UnderReview",
+  "Published",
+  "Archived",
+] as const;
 
 export async function listDesignLanguages(
   filter?: string,
   orderby?: string,
   select?: readonly string[],
 ): Promise<DesignLanguage[]> {
+  if (!filter) {
+    const rowsByStatus = await Promise.all(
+      DESIGN_LANGUAGE_LIFECYCLE_STATUSES.map((status) =>
+        collectDesignLanguageRows(`Status eq '${status}'`, orderby, select),
+      ),
+    );
+    const languages = new Map<string, DesignLanguage>();
+    for (const rows of rowsByStatus) {
+      for (const row of rows) {
+        const language = normalizeDesignLanguageRow(row);
+        languages.set(language.entity_id, language);
+      }
+    }
+    return Array.from(languages.values());
+  }
+
+  return (await collectDesignLanguageRows(filter, orderby, select)).map(
+    normalizeDesignLanguageRow,
+  );
+}
+
+async function collectDesignLanguageRows(
+  filter: string,
+  orderby?: string,
+  select?: readonly string[],
+): Promise<Record<string, unknown>[]> {
   const params = new URLSearchParams();
-  if (filter) params.set("$filter", filter);
+  params.set("$filter", filter);
   if (orderby) params.set("$orderby", orderby);
   if (select && select.length > 0) params.set("$select", select.join(","));
   params.set("$top", String(DESIGN_LANGUAGE_PAGE_SIZE));
   const q = params.toString();
-  const rows = await collectODataPages<Record<string, unknown>>(
+  return collectODataPages<Record<string, unknown>>(
     `DesignLanguages${q ? `?${q}` : ""}`,
   );
-  return rows.map(normalizeDesignLanguageRow);
 }
 
 export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
@@ -330,6 +400,109 @@ export async function listTaxonomies(
     }
   }
   return rows.filter((row) => row.fields.name?.trim());
+}
+
+// ── Taste Rules ──
+
+export type TasteRuleStatus =
+  | "Proposed"
+  | "Accepted"
+  | "Rejected"
+  | "Superseded"
+  | string;
+
+export interface TasteRule {
+  entity_id: string;
+  status: TasteRuleStatus;
+  fields: {
+    Id?: string;
+    Status?: string;
+    State?: string;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    title?: string;
+    Title?: string;
+    polarity?: string;
+    Polarity?: string;
+    pattern_type?: string;
+    PatternType?: string;
+    rule_text?: string;
+    RuleText?: string;
+    rationale?: string;
+    Rationale?: string;
+    evidence_language_ids?: string;
+    EvidenceLanguageIds?: string;
+    comparator_language_ids?: string;
+    ComparatorLanguageIds?: string;
+    confidence?: string;
+    Confidence?: string;
+    source_job_id?: string;
+    SourceJobId?: string;
+    report_file_id?: string;
+    ReportFileId?: string;
+    evidence_fingerprint?: string;
+    EvidenceFingerprint?: string;
+    curator_notes?: string;
+    CuratorNotes?: string;
+    superseded_by_rule_id?: string;
+    SupersededByRuleId?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+const TASTE_RULE_PAGE_SIZE = 200;
+
+export async function listTasteRules(
+  filter?: string,
+): Promise<TasteRule[]> {
+  const params = new URLSearchParams();
+  if (filter) params.set("$filter", filter);
+  params.set("$top", String(TASTE_RULE_PAGE_SIZE));
+  const q = params.toString();
+  const rows = await collectODataPages<Record<string, unknown>>(
+    `TasteRules${q ? `?${q}` : ""}`,
+  );
+  return rows.map(normalizeTasteRuleRow);
+}
+
+function normalizeTasteRuleRow(raw: Record<string, unknown>): TasteRule {
+  if (raw && typeof raw.fields === "object" && raw.fields !== null) {
+    const row = raw as unknown as TasteRule;
+    const status = row.status ?? row.fields.State ?? row.fields.Status ?? "";
+    return { ...row, status };
+  }
+
+  const fields: Record<string, string | undefined> = {};
+  let entityId = "";
+  let status = "";
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === "@odata.id") {
+      entityId = parseEntitySetId(value, "TasteRules") ?? entityId;
+      continue;
+    }
+    if (key === "@odata.context" || key === "@odata.type") {
+      continue;
+    }
+    if (key === "entity_id" && typeof value === "string") {
+      entityId = value;
+      continue;
+    }
+    if ((key === "status" || key === "State" || key === "Status") && typeof value === "string") {
+      status = value;
+      fields[key === "status" ? "State" : key] = value;
+      continue;
+    }
+    if (typeof value === "string") {
+      fields[key] = value;
+    }
+  }
+
+  entityId = fields.Id ?? entityId;
+  return {
+    entity_id: entityId,
+    status,
+    fields,
+  };
 }
 
 // ── Files (embodiment HTML) ──

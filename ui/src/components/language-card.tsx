@@ -127,7 +127,7 @@ export function LanguageCard({
 
   return (
     <div
-      className="group relative min-w-0"
+      className="group relative min-w-0 max-w-full"
       style={cardVisibilityStyle}
     >
       <Link href={`/language/${id}`} prefetch={false} className="block h-full">
@@ -137,6 +137,7 @@ export function LanguageCard({
         <LanguageCardOwnerControls
           id={id}
           name={name}
+          status={lang.status}
           featured={featured}
           displayOrder={displayOrder(lang)}
         />
@@ -153,7 +154,7 @@ interface FullCardProps {
 
 const cardVisibilityStyle = {
   contentVisibility: "auto",
-  containIntrinsicSize: "430px",
+  containIntrinsicBlockSize: "430px",
 } as CSSProperties;
 
 function compactSummary(value?: string): string | undefined {
@@ -200,7 +201,7 @@ function FullCard({
 
   return (
     <article
-      className="sticker-card relative flex h-full min-h-[430px] flex-col overflow-hidden"
+      className="sticker-card relative flex h-full min-h-[430px] w-full max-w-full flex-col overflow-hidden"
       style={{
         background: `color-mix(in srgb, ${stickyTint} 7%, var(--paper-tint-base))`,
       }}

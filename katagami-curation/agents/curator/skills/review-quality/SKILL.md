@@ -1,6 +1,6 @@
 # Review Quality
 
-Review and FIX design languages before publish. Do not write reports — read the spec, validate the DESIGN.md projection, fix any blocking spec/export issues, evaluate the embodiment, then regenerate the HTML fixing every issue.
+Review and FIX design languages before publish. Do not write reports — read the spec, validate the DESIGN.md projection, author/verify first-class shadcn/ui component recipes and preview shots, fix any blocking spec/export issues, evaluate the embodiment, then regenerate the HTML fixing every issue.
 
 ## When to Use
 
@@ -12,6 +12,14 @@ Read the knowledge files in your workspace:
 - `/system/knowledge/design-principles.md` — embodiment standards
 - `/system/knowledge/quality-standards.md` — quality thresholds
 - `/system/knowledge/feedback-log.md` — human feedback (may contain specific notes about target languages)
+
+Load accepted taste rules before judging any language:
+```python
+accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
+```
+Use only Accepted rules. Positive rules describe patterns to preserve or
+amplify; negative rules describe archive-derived anti-patterns to avoid.
+Proposed, Rejected, and Superseded rules must have no effect on quality review.
 
 ## Process
 
@@ -57,10 +65,10 @@ For each language specified in the job input (or ALL languages if none specified
        return json.loads(value)
    ```
 3. **Read normalized fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id, thumbnail_file_id.
-4. **Fast path for already-reviewed languages**: If `bool_state(lang, 'quality_review_passed')` is true and both `field(lang, 'embodiment_file_id')` and `field(lang, 'thumbnail_file_id')` are present, first validate that the native spec fields are structurally coherent as described in the next step using `json_field(...)`. If the spec is coherent, do not regenerate the embodiment or thumbnail just to refresh derived artifacts. Do not call `temper.read` for the embodiment path, do not resolve TemperFS paths, do not run Playwright, and do not regenerate DESIGN.md on this path. Add the language to `fixed_ids` and continue to the next language. The CurationJob finalizer will verify the existing files by file ID, generate/verify deterministic DESIGN.md when needed, attach public assets, and publish through guarded internal actions.
+4. **Fast path for already-reviewed languages**: If `bool_state(lang, 'quality_review_passed')` is true and both `field(lang, 'embodiment_file_id')` and `field(lang, 'thumbnail_file_id')` are present, first validate that the native spec fields are structurally coherent as described in the next step using `json_field(...)`. If the spec is coherent, do not regenerate the embodiment or thumbnail just to refresh derived artifacts. Do not call `temper.read` for the embodiment path, do not resolve TemperFS paths, do not run Playwright, and do not regenerate DESIGN.md on this path. Add the language to `fixed_ids` and continue to the next language. The CurationJob finalizer will verify the existing files by file ID, generate/verify deterministic DESIGN.md and shadcn registry theme when needed, generate/verify missing shadcn component artifacts, attach public assets, and publish through guarded internal actions.
 
    If the spec is not coherent, do **not** take the fast path and do **not** fail merely because a nested token subsection is incomplete. Continue into normal repair. Partial drift such as missing `tokens.typography.heading_font`, `body_font`, `mono_font`, `google_fonts_url`, or sparse `tokens.surfaces`/`borders`/`motion` is repairable in this job when the language still has enough identity in `name`, `description`, `philosophy`, `rules`, `layout_principles`, `guidance`, or its existing embodiment. If the language is currently `Published`, first call `temper.action('DesignLanguages', lang_id, 'Revise', {'curator_notes': 'Repairing incomplete native spec before quality finalization'})`, then repair with `SetTokens` or `SetSpec`; the finalizer will publish after validation.
-5. **Published artifact review path**: If `lang['status'] == 'Published'`, treat the job as a review of existing artifacts unless you have found a concrete source-spec or embodiment defect that requires repair. A published language must not call `AttachDesignMd`, `AttachEmbodiment`, or `AttachThumbnail` directly. Those actions invalidate publish-required verification booleans and are not valid from `Published`. If the language has coherent native spec fields plus `embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`, and a clean `design_md_lint_result`, add the language to `fixed_ids` and continue; the finalizer will verify by file ID, mark quality, attach public assets, and leave it published. Only when an actual repair is required should you first call `Revise`, then use the normal Draft/UnderReview repair flow.
+5. **Published artifact review path**: If `lang['status'] == 'Published'`, treat the job as a review of existing artifacts unless you have found a concrete source-spec or embodiment defect that requires repair. A published language must not call `AttachDesignMd`, `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnComponentSpec`, or `AttachShadcnPreviewShots` directly. Those actions invalidate publish-required verification booleans and are not valid from `Published`. If the language has coherent native spec fields plus `embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`, and a clean `design_md_lint_result`, add the language to `fixed_ids` and continue; the finalizer will verify by file ID, mark quality, attach missing shadcn artifacts through the governed revise flow if needed, attach public assets, and leave it published. Only when an actual repair is required should you first call `Revise`, then use the normal Draft/UnderReview repair flow.
 6. **Artifact handoff path for partially completed retries**: If `quality_review_passed` is false but the language is already `Draft` or `UnderReview` and has all three artifact fields (`embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`) plus a `design_md_lint_result` whose summary has `errors == 0` and `warnings == 0`, validate that the native spec is structurally coherent and that the existing embodiment file is a valid browser artifact before taking the handoff. Resolve `embodiment_file_id` through `temper.get('Files', embodiment_file_id)`, read its `Path` from its `WorkspaceId`, and reject the handoff if `embodiment_format == 'html'` and the file body lacks `<html` or `<!doctype`. SVG recovery placeholders, JSON errors, tiny stubs, or any non-HTML body are not valid embodiments for HTML languages. If the file is invalid, continue into normal repair and regenerate the embodiment and thumbnail. If both the spec and file body are coherent, do not regenerate the embodiment, thumbnail, or DESIGN.md just to repeat work from an earlier failed retry. Add the language to `fixed_ids` and continue. The finalizer will read the referenced files, verify thumbnails/embodiment/DESIGN.md by file ID, mark quality, attach public assets, and publish through guarded internal actions.
 7. **Read the current embodiment when it exists**: If `embodiment_file_id` is present, resolve the `Files` entity and read its actual `Path` with its `WorkspaceId`; only fall back to `temper.read('/katagami/embodiments/' + slug + '.html')` when file metadata is unavailable. If it is missing, unreadable, or invalid for its `embodiment_format`, do not fail solely for that reason. Treat the embodiment as absent, validate the spec, and regenerate a fresh self-contained HTML embodiment from the Katagami fields.
 8. **MANDATORY: Validate the native Katagami spec before evaluating the embodiment.** Parse each JSON field:
@@ -214,11 +222,64 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
    })
    ```
 14. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish. This only applies after a language is in `Draft` or `UnderReview`; if the target is still `Published`, go back to the published artifact review path and do not re-attach DESIGN.md.
-15. **Mark reviewed after all artifacts are attached. Do not publish directly and do not archive.**
+15. **Generate first-class shadcn/ui component artifacts.** The registry theme
+    is deterministic and finalizer-owned, but `components.md` and
+    `preview-shots.json` are agent-authored quality artifacts. If the language is
+    `Draft` or `UnderReview`, write:
+    - `/katagami/shadcn/{slug}/components.md`
+    - `/katagami/shadcn/{slug}/preview-shots.json`
+
+    `components.md` must include `shadcn/ui Components`, `Signature component
+    recipes`, `Preview shots`, and concrete recipes for `button`, `card`,
+    `input`, `textarea`, `select`, `dialog`, `sheet`, `tabs`, `badge`,
+    `separator`, `checkbox`, `switch`, `slider`, `tooltip`, `dropdown-menu`,
+    and `table`. It must translate the language's actual visual character,
+    signature patterns, surfaces, borders, density, focus, and motion into
+    shadcn primitive usage.
+
+    `preview-shots.json` must use artifact
+    `katagami:shadcn-preview-shots`, version `preview-shots-v1`, include at
+    least three shots (`application-shell`, `detail-editor`,
+    `data-operations`), and include `componentRecipes`.
+
+    ```python
+    component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
+    temper.action('DesignLanguages', lang_id, 'AttachShadcnComponentSpec', {
+        'shadcn_component_spec_file_id': component_result['file_id'],
+        'shadcn_component_spec_format_version': 'component-recipes-v1',
+        'shadcn_component_spec_manifest': json.dumps({
+            'artifact': 'katagami:shadcn-component-recipes',
+            'version': 'component-recipes-v1',
+            'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table'],
+            'shots': ['application-shell', 'detail-editor', 'data-operations']
+        }, ensure_ascii=False)
+    })
+
+    shots_result = temper.write('/katagami/shadcn/' + slug + '/preview-shots.json', json.dumps(preview_shots, ensure_ascii=False, indent=2))
+    temper.action('DesignLanguages', lang_id, 'AttachShadcnPreviewShots', {
+        'shadcn_preview_shots_file_id': shots_result['file_id'],
+        'shadcn_preview_shots_format_version': 'preview-shots-v1',
+        'shadcn_preview_shots_manifest': json.dumps({
+            'artifact': 'katagami:shadcn-preview-shots',
+            'version': 'preview-shots-v1',
+            'shotIds': ['application-shell', 'detail-editor', 'data-operations']
+        }, ensure_ascii=False)
+    })
+    ```
+
+    Do not hand-write or attach `AttachShadcnExport`. The CurationJob finalizer
+    deterministically derives `/katagami/shadcn/{slug}/registry-theme.json`
+    from the verified Katagami tokens, attaches it with `AttachShadcnExport`,
+    and marks `VerifyShadcnExport`. Your job is to keep native tokens concrete
+    enough to project into shadcn semantic variables and make the component
+    recipes good enough for real app UI.
+16. **Mark reviewed after all artifacts are attached. Do not publish directly and do not archive.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
-    files, rejects base64 text thumbnail payloads, marks verified fields through
-    internal actions, marks quality as passed, and publishes only if the
-    entity/file world is actually valid.
+    files, derives and verifies the shadcn/ui registry theme, verifies
+    agent-authored shadcn component recipes and preview-shot manifests, rejects
+    base64 text thumbnail payloads, marks verified fields through internal
+    actions, marks quality as passed, and publishes only if the entity/file
+    world is actually valid.
     Never call `Archive` on a `DesignLanguage` during `quality_review` or public
     asset backfill. If a language cannot pass, fail the job with a concrete
     `error_message` so the pipeline can repair it through the normal governed
@@ -226,7 +287,7 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
    ```
-16. **After ALL languages are reviewed and ready for finalizer publish:**
+17. **After ALL languages are reviewed and ready for finalizer publish:**
    ```python
    organize_input = json.dumps({
        'language_ids': fixed_ids,

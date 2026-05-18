@@ -1,6 +1,7 @@
 use temper_wasm_sdk::prelude::*;
 
 const DEFAULT_TOOLS_ENABLED: &str = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch";
+const DOC_WORKSPACE_ID: &str = "os-app-docs";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct JobTemplate {
@@ -640,6 +641,19 @@ fn load_doc_file(
     path: &str,
     inline_content: bool,
 ) -> Option<LoadedDoc> {
+    if let Some(file_id) = resolve_doc_file_id(ctx, api_url, headers, path) {
+        let content = if inline_content {
+            load_file_content(ctx, api_url, headers, &file_id)?
+        } else {
+            None
+        };
+        return Some(LoadedDoc {
+            path: path.to_string(),
+            workspace_id: DOC_WORKSPACE_ID.to_string(),
+            content,
+        });
+    }
+
     let filter = format!("path eq '{}'", odata_string_literal(path));
     let resp = ctx
         .http_call(
@@ -672,18 +686,7 @@ fn load_doc_file(
     let file_id = json_field_str(item, &["Id", "entity_id"])?;
     let workspace_id = json_field_str(item, &["WorkspaceId", "workspace_id"]).unwrap_or_default();
     let content = if inline_content {
-        let content_resp = ctx
-            .http_call(
-                "GET",
-                &format!("{api_url}/tdata/Files('{file_id}')/$value"),
-                headers,
-                "",
-            )
-            .ok()?;
-        if content_resp.status != 200 || content_resp.body.trim().is_empty() {
-            return None;
-        }
-        Some(content_resp.body)
+        load_file_content(ctx, api_url, headers, &file_id)?
     } else {
         None
     };
@@ -693,6 +696,68 @@ fn load_doc_file(
         workspace_id,
         content,
     })
+}
+
+fn resolve_doc_file_id(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Option<String> {
+    let resp = ctx
+        .http_call(
+            "POST",
+            &format!(
+                "{api_url}/tdata/Workspaces('{DOC_WORKSPACE_ID}')/Temper.ResolvePath?await_integration=true"
+            ),
+            headers,
+            &json!({"path": path}).to_string(),
+        )
+        .ok()?;
+    if resp.status != 200 {
+        return None;
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).ok()?;
+    file_id_from_workspace_response(&parsed, path)
+}
+
+fn file_id_from_workspace_response(value: &serde_json::Value, path: &str) -> Option<String> {
+    let resolved_path = value
+        .get("fields")
+        .and_then(|fields| fields.get("last_file_path"))
+        .or_else(|| value.get("last_file_path"))
+        .and_then(|value| value.as_str())?;
+    if resolved_path != path {
+        return None;
+    }
+
+    value
+        .get("fields")
+        .and_then(|fields| fields.get("last_file_id"))
+        .or_else(|| value.get("last_file_id"))
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
+}
+
+fn load_file_content(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    file_id: &str,
+) -> Option<Option<String>> {
+    let content_resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+            headers,
+            "",
+        )
+        .ok()?;
+    if content_resp.status != 200 || content_resp.body.trim().is_empty() {
+        return None;
+    }
+    Some(Some(content_resp.body))
 }
 
 fn json_field_str(item: &serde_json::Value, keys: &[&str]) -> Option<String> {
@@ -900,9 +965,9 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        config_bool, field_bool, instruction_path_candidates, knowledge_read_specs_for_skill,
-        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
-        temper_read_command, LoadedDoc,
+        config_bool, field_bool, file_id_from_workspace_response, instruction_path_candidates,
+        knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
+        render_loaded_reference_block, temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1018,5 +1083,45 @@ mod tests {
         };
 
         assert!(render_loaded_reference_block(Some(&doc), &[], true).contains("# Synthesize"));
+    }
+
+    #[test]
+    fn workspace_response_file_id_prefers_current_resolved_file() {
+        assert_eq!(
+            file_id_from_workspace_response(
+                &json!({
+                    "fields": {
+                        "last_file_id": "fl-current",
+                        "last_file_path": "/docs/SKILL.md"
+                    }
+                }),
+                "/docs/SKILL.md"
+            ),
+            Some("fl-current".to_string())
+        );
+        assert_eq!(
+            file_id_from_workspace_response(
+                &json!({"last_file_id": "fl-root", "last_file_path": "/docs/SKILL.md"}),
+                "/docs/SKILL.md"
+            ),
+            Some("fl-root".to_string())
+        );
+    }
+
+    #[test]
+    fn workspace_response_file_id_ignores_stale_workspace_state() {
+        assert_eq!(
+            file_id_from_workspace_response(
+                &json!({
+                    "fields": {
+                        "last_file_id": "fl-stale",
+                        "last_file_path": "/agents/curator/skills/review-quality/SKILL.md",
+                        "error_message": "file not found: /system/knowledge/design-principles.md"
+                    }
+                }),
+                "/system/knowledge/design-principles.md"
+            ),
+            None
+        );
     }
 }

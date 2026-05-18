@@ -17,6 +17,7 @@ class ThumbnailContractTests(unittest.TestCase):
     def test_design_language_tracks_thumbnail_attachment(self):
         self.assertIn("has_thumbnail", self.states)
         self.assertIn("thumbnail_verified", self.states)
+        self.assertIn("has_published_assets", self.states)
 
         attach = self.actions["AttachThumbnail"]
         self.assertEqual(attach["from"], ["Draft", "UnderReview"])
@@ -24,6 +25,9 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertTrue(self._sets_bool("AttachThumbnail", "has_thumbnail", "true"))
         self.assertTrue(
             self._sets_bool("AttachThumbnail", "thumbnail_verified", "false")
+        )
+        self.assertTrue(
+            self._sets_bool("AttachThumbnail", "has_published_assets", "false")
         )
 
         verify = self.actions["VerifyThumbnail"]
@@ -37,6 +41,12 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertEqual(attach_verified["from"], ["Draft", "UnderReview"])
         self.assertIn("Revise first", attach_verified["hint"])
 
+        assets = self.actions["AttachPublishedAssets"]
+        self.assertEqual(assets["from"], ["Draft", "UnderReview", "Published"])
+        self.assertTrue(
+            self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
+        )
+
         csdl = (self.commons_root / "specs" / "model.csdl.xml").read_text()
         self.assertIn('Property Name="ThumbnailFileId"', csdl)
         self.assertIn('Property Name="ThumbnailAssetId"', csdl)
@@ -48,6 +58,7 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn('Property Name="HasPublishedAssets"', csdl)
         self.assertIn('Property Name="HasThumbnail"', csdl)
         self.assertIn('Property Name="ThumbnailVerified"', csdl)
+        self.assertIn('Property Name="HasPublishedAssets"', csdl)
 
     def _effect_entries(self, action_name):
         effect = self.actions[action_name].get("effect", [])
@@ -91,11 +102,34 @@ class ThumbnailContractTests(unittest.TestCase):
             "has_published_assets",
         )
 
+    def test_archived_languages_have_governed_restore_path(self):
+        self.assertIn(
+            "Archived",
+            self.spec["automaton"]["allow_indefinite_states"],
+        )
+        archive = self.actions["Archive"]
+        self.assertEqual(archive["from"], ["Draft", "UnderReview", "Published"])
+        self.assertEqual(archive["to"], "Archived")
+        self.assertEqual(archive["params"], ["curator_notes"])
+        self.assertIn("governed restore path", archive["hint"])
+
+        restore = self.actions["Restore"]
+        self.assertEqual(restore["from"], ["Archived"])
+        self.assertEqual(restore["to"], "UnderReview")
+        self.assertEqual(restore["params"], ["curator_notes"])
+
+        invariants = {
+            invariant["name"]: invariant for invariant in self.spec["invariant"]
+        }
+        self.assertNotIn("ArchivedIsFinal", invariants)
+
     def test_submit_for_review_requires_thumbnail(self):
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
+        self.assertIn({"type": "is_true", "var": "embodiment_verified"}, guards)
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
         self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+        self.assertIn("finalizer-verified embodiment file", submit["hint"])
         self.assertIn("verified gallery thumbnail", submit["hint"])
 
     def test_quality_finalizer_gates_on_thumbnail(self):

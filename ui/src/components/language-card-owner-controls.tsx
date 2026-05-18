@@ -2,15 +2,18 @@
 
 import { DeleteLanguageButton } from "@/components/delete-language-button";
 import { FeaturedLanguageButton } from "@/components/featured-language-button";
+import { SendToReviewLanguageButton } from "@/components/send-to-review-language-button";
 
 export function LanguageCardOwnerControls({
   id,
   name,
+  status,
   featured,
   displayOrder,
 }: {
   id: string;
   name: string;
+  status: string;
   featured: boolean;
   displayOrder: number;
 }) {
@@ -38,6 +41,9 @@ export function LanguageCardOwnerControls({
         featured={featured}
         displayOrder={displayOrder}
       />
+      {status === "Published" ? (
+        <SendToReviewLanguageButton id={id} name={name} />
+      ) : null}
       <DeleteLanguageButton
         id={id}
         name={name}

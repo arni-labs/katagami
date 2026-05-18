@@ -77,6 +77,7 @@ class ReactionResolverTypeTests(unittest.TestCase):
             "CompleteOrganization",
             "CompleteRegeneration",
             "CompleteEvolution",
+            "CompleteTasteDistillation",
         ]:
             self.assertIn(name, actions)
             self.assertEqual(actions[name]["to"], "Finalizing")
@@ -99,6 +100,7 @@ class ReactionResolverTypeTests(unittest.TestCase):
                 "organize_taxonomy",
                 "regenerate_embodiment",
                 "evolve_language",
+                "taste_distillation",
             },
             job_types,
         )

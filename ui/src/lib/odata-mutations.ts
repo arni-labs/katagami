@@ -16,7 +16,7 @@ export async function dispatchAction(
   action: string,
   params: Record<string, string | number | boolean>,
 ): Promise<void> {
-  const namespaces = ["KatagamiCommons", "Katagami", "Temper"];
+  const namespaces = ["KatagamiCommons", "Katagami.Curation", "Katagami", "Temper"];
   let lastError = "";
   for (const namespace of namespaces) {
     const res = await fetch(
@@ -32,6 +32,29 @@ export async function dispatchAction(
     if (res.status !== 404) break;
   }
   throw new Error(lastError || `Action ${action} failed.`);
+}
+
+export async function createEntity(
+  entitySet: string,
+  fields: Record<string, string | number | boolean> = {},
+): Promise<{ entity_id: string } & Record<string, unknown>> {
+  const body = Object.keys(fields).length > 0 ? { fields } : {};
+  const res = await fetch(`${API_BASE}/tdata/${entitySet}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`Create ${entitySet} failed ${res.status}: ${await res.text()}`);
+  }
+  const created = (await res.json()) as { entity_id?: string } & Record<
+    string,
+    unknown
+  >;
+  if (!created.entity_id) {
+    throw new Error(`Create ${entitySet} did not return an entity_id.`);
+  }
+  return created as { entity_id: string } & Record<string, unknown>;
 }
 
 export async function deleteEntity(

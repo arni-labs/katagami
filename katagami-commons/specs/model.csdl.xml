@@ -32,6 +32,23 @@
         <Property Name="DesignMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="DesignMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="alpha" />
         <Property Name="DesignMdVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- shadcn/ui: generated registry theme projection for component-first apps -->
+        <Property Name="ShadcnExportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ShadcnExportFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="registry-theme-v1" />
+        <Property Name="ShadcnExportManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasShadcnExport" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnExportVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- shadcn/ui: first-class agent-authored component recipes and preview-shot manifests -->
+        <Property Name="ShadcnComponentSpecFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ShadcnComponentSpecFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="component-recipes-v1" />
+        <Property Name="ShadcnComponentSpecManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasShadcnComponentSpec" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnComponentSpecVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnPreviewShotsFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ShadcnPreviewShotsFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="preview-shots-v1" />
+        <Property Name="ShadcnPreviewShotsManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasShadcnPreviewShots" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnPreviewShotsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />

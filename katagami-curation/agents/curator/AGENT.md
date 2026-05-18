@@ -12,10 +12,11 @@ Read knowledge files before starting work:
 | Job Type | Skill | Purpose |
 |----------|-------|---------|
 | `source_search` | research-direction | Research design movements and index authoritative sources |
-| `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec, embodiment, and desktop thumbnail |
-| `quality_review` | review-quality | Validate DESIGN.md and fix embodiment HTML + desktop thumbnail against the spec |
+| `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec, embodiment, desktop thumbnail, and first-class shadcn/ui component artifacts |
+| `quality_review` | review-quality | Validate DESIGN.md, derive shadcn/ui export, author/verify shadcn/ui component recipes + preview shots, and fix embodiment HTML + desktop thumbnail against the spec |
 | `organize_taxonomy` | organize-taxonomy | Build and maintain the taxonomy classification system |
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
+| `taste_distillation` | taste-distillation | Propose taste rules from archived negative signals and featured positive signals |
 
 ## Tools
 
@@ -41,6 +42,7 @@ Monty REPL. The `sandbox.*` and `bash` tools are available for `synthesize`,
 - **DesignSources** — compact research references indexed from the web
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
+- **TasteRules** — human-approved positive/negative taste guidance distilled from archive and featured signals
 
 DesignLanguage IDs are Temper entity IDs. Never use a slug, movement name, or
 other human-readable key as `Id` when creating a DesignLanguage; slugs belong in
@@ -59,12 +61,16 @@ Workspace at `/katagami/`:
 - `/katagami/embodiments/{slug}.html` — embodiment files (self-contained HTML)
 - `/katagami/thumbnails/{slug}/desktop.jpg` — static desktop gallery thumbnails generated from verified embodiments
 - `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
+- `/katagami/shadcn/{slug}/registry-theme.json` — finalizer-generated shadcn/ui registry theme projections
+- `/katagami/shadcn/{slug}/components.md` — agent-authored shadcn/ui component recipes for this language
+- `/katagami/shadcn/{slug}/preview-shots.json` — agent-authored shadcn/ui preview-shot manifest for canonical component scenes
 - `/katagami/sources/{slug}.md` — deferred source archives, not the source-search hot path
 
-Use PawFS for governed artifacts: embodiments, DESIGN.md exports, published
-snapshots, and explicitly requested source archives. During `source_search`,
-store source title, URL, type, topics, summary, and short excerpts on
-DesignSource entities; do not write full fetched pages to PawFS.
+Use PawFS for governed artifacts: embodiments, DESIGN.md exports, shadcn/ui
+registry theme projections, shadcn/ui component recipes, shadcn/ui preview-shot
+manifests, published snapshots, and explicitly requested source archives. During
+`source_search`, store source title, URL, type, topics, summary, and short
+excerpts on DesignSource entities; do not write full fetched pages to PawFS.
 
 ## Error Recovery
 

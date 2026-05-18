@@ -69,6 +69,16 @@ type = "string"
 initial = "{}"
 
 [[state]]
+name = "taste_rule_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "report_file_id"
+type = "string"
+initial = ""
+
+[[state]]
 name = "progress_log"
 type = "string"
 initial = "[]"
@@ -155,6 +165,7 @@ effect = [{ type = "trigger", name = "build_session_message" }]
 name = "build_session_message"
 kind = "wasm"
 module = "build_session_message"
+timeout_secs = "300"
 on_failure = "Fail"
 
 [action.triggers.config]
@@ -178,6 +189,7 @@ effect = [{ type = "trigger", name = "build_session_message" }]
 name = "build_session_message"
 kind = "wasm"
 module = "build_session_message"
+timeout_secs = "300"
 on_failure = "Fail"
 
 [action.triggers.config]
@@ -229,7 +241,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -250,7 +262,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -290,7 +302,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -362,7 +374,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -410,7 +422,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -442,7 +454,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -463,7 +475,28 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
-on_failure = "Fail"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
+[[action]]
+name = "CompleteTasteDistillation"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["taste_rule_ids", "report_file_id", "output"]
+hint = "Taste distillation completed after creating proposed TasteRule records and an evidence report."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+# ADR-0046: inline trigger — migrated from [[integration]] below.
+# Post-parse expansion re-synthesizes the equivalent Integration so
+# the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
@@ -566,6 +599,7 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 name = "finalize_spawned_session"
 kind = "wasm"
 module = "finalize_spawned_session"
+timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
