@@ -41,6 +41,19 @@ Human-approved taste guidance distilled from the catalog. `Proposed` rules are
 created by `taste_distillation`; only `Accepted` rules are loaded by synthesis
 and quality-review jobs.
 
+## Natural Language Operations
+
+Operator and DM-facing agents should translate plain requests like "run taste
+distillation", "distill Katagami taste", "learn from archived languages",
+"derive anti-patterns", or "create suggested taste rules" into a
+`taste_distillation` `CurationJob`. The default input is `{"limit":100}` and the
+job must submit with `completion_contract = "typed-v1"` and
+`inline_job_docs = true`.
+
+This is an owner-reviewed learning loop: distillation creates `Proposed`
+TasteRules and an evidence report only. It must not accept rules automatically.
+The human owner reviews and accepts or rejects proposals from `/owner`.
+
 ## Agents
 
 ### Curator (`agents/curator/AGENT.md`)

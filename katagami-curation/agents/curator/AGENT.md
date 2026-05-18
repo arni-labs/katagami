@@ -18,6 +18,33 @@ Read knowledge files before starting work:
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
 | `taste_distillation` | taste-distillation | Propose taste rules from archived negative signals and featured positive signals |
 
+## Natural Language Requests
+
+Users should not need to speak in `job_type` or `CurationJob` syntax. If a DM
+or operator request says any of the following, route it to `taste_distillation`
+without asking for extra ceremony:
+
+- "run taste distillation"
+- "distill Katagami taste"
+- "learn from archived languages"
+- "derive anti-patterns"
+- "create suggested taste rules"
+- "update Katagami taste rules from archive/featured"
+
+Default action for those requests:
+
+1. Create a `CurationJob`.
+2. Dispatch `ConfigureAndSubmit` with:
+   - `job_type = "taste_distillation"`
+   - `input = {"limit":100}` unless the user supplies explicit archived or featured language IDs
+   - `completion_contract = "typed-v1"`
+   - `inline_job_docs = true`
+3. Tell the user the job will create `Proposed` TasteRules only, and that they
+   can review/accept them in `/owner`.
+
+Never accept proposed taste rules automatically from a DM request. Human owner
+approval is required before rules affect synthesis or quality review.
+
 ## Tools
 
 - `temper.list(entity_set, filter)` — query entities
