@@ -2,14 +2,20 @@
 
 Job type: `taste_distillation`
 
-Use this skill to convert Katagami taste signals into short proposed prompt
-directives for the agents that create and review new design languages. This is
-not a quality-repair job, not a catalog-management job, and it must not mutate
-DesignLanguages.
+Use this skill to convert Katagami taste signals into short, general proposed
+prompt directives for the agents that create and review new design languages.
+This is not a quality-repair job, not a catalog-management job, and it must not
+mutate DesignLanguages.
 
 The primary output is a compact `rule_text` line that could be pasted directly
 into the creator/reviewer prompt. Evidence belongs in `rationale` and the
 Markdown report, not in the directive itself.
+
+The directives must be language-agnostic design tests. Do not overfit to the
+surface theme, genre, subject matter, or named aesthetic of any evidence
+language. Each accepted directive should improve any future language, whether
+it is editorial, operational, playful, cinematic, brutalist, delicate,
+illustrative, data-heavy, or experimental.
 
 The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
 without importing `json`.
@@ -31,6 +37,7 @@ The job input is optional JSON. Supported keys:
 5. **Create proposed rules only.** Never call `Accept` on a TasteRule. Proposed rules are inert until the human curator accepts them.
 6. **Do not recommend catalog actions.** Never propose directives that tell the owner to archive, delete, feature, unfeature, restore, or re-review existing languages. The rule must improve future generation/review behavior.
 7. **Previous TasteRules are taste evidence too.** Accepted rules are already incorporated guidance and should not be duplicated. Rejected rules are negative meta-evidence about rule framings the human did not want. Proposed and Superseded rules also count as already processed for duplicate avoidance.
+8. **Generalize across themes.** If evidence comes from a specific visual theme, rewrite the rule as a general design criterion. The final `rule_text` must not depend on that theme to make sense.
 
 ## Directive Shape
 
@@ -40,7 +47,9 @@ Every proposed `rule_text` must be a short prompt directive:
 - Starts with an imperative cue such as `Require`, `Avoid`, `Prefer`, `Preserve`, `Make`, or `Do not`.
 - Written for future creator/reviewer agents, not for the owner.
 - No evidence IDs, language names, report prose, confidence labels, or archive/feature instructions.
+- No theme-specific aesthetic names or motifs unless the rule is explicitly about avoiding shallow motif substitution.
 - Specific enough to change generation behavior, broad enough to apply beyond one language.
+- Passes the generality test: it should still make sense if applied to a completely different future language theme.
 
 Good examples:
 
@@ -73,12 +82,26 @@ Bad examples:
    - Use `entity_id`, `status`, `fields`, `booleans`, and `counters`.
    - Inspect `name`, `slug`, `philosophy`, `tokens`, `rules`, `layout_principles`, `guidance`, `taxonomy_ids`, `tags`, `parent_ids`, `lineage_type`, `thumbnail_asset_url`, `thumbnail_file_id`, `embodiment_asset_url`, and `embodiment_file_id`.
    - Parse JSON strings when possible; leave raw text when parsing fails.
-7. Identify only evidence-backed directive candidates:
+7. Cluster the evidence before proposing rules. Do not inspect only the most obvious few examples. Build recurring failure/success clusters such as:
+   - distinctness from existing languages
+   - structural/layout originality
+   - specificity of product world, ritual, or artifact
+   - typography and hierarchy discipline
+   - palette discipline and contrast
+   - component/state completeness
+   - embodiment execution quality
+   - coherence between philosophy, tokens, rules, and artifact
+   - avoidance of generic dashboard or template composition
+   - shadcn/component transferability
+8. Identify only evidence-backed directive candidates:
    - Negative examples: inferior duplicate, generic template, weak execution, not distinct enough, incoherent identity, broken artifact.
    - Positive examples: distinctive structure, strong signature element, high signal-to-noise, memorable typography, defensible palette, strong scene specificity.
    - Every proposed directive needs at least two evidence language IDs unless the single example is unusually decisive and the rationale says why.
    - Convert each pattern into the shortest useful prompt directive. Do not propose long analysis paragraphs as rules.
-8. Draft proposed rules in memory first, without creating entities yet. For each draft, compute:
+   - Run the generality test before creating it: "Would this rule improve a future language with a totally different theme?" If not, rewrite it or skip it.
+   - Prefer a directive that names the design test over a directive that names the evidence theme.
+   - For a normal corpus of 20+ archived languages, aim for 8-14 non-duplicate proposed directives when evidence supports them. If fewer than 6 survive, the report must explain which clusters were too weak, already accepted, or rejected.
+9. Draft proposed rules in memory first, without creating entities yet. For each draft, compute:
    ```
    normalized_rule_text = " ".join(rule_text.lower().split())
    evidence_fingerprint = "|".join([
@@ -91,15 +114,16 @@ Bad examples:
    If `evidence_fingerprint` is already in the existing processed set, skip the draft and record it in the report as already processed.
    If `normalized_rule_text` is already present in Accepted, Proposed, Rejected, or Superseded rules, skip it and record which prior status caused the skip.
    If the draft resembles a Rejected rule in wording, framing, or pattern_type, skip it unless the rationale explicitly explains the new distinction.
-9. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
+10. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
    - Corpus counts and filtering decisions.
+   - Evidence clusters considered, including clusters that did not produce rules.
    - Proposed prompt directives and their evidence.
    - Accepted rules that were treated as already incorporated.
    - Rejected rules that suppressed similar proposals.
    - Already processed fingerprints or directive texts that were skipped.
    - Comparators used.
    - Cases where no reliable rule should be proposed.
-10. For each proposed rule, create a TasteRule with the report file ID:
+11. For each proposed rule, create a TasteRule with the report file ID:
    ```
    rule = temper.create('TasteRules', {})
    temper.action('TasteRules', rule['entity_id'], 'Define', {
@@ -117,7 +141,7 @@ Bad examples:
    })
    ```
    Use `rule_text` for the short directive only. Put the why in `rationale`.
-11. Complete the job:
+12. Complete the job:
    ```
    temper.action('CurationJobs', job_id, 'CompleteTasteDistillation', {
        'taste_rule_ids': json.dumps(taste_rule_ids),
@@ -128,6 +152,7 @@ Bad examples:
            'negative_corpus_ids': archived_ids,
            'positive_corpus_ids': featured_ids,
            'comparator_language_ids': comparator_ids,
+           'evidence_clusters_considered': evidence_clusters_considered,
            'skipped_duplicate_fingerprints': skipped_duplicate_fingerprints,
            'skipped_existing_directives': skipped_existing_directives,
            'skipped_rejected_precedents': skipped_rejected_precedents
