@@ -78,11 +78,20 @@ Bad examples:
    - `Rejected`: negative meta-evidence. Do not re-propose the same directive, framing, or pattern type unless the new evidence is materially different and the rationale explains why.
    - `Proposed` and `Superseded`: already processed. Avoid duplicate evidence and duplicate directive text.
    Build processed sets from non-empty `evidence_fingerprint` values and from normalized `rule_text` values across all statuses.
-6. Normalize every language before analysis:
+6. Perform a rule hygiene audit before proposing anything. This audit is for owner review and duplicate avoidance only; **Do not mutate existing TasteRules during the hygiene audit**.
+   - Compare all TasteRules across all statuses using normalized `rule_text`, `title`, `polarity`, `pattern_type`, and `source_job_id`.
+   - Record exact duplicates when normalized `rule_text` is identical.
+   - Record near-duplicates when two or more rules express the same reusable design test with different wording, sources, or evidence.
+   - Record contradictions when one Accepted rule requires what another Accepted rule forbids, when numeric thresholds or hard constraints cannot both be satisfied, or when an Accepted rule reintroduces a Rejected framing without a clear narrower scope.
+   - Record tensions when rules are compatible but need scoping, such as one rule banning opacity-only states while another allows opacity as a performant animation property.
+   - Treat `Accepted` versus `Rejected` conflicts as owner-review evidence, not as permission to revive the rejected rule.
+   - Prefer merge recommendations that preserve the shortest one-line directive and move nuance into rationale.
+   - Do not create a new rule for a pattern that belongs inside an existing duplicate cluster.
+7. Normalize every language before analysis:
    - Use `entity_id`, `status`, `fields`, `booleans`, and `counters`.
    - Inspect `name`, `slug`, `philosophy`, `tokens`, `rules`, `layout_principles`, `guidance`, `taxonomy_ids`, `tags`, `parent_ids`, `lineage_type`, `thumbnail_asset_url`, `thumbnail_file_id`, `embodiment_asset_url`, and `embodiment_file_id`.
    - Parse JSON strings when possible; leave raw text when parsing fails.
-7. Cluster the evidence before proposing rules. Do not inspect only the most obvious few examples. Build recurring failure/success clusters such as:
+8. Cluster the evidence before proposing rules. Do not inspect only the most obvious few examples. Build recurring failure/success clusters such as:
    - distinctness from existing languages
    - structural/layout originality
    - specificity of product world, ritual, or artifact
@@ -93,7 +102,7 @@ Bad examples:
    - coherence between philosophy, tokens, rules, and artifact
    - avoidance of generic dashboard or template composition
    - shadcn/component transferability
-8. Identify only evidence-backed directive candidates:
+9. Identify only evidence-backed directive candidates:
    - Negative examples: inferior duplicate, generic template, weak execution, not distinct enough, incoherent identity, broken artifact.
    - Positive examples: distinctive structure, strong signature element, high signal-to-noise, memorable typography, defensible palette, strong scene specificity.
    - Every proposed directive needs at least two evidence language IDs unless the single example is unusually decisive and the rationale says why.
@@ -101,7 +110,7 @@ Bad examples:
    - Run the generality test before creating it: "Would this rule improve a future language with a totally different theme?" If not, rewrite it or skip it.
    - Prefer a directive that names the design test over a directive that names the evidence theme.
    - For a normal corpus of 20+ archived languages, aim for 8-14 non-duplicate proposed directives when evidence supports them. If fewer than 6 survive, the report must explain which clusters were too weak, already accepted, or rejected.
-9. Draft proposed rules in memory first, without creating entities yet. For each draft, compute:
+10. Draft proposed rules in memory first, without creating entities yet. For each draft, compute:
    ```
    normalized_rule_text = " ".join(rule_text.lower().split())
    evidence_fingerprint = "|".join([
@@ -114,16 +123,21 @@ Bad examples:
    If `evidence_fingerprint` is already in the existing processed set, skip the draft and record it in the report as already processed.
    If `normalized_rule_text` is already present in Accepted, Proposed, Rejected, or Superseded rules, skip it and record which prior status caused the skip.
    If the draft resembles a Rejected rule in wording, framing, or pattern_type, skip it unless the rationale explicitly explains the new distinction.
-10. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
+   If the draft belongs to a duplicate cluster from the rule hygiene audit, skip it and record the existing rule IDs that already cover it.
+   If the draft contradicts an Accepted rule or revives a Rejected framing, skip it and record it in `skipped_contradictory_directives`.
+11. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
    - Corpus counts and filtering decisions.
    - Evidence clusters considered, including clusters that did not produce rules.
+   - Rule hygiene audit results: `duplicate_rule_candidates`, `contradiction_rule_candidates`, and `rule_tension_candidates`, with statuses and source labels.
    - Proposed prompt directives and their evidence.
    - Accepted rules that were treated as already incorporated.
    - Rejected rules that suppressed similar proposals.
    - Already processed fingerprints or directive texts that were skipped.
+   - Proposed directives skipped for duplicate clusters or contradictions.
+   - Dedupe recommendations for owner review, such as keep, merge, reject, or supersede.
    - Comparators used.
    - Cases where no reliable rule should be proposed.
-11. For each proposed rule, create a TasteRule with the report file ID:
+12. For each proposed rule, create a TasteRule with the report file ID:
    ```
    rule = temper.create('TasteRules', {})
    temper.action('TasteRules', rule['entity_id'], 'Define', {
@@ -141,7 +155,7 @@ Bad examples:
    })
    ```
    Use `rule_text` for the short directive only. Put the why in `rationale`.
-12. Complete the job:
+13. Complete the job:
    ```
    temper.action('CurationJobs', job_id, 'CompleteTasteDistillation', {
        'taste_rule_ids': json.dumps(taste_rule_ids),
@@ -155,7 +169,11 @@ Bad examples:
            'evidence_clusters_considered': evidence_clusters_considered,
            'skipped_duplicate_fingerprints': skipped_duplicate_fingerprints,
            'skipped_existing_directives': skipped_existing_directives,
-           'skipped_rejected_precedents': skipped_rejected_precedents
+           'skipped_rejected_precedents': skipped_rejected_precedents,
+           'duplicate_rule_candidates': duplicate_rule_candidates,
+           'contradiction_rule_candidates': contradiction_rule_candidates,
+           'rule_tension_candidates': rule_tension_candidates,
+           'skipped_contradictory_directives': skipped_contradictory_directives
        })
    })
    temper.done("taste_distillation complete")
