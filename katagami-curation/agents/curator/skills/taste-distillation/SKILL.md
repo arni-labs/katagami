@@ -2,8 +2,14 @@
 
 Job type: `taste_distillation`
 
-Use this skill to convert Katagami taste signals into proposed rules. This is
-not a quality-repair job and it must not mutate DesignLanguages.
+Use this skill to convert Katagami taste signals into short proposed prompt
+directives for the agents that create and review new design languages. This is
+not a quality-repair job, not a catalog-management job, and it must not mutate
+DesignLanguages.
+
+The primary output is a compact `rule_text` line that could be pasted directly
+into the creator/reviewer prompt. Evidence belongs in `rationale` and the
+Markdown report, not in the directive itself.
 
 The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
 without importing `json`.
@@ -23,6 +29,30 @@ The job input is optional JSON. Supported keys:
 3. **UnderReview is not a rejection.** Do not use UnderReview languages as negative examples. A language sent back to review means "repair or rethink," not "learn an anti-pattern."
 4. **Non-featured Published is neutral.** Published languages may be used as comparators, but never as positive evidence unless featured.
 5. **Create proposed rules only.** Never call `Accept` on a TasteRule. Proposed rules are inert until the human curator accepts them.
+6. **Do not recommend catalog actions.** Never propose directives that tell the owner to archive, delete, feature, unfeature, restore, or re-review existing languages. The rule must improve future generation/review behavior.
+7. **Previous TasteRules are taste evidence too.** Accepted rules are already incorporated guidance and should not be duplicated. Rejected rules are negative meta-evidence about rule framings the human did not want. Proposed and Superseded rules also count as already processed for duplicate avoidance.
+
+## Directive Shape
+
+Every proposed `rule_text` must be a short prompt directive:
+
+- One sentence, 8-28 words.
+- Starts with an imperative cue such as `Require`, `Avoid`, `Prefer`, `Preserve`, `Make`, or `Do not`.
+- Written for future creator/reviewer agents, not for the owner.
+- No evidence IDs, language names, report prose, confidence labels, or archive/feature instructions.
+- Specific enough to change generation behavior, broad enough to apply beyond one language.
+
+Good examples:
+
+- `Require every new language to have a signature structure that still reads clearly without its palette.`
+- `Avoid proposing a language whose only meaningful distinction from an existing one is color or font choice.`
+- `Prefer concrete product rituals, artifacts, or scenes over generic dashboard composition.`
+
+Bad examples:
+
+- `Archive the weaker geometric language.`
+- `This archived example looked worse than the featured one.`
+- `The curator should review these three languages again.`
 
 ## Procedure
 
@@ -34,29 +64,39 @@ The job input is optional JSON. Supported keys:
    - If `featured_language_ids` is present, get each one and keep only status `Published` with `featured == true`.
    - Otherwise, call `temper.list('DesignLanguages', "Status eq 'Published'")` and keep only rows where `featured` is true in fields, booleans, counters, or top-level values.
 4. Load the broader comparator catalog with `temper.list('DesignLanguages', "Status eq 'Published'")`. Use non-featured Published languages only as comparators, not as positive evidence.
-5. Load existing rules with `temper.list('TasteRules', '')` and build a set of non-empty `evidence_fingerprint` values from Proposed, Accepted, Rejected, and Superseded rules. A rerun may reread the same archive and featured corpus, but it must skip any proposed rule whose evidence fingerprint has already been processed.
+5. Load existing rules with `temper.list('TasteRules', '')` and group them by status:
+   - `Accepted`: already-approved prompt directives. Do not duplicate them; use them as positive examples of the right rule shape and only propose adjacent refinements when new evidence clearly adds something.
+   - `Rejected`: negative meta-evidence. Do not re-propose the same directive, framing, or pattern type unless the new evidence is materially different and the rationale explains why.
+   - `Proposed` and `Superseded`: already processed. Avoid duplicate evidence and duplicate directive text.
+   Build processed sets from non-empty `evidence_fingerprint` values and from normalized `rule_text` values across all statuses.
 6. Normalize every language before analysis:
    - Use `entity_id`, `status`, `fields`, `booleans`, and `counters`.
    - Inspect `name`, `slug`, `philosophy`, `tokens`, `rules`, `layout_principles`, `guidance`, `taxonomy_ids`, `tags`, `parent_ids`, `lineage_type`, `thumbnail_asset_url`, `thumbnail_file_id`, `embodiment_asset_url`, and `embodiment_file_id`.
    - Parse JSON strings when possible; leave raw text when parsing fails.
-7. Identify only evidence-backed patterns:
+7. Identify only evidence-backed directive candidates:
    - Negative examples: inferior duplicate, generic template, weak execution, not distinct enough, incoherent identity, broken artifact.
    - Positive examples: distinctive structure, strong signature element, high signal-to-noise, memorable typography, defensible palette, strong scene specificity.
-   - Every proposed rule needs at least two evidence language IDs unless the single example is unusually decisive and the rationale says why.
+   - Every proposed directive needs at least two evidence language IDs unless the single example is unusually decisive and the rationale says why.
+   - Convert each pattern into the shortest useful prompt directive. Do not propose long analysis paragraphs as rules.
 8. Draft proposed rules in memory first, without creating entities yet. For each draft, compute:
    ```
+   normalized_rule_text = " ".join(rule_text.lower().split())
    evidence_fingerprint = "|".join([
        polarity,
        pattern_type,
+       normalized_rule_text,
        ",".join(sorted(evidence_ids)),
    ])
    ```
    If `evidence_fingerprint` is already in the existing processed set, skip the draft and record it in the report as already processed.
+   If `normalized_rule_text` is already present in Accepted, Proposed, Rejected, or Superseded rules, skip it and record which prior status caused the skip.
+   If the draft resembles a Rejected rule in wording, framing, or pattern_type, skip it unless the rationale explicitly explains the new distinction.
 9. Write a Markdown evidence report to `/katagami/taste-distillation/{job_id}.md` summarizing:
    - Corpus counts and filtering decisions.
-   - Proposed negative rules and archived evidence.
-   - Proposed positive rules and featured evidence.
-   - Already processed fingerprints that were skipped.
+   - Proposed prompt directives and their evidence.
+   - Accepted rules that were treated as already incorporated.
+   - Rejected rules that suppressed similar proposals.
+   - Already processed fingerprints or directive texts that were skipped.
    - Comparators used.
    - Cases where no reliable rule should be proposed.
 10. For each proposed rule, create a TasteRule with the report file ID:
@@ -76,6 +116,7 @@ The job input is optional JSON. Supported keys:
        'evidence_fingerprint': evidence_fingerprint
    })
    ```
+   Use `rule_text` for the short directive only. Put the why in `rationale`.
 11. Complete the job:
    ```
    temper.action('CurationJobs', job_id, 'CompleteTasteDistillation', {
@@ -87,7 +128,9 @@ The job input is optional JSON. Supported keys:
            'negative_corpus_ids': archived_ids,
            'positive_corpus_ids': featured_ids,
            'comparator_language_ids': comparator_ids,
-           'skipped_duplicate_fingerprints': skipped_duplicate_fingerprints
+           'skipped_duplicate_fingerprints': skipped_duplicate_fingerprints,
+           'skipped_existing_directives': skipped_existing_directives,
+           'skipped_rejected_precedents': skipped_rejected_precedents
        })
    })
    temper.done("taste_distillation complete")
