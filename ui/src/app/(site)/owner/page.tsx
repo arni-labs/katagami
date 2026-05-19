@@ -293,11 +293,11 @@ function TasteRulesPanel({
             </TasteRuleSection>
 
             <TasteRuleSection
-              title="Accepted"
+              title="Accepted one-liners"
               empty="No accepted rules yet."
             >
-              {accepted.slice(0, 8).map((rule) => (
-                <TasteRuleCard key={rule.entity_id} rule={rule} />
+              {accepted.map((rule) => (
+                <TasteRuleLine key={rule.entity_id} rule={rule} />
               ))}
             </TasteRuleSection>
           </div>
@@ -347,6 +347,38 @@ function TasteRuleSection({
         </p>
       )}
     </div>
+  );
+}
+
+function TasteRuleLine({ rule }: { rule: TasteRule }) {
+  const title = tasteRuleField(rule, "Title", "title") || "Untitled rule";
+  const polarity = tasteRuleField(rule, "Polarity", "polarity") || "negative";
+  const patternType = tasteRuleField(rule, "PatternType", "pattern_type");
+  const ruleText = tasteRuleField(rule, "RuleText", "rule_text") || title;
+  const polarityClass =
+    polarity === "positive"
+      ? "border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] text-[var(--salad)]"
+      : "border-[color-mix(in_oklch,var(--sakura)_50%,var(--border))] text-[var(--sakura)]";
+
+  return (
+    <article className="border border-border bg-background/70 px-3 py-2 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+        <span
+          className={`w-fit shrink-0 border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
+        >
+          {polarity}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium leading-6 text-foreground">
+            {ruleText}
+          </p>
+          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            {patternType ? `${patternType} / ` : ""}
+            {title}
+          </p>
+        </div>
+      </div>
+    </article>
   );
 }
 
