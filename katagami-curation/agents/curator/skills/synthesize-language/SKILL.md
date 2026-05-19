@@ -40,6 +40,9 @@ accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
 Use only Accepted rules. Positive rules describe patterns to preserve or amplify;
 negative rules describe archive-derived anti-patterns to avoid. Ignore Proposed,
 Rejected, and Superseded rules entirely.
+Accepted TasteRules are the authoritative reusable design tests. The knowledge
+files provide orientation and hard artifact context; do not recreate parallel
+anti-slop checklists from prose.
 
 ## Execution Discipline
 
@@ -131,6 +134,9 @@ temper.action('DesignLanguages', eid, 'SetSpec', {
 Tokens must be DESIGN.md-projectable: real hex values, concrete font names, valid CSS dimensions, component semantics that reference `{colors.*}`, `{typography.*}`, `{rounded.*}`, `{spacing.*}`.
 
 ### Spec Validation Gate
+
+This gate checks structural completeness before visual work. Apply Accepted
+TasteRules separately as the reusable taste and anti-slop test set.
 
 Do NOT proceed to embodiment until every check passes:
 

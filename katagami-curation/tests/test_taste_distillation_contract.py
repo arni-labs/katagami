@@ -11,6 +11,9 @@ class TasteDistillationContractTests(unittest.TestCase):
 
     def test_taste_rule_lifecycle_and_fields(self):
         spec = tomllib.loads((self.root / "specs" / "taste_rule.ioa.toml").read_text())
+        source = (self.root / "specs" / "taste_rule.ioa.toml").read_text()
+        self.assertIn("foundation", source)
+        self.assertIn("already-approved Katagami docs", source)
         automaton = spec["automaton"]
         self.assertEqual(automaton["name"], "TasteRule")
         self.assertEqual(automaton["initial"], "Proposed")
@@ -155,9 +158,22 @@ class TasteDistillationContractTests(unittest.TestCase):
         for skill in [synthesize, review]:
             self.assertIn("temper.list('TasteRules', \"Status eq 'Accepted'\")", skill)
             self.assertIn("Use only Accepted rules", skill)
+            self.assertIn("authoritative reusable design tests", skill)
             self.assertIn("Proposed", skill)
             self.assertIn("Rejected", skill)
             self.assertIn("Superseded", skill)
+
+    def test_foundation_knowledge_delegates_reusable_tests_to_taste_rules(self):
+        quality = (self.root / "system" / "knowledge" / "quality-standards.md").read_text()
+        principles = (self.root / "system" / "knowledge" / "design-principles.md").read_text()
+        feedback = (self.root / "system" / "knowledge" / "feedback-log.md").read_text()
+
+        for doc in [quality, principles, feedback]:
+            self.assertIn("TasteRule", doc)
+
+        self.assertIn("Do not duplicate the full taste checklist", quality)
+        self.assertIn("Use Accepted\n`TasteRules` for concrete pass/fail design guidance", principles)
+        self.assertIn("Foundation TasteRules Extracted", feedback)
 
 
 if __name__ == "__main__":

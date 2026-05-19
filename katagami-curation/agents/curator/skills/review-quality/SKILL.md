@@ -20,6 +20,9 @@ accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
 Use only Accepted rules. Positive rules describe patterns to preserve or
 amplify; negative rules describe archive-derived anti-patterns to avoid.
 Proposed, Rejected, and Superseded rules must have no effect on quality review.
+Accepted TasteRules are the authoritative reusable design tests. The knowledge
+files provide orientation and hard artifact context; do not recreate parallel
+anti-slop checklists from prose.
 
 ## Process
 
@@ -104,16 +107,13 @@ For each language specified in the job input (or ALL languages if none specified
          'design_md_format_version': 'alpha'
      })
      ```
-10. **Evaluate against the spec.** Common failures to fix:
-   - **Catalog layout**: Organized as a component inventory with sections labeled "Controls", "Feedback", "Data" instead of a plausible application scene. This is the #1 failure — redesign the scene entirely.
-   - **Missing structural identity**: The spec's `visual_character` traits and `signature_patterns` must ALL manifest in CSS. Check each one — if it's not visible, the structure is wrong.
-   - **Generic typography**: Using AI-tell fonts or sharing typefaces with another language. Each language's heading, body, and mono fonts should be unique across the library.
-   - **Not responsive**: No media queries, or inline `style` attributes for grid/flex layout (which break media queries). Must have 3 breakpoints. Must pass visual verification at desktop (1440px), tablet (768px), and mobile (375px).
-   - **Missing surface/border/motion tokens**: If the spec says "glass treatment," there must be `backdrop-filter` in the CSS. Heavy borders must be a dominant visual element.
-   - **Browser default form elements**: Unstyled selects, checkboxes, radios. Every form element must be explicitly styled.
-   - **Inconsistent styling**: Buttons, inputs, cards not matching each other.
-   - **Alignment**: Elements off-grid, uneven spacing, misaligned columns.
-   - **curator_notes**: If present, these are specific fix instructions from the human curator. Follow them first.
+10. **Evaluate against the spec and Accepted TasteRules.** Fix every concrete
+    violation before completion. Use the language's `curator_notes` first when
+    present, then apply the Accepted TasteRules as the reusable visual quality
+    bar. Hard artifact defects still require direct repair: missing spec
+    sections, invalid DESIGN.md, unreadable embodiment files, stale shadcn
+    component artifacts, missing responsive CSS, unstyled browser defaults, and
+    broken alignment.
 11. **Regenerate the embodiment as self-contained HTML.** Follow the sandbox visual feedback loop from the `synthesize-language` skill:
    - Write HTML to sandbox
    - Prepare and prove the browser runtime before any screenshot.

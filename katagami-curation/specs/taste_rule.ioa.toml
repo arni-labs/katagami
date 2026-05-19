@@ -1,9 +1,10 @@
 # TasteRule - I/O Automaton Specification
 #
-# Human-approved learning artifact distilled from Katagami taste signals.
-# Negative rules come only from Archived DesignLanguages; positive rules come
-# only from Featured Published DesignLanguages. Proposed rules are inert until
-# explicitly accepted by the human curator.
+# Human-approved learning artifact used by Katagami synthesis and review.
+# Rules may come from owner-approved distillation jobs or from foundation
+# knowledge extracted out of already-approved Katagami docs. Distillation rules
+# still obey their archive/featured evidence boundaries. Proposed rules are
+# inert until explicitly accepted by the human curator.
 
 [automaton]
 name = "TasteRule"

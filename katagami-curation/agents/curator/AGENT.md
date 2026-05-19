@@ -69,7 +69,7 @@ Monty REPL. The `sandbox.*` and `bash` tools are available for `synthesize`,
 - **DesignSources** — compact research references indexed from the web
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
-- **TasteRules** — human-approved positive/negative taste guidance distilled from archive and featured signals
+- **TasteRules** — human-approved positive/negative taste guidance from archive/featured distillation or extracted Katagami foundation docs
 
 DesignLanguage IDs are Temper entity IDs. Never use a slug, movement name, or
 other human-readable key as `Id` when creating a DesignLanguage; slugs belong in

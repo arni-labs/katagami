@@ -1,27 +1,28 @@
 # Katagami Feedback Log
 
-Human curator feedback. Read before starting any quality_review or synthesize job.
+Human curator feedback. Read before starting any `quality_review` or
+`synthesize` job. Reusable rules from this feedback have been extracted into
+Accepted `TasteRule` records.
 
----
+## 2026-05-19: Foundation TasteRules Extracted
 
-## 2026-04-29: Library diversity is the priority
+The repeated anti-slop, design-principle, and quality-standard checklists were
+converted into Accepted `TasteRule` records. Future agents should load those
+rules instead of relying on duplicated prose across knowledge files.
 
-The first batch of 10 languages looked interchangeable — same fonts, same white backgrounds, same editorial-dashboard scene, same border treatment. Individual quality was fine; collective variety was not.
+## 2026-04-29: Library Diversity Is The Priority
 
-**What went wrong:** Overly prescriptive rules (approved font lists, mandatory white backgrounds, narrow surface options) caused convergence. The model followed rules faithfully, but the rules optimized for individual safety over library diversity.
+The first batch of languages looked interchangeable: similar fonts, white
+backgrounds, editorial-dashboard scenes, and border treatments. The lesson was
+that overly prescriptive rules can create convergence even when individual
+quality is acceptable.
 
-**What changed:**
-- Font choice is now fully open (only a small blocklist of AI-tell fonts). Heading, body, and mono typefaces must each be unique across the library.
-- Background color and palette are design decisions, not mandated values. The library needs light, dark, warm, cool, and colored approaches.
-- Scene types should vary — not every embodiment should be an editorial dashboard.
-- Gradients are allowed when they serve the philosophy.
+Preserve the design space. Enforce uniqueness and quality, but do not force
+every language into the same palette, background, font list, or scene type.
 
-**The core lesson:** Prescriptive rules produce uniform output. Design philosophy produces diverse output. Trust the agent's taste, give it the full design space, and enforce uniqueness rather than conformity.
+## 2026-04-22: Anti-Slop Baseline
 
-## 2026-04-22: Anti-slop baseline
-
-The library looked "AI generated." Key fixes:
-- Letter-spacing `-0.02em` on all text (mandatory, biggest single improvement)
-- Border radius scale: 0/16/24/9999 only, no arbitrary mixing
-- Scene-first embodiments, not component catalogs
-- Every spec trait must manifest in the embodiment CSS
+The library looked visibly AI-generated. The original fixes focused on tighter
+typography, disciplined radius choices, scene-first embodiments, and making
+spec traits manifest in CSS. Those checks now live as Accepted `TasteRule`
+records.

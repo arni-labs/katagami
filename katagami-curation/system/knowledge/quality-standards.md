@@ -1,100 +1,53 @@
 # Katagami Quality Standards
 
-Measurable thresholds for specs and embodiments. Design philosophy lives in `design-principles.md` — this file is about verification.
+This file keeps operational verification gates. Reusable design taste,
+anti-slop, and visual judgment checks live in Accepted `TasteRule` records.
+Synthesis and quality-review agents must load those records before creating or
+judging a language.
 
-## Spec Section Minimums
+Do not duplicate the full taste checklist here. If a design pass/fail rule can
+be written as a short prompt directive, it belongs in `TasteRules`.
 
-- **Philosophy** (min 800 chars): `summary`, `values` (5-8), `anti_values` (3-5), `visual_character` (3-5 concrete structural traits, each >= 30 chars).
-- **Tokens** (min 1200 chars): 12 named colors with hex values, full typography system, spacing scale (8+ values), radii, shadows with CSS values, surfaces, borders, motion. No placeholders.
-- **Rules** (min 800 chars): `composition` (5-8 rules), `hierarchy` (4-6), `density`, `signature_patterns` (3-5 unique CSS techniques, each >= 30 chars).
-- **Layout** (min 600 chars): `density` with rationale, `grid` with columns/gutter/max-width, `whitespace`, `responsive` breakpoints.
-- **Guidance** (min 800 chars): `dos` (6-10), `donts` (6-10), `usage_context`, `accessibility`.
+## Rule Source Of Truth
 
-## DESIGN.md Quality Gate
+- Load Accepted `TasteRule` records for reusable visual tests and anti-patterns.
+- Treat Proposed, Rejected, and Superseded rules as inert for generation.
+- Keep hard artifact validation in skill docs and finalizers.
+- Keep this file short enough to orient agents without competing with rules.
 
-- Every published language must have a generated DESIGN.md artifact.
-- Must pass `npx @google/design.md lint` with zero errors and zero warnings.
-- Katagami spec remains the source of truth. Repair source fields, then regenerate.
-- The rich Katagami spec must not be flattened to only the DESIGN.md subset.
+## Spec Completeness Gate
 
-## Embodiment Quality Checks
+- **Philosophy**: `summary`, `values`, `anti_values`, and 3-5 concrete
+  `visual_character` traits.
+- **Tokens**: 12 named colors with hex values, a full typography system,
+  spacing scale, radii, shadows, surfaces, borders, and motion.
+- **Rules**: concrete `composition`, `hierarchy`, `density`, and 3-5
+  `signature_patterns`.
+- **Layout**: grid, breakpoints, whitespace, and density rationale.
+- **Guidance**: clear do/don't guidance, usage context, and accessibility.
 
-### Restraint (Highest Priority)
-- **Removal test**: for every visual property (shadows, gradients, decorative borders, secondary colors), ask "does the design survive without this?" If yes, remove it.
-- **Color count**: no more than 3 accent/brand colors total (excluding neutrals and semantic status colors). Languages with 5+ accent colors fail.
-- **Decorative accumulation**: adding elements to fill space instead of letting restraint create identity = fail.
+No section may be placeholder prose. Incomplete but coherent specs are repaired;
+deeply empty specs should fail with a concrete error.
 
-### Signature Element (Critical)
-- Every language must have one nameable visual signature — a distinctive shape, motif, border treatment, or structural pattern.
-- The reviewer must be able to state the signature in one sentence.
-- If the signature cannot be named, the language lacks structural identity and must be reworked.
+## Artifact Gates
 
-### Composition & Asymmetry (Critical)
-- **Ban the three-equal-cards pattern.** Three same-sized cards in a row = automatic fail. One must be visually dominant.
-- **Vary section weight.** Every section the same visual weight = fail. Must have at least one spacious moment and one dense moment.
-- **At least one grid break.** Every embodiment needs one compositional break — a full-bleed element, an asymmetric split, an oversized heading, or an inset panel.
+- Every publishable language needs a generated `DESIGN.md` artifact.
+- `DESIGN.md` must pass `npx @google/design.md lint` with zero errors and zero
+  warnings.
+- Katagami source fields remain the source of truth; repair source fields, then
+  regenerate projections.
+- Embodiments must be self-contained HTML and render cleanly at desktop,
+  tablet, and mobile viewport sizes.
+- Gallery thumbnails must be deterministic `600x400` JPEGs generated from the
+  verified desktop embodiment.
+- First-class shadcn/ui component recipes and renderable preview shots must be
+  authored and verified before publish.
 
-### Spacing Rhythm (Critical)
-- **8:1 ratio test.** Tightest gap divided into largest gap must yield at least 8. Uniform 24px/32px everywhere = fail.
-- **Grouping test.** Related elements closer than unrelated ones. Card padding equals section margin = fail.
+## Review Behavior
 
-### Structural Identity
-- Every `visual_character` trait and `signature_pattern` visible. Surface/border/motion tokens actively used.
-- **Swap test**: recognizable without its color palette, or fail.
-
-### Scene-First
-- Plausible screen for a **specific fictional product** — not generic dashboard.
-- Sections labeled "Controls", "Feedback", "Data" = fail.
-- **Banned**: SaaS analytics dashboards, CRM views, generic project management, unnamed "Flowbase"/"Acme" products.
-- Fictional product must have a specific name and purpose.
-
-### Typography
-- Google Fonts, unique display font across library.
-- 2-3 font roles, consistent.
-- **Body letter-spacing: `-0.02em`. Display: `-0.03em` to `-0.04em`** — mandatory.
-- **Display line-height: `1.1–1.2`. Body: `1.5–1.6`.** Same line-height for both = fail.
-- Body text `15–16px`.
-- Banned: Poppins, Montserrat, DM Sans, Space Grotesk, Figtree, Outfit, Plus Jakarta Sans.
-
-### Color
-- **Desaturation required.** Pure-saturation accents (S > 80% HSL) fail unless philosophy demands vivid with rationale.
-- **No synthetic triads.** Evenly-spaced hue-wheel accents (cyan+coral+mint) = fail. Palettes cluster around a temperature.
-- **Near-invisible borders.** `rgba(0,0,0,0.06)` not `#D8E0E8`. Solid named-grey borders = SaaS template fingerprint.
-- White backgrounds: `#FFFFFF`. Dark: below 10% lightness.
-- No pastel backgrounds. Max 2 accent colors.
-
-### Gradients
-- No gradients by default. Use `filter: blur(120px)` blobs instead.
-- Exception only with philosophy rationale.
-
-### Border Radius
-- Scale: `0px`, `16px`, `24px`, `9999px`.
-- **Must commit to ONE primary radius.** Never mix `16px` and `24px` in same language.
-- No values between 24px and 9999px.
-
-### One-Sided Accent Borders (Banned on Rounded Elements)
-- **Never combine one-sided colored border (`border-left`, `box-shadow: inset 3px 0 0`) with `border-radius`.** Creates ugly crescent wrapping around corners.
-- Rounded elements: full uniform border or no border. Never partial accent on one side.
-- Use a separate `::before` bar with `border-radius: 0`, or use flat-edged containers for accent indicators.
-- Automatic fail if any rounded element has a visible one-sided accent border.
-
-### Responsiveness
-- 3 breakpoints, no inline layout styles, proper reflow.
-
-### Polish
-- No unstyled browser defaults. Consistent alignment.
-- Hover transforms (scale, color shift, border), not just opacity fade.
-- Professional designer quality bar.
-
-## Failure Modes (Ranked by Frequency)
-
-1. **Uniform spacing** — same padding/margin everywhere, no grouping contrast, no breathing room
-2. **Equal-weight composition** — three equal cards, every section same height, no layout hierarchy
-3. **Synthetic color palette** — fully saturated, evenly spaced hues, solid grey borders, 5+ accents
-4. **No signature element** — nothing distinctive survives a palette swap
-5. **Generic scene** — unnamed SaaS dashboard, CRM, or analytics page
-6. **AI-tell typography** — banned fonts, default tracking, same line-height on display and body
-7. **Mixed border-radius** — both 16px and 24px, or arbitrary values
-8. **Gradient/shadow abuse** — gradient buttons, gradient text, rainbow backgrounds
-9. **Catalog layout** — component inventory instead of application scene
-10. **Decorative accumulation** — adding elements to fill space instead of letting restraint create identity
+- Apply Accepted `TasteRule` records as the reusable visual quality bar.
+- Repair fixable Draft and UnderReview languages instead of writing reports.
+- For Published languages, revise only when a concrete spec or artifact defect
+  requires repair.
+- Never archive a language from `quality_review`; archive remains an owner
+  signal.

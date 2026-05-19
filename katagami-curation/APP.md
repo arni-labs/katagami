@@ -37,9 +37,10 @@ actions.
 
 ### TasteRule
 
-Human-approved taste guidance distilled from the catalog. `Proposed` rules are
-created by `taste_distillation`; only `Accepted` rules are loaded by synthesis
-and quality-review jobs.
+Human-approved taste guidance used by synthesis and quality-review jobs.
+Rules can be created by `taste_distillation` from catalog signals or extracted
+from already-approved Katagami foundation docs. Only `Accepted` rules are
+loaded by synthesis and quality-review jobs.
 
 ## Natural Language Operations
 
