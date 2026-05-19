@@ -95,10 +95,10 @@ hint = "Approve this taste rule for future synthesis and quality-review guidance
 [[action]]
 name = "Reject"
 kind = "input"
-from = ["Proposed"]
+from = ["Proposed", "Accepted"]
 to = "Rejected"
 params = ["curator_notes"]
-hint = "Reject this proposed taste rule. Rejected rules are never used by curator jobs."
+hint = "Reject this taste rule. Rejected rules are never used by curator jobs."
 
 [[action]]
 name = "Supersede"

@@ -287,16 +287,25 @@ function TasteRulesPanel({
               title="Proposed"
               empty="No proposed rules are waiting."
             >
-              {proposed.slice(0, 12).map((rule) => (
+              {proposed.map((rule) => (
                 <TasteRuleCard key={rule.entity_id} rule={rule} reviewable />
               ))}
             </TasteRuleSection>
 
             <TasteRuleSection
-              title="Accepted one-liners"
+              title="Accepted active rules"
               empty="No accepted rules yet."
             >
               {accepted.map((rule) => (
+                <TasteRuleLine key={rule.entity_id} rule={rule} rejectable />
+              ))}
+            </TasteRuleSection>
+
+            <TasteRuleSection
+              title="Rejected history"
+              empty="No rejected rules yet."
+            >
+              {rejected.map((rule) => (
                 <TasteRuleLine key={rule.entity_id} rule={rule} />
               ))}
             </TasteRuleSection>
@@ -350,24 +359,163 @@ function TasteRuleSection({
   );
 }
 
-function TasteRuleLine({ rule }: { rule: TasteRule }) {
-  const title = tasteRuleField(rule, "Title", "title") || "Untitled rule";
-  const polarity = tasteRuleField(rule, "Polarity", "polarity") || "negative";
-  const patternType = tasteRuleField(rule, "PatternType", "pattern_type");
-  const ruleText = tasteRuleField(rule, "RuleText", "rule_text") || title;
+function compactSourceId(value: string): string {
+  if (value.length <= 18) return value;
+  return `${value.slice(0, 8)}...${value.slice(-4)}`;
+}
+
+function tasteRuleSource(rule: TasteRule): {
+  detail: string;
+  label: string;
+  tone: "distillation" | "foundation" | "manual";
+} {
+  const sourceJobId = tasteRuleField(
+    rule,
+    "SourceJobId",
+    "source_job_id",
+  );
+  const reportFileId = tasteRuleField(
+    rule,
+    "ReportFileId",
+    "report_file_id",
+  );
+
+  if (sourceJobId.includes("foundation-md-extraction")) {
+    return {
+      detail: sourceJobId,
+      label: "foundation docs",
+      tone: "foundation",
+    };
+  }
+
+  if (sourceJobId) {
+    return {
+      detail: sourceJobId,
+      label: reportFileId
+        ? `distillation ${compactSourceId(sourceJobId)}`
+        : compactSourceId(sourceJobId),
+      tone: "distillation",
+    };
+  }
+
+  if (reportFileId) {
+    return {
+      detail: reportFileId,
+      label: `report ${compactSourceId(reportFileId)}`,
+      tone: "distillation",
+    };
+  }
+
+  return {
+    detail: "No source_job_id is recorded for this TasteRule.",
+    label: "manual / unknown",
+    tone: "manual",
+  };
+}
+
+function TasteRuleSourceTag({ rule }: { rule: TasteRule }) {
+  const source = tasteRuleSource(rule);
+  const sourceClass =
+    source.tone === "foundation"
+      ? "border-[color-mix(in_oklch,var(--ramune)_50%,var(--border))] text-[var(--ramune)]"
+      : source.tone === "distillation"
+        ? "border-[color-mix(in_oklch,var(--sumire)_45%,var(--border))] text-[var(--sumire)]"
+        : "border-border text-muted-foreground";
+
+  return (
+    <span
+      title={source.detail}
+      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${sourceClass}`}
+    >
+      source: {source.label}
+    </span>
+  );
+}
+
+function TasteRulePolarityTag({ polarity }: { polarity: string }) {
   const polarityClass =
     polarity === "positive"
       ? "border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] text-[var(--salad)]"
       : "border-[color-mix(in_oklch,var(--sakura)_50%,var(--border))] text-[var(--sakura)]";
 
   return (
-    <article className="border border-border bg-background/70 px-3 py-2 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-        <span
-          className={`w-fit shrink-0 border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
-        >
-          {polarity}
-        </span>
+    <span
+      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
+    >
+      {polarity}
+    </span>
+  );
+}
+
+function TasteRuleStatusTag({ status }: { status: string }) {
+  const statusClass =
+    status === "Accepted"
+      ? "border-[color-mix(in_oklch,var(--salad)_45%,var(--border))] text-[var(--salad)]"
+      : status === "Rejected"
+        ? "border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] text-[var(--sakura)]"
+        : "border-[color-mix(in_oklch,var(--ramune)_45%,var(--border))] text-[var(--ramune)]";
+
+  return (
+    <span
+      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${statusClass}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function TasteRuleRejectButton({
+  id,
+  label = "reject",
+}: {
+  id: string;
+  label?: string;
+}) {
+  return (
+    <form action={rejectTasteRule.bind(null, id)}>
+      <button
+        title="Move this rule to Rejected so curator jobs stop reading it."
+        className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--sakura)] transition-all hover:-translate-y-[1px]"
+      >
+        <X className="h-3.5 w-3.5" />
+        {label}
+      </button>
+    </form>
+  );
+}
+
+function TasteRuleAcceptButton({ id }: { id: string }) {
+  return (
+    <form action={acceptTasteRule.bind(null, id)}>
+      <button className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--salad)] transition-all hover:-translate-y-[1px]">
+        <Check className="h-3.5 w-3.5" />
+        accept
+      </button>
+    </form>
+  );
+}
+
+function TasteRuleLine({
+  rule,
+  rejectable = false,
+}: {
+  rule: TasteRule;
+  rejectable?: boolean;
+}) {
+  const title = tasteRuleField(rule, "Title", "title") || "Untitled rule";
+  const polarity = tasteRuleField(rule, "Polarity", "polarity") || "negative";
+  const patternType = tasteRuleField(rule, "PatternType", "pattern_type");
+  const ruleText = tasteRuleField(rule, "RuleText", "rule_text") || title;
+  const status = tasteRuleStatus(rule);
+
+  return (
+    <article className="border border-border bg-background/70 px-3 py-3 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="flex shrink-0 flex-wrap gap-1.5 lg:max-w-[15rem]">
+          <TasteRuleStatusTag status={status} />
+          <TasteRulePolarityTag polarity={polarity} />
+          <TasteRuleSourceTag rule={rule} />
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium leading-6 text-foreground">
             {ruleText}
@@ -377,6 +525,11 @@ function TasteRuleLine({ rule }: { rule: TasteRule }) {
             {title}
           </p>
         </div>
+        {rejectable ? (
+          <div className="shrink-0">
+            <TasteRuleRejectButton id={rule.entity_id} />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -406,19 +559,13 @@ function TasteRuleCard({
     "ComparatorLanguageIds",
     "comparator_language_ids",
   );
-  const polarityClass =
-    polarity === "positive"
-      ? "border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] text-[var(--salad)]"
-      : "border-[color-mix(in_oklch,var(--sakura)_50%,var(--border))] text-[var(--sakura)]";
 
   return (
     <article className="border border-border bg-background/70 p-4 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
       <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
-        >
-          {polarity}
-        </span>
+        <TasteRuleStatusTag status={tasteRuleStatus(rule)} />
+        <TasteRulePolarityTag polarity={polarity} />
+        <TasteRuleSourceTag rule={rule} />
         {patternType ? (
           <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {patternType}
@@ -461,18 +608,8 @@ function TasteRuleCard({
 
         {reviewable ? (
           <>
-            <form action={acceptTasteRule.bind(null, rule.entity_id)}>
-              <button className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--salad)] transition-all hover:-translate-y-[1px]">
-                <Check className="h-3.5 w-3.5" />
-                accept
-              </button>
-            </form>
-            <form action={rejectTasteRule.bind(null, rule.entity_id)}>
-              <button className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--sakura)] transition-all hover:-translate-y-[1px]">
-                <X className="h-3.5 w-3.5" />
-                reject
-              </button>
-            </form>
+            <TasteRuleAcceptButton id={rule.entity_id} />
+            <TasteRuleRejectButton id={rule.entity_id} />
           </>
         ) : null}
       </div>

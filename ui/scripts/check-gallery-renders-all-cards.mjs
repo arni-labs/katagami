@@ -183,6 +183,24 @@ if (!/queueTasteDistillation/.test(ownerPageSource) || !/acceptTasteRule/.test(o
   });
 }
 
+if (!/function TasteRuleSourceTag/.test(ownerPageSource) || !/SourceJobId/.test(ownerPageSource)) {
+  violations.push({
+    label: "owner TasteRule rows do not show source labels",
+  });
+}
+
+if (!/accepted\.map\(\(rule\)\s*=>[\s\S]*<TasteRuleLine key=\{rule\.entity_id\} rule=\{rule\} rejectable/.test(ownerPageSource)) {
+  violations.push({
+    label: "accepted TasteRules cannot be rejected from the owner page",
+  });
+}
+
+if (!/Rejected history/.test(ownerPageSource) || !/rejected\.map\(\(rule\)/.test(ownerPageSource)) {
+  violations.push({
+    label: "owner page does not display rejected TasteRule history",
+  });
+}
+
 if (!/listTaxonomies[\s\S]*let rows = await collectODataPages<Taxonomy>\([\s\S]*Taxonomies\$\{q \? `\?\$\{q\}` : ""\}[\s\S]*rows = rows\.filter\(\(row\)/.test(odataSource)) {
   violations.push({
     label: "listTaxonomies does not fetch canonical taxonomy rows before local lifecycle filtering",

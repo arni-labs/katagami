@@ -41,6 +41,7 @@ class TasteDistillationContractTests(unittest.TestCase):
         actions = {action["name"]: action for action in spec["action"]}
         self.assertEqual(actions["Accept"]["from"], ["Proposed"])
         self.assertEqual(actions["Accept"]["to"], "Accepted")
+        self.assertEqual(actions["Reject"]["from"], ["Proposed", "Accepted"])
         self.assertEqual(actions["Reject"]["to"], "Rejected")
         self.assertIn("curator_notes", actions["Accept"]["params"])
         self.assertIn("source_job_id", actions["Define"]["params"])
