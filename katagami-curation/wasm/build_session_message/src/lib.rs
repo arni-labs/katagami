@@ -38,6 +38,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
     let result = (|| -> Result<(), String> {
         let ctx = Context::from_host()?;
         ctx.log("info", "build_session_message: starting");
+        let total_started_at = Context::get_time_millis();
 
         let fields = ctx.entity_state.get("fields").cloned().unwrap_or(json!({}));
 
@@ -47,150 +48,175 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .unwrap_or("")
             .to_string();
 
-        let input = fields
-            .get("input")
-            .and_then(|v| v.as_str())
-            .unwrap_or("{}")
-            .to_string();
+        let result = (|| -> Result<(), String> {
+            let input = fields
+                .get("input")
+                .and_then(|v| v.as_str())
+                .unwrap_or("{}")
+                .to_string();
 
-        let soul_id = fields
-            .get("soul_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("curator")
-            .to_string();
-        let stable_soul_id = normalize_bootstrapped_soul_id(&soul_id);
+            let soul_id = fields
+                .get("soul_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("curator")
+                .to_string();
+            let stable_soul_id = normalize_bootstrapped_soul_id(&soul_id);
 
-        // --- Config (needed early for secret lookups) ---
-        let api_url = ctx
-            .config
-            .get("temper_api_url")
-            .filter(|s| !s.is_empty() && !s.contains("{secret:"))
-            .cloned()
-            .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());
+            // --- Config (needed early for secret lookups) ---
+            let api_url = ctx
+                .config
+                .get("temper_api_url")
+                .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                .cloned()
+                .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());
 
-        let tenant = &ctx.tenant;
+            let tenant = &ctx.tenant;
 
-        let headers = vec![
-            ("Content-Type".to_string(), "application/json".to_string()),
-            ("X-Tenant-Id".to_string(), tenant.to_string()),
-            ("x-temper-principal-kind".to_string(), "agent".to_string()),
-            ("x-temper-principal-id".to_string(), "system".to_string()),
-            ("x-temper-agent-type".to_string(), "system".to_string()),
-        ];
+            let headers = vec![
+                ("Content-Type".to_string(), "application/json".to_string()),
+                ("X-Tenant-Id".to_string(), tenant.to_string()),
+                ("x-temper-principal-kind".to_string(), "agent".to_string()),
+                ("x-temper-principal-id".to_string(), "system".to_string()),
+                ("x-temper-agent-type".to_string(), "system".to_string()),
+            ];
 
-        let model = fields
-            .get("model")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .or_else(|| {
-                ctx.config
-                    .get("llm_model")
-                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
-                    .cloned()
-            })
-            .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_model"))
-            .ok_or("No model configured: set llm_model in vault or pass model on CurationJob")?;
+            let model = fields
+                .get("model")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    ctx.config
+                        .get("llm_model")
+                        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                        .cloned()
+                })
+                .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_model"))
+                .ok_or(
+                    "No model configured: set llm_model in vault or pass model on CurationJob",
+                )?;
 
-        let provider = fields
-            .get("provider")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .or_else(|| {
-                ctx.config
-                    .get("llm_provider")
-                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
-                    .cloned()
-            })
-            .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_provider"))
-            .ok_or(
-                "No provider configured: set llm_provider in vault or pass provider on CurationJob",
-            )?;
+            let provider = fields
+                .get("provider")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    ctx.config
+                        .get("llm_provider")
+                        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                        .cloned()
+                })
+                .or_else(|| read_secret(&ctx, &api_url, &headers, "llm_provider"))
+                .ok_or(
+                    "No provider configured: set llm_provider in vault or pass provider on CurationJob",
+                )?;
 
-        let entity_id = ctx
-            .entity_state
-            .get("entity_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or(&ctx.entity_id)
-            .to_string();
+            let entity_id = ctx
+                .entity_state
+                .get("entity_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or(&ctx.entity_id)
+                .to_string();
 
-        let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
-        let skill = template.skill_id.as_str();
-        let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
-        let instruction_doc = load_instruction_doc(
-            &ctx,
-            &api_url,
-            &headers,
-            &template.instruction_path,
-            &stable_soul_id,
-            inline_job_docs,
-        );
-        let effective_instruction_path = instruction_doc
-            .as_ref()
-            .map(|doc| doc.path.as_str())
-            .unwrap_or(template.instruction_path.as_str());
-        let knowledge_specs = knowledge_read_specs_for_skill(skill);
-        let knowledge_docs = knowledge_specs
-            .iter()
-            .filter_map(|(path, _)| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
-            .collect::<Vec<_>>();
-        let instruction_read_command =
-            temper_read_command(effective_instruction_path, instruction_doc.as_ref());
-        let knowledge_read_commands = render_read_commands(knowledge_specs, &knowledge_docs);
-        let loaded_reference_block = render_loaded_reference_block(
-            instruction_doc.as_ref(),
-            &knowledge_docs,
-            inline_job_docs,
-        );
+            let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
+            let skill = template.skill_id.as_str();
+            let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
+            let instruction_doc = load_instruction_doc(
+                &ctx,
+                &api_url,
+                &headers,
+                &template.instruction_path,
+                &stable_soul_id,
+                inline_job_docs,
+            );
+            let effective_instruction_path = instruction_doc
+                .as_ref()
+                .map(|doc| doc.path.as_str())
+                .unwrap_or(template.instruction_path.as_str());
+            let knowledge_specs = knowledge_read_specs_for_skill(skill);
+            let knowledge_docs = knowledge_specs
+                .iter()
+                .filter_map(|(path, _)| {
+                    load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs)
+                })
+                .collect::<Vec<_>>();
+            let instruction_read_command =
+                temper_read_command(effective_instruction_path, instruction_doc.as_ref());
+            let knowledge_read_commands = render_read_commands(knowledge_specs, &knowledge_docs);
+            let loaded_reference_block = render_loaded_reference_block(
+                instruction_doc.as_ref(),
+                &knowledge_docs,
+                inline_job_docs,
+            );
 
-        let job_tools = fields
-            .get("tools_enabled")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let mut tools_enabled = if job_tools.is_empty() || job_tools == DEFAULT_TOOLS_ENABLED {
-            template.tools_profile.clone()
-        } else {
-            job_tools.to_string()
-        };
+            let job_tools = fields
+                .get("tools_enabled")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let mut tools_enabled = if job_tools.is_empty() || job_tools == DEFAULT_TOOLS_ENABLED {
+                template.tools_profile.clone()
+            } else {
+                job_tools.to_string()
+            };
 
-        if template.requires_sandbox {
-            for tool in ["bash", "read", "write", "edit"] {
-                if !tools_enabled
-                    .split(',')
-                    .any(|candidate| candidate.trim() == tool)
-                {
-                    tools_enabled = format!("{tools_enabled},{tool}");
+            if template.requires_sandbox {
+                for tool in ["bash", "read", "write", "edit"] {
+                    if !tools_enabled
+                        .split(',')
+                        .any(|candidate| candidate.trim() == tool)
+                    {
+                        tools_enabled = format!("{tools_enabled},{tool}");
+                    }
                 }
             }
-        }
 
-        let job_max_turns = fields
-            .get("max_turns")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let max_turns = if job_max_turns.is_empty() || job_max_turns == "250" {
-            template.max_turns_default.clone()
-        } else {
-            job_max_turns.to_string()
-        };
+            let job_max_turns = fields
+                .get("max_turns")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let max_turns = if job_max_turns.is_empty() || job_max_turns == "250" {
+                template.max_turns_default.clone()
+            } else {
+                job_max_turns.to_string()
+            };
 
-        // --- Ensure workspace ---
-        let existing_workspace_id = fields
-            .get("workspace_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let workspace_name = "katagami-library".to_string();
-        let workspace_id = if existing_workspace_id.is_empty() {
-            ensure_workspace(&ctx, &api_url, &headers, &workspace_name)?
-        } else {
-            existing_workspace_id
-        };
+            // --- Ensure workspace ---
+            let existing_workspace_id = fields
+                .get("workspace_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let workspace_name = "katagami-library".to_string();
+            let workspace_id = if existing_workspace_id.is_empty() {
+                let workspace_started_at = Context::get_time_millis();
+                let workspace_result = ensure_workspace(&ctx, &api_url, &headers, &workspace_name);
+                emit_build_session_step_duration(
+                    &ctx,
+                    &job_type,
+                    "ensure_workspace",
+                    workspace_started_at,
+                    if workspace_result.is_ok() {
+                        "ok"
+                    } else {
+                        "error"
+                    },
+                );
+                workspace_result?
+            } else {
+                emit_build_session_step_duration(
+                    &ctx,
+                    &job_type,
+                    "ensure_workspace",
+                    Context::get_time_millis(),
+                    "skipped",
+                );
+                existing_workspace_id
+            };
 
-        // --- Build user_message ---
-        let user_message = format!(
-            r#"You are executing a CurationJob ({job_type}).
+            // --- Build user_message ---
+            let user_message = format!(
+                r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
 Skill: {skill}
 Instruction path: {effective_instruction_path}
@@ -236,150 +262,261 @@ temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}}
 temper.done("{job_type} failed")
 ```
 "#,
-            effective_instruction_path = effective_instruction_path,
-            completion_action = template.completion_action.as_str(),
-            completion_contract = template.completion_contract.as_str(),
-        );
+                effective_instruction_path = effective_instruction_path,
+                completion_action = template.completion_action.as_str(),
+                completion_contract = template.completion_contract.as_str(),
+            );
 
-        ctx.log(
-            "info",
-            &format!(
+            ctx.log(
+                "info",
+                &format!(
                 "build_session_message: skill='{}' prompt_len={} docs_resolved={} inline_docs={}",
                 skill,
                 user_message.len(),
                 usize::from(instruction_doc.is_some()) + knowledge_docs.len(),
                 inline_job_docs
             ),
-        );
+            );
 
-        // --- Create Session entity ---
-        let create_resp = ctx.http_call(
-            "POST",
-            &format!("{api_url}/tdata/Sessions"),
-            &headers,
-            &json!({"fields": {}}).to_string(),
-        )?;
-        if !(200..300).contains(&create_resp.status) {
-            return Err(format!(
-                "Failed to create Session: HTTP {}: {}",
-                create_resp.status,
-                &create_resp.body[..create_resp.body.len().min(500)]
-            ));
-        }
+            // --- Create Session entity ---
+            let create_session_started_at = Context::get_time_millis();
+            let create_resp = match ctx.http_call(
+                "POST",
+                &format!("{api_url}/tdata/Sessions"),
+                &headers,
+                &json!({"fields": {}}).to_string(),
+            ) {
+                Ok(response) => response,
+                Err(err) => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "create_session",
+                        create_session_started_at,
+                        "error",
+                    );
+                    return Err(err);
+                }
+            };
+            if !(200..300).contains(&create_resp.status) {
+                emit_build_session_step_duration(
+                    &ctx,
+                    &job_type,
+                    "create_session",
+                    create_session_started_at,
+                    "error",
+                );
+                return Err(format!(
+                    "Failed to create Session: HTTP {}: {}",
+                    create_resp.status,
+                    &create_resp.body[..create_resp.body.len().min(500)]
+                ));
+            }
 
-        let created: serde_json::Value = serde_json::from_str(&create_resp.body)
-            .map_err(|e| format!("Failed to parse Session creation response: {e}"))?;
+            let created: serde_json::Value = match serde_json::from_str(&create_resp.body) {
+                Ok(value) => value,
+                Err(err) => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "create_session",
+                        create_session_started_at,
+                        "error",
+                    );
+                    return Err(format!("Failed to parse Session creation response: {err}"));
+                }
+            };
 
-        let session_id = created
-            .get("entity_id")
-            .and_then(|v| v.as_str())
-            .ok_or("Created Session has no entity_id")?
-            .to_string();
+            let session_id = match created.get("entity_id").and_then(|v| v.as_str()) {
+                Some(session_id) => session_id.to_string(),
+                None => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "create_session",
+                        create_session_started_at,
+                        "error",
+                    );
+                    return Err("Created Session has no entity_id".to_string());
+                }
+            };
+            emit_build_session_step_duration(
+                &ctx,
+                &job_type,
+                "create_session",
+                create_session_started_at,
+                "ok",
+            );
 
-        ctx.log(
-            "info",
-            &format!("build_session_message: created Session '{session_id}'"),
-        );
+            ctx.log(
+                "info",
+                &format!("build_session_message: created Session '{session_id}'"),
+            );
 
-        // --- Configure the Session ---
-        // Sandbox-capable skills need a provisioned sandbox for compile + screenshot loop
-        let needs_sandbox = template.requires_sandbox;
+            // --- Configure the Session ---
+            // Sandbox-capable skills need a provisioned sandbox for compile + screenshot loop
+            let needs_sandbox = template.requires_sandbox;
 
-        let mut config_body = json!({
-            "soul_id": stable_soul_id,
-            "agent_id": stable_soul_id,
-            "user_message": user_message,
-            "model": model,
-            "provider": provider,
-            "tools_enabled": tools_enabled,
-            "max_turns": max_turns,
-            "workspace_id": workspace_id,
-        });
+            let mut config_body = json!({
+                "soul_id": stable_soul_id,
+                "agent_id": stable_soul_id,
+                "user_message": user_message,
+                "model": model,
+                "provider": provider,
+                "tools_enabled": tools_enabled,
+                "max_turns": max_turns,
+                "workspace_id": workspace_id,
+            });
 
-        if needs_sandbox {
-            // Read sandbox provider from server env (set via SANDBOX_PROVIDER)
-            let sandbox_provider = ctx
-                .config
-                .get("sandbox_provider")
-                .filter(|s| !s.is_empty() && !s.contains("{secret:"))
-                .cloned()
-                .unwrap_or_default();
+            if needs_sandbox {
+                // Read sandbox provider from server env (set via SANDBOX_PROVIDER)
+                let sandbox_provider = ctx
+                    .config
+                    .get("sandbox_provider")
+                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                    .cloned()
+                    .unwrap_or_default();
 
-            if !sandbox_provider.is_empty() {
-                config_body
-                    .as_object_mut()
-                    .unwrap()
-                    .insert("sandbox_provider".to_string(), json!(sandbox_provider));
-                ctx.log(
+                if !sandbox_provider.is_empty() {
+                    config_body
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("sandbox_provider".to_string(), json!(sandbox_provider));
+                    ctx.log(
                     "info",
                     &format!("build_session_message: enabling sandbox_provider='{sandbox_provider}' for {skill}"),
                 );
-            } else {
-                ctx.log(
+                } else {
+                    ctx.log(
                     "warn",
                     "build_session_message: no sandbox_provider configured — agent will not have sandbox tools",
                 );
+                }
             }
-        }
 
-        let configure_resp = ctx.http_call(
-            "POST",
-            &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Configure"),
-            &headers,
-            &config_body.to_string(),
-        )?;
-        if !(200..300).contains(&configure_resp.status) {
-            return Err(format!(
-                "Failed to Configure Session: HTTP {}: {}",
-                configure_resp.status,
-                &configure_resp.body[..configure_resp.body.len().min(500)]
-            ));
-        }
+            let configure_session_started_at = Context::get_time_millis();
+            let configure_resp = match ctx.http_call(
+                "POST",
+                &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Configure"),
+                &headers,
+                &config_body.to_string(),
+            ) {
+                Ok(response) => response,
+                Err(err) => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "configure_session",
+                        configure_session_started_at,
+                        "error",
+                    );
+                    return Err(err);
+                }
+            };
+            if !(200..300).contains(&configure_resp.status) {
+                emit_build_session_step_duration(
+                    &ctx,
+                    &job_type,
+                    "configure_session",
+                    configure_session_started_at,
+                    "error",
+                );
+                return Err(format!(
+                    "Failed to Configure Session: HTTP {}: {}",
+                    configure_resp.status,
+                    &configure_resp.body[..configure_resp.body.len().min(500)]
+                ));
+            }
+            emit_build_session_step_duration(
+                &ctx,
+                &job_type,
+                "configure_session",
+                configure_session_started_at,
+                "ok",
+            );
 
-        // --- Dispatch SessionSpawned on the CurationJob ---
-        let spawned_body = json!({
-            "session_id": session_id,
-            "workspace_id": workspace_id,
-        });
-
-        let spawned_resp = ctx.http_call(
-            "POST",
-            &format!(
-                "{api_url}/tdata/CurationJobs('{entity_id}')/Katagami.Curation.SessionSpawned"
-            ),
-            &headers,
-            &spawned_body.to_string(),
-        )?;
-        if !(200..300).contains(&spawned_resp.status) {
-            return Err(format!(
-                "Failed to dispatch SessionSpawned: HTTP {}: {}",
-                spawned_resp.status,
-                &spawned_resp.body[..spawned_resp.body.len().min(500)]
-            ));
-        }
-
-        if let Err(link_error) =
-            create_session_link(&ctx, &api_url, &headers, &entity_id, &session_id)
-        {
-            let message =
-                format!("SessionLink setup failed for child Session '{session_id}': {link_error}");
-            dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
-            return Err(message);
-        }
-
-        ctx.log("info", "build_session_message: completed successfully");
-
-        set_success_result(
-            "",
-            &json!({
-                "status": "ok",
+            // --- Dispatch SessionSpawned on the CurationJob ---
+            let spawned_body = json!({
                 "session_id": session_id,
-                "job_type": job_type,
-                "skill": skill,
-                "template_version": template.template_version,
-            }),
+                "workspace_id": workspace_id,
+            });
+
+            let spawned_started_at = Context::get_time_millis();
+            let spawned_resp = match ctx.http_call(
+                "POST",
+                &format!(
+                    "{api_url}/tdata/CurationJobs('{entity_id}')/Katagami.Curation.SessionSpawned"
+                ),
+                &headers,
+                &spawned_body.to_string(),
+            ) {
+                Ok(response) => response,
+                Err(err) => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "session_spawned",
+                        spawned_started_at,
+                        "error",
+                    );
+                    return Err(err);
+                }
+            };
+            if !(200..300).contains(&spawned_resp.status) {
+                emit_build_session_step_duration(
+                    &ctx,
+                    &job_type,
+                    "session_spawned",
+                    spawned_started_at,
+                    "error",
+                );
+                return Err(format!(
+                    "Failed to dispatch SessionSpawned: HTTP {}: {}",
+                    spawned_resp.status,
+                    &spawned_resp.body[..spawned_resp.body.len().min(500)]
+                ));
+            }
+            emit_build_session_step_duration(
+                &ctx,
+                &job_type,
+                "session_spawned",
+                spawned_started_at,
+                "ok",
+            );
+
+            if let Err(link_error) =
+                create_session_link(&ctx, &api_url, &headers, &job_type, &entity_id, &session_id)
+            {
+                let message = format!(
+                    "SessionLink setup failed for child Session '{session_id}': {link_error}"
+                );
+                dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
+                return Err(message);
+            }
+
+            ctx.log("info", "build_session_message: completed successfully");
+
+            set_success_result(
+                "",
+                &json!({
+                    "status": "ok",
+                    "session_id": session_id,
+                    "job_type": job_type,
+                    "skill": skill,
+                    "template_version": template.template_version,
+                }),
+            );
+            Ok(())
+        })();
+
+        emit_build_session_step_duration(
+            &ctx,
+            &job_type,
+            "total",
+            total_started_at,
+            if result.is_ok() { "ok" } else { "error" },
         );
-        Ok(())
+        result
     })();
 
     if let Err(e) = result {
@@ -388,33 +525,117 @@ temper.done("{job_type} failed")
     0
 }
 
+fn elapsed_ms_since(started_at: i64) -> i64 {
+    Context::get_time_millis().saturating_sub(started_at)
+}
+
+fn emit_build_session_step_duration(
+    ctx: &Context,
+    job_type: &str,
+    step: &str,
+    started_at: i64,
+    result: &str,
+) -> i64 {
+    let elapsed_ms = elapsed_ms_since(started_at);
+    let _ = ctx.emit_metric(
+        "katagami_curation_build_session_message_step_duration_ms",
+        elapsed_ms as f64,
+        &json!({
+            "job_type": job_type,
+            "step": step,
+            "result": result,
+        }),
+        Some("histogram"),
+    );
+    ctx.log(
+        "info",
+        &format!(
+            "build_session_message_step job_type={job_type} step={step} result={result} elapsed_ms={elapsed_ms}"
+        ),
+    );
+    elapsed_ms
+}
+
 fn create_session_link(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
+    job_type: &str,
     parent_job_id: &str,
     child_session_id: &str,
 ) -> Result<(), String> {
-    let create_resp = ctx.http_call(
+    let create_started_at = Context::get_time_millis();
+    let create_resp = match ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/SessionLinks"),
         headers,
         "{}",
-    )?;
+    ) {
+        Ok(response) => response,
+        Err(err) => {
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "create_session_link",
+                create_started_at,
+                "error",
+            );
+            return Err(err);
+        }
+    };
     if create_resp.status < 200 || create_resp.status >= 300 {
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "create_session_link",
+            create_started_at,
+            "error",
+        );
         return Err(format!(
             "Failed to create SessionLink: HTTP {}: {}",
             create_resp.status,
             &create_resp.body[..create_resp.body.len().min(500)]
         ));
     }
-    let created: Value = serde_json::from_str(&create_resp.body)
-        .map_err(|err| format!("Failed to parse SessionLink creation response: {err}"))?;
-    let link_id = created
+    let created: Value = match serde_json::from_str(&create_resp.body) {
+        Ok(value) => value,
+        Err(err) => {
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "create_session_link",
+                create_started_at,
+                "error",
+            );
+            return Err(format!(
+                "Failed to parse SessionLink creation response: {err}"
+            ));
+        }
+    };
+    let link_id = match created
         .get("entity_id")
         .or_else(|| created.get("Id"))
         .and_then(|value| value.as_str())
-        .ok_or("Created SessionLink has no entity_id")?;
+    {
+        Some(link_id) => link_id,
+        None => {
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "create_session_link",
+                create_started_at,
+                "error",
+            );
+            return Err("Created SessionLink has no entity_id".to_string());
+        }
+    };
+    emit_build_session_step_duration(
+        ctx,
+        job_type,
+        "create_session_link",
+        create_started_at,
+        "ok",
+    );
 
     let configure_body = json!({
         "ParentEntitySet": "CurationJobs",
@@ -425,19 +646,46 @@ fn create_session_link(
         "OnFailureAction": "Fail",
         "MaxChecks": "80",
     });
-    let configure_resp = ctx.http_call(
+    let configure_started_at = Context::get_time_millis();
+    let configure_resp = match ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/SessionLinks('{link_id}')/TemperPaw.Configure"),
         headers,
         &configure_body.to_string(),
-    )?;
+    ) {
+        Ok(response) => response,
+        Err(err) => {
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "configure_session_link",
+                configure_started_at,
+                "error",
+            );
+            return Err(err);
+        }
+    };
     if configure_resp.status < 200 || configure_resp.status >= 300 {
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "configure_session_link",
+            configure_started_at,
+            "error",
+        );
         return Err(format!(
             "Failed to configure SessionLink: HTTP {}: {}",
             configure_resp.status,
             &configure_resp.body[..configure_resp.body.len().min(500)]
         ));
     }
+    emit_build_session_step_duration(
+        ctx,
+        job_type,
+        "configure_session_link",
+        configure_started_at,
+        "ok",
+    );
 
     ctx.log(
         "info",
