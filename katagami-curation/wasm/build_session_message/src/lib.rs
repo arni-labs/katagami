@@ -537,15 +537,28 @@ fn emit_build_session_step_duration(
     result: &str,
 ) -> i64 {
     let elapsed_ms = elapsed_ms_since(started_at);
+    let tags = json!({
+        "job_type": job_type,
+        "step": step,
+        "result": result,
+    });
     let _ = ctx.emit_metric(
         "katagami_curation_build_session_message_step_duration_ms",
         elapsed_ms as f64,
-        &json!({
-            "job_type": job_type,
-            "step": step,
-            "result": result,
-        }),
+        &tags,
         Some("histogram"),
+    );
+    let _ = ctx.emit_metric(
+        "katagami_curation_build_session_message_step_duration_ms_total",
+        elapsed_ms as f64,
+        &tags,
+        Some("count"),
+    );
+    let _ = ctx.emit_metric(
+        "katagami_curation_build_session_message_step_count_total",
+        1.0,
+        &tags,
+        Some("count"),
     );
     ctx.log(
         "info",
