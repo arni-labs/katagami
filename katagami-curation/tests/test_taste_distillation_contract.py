@@ -136,6 +136,7 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertIn("evidence_clusters_considered", skill)
         self.assertIn("rule hygiene audit", skill)
         self.assertIn("Do not mutate existing TasteRules during the hygiene audit", skill)
+        self.assertIn("semantic review, not a string-match pass", skill)
         self.assertIn("duplicate_rule_candidates", skill)
         self.assertIn("contradiction_rule_candidates", skill)
         self.assertIn("rule_tension_candidates", skill)

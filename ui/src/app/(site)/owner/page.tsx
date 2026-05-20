@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   Check,
   FileText,
+  GitMerge,
   KeyRound,
   Lock,
   Sparkles,
@@ -17,8 +19,13 @@ import {
   rejectTasteRule,
   unlockOwnerMode,
 } from "@/app/actions";
-import { getFileUrl, listTasteRules, parseJson } from "@/lib/odata";
-import type { TasteRule } from "@/lib/odata";
+import {
+  getFileUrl,
+  listCurationJobs,
+  listTasteRules,
+  parseJson,
+} from "@/lib/odata";
+import type { CurationJob, TasteRule } from "@/lib/odata";
 import { isOwner, isOwnerModeConfigured } from "@/lib/owner";
 import {
   Marker,
@@ -39,13 +46,34 @@ type TasteRuleDashboard = {
   proposed: TasteRule[];
   accepted: TasteRule[];
   rejected: TasteRule[];
+  audits: TasteDistillationAudit[];
   unavailable: boolean;
+};
+
+type TasteDistillationAudit = {
+  jobId: string;
+  status: string;
+  updatedAt: string;
+  reportFileId: string;
+  duplicates: TasteRuleAuditCandidate[];
+  contradictions: TasteRuleAuditCandidate[];
+  tensions: TasteRuleAuditCandidate[];
+  skippedContradictions: TasteRuleAuditCandidate[];
+};
+
+type TasteRuleAuditCandidate = {
+  key: string;
+  text: string;
+  detail: string;
+  recommendation: string;
+  ruleIds: string[];
 };
 
 const emptyTasteRuleDashboard: TasteRuleDashboard = {
   proposed: [],
   accepted: [],
   rejected: [],
+  audits: [],
   unavailable: false,
 };
 
@@ -55,10 +83,23 @@ async function loadTasteRuleDashboard(
   if (!owner) return emptyTasteRuleDashboard;
   try {
     const rules = (await listTasteRules()).sort(byNewestTasteRule);
+    let audits: TasteDistillationAudit[] = [];
+    try {
+      const jobs = await listCurationJobs("JobType eq 'taste_distillation'", 20);
+      audits = jobs
+        .filter((job) => curationJobType(job) === "taste_distillation")
+        .sort(byNewestCurationJob)
+        .map(tasteDistillationAuditFromJob)
+        .filter(hasTasteAuditSignal)
+        .slice(0, 3);
+    } catch {
+      audits = [];
+    }
     return {
       proposed: rules.filter((rule) => tasteRuleStatus(rule) === "Proposed"),
       accepted: rules.filter((rule) => tasteRuleStatus(rule) === "Accepted"),
       rejected: rules.filter((rule) => tasteRuleStatus(rule) === "Rejected"),
+      audits,
       unavailable: false,
     };
   } catch {
@@ -76,6 +117,155 @@ function tasteRuleTime(rule: TasteRule): number {
     tasteRuleField(rule, "CreatedAt", "created_at");
   const time = raw ? Date.parse(raw) : Number.NaN;
   return Number.isFinite(time) ? time : 0;
+}
+
+function byNewestCurationJob(a: CurationJob, b: CurationJob): number {
+  return curationJobTime(b) - curationJobTime(a);
+}
+
+function curationJobTime(job: CurationJob): number {
+  const raw =
+    curationJobField(job, "UpdatedAt", "updated_at") ||
+    curationJobField(job, "CreatedAt", "created_at");
+  const time = raw ? Date.parse(raw) : Number.NaN;
+  return Number.isFinite(time) ? time : 0;
+}
+
+function curationJobType(job: CurationJob): string {
+  return curationJobField(job, "JobType", "job_type");
+}
+
+function curationJobField(job: CurationJob, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = job.fields[key];
+    if (value?.trim()) return value;
+  }
+  return "";
+}
+
+function tasteDistillationAuditFromJob(
+  job: CurationJob,
+): TasteDistillationAudit {
+  const output = parseJson<Record<string, unknown>>(
+    curationJobField(job, "Output", "output"),
+  );
+  return {
+    jobId: job.entity_id,
+    status: job.status || curationJobField(job, "State", "Status"),
+    updatedAt:
+      curationJobField(job, "UpdatedAt", "updated_at") ||
+      curationJobField(job, "CreatedAt", "created_at"),
+    reportFileId: curationJobField(job, "ReportFileId", "report_file_id"),
+    duplicates: auditCandidateList(output?.duplicate_rule_candidates),
+    contradictions: auditCandidateList(output?.contradiction_rule_candidates),
+    tensions: auditCandidateList(output?.rule_tension_candidates),
+    skippedContradictions: auditCandidateList(
+      output?.skipped_contradictory_directives,
+    ),
+  };
+}
+
+function hasTasteAuditSignal(audit: TasteDistillationAudit): boolean {
+  return (
+    audit.duplicates.length > 0 ||
+    audit.contradictions.length > 0 ||
+    audit.tensions.length > 0 ||
+    audit.skippedContradictions.length > 0
+  );
+}
+
+function auditCandidateList(value: unknown): TasteRuleAuditCandidate[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((candidate, index) => auditCandidate(candidate, index));
+}
+
+function auditCandidate(
+  candidate: unknown,
+  index: number,
+): TasteRuleAuditCandidate {
+  if (typeof candidate === "string") {
+    return {
+      key: `${index}-${candidate}`,
+      text: candidate,
+      detail: "",
+      recommendation: "",
+      ruleIds: [],
+    };
+  }
+
+  if (!candidate || typeof candidate !== "object") {
+    return {
+      key: `unknown-${index}`,
+      text: "Unlabeled audit candidate",
+      detail: "",
+      recommendation: "",
+      ruleIds: [],
+    };
+  }
+
+  const record = candidate as Record<string, unknown>;
+  const text =
+    firstString(record, [
+      "summary",
+      "title",
+      "rule_text",
+      "ruleText",
+      "description",
+      "issue",
+      "reason",
+    ]) || "Unlabeled audit candidate";
+  const detail = firstString(record, [
+    "detail",
+    "rationale",
+    "explanation",
+    "notes",
+  ]);
+  const recommendation = firstString(record, [
+    "recommendation",
+    "resolution",
+    "action",
+  ]);
+  const ruleIds = [
+    ...stringList(record.rule_ids),
+    ...stringList(record.ruleIds),
+    ...stringList(record.taste_rule_ids),
+    ...stringList(record.existing_rule_ids),
+    ...stringList(record.candidate_rule_ids),
+  ];
+
+  return {
+    key: `${index}-${text}`,
+    text,
+    detail,
+    recommendation,
+    ruleIds: Array.from(new Set(ruleIds)),
+  };
+}
+
+function firstString(record: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  for (const value of Object.values(record)) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function stringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = parseJson<string[]>(value);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 function tasteRuleStatus(rule: TasteRule): string {
@@ -243,7 +433,7 @@ function TasteRulesPanel({
 }: {
   dashboard: TasteRuleDashboard;
 }) {
-  const { proposed, accepted, rejected, unavailable } = dashboard;
+  const { proposed, accepted, rejected, audits, unavailable } = dashboard;
   return (
     <section className="relative">
       <WashiTape
@@ -283,6 +473,8 @@ function TasteRulesPanel({
               <TasteRuleCount label="rejected" value={rejected.length} />
             </div>
 
+            <TasteRuleAuditPanel audits={audits} />
+
             <TasteRuleSection
               title="Proposed"
               empty="No proposed rules are waiting."
@@ -313,6 +505,175 @@ function TasteRulesPanel({
         )}
       </StickyNote>
     </section>
+  );
+}
+
+function TasteRuleAuditPanel({
+  audits,
+}: {
+  audits: TasteDistillationAudit[];
+}) {
+  return (
+    <div className="space-y-3 border border-border bg-background/55 p-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          Rule hygiene reviews
+        </h3>
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          latest distillation output
+        </span>
+      </div>
+
+      {audits.length > 0 ? (
+        <div className="space-y-3">
+          {audits.map((audit) => (
+            <TasteRuleAuditCard key={audit.jobId} audit={audit} />
+          ))}
+        </div>
+      ) : (
+        <p className="border border-dashed border-border bg-card/50 px-3 py-2 text-sm text-muted-foreground">
+          Future distillation runs will show duplicate, contradiction, and
+          tension candidates here for owner review.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TasteRuleAuditCard({
+  audit,
+}: {
+  audit: TasteDistillationAudit;
+}) {
+  const updatedAt = audit.updatedAt ? new Date(audit.updatedAt) : null;
+  const timestamp =
+    updatedAt && Number.isFinite(updatedAt.getTime())
+      ? updatedAt.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "recent run";
+
+  return (
+    <article className="border border-border bg-card/60 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            {compactSourceId(audit.jobId)}
+          </span>
+          <TasteRuleStatusTag status={audit.status || "Completed"} />
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            {timestamp}
+          </span>
+        </div>
+        {audit.reportFileId ? (
+          <a
+            href={getFileUrl(audit.reportFileId)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-8 items-center gap-1.5 border border-border bg-background/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            report
+          </a>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-2">
+        <AuditCandidateGroup
+          title="duplicates"
+          tone="ramune"
+          icon={<GitMerge className="h-3.5 w-3.5" />}
+          candidates={audit.duplicates}
+        />
+        <AuditCandidateGroup
+          title="contradictions"
+          tone="sakura"
+          icon={<AlertTriangle className="h-3.5 w-3.5" />}
+          candidates={audit.contradictions}
+        />
+        <AuditCandidateGroup
+          title="tensions"
+          tone="sumire"
+          icon={<AlertTriangle className="h-3.5 w-3.5" />}
+          candidates={audit.tensions}
+        />
+        <AuditCandidateGroup
+          title="skipped contradictory drafts"
+          tone="sakura"
+          icon={<X className="h-3.5 w-3.5" />}
+          candidates={audit.skippedContradictions}
+        />
+      </div>
+    </article>
+  );
+}
+
+function AuditCandidateGroup({
+  title,
+  tone,
+  icon,
+  candidates,
+}: {
+  title: string;
+  tone: "ramune" | "sakura" | "sumire";
+  icon: ReactNode;
+  candidates: TasteRuleAuditCandidate[];
+}) {
+  if (candidates.length === 0) return null;
+  const toneClass =
+    tone === "sakura"
+      ? "border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] text-[var(--sakura)]"
+      : tone === "sumire"
+        ? "border-[color-mix(in_oklch,var(--sumire)_45%,var(--border))] text-[var(--sumire)]"
+        : "border-[color-mix(in_oklch,var(--ramune)_45%,var(--border))] text-[var(--ramune)]";
+
+  return (
+    <div className="border border-border bg-background/55 p-3">
+      <div className={`inline-flex items-center gap-1.5 border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${toneClass}`}>
+        {icon}
+        {title} · {candidates.length}
+      </div>
+      <div className="mt-2 space-y-2">
+        {candidates.slice(0, 5).map((candidate) => (
+          <div key={candidate.key} className="text-sm leading-6">
+            <p className="font-medium text-foreground">{candidate.text}</p>
+            {candidate.detail ? (
+              <p className="text-muted-foreground">{candidate.detail}</p>
+            ) : null}
+            {candidate.recommendation ? (
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                {candidate.recommendation}
+              </p>
+            ) : null}
+            {candidate.ruleIds.length > 0 ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {candidate.ruleIds.slice(0, 6).map((id) => (
+                  <span
+                    key={id}
+                    className="border border-border bg-card/50 px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                  >
+                    {compactSourceId(id)}
+                  </span>
+                ))}
+                {candidate.ruleIds.length > 6 ? (
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    +{candidate.ruleIds.length - 6}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ))}
+        {candidates.length > 5 ? (
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            +{candidates.length - 5} more in the report
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

@@ -404,6 +404,88 @@ export async function listTaxonomies(
 
 // ── Taste Rules ──
 
+export interface CurationJob {
+  entity_id: string;
+  status: string;
+  fields: {
+    Id?: string;
+    Status?: string;
+    State?: string;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    job_type?: string;
+    JobType?: string;
+    input?: string;
+    Input?: string;
+    output?: string;
+    Output?: string;
+    taste_rule_ids?: string;
+    TasteRuleIds?: string;
+    report_file_id?: string;
+    ReportFileId?: string;
+    error_message?: string;
+    ErrorMessage?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+export async function listCurationJobs(
+  filter?: string,
+  top = 100,
+): Promise<CurationJob[]> {
+  const params = new URLSearchParams();
+  if (filter) params.set("$filter", filter);
+  params.set("$top", String(top));
+  const q = params.toString();
+  const rows = await collectODataPages<Record<string, unknown>>(
+    `CurationJobs${q ? `?${q}` : ""}`,
+  );
+  return rows.map(normalizeCurationJobRow);
+}
+
+function normalizeCurationJobRow(raw: Record<string, unknown>): CurationJob {
+  if (raw && typeof raw.fields === "object" && raw.fields !== null) {
+    const row = raw as unknown as CurationJob;
+    const status = row.status ?? row.fields.State ?? row.fields.Status ?? "";
+    return { ...row, status };
+  }
+
+  const fields: Record<string, string | undefined> = {};
+  let entityId = "";
+  let status = "";
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === "@odata.id") {
+      entityId = parseEntitySetId(value, "CurationJobs") ?? entityId;
+      continue;
+    }
+    if (key === "@odata.context" || key === "@odata.type") {
+      continue;
+    }
+    if (key === "entity_id" && typeof value === "string") {
+      entityId = value;
+      continue;
+    }
+    if (
+      (key === "status" || key === "State" || key === "Status") &&
+      typeof value === "string"
+    ) {
+      status = value;
+      fields[key === "status" ? "State" : key] = value;
+      continue;
+    }
+    if (typeof value === "string") {
+      fields[key] = value;
+    }
+  }
+
+  entityId = fields.Id ?? entityId;
+  return {
+    entity_id: entityId,
+    status,
+    fields,
+  };
+}
+
 export type TasteRuleStatus =
   | "Proposed"
   | "Accepted"

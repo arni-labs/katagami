@@ -79,6 +79,7 @@ Bad examples:
    - `Proposed` and `Superseded`: already processed. Avoid duplicate evidence and duplicate directive text.
    Build processed sets from non-empty `evidence_fingerprint` values and from normalized `rule_text` values across all statuses.
 6. Perform a rule hygiene audit before proposing anything. This audit is for owner review and duplicate avoidance only; **Do not mutate existing TasteRules during the hygiene audit**.
+   - This is a semantic review, not a string-match pass. Use judgment to group rules with the same practical effect even when their wording differs.
    - Compare all TasteRules across all statuses using normalized `rule_text`, `title`, `polarity`, `pattern_type`, and `source_job_id`.
    - Record exact duplicates when normalized `rule_text` is identical.
    - Record near-duplicates when two or more rules express the same reusable design test with different wording, sources, or evidence.
