@@ -1,0 +1,109 @@
+# TasteRule - I/O Automaton Specification
+#
+# Human-approved learning artifact used by Katagami synthesis and review.
+# Rules may come from owner-approved distillation jobs or from foundation
+# knowledge extracted out of already-approved Katagami docs. Distillation rules
+# still obey their archive/featured evidence boundaries. Proposed rules are
+# inert until explicitly accepted by the human curator.
+
+[automaton]
+name = "TasteRule"
+states = ["Proposed", "Accepted", "Rejected", "Superseded"]
+initial = "Proposed"
+allow_indefinite_states = ["Proposed", "Accepted", "Rejected", "Superseded"]
+
+[[state]]
+name = "title"
+type = "string"
+initial = ""
+
+[[state]]
+name = "polarity"
+type = "string"
+initial = ""
+
+[[state]]
+name = "pattern_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "rule_text"
+type = "string"
+initial = ""
+
+[[state]]
+name = "rationale"
+type = "string"
+initial = ""
+
+[[state]]
+name = "evidence_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "comparator_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "confidence"
+type = "string"
+initial = "medium"
+
+[[state]]
+name = "source_job_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "report_file_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "evidence_fingerprint"
+type = "string"
+initial = ""
+
+[[state]]
+name = "curator_notes"
+type = "string"
+initial = ""
+
+[[state]]
+name = "superseded_by_rule_id"
+type = "string"
+initial = ""
+
+[[action]]
+name = "Define"
+kind = "input"
+from = ["Proposed"]
+params = ["title", "polarity", "pattern_type", "rule_text", "rationale", "evidence_language_ids", "comparator_language_ids", "confidence", "source_job_id", "report_file_id", "evidence_fingerprint"]
+hint = "Populate a proposed taste rule from a distillation job. Polarity must be positive or negative."
+
+[[action]]
+name = "Accept"
+kind = "input"
+from = ["Proposed"]
+to = "Accepted"
+params = ["curator_notes"]
+hint = "Approve this taste rule for future synthesis and quality-review guidance."
+
+[[action]]
+name = "Reject"
+kind = "input"
+from = ["Proposed", "Accepted"]
+to = "Rejected"
+params = ["curator_notes"]
+hint = "Reject this taste rule. Rejected rules are never used by curator jobs."
+
+[[action]]
+name = "Supersede"
+kind = "input"
+from = ["Proposed", "Accepted"]
+to = "Superseded"
+params = ["superseded_by_rule_id", "curator_notes"]
+hint = "Retire a rule in favor of a newer rule."

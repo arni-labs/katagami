@@ -1,0 +1,6 @@
+# Taxonomy seed data — intentionally empty.
+#
+# Taxonomies are created and organized by the curator agent via
+# organize_taxonomy CurationJobs, not hardcoded here. The agent
+# discovers categories from the actual design languages that exist,
+# builds hierarchy, sets relationships, and prevents duplicates.

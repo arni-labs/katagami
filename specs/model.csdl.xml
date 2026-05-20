@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Katagami Curation — Agent Work Layer
+     CurationJob: task queue for bootstrap and curator agents.
+     Structurally identical to koto-wiki WikiJob. -->
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="Katagami.Curation" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+
+      <!-- CurationJob: task queue entry for curator agents -->
+      <EntityType Name="CurationJob">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Queued" />
+        <Property Name="JobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Input" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Output" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="FollowupJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReviewInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="OrganizeInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="TasteRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
+        <Property Name="InlineJobDocs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Session spawning fields -->
+        <Property Name="SoulId" Type="Edm.String" Nullable="false" DefaultValue="app-agent-bootstrap" />
+        <Property Name="Model" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Provider" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ToolsEnabled" Type="Edm.String" Nullable="false" DefaultValue="temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch" />
+        <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
+        <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationDirection: one research-discovered synthesis direction -->
+      <EntityType Name="CurationDirection">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Discovered" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Task" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Scope" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TargetDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PaletteDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="TopicAllowlist" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SynthInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationJobTemplate: data-owned session bootstrapping config -->
+      <EntityType Name="CurationJobTemplate">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="JobType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SkillId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="InstructionPath" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ToolsProfile" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RequiresSandbox" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="MaxTurnsDefault" Type="Edm.String" Nullable="false" DefaultValue="250" />
+        <Property Name="CompletionAction" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
+        <Property Name="TemplateVersion" Type="Edm.String" Nullable="false" DefaultValue="1" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- CurationQuery: end-to-end pipeline tracker for automated design language creation -->
+      <EntityType Name="CurationQuery">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Submitted" />
+        <Property Name="QueryText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SynthesizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SynthesizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="QualityReviewJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OrganizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OrganizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- TasteRule: proposed or accepted taste guidance distilled from archive/featured signals -->
+      <EntityType Name="TasteRule">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Proposed" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Polarity" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PatternType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RuleText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Rationale" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ComparatorLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Confidence" Type="Edm.String" Nullable="false" DefaultValue="medium" />
+        <Property Name="SourceJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EvidenceFingerprint" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SupersededByRuleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <EntityContainer Name="KatagamiCurationContainer">
+        <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
+        <EntitySet Name="CurationDirections" EntityType="Katagami.Curation.CurationDirection" />
+        <EntitySet Name="CurationJobTemplates" EntityType="Katagami.Curation.CurationJobTemplate" />
+        <EntitySet Name="CurationQueries" EntityType="Katagami.Curation.CurationQuery" />
+        <EntitySet Name="TasteRules" EntityType="Katagami.Curation.TasteRule" />
+      </EntityContainer>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>
