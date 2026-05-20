@@ -119,10 +119,23 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 .unwrap_or(&ctx.entity_id)
                 .to_string();
 
-            let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
+            let prompt_assets_started_at = Context::get_time_millis();
+            let template = match lookup_active_template(&ctx, &api_url, &headers, &job_type) {
+                Ok(template) => template,
+                Err(err) => {
+                    emit_build_session_step_duration(
+                        &ctx,
+                        &job_type,
+                        "prompt_assets",
+                        prompt_assets_started_at,
+                        "error",
+                    );
+                    return Err(err);
+                }
+            };
             let skill = template.skill_id.as_str();
             let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
-            let instruction_doc = load_instruction_doc(
+            let instruction_doc = reference_instruction_doc(
                 &ctx,
                 &api_url,
                 &headers,
@@ -135,12 +148,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 .map(|doc| doc.path.as_str())
                 .unwrap_or(template.instruction_path.as_str());
             let knowledge_specs = knowledge_read_specs_for_skill(skill);
-            let knowledge_docs = knowledge_specs
-                .iter()
-                .filter_map(|(path, _)| {
-                    load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs)
-                })
-                .collect::<Vec<_>>();
+            let knowledge_docs = reference_knowledge_docs(
+                &ctx,
+                &api_url,
+                &headers,
+                knowledge_specs,
+                inline_job_docs,
+            );
             let instruction_read_command =
                 temper_read_command(effective_instruction_path, instruction_doc.as_ref());
             let knowledge_read_commands = render_read_commands(knowledge_specs, &knowledge_docs);
@@ -148,6 +162,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 instruction_doc.as_ref(),
                 &knowledge_docs,
                 inline_job_docs,
+            );
+            emit_build_session_step_duration(
+                &ctx,
+                &job_type,
+                "prompt_assets",
+                prompt_assets_started_at,
+                "ok",
             );
 
             let job_tools = fields
@@ -883,6 +904,48 @@ fn load_instruction_doc(
         }
     }
     None
+}
+
+fn reference_instruction_doc(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    configured_path: &str,
+    stable_soul_id: &str,
+    inline_content: bool,
+) -> Option<LoadedDoc> {
+    if inline_content {
+        return load_instruction_doc(ctx, api_url, headers, configured_path, stable_soul_id, true);
+    }
+    Some(static_doc_reference(configured_path))
+}
+
+fn reference_knowledge_docs(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    paths: &[(&'static str, &'static str)],
+    inline_content: bool,
+) -> Vec<LoadedDoc> {
+    if inline_content {
+        return paths
+            .iter()
+            .filter_map(|(path, _)| load_doc_file(ctx, api_url, headers, path, true))
+            .collect();
+    }
+
+    paths
+        .iter()
+        .map(|(path, _)| static_doc_reference(path))
+        .collect()
+}
+
+fn static_doc_reference(path: &str) -> LoadedDoc {
+    LoadedDoc {
+        path: path.to_string(),
+        workspace_id: DOC_WORKSPACE_ID.to_string(),
+        content: None,
+    }
 }
 
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {

@@ -15,6 +15,7 @@ class BuildSessionStepMetricsTests(unittest.TestCase):
         self.assertIn("Context::get_time_millis", builder)
 
         for needle in [
+            '"prompt_assets"',
             '"ensure_workspace"',
             '"create_session"',
             '"configure_session"',
