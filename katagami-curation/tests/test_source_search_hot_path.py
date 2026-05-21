@@ -124,6 +124,26 @@ class SourceSearchHotPathTests(unittest.TestCase):
                     f"{doc_path} must be packaged under katagami-curation",
                 )
 
+    def test_curation_child_session_setup_batches_independent_work(self):
+        root = Path(__file__).resolve().parents[1]
+        builder = (
+            root / "wasm" / "build_session_message" / "src" / "lib.rs"
+        ).read_text()
+
+        self.assertIn("configure_session_and_create_link", builder)
+        self.assertIn("ctx.http_call_batch(&[", builder)
+        self.assertIn('"child_setup_batch"', builder)
+
+        run_tail = builder[
+            builder.index("let link_id = match configure_session_and_create_link") :
+            builder.index('ctx.log("info", "build_session_message: completed successfully")')
+        ]
+        self.assertLess(
+            run_tail.index("configure_session_link("),
+            run_tail.index("Katagami.Curation.SessionSpawned"),
+            "CurationJob should not be marked Running until the SessionLink is configured",
+        )
+
     def test_curator_skills_use_preloaded_json_helper_contract(self):
         root = Path(__file__).resolve().parents[1]
         curator_root = root / "agents" / "curator"

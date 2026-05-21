@@ -18,6 +18,7 @@ class BuildSessionStepMetricsTests(unittest.TestCase):
             '"prompt_assets"',
             '"ensure_workspace"',
             '"create_session"',
+            '"child_setup_batch"',
             '"configure_session"',
             '"session_spawned"',
             '"create_session_link"',
