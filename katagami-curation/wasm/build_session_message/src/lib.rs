@@ -415,46 +415,39 @@ temper.done("{job_type} failed")
                 }
             }
 
-            let configure_session_started_at = Context::get_time_millis();
-            let configure_resp = match ctx.http_call(
-                "POST",
-                &format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Configure"),
+            let link_id = match configure_session_and_create_link(
+                &ctx,
+                &api_url,
                 &headers,
-                &config_body.to_string(),
+                &job_type,
+                &session_id,
+                &config_body,
             ) {
-                Ok(response) => response,
-                Err(err) => {
-                    emit_build_session_step_duration(
-                        &ctx,
-                        &job_type,
-                        "configure_session",
-                        configure_session_started_at,
-                        "error",
+                Ok(link_id) => link_id,
+                Err(link_error) => {
+                    let message = format!(
+                        "Child Session setup failed for Session '{session_id}': {link_error}"
                     );
-                    return Err(err);
+                    dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
+                    return Err(message);
                 }
             };
-            if !(200..300).contains(&configure_resp.status) {
-                emit_build_session_step_duration(
-                    &ctx,
-                    &job_type,
-                    "configure_session",
-                    configure_session_started_at,
-                    "error",
-                );
-                return Err(format!(
-                    "Failed to Configure Session: HTTP {}: {}",
-                    configure_resp.status,
-                    &configure_resp.body[..configure_resp.body.len().min(500)]
-                ));
-            }
-            emit_build_session_step_duration(
+
+            if let Err(link_error) = configure_session_link(
                 &ctx,
+                &api_url,
+                &headers,
                 &job_type,
-                "configure_session",
-                configure_session_started_at,
-                "ok",
-            );
+                &entity_id,
+                &session_id,
+                &link_id,
+            ) {
+                let message = format!(
+                    "SessionLink setup failed for child Session '{session_id}': {link_error}"
+                );
+                dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
+                return Err(message);
+            }
 
             // --- Dispatch SessionSpawned on the CurationJob ---
             let spawned_body = json!({
@@ -504,16 +497,6 @@ temper.done("{job_type} failed")
                 spawned_started_at,
                 "ok",
             );
-
-            if let Err(link_error) =
-                create_session_link(&ctx, &api_url, &headers, &job_type, &entity_id, &session_id)
-            {
-                let message = format!(
-                    "SessionLink setup failed for child Session '{session_id}': {link_error}"
-                );
-                dispatch_curation_job_failure(&ctx, &api_url, &headers, &entity_id, &message)?;
-                return Err(message);
-            }
 
             ctx.log("info", "build_session_message: completed successfully");
 
@@ -590,39 +573,93 @@ fn emit_build_session_step_duration(
     elapsed_ms
 }
 
-fn create_session_link(
+fn configure_session_and_create_link(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     job_type: &str,
-    parent_job_id: &str,
-    child_session_id: &str,
-) -> Result<(), String> {
-    let create_started_at = Context::get_time_millis();
-    let create_resp = match ctx.http_call(
-        "POST",
-        &format!("{api_url}/tdata/SessionLinks"),
-        headers,
-        "{}",
-    ) {
-        Ok(response) => response,
+    session_id: &str,
+    config_body: &Value,
+) -> Result<String, String> {
+    let batch_started_at = Context::get_time_millis();
+    let responses = match ctx.http_call_batch(&[
+        HttpRequest {
+            method: "POST".to_string(),
+            url: format!("{api_url}/tdata/Sessions('{session_id}')/OpenPaw.Configure"),
+            headers: headers.to_vec(),
+            body: config_body.to_string(),
+        },
+        HttpRequest {
+            method: "POST".to_string(),
+            url: format!("{api_url}/tdata/SessionLinks"),
+            headers: headers.to_vec(),
+            body: "{}".to_string(),
+        },
+    ]) {
+        Ok(responses) => responses,
         Err(err) => {
             emit_build_session_step_duration(
                 ctx,
                 job_type,
-                "create_session_link",
-                create_started_at,
+                "child_setup_batch",
+                batch_started_at,
                 "error",
             );
             return Err(err);
         }
     };
+
+    if responses.len() != 2 {
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "child_setup_batch",
+            batch_started_at,
+            "error",
+        );
+        return Err(format!(
+            "Expected 2 child setup batch responses, got {}",
+            responses.len()
+        ));
+    }
+
+    let configure_resp = &responses[0];
+    if !(200..300).contains(&configure_resp.status) {
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "configure_session",
+            batch_started_at,
+            "error",
+        );
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "child_setup_batch",
+            batch_started_at,
+            "error",
+        );
+        return Err(format!(
+            "Failed to Configure Session: HTTP {}: {}",
+            configure_resp.status,
+            &configure_resp.body[..configure_resp.body.len().min(500)]
+        ));
+    }
+
+    let create_resp = &responses[1];
     if create_resp.status < 200 || create_resp.status >= 300 {
         emit_build_session_step_duration(
             ctx,
             job_type,
             "create_session_link",
-            create_started_at,
+            batch_started_at,
+            "error",
+        );
+        emit_build_session_step_duration(
+            ctx,
+            job_type,
+            "child_setup_batch",
+            batch_started_at,
             "error",
         );
         return Err(format!(
@@ -638,7 +675,14 @@ fn create_session_link(
                 ctx,
                 job_type,
                 "create_session_link",
-                create_started_at,
+                batch_started_at,
+                "error",
+            );
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "child_setup_batch",
+                batch_started_at,
                 "error",
             );
             return Err(format!(
@@ -657,20 +701,32 @@ fn create_session_link(
                 ctx,
                 job_type,
                 "create_session_link",
-                create_started_at,
+                batch_started_at,
+                "error",
+            );
+            emit_build_session_step_duration(
+                ctx,
+                job_type,
+                "child_setup_batch",
+                batch_started_at,
                 "error",
             );
             return Err("Created SessionLink has no entity_id".to_string());
         }
     };
-    emit_build_session_step_duration(
-        ctx,
-        job_type,
-        "create_session_link",
-        create_started_at,
-        "ok",
-    );
+    emit_build_session_step_duration(ctx, job_type, "child_setup_batch", batch_started_at, "ok");
+    Ok(link_id.to_string())
+}
 
+fn configure_session_link(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_type: &str,
+    parent_job_id: &str,
+    child_session_id: &str,
+    link_id: &str,
+) -> Result<(), String> {
     let configure_body = json!({
         "ParentEntitySet": "CurationJobs",
         "ParentEntityId": parent_job_id,
