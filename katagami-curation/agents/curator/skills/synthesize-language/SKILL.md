@@ -132,6 +132,12 @@ temper.action('DesignLanguages', eid, 'SetSpec', {
 ```
 
 Tokens must be DESIGN.md-projectable: real hex values, concrete font names, valid CSS dimensions, component semantics that reference `{colors.*}`, `{typography.*}`, `{rounded.*}`, `{spacing.*}`.
+The generated DESIGN.md projection must also include a `## shadcn/ui Usage`
+section that points shadcn-targeted agents to
+`/language/{language_id}/DESIGN.with-shadcn.md`, `/shadcn.json`,
+`/shadcn-components.md`, and `/shadcn-shots.json`, and says to import local
+primitives from `@/components/ui/*` instead of inventing a second component
+system.
 
 ### Spec Validation Gate
 
@@ -336,21 +342,51 @@ Create `/katagami/shadcn/{slug}/components.md` with:
 - `## Required primitives`
 - `## Token cues`
 - `## Visual character to preserve`
+- `## ShadSync visual profile`
 - `## Signature component recipes`
 - `## Preview shots`
 - `## Implementation contract`
+- `## Copy-paste component example`
 
 The recipes must cover `button`, `card`, `input`, `textarea`, `select`,
 `dialog`, `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`,
-`slider`, `tooltip`, `dropdown-menu`, and `table`. They must translate the
-language's actual `visual_character`, `signature_patterns`, surfaces, borders,
-density, focus, and motion into shadcn component usage.
+`slider`, `tooltip`, `dropdown-menu`, and `table`. It must include a
+top-level author line naming `katagami-agent`, a `ShadSync visual profile`
+section, and copy-paste TSX that imports from `@/components/ui/*`. Use the exact
+author line ``Author: `katagami-agent``` so finalizer verification can
+distinguish agent work from deterministic placeholders. The recipes must
+translate the language's
+actual `visual_character`, `signature_patterns`, surfaces, borders, density,
+focus, and motion into shadcn component usage.
 
 Create `/katagami/shadcn/{slug}/preview-shots.json` with artifact
-`katagami:shadcn-preview-shots`, version `preview-shots-v1`, at least three
-shots (`application-shell`, `detail-editor`, `data-operations`), and a
-`componentRecipes` array. Each shot must name the shadcn primitives used,
-composition, must-show states, and avoid rules.
+`katagami:shadcn-preview-shots`, version `preview-shots-v1`, schema
+`katagami:shadcn-preview-shots/renderable-v1`, `renderable: true`, top-level
+`author: "katagami-agent"`, `generatedBy: "katagami-agent"`,
+`requiresVisualProfile: true`, at least three shots (`application-shell`,
+`detail-editor`, `data-operations`), a top-level `visualProfile` object, and a
+`componentRecipes` array covering every
+required primitive. Each shot must name the shadcn primitives used, composition,
+must-show states, avoid rules, and a renderable `scene` object with `eyebrow`,
+`headline`, `description`, action labels, and concrete `stats`, `fields`, or
+`rows` data. The language page renders these scene objects and the
+`visualProfile` directly on local shadcn-style primitives, so do not leave
+preview shots as generic prose-only notes.
+
+`visualProfile` is required art direction data, not documentation. Use values
+derived from the actual language: `family`, `material`, `contour`, `border`,
+`underlay`, `grain`, `stickerBadges`, `motion`, `density`, and `accents`.
+Example for a collage language: `family: "paper-collage"`,
+`material: "paper"`, `contour: "blob"`, `border: "dashed"`,
+`underlay: true`, `grain: true`, `stickerBadges: true`,
+`motion: "lift-rotate"`, `density: "balanced"`.
+Keep the rendered shots clean. `contour` is decorative art direction, not a
+license to make every card, sheet, and table a novelty shape. Define one
+coherent shape scale in the recipes: container/card radius, control/field
+radius, and pill/badge radius. The three preview shots must look like polished
+product screenshots, not shadcn component inventory walls: use realistic
+content, stable spacing, hierarchy, and one or two distinctive signature
+patterns from the language.
 
 ```python
 component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
@@ -360,6 +396,9 @@ temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
     'shadcn_component_spec_manifest': json.dumps({
         'artifact': 'katagami:shadcn-component-recipes',
         'version': 'component-recipes-v1',
+        'author': 'katagami-agent',
+        'generatedBy': 'katagami-agent',
+        'requiresVisualProfile': True,
         'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table'],
         'shots': ['application-shell', 'detail-editor', 'data-operations']
     }, ensure_ascii=False)
@@ -372,7 +411,13 @@ temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
     'shadcn_preview_shots_manifest': json.dumps({
         'artifact': 'katagami:shadcn-preview-shots',
         'version': 'preview-shots-v1',
-        'shotIds': ['application-shell', 'detail-editor', 'data-operations']
+        'author': 'katagami-agent',
+        'generatedBy': 'katagami-agent',
+        'schema': 'katagami:shadcn-preview-shots/renderable-v1',
+        'renderable': True,
+        'requiresVisualProfile': True,
+        'shotIds': ['application-shell', 'detail-editor', 'data-operations'],
+        'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table']
     }, ensure_ascii=False)
 })
 ```
@@ -380,7 +425,8 @@ temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
 The deterministic shadcn/ui registry theme is still finalizer-owned. Do not
 hand-write or attach `AttachShadcnExport` during synthesis; keep the native
 Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
-`/katagami/shadcn/{slug}/registry-theme.json`.
+`/katagami/shadcn/{slug}/registry-theme.json`. The finalizer does not author
+`components.md` or `preview-shots.json`; it only verifies that the agent did.
 
 ### Final Tool Call
 

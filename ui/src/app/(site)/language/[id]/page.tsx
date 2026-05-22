@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getDesignLanguage } from "@/lib/odata";
+import { readTemperFileText } from "@/lib/temper-files";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
@@ -15,6 +16,7 @@ import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
 import { PageHero, Marker } from "@/components/page-hero";
+import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
   StickyNote,
   WashiTape,
@@ -121,7 +123,48 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  const shadcnTheme = shadcnThemeJson(specProps);
+  const [
+    storedShadcnTheme,
+    storedShadcnComponentSpec,
+    storedShadcnPreviewShots,
+  ] = await Promise.all([
+    readTemperFileText(f.shadcn_export_file_id),
+    readTemperFileText(f.shadcn_component_spec_file_id),
+    readTemperFileText(f.shadcn_preview_shots_file_id),
+  ]);
+  const shadcnTheme = storedShadcnTheme ?? shadcnThemeJson(specProps);
+  const shadcnThemeStatus = storedShadcnTheme
+    ? lang.booleans.shadcn_export_verified
+      ? "validated"
+      : "stored-unverified"
+    : "generated-preview";
+  const shadcnComponentStatus = storedShadcnComponentSpec
+    ? lang.booleans.shadcn_component_spec_verified
+      ? "validated"
+      : "stored-unverified"
+    : "generated-preview";
+  const shadcnPreviewShotsStatus = storedShadcnPreviewShots
+    ? lang.booleans.shadcn_preview_shots_verified
+      ? "validated"
+      : "stored-unverified"
+    : "generated-preview";
+  const shadcnDesignMd = shadcnDesignMdMarkdown({
+    languageId: id,
+    name,
+    slug: f.slug,
+    tokens: f.tokens,
+    philosophy: f.philosophy,
+    rules: f.rules,
+    layout: f.layout_principles,
+    guidance: f.guidance,
+    designMd,
+    themeJson: shadcnTheme,
+    componentSpec: storedShadcnComponentSpec,
+    previewShotsJson: storedShadcnPreviewShots,
+    themeStatus: shadcnThemeStatus,
+    componentSpecStatus: shadcnComponentStatus,
+    previewShotsStatus: shadcnPreviewShotsStatus,
+  });
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
@@ -165,6 +208,7 @@ export default async function LanguageDetailPage({
         katagamiSpec={katagamiMarkdown}
         designMd={designMd}
         shadcnTheme={shadcnTheme}
+        shadcnDesignMd={shadcnDesignMd}
         slug={f.slug}
         variant="hero"
       />
@@ -247,7 +291,7 @@ export default async function LanguageDetailPage({
 
           <section className="order-4">
             <SectionHeading eyebrow="shadcn/ui" eyebrowColor="teal">
-              <Marker color="teal">component theme</Marker>
+              <Marker color="teal">implementation kit</Marker>
             </SectionHeading>
             <StickyNote tint="teal" className="p-4 sm:p-5">
               <ShadcnPreview
@@ -259,6 +303,13 @@ export default async function LanguageDetailPage({
                 rulesRaw={f.rules}
                 layoutRaw={f.layout_principles}
                 guidanceRaw={f.guidance}
+                storedThemeJson={storedShadcnTheme}
+                storedComponentSpec={storedShadcnComponentSpec}
+                storedPreviewShots={storedShadcnPreviewShots}
+                shadcnDesignMd={shadcnDesignMd}
+                themeStatus={shadcnThemeStatus}
+                componentSpecStatus={shadcnComponentStatus}
+                previewShotsStatus={shadcnPreviewShotsStatus}
                 compact
               />
             </StickyNote>

@@ -242,7 +242,26 @@ function normalizeDesignLanguageRow(
   raw: Record<string, unknown>,
 ): DesignLanguage {
   if (raw && typeof raw.fields === "object" && raw.fields !== null) {
-    return raw as unknown as DesignLanguage;
+    const fields = raw.fields as Record<string, unknown>;
+    const booleans = {
+      ...((raw.booleans as Record<string, boolean> | undefined) ?? {}),
+    };
+    const counters = {
+      ...((raw.counters as Record<string, number> | undefined) ?? {}),
+    };
+    for (const [key, value] of Object.entries(fields)) {
+      if (FLAT_BOOLEAN_KEYS.has(key) && typeof value === "boolean") {
+        booleans[key] = value;
+      }
+      if (FLAT_COUNTER_KEYS.has(key) && typeof value === "number") {
+        counters[key] = value;
+      }
+    }
+    return {
+      ...raw,
+      booleans,
+      counters,
+    } as unknown as DesignLanguage;
   }
   const fields: Record<string, unknown> = {};
   const booleans: Record<string, boolean> = {};
@@ -353,7 +372,9 @@ async function collectDesignLanguageRows(
 }
 
 export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
-  return odata<DesignLanguage>(`DesignLanguages('${id}')`);
+  return normalizeDesignLanguageRow(
+    await odata<Record<string, unknown>>(`DesignLanguages('${id}')`),
+  );
 }
 
 // ── Taxonomy ──

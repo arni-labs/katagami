@@ -1,33 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
-import { shadcnPreviewShotsJson } from "@/lib/shadcn-export";
-
-function cleanEnv(value: string | undefined, fallback: string): string {
-  const cleaned = (value ?? fallback).replace(/\\n/g, "").trim();
-  return cleaned || fallback;
-}
-
-const API_BASE = cleanEnv(
-  process.env.NEXT_PUBLIC_TEMPER_API_URL,
-  "http://localhost:3500",
-);
-const TENANT = cleanEnv(process.env.NEXT_PUBLIC_TEMPER_TENANT, "default");
-const API_KEY = cleanEnv(process.env.TEMPER_API_KEY, "");
+import { readTemperFileBytes } from "@/lib/temper-files";
+import {
+  isAgentAuthoredShadcnPreviewShots,
+  isRenderableShadcnPreviewShots,
+  shadcnPreviewShotsJson,
+} from "@/lib/shadcn-export";
 
 export const dynamic = "force-dynamic";
-
-async function readStoredFile(fileId: string): Promise<ArrayBuffer | null> {
-  const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
-  if (API_KEY) fetchHeaders.Authorization = `Bearer ${API_KEY}`;
-
-  const res = await fetch(`${API_BASE}/tdata/Files('${fileId}')/$value`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-
-  if (!res.ok) return null;
-  return res.arrayBuffer();
-}
 
 export async function GET(
   _req: Request,
@@ -56,17 +36,28 @@ export async function GET(
       : "stored-unverified";
 
   if (f.shadcn_preview_shots_file_id) {
-    const stored = await readStoredFile(f.shadcn_preview_shots_file_id);
+    const stored = await readTemperFileBytes(f.shadcn_preview_shots_file_id);
     if (stored) {
-      return new NextResponse(stored, {
-        status: 200,
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          "content-disposition": `inline; filename="${filename}"`,
-          "cache-control": "public, max-age=60, s-maxage=300",
-          "x-katagami-shadcn-status": storedStatus,
-        },
-      });
+      try {
+        const storedJson = JSON.parse(new TextDecoder().decode(stored));
+        if (
+          isRenderableShadcnPreviewShots(storedJson) &&
+          isAgentAuthoredShadcnPreviewShots(storedJson)
+        ) {
+          return new NextResponse(stored, {
+            status: 200,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "content-disposition": `inline; filename="${filename}"`,
+              "cache-control": "public, max-age=60, s-maxage=300",
+              "x-katagami-shadcn-status": storedStatus,
+            },
+          });
+        }
+      } catch {
+        // Fall through to the deterministic preview. The stored artifact exists,
+        // but it is not renderable enough to present as a verified shot contract.
+      }
     }
   }
 
@@ -86,6 +77,9 @@ export async function GET(
       "content-disposition": `inline; filename="${filename}"`,
       "cache-control": "public, max-age=60, s-maxage=300",
       "x-katagami-shadcn-status": "generated-preview",
+      "x-katagami-shadcn-stored-status": f.shadcn_preview_shots_file_id
+        ? "invalid-stored"
+        : "missing-stored",
     },
   });
 }

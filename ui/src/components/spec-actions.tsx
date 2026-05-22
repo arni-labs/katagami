@@ -8,11 +8,12 @@ interface SpecActionsProps {
   katagamiSpec: string;
   designMd: string;
   shadcnTheme: string;
+  shadcnDesignMd?: string;
   slug?: string;
   variant?: "compact" | "hero";
 }
 
-type Format = "katagami" | "design-md" | "shadcn";
+type Format = "katagami" | "design-md" | "shadcn-md" | "shadcn";
 type CopyKind = "copy" | "link";
 
 const PREAMBLE: Record<Format, string> = {
@@ -25,23 +26,35 @@ const PREAMBLE: Record<Format, string> = {
   shadcn:
     "Use the following shadcn/ui registry theme as the component-theme projection of the Katagami design language. " +
     "Apply the CSS variables to shadcn/ui primitives and keep the native Katagami spec as the source of truth.",
+  "shadcn-md":
+    "Use the following DESIGN.md for a shadcn/ui project. It includes the Katagami design language plus shadcn/ui install, theme, component recipe, preview-shot, and starter TSX guidance.",
 };
 
 const FILENAME_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI",
   "design-md": "DESIGN",
+  "shadcn-md": "DESIGN.with-shadcn",
   shadcn: "SHADCN",
 };
 
 const URL_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI.MD",
   "design-md": "DESIGN.md",
+  "shadcn-md": "DESIGN.with-shadcn.md",
+  shadcn: "shadcn.json",
+};
+
+const DISPLAY_FILENAME: Record<Format, string> = {
+  katagami: "KATAGAMI.MD",
+  "design-md": "DESIGN.md",
+  "shadcn-md": "DESIGN.md",
   shadcn: "shadcn.json",
 };
 
 const ACCENT: Record<Format, string> = {
   katagami: "sumire",
   "design-md": "salad",
+  "shadcn-md": "ramune",
   shadcn: "teal",
 };
 
@@ -65,6 +78,7 @@ export function SpecActions({
   katagamiSpec,
   designMd,
   shadcnTheme,
+  shadcnDesignMd,
   slug,
   variant = "compact",
 }: SpecActionsProps) {
@@ -87,7 +101,13 @@ export function SpecActions({
   };
 
   const markdownFor = (f: Format) =>
-    f === "katagami" ? katagamiSpec : f === "design-md" ? designMd : shadcnTheme;
+    f === "katagami"
+      ? katagamiSpec
+      : f === "design-md"
+        ? designMd
+        : f === "shadcn-md"
+          ? shadcnDesignMd ?? designMd
+          : shadcnTheme;
 
   const handleCopy = async () => {
     const md = markdownFor(format);
@@ -128,7 +148,11 @@ export function SpecActions({
   };
 
   const accent = ACCENT[format];
-  const filename = URL_SUFFIX[format];
+  const displayFilename = DISPLAY_FILENAME[format];
+  const actionTitle =
+    format === "shadcn-md"
+      ? "DESIGN.md with shadcn/ui"
+      : displayFilename;
 
   if (variant === "hero") {
     return (
@@ -153,37 +177,44 @@ export function SpecActions({
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div className="min-w-0">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <FormatTab
-                  active={format === "design-md"}
-                  onClick={() => setFormat("design-md")}
-                  accent="salad"
-                >
-                  DESIGN.md
-                </FormatTab>
-                <FormatTab
-                  active={format === "katagami"}
-                  onClick={() => setFormat("katagami")}
-                  accent="sumire"
-                  kanji
-                >
-                  katagami
-                </FormatTab>
-                <FormatTab
-                  active={format === "shadcn"}
-                  onClick={() => setFormat("shadcn")}
-                  accent="teal"
-                >
-                  shadcn
-                </FormatTab>
+              <div className="mb-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <FormatTab
+                    active={format === "design-md"}
+                    onClick={() => setFormat("design-md")}
+                    accent="salad"
+                  >
+                    DESIGN.md
+                  </FormatTab>
+                  <FormatTab
+                    active={format === "shadcn-md"}
+                    onClick={() => setFormat("shadcn-md")}
+                    accent="ramune"
+                  >
+                    with shadcn
+                  </FormatTab>
+                  <FormatTab
+                    active={format === "katagami"}
+                    onClick={() => setFormat("katagami")}
+                    accent="sumire"
+                    kanji
+                  >
+                    katagami
+                  </FormatTab>
+                </div>
+                <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.025em] sm:text-[32px]">
+                  Download {displayFilename}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  {format === "shadcn-md"
+                    ? "For shadcn/ui projects: the same DESIGN.md source plus install, theme, recipes, preview contract, and starter TSX in one Markdown file."
+                    : format === "shadcn"
+                      ? "Raw shadcn registry theme JSON for CSS variables."
+                      : format === "katagami"
+                        ? "Native Katagami source spec with the richest token and language context."
+                        : "Portable DESIGN.md source of truth for most agents and apps."}
+                </p>
               </div>
-              <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.025em] sm:text-[32px]">
-                Download {filename}
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Take the selected artifact now; the deeper spec, preview, and
-                tokens stay below for inspection.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -191,7 +222,7 @@ export function SpecActions({
                 type="button"
                 onClick={handleDownload}
                 className="group inline-flex cursor-pointer items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
-                title={`Download ${filename}`}
+                title={`Download ${actionTitle}`}
               >
                 <Download className="h-4 w-4" />
                 download
@@ -246,16 +277,8 @@ export function SpecActions({
       />
 
       <div className="relative flex flex-col gap-2 bg-card/70 px-3 pb-3 pt-2 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">
-        {/* Tab strip — two filing tabs, active one tilts forward */}
+        {/* Tab strip — active one tilts forward */}
         <div className="flex items-end gap-2">
-          <FormatTab
-            active={format === "katagami"}
-            onClick={() => setFormat("katagami")}
-            accent="sumire"
-            kanji
-          >
-            katagami
-          </FormatTab>
           <FormatTab
             active={format === "design-md"}
             onClick={() => setFormat("design-md")}
@@ -264,11 +287,19 @@ export function SpecActions({
             DESIGN.md
           </FormatTab>
           <FormatTab
-            active={format === "shadcn"}
-            onClick={() => setFormat("shadcn")}
-            accent="teal"
+            active={format === "shadcn-md"}
+            onClick={() => setFormat("shadcn-md")}
+            accent="ramune"
           >
-            shadcn
+            with shadcn
+          </FormatTab>
+          <FormatTab
+            active={format === "katagami"}
+            onClick={() => setFormat("katagami")}
+            accent="sumire"
+            kanji
+          >
+            katagami
           </FormatTab>
         </div>
 

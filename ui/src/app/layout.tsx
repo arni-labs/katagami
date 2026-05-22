@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Nunito, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Geist_Mono,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
+  Instrument_Serif,
+  Nunito,
+} from "next/font/google";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -17,6 +24,26 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-dew-display",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+});
+
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-dew-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-dew-mono",
+  subsets: ["latin"],
+  weight: ["500"],
 });
 
 export const metadata: Metadata = {
@@ -70,7 +97,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
+      className={`${nunito.variable} ${geistMono.variable} ${bricolage.variable} ${instrumentSerif.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
