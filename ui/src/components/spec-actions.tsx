@@ -13,7 +13,7 @@ interface SpecActionsProps {
   variant?: "compact" | "hero";
 }
 
-type Format = "katagami" | "design-md" | "shadcn-md" | "shadcn";
+type Format = "katagami" | "design-md" | "shadcn-md";
 type CopyKind = "copy" | "link";
 
 const PREAMBLE: Record<Format, string> = {
@@ -23,9 +23,6 @@ const PREAMBLE: Record<Format, string> = {
   "design-md":
     "Use the following DESIGN.md as the portable design-system source of truth for every UI we build. " +
     "Follow its YAML tokens, component guidance, layout rules, and do/don't guardrails.",
-  shadcn:
-    "Use the following shadcn/ui registry theme as the component-theme projection of the Katagami design language. " +
-    "Apply the CSS variables to shadcn/ui primitives and keep the native Katagami spec as the source of truth.",
   "shadcn-md":
     "Use the following DESIGN.md for a shadcn/ui project. It includes the Katagami design language plus shadcn/ui install, theme, component recipe, preview-shot, and starter TSX guidance.",
 };
@@ -34,28 +31,24 @@ const FILENAME_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI",
   "design-md": "DESIGN",
   "shadcn-md": "DESIGN.with-shadcn",
-  shadcn: "SHADCN",
 };
 
 const URL_SUFFIX: Record<Format, string> = {
   katagami: "KATAGAMI.MD",
   "design-md": "DESIGN.md",
   "shadcn-md": "DESIGN.with-shadcn.md",
-  shadcn: "shadcn.json",
 };
 
 const DISPLAY_FILENAME: Record<Format, string> = {
   katagami: "KATAGAMI.MD",
   "design-md": "DESIGN.md",
   "shadcn-md": "DESIGN.md",
-  shadcn: "shadcn.json",
 };
 
 const ACCENT: Record<Format, string> = {
   katagami: "sumire",
   "design-md": "salad",
   "shadcn-md": "ramune",
-  shadcn: "teal",
 };
 
 async function writeClipboard(text: string) {
@@ -77,7 +70,6 @@ export function SpecActions({
   languageId,
   katagamiSpec,
   designMd,
-  shadcnTheme,
   shadcnDesignMd,
   slug,
   variant = "compact",
@@ -105,9 +97,7 @@ export function SpecActions({
       ? katagamiSpec
       : f === "design-md"
         ? designMd
-        : f === "shadcn-md"
-          ? shadcnDesignMd ?? designMd
-          : shadcnTheme;
+        : shadcnDesignMd ?? designMd;
 
   const handleCopy = async () => {
     const md = markdownFor(format);
@@ -126,21 +116,14 @@ export function SpecActions({
 
   const handleDownload = () => {
     const blob = new Blob([markdownFor(format)], {
-      type:
-        format === "shadcn"
-          ? "application/json;charset=utf-8"
-          : "text/markdown;charset=utf-8",
+      type: "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = slug
-      ? format === "shadcn"
-        ? `${slug}-${FILENAME_SUFFIX[format]}.json`
-        : `${slug}-${FILENAME_SUFFIX[format]}.md`
-      : format === "shadcn"
-        ? `${FILENAME_SUFFIX[format]}.json`
-        : `${FILENAME_SUFFIX[format]}.md`;
+      ? `${slug}-${FILENAME_SUFFIX[format]}.md`
+      : `${FILENAME_SUFFIX[format]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -208,9 +191,7 @@ export function SpecActions({
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
                   {format === "shadcn-md"
                     ? "For shadcn/ui projects: the same DESIGN.md source plus install, theme, recipes, preview contract, and starter TSX in one Markdown file."
-                    : format === "shadcn"
-                      ? "Raw shadcn registry theme JSON for CSS variables."
-                      : format === "katagami"
+                    : format === "katagami"
                         ? "Native Katagami source spec with the richest token and language context."
                         : "Portable DESIGN.md source of truth for most agents and apps."}
                 </p>

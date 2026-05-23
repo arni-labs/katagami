@@ -366,7 +366,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertIn("preview shots", preview)
         self.assertIn("tsx starter", preview)
         self.assertIn("DESIGN.md with shadcn", preview)
-        self.assertIn("advanced shadcn artifacts", preview)
+        self.assertIn("advanced implementation files", preview)
         self.assertIn("readTemperFileBytes", route)
         self.assertIn("withCurrentShadcnUsage", design_route)
         self.assertIn("DESIGN.with-shadcn.md", design_route)

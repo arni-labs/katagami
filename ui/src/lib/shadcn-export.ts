@@ -474,10 +474,7 @@ export function shadcnUsageMarkdown(theme: ShadcnRegistryTheme): string {
     "",
     `DESIGN.md with shadcn: \`${languagePath}/DESIGN.with-shadcn.md\`.`,
     "",
-    "Related shadcn artifacts:",
-    `- \`${languagePath}/shadcn.json\` — registry theme JSON for shadcn-compatible CSS variables.`,
-    `- \`${languagePath}/shadcn-components.md\` — component recipes using local imports such as \`@/components/ui/button\`, \`@/components/ui/card\`, and \`@/components/ui/table\`.`,
-    `- \`${languagePath}/shadcn-shots.json\` — preview-shot contract for verifying the shadcn scenes.`,
+    "The shadcn page also exposes optional machine-readable files for automation, but the human-facing handoff is DESIGN.md with shadcn.",
     "",
     `Install recommended primitives with \`${theme.meta.installCommand}\`.`,
     "",
@@ -925,9 +922,6 @@ function artifactStatusLabel(status?: ShadcnArtifactStatus): string {
 export function shadcnDesignMdMarkdown(input: ShadcnDesignMdInput): string {
   const theme = buildShadcnRegistryTheme(input);
   const name = input.name?.trim() || "Katagami Design Language";
-  const languagePath = input.languageId
-    ? `/language/${input.languageId}`
-    : "/language/{language-id}";
   const registryTheme = input.themeJson?.trim()
     ? input.themeJson.trimEnd()
     : shadcnThemeToJson(theme).trimEnd();
@@ -983,9 +977,9 @@ export function shadcnDesignMdMarkdown(input: ShadcnDesignMdInput): string {
     css,
     "```",
     "",
-    "## Registry Theme JSON",
+    "## Theme Variables JSON",
     "",
-    `Raw artifact: \`${languagePath}/shadcn.json\`.`,
+    "Optional machine-readable copy of the variables above.",
     "",
     "```json",
     registryTheme,
@@ -1001,13 +995,13 @@ export function shadcnDesignMdMarkdown(input: ShadcnDesignMdInput): string {
     "",
     "## Component Recipes",
     "",
-    `Raw artifact: \`${languagePath}/shadcn-components.md\`.`,
+    "Use these recipes with the local shadcn primitives.",
     "",
     componentSpec,
     "",
     "## Preview Shot Contract",
     "",
-    `Raw artifact: \`${languagePath}/shadcn-shots.json\`.`,
+    "Use this contract to verify the shadcn scenes.",
     "",
     "```json",
     previewShots,

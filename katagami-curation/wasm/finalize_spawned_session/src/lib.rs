@@ -2335,10 +2335,7 @@ fn markdown_shadcn_usage(language_id: &str) -> String {
         .join("\n");
     let language_path = format!("/language/{language_id}");
     format!(
-        "When the target app uses shadcn/ui, copy DESIGN.md with shadcn instead of the plain DESIGN.md. It contains the same Katagami design-language source plus the shadcn/ui primitives, imports, theme variables, component recipes, and preview-shot guidance.\n\nDESIGN.md with shadcn: `{}/DESIGN.with-shadcn.md`.\n\nRelated shadcn artifacts:\n- `{}/shadcn.json` — registry theme JSON for shadcn-compatible CSS variables.\n- `{}/shadcn-components.md` — component recipes using local imports such as `@/components/ui/button`, `@/components/ui/card`, and `@/components/ui/table`.\n- `{}/shadcn-shots.json` — preview-shot contract for verifying the shadcn scenes.\n\nInstall recommended primitives with `{}`.\n\nUse these primitives in shadcn apps:\n{}\n\nImplementation rule for agents: import shadcn primitives from `@/components/ui/*`, apply the generated CSS variables first, then compose the language-specific recipes from DESIGN.md with shadcn. Katagami remains the source of truth; shadcn names are the implementation surface.",
-        language_path,
-        language_path,
-        language_path,
+        "When the target app uses shadcn/ui, copy DESIGN.md with shadcn instead of the plain DESIGN.md. It contains the same Katagami design-language source plus the shadcn/ui primitives, imports, theme variables, component recipes, and preview-shot guidance.\n\nDESIGN.md with shadcn: `{}/DESIGN.with-shadcn.md`.\n\nThe shadcn page also exposes optional machine-readable files for automation, but the human-facing handoff is DESIGN.md with shadcn.\n\nInstall recommended primitives with `{}`.\n\nUse these primitives in shadcn apps:\n{}\n\nImplementation rule for agents: import shadcn primitives from `@/components/ui/*`, apply the generated CSS variables first, then compose the language-specific recipes from DESIGN.md with shadcn. Katagami remains the source of truth; shadcn names are the implementation surface.",
         language_path,
         shadcn_install_command(),
         components

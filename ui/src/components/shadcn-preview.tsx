@@ -724,7 +724,7 @@ function ImplementationKitNotice({
           <CardDescription>
             {hasAgentKit
               ? "These scenes and recipes came from the Katagami review agent and can be copied as the shadcn implementation layer."
-              : "The registry theme can still be copied, but the polished shadcn component recipes and shots have not been authored by the Katagami agent yet."}
+              : "The generated theme variables are available, but the polished shadcn component recipes and shots have not been authored by the Katagami agent yet."}
           </CardDescription>
         </div>
       </CardHeader>
@@ -2014,10 +2014,10 @@ export function ShadcnPreview({
       <details className="group rounded-lg border border-border bg-card/70">
         <summary className="flex cursor-pointer list-none flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            advanced shadcn artifacts
+            advanced implementation files
           </span>
           <span className="text-xs text-muted-foreground">
-            registry, CSS, TSX starter, recipes, and preview-shot JSON
+            optional machine-readable theme, CSS, TSX starter, recipes, and preview contract
           </span>
         </summary>
         <div className="grid gap-3 border-t border-border p-3 lg:grid-cols-3">
@@ -2025,7 +2025,7 @@ export function ShadcnPreview({
         <ArtifactBlock label="theme css" value={css} />
         <ArtifactBlock label="tsx starter" value={tsxExample} />
         <ArtifactBlock
-          label="registry theme"
+          label="theme JSON"
           value={json}
           status={storedThemeJson?.trim() ? themeStatus : "generated-preview"}
         />
