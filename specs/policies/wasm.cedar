@@ -50,3 +50,19 @@ permit(
     context.module == "finalize_spawned_session" ||
     context.module == "launch_research"
 };
+
+
+// Explicit allow for the actual governed trigger principal/resource shape
+// observed in quality_review Submit denials. This is intentionally scoped to
+// Katagami's build_session_message trigger endpoints, not general outbound IO.
+permit(
+    principal == Agent::"wasm-module",
+    action == Action::"http_call",
+    resource == HttpEndpoint::"__trigger__:Submit:build_session_message"
+);
+
+permit(
+    principal == Agent::"wasm-module",
+    action == Action::"http_call",
+    resource == HttpEndpoint::"__trigger__:ConfigureAndSubmit:build_session_message"
+);
