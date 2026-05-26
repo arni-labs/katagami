@@ -1546,7 +1546,15 @@ fn verify_shadcn_preview_shots(
         .unwrap_or_else(|| json!({}));
     let source_invalidated_preview_shots = !bool_field(&initial_bools, "has_shadcn_preview_shots");
     if source_invalidated_preview_shots
-        || shadcn_preview_shots_projection_refresh_reason(&fields, &file_id).is_some()
+        || shadcn_preview_shots_projection_refresh_reason(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &fields,
+            &file_id,
+        )
+        .is_some()
     {
         let (refreshed_fields, refreshed_file_id, did_revise) =
             refresh_shadcn_preview_shots_projection(
@@ -3485,6 +3493,10 @@ fn shadcn_component_spec_projection_refresh_reason(
 }
 
 fn shadcn_preview_shots_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     shadcn_preview_shots_file_id: &str,
 ) -> Option<&'static str> {
@@ -3505,7 +3517,27 @@ fn shadcn_preview_shots_projection_refresh_reason(
         return Some("missing_shadsync_visual_profile_manifest");
     }
 
-    None
+    match read_file_value(ctx, api_url, headers, shadcn_preview_shots_file_id) {
+        Ok(body) => shadcn_preview_shots_body_refresh_reason(language_id, shadcn_preview_shots_file_id, &body),
+        Err(_) => Some("unreadable_shadcn_preview_shots_file"),
+    }
+}
+
+fn shadcn_preview_shots_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(
+        language_id,
+        file_id,
+        "shadcn_preview_shots",
+        None,
+        body,
+    ) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_shadcn_preview_shots_body"),
+    }
 }
 
 fn verify_design_md_lint_result(
