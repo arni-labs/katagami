@@ -121,10 +121,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             "source_search_job_id": job_id
         });
         let record_resp = ctx.http_call(
-            "POST",
-            &format!(
-                "{api_url}/tdata/CurationQueries('{query_id}')/Katagami.Curation.RecordResearchJob"
-            ),
+            "PATCH",
+            &format!("{api_url}/tdata/CurationQueries('{query_id}')"),
             &headers,
             &record_body.to_string(),
         )?;

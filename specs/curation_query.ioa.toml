@@ -110,14 +110,6 @@ on_failure = "Fail"
 temper_api_url = "{secret:temper_api_url}"
 
 [[action]]
-name = "RecordResearchJob"
-kind = "internal"
-from = ["Researching"]
-to = "Researching"
-params = ["source_search_job_id"]
-hint = "Record the source_search job created by launch_research immediately so Researching queries are observable while the job runs."
-
-[[action]]
 name = "ResearchComplete"
 kind = "input"
 from = ["Researching"]
