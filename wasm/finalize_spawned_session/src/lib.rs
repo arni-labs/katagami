@@ -991,7 +991,14 @@ fn verify_design_md(
     let mut revised = false;
     let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
     let mut attached_design_md_this_run = false;
-    let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
+    let refresh_reason = design_md_projection_refresh_reason(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &fields,
+        &design_md_file_id,
+    );
     if let Some(refresh_reason) = refresh_reason {
         let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
             ctx,
@@ -1367,7 +1374,15 @@ fn verify_shadcn_component_spec(
     let source_invalidated_component_spec =
         !bool_field(&initial_bools, "has_shadcn_component_spec");
     if source_invalidated_component_spec
-        || shadcn_component_spec_projection_refresh_reason(&fields, &file_id).is_some()
+        || shadcn_component_spec_projection_refresh_reason(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &fields,
+            &file_id,
+        )
+        .is_some()
     {
         let (refreshed_fields, refreshed_file_id, did_revise) =
             refresh_shadcn_component_spec_projection(
@@ -3414,6 +3429,10 @@ fn publish_file_artifact(
 }
 
 fn design_md_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     design_md_file_id: &str,
 ) -> Option<&'static str> {
@@ -3442,11 +3461,26 @@ fn design_md_projection_refresh_reason(
         .unwrap_or(0);
 
     if errors != 0 {
-        Some("design_md_lint_errors")
-    } else if warnings != 0 {
-        Some("design_md_lint_warnings")
-    } else {
-        None
+        return Some("design_md_lint_errors");
+    }
+    if warnings != 0 {
+        return Some("design_md_lint_warnings");
+    }
+
+    match read_file_value(ctx, api_url, headers, design_md_file_id) {
+        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
+        Err(_) => Some("unreadable_design_md_file"),
+    }
+}
+
+fn design_md_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(language_id, file_id, "design_md", None, body) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_design_md_body"),
     }
 }
 
@@ -3472,6 +3506,10 @@ fn shadcn_export_projection_refresh_reason(
 }
 
 fn shadcn_component_spec_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     shadcn_component_spec_file_id: &str,
 ) -> Option<&'static str> {
@@ -3489,7 +3527,21 @@ fn shadcn_component_spec_projection_refresh_reason(
         return Some("missing_shadcn_component_spec_manifest");
     }
 
-    None
+    match read_file_value(ctx, api_url, headers, shadcn_component_spec_file_id) {
+        Ok(body) => shadcn_component_spec_body_refresh_reason(language_id, shadcn_component_spec_file_id, &body),
+        Err(_) => Some("unreadable_shadcn_component_spec_file"),
+    }
+}
+
+fn shadcn_component_spec_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(language_id, file_id, "shadcn_component_spec", None, body) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_shadcn_component_spec_body"),
+    }
 }
 
 fn shadcn_preview_shots_projection_refresh_reason(
@@ -5065,11 +5117,11 @@ mod tests {
     #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
-            design_md_projection_refresh_reason(&json!({}), ""),
+            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), ""),
             Some("missing_design_md_file_id")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(&json!({}), "fl-design-md"),
+            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), "fl-design-md"),
             Some("missing_design_md_lint_result")
         );
         assert_eq!(
