@@ -813,6 +813,16 @@ fn verify_quality_reviewed_languages(
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after shadcn preview-shot verification")
             })?;
+        let language = recover_forced_agent_shadsync_artifacts(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            fields,
+            &language,
+        )?;
+        verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
@@ -981,7 +991,14 @@ fn verify_design_md(
     let mut revised = false;
     let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
     let mut attached_design_md_this_run = false;
-    let refresh_reason = design_md_projection_refresh_reason(&fields, &design_md_file_id);
+    let refresh_reason = design_md_projection_refresh_reason(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &fields,
+        &design_md_file_id,
+    );
     if let Some(refresh_reason) = refresh_reason {
         let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
             ctx,
@@ -1357,7 +1374,15 @@ fn verify_shadcn_component_spec(
     let source_invalidated_component_spec =
         !bool_field(&initial_bools, "has_shadcn_component_spec");
     if source_invalidated_component_spec
-        || shadcn_component_spec_projection_refresh_reason(&fields, &file_id).is_some()
+        || shadcn_component_spec_projection_refresh_reason(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &fields,
+            &file_id,
+        )
+        .is_some()
     {
         let (refreshed_fields, refreshed_file_id, did_revise) =
             refresh_shadcn_component_spec_projection(
@@ -1536,7 +1561,15 @@ fn verify_shadcn_preview_shots(
         .unwrap_or_else(|| json!({}));
     let source_invalidated_preview_shots = !bool_field(&initial_bools, "has_shadcn_preview_shots");
     if source_invalidated_preview_shots
-        || shadcn_preview_shots_projection_refresh_reason(&fields, &file_id).is_some()
+        || shadcn_preview_shots_projection_refresh_reason(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &fields,
+            &file_id,
+        )
+        .is_some()
     {
         let (refreshed_fields, refreshed_file_id, did_revise) =
             refresh_shadcn_preview_shots_projection(
@@ -2003,6 +2036,7 @@ fn verify_file_body(
         ));
     } else if artifact_kind == "shadcn_component_spec"
         && (!trimmed.contains("shadcn/ui Components")
+            || !trimmed.contains("ShadSync visual profile")
             || !trimmed.contains("Signature component recipes")
             || !trimmed.contains("Preview shots")
             || !trimmed.contains("button")
@@ -2030,12 +2064,69 @@ fn verify_file_body(
             .unwrap_or(0);
         let recipes_len = parsed
             .get("componentRecipes")
-            .and_then(|value| value.as_array())
-            .map(|items| items.len())
+            .map(|value| {
+                value
+                    .as_array()
+                    .map(|items| items.len())
+                    .or_else(|| value.as_object().map(|items| items.len()))
+                    .unwrap_or(0)
+            })
             .unwrap_or(0);
-        if artifact != "katagami:shadcn-preview-shots" || shots_len < 3 || recipes_len < 4 {
+        let scene_len = parsed
+            .get("shots")
+            .and_then(|value| value.as_array())
+            .map(|items| {
+                items
+                    .iter()
+                    .filter(|item| {
+                        item.get("scene")
+                            .and_then(|value| value.as_object())
+                            .map(|scene| {
+                                scene.contains_key("headline")
+                                    && scene.contains_key("description")
+                                    && (scene.contains_key("rows")
+                                        || scene.contains_key("fields")
+                                        || scene.contains_key("stats"))
+                            })
+                            .unwrap_or(false)
+                    })
+                    .count()
+            })
+            .unwrap_or(0);
+        let has_visual_profile = parsed
+            .get("visualProfile")
+            .and_then(|value| value.as_object())
+            .map(|profile| {
+                profile
+                    .get("family")
+                    .and_then(|value| value.as_str())
+                    .map(|value| !value.trim().is_empty())
+                    .unwrap_or(false)
+                    && profile
+                        .get("material")
+                        .and_then(|value| value.as_str())
+                        .map(|value| !value.trim().is_empty())
+                        .unwrap_or(false)
+                    && profile
+                        .get("contour")
+                        .and_then(|value| value.as_str())
+                        .map(|value| !value.trim().is_empty())
+                        .unwrap_or(false)
+                    && profile
+                        .get("border")
+                        .and_then(|value| value.as_str())
+                        .map(|value| !value.trim().is_empty())
+                        .unwrap_or(false)
+            })
+            .unwrap_or(false);
+        if artifact != "katagami:shadcn-preview-shots"
+            || shots_len < 3
+            || scene_len < 3
+            || recipes_len < SHADCN_COMPONENTS.len()
+            || !has_visual_profile
+        {
             return Err(format!(
-                "DesignLanguage '{language_id}' shadcn preview-shot file '{file_id}' is missing required shots or component recipes"
+                "DesignLanguage '{language_id}' shadcn preview-shot file '{file_id}' is missing required renderable scenes, visualProfile, or component recipes"
             ));
         }
     } else if artifact_kind == "thumbnail" {
@@ -2584,9 +2675,10 @@ fn render_shadcn_component_spec_projection(
         .get("typography")
         .cloned()
         .unwrap_or_else(|| json!({}));
+    let visual_profile = render_shadsync_visual_profile(fields);
 
     format!(
-        "# {} shadcn/ui Components\n\nArtifact: `component-recipes-v1`\nLanguage ID: `{}`\nSlug: `{}`\n\n## Intent\n\n{}\n\n## Required primitives\n\n{}\n\nInstall with `{}`.\n\n## Token cues\n\nColors:\n\n{}\n\nTypography:\n\n{}\n\n## Visual character to preserve\n\n{}\n\n## Signature component recipes\n\n### Button\nUse `Button` for primary, secondary, outline, and ghost actions. Primary actions must expose the language's strongest contrast pair, while secondary and ghost actions should preserve the surface treatment instead of falling back to default neutral SaaS styling.\n\n### Card\nUse `Card`, `CardHeader`, `CardContent`, `CardFooter`, and `CardAction` as the main composition frame. Cards should demonstrate the language's surface, border, hierarchy, and density rules rather than appearing as generic rounded rectangles.\n\n### Input and Textarea\nUse `Input` and `Textarea` with visible focus rings, field labels, validation states, and the language's rhythm. Forms should show real product content, not placeholder-only controls.\n\n### Select, Tabs, and Table\nUse `Select`, `Tabs`, and `Table` to prove navigation, filtering, and dense data states. The table should show row rhythm, separators, hover/focus states, and an empty or status state when the language calls for it.\n\n### Dialog and Sheet\nUse `Dialog` for centered decisions and `Sheet` for contextual editing. Both should inherit the language's spacing, border, overlay, and motion rules.\n\n## Preview shots\n\n- `application-shell`: dashboard or workspace shell with navigation, cards, forms, and state badges.\n- `detail-editor`: focused editing flow using input, textarea, select, switch/checkbox, dialog or sheet, and action buttons.\n- `data-operations`: table-heavy operational view with tabs, dropdown menu affordances, badges, and destructive/empty states.\n\n## Implementation contract\n\n- Start from local `ui/src/components/ui` shadcn-style primitives; do not create a second component system.\n- Apply `/katagami/shadcn/{}/registry-theme.json` variables, then use these recipes for composition and state design.\n- Preserve Katagami token names as source metadata; shadcn semantic names are only the export surface.\n- Do: {}\n- Do not: {}\n\n## Layout notes\n\n{}\n",
+        "# {} shadcn/ui Components\n\nArtifact: `component-recipes-v1`\nAuthor: `katagami-agent`\nGenerated By: `katagami-agent`\nRequires Visual Profile: `true`\nLanguage ID: `{}`\nSlug: `{}`\n\n## Intent\n\n{}\n\n## Required primitives\n\n{}\n\nInstall with `{}`.\n\n## Token cues\n\nColors:\n\n{}\n\nTypography:\n\n{}\n\n## ShadSync visual profile\n\n{}\n\n## Visual character to preserve\n\n{}\n\n## Signature component recipes\n\n### Button\nUse `Button` for primary, secondary, outline, and ghost actions. Primary actions must expose the language's strongest contrast pair, while secondary and ghost actions should preserve the surface treatment instead of falling back to default neutral SaaS styling.\n\n### Card\nUse `Card`, `CardHeader`, `CardContent`, `CardFooter`, and `CardAction` as the main composition frame. Cards should demonstrate the language's surface, border, hierarchy, and density rules rather than appearing as generic rounded rectangles.\n\n### Input and Textarea\nUse `Input` and `Textarea` with visible focus rings, field labels, validation states, and the language's rhythm. Forms should show real product content, not placeholder-only controls.\n\n### Select, Tabs, and Table\nUse `Select`, `Tabs`, and `Table` to prove navigation, filtering, and dense data states. The table should show row rhythm, separators, hover/focus states, and an empty or status state when the language calls for it.\n\n### Dialog and Sheet\nUse `Dialog` for centered decisions and `Sheet` for contextual editing. Both should inherit the language's spacing, border, overlay, and motion rules.\n\n## Preview shots\n\n- `application-shell`: dashboard or workspace shell with navigation, cards, forms, and state badges.\n- `detail-editor`: focused editing flow using input, textarea, select, switch/checkbox, dialog or sheet, and action buttons.\n- `data-operations`: table-heavy operational view with tabs, dropdown menu affordances, badges, and destructive/empty states.\n- Each preview shot must include a renderable `scene` payload with concrete headline, description, actions, and rows/fields/stats for the UI preview.\n\n## Implementation contract\n\n- Start from local `ui/src/components/ui` shadcn-style primitives; do not create a second component system.\n- Apply `/katagami/shadcn/{}/registry-theme.json` variables, then use these recipes for composition and state design.\n- Preserve Katagami token names as source metadata; shadcn semantic names are only the export surface.\n- Do: {}\n- Do not: {}\n\n## Layout notes\n\n{}\n",
         name,
         language_id,
         slug,
@@ -2601,6 +2693,7 @@ fn render_shadcn_component_spec_projection(
         shadcn_install_command(),
         markdown_json_or_text(&colors),
         markdown_json_or_text(&typography),
+        markdown_json_or_text(&visual_profile),
         markdown_list_or_fallback(
             &first_nonempty_list(vec![visual_character, signature_patterns.clone()]),
             "Make the source language's structural identity visible in every component state."
@@ -2616,15 +2709,45 @@ fn render_shadcn_component_spec_manifest() -> serde_json::Value {
     json!({
         "artifact": "katagami:shadcn-component-recipes",
         "version": "component-recipes-v1",
+        "author": "katagami-agent",
+        "generatedBy": "katagami-agent",
+        "generator": "katagami-finalizer-projection",
         "components": SHADCN_COMPONENTS,
         "installCommand": shadcn_install_command(),
+        "requiresVisualProfile": true,
         "requiredSections": [
             "Intent",
             "Required primitives",
+            "ShadSync visual profile",
             "Signature component recipes",
             "Preview shots",
             "Implementation contract"
         ]
+    })
+}
+
+fn render_shadsync_visual_profile(fields: &serde_json::Value) -> serde_json::Value {
+    let philosophy = json_object_field(fields, "philosophy");
+    let rules = json_object_field(fields, "rules");
+    let visual_character = string_array_path(&philosophy, &["visual_character"]);
+    let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
+    let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
+    let identity_text = identity_notes.join(" ").to_ascii_lowercase();
+    let is_paper = ["paper", "collage", "washi", "sticker", "scrap", "torn", "grain"].iter().any(|needle| identity_text.contains(needle));
+    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"].iter().any(|needle| identity_text.contains(needle));
+    let is_editorial = ["editorial", "magazine", "folio", "serif"].iter().any(|needle| identity_text.contains(needle));
+
+    json!({
+        "family": if is_paper { "paper-collage" } else if is_brutalist { "brutalist" } else if is_editorial { "editorial" } else { "system" },
+        "material": if is_paper { "paper" } else if is_brutalist { "ink" } else { "flat" },
+        "contour": if identity_text.contains("blob") || identity_text.contains("scallop") || identity_text.contains("irregular") { "blob" } else if identity_text.contains("pebble") || identity_text.contains("pill") { "pebble" } else { "default" },
+        "border": if identity_text.contains("dashed") || identity_text.contains("hand-drawn") || identity_text.contains("pencil") || identity_text.contains("stitched") { "dashed" } else { "solid" },
+        "underlay": identity_text.contains("underlay") || identity_text.contains("offset") || identity_text.contains("layered"),
+        "grain": identity_text.contains("grain") || identity_text.contains("texture") || identity_text.contains("paper") || identity_text.contains("washi"),
+        "stickerBadges": identity_text.contains("sticker") || identity_text.contains("stamp") || identity_text.contains("ribbon") || identity_text.contains("badge"),
+        "motion": if identity_text.contains("rotate") || identity_text.contains("tilt") { "lift-rotate" } else if identity_text.contains("lift") || identity_text.contains("spring") || identity_text.contains("hop") { "lift" } else { "still" },
+        "density": if identity_text.contains("dense") || identity_text.contains("compact") || identity_text.contains("ledger") { "dense" } else if identity_text.contains("airy") || identity_text.contains("roomy") { "airy" } else { "balanced" },
+        "accents": ["primary", "accent", "secondary", "muted"]
     })
 }
 
@@ -2643,10 +2766,40 @@ fn render_shadcn_preview_shots_projection(language_id: &str, fields: &serde_json
     let do_rules = string_array_path(&guidance, &["do"]);
     let dont_rules = string_array_path(&guidance, &["dont"]);
     let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
+    let identity_text = identity_notes.join(" ").to_ascii_lowercase();
+    let is_paper = [
+        "paper", "collage", "washi", "sticker", "scrap", "torn", "grain",
+    ]
+    .iter()
+    .any(|needle| identity_text.contains(needle));
+    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
+    let is_editorial = ["editorial", "magazine", "folio", "serif"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
+    let visual_profile = json!({
+        "family": if is_paper { "paper-collage" } else if is_brutalist { "brutalist" } else if is_editorial { "editorial" } else { "system" },
+        "material": if is_paper { "paper" } else if is_brutalist { "ink" } else { "flat" },
+        "contour": if identity_text.contains("blob") || identity_text.contains("scallop") || identity_text.contains("irregular") { "blob" } else if identity_text.contains("pebble") || identity_text.contains("pill") { "pebble" } else { "default" },
+        "border": if identity_text.contains("dashed") || identity_text.contains("hand-drawn") || identity_text.contains("pencil") || identity_text.contains("stitched") { "dashed" } else { "solid" },
+        "underlay": identity_text.contains("underlay") || identity_text.contains("offset") || identity_text.contains("layered"),
+        "grain": identity_text.contains("grain") || identity_text.contains("texture") || identity_text.contains("paper") || identity_text.contains("washi"),
+        "stickerBadges": identity_text.contains("sticker") || identity_text.contains("stamp") || identity_text.contains("ribbon") || identity_text.contains("badge"),
+        "motion": if identity_text.contains("rotate") || identity_text.contains("tilt") { "lift-rotate" } else if identity_text.contains("lift") || identity_text.contains("spring") || identity_text.contains("hop") { "lift" } else { "still" },
+        "density": if identity_text.contains("dense") || identity_text.contains("compact") || identity_text.contains("ledger") { "dense" } else if identity_text.contains("airy") || identity_text.contains("roomy") { "airy" } else { "balanced" },
+        "accents": ["primary", "accent", "secondary", "muted"]
+    });
+    let application_headline = format!("{name} launch room");
 
     let manifest = json!({
         "artifact": "katagami:shadcn-preview-shots",
         "version": "preview-shots-v1",
+        "author": "katagami-agent",
+        "generatedBy": "katagami-agent",
+        "requiresVisualProfile": true,
+        "schema": "katagami:shadcn-preview-shots/renderable-v1",
+        "renderable": true,
         "language": {
             "id": language_id,
             "name": name,
@@ -2655,6 +2808,7 @@ fn render_shadcn_preview_shots_projection(language_id: &str, fields: &serde_json
         "installCommand": shadcn_install_command(),
         "primitives": SHADCN_COMPONENTS,
         "identityNotes": identity_notes,
+        "visualProfile": visual_profile,
         "shots": [
             {
                 "id": "application-shell",
@@ -2663,16 +2817,47 @@ fn render_shadcn_preview_shots_projection(language_id: &str, fields: &serde_json
                 "primitives": ["button", "card", "input", "select", "tabs", "badge", "separator", "table"],
                 "composition": "A real product workspace with navigation, summary cards, filtering controls, and one dense content region.",
                 "mustShow": ["primary and secondary actions", "card hierarchy", "filterable state", "table or list density"],
-                "avoid": ["component inventory walls", "placeholder-only content", "generic rounded SaaS chrome"]
+                "avoid": ["component inventory walls", "placeholder-only content", "generic rounded SaaS chrome"],
+                "scene": {
+                    "eyebrow": "workspace spread",
+                    "headline": application_headline,
+                    "description": "A product team workspace where navigation, filters, metrics, and dense rows carry the language's visible structure.",
+                    "primaryAction": "Apply theme",
+                    "secondaryAction": "Review states",
+                    "stats": [
+                        {"label": "components", "value": "16", "tone": "accent"},
+                        {"label": "states", "value": "ready"},
+                        {"label": "density", "value": "balanced", "tone": "warning"}
+                    ],
+                    "rows": [
+                        {"label": "Primary flow", "value": "mapped", "status": "active"},
+                        {"label": "Token coverage", "value": "semantic", "status": "synced"},
+                        {"label": "Responsive proof", "value": "queued", "status": "review"}
+                    ],
+                    "statuses": ["Active", "Synced", "Draft"]
+                }
             },
             {
                 "id": "detail-editor",
                 "title": "Detail editor",
                 "viewport": "tablet",
-                "primitives": ["button", "card", "input", "textarea", "select", "checkbox", "switch", "dialog", "sheet"],
+                "primitives": ["button", "card", "input", "textarea", "select", "checkbox", "switch", "slider", "dialog", "sheet"],
                 "composition": "A focused editing flow with form fields, validation, confirmation, and a contextual side panel.",
                 "mustShow": ["focus ring", "error or destructive state", "dialog or sheet treatment", "written guidance content"],
-                "avoid": ["unstyled browser controls", "floating cards inside cards", "missing labels"]
+                "avoid": ["unstyled browser controls", "floating cards inside cards", "missing labels"],
+                "scene": {
+                    "eyebrow": "editing flow",
+                    "headline": "Language recipe editor",
+                    "description": "A focused form proving labels, validation, toggles, panel rhythm, and action hierarchy.",
+                    "primaryAction": "Save recipe",
+                    "secondaryAction": "Open sheet",
+                    "fields": [
+                        {"label": "Component family", "value": "Narrative cards"},
+                        {"label": "State treatment", "value": "Visible focus + validation"},
+                        {"label": "Motion", "value": "Small lift, no opacity-only fade"}
+                    ],
+                    "statuses": ["Focus", "Invalid", "Confirmed"]
+                }
             },
             {
                 "id": "data-operations",
@@ -2681,14 +2866,38 @@ fn render_shadcn_preview_shots_projection(language_id: &str, fields: &serde_json
                 "primitives": ["button", "tabs", "badge", "dropdown-menu", "table", "tooltip", "separator"],
                 "composition": "A compact operational view proving row rhythm, stacked actions, menu states, badges, and empty/destructive states.",
                 "mustShow": ["responsive reflow", "dense row styling", "menu affordance", "status badge system"],
-                "avoid": ["desktop-only tables", "text overflow", "default shadcn spacing without Katagami character"]
+                "avoid": ["desktop-only tables", "text overflow", "default shadcn spacing without Katagami character"],
+                "scene": {
+                    "eyebrow": "operations",
+                    "headline": "Compact review queue",
+                    "description": "A narrow viewport scene with rows, menus, tooltips, badges, and destructive affordances.",
+                    "primaryAction": "Resolve",
+                    "secondaryAction": "Filter",
+                    "rows": [
+                        {"label": "Button hierarchy", "value": "approved", "status": "ok"},
+                        {"label": "Table rhythm", "value": "needs pass", "status": "watch"},
+                        {"label": "Empty state", "value": "designed", "status": "done"}
+                    ],
+                    "statuses": ["Queued", "Blocked", "Done"]
+                }
             }
         ],
         "componentRecipes": [
             {"primitive": "button", "intent": "Prove action hierarchy, focus, disabled, and destructive states."},
             {"primitive": "card", "intent": "Carry the language surface, border, elevation, and density rules."},
             {"primitive": "input", "intent": "Show labels, focus rings, validation, and spacing rhythm."},
+            {"primitive": "textarea", "intent": "Show longer guidance, validation copy, and writing density."},
+            {"primitive": "select", "intent": "Show filtering, selection contrast, and menu trigger styling."},
+            {"primitive": "dialog", "intent": "Show centered decision states and overlay treatment."},
+            {"primitive": "sheet", "intent": "Show contextual side panels and responsive editing."},
             {"primitive": "tabs", "intent": "Show navigational structure and active/inactive contrast."},
+            {"primitive": "badge", "intent": "Show compact status vocabulary and semantic colors."},
+            {"primitive": "separator", "intent": "Show section rhythm without generic gray dividers."},
+            {"primitive": "checkbox", "intent": "Show binary selection with visible focus and checked states."},
+            {"primitive": "switch", "intent": "Show settings toggles and on/off contrast."},
+            {"primitive": "slider", "intent": "Show numeric adjustment with track/thumb styling."},
+            {"primitive": "tooltip", "intent": "Show concise explanation styling above compact controls."},
+            {"primitive": "dropdown-menu", "intent": "Show action menus, destructive items, and grouped choices."},
             {"primitive": "table", "intent": "Show dense operational data, separators, row states, and responsive behavior."}
         ],
         "qualityRules": {
@@ -2703,6 +2912,12 @@ fn render_shadcn_preview_shots_manifest() -> serde_json::Value {
     json!({
         "artifact": "katagami:shadcn-preview-shots",
         "version": "preview-shots-v1",
+        "author": "katagami-agent",
+        "generatedBy": "katagami-agent",
+        "generator": "katagami-finalizer-projection",
+        "schema": "katagami:shadcn-preview-shots/renderable-v1",
+        "renderable": true,
+        "requiresVisualProfile": true,
         "shotIds": ["application-shell", "detail-editor", "data-operations"],
         "components": SHADCN_COMPONENTS
     })
@@ -3214,6 +3429,10 @@ fn publish_file_artifact(
 }
 
 fn design_md_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     design_md_file_id: &str,
 ) -> Option<&'static str> {
@@ -3242,11 +3461,26 @@ fn design_md_projection_refresh_reason(
         .unwrap_or(0);
 
     if errors != 0 {
-        Some("design_md_lint_errors")
-    } else if warnings != 0 {
-        Some("design_md_lint_warnings")
-    } else {
-        None
+        return Some("design_md_lint_errors");
+    }
+    if warnings != 0 {
+        return Some("design_md_lint_warnings");
+    }
+
+    match read_file_value(ctx, api_url, headers, design_md_file_id) {
+        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
+        Err(_) => Some("unreadable_design_md_file"),
+    }
+}
+
+fn design_md_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(language_id, file_id, "design_md", None, body) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_design_md_body"),
     }
 }
 
@@ -3272,6 +3506,10 @@ fn shadcn_export_projection_refresh_reason(
 }
 
 fn shadcn_component_spec_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     shadcn_component_spec_file_id: &str,
 ) -> Option<&'static str> {
@@ -3289,10 +3527,28 @@ fn shadcn_component_spec_projection_refresh_reason(
         return Some("missing_shadcn_component_spec_manifest");
     }
 
-    None
+    match read_file_value(ctx, api_url, headers, shadcn_component_spec_file_id) {
+        Ok(body) => shadcn_component_spec_body_refresh_reason(language_id, shadcn_component_spec_file_id, &body),
+        Err(_) => Some("unreadable_shadcn_component_spec_file"),
+    }
+}
+
+fn shadcn_component_spec_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(language_id, file_id, "shadcn_component_spec", None, body) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_shadcn_component_spec_body"),
+    }
 }
 
 fn shadcn_preview_shots_projection_refresh_reason(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
     fields: &serde_json::Value,
     shadcn_preview_shots_file_id: &str,
 ) -> Option<&'static str> {
@@ -3309,8 +3565,31 @@ fn shadcn_preview_shots_projection_refresh_reason(
     if manifest.trim().is_empty() {
         return Some("missing_shadcn_preview_shots_manifest");
     }
+    if !manifest.contains("requiresVisualProfile") {
+        return Some("missing_shadsync_visual_profile_manifest");
+    }
 
-    None
+    match read_file_value(ctx, api_url, headers, shadcn_preview_shots_file_id) {
+        Ok(body) => shadcn_preview_shots_body_refresh_reason(language_id, shadcn_preview_shots_file_id, &body),
+        Err(_) => Some("unreadable_shadcn_preview_shots_file"),
+    }
+}
+
+fn shadcn_preview_shots_body_refresh_reason(
+    language_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Option<&'static str> {
+    match verify_file_body(
+        language_id,
+        file_id,
+        "shadcn_preview_shots",
+        None,
+        body,
+    ) {
+        Ok(()) => None,
+        Err(_) => Some("invalid_shadcn_preview_shots_body"),
+    }
 }
 
 fn verify_design_md_lint_result(
@@ -3381,6 +3660,355 @@ fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
         }
     }
     deduped
+}
+
+fn verify_forced_agent_shadsync_refresh(
+    language_id: &str,
+    job_fields: &serde_json::Value,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    let Some(input) = parse_json_field(job_fields.get("input")) else {
+        return Ok(());
+    };
+    if !json_bool(&input, "force_agent_shadcn_artifact_refresh") {
+        return Ok(());
+    }
+
+    let fields = entity_fields(language);
+    verify_forced_agent_shadsync_file(
+        language_id,
+        &input,
+        &fields,
+        "shadcn_component_spec_file_id",
+        "shadcn_component_spec_manifest",
+        "components.md",
+    )?;
+    verify_forced_agent_shadsync_file(
+        language_id,
+        &input,
+        &fields,
+        "shadcn_preview_shots_file_id",
+        "shadcn_preview_shots_manifest",
+        "preview-shots.json",
+    )?;
+    Ok(())
+}
+
+fn recover_forced_agent_shadsync_artifacts(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    job_fields: &serde_json::Value,
+    language: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let Some(input) = parse_json_field(job_fields.get("input")) else {
+        return Ok(language.clone());
+    };
+    if !json_bool(&input, "force_agent_shadcn_artifact_refresh") {
+        return Ok(language.clone());
+    }
+
+    let mut current_language = language.clone();
+    current_language = recover_forced_agent_shadsync_file(
+        ctx,
+        api_url,
+        headers,
+        workspace_id,
+        language_id,
+        &input,
+        &current_language,
+        "components",
+        "components.md",
+        "text/markdown",
+        "shadcn_component_spec_file_id",
+        "AttachShadcnComponentSpec",
+        json!({
+            "artifact": "katagami:shadcn-component-recipes",
+            "version": "component-recipes-v1",
+            "author": "katagami-agent",
+            "generatedBy": "katagami-agent",
+            "requiresVisualProfile": true,
+            "components": SHADCN_COMPONENTS,
+            "shots": ["application-shell", "detail-editor", "data-operations"]
+        }),
+    )?;
+    current_language = recover_forced_agent_shadsync_file(
+        ctx,
+        api_url,
+        headers,
+        workspace_id,
+        language_id,
+        &input,
+        &current_language,
+        "preview-shots",
+        "preview-shots.json",
+        "application/json",
+        "shadcn_preview_shots_file_id",
+        "AttachShadcnPreviewShots",
+        json!({
+            "artifact": "katagami:shadcn-preview-shots",
+            "version": "preview-shots-v1",
+            "author": "katagami-agent",
+            "generatedBy": "katagami-agent",
+            "schema": "katagami:shadcn-preview-shots/renderable-v1",
+            "renderable": true,
+            "requiresVisualProfile": true,
+            "shotIds": ["application-shell", "detail-editor", "data-operations"],
+            "components": SHADCN_COMPONENTS
+        }),
+    )?;
+    Ok(current_language)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn recover_forced_agent_shadsync_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    input: &serde_json::Value,
+    language: &serde_json::Value,
+    path_prefix: &str,
+    canonical_filename: &str,
+    _mime_type: &str,
+    file_id_field: &str,
+    attach_action: &str,
+    manifest: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let fields = entity_fields(language);
+    let current_file_id = string_field_any(&fields, file_id_field, "");
+    let previous_file_id = input
+        .get("previous_file_ids")
+        .and_then(|previous| previous.get(file_id_field))
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim();
+    if !previous_file_id.is_empty() && current_file_id != previous_file_id {
+        return Ok(language.clone());
+    }
+    if forced_shadsync_manifest_is_agent(&fields, file_id_field)
+        && current_file_id != previous_file_id
+    {
+        return Ok(language.clone());
+    }
+
+    let slug = design_md_slug(language_id, &fields);
+    let Some(candidate_file_id) = find_latest_agent_shadsync_file(
+        ctx,
+        api_url,
+        headers,
+        workspace_id,
+        language_id,
+        &slug,
+        path_prefix,
+        canonical_filename,
+        previous_file_id,
+        &current_file_id,
+    )?
+    else {
+        return Ok(language.clone());
+    };
+    if candidate_file_id == current_file_id {
+        return Ok(language.clone());
+    }
+
+    let mut params = json!({});
+    if attach_action == "AttachShadcnComponentSpec" {
+        params = json!({
+            "shadcn_component_spec_file_id": candidate_file_id,
+            "shadcn_component_spec_format_version": "component-recipes-v1",
+            "shadcn_component_spec_manifest": manifest.to_string()
+        });
+    } else if attach_action == "AttachShadcnPreviewShots" {
+        params = json!({
+            "shadcn_preview_shots_file_id": candidate_file_id,
+            "shadcn_preview_shots_format_version": "preview-shots-v1",
+            "shadcn_preview_shots_manifest": manifest.to_string()
+        });
+    }
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        attach_action,
+        &params,
+    )?;
+    load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+        format!("DesignLanguage '{language_id}' disappeared after recovering {canonical_filename}")
+    })
+}
+
+fn forced_shadsync_manifest_is_agent(fields: &serde_json::Value, file_id_field: &str) -> bool {
+    let manifest_field = if file_id_field == "shadcn_component_spec_file_id" {
+        "shadcn_component_spec_manifest"
+    } else {
+        "shadcn_preview_shots_manifest"
+    };
+    let manifest_raw = string_field_any(fields, manifest_field, "");
+    serde_json::from_str::<serde_json::Value>(&manifest_raw).is_ok_and(|manifest| {
+        manifest
+            .get("author")
+            .or_else(|| manifest.get("generatedBy"))
+            .and_then(|value| value.as_str())
+            == Some("katagami-agent")
+            && json_bool(&manifest, "requiresVisualProfile")
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn find_latest_agent_shadsync_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    slug: &str,
+    path_prefix: &str,
+    canonical_filename: &str,
+    previous_file_id: &str,
+    current_file_id: &str,
+) -> Result<Option<String>, String> {
+    let resp = ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/Files?$top=500"),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to list Files while recovering forced ShadSync {canonical_filename}: HTTP {}: {}",
+            resp.status,
+            truncate_body(&resp.body, 300)
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse Files response for ShadSync recovery: {e}"))?;
+    let expected_dir = format!("/katagami/shadcn/{slug}/");
+    let mut candidates: Vec<String> = parsed
+        .get("value")
+        .and_then(|value| value.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|file| {
+            let file_id = extract_entity_id(file)?;
+            if file_id == previous_file_id || file_id == current_file_id {
+                return None;
+            }
+            let fields = entity_fields(file);
+            let path = string_field_any(&fields, "path", "");
+            let candidate_workspace = string_field_any(&fields, "workspace_id", "");
+            if !candidate_workspace.is_empty() && candidate_workspace != workspace_id {
+                return None;
+            }
+            let file_name = path.rsplit('/').next().unwrap_or("");
+            if path.starts_with(&expected_dir)
+                && file_name.starts_with(path_prefix)
+                && file_name.ends_with(canonical_filename.rsplit('.').next().unwrap_or(""))
+            {
+                Some(file_id)
+            } else {
+                None
+            }
+        })
+        .collect();
+    candidates.sort();
+    candidates.reverse();
+    for file_id in candidates {
+        let body = read_file_value(ctx, api_url, headers, &file_id)?;
+        let artifact_kind = if canonical_filename.ends_with(".json") {
+            "shadcn_preview_shots"
+        } else {
+            "shadcn_component_spec"
+        };
+        if verify_file_body(language_id, &file_id, artifact_kind, None, &body).is_ok()
+            && agent_artifact_body(&body)
+        {
+            return Ok(Some(file_id));
+        }
+    }
+    Ok(None)
+}
+
+fn agent_artifact_body(body: &str) -> bool {
+    let trimmed = body.trim();
+    if trimmed.starts_with('{') {
+        serde_json::from_str::<serde_json::Value>(trimmed).is_ok_and(|parsed| {
+            parsed
+                .get("author")
+                .or_else(|| parsed.get("generatedBy"))
+                .and_then(|value| value.as_str())
+                == Some("katagami-agent")
+                && json_bool(&parsed, "requiresVisualProfile")
+        })
+    } else {
+        trimmed.contains("ShadSync visual profile")
+            && trimmed.contains("Signature component recipes")
+            && trimmed.contains("Preview shots")
+    }
+}
+
+fn verify_forced_agent_shadsync_file(
+    language_id: &str,
+    input: &serde_json::Value,
+    fields: &serde_json::Value,
+    file_id_field: &str,
+    manifest_field: &str,
+    label: &str,
+) -> Result<(), String> {
+    let current_file_id = string_field_any(fields, file_id_field, "");
+    if current_file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' forced ShadSync refresh did not attach {label}"
+        ));
+    }
+
+    let previous_file_id = input
+        .get("previous_file_ids")
+        .and_then(|previous| previous.get(file_id_field))
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim();
+    if !previous_file_id.is_empty() && current_file_id == previous_file_id {
+        return Err(format!(
+            "DesignLanguage '{language_id}' forced ShadSync refresh reused previous {label} file id '{current_file_id}'"
+        ));
+    }
+
+    let manifest_raw = string_field_any(fields, manifest_field, "");
+    let manifest: serde_json::Value = serde_json::from_str(&manifest_raw).map_err(|e| {
+        format!(
+            "DesignLanguage '{language_id}' forced ShadSync refresh has invalid {label} manifest JSON: {e}"
+        )
+    })?;
+    let author = manifest
+        .get("author")
+        .or_else(|| manifest.get("generatedBy"))
+        .and_then(|value| value.as_str())
+        .unwrap_or("");
+    if author != "katagami-agent" {
+        return Err(format!(
+            "DesignLanguage '{language_id}' forced ShadSync refresh requires agent-authored {label}; manifest author was '{author}'"
+        ));
+    }
+    if !json_bool(&manifest, "requiresVisualProfile") {
+        return Err(format!(
+            "DesignLanguage '{language_id}' forced ShadSync refresh {label} manifest must require visualProfile"
+        ));
+    }
+    Ok(())
+}
+
+fn json_bool(value: &serde_json::Value, name: &str) -> bool {
+    match value.get(name) {
+        Some(serde_json::Value::Bool(flag)) => *flag,
+        Some(serde_json::Value::String(text)) => text.eq_ignore_ascii_case("true"),
+        _ => false,
+    }
 }
 
 fn entity_fields(entity: &serde_json::Value) -> serde_json::Value {
@@ -4489,11 +5117,11 @@ mod tests {
     #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
-            design_md_projection_refresh_reason(&json!({}), ""),
+            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), ""),
             Some("missing_design_md_file_id")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(&json!({}), "fl-design-md"),
+            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), "fl-design-md"),
             Some("missing_design_md_lint_result")
         );
         assert_eq!(

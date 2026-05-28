@@ -1,6 +1,7 @@
 # WASM build artifacts
 **/wasm/*/target/
 **/wasm/*/Cargo.lock
+!katagami-curation/wasm/*/Cargo.lock
 
 # Python test artifacts
 __pycache__/

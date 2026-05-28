@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
 import { designMdToMarkdown } from "@/components/spec-panel";
+import {
+  buildShadcnRegistryTheme,
+  shadcnUsageMarkdown,
+} from "@/lib/shadcn-export";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -19,6 +23,38 @@ async function readStoredFile(fileId: string): Promise<ArrayBuffer | null> {
 
   if (!res.ok) return null;
   return res.arrayBuffer();
+}
+
+function withCurrentShadcnUsage(
+  markdown: string,
+  props: {
+    languageId: string;
+    name?: string;
+    slug?: string;
+    tokens?: string;
+  },
+): string {
+  const usage = shadcnUsageMarkdown(
+    buildShadcnRegistryTheme({
+      languageId: props.languageId,
+      name: props.name,
+      slug: props.slug,
+      tokens: props.tokens,
+    }),
+  ).trimEnd();
+  const trimmed = markdown.trimEnd();
+  if (
+    trimmed.includes("DESIGN.with-shadcn.md") &&
+    trimmed.includes("@/components/ui")
+  ) {
+    return `${trimmed}\n`;
+  }
+
+  const section = /\n## shadcn\/ui Usage\n[\s\S]*?(?=\n## |\s*$)/;
+  if (section.test(trimmed)) {
+    return `${trimmed.replace(section, `\n${usage}`)}\n`;
+  }
+  return `${trimmed}\n\n${usage}\n`;
 }
 
 export async function GET(
@@ -45,20 +81,16 @@ export async function GET(
       ? "validated"
       : "stored-unverified";
 
-  if (isPublished && f.design_md_asset_url) {
-    return NextResponse.redirect(f.design_md_asset_url, {
-      status: 307,
-      headers: {
-        "cache-control": "public, max-age=60, s-maxage=300",
-        "x-katagami-design-md-status": "public-artifact",
-      },
-    });
-  }
-
-  if (!isPublished && f.design_md_file_id) {
+  if (f.design_md_file_id) {
     const stored = await readStoredFile(f.design_md_file_id);
     if (stored) {
-      return new NextResponse(stored, {
+      const markdown = withCurrentShadcnUsage(new TextDecoder().decode(stored), {
+        languageId: id,
+        name: f.name,
+        slug: f.slug,
+        tokens: f.tokens,
+      });
+      return new NextResponse(markdown, {
         status: 200,
         headers: {
           "content-type": "text/markdown; charset=utf-8",
@@ -70,7 +102,8 @@ export async function GET(
     }
   }
 
-  const markdown = designMdToMarkdown({
+  const markdown = withCurrentShadcnUsage(designMdToMarkdown({
+    languageId: id,
     name: f.name,
     slug: f.slug,
     philosophy: f.philosophy,
@@ -80,6 +113,11 @@ export async function GET(
     guidance: f.guidance,
     imageryDirection: f.imagery_direction,
     generativeCanvas: f.generative_canvas,
+  }), {
+    languageId: id,
+    name: f.name,
+    slug: f.slug,
+    tokens: f.tokens,
   });
 
   return new NextResponse(markdown, {

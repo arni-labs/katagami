@@ -217,12 +217,19 @@ class ShadcnExportContractTests(unittest.TestCase):
             "source_invalidated_export",
             "fn render_shadcn_component_spec_projection",
             "fn render_shadcn_preview_shots_projection",
+            "katagami:shadcn-preview-shots/renderable-v1",
+            "scene_len < 3",
             "fn verify_shadcn_component_spec",
             "fn verify_shadcn_preview_shots",
             "AttachShadcnComponentSpec",
             "AttachShadcnPreviewShots",
             "VerifyShadcnComponentSpec",
             "VerifyShadcnPreviewShots",
+            "verify_forced_agent_shadsync_refresh",
+            "force_agent_shadcn_artifact_refresh",
+            "katagami-agent",
+            "ShadSync visual profile",
+            "katagami-finalizer-projection",
             "/katagami/shadcn/{}/components.md",
             "/katagami/shadcn/{}/preview-shots.json",
             "component-recipes-v1",
@@ -289,18 +296,29 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertIn("buildShadcnRegistryTheme", ui_lib)
         self.assertIn("shadcnComponentSpecMarkdown", ui_lib)
         self.assertIn("shadcnPreviewShotsJson", ui_lib)
+        self.assertIn("renderable-v1", ui_lib)
         self.assertIn("buildDarkVars", ui_lib)
         self.assertIn("Button", preview)
         self.assertIn("Card", preview)
         self.assertIn("Select", preview)
         self.assertIn("Tabs", preview)
+        self.assertIn("Checkbox", preview)
+        self.assertIn("Switch", preview)
+        self.assertIn("Slider", preview)
+        self.assertIn("DropdownMenu", preview)
+        self.assertIn("Table", preview)
+        self.assertIn("parsePreviewShots", preview)
+        self.assertIn("ShotPreviewDeck", preview)
+        self.assertIn("data-shadcn-preview-source", preview)
         self.assertIn("component recipes", preview)
         self.assertIn("preview shots", preview)
-        self.assertIn("shadcnThemeToJson", route)
-        self.assertIn("shadcnComponentSpecMarkdown", component_route)
-        self.assertIn("shadcnPreviewShotsJson", shots_route)
+        self.assertIn("readTemperFileBytes", route)
+        self.assertIn("readTemperFileBytes", component_route)
+        self.assertIn("readTemperFileBytes", shots_route)
         self.assertIn("--apply", backfill)
         self.assertIn("--fixture=", backfill)
+        self.assertIn("--id=", backfill)
+        self.assertIn("renderable-v1", backfill)
         self.assertIn("registry:theme", seed)
         self.assertIn("original_css_vars", seed)
 
@@ -330,6 +348,9 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertIn("AttachShadcnComponentSpec", synth)
         self.assertIn("AttachShadcnPreviewShots", synth)
         self.assertIn("agent-authored", review)
+        self.assertIn("renderable `scene` object", synth)
+        self.assertIn("renderable `scene` object", review)
+        self.assertIn("do not take the fast path", review)
 
 
 if __name__ == "__main__":

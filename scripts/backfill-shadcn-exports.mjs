@@ -29,11 +29,20 @@ const args = new Set(process.argv.slice(2));
 const apply = args.has("--apply");
 const fixtureArg = process.argv.find((arg) => arg.startsWith("--fixture="));
 const fixturePath = fixtureArg?.slice("--fixture=".length);
+const idArg = process.argv.find((arg) => arg.startsWith("--id="));
+const targetId = idArg?.slice("--id=".length);
 
 const headers = {
   "Content-Type": "application/json",
   "X-Tenant-Id": TENANT,
   ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
+};
+
+const pawfsHeaders = {
+  ...headers,
+  "x-temper-principal-kind": "agent",
+  "x-temper-principal-id": "katagami-finalizer",
+  "x-temper-agent-type": "system",
 };
 
 function parseJson(raw, fallback) {
@@ -191,6 +200,49 @@ function markdownInline(values, fallback) {
   return values.length ? values.join("; ") : fallback;
 }
 
+function textHasAny(text, words) {
+  return words.some((word) => text.includes(word));
+}
+
+function shadSyncVisualProfile(philosophy, rules, tokens) {
+  const profileText = [
+    ...stringArray(philosophy.visual_character),
+    ...stringArray(rules.signature_patterns),
+    JSON.stringify(tokens.surfaces || {}),
+    JSON.stringify(tokens.borders || {}),
+    JSON.stringify(tokens.motion || {}),
+  ]
+    .join(" ")
+    .toLowerCase();
+  const paper = textHasAny(profileText, ["paper", "collage", "washi", "sticker", "scrap", "torn", "grain"]);
+  const brutal = textHasAny(profileText, ["brutalist", "industrial", "terminal", "mechanical"]);
+  const editorial = textHasAny(profileText, ["editorial", "magazine", "folio", "serif"]);
+  return {
+    family: paper ? "paper-collage" : brutal ? "brutalist" : editorial ? "editorial" : "system",
+    material: paper ? "paper" : brutal ? "ink" : "flat",
+    contour: textHasAny(profileText, ["blob", "scallop", "irregular"])
+      ? "blob"
+      : textHasAny(profileText, ["pebble", "pill"])
+        ? "pebble"
+        : "default",
+    border: textHasAny(profileText, ["dashed", "hand-drawn", "pencil", "stitched"]) ? "dashed" : "solid",
+    underlay: textHasAny(profileText, ["underlay", "offset", "layered", "shadow patch"]),
+    grain: textHasAny(profileText, ["grain", "texture", "paper", "washi"]),
+    stickerBadges: textHasAny(profileText, ["sticker", "stamp", "ribbon", "label chip", "badge"]),
+    motion: textHasAny(profileText, ["rotate", "tilt", "one degree"])
+      ? "lift-rotate"
+      : textHasAny(profileText, ["lift", "spring", "hop"])
+        ? "lift"
+        : "still",
+    density: textHasAny(profileText, ["dense", "compact", "ledger"])
+      ? "dense"
+      : textHasAny(profileText, ["airy", "roomy", "wide gutter"])
+        ? "airy"
+        : "balanced",
+    accents: ["primary", "accent", "secondary", "muted"],
+  };
+}
+
 function themeFor(language) {
   const fields = language.fields || language;
   const tokens = parseJson(fields.tokens, {});
@@ -231,6 +283,7 @@ function componentSpecFor(language, theme) {
     stringArray(philosophy.visual_character),
     stringArray(rules.signature_patterns),
   );
+  const visualProfile = shadSyncVisualProfile(philosophy, rules, tokens);
   const summary =
     typeof philosophy.summary === "string" && philosophy.summary.trim()
       ? philosophy.summary.trim()
@@ -267,6 +320,10 @@ function componentSpecFor(language, theme) {
     "",
     markdownList(identity, "Make the source language's structural identity visible in every component state."),
     "",
+    "## ShadSync visual profile",
+    "",
+    JSON.stringify(visualProfile, null, 2),
+    "",
     "## Signature component recipes",
     "",
     "### Button",
@@ -289,6 +346,7 @@ function componentSpecFor(language, theme) {
     "- `application-shell`: dashboard or workspace shell with navigation, cards, forms, and state badges.",
     "- `detail-editor`: focused editing flow using input, textarea, select, switch/checkbox, dialog or sheet, and action buttons.",
     "- `data-operations`: table-heavy operational view with tabs, dropdown menu affordances, badges, and destructive/empty states.",
+    "- Each preview shot must include a renderable `scene` payload with concrete headline, description, actions, and rows/fields/stats for the UI preview.",
     "",
     "## Implementation contract",
     "",
@@ -310,10 +368,14 @@ function previewShotsFor(language, theme) {
   const philosophy = parseJson(fields.philosophy, {});
   const rules = parseJson(fields.rules, {});
   const guidance = parseJson(fields.guidance, {});
+  const tokens = parseJson(fields.tokens, {});
   return `${JSON.stringify(
     {
       artifact: "katagami:shadcn-preview-shots",
       version: "preview-shots-v1",
+      generator: "katagami-backfill-projection",
+      schema: "katagami:shadcn-preview-shots/renderable-v1",
+      renderable: true,
       language: {
         id: theme.meta.languageId,
         name: fields.name || theme.name,
@@ -325,6 +387,7 @@ function previewShotsFor(language, theme) {
         stringArray(philosophy.visual_character),
         stringArray(rules.signature_patterns),
       ),
+      visualProfile: shadSyncVisualProfile(philosophy, rules, tokens),
       shots: [
         {
           id: "application-shell",
@@ -334,15 +397,48 @@ function previewShotsFor(language, theme) {
           composition: "A real product workspace with navigation, summary cards, filtering controls, and one dense content region.",
           mustShow: ["primary and secondary actions", "card hierarchy", "filterable state", "table or list density"],
           avoid: ["component inventory walls", "placeholder-only content", "generic rounded SaaS chrome"],
+          scene: {
+            eyebrow: "workspace spread",
+            headline: `${fields.name || theme.name} launch room`,
+            description:
+              "A product team workspace where navigation, filters, metrics, and dense rows carry the language's visible structure.",
+            primaryAction: "Apply theme",
+            secondaryAction: "Review states",
+            stats: [
+              { label: "components", value: "16", tone: "accent" },
+              { label: "states", value: "ready" },
+              { label: "density", value: "balanced", tone: "warning" },
+            ],
+            rows: [
+              { label: "Primary flow", value: "mapped", status: "active" },
+              { label: "Token coverage", value: "semantic", status: "synced" },
+              { label: "Responsive proof", value: "queued", status: "review" },
+            ],
+            statuses: ["Active", "Synced", "Draft"],
+          },
         },
         {
           id: "detail-editor",
           title: "Detail editor",
           viewport: "tablet",
-          primitives: ["button", "card", "input", "textarea", "select", "checkbox", "switch", "dialog", "sheet"],
+          primitives: ["button", "card", "input", "textarea", "select", "checkbox", "switch", "slider", "dialog", "sheet"],
           composition: "A focused editing flow with form fields, validation, confirmation, and a contextual side panel.",
           mustShow: ["focus ring", "error or destructive state", "dialog or sheet treatment", "written guidance content"],
           avoid: ["unstyled browser controls", "floating cards inside cards", "missing labels"],
+          scene: {
+            eyebrow: "editing flow",
+            headline: "Language recipe editor",
+            description:
+              "A focused form proving labels, validation, toggles, panel rhythm, and action hierarchy.",
+            primaryAction: "Save recipe",
+            secondaryAction: "Open sheet",
+            fields: [
+              { label: "Component family", value: "Narrative cards" },
+              { label: "State treatment", value: "Visible focus + validation" },
+              { label: "Motion", value: "Small lift, no opacity-only fade" },
+            ],
+            statuses: ["Focus", "Invalid", "Confirmed"],
+          },
         },
         {
           id: "data-operations",
@@ -352,13 +448,38 @@ function previewShotsFor(language, theme) {
           composition: "A compact operational view proving row rhythm, stacked actions, menu states, badges, and empty/destructive states.",
           mustShow: ["responsive reflow", "dense row styling", "menu affordance", "status badge system"],
           avoid: ["desktop-only tables", "text overflow", "default shadcn spacing without Katagami character"],
+          scene: {
+            eyebrow: "operations",
+            headline: "Compact review queue",
+            description:
+              "A narrow viewport scene with rows, menus, tooltips, badges, and destructive affordances.",
+            primaryAction: "Resolve",
+            secondaryAction: "Filter",
+            rows: [
+              { label: "Button hierarchy", value: "approved", status: "ok" },
+              { label: "Table rhythm", value: "needs pass", status: "watch" },
+              { label: "Empty state", value: "designed", status: "done" },
+            ],
+            statuses: ["Queued", "Blocked", "Done"],
+          },
         },
       ],
       componentRecipes: [
         { primitive: "button", intent: "Prove action hierarchy, focus, disabled, and destructive states." },
         { primitive: "card", intent: "Carry the language surface, border, elevation, and density rules." },
         { primitive: "input", intent: "Show labels, focus rings, validation, and spacing rhythm." },
+        { primitive: "textarea", intent: "Show longer guidance, validation copy, and writing density." },
+        { primitive: "select", intent: "Show filtering, selection contrast, and menu trigger styling." },
+        { primitive: "dialog", intent: "Show centered decision states and overlay treatment." },
+        { primitive: "sheet", intent: "Show contextual side panels and responsive editing." },
         { primitive: "tabs", intent: "Show navigational structure and active/inactive contrast." },
+        { primitive: "badge", intent: "Show compact status vocabulary and semantic colors." },
+        { primitive: "separator", intent: "Show section rhythm without generic gray dividers." },
+        { primitive: "checkbox", intent: "Show binary selection with visible focus and checked states." },
+        { primitive: "switch", intent: "Show settings toggles and on/off contrast." },
+        { primitive: "slider", intent: "Show numeric adjustment with track/thumb styling." },
+        { primitive: "tooltip", intent: "Show concise explanation styling above compact controls." },
+        { primitive: "dropdown-menu", intent: "Show action menus, destructive items, and grouped choices." },
         { primitive: "table", intent: "Show dense operational data, separators, row states, and responsive behavior." },
       ],
       qualityRules: {
@@ -381,7 +502,7 @@ async function fetchJson(path, init = {}) {
 }
 
 async function dispatch(entitySet, id, action, params) {
-  for (const namespace of ["KatagamiCommons", "Katagami.Curation", "Katagami", "Temper"]) {
+  for (const namespace of ["Temper", "KatagamiCommons", "Katagami.Curation", "Katagami"]) {
     const res = await fetch(`${API_BASE}/tdata/${entitySet}('${id}')/${namespace}.${action}`, {
       method: "POST",
       headers,
@@ -397,30 +518,79 @@ async function writeArtifact(slug, filename, mimeType, body) {
   const dir = `/katagami/shadcn/${slug}`;
   await fetchJson(`Workspaces('${WORKSPACE_ID}')/Temper.MkDir?await_integration=true`, {
     method: "POST",
+    headers: pawfsHeaders,
     body: JSON.stringify({ path: dir }),
   });
   const created = await fetchJson(`Workspaces('${WORKSPACE_ID}')/Temper.CreateFile?await_integration=true`, {
     method: "POST",
+    headers: pawfsHeaders,
     body: JSON.stringify({ path: `${dir}/${filename}`, mime_type: mimeType }),
   });
   const fileId = created.fields?.last_file_id || created.last_file_id;
   if (!fileId) throw new Error(`CreateFile for ${dir}/${filename} returned no file id`);
   const res = await fetch(`${API_BASE}/tdata/Files('${fileId}')/$value`, {
     method: "PUT",
-    headers: { ...headers, "Content-Type": mimeType },
+    headers: { ...pawfsHeaders, "Content-Type": mimeType },
     body,
   });
   if (!res.ok) throw new Error(`upload ${fileId} failed ${res.status}: ${await res.text()}`);
   return fileId;
 }
 
+async function createForcedShadcnReviewJob(language, theme) {
+  const fields = language.fields || language;
+  const id = language.entity_id || language.Id || fields.Id;
+  const previousFileIds = {
+    shadcn_component_spec_file_id: fields.shadcn_component_spec_file_id || fields.ShadcnComponentSpecFileId || "",
+    shadcn_preview_shots_file_id: fields.shadcn_preview_shots_file_id || fields.ShadcnPreviewShotsFileId || "",
+  };
+  const created = await fetchJson("CurationJobs", {
+    method: "POST",
+    body: JSON.stringify({ fields: {} }),
+  });
+  const jobId = created.entity_id || created.Id || created.fields?.Id;
+  if (!jobId) throw new Error(`CurationJobs create returned no job id for ${id}`);
+
+  await dispatch("CurationJobs", jobId, "Configure", {
+    job_type: "quality_review",
+    workspace_id: WORKSPACE_ID,
+    query_id: fields.query_id || fields.QueryId || "",
+    inline_job_docs: true,
+    input: JSON.stringify({
+      language_ids: [id],
+      force_agent_shadcn_artifact_refresh: true,
+      previous_file_ids: previousFileIds,
+      requested_artifacts: [
+        `/katagami/shadcn/${theme.name}/components.md`,
+        `/katagami/shadcn/${theme.name}/preview-shots.json`,
+      ],
+    }),
+  });
+  await dispatch("CurationJobs", jobId, "Submit", {});
+  return { jobId, previousFileIds };
+}
+
 async function listPublished() {
   if (fixturePath) {
     const raw = JSON.parse(readFileSync(fixturePath, "utf8"));
-    return Array.isArray(raw) ? raw : raw.value || [];
+    const rows = Array.isArray(raw) ? raw : raw.value || [];
+    return filterTarget(rows);
+  }
+  if (targetId) {
+    const row = await fetchJson(`DesignLanguages('${encodeURIComponent(targetId)}')`);
+    return [row];
   }
   const rows = await fetchJson("DesignLanguages?$filter=Status eq 'Published'&$top=500");
-  return rows.value || [];
+  return filterTarget(rows.value || []);
+}
+
+function filterTarget(rows) {
+  if (!targetId) return rows;
+  return rows.filter((language) => {
+    const fields = language.fields || language;
+    const id = language.entity_id || language.Id || fields.Id;
+    return id === targetId;
+  });
 }
 
 const languages = await listPublished();
@@ -432,69 +602,23 @@ for (const language of languages) {
   const body = `${JSON.stringify(theme, null, 2)}\n`;
   const componentSpec = componentSpecFor(language, theme);
   const previewShots = previewShotsFor(language, theme);
-  results.push({
+  const result = {
     id,
     slug: theme.name,
     registryBytes: body.length,
     componentSpecBytes: componentSpec.length,
     previewShotsBytes: previewShots.length,
     apply,
-  });
+    mode: apply ? "launch-quality-review" : "dry-run",
+  };
 
-  if (!apply) continue;
-  const status = language.status || language.Status || language.fields?.Status;
-  if (status === "Published") {
-    await dispatch("DesignLanguages", id, "Revise", {
-      curator_notes: "Backfilling deterministic shadcn/ui registry theme projection",
-    });
+  if (apply) {
+    const launched = await createForcedShadcnReviewJob(language, theme);
+    result.qualityReviewJobId = launched.jobId;
+    result.previousFileIds = launched.previousFileIds;
   }
-  const fileId = await writeArtifact(theme.name, "registry-theme.json", "application/json", body);
-  await dispatch("DesignLanguages", id, "AttachShadcnExport", {
-    shadcn_export_file_id: fileId,
-    shadcn_export_format_version: "registry-theme-v1",
-    shadcn_export_manifest: JSON.stringify({
-      components: COMPONENTS,
-      installCommand: theme.meta.installCommand,
-      artifact: "registry:theme",
-    }),
-  });
-  await dispatch("DesignLanguages", id, "VerifyShadcnExport", {});
-  const componentFileId = await writeArtifact(
-    theme.name,
-    "components.md",
-    "text/markdown",
-    componentSpec,
-  );
-  await dispatch("DesignLanguages", id, "AttachShadcnComponentSpec", {
-    shadcn_component_spec_file_id: componentFileId,
-    shadcn_component_spec_format_version: "component-recipes-v1",
-    shadcn_component_spec_manifest: JSON.stringify({
-      artifact: "katagami:shadcn-component-recipes",
-      version: "component-recipes-v1",
-      components: COMPONENTS,
-      shots: ["application-shell", "detail-editor", "data-operations"],
-    }),
-  });
-  await dispatch("DesignLanguages", id, "VerifyShadcnComponentSpec", {});
-  const shotsFileId = await writeArtifact(
-    theme.name,
-    "preview-shots.json",
-    "application/json",
-    previewShots,
-  );
-  await dispatch("DesignLanguages", id, "AttachShadcnPreviewShots", {
-    shadcn_preview_shots_file_id: shotsFileId,
-    shadcn_preview_shots_format_version: "preview-shots-v1",
-    shadcn_preview_shots_manifest: JSON.stringify({
-      artifact: "katagami:shadcn-preview-shots",
-      version: "preview-shots-v1",
-      shotIds: ["application-shell", "detail-editor", "data-operations"],
-    }),
-  });
-  await dispatch("DesignLanguages", id, "VerifyShadcnPreviewShots", {});
-  if (status === "Published") {
-    await dispatch("DesignLanguages", id, "Publish", {});
-  }
+
+  results.push(result);
 }
 
 console.log(JSON.stringify({ count: results.length, apply, results }, null, 2));

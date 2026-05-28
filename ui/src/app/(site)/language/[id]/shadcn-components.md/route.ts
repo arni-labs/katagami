@@ -1,33 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
-import { shadcnComponentSpecMarkdown } from "@/lib/shadcn-export";
-
-function cleanEnv(value: string | undefined, fallback: string): string {
-  const cleaned = (value ?? fallback).replace(/\\n/g, "").trim();
-  return cleaned || fallback;
-}
-
-const API_BASE = cleanEnv(
-  process.env.NEXT_PUBLIC_TEMPER_API_URL,
-  "http://localhost:3500",
-);
-const TENANT = cleanEnv(process.env.NEXT_PUBLIC_TEMPER_TENANT, "default");
-const API_KEY = cleanEnv(process.env.TEMPER_API_KEY, "");
+import { readTemperFileBytes } from "@/lib/temper-files";
+import {
+  isAgentAuthoredShadcnComponentSpec,
+  shadcnComponentSpecMarkdown,
+} from "@/lib/shadcn-export";
 
 export const dynamic = "force-dynamic";
-
-async function readStoredFile(fileId: string): Promise<ArrayBuffer | null> {
-  const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
-  if (API_KEY) fetchHeaders.Authorization = `Bearer ${API_KEY}`;
-
-  const res = await fetch(`${API_BASE}/tdata/Files('${fileId}')/$value`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-
-  if (!res.ok) return null;
-  return res.arrayBuffer();
-}
 
 export async function GET(
   _req: Request,
@@ -56,8 +35,8 @@ export async function GET(
       : "stored-unverified";
 
   if (f.shadcn_component_spec_file_id) {
-    const stored = await readStoredFile(f.shadcn_component_spec_file_id);
-    if (stored) {
+    const stored = await readTemperFileBytes(f.shadcn_component_spec_file_id);
+    if (stored && isAgentAuthoredShadcnComponentSpec(new TextDecoder().decode(stored))) {
       return new NextResponse(stored, {
         status: 200,
         headers: {

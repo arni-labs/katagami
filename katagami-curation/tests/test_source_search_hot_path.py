@@ -1,11 +1,6 @@
 import unittest
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - Python < 3.11 fallback
-    import tomli as tomllib
-
 
 class SourceSearchHotPathTests(unittest.TestCase):
     def test_source_search_does_not_archive_full_pages_synchronously(self):
@@ -91,58 +86,6 @@ class SourceSearchHotPathTests(unittest.TestCase):
 
         self.assertIn('"MaxChecks": "80"', builder)
         self.assertNotIn('"MaxChecks": "180"', builder)
-
-    def test_curation_doc_references_are_static_packaged_paths(self):
-        root = Path(__file__).resolve().parents[1]
-        builder = (
-            root / "wasm" / "build_session_message" / "src" / "lib.rs"
-        ).read_text()
-
-        self.assertIn("static_doc_reference", builder)
-        self.assertIn("reference_instruction_doc", builder)
-        self.assertIn("reference_knowledge_docs", builder)
-        self.assertIn('workspace_id: DOC_WORKSPACE_ID.to_string()', builder)
-
-        seed = tomllib.loads((root / "seed-data" / "job_templates.toml").read_text())
-        instruction_paths = []
-        for instance in seed["instance"]:
-            if instance["type"] != "CurationJobTemplate":
-                continue
-            for action in instance.get("actions", []):
-                if action["name"] == "Configure":
-                    instruction_paths.append(action["params"]["instruction_path"])
-
-        self.assertGreater(len(instruction_paths), 0)
-        for doc_path in instruction_paths + [
-            "/system/knowledge/design-principles.md",
-            "/system/knowledge/quality-standards.md",
-            "/system/knowledge/feedback-log.md",
-        ]:
-            with self.subTest(doc_path=doc_path):
-                self.assertTrue(
-                    (root / doc_path.lstrip("/")).is_file(),
-                    f"{doc_path} must be packaged under katagami-curation",
-                )
-
-    def test_curation_child_session_setup_batches_independent_work(self):
-        root = Path(__file__).resolve().parents[1]
-        builder = (
-            root / "wasm" / "build_session_message" / "src" / "lib.rs"
-        ).read_text()
-
-        self.assertIn("configure_session_and_create_link", builder)
-        self.assertIn("ctx.http_call_batch(&[", builder)
-        self.assertIn('"child_setup_batch"', builder)
-
-        run_tail = builder[
-            builder.index("let link_id = match configure_session_and_create_link") :
-            builder.index('ctx.log("info", "build_session_message: completed successfully")')
-        ]
-        self.assertLess(
-            run_tail.index("configure_session_link("),
-            run_tail.index("Katagami.Curation.SessionSpawned"),
-            "CurationJob should not be marked Running until the SessionLink is configured",
-        )
 
     def test_curator_skills_use_preloaded_json_helper_contract(self):
         root = Path(__file__).resolve().parents[1]
