@@ -147,3 +147,45 @@ template_version = "1"
 
 [[instance.actions]]
 name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-synthesize-palette-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "synthesize_palette"
+skill_id = "synthesize-palette"
+instruction_path = "/agents/curator/skills/synthesize-palette/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompletePaletteSynthesis"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
+
+[[instance]]
+type = "CurationJobTemplate"
+id = "template-synthesize-art-style-v1"
+
+[[instance.actions]]
+name = "Configure"
+
+[instance.actions.params]
+job_type = "synthesize_art_style"
+skill_id = "synthesize-art-style"
+instruction_path = "/agents/curator/skills/synthesize-art-style/SKILL.md"
+tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
+requires_sandbox = true
+max_turns_default = "250"
+completion_action = "CompleteArtStyleSynthesis"
+completion_contract = "typed-v1"
+template_version = "1"
+
+[[instance.actions]]
+name = "Activate"
