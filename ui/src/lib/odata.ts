@@ -608,6 +608,79 @@ function normalizeTasteRuleRow(raw: Record<string, unknown>): TasteRule {
   };
 }
 
+// ── Multi-lane remix: Palette Systems, Art Styles, Remixes ──
+
+export interface LaneEntity {
+  entity_id: string;
+  status: string;
+  fields: Record<string, string | undefined>;
+}
+
+// Field shapes are advisory — fields arrive as snake_case action params.
+export type PaletteSystem = LaneEntity;
+export type ArtStyle = LaneEntity;
+export type Remix = LaneEntity;
+
+const LANE_PAGE_SIZE = 200;
+
+function normalizeLaneRow(raw: Record<string, unknown>, set: string): LaneEntity {
+  if (raw && typeof raw.fields === "object" && raw.fields !== null) {
+    const row = raw as unknown as LaneEntity;
+    const f = row.fields as Record<string, string | undefined>;
+    const status = row.status ?? f.State ?? f.Status ?? "";
+    return { entity_id: row.entity_id, status, fields: f };
+  }
+  const fields: Record<string, string | undefined> = {};
+  let entityId = "";
+  let status = "";
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === "@odata.id") {
+      entityId = parseEntitySetId(value, set) ?? entityId;
+      continue;
+    }
+    if (key === "@odata.context" || key === "@odata.type") continue;
+    if (key === "entity_id" && typeof value === "string") {
+      entityId = value;
+      continue;
+    }
+    if ((key === "status" || key === "State" || key === "Status") && typeof value === "string") {
+      status = value;
+      fields[key === "status" ? "State" : key] = value;
+      continue;
+    }
+    if (typeof value === "string") fields[key] = value;
+  }
+  entityId = (fields.Id as string) ?? entityId;
+  return { entity_id: entityId, status, fields };
+}
+
+async function listLane(set: string, filter?: string): Promise<LaneEntity[]> {
+  const params = new URLSearchParams();
+  if (filter) params.set("$filter", filter);
+  params.set("$top", String(LANE_PAGE_SIZE));
+  const q = params.toString();
+  const rows = await collectODataPages<Record<string, unknown>>(
+    `${set}${q ? `?${q}` : ""}`,
+  );
+  return rows.map((r) => normalizeLaneRow(r, set));
+}
+
+async function getLane(set: string, id: string): Promise<LaneEntity> {
+  return normalizeLaneRow(
+    await odata<Record<string, unknown>>(`${set}('${id}')`),
+    set,
+  );
+}
+
+export const listPaletteSystems = (filter = "Status eq 'Published'") =>
+  listLane("PaletteSystems", filter);
+export const getPaletteSystem = (id: string) => getLane("PaletteSystems", id);
+export const listArtStyles = (filter = "Status eq 'Published'") =>
+  listLane("ArtStyles", filter);
+export const getArtStyle = (id: string) => getLane("ArtStyles", id);
+export const listRemixes = (filter?: string) => listLane("Remixes", filter);
+export const getRemix = (id: string) => getLane("Remixes", id);
+
 // ── Files (embodiment HTML) ──
 
 export function getFileUrl(fileId: string): string {
