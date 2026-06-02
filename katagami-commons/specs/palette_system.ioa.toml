@@ -1,0 +1,376 @@
+# PaletteSystem — I/O Automaton Specification
+#
+# A curated color system: semantic Roles (bg, surface, text, accent, semantic),
+# tonal Ramps, a set of ProofScenes the palette must survive (a tinted UI shell,
+# a chart, a gradient field), and a generated portable token export (CSS custom
+# properties / DTCG). Promotes the `palette_direction` already discovered during
+# research into a first-class, remixable lane alongside DesignLanguage.
+#
+# Lifecycle: Draft -> UnderReview -> Published -> Archived
+#                         ^              |             |
+#                         └──────────────┴─────────────┘ (Revise/Restore)
+#
+# Key invariants: can't Publish without roles + ramps + proof scenes + a verified
+# token export + verified thumbnail + quality review + public assets.
+# Lineage mirrors DesignLanguage: originals, single-parent evolutions, multi-parent remixes.
+
+[automaton]
+name = "PaletteSystem"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+
+# ADR-0050: indefinite-state allowlist (mirrors DesignLanguage) to unblock
+# TEMPER_LIVENESS_ENFORCE=true; revisit per state.
+allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_roles"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_ramps"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_proof_scenes"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_tokens_export"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "tokens_export_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_thumbnail"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "thumbnail_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_published_assets"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "review_status"
+type = "string"
+initial = "unreviewed"
+
+[[state]]
+name = "quality_review_passed"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "featured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "display_order"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "fork_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "usage_count"
+type = "counter"
+initial = 0
+
+# --- Actions: Spec Authoring (Draft & UnderReview) ---
+
+[[action]]
+name = "SetName"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["name", "slug"]
+hint = "Set the palette system name and URL-safe slug."
+
+[[action]]
+name = "SetRoles"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_roles", value = "true" }, { type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["roles"]
+hint = "Set semantic color roles (bg, surface, text, accent, semantic.success/warn/error/info) as JSON of role -> hex."
+
+[[action]]
+name = "SetRamps"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_ramps", value = "true" }, { type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["ramps"]
+hint = "Set tonal ramps (per-role scales, e.g. accent-50..accent-950) as JSON."
+
+[[action]]
+name = "SetProofScenes"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_proof_scenes", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["proof_scenes"]
+hint = "Set the canonical scenes this palette must survive (tinted UI shell, chart, gradient field) as JSON."
+
+[[action]]
+name = "SetUsageGuidance"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["usage_guidance"]
+hint = "Set pairing/contrast guidance (do's, don'ts, WCAG notes, recommended text-on-surface combos)."
+
+# --- Actions: Token Export (derived artifact) ---
+
+[[action]]
+name = "AttachTokensExport"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_tokens_export", value = "true" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["tokens_export_file_id", "tokens_export_format_version", "tokens_export_manifest"]
+hint = "Attach a generated portable token projection (CSS custom properties / DTCG JSON). Published palettes must Revise first; this invalidates publish-required verification booleans until the finalizer verifies the referenced file."
+
+[[action]]
+name = "VerifyTokensExport"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+guard = [{ type = "is_true", var = "has_tokens_export" }]
+effect = [{ type = "set_bool", var = "tokens_export_verified", value = "true" }]
+params = []
+hint = "Mark the attached token export as verified after the finalizer has read the referenced file."
+
+# --- Actions: Thumbnail / Public Assets ---
+
+[[action]]
+name = "AttachThumbnail"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+params = ["thumbnail_file_id"]
+hint = "Attach or update the static gallery thumbnail (swatch grid). The finalizer must VerifyThumbnail after confirming the referenced file is an image payload."
+
+[[action]]
+name = "VerifyThumbnail"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+guard = [{ type = "is_true", var = "has_thumbnail" }]
+effect = [{ type = "set_bool", var = "thumbnail_verified", value = "true" }]
+params = []
+hint = "Mark the attached thumbnail as verified after the finalizer has read the referenced file and confirmed it is an image payload."
+
+[[action]]
+name = "AttachVerifiedThumbnail"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+params = ["thumbnail_file_id"]
+hint = "Attach a thumbnail already validated by the finalizer or a backfill job. Published palettes must Revise first."
+
+[[action]]
+name = "AttachPublishedAssets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_published_assets", value = "true" }]
+params = ["thumbnail_asset_id", "thumbnail_asset_url", "tokens_export_asset_id", "tokens_export_asset_url"]
+hint = "Attach immutable public artifact URLs from the generic Temper publish-artifact flow. PawFS file ids remain the governed source; asset URLs are the public serving plane."
+
+# --- Actions: Classification ---
+
+[[action]]
+name = "SetTaxonomy"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["taxonomy_ids"]
+hint = "Assign taxonomy categories to this palette system."
+
+[[action]]
+name = "SetTags"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["tags"]
+hint = "Set freeform tags for discovery and search."
+
+[[action]]
+name = "SetFeatured"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["featured", "display_order"]
+hint = "Set featured status and display order for gallery sorting."
+
+[[action]]
+name = "AddCuratorNotes"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["curator_notes"]
+hint = "Add curator feedback notes to a draft or under-review palette."
+
+[[action]]
+name = "SetSources"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["source_ids"]
+hint = "Link DesignSource entities that informed this palette."
+
+# --- Actions: Lineage ---
+
+[[action]]
+name = "SetLineage"
+kind = "input"
+from = ["Draft"]
+params = ["parent_ids", "lineage_type", "generation_number"]
+hint = "Set lineage: parent_ids=[] for originals, single parent for evolution, multiple for remix."
+
+# --- Actions: Review Lifecycle ---
+
+[[action]]
+name = "SubmitForReview"
+kind = "internal"
+from = ["Draft"]
+to = "UnderReview"
+guard = [{ type = "is_true", var = "has_roles" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
+hint = "Submit for curator review. Requires roles, ramps, proof scenes, and a finalizer-verified thumbnail."
+
+[[action]]
+name = "Publish"
+kind = "internal"
+from = ["UnderReview"]
+to = "Published"
+guard = [{ type = "is_true", var = "has_roles" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_tokens_export" }, { type = "is_true", var = "tokens_export_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
+effect = [{ type = "increment", field = "version" }]
+hint = "Curator approves and publishes. Requires roles, ramps, proof scenes, verified token export, verified thumbnail, quality review, and public assets."
+
+[[action]]
+name = "Revise"
+kind = "input"
+from = ["Published"]
+to = "UnderReview"
+params = ["curator_notes"]
+hint = "Pull a published palette back for revision with stated rationale."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+to = "Archived"
+params = ["curator_notes"]
+hint = "Archive a malformed, test, superseded, or published palette while preserving a governed restore path."
+
+[[action]]
+name = "Restore"
+kind = "input"
+from = ["Archived"]
+to = "UnderReview"
+params = ["curator_notes"]
+hint = "Restore an archived palette into review so the finalizer can re-verify artifacts and publish through normal guards."
+
+# --- Actions: Quality & Usage Signals ---
+
+[[action]]
+name = "UpdateQuality"
+kind = "input"
+from = ["UnderReview", "Published"]
+params = ["quality_score", "review_status"]
+hint = "Update quality score and/or review status (unreviewed, reviewed, needs_revision)."
+
+[[action]]
+name = "MarkQualityPassed"
+kind = "internal"
+from = ["UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "quality_review_passed", value = "true" }]
+params = []
+hint = "Mark quality review as passed after finalizer-side artifact and state validation."
+
+[[action]]
+name = "IncrementUsage"
+kind = "input"
+from = ["Published"]
+effect = "increment usage_count"
+hint = "Record that a remix or agent used this palette."
+
+[[action]]
+name = "IncrementFork"
+kind = "input"
+from = ["Published"]
+effect = "increment fork_count"
+hint = "Record that a child palette was forked from this one."
+
+# --- Output Actions ---
+
+[[action]]
+name = "PaletteSystemPublishedEvent"
+kind = "output"
+hint = "Emitted when a palette system is published."
+
+[[action]]
+name = "PaletteSystemArchivedEvent"
+kind = "output"
+hint = "Emitted when a palette system is archived."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "PublishedRequiresRoles"
+when = ["Published"]
+assert = "has_roles"
+
+[[invariant]]
+name = "PublishedRequiresRamps"
+when = ["Published"]
+assert = "has_ramps"
+
+[[invariant]]
+name = "PublishedRequiresProofScenes"
+when = ["Published"]
+assert = "has_proof_scenes"
+
+[[invariant]]
+name = "PublishedRequiresTokensExport"
+when = ["Published"]
+assert = "has_tokens_export"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedTokensExport"
+when = ["Published"]
+assert = "tokens_export_verified"
+
+[[invariant]]
+name = "PublishedRequiresThumbnail"
+when = ["Published"]
+assert = "has_thumbnail"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedThumbnail"
+when = ["Published"]
+assert = "thumbnail_verified"
+
+[[invariant]]
+name = "PublishedRequiresPublicAssets"
+when = ["Published"]
+assert = "has_published_assets"
+
+[[invariant]]
+name = "PublishedRequiresQualityReview"
+when = ["Published"]
+assert = "quality_review_passed"
