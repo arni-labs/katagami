@@ -1,9 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { DesignShowcase } from "@/components/design-showcase";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
+import { saveRemix, rateRemix } from "@/app/remix-actions";
+
+export interface SavedMix {
+  id: string;
+  ui: string;
+  palette: string;
+  art: string;
+  composition: string;
+  rating: number;
+}
 
 export interface UiOption {
   id: string;
@@ -61,11 +72,15 @@ export function RemixStudio({
   ui,
   palettes,
   art,
+  saved = [],
 }: {
   ui: UiOption[];
   palettes: PaletteOption[];
   art: ArtOption[];
+  saved?: SavedMix[];
 }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [uiIdx, setUiIdx] = useState(0);
   const [palIdx, setPalIdx] = useState(0);
   const [artIdx, setArtIdx] = useState(0);
@@ -103,6 +118,42 @@ export function RemixStudio({
   }, [selArt, comp]);
 
   const haveAll = ui.length > 0 && palettes.length > 0 && art.length > 0;
+
+  const nameOf = (arr: { id: string; name: string }[], id: string) =>
+    arr.find((x) => x.id === id)?.name ?? id.slice(0, 8);
+
+  // Taste loop: average rating for the current palette × art-style pair across
+  // saved+rated mixes — the compatibility signal ratings feed.
+  const compat = useMemo(() => {
+    if (!selPal || !selArt) return null;
+    const rated = saved.filter((s) => s.palette === selPal.id && s.art === selArt.id && s.rating > 0);
+    if (!rated.length) return null;
+    return { avg: rated.reduce((a, s) => a + s.rating, 0) / rated.length, n: rated.length };
+  }, [saved, selPal, selArt]);
+
+  function doSave() {
+    if (!haveAll) return;
+    const slotAssignments = JSON.stringify(
+      Object.fromEntries(slotImages.map((s) => [s.slot.key, s.url])),
+    );
+    startTransition(async () => {
+      await saveRemix({
+        designLanguageId: selUi.id,
+        paletteSystemId: selPal.id,
+        artStyleId: selArt.id,
+        compositionKey: comp.key,
+        slotAssignments,
+      });
+      router.refresh();
+    });
+  }
+
+  function doRate(id: string, rating: number) {
+    startTransition(async () => {
+      await rateRemix(id, rating);
+      router.refresh();
+    });
+  }
 
   function rand(n: number) {
     return Math.floor(Math.random() * n);
@@ -181,6 +232,12 @@ export function RemixStudio({
         <Picker label="Art style" options={art} index={artIdx} onChange={setArtIdx} />
       </div>
 
+      {compat && (
+        <div style={{ margin: "0 0 12px", fontSize: 13, color: "#5b6f52", fontWeight: 600 }}>
+          ★ {compat.avg.toFixed(1)} · {compat.n} rating{compat.n > 1 ? "s" : ""} — this palette × art style pairs well
+        </div>
+      )}
+
       {/* Composition switcher + actions */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 18 }}>
         {COMPOSITIONS.map((c, i) => (
@@ -207,6 +264,14 @@ export function RemixStudio({
           style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #2b2a26", background: haveAll ? "#2b2a26" : "#bbb", color: "#fff", cursor: haveAll ? "pointer" : "default", fontSize: 14, fontWeight: 600 }}
         >
           {copied ? "Copied ✓" : "Copy brief"}
+        </button>
+        <button
+          onClick={doSave}
+          disabled={!haveAll || pending}
+          title="Persist this mix as a Remix you can rate"
+          style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #7c6f57", background: "#fff", color: "#7c6f57", cursor: haveAll && !pending ? "pointer" : "default", fontSize: 14, fontWeight: 600 }}
+        >
+          {pending ? "…" : "Save mix"}
         </button>
       </div>
 
@@ -259,6 +324,40 @@ export function RemixStudio({
           ))}
         </div>
       </div>
+
+      {/* Saved mixes + rating — the compatibility/taste loop */}
+      {saved.length > 0 && (
+        <div style={{ ...card, padding: 16, marginTop: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: "#6b665c" }}>
+            Saved mixes · rate them to build the palette × art-style compatibility signal
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
+            {saved.map((m) => (
+              <div key={m.id} style={{ border: "1px solid #e5e3dd", borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ fontSize: 13, color: "#2b2a26" }}>
+                  {nameOf(ui, m.ui)} · {nameOf(palettes, m.palette)} · {nameOf(art, m.art)}
+                </div>
+                <div style={{ fontSize: 11, color: "#8a857a", margin: "2px 0 6px" }}>
+                  {COMPOSITIONS.find((c) => c.key === m.composition)?.name ?? m.composition}
+                </div>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => doRate(m.id, n)}
+                      disabled={pending}
+                      aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}
+                      style={{ border: "none", background: "none", cursor: pending ? "default" : "pointer", fontSize: 18, lineHeight: 1, padding: 0, color: n <= m.rating ? "#b8893f" : "#d9d4c7" }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

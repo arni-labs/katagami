@@ -2,6 +2,7 @@ import {
   listDesignLanguages,
   listPaletteSystems,
   listArtStyles,
+  listRemixes,
   getFileUrl,
   parseJson,
 } from "@/lib/odata";
@@ -20,10 +21,11 @@ function refUrls(raw?: string): string[] {
 }
 
 export default async function StudioPage() {
-  const [languages, palettes, artStyles] = await Promise.all([
+  const [languages, palettes, artStyles, savedRemixes] = await Promise.all([
     listDesignLanguages("Status eq 'Published'").catch(() => []),
     listPaletteSystems().catch(() => []),
     listArtStyles().catch(() => []),
+    listRemixes("Status eq 'Saved'").catch(() => []),
   ]);
 
   const ui = languages.map((l) => ({
@@ -48,5 +50,14 @@ export default async function StudioPage() {
     thumb: a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "",
   }));
 
-  return <RemixStudio ui={ui} palettes={pal} art={art} />;
+  const saved = savedRemixes.map((r) => ({
+    id: r.entity_id,
+    ui: r.fields.design_language_id ?? "",
+    palette: r.fields.palette_system_id ?? "",
+    art: r.fields.art_style_id ?? "",
+    composition: r.fields.composition_key ?? "",
+    rating: Number(r.fields.rating ?? r.fields.Rating ?? 0),
+  }));
+
+  return <RemixStudio ui={ui} palettes={pal} art={art} saved={saved} />;
 }
