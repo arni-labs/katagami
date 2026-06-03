@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { DesignShowcase } from "@/components/design-showcase";
 import { PageHero, Marker } from "@/components/page-hero";
+import { buildRemixEmbodiment } from "@/lib/remix-embodiment";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { saveRemix, rateRemix } from "@/app/remix-actions";
@@ -46,13 +46,6 @@ function safeParse(raw?: string): Record<string, unknown> {
   }
 }
 
-// palette role -> design-token color key
-const ROLE_TO_TOKEN: Record<string, string> = {
-  background: "bg", surface: "surface", text: "text", primary: "text",
-  secondary: "muted", muted: "muted", border: "border", accent: "accent",
-  success: "success", warning: "warning", error: "error", info: "info",
-};
-
 function uiColors(o: UiOption): string[] {
   const t = safeParse(o.tokens);
   const c = (t.colors as Record<string, string>) ?? {};
@@ -89,15 +82,6 @@ export function RemixStudio({
 
   const roles = useMemo(() => (selPal ? paletteColors(selPal) : {}), [selPal]);
 
-  const mergedTokens = useMemo(() => {
-    const t = safeParse(selUi?.tokens);
-    const colors = { ...((t.colors as Record<string, string>) ?? {}) };
-    for (const [tokenKey, roleKey] of Object.entries(ROLE_TO_TOKEN)) {
-      if (roles[roleKey]) colors[tokenKey] = roles[roleKey];
-    }
-    return JSON.stringify({ ...t, colors });
-  }, [selUi, roles]);
-
   const slotImages = useMemo(() => {
     const refs = selArt?.refs ?? [];
     return comp.image_slots.map((slot, i) => ({
@@ -105,6 +89,23 @@ export function RemixStudio({
       url: refs.length ? refs[i % refs.length] : (selArt?.thumb ?? ""),
     }));
   }, [selArt, comp]);
+
+  // The preview is a real, themed embodiment screen (iframe srcdoc): the UI
+  // language supplies typography/shape, the palette recolors every token, the
+  // art style fills the image slots — recomputed live on any change.
+  const embodimentHtml = useMemo(() => {
+    if (!selUi) return "";
+    const slots: Record<string, string> = {};
+    for (const { slot, url } of slotImages) slots[slot.key] = url;
+    return buildRemixEmbodiment({
+      compositionKey: comp.key,
+      uiName: selUi.name,
+      artName: selArt?.name ?? "",
+      tokens: safeParse(selUi.tokens) as never,
+      roles,
+      slots,
+    });
+  }, [selUi, selArt, comp, roles, slotImages]);
 
   const nameOf = (arr: { id: string; name: string }[], id: string) =>
     arr.find((x) => x.id === id)?.name ?? id.slice(0, 8);
@@ -260,46 +261,29 @@ export function RemixStudio({
         </button>
       </div>
 
-      {/* stage */}
-      <div className="mt-5 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_1px_2px_rgba(30,35,45,0.04),0_8px_24px_rgba(30,35,45,0.06)]">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-          <div className="flex h-3 overflow-hidden rounded-[1px]">
-            {["accent", "success", "warning", "error", "info"].map((k) => (
-              <span key={k} className="w-3" style={{ background: roles[k] ?? "#ddd" }} />
-            ))}
+      {/* preview: live embodiment screen */}
+      <div className="mt-5 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_1px_2px_rgba(30,35,45,0.04),0_14px_40px_rgba(30,35,45,0.1)]">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-2.5" style={{ background: "color-mix(in srgb, var(--foreground) 4%, var(--card))" }}>
+          <div className="flex gap-1.5">
+            <span className="h-3 w-3 rounded-full" style={{ background: "var(--sakura)" }} />
+            <span className="h-3 w-3 rounded-full" style={{ background: "var(--yuzu)" }} />
+            <span className="h-3 w-3 rounded-full" style={{ background: "var(--salad)" }} />
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            {selUi?.name ?? "—"} · themed with {selPal?.name ?? "—"}
-          </span>
+          <div className="mx-auto w-full max-w-md truncate rounded-full border border-border bg-card px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
+            {selUi?.name ?? "—"} · {selPal?.name ?? "—"} · {selArt?.name ?? "—"} — {comp.name}
+          </div>
         </div>
-        <div className="max-h-[600px] overflow-auto">
-          {selUi ? <DesignShowcase tokensRaw={mergedTokens} languageName={selUi.name} /> : null}
-        </div>
-      </div>
-
-      {/* imagery (art lane) */}
-      <div className="mt-5 rounded-[var(--radius-lg)] border border-border bg-card p-4">
-        <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-          Imagery — {selArt?.name ?? "—"} ({selArt?.medium || "—"}) · {comp.name} slots
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {slotImages.map(({ slot, url }) => (
-            <figure key={slot.key} className="m-0">
-              <div
-                className="relative overflow-hidden rounded-[var(--radius-md)] border border-border"
-                style={{ aspectRatio: slot.aspect.replace(":", "/"), background: `linear-gradient(135deg, ${roles.accent || "#bdb6a6"}, ${roles.surface || "#efeae0"})` }}
-              >
-                {url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt={slot.subject_hint} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" />
-                ) : null}
-              </div>
-              <figcaption className="mt-1.5 font-mono text-[10px] text-muted-foreground">
-                <span className="text-foreground">{slot.key}</span> — {slot.subject_hint}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
+        {selUi ? (
+          <iframe
+            title="Remix preview"
+            srcDoc={embodimentHtml}
+            className="block w-full bg-white"
+            style={{ height: 700, border: 0 }}
+            sandbox="allow-same-origin"
+          />
+        ) : (
+          <div className="grid h-[700px] place-items-center text-sm text-muted-foreground">No UI language selected.</div>
+        )}
       </div>
 
       {/* saved mixes + rating */}
