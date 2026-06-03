@@ -59,6 +59,19 @@ name = "embodiment_verified"
 type = "bool"
 initial = "false"
 
+# Compositions = the bespoke Landing + Dashboard screens. Gated identically to
+# the element embodiment: attached, then finalizer-verified (files read, checked
+# self-contained + tokenized, landing carries the hero slot) before publish.
+[[state]]
+name = "has_compositions"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "compositions_verified"
+type = "bool"
+initial = "false"
+
 [[state]]
 name = "has_design_md"
 type = "bool"
@@ -418,9 +431,18 @@ hint = "Link DesignSource entities that informed this language."
 [[action]]
 name = "AttachCompositions"
 kind = "input"
-from = ["Draft", "UnderReview", "Published"]
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_compositions", value = "true" }, { type = "set_bool", var = "compositions_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["landing_file_id", "dashboard_file_id"]
-hint = "Attach the language's bespoke composition embodiments: a Landing and a Dashboard screen (self-contained HTML, tokenized with color CSS vars + a full-bleed {--hero-image} slot on the landing). Authored uniquely per language alongside the element embodiment, following the same taste rules. These are what the Remix Studio recolors + fills."
+hint = "Attach the language's bespoke composition embodiments: a Landing and a Dashboard screen (self-contained HTML, tokenized with color CSS vars + a full-bleed {--hero-image} slot on the landing). Authored uniquely per language alongside the element embodiment, following the same taste rules. These are what the Remix Studio recolors + fills. Re-attaching invalidates quality review + published assets until re-verified. To replace compositions on a Published language, Revise first."
+
+[[action]]
+name = "VerifyCompositions"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "compositions_verified", value = "true" }]
+params = []
+hint = "Mark the Landing + Dashboard compositions verified after the finalizer has read both files and checked each is self-contained, tokenized HTML (color vars + the landing's hero slot)."
 
 # --- Actions: Lineage ---
 
@@ -438,17 +460,17 @@ name = "SubmitForReview"
 kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
-hint = "Submit for curator review. Requires all five spec sections, a finalizer-verified embodiment file, and a verified gallery thumbnail."
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "compositions_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
+hint = "Submit for curator review. Requires all five spec sections, a finalizer-verified embodiment file, finalizer-verified Landing + Dashboard compositions, and a verified gallery thumbnail."
 
 [[action]]
 name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "shadcn_export_verified" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "shadcn_component_spec_verified" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "is_true", var = "shadcn_preview_shots_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "compositions_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "shadcn_export_verified" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "shadcn_component_spec_verified" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "is_true", var = "shadcn_preview_shots_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Requires verified spec sections, embodiment, thumbnail, DESIGN.md, shadcn/ui export, shadcn component recipes, preview shots, public assets, and quality review."
+hint = "Curator approves and publishes. Requires verified spec sections, embodiment, Landing + Dashboard compositions, thumbnail, DESIGN.md, shadcn/ui export, shadcn component recipes, preview shots, public assets, and quality review."
 
 [[action]]
 name = "Revise"
@@ -528,6 +550,16 @@ assert = "has_embodiment"
 name = "PublishedRequiresVerifiedEmbodiment"
 when = ["Published"]
 assert = "embodiment_verified"
+
+[[invariant]]
+name = "PublishedRequiresCompositions"
+when = ["Published"]
+assert = "has_compositions"
+
+[[invariant]]
+name = "PublishedRequiresVerifiedCompositions"
+when = ["Published"]
+assert = "compositions_verified"
 
 [[invariant]]
 name = "PublishedRequiresThumbnail"

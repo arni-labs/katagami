@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getDesignLanguage } from "@/lib/odata";
+import { getDesignLanguage, getFileUrl } from "@/lib/odata";
 import { readTemperFileText } from "@/lib/temper-files";
 import {
   designMdToMarkdown,
@@ -12,14 +12,13 @@ import {
 } from "@/components/spec-panel";
 import { SpecActions } from "@/components/spec-actions";
 import { DesignMdShowcase } from "@/components/design-md-showcase";
-import { EmbodimentViewer } from "@/components/embodiment-viewer";
+import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
 import { PageHero, Marker } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
   StickyNote,
-  WashiTape,
   SectionHeading,
   Stamp,
   Perforation,
@@ -86,12 +85,43 @@ export default async function LanguageDetailPage({
   const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
   const isPublished = lang.status === "Published";
-  const embodimentFileId = isPublished ? undefined : f.embodiment_file_id;
-  const embodimentSrc = f.embodiment_asset_url;
-  const canRenderEmbodiment = Boolean(
-    (embodimentSrc || embodimentFileId) &&
-      (f.embodiment_format ?? "html") !== "tsx",
-  );
+
+  // Three embodiments, each a served self-contained HTML file: the element
+  // showcase + the bespoke Landing + the bespoke Dashboard. Published languages
+  // serve the embodiment from its public asset URL; pre-publish ones from the
+  // governed file id. Both resolve to a fetchable URL via getFileUrl.
+  const embodimentUrl = isPublished
+    ? (f.embodiment_asset_url || "").trim()
+    : f.embodiment_file_id
+      ? getFileUrl(f.embodiment_file_id)
+      : "";
+  const embodimentRenderable =
+    Boolean(embodimentUrl) && (f.embodiment_format ?? "html") !== "tsx";
+  const landingUrl = f.landing_file_id ? getFileUrl(f.landing_file_id) : "";
+  const dashboardUrl = f.dashboard_file_id ? getFileUrl(f.dashboard_file_id) : "";
+
+  const embodimentTabs: EmbodimentTab[] = [];
+  if (embodimentRenderable)
+    embodimentTabs.push({
+      key: "embodiment",
+      label: "Embodiment",
+      url: embodimentUrl,
+      note: "the full element showcase",
+    });
+  if (landingUrl)
+    embodimentTabs.push({
+      key: "landing",
+      label: "Landing",
+      url: landingUrl,
+      note: "bespoke marketing landing",
+    });
+  if (dashboardUrl)
+    embodimentTabs.push({
+      key: "dashboard",
+      label: "Dashboard",
+      url: dashboardUrl,
+      note: "bespoke app dashboard",
+    });
   const specProps = {
     languageId: id,
     name,
@@ -229,32 +259,13 @@ export default async function LanguageDetailPage({
         <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
           <section className="order-1 space-y-8 md:space-y-6">
             <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
-              <Marker color="salad">design embodiment</Marker>
+              <Marker color="salad">embodiments</Marker>
             </SectionHeading>
-            {canRenderEmbodiment ? (
-              <div className="relative">
-                <WashiTape
-                  color="sakura"
-                  rotate={-4}
-                  className="-left-4 -top-3"
-                  width={100}
-                />
-                <WashiTape
-                  color="salad"
-                  rotate={5}
-                  className="-right-4 -top-3"
-                  width={80}
-                />
-                <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
-                  <EmbodimentViewer
-                    fileId={embodimentFileId}
-                    src={embodimentSrc}
-                  />
-                  <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
-                    preview · {f.slug || id.slice(0, 12)}
-                  </span>
-                </div>
-              </div>
+            {embodimentTabs.length > 0 ? (
+              <EmbodimentTabs
+                tabs={embodimentTabs}
+                slug={f.slug || id.slice(0, 12)}
+              />
             ) : f.tokens ? (
               <StickyNote tint="teal" className="p-6">
                 <DesignShowcase tokensRaw={f.tokens} languageName={name} />
@@ -262,7 +273,7 @@ export default async function LanguageDetailPage({
             ) : (
               <StickyNote className="flex items-center justify-center p-16 text-center font-mono text-sm text-muted-foreground">
                 {f.embodiment_file_id
-                  ? isPublished && !embodimentSrc
+                  ? isPublished && !embodimentUrl
                     ? "public embodiment is still publishing"
                     : "tsx preview is not rendered — view the spec for details"
                   : "no embodiment or tokens defined yet"}

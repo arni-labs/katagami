@@ -55,14 +55,18 @@ async function seedDesignLanguage(d) {
     philosophy: J(d.philosophy), tokens: J(d.tokens), rules: J(d.rules),
     layout_principles: J(d.layout), guidance: J(d.guidance), tags: J(d.tags),
   });
-  // Bespoke composition embodiments (hand-authored per language for the local
-  // demo; the synthesize-language agent produces these for real runs).
+  // Three embodiments per language, all hand-authored for the local demo (the
+  // synthesize-language agent produces these for real runs, gated by the
+  // finalizer): the element-showcase embodiment + bespoke Landing + Dashboard.
   await act("DesignLanguages", id, "AttachCompositions", {
     landing_file_id: `/embodiments/${d.slug}-landing.html`,
     dashboard_file_id: `/embodiments/${d.slug}-dashboard.html`,
   });
+  // Gate the compositions the same way the finalizer does (the seed walks
+  // entities directly, so it stands in for the finalizer's VerifyCompositions).
+  await act("DesignLanguages", id, "VerifyCompositions", {});
   await act("DesignLanguages", id, "AttachEmbodiment", {
-    embodiment_file_id: `seed-embodiment-${d.slug}`, element_count: "15",
+    embodiment_file_id: `/embodiments/${d.slug}-embodiment.html`, element_count: "15",
     composition_count: "5", embodiment_format: "html",
   });
   await act("DesignLanguages", id, "VerifyEmbodiment", {});
@@ -90,7 +94,7 @@ async function seedDesignLanguage(d) {
   await act("DesignLanguages", id, "SubmitForReview", {});
   await act("DesignLanguages", id, "AttachPublishedAssets", {
     thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
-    embodiment_asset_id: `seed-embodiment-${d.slug}`, embodiment_asset_url: "",
+    embodiment_asset_id: `seed-embodiment-${d.slug}`, embodiment_asset_url: `/embodiments/${d.slug}-embodiment.html`,
     design_md_asset_id: `seed-designmd-${d.slug}`, design_md_asset_url: "",
   });
   await act("DesignLanguages", id, "MarkQualityPassed", {});

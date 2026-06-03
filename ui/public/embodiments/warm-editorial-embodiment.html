@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Element embodiment · Warm Editorial.
+     The canonical-elements showcase rendered in this language's voice: Georgia
+     serif, a warm paper ground, small-caps labels, hairline rules, ❧ ornaments,
+     drop-caps, and a single terracotta accent. Tokenized for color honesty;
+     renders in the language's own palette. The "in the wild" reference. -->
+<style>
+  :root{
+    --bg:#faf6ef; --surface:#f3ece0; --text:#2b2117; --muted:#6b5d4f;
+    --border:#e3d8c6; --accent:#9c4f2b; --on-accent:#fff7ee;
+    --success:#5d7a4f; --warning:#b07d2b; --error:#a8412a; --info:#4a6670;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.65}
+  .wrap{max-width:920px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+  .sc{font-variant:small-caps;letter-spacing:.08em}
+
+  header.mast{border-bottom:1px solid var(--border);background:var(--bg)}
+  .mast .row{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .masthead{font-size:24px;font-style:italic;letter-spacing:.01em}
+  .nav{display:flex;gap:24px;font-size:14px}
+  .nav a{font-variant:small-caps;letter-spacing:.08em;color:var(--muted);padding-bottom:3px;border-bottom:1px solid transparent}
+  .nav a.on{color:var(--accent);border-color:var(--accent)}
+
+  .rule{display:flex;align-items:center;gap:16px;color:var(--muted);margin:0 auto;max-width:920px;padding:34px 32px 0}
+  .rule::before,.rule::after{content:"";flex:1;height:1px;background:var(--border)}
+  .rule .mark{color:var(--accent);font-size:20px}
+
+  section{padding:30px 0}
+  .seclabel{text-align:center;margin-bottom:26px}
+  .seclabel .idx{display:block;color:var(--accent);font-variant:small-caps;letter-spacing:.22em;font-size:13px}
+  .seclabel h2{font-size:30px;font-style:italic;margin-top:4px}
+  .seclabel p{color:var(--muted);font-size:15px;margin-top:6px}
+
+  /* type */
+  .t-display{font-size:60px;line-height:1.02;letter-spacing:-.01em}
+  .t-h1{font-size:38px;line-height:1.08}
+  .lead{font-size:19px}
+  .lead::first-letter{font-size:64px;float:left;line-height:.74;padding:8px 14px 0 0;color:var(--accent);font-weight:700}
+  .pull{font-size:25px;font-style:italic;line-height:1.4;color:var(--accent);border-left:3px solid var(--accent);padding:8px 0 8px 24px;margin:26px 0}
+  .label{font-variant:small-caps;letter-spacing:.16em;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:5px;margin:24px 0 10px}
+
+  /* buttons */
+  .btnrow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--on-accent);padding:12px 28px;font-family:inherit;font-variant:small-caps;letter-spacing:.08em;font-size:16px;border:0;border-radius:3px;cursor:pointer;transition:opacity .15s}
+  .btn:hover{opacity:.9}
+  .btn.sec{background:transparent;color:var(--text);border:1px solid var(--text)}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .btn.link{background:transparent;color:var(--accent);padding:12px 0;font-variant:normal;font-style:italic;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
+  .btn.sm{padding:8px 16px;font-size:13px}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+
+  /* form */
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-variant:small-caps;letter-spacing:.1em;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;font:inherit;font-size:16px;padding:11px 13px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:3px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(156,79,43,.16)}
+  .field .hint{font-size:13px;font-style:italic;color:var(--muted);margin-top:6px}
+  .check{display:flex;gap:12px;align-items:flex-start;font-size:16px;margin-bottom:15px}
+  .box{width:20px;height:20px;border:1px solid var(--text);border-radius:4px;flex:none;display:grid;place-items:center;margin-top:2px}
+  .box.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .box.rad{border-radius:50%}
+  .switch{width:44px;height:24px;border:1px solid var(--border);background:var(--surface);border-radius:999px;position:relative;flex:none;margin-top:1px}
+  .switch.on{background:var(--accent);border-color:var(--accent)}
+  .switch i{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s}
+  .switch.on i{left:21px}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden}
+  .card .cap{aspect-ratio:3/2;background:linear-gradient(135deg,var(--accent),#7d3c20);color:var(--on-accent);display:grid;place-items:center;font-style:italic;font-size:15px}
+  .card .body{padding:20px}
+  .card h3{font-size:20px;font-style:italic;margin-bottom:8px}
+  .card p{font-size:14px;color:var(--muted)}
+  .card .foot{margin-top:16px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+
+  /* badges + alerts */
+  .twocol{display:grid;grid-template-columns:1fr 1.3fr;gap:40px;align-items:start}
+  .badges{display:flex;flex-wrap:wrap;gap:10px}
+  .tag{font-variant:small-caps;letter-spacing:.08em;font-size:13px;padding:5px 13px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
+  .tag.solid{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .tag.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .alert{display:flex;gap:12px;padding:13px 16px;border:1px solid var(--border);border-left-width:4px;border-radius:4px;font-size:14px;align-items:center;margin-bottom:12px;background:var(--surface)}
+  .alert .k{font-variant:small-caps;letter-spacing:.08em;font-weight:700;font-size:13px}
+  .alert.s{border-left-color:var(--success)} .alert.s .k{color:var(--success)}
+  .alert.w{border-left-color:var(--warning)} .alert.w .k{color:var(--warning)}
+  .alert.e{border-left-color:var(--error)} .alert.e .k{color:var(--error)}
+  .alert.i{border-left-color:var(--info)} .alert.i .k{color:var(--info)}
+
+  /* tabs */
+  .tablist{display:flex;gap:0;justify-content:center;border-bottom:1px solid var(--border)}
+  .tablist button{font:inherit;font-variant:small-caps;letter-spacing:.08em;font-size:15px;background:none;border:0;border-bottom:2px solid transparent;padding:11px 20px;cursor:pointer;color:var(--muted);margin-bottom:-1px}
+  .tablist button.on{color:var(--accent);border-color:var(--accent)}
+  .tabpane{padding:22px 0;font-size:16px;color:var(--text);max-width:64ch;margin:0 auto;text-align:center;font-style:italic}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  caption{text-align:left;font-variant:small-caps;letter-spacing:.1em;color:var(--muted);padding-bottom:10px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--border)}
+  th{font-variant:small-caps;letter-spacing:.08em;font-size:13px;color:var(--muted)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:0}
+  .pill{font-variant:small-caps;letter-spacing:.06em;font-size:13px;padding:3px 11px;border-radius:999px}
+  .pill.ok{color:var(--success);border:1px solid var(--success)}
+  .pill.pend{color:var(--warning);border:1px solid var(--warning)}
+
+  /* avatars + pagination */
+  .meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+  .avatars{display:flex}
+  .avatars .a{width:42px;height:42px;border-radius:50%;background:var(--surface);color:var(--accent);border:1px solid var(--border);display:grid;place-items:center;font-style:italic;font-size:15px;margin-left:-10px}
+  .avatars .a:first-child{margin-left:0}
+  .avatars .a.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pager{display:flex;gap:8px}
+  .pager a{min-width:36px;height:36px;padding:0 10px;display:grid;place-items:center;border:1px solid var(--border);border-radius:999px;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .pager a.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  footer.foot{border-top:1px solid var(--border);margin-top:24px;padding:28px 0;text-align:center;color:var(--muted);font-variant:small-caps;letter-spacing:.1em;font-size:13px}
+</style>
+</head>
+<body>
+  <header class="mast"><div class="wrap row">
+    <div class="masthead">The Warm Review</div>
+    <nav class="nav"><a class="on">Elements</a><a>Essays</a><a>Letters</a><a>Archive</a></nav>
+  </div></header>
+
+  <main class="wrap">
+    <div class="rule" style="padding-left:0;padding-right:0"><span class="mark">❧</span></div>
+
+    <!-- TYPE -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen One</span><h2>Typography</h2><p>Georgia, set for the long read at a comfortable measure.</p></div>
+      <div class="t-display">Warmth</div>
+      <div class="label">Heading · 38</div>
+      <div class="t-h1">Reading is an act of warmth</div>
+      <div class="label">Body · 19</div>
+      <p class="lead">Type is the closest thing the web has to a voice. A serif at a comfortable measure, set on a warm ground, slows the eye just enough to let meaning arrive — and that small generosity is the whole of good editorial design.</p>
+      <div class="pull">"Comfort is not the absence of style. It is the highest form of it."</div>
+    </section>
+
+    <!-- BUTTONS -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Two</span><h2>Buttons</h2><p>Soft corners, small-caps labels, one warm accent.</p></div>
+      <div class="btnrow">
+        <button class="btn">Begin reading</button>
+        <button class="btn sec">Secondary</button>
+        <button class="btn ghost">Outline</button>
+        <a class="btn link">a quiet text link</a>
+        <button class="btn sm">Small</button>
+        <button class="btn" disabled>Disabled</button>
+      </div>
+    </section>
+
+    <!-- FORMS -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Three</span><h2>Forms</h2><p>Rounded fields, a warm focus glow, italic hints.</p></div>
+      <div class="cols2">
+        <div>
+          <div class="field"><label>Your name</label><input value="Beatrice Warde"></div>
+          <div class="field"><label>Email</label><input placeholder="reader@warmreview.com"><div class="hint">A letter arrives each new moon.</div></div>
+          <div class="field"><label>Section</label><select><option>Essays on craft</option><option>Letters</option><option>Marginalia</option></select></div>
+          <div class="field"><label>A note</label><textarea rows="3">Set in Georgia, themed live.</textarea></div>
+        </div>
+        <div style="padding-top:6px">
+          <div class="check"><span class="box on">✓</span><span><b>The monthly letter</b><br><span class="hint" style="font-style:italic">Essays on type, paper, and patience.</span></span></div>
+          <div class="check"><span class="box"></span><span>Leave my reading in the margins</span></div>
+          <div class="check"><span class="box rad on"></span><span>Edition — Cloth</span></div>
+          <div class="check"><span class="box rad"></span><span>Edition — Paper</span></div>
+          <div class="check"><span class="switch on"><i></i></span><span>Old-style figures</span></div>
+          <div class="check"><span class="switch"><i></i></span><span>Wide margins</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Four</span><h2>Cards</h2><p>Paper panels with a warm plate and an italic title.</p></div>
+      <div class="cards">
+        <div class="card"><div class="cap">No. I</div><div class="body"><h3>On the Measure</h3><p>Why sixty-six characters is the kindest line a reader can be given.</p><div class="foot"><span class="sc">Essay</span><a class="btn link" style="padding:0">Read</a></div></div></div>
+        <div class="card"><div class="cap">No. II</div><div class="body"><h3>The Drop Cap</h3><p>An old courtesy that still tells the eye exactly where to begin.</p><div class="foot"><span class="sc">Note</span><a class="btn link" style="padding:0">Read</a></div></div></div>
+        <div class="card"><div class="cap">No. III</div><div class="body"><h3>One Warm Accent</h3><p>Reserve terracotta for the single moment that earns the reader's hand.</p><div class="foot"><span class="sc">Letter</span><a class="btn link" style="padding:0">Read</a></div></div></div>
+      </div>
+    </section>
+
+    <!-- BADGES + ALERTS -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Five</span><h2>Badges &amp; status</h2><p>Pill tags in small-caps; semantic color kept to the rule.</p></div>
+      <div class="twocol">
+        <div class="badges">
+          <span class="tag">Default</span><span class="tag solid">Solid</span><span class="tag acc">Accent</span>
+          <span class="tag">Draft</span><span class="tag">In review</span><span class="tag">Published</span><span class="tag">Vol. I</span>
+        </div>
+        <div>
+          <div class="alert s"><span class="k">Set</span><span>The proof has been read and corrected.</span></div>
+          <div class="alert i"><span class="k">Note</span><span>The measure reflows below 640 pixels.</span></div>
+          <div class="alert w"><span class="k">Hold</span><span>One pull quote runs long for the column.</span></div>
+          <div class="alert e"><span class="k">Error</span><span>The accent appears twice on this spread.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Six</span><h2>Tabs</h2><p>Centered, with the accent underline.</p></div>
+      <div class="tablist"><button class="on">The Essay</button><button>Specimen</button><button>Margins</button><button>Colophon</button></div>
+      <div class="tabpane">A single measured column near sixty-six characters, rules and ornaments to mark the turns, and one warm accent reserved for the moment that matters.</div>
+    </section>
+
+    <!-- TABLE -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Seven</span><h2>Table</h2><p>Hairline rows; old-style numerals; pill status.</p></div>
+      <table>
+        <caption>The colophon</caption>
+        <thead><tr><th>Element</th><th>Face</th><th class="num">Size</th><th class="num">Leading</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Display</td><td>Georgia Italic</td><td class="num">60</td><td class="num">1.02</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Heading</td><td>Georgia</td><td class="num">38</td><td class="num">1.08</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Body</td><td>Georgia</td><td class="num">19</td><td class="num">1.65</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Caption</td><td>Georgia Italic</td><td class="num">13</td><td class="num">1.50</td><td><span class="pill pend">Proof</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- AVATARS + PAGINATION -->
+    <section>
+      <div class="seclabel"><span class="idx">Specimen Eight</span><h2>Contributors &amp; paging</h2><p>Initial medallions and pill pagination.</p></div>
+      <div class="meta">
+        <div class="avatars"><span class="a acc">BW</span><span class="a">EG</span><span class="a">SM</span><span class="a">+5</span></div>
+        <div class="pager"><a>‹ Prev</a><a class="on">1</a><a>2</a><a>3</a><a>Next ›</a></div>
+      </div>
+    </section>
+    <div class="rule" style="padding-left:0;padding-right:0"><span class="mark">❧</span></div>
+  </main>
+
+  <footer class="foot">The Warm Review · element embodiment · set in Georgia</footer>
+</body>
+</html>

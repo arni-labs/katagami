@@ -694,16 +694,11 @@ fn verify_synthesized_languages(
         };
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
-            // Composition contract: a language must carry bespoke Landing +
-            // Dashboard embodiments (the Remix Studio recolors + fills these).
-            let lf = string_field_any(&entity_fields(&language), "landing_file_id", "");
-            let df = string_field_any(&entity_fields(&language), "dashboard_file_id", "");
-            if lf.is_empty() || df.is_empty() {
-                return Err(format!(
-                    "DesignLanguage '{language_id}' is missing a bespoke {} composition; synthesize must AttachCompositions(landing + dashboard) before completion",
-                    if lf.is_empty() { "landing" } else { "dashboard" }
-                ));
-            }
+            // Composition contract (bespoke Landing + Dashboard) is enforced inside
+            // verify_language_core alongside the embodiment: a missing/invalid
+            // composition fails the core check and the language is routed to
+            // quality_review for remediation (same as a bad embodiment), rather
+            // than hard-failing the whole job here.
         }
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
             format!("{job_type} completion requires a valid gallery thumbnail before review: {e}")
@@ -1253,6 +1248,45 @@ fn verify_language_core(
         "DesignLanguages",
         language_id,
         "VerifyEmbodiment",
+        &json!({}),
+    )?;
+
+    // Compositions: the bespoke Landing + Dashboard screens are gated identically
+    // to the element embodiment — both files must exist, be self-contained HTML,
+    // be tokenized (var(--…)), and the Landing must carry the --hero-image slot.
+    let landing_file_id = string_field_any(&fields, "landing_file_id", "");
+    let dashboard_file_id = string_field_any(&fields, "dashboard_file_id", "");
+    if landing_file_id.is_empty() || dashboard_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is missing a bespoke {} composition; AttachCompositions(landing + dashboard) is required before publish",
+            if landing_file_id.is_empty() { "landing" } else { "dashboard" }
+        ));
+    }
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &landing_file_id,
+        "composition_landing",
+        None,
+    )?;
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &dashboard_file_id,
+        "composition_dashboard",
+        None,
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyCompositions",
         &json!({}),
     )?;
     Ok(())
@@ -2153,6 +2187,26 @@ fn verify_file_body(
         {
             return Err(format!(
                 "DesignLanguage '{language_id}' thumbnail file '{file_id}' looks like text-encoded image or markup, not browser-renderable image bytes"
+            ));
+        }
+    } else if artifact_kind == "composition_landing" || artifact_kind == "composition_dashboard" {
+        // Bespoke Landing/Dashboard screens: self-contained HTML, tokenized with
+        // CSS custom properties (so the Remix Studio can recolor them). The Landing
+        // additionally carries the full-bleed --hero-image slot.
+        let lower = trimmed.to_ascii_lowercase();
+        if !lower.contains("<html") && !lower.contains("<!doctype") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is not self-contained HTML"
+            ));
+        }
+        if !lower.contains("var(--") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is not tokenized — composition embodiments must drive color/type through CSS custom properties (var(--…)) so the Remix Studio can recolor them"
+            ));
+        }
+        if artifact_kind == "composition_landing" && !lower.contains("--hero-image") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' landing composition file '{file_id}' is missing the full-bleed --hero-image hero slot"
             ));
         }
     }
