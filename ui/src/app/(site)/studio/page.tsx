@@ -5,6 +5,7 @@ import {
   listRemixes,
   getFileUrl,
   parseJson,
+  paletteRoles,
 } from "@/lib/odata";
 import { RemixStudio } from "@/components/remix-studio";
 
@@ -38,7 +39,7 @@ export default async function StudioPage() {
   const pal = palettes.map((p) => ({
     id: p.entity_id,
     name: p.fields.name ?? "Untitled",
-    roles: p.fields.roles ?? "{}",
+    roles: JSON.stringify(paletteRoles(p.fields)),
     thumb: p.fields.thumbnail_file_id ? getFileUrl(p.fields.thumbnail_file_id) : "",
   }));
   const art = artStyles.map((a) => ({

@@ -168,8 +168,11 @@
         <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
-        <!-- Core spec (JSON) -->
-        <Property Name="Roles" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <!-- Core spec (JSON). Identity = signature (ordered list, [0]=primary accent) + neutrals. -->
+        <Property Name="Signature" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Neutrals" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Semantic" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Mood" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="Ramps" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="ProofScenes" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="UsageGuidance" Type="Edm.String" Nullable="false" DefaultValue="" />

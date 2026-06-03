@@ -1,4 +1,4 @@
-import { listPaletteSystems, parseJson } from "@/lib/odata";
+import { listPaletteSystems, parseJson, paletteRoles } from "@/lib/odata";
 import { PageHero, Marker } from "@/components/page-hero";
 import { PaletteCatalog } from "@/components/lane-catalog";
 import type { PaletteItem } from "@/components/palette-card";
@@ -16,7 +16,7 @@ export default async function PalettesPage() {
     name: r.fields.name ?? "Untitled",
     slug: r.fields.slug ?? "",
     status: r.status,
-    roles: parseJson<Record<string, string>>(r.fields.roles) ?? {},
+    roles: paletteRoles(r.fields),
     ramps: parseJson<Record<string, Record<string, string>>>(r.fields.ramps) ?? {},
     tags: parseJson<string[]>(r.fields.tags) ?? [],
   }));

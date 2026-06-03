@@ -694,6 +694,16 @@ fn verify_synthesized_languages(
         };
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
+            // Composition contract: a language must carry bespoke Landing +
+            // Dashboard embodiments (the Remix Studio recolors + fills these).
+            let lf = string_field_any(&entity_fields(&language), "landing_file_id", "");
+            let df = string_field_any(&entity_fields(&language), "dashboard_file_id", "");
+            if lf.is_empty() || df.is_empty() {
+                return Err(format!(
+                    "DesignLanguage '{language_id}' is missing a bespoke {} composition; synthesize must AttachCompositions(landing + dashboard) before completion",
+                    if lf.is_empty() { "landing" } else { "dashboard" }
+                ));
+            }
         }
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
             format!("{job_type} completion requires a valid gallery thumbnail before review: {e}")
@@ -827,6 +837,60 @@ fn walk_lane_entity_to_published(
     Ok(())
 }
 
+// --- Deterministic palette gates (WCAG contrast) -----------------------------
+fn pal_hex_rgb(s: &str) -> Option<(f64, f64, f64)> {
+    let t = s.trim().trim_start_matches('#');
+    if t.len() != 6 || !t.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    let n = u32::from_str_radix(t, 16).ok()?;
+    Some((((n >> 16) & 255) as f64, ((n >> 8) & 255) as f64, (n & 255) as f64))
+}
+fn rel_lum(c: (f64, f64, f64)) -> f64 {
+    fn ch(v: f64) -> f64 {
+        let s = v / 255.0;
+        if s <= 0.03928 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+    }
+    0.2126 * ch(c.0) + 0.7152 * ch(c.1) + 0.0722 * ch(c.2)
+}
+fn contrast_ratio(a: &str, b: &str) -> Option<f64> {
+    let la = rel_lum(pal_hex_rgb(a)?);
+    let lb = rel_lum(pal_hex_rgb(b)?);
+    let (hi, lo) = if la > lb { (la, lb) } else { (lb, la) };
+    Some((hi + 0.05) / (lo + 0.05))
+}
+fn first_signature_hex(f: &serde_json::Value) -> Option<String> {
+    let sig = parse_json_field(f.get("signature"))?;
+    let first = sig.as_array()?.first()?;
+    if let Some(s) = first.as_str() {
+        return Some(s.to_string());
+    }
+    first.get("hex").and_then(|v| v.as_str()).map(|s| s.to_string())
+}
+// Returns Err with a human reason if the palette fails the deterministic gate.
+fn validate_palette_colors(f: &serde_json::Value) -> Result<(), String> {
+    let neutrals = parse_json_field(f.get("neutrals"))
+        .ok_or_else(|| "missing neutrals".to_string())?;
+    let get = |k: &str| neutrals.get(k).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let text = get("text").ok_or("neutrals.text missing")?;
+    let surface = get("surface").ok_or("neutrals.surface missing")?;
+    let bg = get("bg").ok_or("neutrals.bg missing")?;
+    let cs = contrast_ratio(&text, &surface).ok_or("invalid text/surface hex")?;
+    if cs < 4.5 {
+        return Err(format!("text-on-surface contrast {cs:.2} < 4.5 (WCAG AA)"));
+    }
+    let cbg = contrast_ratio(&text, &bg).ok_or("invalid text/bg hex")?;
+    if cbg < 4.5 {
+        return Err(format!("text-on-bg contrast {cbg:.2} < 4.5 (WCAG AA)"));
+    }
+    let accent = first_signature_hex(f).ok_or("signature[0] (primary accent) missing")?;
+    let ca = contrast_ratio(&accent, &surface).ok_or("invalid accent hex")?;
+    if ca < 3.0 {
+        return Err(format!("primary accent vs surface contrast {ca:.2} < 3.0 (not distinguishable)"));
+    }
+    Ok(())
+}
+
 fn verify_synthesized_palettes(
     ctx: &Context,
     api_url: &str,
@@ -862,6 +926,10 @@ fn verify_synthesized_palettes(
                 "PaletteSystem '{id}' has no thumbnail_file_id; the curator must AttachThumbnail before completion"
             ));
         }
+        // Deterministic legibility gate — reject palettes that fail WCAG contrast.
+        validate_palette_colors(&f).map_err(|e| {
+            format!("PaletteSystem '{id}' failed the deterministic palette gate: {e}. Fix the colors and resubmit.")
+        })?;
         walk_lane_entity_to_published(
             ctx,
             api_url,

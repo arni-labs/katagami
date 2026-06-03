@@ -103,13 +103,15 @@ async function seedDesignLanguage(d) {
 async function seedPalette(p) {
   const id = await create("PaletteSystems");
   await act("PaletteSystems", id, "SetName", { name: p.name, slug: p.slug });
-  await act("PaletteSystems", id, "SetRoles", { roles: J(p.roles) });
+  await act("PaletteSystems", id, "SetCore", {
+    signature: J(p.signature), neutrals: J(p.neutrals), semantic: J(p.semantic), mood: J(p.mood),
+  });
   await act("PaletteSystems", id, "SetRamps", { ramps: J(p.ramps) });
   await act("PaletteSystems", id, "SetProofScenes", { proof_scenes: J(p.proofScenes) });
   await act("PaletteSystems", id, "SetUsageGuidance", { usage_guidance: J(p.guidance) });
   await act("PaletteSystems", id, "AttachTokensExport", {
     tokens_export_file_id: `seed-tokens-${p.slug}`, tokens_export_format_version: "tokens-v1",
-    tokens_export_manifest: J({ roles: Object.keys(p.roles) }),
+    tokens_export_manifest: J({ signature_count: p.signature.length, css_var_prefix: "--ds-" }),
   });
   await act("PaletteSystems", id, "AttachThumbnail", { thumbnail_file_id: `seed-pal-thumb-${p.slug}` });
   await act("PaletteSystems", id, "VerifyTokensExport", {});
@@ -182,9 +184,24 @@ const LANGUAGES = [
 ];
 
 const PALETTES = [
-  { name: "Muted Hobonichi Ink", slug: "muted-hobonichi-ink", roles: { bg: "#f4f1ea", surface: "#fbfaf6", text: "#2b2a26", muted: "#8a857a", border: "#d9d4c7", accent: "#7c6f57", success: "#5b6f52", warning: "#b8893f", error: "#a4503f", info: "#4f6470" }, ramps: { neutral: { 50: "#fbfaf6", 300: "#d2ccbd", 500: "#8a857a", 700: "#4d4a43", 900: "#2b2a26" }, accent: { 50: "#efe9dd", 300: "#c3b291", 500: "#7c6f57", 700: "#5a503e", 900: "#332d22" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["text on surface AA+"], dont: ["muted body text on bg"] } },
-  { name: "Riso Duotone", slug: "riso-duotone", roles: { bg: "#fdf4e3", surface: "#fffaf0", text: "#27305a", muted: "#7b80a3", border: "#d8d2e0", accent: "#ff4d5e", success: "#2f9e6f", warning: "#ffb020", error: "#ff4d5e", info: "#27305a" }, ramps: { neutral: { 50: "#fffaf0", 300: "#d8d2e0", 500: "#7b80a3", 700: "#3d4470", 900: "#27305a" }, accent: { 50: "#ffe1e4", 300: "#ff9aa4", 500: "#ff4d5e", 700: "#c2384a", 900: "#7d2531" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["2 spot inks"], dont: ["soft gradients"] } },
-  { name: "Nocturne", slug: "nocturne", roles: { bg: "#14161c", surface: "#1d2029", text: "#e7e9f0", muted: "#8a8fa3", border: "#2c303c", accent: "#7aa2ff", success: "#6bd0a0", warning: "#e0b35c", error: "#e0696b", info: "#7aa2ff" }, ramps: { neutral: { 50: "#e7e9f0", 300: "#8a8fa3", 500: "#4a4f60", 700: "#2c303c", 900: "#14161c" }, accent: { 50: "#dbe6ff", 300: "#a9c2ff", 500: "#7aa2ff", 700: "#4f72c2", 900: "#2a3f73" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["dark surfaces, luminous accent"], dont: ["pure black"] } },
+  { name: "Muted Hobonichi Ink", slug: "muted-hobonichi-ink",
+    signature: [{ hex: "#7c6f57", name: "Ochre ink" }],
+    neutrals: { bg: "#f4f1ea", surface: "#fbfaf6", text: "#2b2a26", muted: "#8a857a", border: "#d9d4c7" },
+    semantic: { success: "#5b6f52", warning: "#b8893f", error: "#a4503f", info: "#4f6470" },
+    mood: { temperature: "warm", key_hue: "ochre", summary: "Muted, inky, paper-warm — an accent that whispers." },
+    ramps: { neutral: { 50: "#fbfaf6", 300: "#d2ccbd", 500: "#8a857a", 700: "#4d4a43", 900: "#2b2a26" }, accent: { 50: "#efe9dd", 300: "#c3b291", 500: "#7c6f57", 700: "#5a503e", 900: "#332d22" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["text on surface AA+"], dont: ["muted body text on bg"] } },
+  { name: "Riso Duotone", slug: "riso-duotone",
+    signature: [{ hex: "#ff4d5e", name: "Riso coral" }, { hex: "#27305a", name: "Ink navy" }],
+    neutrals: { bg: "#fdf4e3", surface: "#fffaf0", text: "#27305a", muted: "#7b80a3", border: "#d8d2e0" },
+    semantic: { success: "#2f9e6f", warning: "#ffb020", error: "#d23b4b", info: "#27305a" },
+    mood: { temperature: "warm-cool", key_hue: "coral", summary: "Two-ink Riso pop on warm paper." },
+    ramps: { neutral: { 50: "#fffaf0", 300: "#d8d2e0", 500: "#7b80a3", 700: "#3d4470", 900: "#27305a" }, accent: { 50: "#ffe1e4", 300: "#ff9aa4", 500: "#ff4d5e", 700: "#c2384a", 900: "#7d2531" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["2 spot inks"], dont: ["soft gradients"] } },
+  { name: "Nocturne", slug: "nocturne",
+    signature: [{ hex: "#7aa2ff", name: "Luminous blue" }],
+    neutrals: { bg: "#14161c", surface: "#1d2029", text: "#e7e9f0", muted: "#8a8fa3", border: "#2c303c" },
+    semantic: { success: "#6bd0a0", warning: "#e0b35c", error: "#e0696b", info: "#7aa2ff" },
+    mood: { temperature: "cool", key_hue: "blue", summary: "Dark surfaces, one luminous accent." },
+    ramps: { neutral: { 50: "#e7e9f0", 300: "#8a8fa3", 500: "#4a4f60", 700: "#2c303c", 900: "#14161c" }, accent: { 50: "#dbe6ff", 300: "#a9c2ff", 500: "#7aa2ff", 700: "#4f72c2", 900: "#2a3f73" } }, proofScenes: [{ key: "tinted-ui" }, { key: "chart" }, { key: "gradient" }], guidance: { do: ["dark surfaces, luminous accent"], dont: ["pure black"] } },
 ];
 
 const ART_STYLES = [

@@ -681,6 +681,18 @@ export const getArtStyle = (id: string) => getLane("ArtStyles", id);
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 
+/** Flatten a PaletteSystem's structured fields (signature/neutrals/semantic)
+ *  into the flat color set the embodiment + studio theme on. signature[0] is
+ *  the primary accent (the star). */
+export function paletteRoles(fields: Record<string, string | undefined>): Record<string, string> {
+  const neutrals = parseJson<Record<string, string>>(fields.neutrals) ?? {};
+  const semantic = parseJson<Record<string, string>>(fields.semantic) ?? {};
+  const sig = parseJson<Array<{ hex?: string } | string>>(fields.signature) ?? [];
+  const first = sig[0];
+  const accent = typeof first === "string" ? first : (first?.hex ?? "");
+  return { ...neutrals, ...(accent ? { accent } : {}), ...semantic };
+}
+
 // ── Files (embodiment HTML) ──
 
 export function getFileUrl(fileId: string): string {

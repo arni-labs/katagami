@@ -26,7 +26,7 @@ allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
 # --- State Variables ---
 
 [[state]]
-name = "has_roles"
+name = "has_core"
 type = "bool"
 initial = "false"
 
@@ -111,12 +111,12 @@ params = ["name", "slug"]
 hint = "Set the palette system name and URL-safe slug."
 
 [[action]]
-name = "SetRoles"
+name = "SetCore"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_roles", value = "true" }, { type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
-params = ["roles"]
-hint = "Set semantic color roles (bg, surface, text, accent, semantic.success/warn/error/info) as JSON of role -> hex."
+effect = [{ type = "set_bool", var = "has_core", value = "true" }, { type = "set_bool", var = "has_tokens_export", value = "false" }, { type = "set_bool", var = "tokens_export_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["signature", "neutrals", "semantic", "mood"]
+hint = "Set the palette core. signature: ordered JSON list of 1-4 key colors [{hex,name}], [0] = primary accent (the star). neutrals: {bg,surface,text,muted,border} (the ground). semantic: {success,warning,error,info} (agent-authored, secondary/functional). mood: {temperature,key_hue,summary}. Signature + neutrals ARE the identity; semantic is a small accessory."
 
 [[action]]
 name = "SetRamps"
@@ -249,7 +249,7 @@ name = "SubmitForReview"
 kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
-guard = [{ type = "is_true", var = "has_roles" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
+guard = [{ type = "is_true", var = "has_core" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
 hint = "Submit for curator review. Requires roles, ramps, proof scenes, and a finalizer-verified thumbnail."
 
 [[action]]
@@ -257,7 +257,7 @@ name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_roles" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_tokens_export" }, { type = "is_true", var = "tokens_export_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
+guard = [{ type = "is_true", var = "has_core" }, { type = "is_true", var = "has_ramps" }, { type = "is_true", var = "has_proof_scenes" }, { type = "is_true", var = "has_tokens_export" }, { type = "is_true", var = "tokens_export_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
 effect = [{ type = "increment", field = "version" }]
 hint = "Curator approves and publishes. Requires roles, ramps, proof scenes, verified token export, verified thumbnail, quality review, and public assets."
 
@@ -331,9 +331,9 @@ hint = "Emitted when a palette system is archived."
 # --- Safety Invariants ---
 
 [[invariant]]
-name = "PublishedRequiresRoles"
+name = "PublishedRequiresCore"
 when = ["Published"]
-assert = "has_roles"
+assert = "has_core"
 
 [[invariant]]
 name = "PublishedRequiresRamps"

@@ -49,18 +49,30 @@ eid = ps['entity_id']
 created_ids.append(eid)
 ```
 
-**Roles** — semantic color assignments as a flat map of role -> hex. Required
-roles: `bg`, `surface`, `text`, `muted`, `border`, `accent`, and the semantic
-group `success`, `warning`, `error`, `info`. Every value a real hex.
+**Core — the palette's identity.** A palette IS its **signature** (1–4 key colors,
+`signature[0]` = the **primary accent**, the star) + its **neutral ground**, with a
+small **semantic** accessory and a **mood**. Lead with the signature; the neutrals
+are most of what's seen; semantic is functional, NOT identity.
 
 ```python
-roles = {
-    "bg": "#f4f1ea", "surface": "#fbfaf6", "text": "#2b2a26", "muted": "#8a857a",
-    "border": "#d9d4c7", "accent": "#7c6f57",
-    "success": "#5b6f52", "warning": "#b8893f", "error": "#a4503f", "info": "#4f6470"
-}
-temper.action('PaletteSystems', eid, 'SetRoles', {'roles': json.dumps(roles, ensure_ascii=False)})
+signature = [{"hex": "#7c6f57", "name": "Ochre ink"}]   # [0] = primary accent (the star); 1-4 colors
+neutrals  = {"bg": "#f4f1ea", "surface": "#fbfaf6", "text": "#2b2a26", "muted": "#8a857a", "border": "#d9d4c7"}
+semantic  = {"success": "#5b6f52", "warning": "#b8893f", "error": "#a4503f", "info": "#4f6470"}
+mood      = {"temperature": "warm", "key_hue": "ochre", "summary": "Muted, inky, paper-warm."}
+temper.action('PaletteSystems', eid, 'SetCore', {
+    'signature': json.dumps(signature, ensure_ascii=False),
+    'neutrals':  json.dumps(neutrals, ensure_ascii=False),
+    'semantic':  json.dumps(semantic, ensure_ascii=False),
+    'mood':      json.dumps(mood, ensure_ascii=False),
+})
+
+# flat color map used by the token export + thumbnail below
+flat = {**neutrals, "accent": signature[0]["hex"], **semantic}
 ```
+
+**Contrast is enforced deterministically by the finalizer** — `text`↔`surface` and
+`text`↔`bg` must clear WCAG AA (≥ 4.5:1), and the primary accent must clear ≥ 3.0:1
+on `surface`, or the palette is rejected back to you. Pick colors accordingly.
 
 **Ramps** — a tonal scale (50..950) for at least `accent` and a `neutral` ramp.
 Each step a real hex, monotonic in lightness.
@@ -100,29 +112,31 @@ temper.action('PaletteSystems', eid, 'SetUsageGuidance', {'usage_guidance': json
 
 ### Spec Validation Gate
 
-Do not proceed until: `roles` has all 10 required keys with valid hex; `ramps` has
-`neutral` + `accent` each with >= 4 steps; `proof_scenes` has the three required
-keys; every text/surface and text/accent pair clears WCAG AA (>= 4.5:1).
+Do not proceed until: `signature` has 1–4 valid hexes (`[0]` is the primary accent);
+`neutrals` has bg/surface/text/muted/border; `semantic` has success/warning/error/info;
+`ramps` has `neutral` + `accent` (>= 4 steps each); `proof_scenes` has the three keys;
+and the contrast rules above hold (text↔surface, text↔bg ≥ 4.5:1; accent↔surface ≥ 3.0:1)
+— the finalizer rejects palettes that fail.
 
 ## ARTIFACT PHASE
 
 ### Token export (portable projection)
 
-Build a token export containing both CSS custom properties and a DTCG block, then
-write it to PawFS and attach it. Map roles to `--ds-*` variable names (the same
-namespace the Katagami UI themes on): `--ds-bg`, `--ds-surface`, `--ds-text`,
-`--ds-muted`, `--ds-border`, `--ds-accent`, plus semantic `--ds-success` etc.
+Build a token export (CSS custom properties + a DTCG block) from the flat map and
+attach it. Vars use the `--ds-*` namespace the Katagami UI themes on: `--ds-bg`,
+`--ds-surface`, `--ds-text`, `--ds-muted`, `--ds-border`, `--ds-accent`, plus the
+semantic `--ds-success` etc.
 
 ```python
-css_lines = [f"  --ds-{k}: {v};" for k, v in roles.items()]
+css_lines = [f"  --ds-{k}: {v};" for k, v in flat.items()]
 css = ":root {\n" + "\n".join(css_lines) + "\n}\n"
-dtcg = {"$description": name, "color": {k: {"$type": "color", "$value": v} for k, v in roles.items()}}
+dtcg = {"$description": name, "color": {k: {"$type": "color", "$value": v} for k, v in flat.items()}}
 tokens_doc = "/* " + name + " — Katagami palette tokens */\n" + css + "\n/* DTCG */\n" + json.dumps(dtcg, ensure_ascii=False, indent=2)
 tokens_result = temper.write('/katagami/palettes/' + slug + '/tokens.css', tokens_doc, {'mime_type': 'text/css'})
 temper.action('PaletteSystems', eid, 'AttachTokensExport', {
     'tokens_export_file_id': tokens_result['file_id'],
     'tokens_export_format_version': 'tokens-v1',
-    'tokens_export_manifest': json.dumps({'roles': list(roles.keys()), 'css_var_prefix': '--ds-'}, ensure_ascii=False)
+    'tokens_export_manifest': json.dumps({'keys': list(flat.keys()), 'css_var_prefix': '--ds-'}, ensure_ascii=False)
 })
 ```
 
@@ -145,7 +159,7 @@ for i, key in enumerate(order):
     d.rectangle([x, y, x + cw, y + ch], fill=roles.get(key, "#888888"))
 img.save("/tmp/palette_thumb.jpg", "JPEG", quality=80)
 print("thumb ok")
-PY""".replace("__ROLES__", json.dumps(roles, ensure_ascii=False)))
+PY""".replace("__ROLES__", json.dumps(flat, ensure_ascii=False)))
 assert 'thumb ok' in thumb_log, thumb_log
 thumb_bytes = sandbox.read('/tmp/palette_thumb.jpg', binary=True)
 thumb_result = temper.write('/katagami/palettes/' + slug + '/thumbnail.jpg', thumb_bytes, {'mime_type': 'image/jpeg'})
