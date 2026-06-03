@@ -89,7 +89,7 @@ async function seedDesignLanguage(d) {
   await act("DesignLanguages", id, "VerifyShadcnPreviewShots", {});
   await act("DesignLanguages", id, "SubmitForReview", {});
   await act("DesignLanguages", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: "",
+    thumbnail_asset_id: `seed-thumb-${d.slug}`, thumbnail_asset_url: `/thumbs/${d.slug}.png`,
     embodiment_asset_id: `seed-embodiment-${d.slug}`, embodiment_asset_url: "",
     design_md_asset_id: `seed-designmd-${d.slug}`, design_md_asset_url: "",
   });
@@ -137,8 +137,8 @@ async function seedArtStyle(a) {
   });
   await act("ArtStyles", id, "SetSlotRecipes", { slot_recipes: J(a.slotRecipes) });
   await act("ArtStyles", id, "SetGuidance", { guidance: J(a.guidance) });
-  const refIds = [1, 2, 3, 4].map((n) => `/art/${a.slug}-${n}.svg`);
-  const proofIds = [1, 2, 3, 4].map((n) => `/art/${a.slug}-${n}.svg`);
+  const refIds = [1, 2].map((n) => `/art/${a.slug}-${n}.png`);
+  const proofIds = [1, 2].map((n) => `/art/${a.slug}-${n}.png`);
   await act("ArtStyles", id, "AttachReferenceImages", {
     reference_image_file_ids: J(refIds),
     reference_manifest: J({ items: refIds.map((fid) => ({ file_id: fid, role: "reference", aspect: "1:1" })) }),
@@ -147,13 +147,13 @@ async function seedArtStyle(a) {
     proof_shots_file_ids: J(proofIds),
     proof_shots_manifest: J({ items: proofIds.map((fid) => ({ file_id: fid })) }),
   });
-  await act("ArtStyles", id, "AttachThumbnail", { thumbnail_file_id: `/art/${a.slug}-1.svg` });
+  await act("ArtStyles", id, "AttachThumbnail", { thumbnail_file_id: `/art/${a.slug}-1.png` });
   await act("ArtStyles", id, "VerifyReferenceImages", {});
   await act("ArtStyles", id, "VerifyProofShots", {});
   await act("ArtStyles", id, "VerifyThumbnail", {});
   await act("ArtStyles", id, "SubmitForReview", {});
   await act("ArtStyles", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `/art/${a.slug}-1.svg`, thumbnail_asset_url: "", reference_assets: "{}",
+    thumbnail_asset_id: `/art/${a.slug}-1.png`, thumbnail_asset_url: "", reference_assets: "{}",
   });
   await act("ArtStyles", id, "MarkQualityPassed", {});
   await act("ArtStyles", id, "Publish", {});

@@ -89,12 +89,16 @@ temper.action('ArtStyles', eid, 'SetGuidance', {'guidance': json.dumps({
 }, ensure_ascii=False)})
 ```
 
-## ARTIFACT PHASE — procedural reference + proof images (PIL)
+## ARTIFACT PHASE — reference + proof images (real generation)
 
-Render on-style tiles that convey the medium with a representative palette. Use a
-neutral demo palette (the real palette is supplied downstream at generation time).
-Generate >= 3 reference tiles and >= 4 proof shots (portrait, landscape, object,
-pattern). Example renderer for a grainy 2-spot-ink look:
+Generate **real, on-style images** with the curator's image engine — do NOT ship
+procedural placeholders. Produce one **wide hero** (full-bleed; used as the
+landing's `--hero-image`) plus 3–4 **proof shots** across subjects (portrait,
+landscape, object, pattern) that prove the style transfers. Build each prompt from
+the recipe: `{subject}` per shot + the medium + a representative palette + the
+negative prompt. Write each to PawFS and attach the file ids (hero first in the
+reference list). Only if no image engine is available in the sandbox, fall back to
+the procedural PIL renderer below:
 
 ```python
 sandbox.bash("python3 -m pip install --quiet pillow")
