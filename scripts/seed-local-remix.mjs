@@ -55,6 +55,12 @@ async function seedDesignLanguage(d) {
     philosophy: J(d.philosophy), tokens: J(d.tokens), rules: J(d.rules),
     layout_principles: J(d.layout), guidance: J(d.guidance), tags: J(d.tags),
   });
+  // Bespoke composition embodiments (hand-authored per language for the local
+  // demo; the synthesize-language agent produces these for real runs).
+  await act("DesignLanguages", id, "AttachCompositions", {
+    landing_file_id: `/embodiments/${d.slug}-landing.html`,
+    dashboard_file_id: `/embodiments/${d.slug}-dashboard.html`,
+  });
   await act("DesignLanguages", id, "AttachEmbodiment", {
     embodiment_file_id: `seed-embodiment-${d.slug}`, element_count: "15",
     composition_count: "5", embodiment_format: "html",

@@ -415,6 +415,13 @@ from = ["Draft", "UnderReview"]
 params = ["source_ids"]
 hint = "Link DesignSource entities that informed this language."
 
+[[action]]
+name = "AttachCompositions"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["landing_file_id", "dashboard_file_id"]
+hint = "Attach the language's bespoke composition embodiments: a Landing and a Dashboard screen (self-contained HTML, tokenized with color CSS vars + a full-bleed {--hero-image} slot on the landing). Authored uniquely per language alongside the element embodiment, following the same taste rules. These are what the Remix Studio recolors + fills."
+
 # --- Actions: Lineage ---
 
 [[action]]

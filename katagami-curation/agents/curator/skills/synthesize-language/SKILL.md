@@ -428,6 +428,48 @@ Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
 `/katagami/shadcn/{slug}/registry-theme.json`. The finalizer does not author
 `components.md` or `preview-shots.json`; it only verifies that the agent did.
 
+## COMPOSITION EMBODIMENTS (Landing + Dashboard)
+
+Beyond the element embodiment, author TWO bespoke full-screen composition
+embodiments **unique to this language**, following the same `visual_character`,
+`signature_patterns`, taste rules, and tokens:
+
+- **Landing** (`/katagami/compositions/{slug}/landing.html`) — a real marketing
+  landing screen. Lead with a **full-bleed hero image** at the top (today's
+  trend): a section whose `background-image: var(--hero-image)` covers the
+  viewport top, with the headline/CTA overlaid on a scrim. This is the priority
+  placement for the single large image.
+- **Dashboard** (`/katagami/compositions/{slug}/dashboard.html`) — a real app
+  dashboard (sidebar nav, stat cards, a chart, a table or empty-state). UI-led;
+  no hero image required.
+
+These are **remixable**, so they MUST be tokenized — bake the language's
+identity (type, layout, density, treatment) into the HTML, but read every COLOR
+from CSS custom properties so the studio can recolor with any palette and inject
+any art image:
+
+```
+:root{ --bg --surface --text --muted --border --accent --on-accent
+       --success --warning --error --info --hero-image }
+```
+
+Define sensible defaults in `:root` (the language's own colors), use only those
+vars for color, and use `var(--hero-image)` for the landing's full-bleed hero.
+Self-contained HTML, same safety rules as the element embodiment. Then attach:
+
+```python
+landing = temper.write('/katagami/compositions/' + slug + '/landing.html', landing_html)
+dashboard = temper.write('/katagami/compositions/' + slug + '/dashboard.html', dashboard_html)
+temper.action('DesignLanguages', eid, 'AttachCompositions', {
+    'landing_file_id': landing['file_id'],
+    'dashboard_file_id': dashboard['file_id'],
+})
+```
+
+Both must clearly differ between languages — a Swiss grid landing and a warm
+editorial landing should look like different products, not the same template
+recolored.
+
 ### Final Tool Call
 
 ```python

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Bespoke landing embodiment · Swiss Grid System.
+     Identity (type, grid, hairlines, density) is baked in here; the remix studio
+     injects color tokens (--bg..--info) + a full-bleed hero (--hero-image). -->
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f5f5f5; --text:#111111; --muted:#666666;
+    --border:#e0e0e0; --accent:#d72638; --on-accent:#ffffff;
+    --hero-image:none;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .grid{max-width:1100px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);position:absolute;inset:0 0 auto;z-index:3;color:#fff;mix-blend-mode:difference}
+  nav .n{display:flex;gap:28px;font-size:13px;font-weight:500;letter-spacing:.01em}
+  .brand{font-weight:700;font-size:17px;letter-spacing:-.01em}
+  /* full-bleed hero */
+  .hero{position:relative;min-height:560px;display:flex;align-items:flex-end;color:#fff;overflow:hidden}
+  .hero .bg{position:absolute;inset:0;background-image:var(--hero-image);background-size:cover;background-position:center}
+  .hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.62))}
+  .hero .inner{position:relative;z-index:2;width:100%;max-width:1100px;margin:0 auto;padding:0 32px 56px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+  .hero h1{font-size:clamp(46px,7vw,86px);line-height:.96;letter-spacing:-.035em;font-weight:700;max-width:14ch;margin-top:14px}
+  .hero .sub{display:flex;gap:14px;align-items:center;margin-top:26px;font-size:15px}
+  .btn{display:inline-block;background:var(--accent);color:var(--on-accent);padding:13px 26px;font-weight:700;font-size:14px;letter-spacing:.01em}
+  .btn.o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6)}
+  /* strict 12-col body */
+  section.body{padding:0 0 8px}
+  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;border-top:1px solid var(--text);padding:40px 0}
+  .row .lead{grid-column:1/6;font-size:26px;line-height:1.12;letter-spacing:-.02em;font-weight:700}
+  .row .cols{grid-column:7/13;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .row .cols p{font-size:14px;color:var(--muted);line-height:1.6}
+  .row .cols h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;border-top:1px solid var(--text);border-bottom:1px solid var(--text);padding:28px 0;margin-top:8px}
+  .stats .s .n{font-size:40px;font-weight:700;letter-spacing:-.03em}
+  .stats .s .l{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  footer{padding:36px 0;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);letter-spacing:.04em}
+</style>
+</head>
+<body>
+  <nav><span class="brand">SWISS</span><span class="n"><span>Index</span><span>Work</span><span>Studio</span><span>About</span></span><span style="font-size:13px">Contact</span></nav>
+  <header class="hero">
+    <div class="bg"></div><div class="scrim"></div>
+    <div class="inner">
+      <div class="eyebrow">International Typographic — 001</div>
+      <h1>Order is the visible form of clarity.</h1>
+      <div class="sub"><a class="btn">View the system</a><a class="btn o">Documentation</a></div>
+    </div>
+  </header>
+  <section class="body grid">
+    <div class="row">
+      <div class="lead">A grid is not a constraint. It is the instrument that keeps every element honest.</div>
+      <div class="cols">
+        <div><h4>Method</h4><p>Twelve columns, consistent gutters, flush-left ranging. Hierarchy by size and weight — never decoration.</p></div>
+        <div><h4>Discipline</h4><p>Generous margins, a single accent, tabular figures. The page does the talking; the typography stays quiet.</p></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="s"><div class="n">12</div><div class="l">columns</div></div>
+      <div class="s"><div class="n">1</div><div class="l">accent</div></div>
+      <div class="s"><div class="n">∞</div><div class="l">alignment</div></div>
+      <div class="s"><div class="n">0</div><div class="l">ornament</div></div>
+    </div>
+    <footer><span>© Swiss Grid System</span><span>Set in Helvetica · themed live</span></footer>
+  </section>
+</body>
+</html>

@@ -54,6 +54,9 @@
         <Property Name="EmbodimentAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Composition embodiments: bespoke Landing + Dashboard screens (HTML), tokenized for remix -->
+        <Property Name="LandingFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DashboardFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />

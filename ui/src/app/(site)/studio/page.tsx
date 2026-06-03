@@ -32,6 +32,8 @@ export default async function StudioPage() {
     id: l.entity_id,
     name: l.fields.name ?? "Untitled",
     tokens: l.fields.tokens ?? "",
+    landingUrl: l.fields.landing_file_id ? getFileUrl(l.fields.landing_file_id) : "",
+    dashboardUrl: l.fields.dashboard_file_id ? getFileUrl(l.fields.dashboard_file_id) : "",
   }));
   const pal = palettes.map((p) => ({
     id: p.entity_id,
