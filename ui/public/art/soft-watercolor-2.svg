@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <defs>
+    <filter id="wc" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="14" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="34"/>
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="paperGrain"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0"/></filter>
+  </defs>
+  <rect width="600" height="400" fill="#faf7f0"/>
+  <g filter="url(#wc)" style="mix-blend-mode:multiply"><ellipse cx="191" cy="331" rx="69" ry="125" fill="#c98a8a" opacity="0.5"/><ellipse cx="150" cy="326" rx="144" ry="112" fill="#9cc4a7" opacity="0.5"/><ellipse cx="22" cy="323" rx="108" ry="134" fill="#d9b36b" opacity="0.5"/><ellipse cx="154" cy="136" rx="126" ry="88" fill="#d9b36b" opacity="0.5"/><ellipse cx="557" cy="148" rx="98" ry="121" fill="#7fa9c9" opacity="0.5"/></g>
+  <rect width="600" height="400" filter="url(#paperGrain)"/>
+</svg>

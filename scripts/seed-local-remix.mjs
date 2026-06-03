@@ -129,8 +129,8 @@ async function seedArtStyle(a) {
   });
   await act("ArtStyles", id, "SetSlotRecipes", { slot_recipes: J(a.slotRecipes) });
   await act("ArtStyles", id, "SetGuidance", { guidance: J(a.guidance) });
-  const refIds = [1, 2, 3].map((n) => `seed-ref-${a.slug}-${n}`);
-  const proofIds = ["portrait", "landscape", "object", "pattern"].map((s) => `seed-proof-${a.slug}-${s}`);
+  const refIds = [1, 2, 3, 4].map((n) => `/art/${a.slug}-${n}.svg`);
+  const proofIds = [1, 2, 3, 4].map((n) => `/art/${a.slug}-${n}.svg`);
   await act("ArtStyles", id, "AttachReferenceImages", {
     reference_image_file_ids: J(refIds),
     reference_manifest: J({ items: refIds.map((fid) => ({ file_id: fid, role: "reference", aspect: "1:1" })) }),
@@ -139,13 +139,13 @@ async function seedArtStyle(a) {
     proof_shots_file_ids: J(proofIds),
     proof_shots_manifest: J({ items: proofIds.map((fid) => ({ file_id: fid })) }),
   });
-  await act("ArtStyles", id, "AttachThumbnail", { thumbnail_file_id: `seed-art-thumb-${a.slug}` });
+  await act("ArtStyles", id, "AttachThumbnail", { thumbnail_file_id: `/art/${a.slug}-1.svg` });
   await act("ArtStyles", id, "VerifyReferenceImages", {});
   await act("ArtStyles", id, "VerifyProofShots", {});
   await act("ArtStyles", id, "VerifyThumbnail", {});
   await act("ArtStyles", id, "SubmitForReview", {});
   await act("ArtStyles", id, "AttachPublishedAssets", {
-    thumbnail_asset_id: `seed-art-thumb-${a.slug}`, thumbnail_asset_url: "", reference_assets: "{}",
+    thumbnail_asset_id: `/art/${a.slug}-1.svg`, thumbnail_asset_url: "", reference_assets: "{}",
   });
   await act("ArtStyles", id, "MarkQualityPassed", {});
   await act("ArtStyles", id, "Publish", {});

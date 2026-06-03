@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DesignShowcase } from "@/components/design-showcase";
+import { PageHero, Marker } from "@/components/page-hero";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { saveRemix, rateRemix } from "@/app/remix-actions";
@@ -15,7 +16,6 @@ export interface SavedMix {
   composition: string;
   rating: number;
 }
-
 export interface UiOption {
   id: string;
   name: string;
@@ -46,27 +46,21 @@ function safeParse(raw?: string): Record<string, unknown> {
   }
 }
 
-// Palette role -> design-token color key (the keys design-showcase reads).
+// palette role -> design-token color key
 const ROLE_TO_TOKEN: Record<string, string> = {
-  background: "bg",
-  surface: "surface",
-  text: "text",
-  primary: "text",
-  secondary: "muted",
-  muted: "muted",
-  border: "border",
-  accent: "accent",
-  success: "success",
-  warning: "warning",
-  error: "error",
-  info: "info",
+  background: "bg", surface: "surface", text: "text", primary: "text",
+  secondary: "muted", muted: "muted", border: "border", accent: "accent",
+  success: "success", warning: "warning", error: "error", info: "info",
 };
 
-const card: React.CSSProperties = {
-  border: "1px solid #e5e3dd",
-  borderRadius: 10,
-  background: "#fff",
-};
+function uiColors(o: UiOption): string[] {
+  const t = safeParse(o.tokens);
+  const c = (t.colors as Record<string, string>) ?? {};
+  return [c.primary, c.accent, c.secondary, c.surface, c.background].filter(Boolean) as string[];
+}
+function paletteColors(o: PaletteOption): Record<string, string> {
+  return safeParse(o.roles) as Record<string, string>;
+}
 
 export function RemixStudio({
   ui,
@@ -91,13 +85,10 @@ export function RemixStudio({
   const selPal = palettes[palIdx];
   const selArt = art[artIdx];
   const comp = COMPOSITIONS[compIdx];
+  const haveAll = ui.length > 0 && palettes.length > 0 && art.length > 0;
 
-  const roles = useMemo(
-    () => safeParse(selPal?.roles) as Record<string, string>,
-    [selPal],
-  );
+  const roles = useMemo(() => (selPal ? paletteColors(selPal) : {}), [selPal]);
 
-  // Live recolor: merge palette roles into the UI language's token colors.
   const mergedTokens = useMemo(() => {
     const t = safeParse(selUi?.tokens);
     const colors = { ...((t.colors as Record<string, string>) ?? {}) };
@@ -107,8 +98,6 @@ export function RemixStudio({
     return JSON.stringify({ ...t, colors });
   }, [selUi, roles]);
 
-  // Art lane: fill the composition's image slots with the style's reference
-  // images (representative "vibe", zero generation).
   const slotImages = useMemo(() => {
     const refs = selArt?.refs ?? [];
     return comp.image_slots.map((slot, i) => ({
@@ -117,43 +106,15 @@ export function RemixStudio({
     }));
   }, [selArt, comp]);
 
-  const haveAll = ui.length > 0 && palettes.length > 0 && art.length > 0;
-
   const nameOf = (arr: { id: string; name: string }[], id: string) =>
     arr.find((x) => x.id === id)?.name ?? id.slice(0, 8);
 
-  // Taste loop: average rating for the current palette × art-style pair across
-  // saved+rated mixes — the compatibility signal ratings feed.
   const compat = useMemo(() => {
     if (!selPal || !selArt) return null;
     const rated = saved.filter((s) => s.palette === selPal.id && s.art === selArt.id && s.rating > 0);
     if (!rated.length) return null;
     return { avg: rated.reduce((a, s) => a + s.rating, 0) / rated.length, n: rated.length };
   }, [saved, selPal, selArt]);
-
-  function doSave() {
-    if (!haveAll) return;
-    const slotAssignments = JSON.stringify(
-      Object.fromEntries(slotImages.map((s) => [s.slot.key, s.url])),
-    );
-    startTransition(async () => {
-      await saveRemix({
-        designLanguageId: selUi.id,
-        paletteSystemId: selPal.id,
-        artStyleId: selArt.id,
-        compositionKey: comp.key,
-        slotAssignments,
-      });
-      router.refresh();
-    });
-  }
-
-  function doRate(id: string, rating: number) {
-    startTransition(async () => {
-      await rateRemix(id, rating);
-      router.refresh();
-    });
-  }
 
   function rand(n: number) {
     return Math.floor(Math.random() * n);
@@ -163,18 +124,14 @@ export function RemixStudio({
     if (palettes.length) setPalIdx(rand(palettes.length));
     if (art.length) setArtIdx(rand(art.length));
   }
-
   function copyBrief() {
     if (!haveAll) return;
     const brief = buildRemixBrief({
       language: { name: selUi.name, tokens: safeParse(selUi.tokens) },
       palette: { name: selPal.name, roles },
       artStyle: {
-        name: selArt.name,
-        medium: selArt.medium,
-        promptTemplate: selArt.promptTemplate,
-        negativePrompt: selArt.negativePrompt,
-        slotRecipes: safeParse(selArt.slotRecipes) as Record<string, string>,
+        name: selArt.name, medium: selArt.medium, promptTemplate: selArt.promptTemplate,
+        negativePrompt: selArt.negativePrompt, slotRecipes: safeParse(selArt.slotRecipes) as Record<string, string>,
         referenceUrls: selArt.refs,
       },
       composition: comp,
@@ -183,172 +140,186 @@ export function RemixStudio({
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   }
-
-  function Picker<T extends { id: string; name: string }>(props: {
-    label: string;
-    options: T[];
-    index: number;
-    onChange: (i: number) => void;
-  }) {
-    return (
-      <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}>
-        <span style={{ fontWeight: 600, color: "#6b665c", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: 11 }}>
-          {props.label}
-        </span>
-        {props.options.length ? (
-          <select
-            value={props.index}
-            onChange={(e) => props.onChange(Number(e.target.value))}
-            style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid #d9d4c7", background: "#fbfaf6", fontSize: 14 }}
-          >
-            {props.options.map((o, i) => (
-              <option key={o.id} value={i}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span style={{ color: "#a4503f", fontSize: 13 }}>none published yet</span>
-        )}
-      </label>
-    );
+  function doSave() {
+    if (!haveAll) return;
+    const slotAssignments = JSON.stringify(Object.fromEntries(slotImages.map((s) => [s.slot.key, s.url])));
+    startTransition(async () => {
+      await saveRemix({ designLanguageId: selUi.id, paletteSystemId: selPal.id, artStyleId: selArt.id, compositionKey: comp.key, slotAssignments });
+      router.refresh();
+    });
+  }
+  function doRate(id: string, rating: number) {
+    startTransition(async () => {
+      await rateRemix(id, rating);
+      router.refresh();
+    });
   }
 
+  const tileBase =
+    "relative shrink-0 cursor-pointer overflow-hidden rounded-[var(--radius-md)] border bg-card text-left transition-all";
+  const tileSel = (on: boolean) =>
+    on
+      ? "border-foreground shadow-[0_2px_10px_rgba(30,35,45,0.12)] -translate-y-0.5"
+      : "border-border hover:border-foreground/40";
+
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px", fontFamily: "system-ui, sans-serif", color: "#2b2a26" }}>
-      <header style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 26, margin: 0, letterSpacing: "-0.02em" }}>Remix Studio</h1>
-        <p style={{ color: "#6b665c", marginTop: 6, fontSize: 15 }}>
-          Mix a UI language × a palette × an art style. The preview recolors live and shows the
-          art lane&apos;s reference imagery in the composition&apos;s slots — no generation. Copy the
-          brief and hand it to your agent to build the real, illustrated screen.
-        </p>
-      </header>
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
+      <PageHero
+        eyebrow="Remix lane"
+        eyebrowAccent="salad"
+        title={<>The <Marker color="salad">remix</Marker> studio</>}
+        description="Mix a UI language × a palette × an art style. The stage recolors live and the art lane fills the layout's image slots — no generation. Copy the brief for your agent, or save the mix and rate it."
+      />
 
-      {/* Instrument panel */}
-      <div style={{ ...card, padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 12 }}>
-        <Picker label="UI language" options={ui} index={uiIdx} onChange={setUiIdx} />
-        <Picker label="Palette" options={palettes} index={palIdx} onChange={setPalIdx} />
-        <Picker label="Art style" options={art} index={artIdx} onChange={setArtIdx} />
-      </div>
-
-      {compat && (
-        <div style={{ margin: "0 0 12px", fontSize: 13, color: "#5b6f52", fontWeight: 600 }}>
-          ★ {compat.avg.toFixed(1)} · {compat.n} rating{compat.n > 1 ? "s" : ""} — this palette × art style pairs well
+      {!haveAll && (
+        <div className="paper-card mt-8 rounded-[var(--radius-lg)] p-5 text-sm text-muted-foreground">
+          The studio needs at least one <b>Published</b> entry in each lane. Browse the{" "}
+          <a href="/palettes" className="ink-underline text-foreground">palettes</a> and{" "}
+          <a href="/art-styles" className="ink-underline text-foreground">art styles</a> catalogs.
         </div>
       )}
 
-      {/* Composition switcher + actions */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 18 }}>
+      {/* lane selection shelves */}
+      <div className="mt-8 space-y-4">
+        <Shelf label="UI language" href="/" count={ui.length}>
+          {ui.map((o, i) => (
+            <button key={o.id} onClick={() => setUiIdx(i)} className={`${tileBase} ${tileSel(i === uiIdx)} w-[150px]`}>
+              <div className="flex h-9">
+                {(uiColors(o).length ? uiColors(o) : ["#ddd"]).slice(0, 5).map((c, j) => (
+                  <span key={j} className="flex-1" style={{ background: c }} />
+                ))}
+              </div>
+              <div className="truncate px-2.5 py-2 font-display text-[13px] font-bold text-foreground">{o.name}</div>
+            </button>
+          ))}
+        </Shelf>
+
+        <Shelf label="Palette" href="/palettes" count={palettes.length}>
+          {palettes.map((o, i) => {
+            const r = paletteColors(o);
+            const keys = ["bg", "surface", "accent", "text", "success", "info"];
+            return (
+              <button key={o.id} onClick={() => setPalIdx(i)} className={`${tileBase} ${tileSel(i === palIdx)} w-[150px]`}>
+                <div className="flex h-9">
+                  {keys.map((k) => (
+                    <span key={k} className="flex-1" style={{ background: r[k] ?? "#ddd" }} />
+                  ))}
+                </div>
+                <div className="truncate px-2.5 py-2 font-display text-[13px] font-bold text-foreground">{o.name}</div>
+              </button>
+            );
+          })}
+        </Shelf>
+
+        <Shelf label="Art style" href="/art-styles" count={art.length}>
+          {art.map((o, i) => (
+            <button key={o.id} onClick={() => setArtIdx(i)} className={`${tileBase} ${tileSel(i === artIdx)} w-[150px]`}>
+              <div className="h-[68px] w-full overflow-hidden bg-muted">
+                {o.refs[0] || o.thumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={o.refs[0] || o.thumb} alt="" className="h-full w-full object-cover" />
+                ) : null}
+              </div>
+              <div className="truncate px-2.5 py-2">
+                <div className="font-display text-[13px] font-bold leading-tight text-foreground">{o.name}</div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{o.medium}</div>
+              </div>
+            </button>
+          ))}
+        </Shelf>
+      </div>
+
+      {compat && (
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground">
+          <span style={{ color: "var(--matcha)" }}>★ {compat.avg.toFixed(1)}</span>
+          {compat.n} rating{compat.n > 1 ? "s" : ""} — {selPal?.name} × {selArt?.name} pairs well
+        </div>
+      )}
+
+      {/* composition tabs + actions */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         {COMPOSITIONS.map((c, i) => (
           <button
             key={c.key}
             onClick={() => setCompIdx(i)}
-            style={{
-              padding: "6px 12px", borderRadius: 999, fontSize: 13, cursor: "pointer",
-              border: "1px solid " + (i === compIdx ? "#2b2a26" : "#d9d4c7"),
-              background: i === compIdx ? "#2b2a26" : "#fff",
-              color: i === compIdx ? "#fff" : "#2b2a26",
-            }}
+            data-active={i === compIdx}
+            className="rounded-full border border-border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground data-[active=true]:border-foreground data-[active=true]:bg-foreground data-[active=true]:text-background"
           >
             {c.name}
           </button>
         ))}
-        <div style={{ flex: 1 }} />
-        <button onClick={shuffle} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #d9d4c7", background: "#fff", cursor: "pointer", fontSize: 14 }}>
+        <div className="flex-1" />
+        <button onClick={shuffle} disabled={!haveAll} className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:border-foreground/40">
           🎲 Shuffle
         </button>
-        <button
-          onClick={copyBrief}
-          disabled={!haveAll}
-          style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #2b2a26", background: haveAll ? "#2b2a26" : "#bbb", color: "#fff", cursor: haveAll ? "pointer" : "default", fontSize: 14, fontWeight: 600 }}
-        >
-          {copied ? "Copied ✓" : "Copy brief"}
+        <button onClick={doSave} disabled={!haveAll || pending} className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50">
+          {pending ? "Saving…" : "Save mix"}
         </button>
-        <button
-          onClick={doSave}
-          disabled={!haveAll || pending}
-          title="Persist this mix as a Remix you can rate"
-          style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #7c6f57", background: "#fff", color: "#7c6f57", cursor: haveAll && !pending ? "pointer" : "default", fontSize: 14, fontWeight: 600 }}
-        >
-          {pending ? "…" : "Save mix"}
+        <button onClick={copyBrief} disabled={!haveAll} className="rounded-[var(--radius-md)] bg-foreground px-3.5 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-50">
+          {copied ? "Copied ✓" : "Copy brief"}
         </button>
       </div>
 
-      {!haveAll && (
-        <div style={{ ...card, padding: 16, marginBottom: 18, background: "#fdf6ec", borderColor: "#e7d4b5", color: "#7a5a23", fontSize: 14 }}>
-          This studio needs at least one <b>Published</b> entry in each lane. Run{" "}
-          <code>synthesize_palette</code> and <code>synthesize_art_style</code> curation jobs to
-          populate the palette and art-style libraries.
+      {/* stage */}
+      <div className="mt-5 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_1px_2px_rgba(30,35,45,0.04),0_8px_24px_rgba(30,35,45,0.06)]">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+          <div className="flex h-3 overflow-hidden rounded-[1px]">
+            {["accent", "success", "warning", "error", "info"].map((k) => (
+              <span key={k} className="w-3" style={{ background: roles[k] ?? "#ddd" }} />
+            ))}
+          </div>
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            {selUi?.name ?? "—"} · themed with {selPal?.name ?? "—"}
+          </span>
         </div>
-      )}
-
-      {/* Stage: UI recolored by the palette */}
-      <div style={{ ...card, overflow: "hidden", marginBottom: 18 }}>
-        <div style={{ padding: "8px 14px", borderBottom: "1px solid #eee", fontSize: 12, color: "#6b665c" }}>
-          {selUi?.name ?? "—"} · themed with {selPal?.name ?? "—"}
-        </div>
-        <div style={{ maxHeight: 560, overflow: "auto" }}>
+        <div className="max-h-[600px] overflow-auto">
           {selUi ? <DesignShowcase tokensRaw={mergedTokens} languageName={selUi.name} /> : null}
         </div>
       </div>
 
-      {/* Art lane: composition image slots filled with reference imagery */}
-      <div style={{ ...card, padding: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: "#6b665c" }}>
+      {/* imagery (art lane) */}
+      <div className="mt-5 rounded-[var(--radius-lg)] border border-border bg-card p-4">
+        <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
           Imagery — {selArt?.name ?? "—"} ({selArt?.medium || "—"}) · {comp.name} slots
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {slotImages.map(({ slot, url }) => (
-            <figure key={slot.key} style={{ margin: 0 }}>
-              <div style={{ position: "relative", aspectRatio: slot.aspect.replace(":", "/"), background: `linear-gradient(135deg, ${roles.accent || "#bdb6a6"}, ${roles.surface || "#efeae0"})`, borderRadius: 8, overflow: "hidden", border: "1px solid #e5e3dd", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 10, color: roles.text || "#555", opacity: 0.5, textAlign: "center", padding: 6, lineHeight: 1.3 }}>
-                  {selArt?.name}
-                </span>
+            <figure key={slot.key} className="m-0">
+              <div
+                className="relative overflow-hidden rounded-[var(--radius-md)] border border-border"
+                style={{ aspectRatio: slot.aspect.replace(":", "/"), background: `linear-gradient(135deg, ${roles.accent || "#bdb6a6"}, ${roles.surface || "#efeae0"})` }}
+              >
                 {url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={url}
-                    alt={slot.subject_hint}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
-                    }}
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                  />
+                  <img src={url} alt={slot.subject_hint} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" />
                 ) : null}
               </div>
-              <figcaption style={{ fontSize: 11, color: "#8a857a", marginTop: 4 }}>
-                <b style={{ color: "#2b2a26" }}>{slot.key}</b> — {slot.subject_hint}
+              <figcaption className="mt-1.5 font-mono text-[10px] text-muted-foreground">
+                <span className="text-foreground">{slot.key}</span> — {slot.subject_hint}
               </figcaption>
             </figure>
           ))}
         </div>
       </div>
 
-      {/* Saved mixes + rating — the compatibility/taste loop */}
+      {/* saved mixes + rating */}
       {saved.length > 0 && (
-        <div style={{ ...card, padding: 16, marginTop: 18 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: "#6b665c" }}>
+        <div className="mt-5 rounded-[var(--radius-lg)] border border-border bg-card p-4">
+          <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
             Saved mixes · rate them to build the palette × art-style compatibility signal
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {saved.map((m) => (
-              <div key={m.id} style={{ border: "1px solid #e5e3dd", borderRadius: 8, padding: "10px 12px" }}>
-                <div style={{ fontSize: 13, color: "#2b2a26" }}>
+              <div key={m.id} className="rounded-[var(--radius-md)] border border-border px-3.5 py-3">
+                <div className="text-[13px] text-foreground">
                   {nameOf(ui, m.ui)} · {nameOf(palettes, m.palette)} · {nameOf(art, m.art)}
                 </div>
-                <div style={{ fontSize: 11, color: "#8a857a", margin: "2px 0 6px" }}>
+                <div className="mb-1.5 mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                   {COMPOSITIONS.find((c) => c.key === m.composition)?.name ?? m.composition}
                 </div>
-                <div style={{ display: "flex", gap: 2 }}>
+                <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => doRate(m.id, n)}
-                      disabled={pending}
-                      aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}
-                      style={{ border: "none", background: "none", cursor: pending ? "default" : "pointer", fontSize: 18, lineHeight: 1, padding: 0, color: n <= m.rating ? "#b8893f" : "#d9d4c7" }}
-                    >
+                    <button key={n} onClick={() => doRate(m.id, n)} disabled={pending} aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`} className="p-0 text-[18px] leading-none disabled:cursor-default" style={{ background: "none", border: "none", cursor: pending ? "default" : "pointer", color: n <= m.rating ? "var(--yuzu)" : "var(--border)" }}>
                       ★
                     </button>
                   ))}
@@ -358,6 +329,32 @@ export function RemixStudio({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Shelf({
+  label,
+  href,
+  count,
+  children,
+}: {
+  label: string;
+  href: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          {label} · {count}
+        </span>
+        <a href={href} className="ink-underline font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">
+          browse all →
+        </a>
+      </div>
+      <div className="flex gap-2.5 overflow-x-auto pb-1.5">{children}</div>
     </div>
   );
 }

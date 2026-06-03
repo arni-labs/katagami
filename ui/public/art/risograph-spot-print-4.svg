@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <defs>
+    <pattern id="ht" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#000"/>
+    </pattern>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="600" height="400" fill="#f4efe0"/>
+  <g style="mix-blend-mode:multiply">
+    <circle cx="129.5138478300133" cy="146.99056120216406" r="95.98566056507903" fill="#ff4d5e"/>
+    <circle cx="123.06295395040091" cy="140.53966732255168" r="95.98566056507903" fill="none" stroke="#27305a" stroke-width="3"/>
+    <path d="M0 307.85812618809666 Q150 257.85812618809666 300 307.85812618809666 T600 307.85812618809666 V400 H0 Z" fill="#27305a" opacity="0.92"/>
+    <path d="M0 341.40723230848425 Q200 291.40723230848425 400 341.40723230848425 T600 331.40723230848425 V400 H0 Z" fill="#ff4d5e" opacity="0.55"/>
+  </g>
+  <rect width="600" height="400" fill="url(#ht)" opacity="0.14"/>
+  <rect width="600" height="400" filter="url(#grain)"/>
+</svg>

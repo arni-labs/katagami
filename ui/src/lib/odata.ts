@@ -684,6 +684,9 @@ export const getRemix = (id: string) => getLane("Remixes", id);
 // ── Files (embodiment HTML) ──
 
 export function getFileUrl(fileId: string): string {
+  // Pass through absolute URLs and public paths (e.g. locally-served /art/*.svg
+  // reference images) untouched; otherwise resolve through the file proxy.
+  if (/^(https?:\/\/|\/)/.test(fileId)) return fileId;
   // Use the Next.js API proxy which adds the X-Tenant-Id header
   return `/api/file/${encodeURIComponent(fileId)}?v=${FILE_PROXY_CACHE_VERSION}`;
 }
