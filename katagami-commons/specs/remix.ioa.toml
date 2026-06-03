@@ -87,10 +87,10 @@ hint = "Record that this mix's brief was copied or fetched by an agent."
 [[action]]
 name = "Archive"
 kind = "internal"
-from = ["Draft", "Saved"]
+from = ["Saved"]
 to = "Archived"
 params = ["curator_notes"]
-hint = "Archive a saved mix while preserving a governed restore path."
+hint = "Archive a saved mix while preserving a governed restore path. Only Saved mixes are archivable (a never-saved Draft is ephemeral); this keeps the SavedRequiresSelection invariant intact across Archive -> Restore."
 
 [[action]]
 name = "Restore"

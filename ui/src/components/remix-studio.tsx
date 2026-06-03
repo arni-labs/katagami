@@ -236,10 +236,20 @@ export function RemixStudio({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
           {slotImages.map(({ slot, url }) => (
             <figure key={slot.key} style={{ margin: 0 }}>
-              <div style={{ aspectRatio: slot.aspect.replace(":", "/"), background: "#f0ece2", borderRadius: 8, overflow: "hidden", border: "1px solid #e5e3dd" }}>
+              <div style={{ position: "relative", aspectRatio: slot.aspect.replace(":", "/"), background: `linear-gradient(135deg, ${roles.accent || "#bdb6a6"}, ${roles.surface || "#efeae0"})`, borderRadius: 8, overflow: "hidden", border: "1px solid #e5e3dd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 10, color: roles.text || "#555", opacity: 0.5, textAlign: "center", padding: 6, lineHeight: 1.3 }}>
+                  {selArt?.name}
+                </span>
                 {url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt={slot.subject_hint} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img
+                    src={url}
+                    alt={slot.subject_hint}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 ) : null}
               </div>
               <figcaption style={{ fontSize: 11, color: "#8a857a", marginTop: 4 }}>
