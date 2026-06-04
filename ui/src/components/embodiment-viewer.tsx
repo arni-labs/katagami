@@ -1,54 +1,18 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { getFileUrl } from "@/lib/odata";
+import { ScaledFrame } from "@/components/scaled-frame";
 
-// Desktop viewport — embodiments render at 1440px internal width so
-// their responsive CSS lands on the desktop breakpoint.
 const VIEWPORT_WIDTH = 1440;
 const DEFAULT_HEIGHT = 900;
-const MIN_HEIGHT = 400;
-// Max internal body height on the detail page — generous enough for
-// most tall designs but capped to prevent runaway 100vh layouts.
-const MAX_HEIGHT = 5000;
 
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-// Safety CSS injected at the top of <head> in the embodiment HTML
-// before it's rendered via srcdoc. Prevents runaway body heights and
-// kills continuous GPU work from animations/transitions.
-const SAFETY_CSS = `<style>
-  html, body {
-    max-height: ${MAX_HEIGHT}px !important;
-    overflow: hidden !important;
-  }
-  *, *::before, *::after {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
-  }
-</style>`;
-
-function patchHtml(html: string): string {
-  if (html.includes("<head>")) {
-    return html.replace("<head>", `<head>${SAFETY_CSS}`);
-  }
-  const m = html.match(/<html[^>]*>/i);
-  if (m) {
-    return html.replace(m[0], `${m[0]}<head>${SAFETY_CSS}</head>`);
-  }
-  return SAFETY_CSS + html;
-}
-
+/**
+ * Fetches a self-contained embodiment (by file id or URL) and renders it via the
+ * shared ScaledFrame — the same desktop-render-then-scale path the studio uses,
+ * so nothing overflows or crops. Adds an "open full" escape hatch to the source.
+ */
 export function EmbodimentViewer({
   fileId,
   src,
@@ -56,128 +20,46 @@ export function EmbodimentViewer({
   fileId?: string;
   src?: string;
 }) {
-  // Auto-render the safety-patched preview by default. The srcdoc
-  // injection caps layout from first paint, so mounting is safe.
   const url = src ?? (fileId ? getFileUrl(fileId) : "");
-  if (!url) return <UnavailablePreview />;
-  return <SafePreview url={url} />;
-}
+  // Keyed by url inside the state so a changed source shows loading until its
+  // own fetch resolves — correct whether or not the parent remounts us, and we
+  // only ever setState from async callbacks (no synchronous setState-in-effect).
+  const [data, setData] = useState<{ url: string; html: string | null; failed: boolean }>({
+    url,
+    html: null,
+    failed: false,
+  });
 
-// ── Safety-patched in-page preview ─────────────────────────────────
-
-function SafePreview({ url }: { url: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const measuredRef = useRef(false);
-  const [srcDoc, setSrcDoc] = useState<string | null>(null);
-  const [scale, setScale] = useState<number | null>(null);
-  const [contentHeight, setContentHeight] = useState(DEFAULT_HEIGHT);
-  const [status, setStatus] = useState<"loading" | "ok" | "failed">(
-    "loading",
-  );
-
-  // Fetch + patch the HTML before it hits the iframe renderer.
   useEffect(() => {
+    if (!url) return;
     let cancelled = false;
     fetch(url)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then((html) => {
-        if (cancelled) return;
-        setSrcDoc(patchHtml(html));
-        setStatus("ok");
+      .then((t) => {
+        if (!cancelled) setData({ url, html: t, failed: false });
       })
       .catch(() => {
-        if (!cancelled) setStatus("failed");
+        if (!cancelled) setData({ url, html: null, failed: true });
       });
     return () => {
       cancelled = true;
     };
   }, [url]);
 
-  // Measure container width synchronously before paint.
-  useIsoLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const w = el.getBoundingClientRect().width;
-    if (w > 0) setScale(w / VIEWPORT_WIDTH);
-  }, []);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setScale(w / VIEWPORT_WIDTH);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  function measureContent() {
-    if (measuredRef.current) return;
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    try {
-      // srcdoc iframes are treated as same-origin (inherit parent) so
-      // contentDocument is accessible without allow-same-origin.
-      const doc = iframe.contentDocument;
-      if (!doc) return;
-      const measured = Math.max(
-        doc.documentElement.scrollHeight,
-        doc.body?.scrollHeight ?? 0,
-        doc.body?.offsetHeight ?? 0,
-        MIN_HEIGHT,
-      );
-      measuredRef.current = true;
-      setContentHeight(Math.min(measured, MAX_HEIGHT));
-    } catch {
-      // Cross-origin or other error — keep default
-    }
-  }
-
-  function onIframeLoad() {
-    setTimeout(measureContent, 400);
-  }
-
-  if (status === "loading" || scale === null || !srcDoc) {
+  const fresh = data.url === url ? data : { url, html: null, failed: false };
+  if (!url || fresh.failed) return <UnavailablePreview />;
+  if (fresh.html === null) {
     return (
       <div
-        ref={containerRef}
         className="w-full animate-pulse bg-muted"
         style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
       />
     );
   }
 
-  if (status === "failed") {
-    return <UnavailablePreview />;
-  }
-
-  const scaledHeight = contentHeight * scale;
-
   return (
     <div className="relative">
-      <div
-        ref={containerRef}
-        className="relative w-full overflow-hidden bg-card"
-        style={{ height: scaledHeight }}
-      >
-        <iframe
-          ref={iframeRef}
-          srcDoc={srcDoc}
-          className="absolute left-0 top-0 border-0"
-          style={{
-            width: `${VIEWPORT_WIDTH}px`,
-            height: `${contentHeight}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-          }}
-          // No scripts, no same-origin — srcdoc already has patched content.
-          sandbox=""
-          onLoad={onIframeLoad}
-          title="Design language embodiment"
-        />
-      </div>
+      <ScaledFrame html={fresh.html} title="Design language embodiment" />
       <a
         href={url}
         target="_blank"

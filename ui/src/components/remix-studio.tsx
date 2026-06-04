@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHero, Marker } from "@/components/page-hero";
+import { ScaledFrame } from "@/components/scaled-frame";
+import { StickyNote, WashiTape } from "@/components/scrapbook";
 import { buildRemixEmbodiment } from "@/lib/remix-embodiment";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
@@ -172,8 +174,8 @@ export function RemixStudio({
     startTransition(async () => { await rateRemix(id, rating); router.refresh(); });
   }
 
-  const row = "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border px-2.5 py-2 text-left transition-colors";
-  const sel = (on: boolean) => (on ? "border-foreground bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))]" : "border-border hover:border-foreground/40");
+  const row = "flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border bg-card/70 px-2.5 py-2 text-left transition-colors";
+  const sel = (on: boolean) => (on ? "border-foreground bg-card shadow-[0_1px_2px_rgba(30,35,45,0.08)]" : "border-border/70 hover:border-foreground/40 hover:bg-card");
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
@@ -195,7 +197,7 @@ export function RemixStudio({
       <div className="mt-8 grid gap-6 lg:grid-cols-[300px_1fr]">
         {/* control rail */}
         <aside className="space-y-5">
-          <LaneList label="UI language" browse="/" count={ui.length}>
+          <LaneList label="UI language" browse="/" count={ui.length} tint="teal">
             {ui.map((o, i) => (
               <button key={o.id} onClick={() => setUiIdx(i)} className={`${row} ${sel(i === uiIdx)}`}>
                 <span className="flex h-7 w-10 shrink-0 overflow-hidden rounded-[3px] border border-border">
@@ -208,7 +210,7 @@ export function RemixStudio({
             ))}
           </LaneList>
 
-          <LaneList label="Palette" browse="/palettes" count={palettes.length}>
+          <LaneList label="Palette" browse="/palettes" count={palettes.length} tint="ramune">
             {palettes.map((o, i) => {
               const r = paletteColors(o);
               return (
@@ -224,7 +226,7 @@ export function RemixStudio({
             })}
           </LaneList>
 
-          <LaneList label="Art style" browse="/art-styles" count={art.length}>
+          <LaneList label="Art style" browse="/art-styles" count={art.length} tint="sakura">
             {art.map((o, i) => (
               <button key={o.id} onClick={() => setArtIdx(i)} className={`${row} ${sel(i === artIdx)}`}>
                 <span className="h-7 w-10 shrink-0 overflow-hidden rounded-[3px] border border-border bg-muted">
@@ -242,58 +244,67 @@ export function RemixStudio({
           </LaneList>
 
           {compat && (
-            <div className="rounded-[var(--radius-md)] border border-border bg-card px-3 py-2.5 text-[12px] text-foreground">
-              <span className="font-mono" style={{ color: "var(--matcha)" }}>★ {compat.avg.toFixed(1)}</span>{" "}
+            <StickyNote tint="matcha" className="px-3.5 py-2.5 text-[12px] text-foreground">
+              <span className="font-mono font-bold" style={{ color: "color-mix(in oklch, var(--matcha), black 32%)" }}>★ {compat.avg.toFixed(1)}</span>{" "}
               <span className="text-muted-foreground">· {compat.n} rating{compat.n > 1 ? "s" : ""} — pairs well</span>
-            </div>
+            </StickyNote>
           )}
         </aside>
 
         {/* preview */}
         <main className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-[var(--radius-md)] border border-border p-0.5">
+            <div className="inline-flex rounded-[var(--radius-md)] border border-border bg-card p-0.5">
               {COMPS.map((c, i) => (
                 <button
                   key={c.key}
                   onClick={() => setCompIdx(i)}
                   data-active={i === compIdx}
-                  className="rounded-[calc(var(--radius-md)-2px)] px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background"
+                  className="rounded-[calc(var(--radius-md)-2px)] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background"
                 >
                   {c.name}
                 </button>
               ))}
             </div>
             <div className="flex-1" />
-            <button onClick={shuffle} disabled={!haveAll} className="rounded-[var(--radius-md)] border border-border bg-card px-3 py-2 text-sm text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50">🎲</button>
-            <button onClick={doSave} disabled={!haveAll || pending} className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
-            <button onClick={copyBrief} disabled={!haveAll} className="rounded-[var(--radius-md)] bg-foreground px-3.5 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-50">{copied ? "Copied ✓" : "Copy brief"}</button>
+            <button onClick={shuffle} disabled={!haveAll} title="Shuffle" aria-label="Shuffle" className="rounded-[var(--radius-md)] border border-border bg-card px-3 py-2 text-sm text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50">🎲</button>
+            <button onClick={doSave} disabled={!haveAll || pending} className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
+            <button onClick={copyBrief} disabled={!haveAll} className="rounded-[var(--radius-md)] bg-foreground px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-50">{copied ? "Copied ✓" : "Copy brief"}</button>
           </div>
 
-          <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_1px_2px_rgba(30,35,45,0.04),0_18px_44px_rgba(30,35,45,0.12)]">
-            <div className="flex items-center gap-3 border-b border-border px-4 py-2.5" style={{ background: "color-mix(in srgb, var(--foreground) 4%, var(--card))" }}>
-              <div className="flex gap-1.5">
-                <span className="h-3 w-3 rounded-full" style={{ background: "var(--sakura)" }} />
-                <span className="h-3 w-3 rounded-full" style={{ background: "var(--yuzu)" }} />
-                <span className="h-3 w-3 rounded-full" style={{ background: "var(--salad)" }} />
+          <div className="relative">
+            <WashiTape color="sakura" rotate={-4} className="-left-4 -top-3" width={104} />
+            <WashiTape color="salad" rotate={5} className="-right-4 -top-3" width={84} />
+            <div className="relative overflow-hidden rounded-[2px] border border-border bg-card p-3 pb-9 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {comp?.name ?? "Preview"}
+                </span>
+                <span className="hidden truncate font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground/75 sm:block">
+                  {selUi?.name ?? "—"} · {selPal?.name ?? "—"} · {selArt?.name ?? "—"}
+                </span>
               </div>
-              <div className="mx-auto w-full max-w-md truncate rounded-full border border-border bg-card px-3 py-1 text-center font-mono text-[11px] text-muted-foreground">
-                {selUi?.name ?? "—"} · {selPal?.name ?? "—"} · {selArt?.name ?? "—"}
+              <div className="overflow-hidden rounded-[1px] border border-border">
+                {selUi ? (
+                  <ScaledFrame html={previewHtml} title="Remix preview" />
+                ) : (
+                  <div className="grid h-[420px] place-items-center text-sm text-muted-foreground">
+                    No UI language selected.
+                  </div>
+                )}
               </div>
+              <span className="absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/75">
+                live preview · recolored + filled
+              </span>
             </div>
-            {selUi ? (
-              <iframe title="Remix preview" srcDoc={previewHtml} className="block w-full bg-white" style={{ height: 720, border: 0 }} sandbox="allow-same-origin" />
-            ) : (
-              <div className="grid h-[720px] place-items-center text-sm text-muted-foreground">No UI language selected.</div>
-            )}
           </div>
 
           {saved.length > 0 && (
-            <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+            <StickyNote tint="yuzu" className="p-4">
               <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Saved mixes · rate to build the compatibility signal</div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {saved.map((m) => (
-                  <div key={m.id} className="rounded-[var(--radius-md)] border border-border px-3.5 py-3">
+                  <div key={m.id} className="rounded-[var(--radius-md)] border border-border/70 bg-card/70 px-3.5 py-3">
                     <div className="text-[13px] text-foreground">{nameOf(ui, m.ui)} · {nameOf(palettes, m.palette)} · {nameOf(art, m.art)}</div>
                     <div className="mb-1.5 mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{COMPS.find((c) => c.key === m.composition)?.name ?? m.composition}</div>
                     <div className="flex gap-0.5">
@@ -304,7 +315,7 @@ export function RemixStudio({
                   </div>
                 ))}
               </div>
-            </div>
+            </StickyNote>
           )}
         </main>
       </div>
@@ -312,14 +323,33 @@ export function RemixStudio({
   );
 }
 
-function LaneList({ label, browse, count, children }: { label: string; browse: string; count: number; children: React.ReactNode }) {
+function LaneList({
+  label,
+  browse,
+  count,
+  tint,
+  children,
+}: {
+  label: string;
+  browse: string;
+  count: number;
+  tint?: "teal" | "ramune" | "sakura" | "salad" | "yuzu" | "sumire" | "matcha";
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label} · {count}</span>
-        <a href={browse} className="ink-underline font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground">all →</a>
+    <StickyNote tint={tint} className="p-3.5">
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          {label} · {count}
+        </span>
+        <a
+          href={browse}
+          className="ink-underline font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
+        >
+          all →
+        </a>
       </div>
-      <div className="max-h-[208px] space-y-1.5 overflow-y-auto pr-1">{children}</div>
-    </div>
+      <div className="max-h-[200px] space-y-1.5 overflow-y-auto pr-1">{children}</div>
+    </StickyNote>
   );
 }

@@ -693,6 +693,33 @@ export function paletteRoles(fields: Record<string, string | undefined>): Record
   return { ...neutrals, ...(accent ? { accent } : {}), ...semantic };
 }
 
+export interface PaletteSwatch {
+  hex: string;
+  name?: string;
+}
+export interface PaletteCore {
+  /** The palette's identity: 1–4 key colors. signature[0] is the primary accent. */
+  signature: PaletteSwatch[];
+  /** The ground most of the surface is built from. */
+  neutrals: Record<string, string>;
+  /** Small functional accessory — NOT the identity. */
+  semantic: Record<string, string>;
+  mood: { temperature?: string; key_hue?: string; summary?: string };
+}
+
+/** Structured view of a PaletteSystem that preserves the signature →
+ *  neutrals → semantic hierarchy (signature is the star). */
+export function paletteCore(fields: Record<string, string | undefined>): PaletteCore {
+  const neutrals = parseJson<Record<string, string>>(fields.neutrals) ?? {};
+  const semantic = parseJson<Record<string, string>>(fields.semantic) ?? {};
+  const rawSig = parseJson<Array<{ hex?: string; name?: string } | string>>(fields.signature) ?? [];
+  const signature: PaletteSwatch[] = rawSig
+    .map((s) => (typeof s === "string" ? { hex: s } : { hex: s?.hex ?? "", name: s?.name }))
+    .filter((s) => /^#?[0-9a-f]{3,8}$/i.test(s.hex));
+  const mood = parseJson<{ temperature?: string; key_hue?: string; summary?: string }>(fields.mood) ?? {};
+  return { signature, neutrals, semantic, mood };
+}
+
 // ── Files (embodiment HTML) ──
 
 export function getFileUrl(fileId: string): string {
