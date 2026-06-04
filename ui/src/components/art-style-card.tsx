@@ -15,6 +15,8 @@ const accentColors = [
   "var(--teal)", "var(--ramune)", "var(--sumire)",
 ];
 
+const STRIP_MAX = 4;
+
 function hashInt(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -24,8 +26,14 @@ function hashInt(s: string) {
 export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
   const tint = accentColors[hashInt(art.id) % accentColors.length];
   const tapeRot = ((hashInt(art.slug || art.id) % 11) - 5) * 0.55 - 3;
-  const hero = art.refs[0] || art.thumb || "";
-  const strip = art.refs.slice(0, 5);
+
+  // Distinct images: a wide hero (the establishing shot) leads; the rest read as
+  // a tidy contact strip of fixed-size squares (never a stretched orphan).
+  const images = Array.from(new Set([...art.refs, art.thumb].filter(Boolean)));
+  const hero = images[0] ?? "";
+  const rest = images.slice(1);
+  const stripShots = rest.slice(0, STRIP_MAX);
+  const overflow = rest.length - stripShots.length;
 
   return (
     <article
@@ -41,30 +49,40 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
         }}
       />
 
-      {/* polaroid with the hero reference image */}
+      {/* polaroid: wide hero + a tidy contact strip of the remaining shots */}
       <div className="px-4 pb-1 pt-7">
         <div
           className="relative mx-auto w-[96%] rotate-[-0.7deg] transition-transform duration-300 ease-out group-hover:rotate-0"
           style={{ transformOrigin: "center top" }}
         >
           <div className="relative border border-border bg-card p-1.5 pb-3 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
-            <div className="relative w-full overflow-hidden rounded-[1px] bg-muted" style={{ aspectRatio: "3 / 2" }}>
+            <div className="relative w-full overflow-hidden rounded-[1px] bg-muted" style={{ aspectRatio: "16 / 9" }}>
               {hero ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={hero} alt={`${art.name} reference`} className="h-full w-full object-cover" />
+                <img src={hero} alt={`${art.name} — hero reference`} className="h-full w-full object-cover" />
               ) : (
                 <div className="absolute inset-0" style={{ background: `color-mix(in srgb, ${tint} 14%, var(--card))` }} />
               )}
+              <span className="absolute left-1.5 top-1.5 rounded-[1px] bg-card/85 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground">
+                hero
+              </span>
             </div>
-            {/* reference strip (the other refs) */}
-            {strip.length > 1 && (
-              <div className="mt-1.5 flex gap-1.5">
-                {strip.slice(1, 5).map((src, i) => (
-                  <div key={i} className="relative h-9 flex-1 overflow-hidden rounded-[1px] border border-border bg-muted">
+            {stripShots.length > 0 && (
+              <div className="mt-1.5 flex items-center gap-1.5">
+                {stripShots.map((src, i) => (
+                  <div key={i} className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[1px] border border-border bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <img src={src} alt={`${art.name} proof ${i + 1}`} className="h-full w-full object-cover" />
                   </div>
                 ))}
+                {overflow > 0 && (
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[1px] border border-dashed border-border font-mono text-[10px] text-muted-foreground">
+                    +{overflow}
+                  </span>
+                )}
+                <span className="ml-auto pr-0.5 font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  proofs
+                </span>
               </div>
             )}
           </div>
@@ -73,14 +91,15 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
 
       {/* body */}
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-        <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          Art style · {art.medium || "mixed"}
+        <div className="mb-2 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+          <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: tint }} />
+          {art.medium || "mixed"} · {images.length} image{images.length === 1 ? "" : "s"}
         </div>
         <h3 className="font-display text-[22px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground">
           {art.name}
         </h3>
         {art.promptTemplate && (
-          <p className="mt-3 line-clamp-3 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-3 line-clamp-2 font-mono text-[11px] leading-relaxed text-muted-foreground">
             {art.promptTemplate}
           </p>
         )}
