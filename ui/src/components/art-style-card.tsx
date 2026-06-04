@@ -5,7 +5,10 @@ export interface ArtStyleItem {
   status: string;
   medium: string;
   promptTemplate: string;
+  /** Reference images — refs[0] is the wide hero (the establishing shot). */
   refs: string[];
+  /** Proof shots: the same subjects rendered in-style (portrait/object/scene). */
+  proofs: string[];
   thumb: string;
   tags: string[];
 }
@@ -27,13 +30,16 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
   const tint = accentColors[hashInt(art.id) % accentColors.length];
   const tapeRot = ((hashInt(art.slug || art.id) % 11) - 5) * 0.55 - 3;
 
-  // Distinct images: a wide hero (the establishing shot) leads; the rest read as
-  // a tidy contact strip of fixed-size squares (never a stretched orphan).
-  const images = Array.from(new Set([...art.refs, art.thumb].filter(Boolean)));
-  const hero = images[0] ?? "";
-  const rest = images.slice(1);
-  const stripShots = rest.slice(0, STRIP_MAX);
-  const overflow = rest.length - stripShots.length;
+  // A wide hero (the establishing shot) leads; the proof shots read as a tidy
+  // contact strip of fixed-size squares (never a stretched orphan). Falls back
+  // to extra references if no separate proof shots were attached.
+  const hero = art.refs[0] || art.thumb || "";
+  const strip = (art.proofs.length ? art.proofs : art.refs.slice(1)).filter(
+    (s) => s && s !== hero,
+  );
+  const imageCount = new Set([hero, ...strip].filter(Boolean)).size;
+  const stripShots = strip.slice(0, STRIP_MAX);
+  const overflow = strip.length - stripShots.length;
 
   return (
     <article
@@ -93,7 +99,7 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
       <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
         <div className="mb-2 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
           <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: tint }} />
-          {art.medium || "mixed"} · {images.length} image{images.length === 1 ? "" : "s"}
+          {art.medium || "mixed"} · {imageCount} image{imageCount === 1 ? "" : "s"}
         </div>
         <h3 className="font-display text-[22px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground">
           {art.name}

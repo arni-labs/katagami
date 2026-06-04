@@ -141,11 +141,13 @@ async function seedArtStyle(a) {
   });
   await act("ArtStyles", id, "SetSlotRecipes", { slot_recipes: J(a.slotRecipes) });
   await act("ArtStyles", id, "SetGuidance", { guidance: J(a.guidance) });
-  const refIds = [1, 2].map((n) => `/art/${a.slug}-${n}.png`);
-  const proofIds = [1, 2].map((n) => `/art/${a.slug}-${n}.png`);
+  // Contract shape: a wide hero (reference[0], also the landing --hero-image) +
+  // 3 proof shots (the same subjects rendered in-style). 4 real images per style.
+  const refIds = [`/art/${a.slug}-1.png`]; // [0] = wide hero / establishing shot
+  const proofIds = [2, 3, 4].map((n) => `/art/${a.slug}-${n}.png`); // subject proofs
   await act("ArtStyles", id, "AttachReferenceImages", {
     reference_image_file_ids: J(refIds),
-    reference_manifest: J({ items: refIds.map((fid) => ({ file_id: fid, role: "reference", aspect: "1:1" })) }),
+    reference_manifest: J({ items: refIds.map((fid) => ({ file_id: fid, role: "hero", aspect: "16:9" })) }),
   });
   await act("ArtStyles", id, "AttachProofShots", {
     proof_shots_file_ids: J(proofIds),

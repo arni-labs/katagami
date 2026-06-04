@@ -24,6 +24,7 @@ export default async function ArtStylesPage() {
     medium: r.fields.medium ?? "",
     promptTemplate: r.fields.prompt_template ?? "",
     refs: refUrls(r.fields.reference_image_file_ids),
+    proofs: refUrls(r.fields.proof_shots_file_ids),
     thumb: r.fields.thumbnail_file_id ? getFileUrl(r.fields.thumbnail_file_id) : "",
     tags: parseJson<string[]>(r.fields.tags) ?? [],
   }));
