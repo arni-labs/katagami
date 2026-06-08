@@ -7,8 +7,8 @@ import {
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import Link from "next/link";
 import { PageHero, Marker } from "@/components/page-hero";
-import { InlineRemix } from "@/components/remix/inline-remix";
-import { SavedMixes, type SavedMix } from "@/components/remix/saved-mixes";
+import { StudioClient } from "@/components/remix/studio-client";
+import type { SavedMix } from "@/components/remix/saved-mixes";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +29,6 @@ export default async function StudioPage() {
   const pal = toPaletteOpts(palettes);
   const art = toArtOpts(artStyles);
 
-  const names = {
-    ui: Object.fromEntries(ui.map((o) => [o.id, o.name])),
-    palette: Object.fromEntries(pal.map((o) => [o.id, o.name])),
-    art: Object.fromEntries(art.map((o) => [o.id, o.name])),
-  };
   const saved: SavedMix[] = savedRemixes.map((r) => ({
     id: r.entity_id,
     ui: r.fields.design_language_id ?? "",
@@ -61,9 +56,8 @@ export default async function StudioPage() {
           <Link href="/art-styles" className="ink-underline text-foreground">art styles</Link> catalogs.
         </div>
       ) : (
-        <div className="mt-8 space-y-5">
-          <InlineRemix languages={ui} palettes={pal} art={art} variant="command" enableSave />
-          <SavedMixes saved={saved} names={names} />
+        <div className="mt-8">
+          <StudioClient ui={ui} palettes={pal} art={art} saved={saved} />
         </div>
       )}
     </div>

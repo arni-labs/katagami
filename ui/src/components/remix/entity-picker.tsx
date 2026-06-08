@@ -30,11 +30,7 @@ function haystack(it: PickItem): string {
     .toLowerCase();
 }
 
-function useFiltered(
-  items: PickItem[],
-  q: string,
-  active: Record<string, Set<string>>,
-) {
+function useFiltered(items: PickItem[], q: string, active: Record<string, Set<string>>) {
   return useMemo(() => {
     const query = q.trim().toLowerCase();
     return items.filter((it) => {
@@ -47,6 +43,75 @@ function useFiltered(
       return true;
     });
   }, [items, q, active]);
+}
+
+function useFacets(items: PickItem[]) {
+  return useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    for (const it of items) {
+      for (const [k, v] of Object.entries(it.facets ?? {})) {
+        if (!v) continue;
+        (map[k] ??= new Set()).add(v);
+      }
+    }
+    return Object.entries(map).map(([k, vs]) => [k, [...vs].sort()] as const);
+  }, [items]);
+}
+
+// "Search by name, temperature, hue…" — tells the user what's searchable.
+function searchPlaceholder(facets: readonly (readonly [string, string[]])[]) {
+  const keys = facets.map(([k]) => k);
+  return `Search by name${keys.length ? ", " + keys.join(", ") : ""}…`;
+}
+
+function toggle(
+  setActive: React.Dispatch<React.SetStateAction<Record<string, Set<string>>>>,
+  key: string,
+  val: string,
+) {
+  setActive((prev) => {
+    const next: Record<string, Set<string>> = {};
+    for (const [k, s] of Object.entries(prev)) next[k] = new Set(s);
+    const set = (next[key] ??= new Set());
+    if (set.has(val)) set.delete(val);
+    else set.add(val);
+    return next;
+  });
+}
+
+function FacetChips({
+  facets,
+  active,
+  onToggle,
+}: {
+  facets: readonly (readonly [string, string[]])[];
+  active: Record<string, Set<string>>;
+  onToggle: (key: string, val: string) => void;
+}) {
+  if (facets.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      {facets.map(([key, vals]) => (
+        <div key={key} className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">{key}</span>
+          {vals.map((v) => {
+            const on = active[key]?.has(v) ?? false;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => onToggle(key, v)}
+                data-on={on}
+                className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-0.5 font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground data-[on=true]:bg-foreground data-[on=true]:text-background"
+              >
+                {v}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ItemMedia({ item }: { item: PickItem }) {
@@ -69,15 +134,7 @@ function ItemMedia({ item }: { item: PickItem }) {
   );
 }
 
-function ItemRow({
-  item,
-  active,
-  onPick,
-}: {
-  item: PickItem;
-  active: boolean;
-  onPick: () => void;
-}) {
+function ItemRow({ item, active, onPick }: { item: PickItem; active: boolean; onPick: () => void }) {
   return (
     <button
       type="button"
@@ -96,19 +153,18 @@ function ItemRow({
           </span>
         ) : null}
       </span>
+      {item.tags && item.tags.length ? (
+        <span className="hidden shrink-0 gap-2 sm:flex">
+          {item.tags.slice(0, 2).map((t) => (
+            <span key={t} className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground/55">{t}</span>
+          ))}
+        </span>
+      ) : null}
     </button>
   );
 }
 
-function Trigger({
-  label,
-  current,
-  onOpen,
-}: {
-  label: string;
-  current?: PickItem;
-  onOpen: () => void;
-}) {
+function Trigger({ label, current, onOpen }: { label: string; current?: PickItem; onOpen: () => void }) {
   return (
     <div>
       <div className={`mb-1.5 ${KX_LABEL}`}>{label}</div>
@@ -118,11 +174,17 @@ function Trigger({
         className="group flex w-full items-center gap-2.5 bg-card/70 px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)] backdrop-blur-[3px] transition-all hover:-translate-y-[1px] hover:bg-card"
       >
         {current ? <ItemMedia item={current} /> : null}
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
-          {current?.name ?? "Choose…"}
-        </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground transition-colors group-hover:text-foreground">change</span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{current?.name ?? "Choose…"}</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground transition-colors group-hover:text-foreground">browse</span>
       </button>
+    </div>
+  );
+}
+
+function CountHint({ shown, total, noun }: { shown: number; total: number; noun: string }) {
+  return (
+    <div className="px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+      {shown === total ? `${total} ${noun}` : `${shown} of ${total} ${noun}`}
     </div>
   );
 }
@@ -150,14 +212,18 @@ export function CommandPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [active, setActive] = useState<Record<string, Set<string>>>({});
   const [cursor, setCursor] = useState(0);
   const current = items.find((i) => i.id === value);
-  const filtered = useFiltered(items, q, {});
+  const facets = useFacets(items);
+  const filtered = useFiltered(items, q, active);
   const visible = filtered.slice(0, RESULT_CAP);
+  const noun = label.toLowerCase();
 
   function close() {
     setOpen(false);
     setQ("");
+    setActive({});
     setCursor(0);
   }
 
@@ -189,11 +255,7 @@ export function CommandPicker({
       {open ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh]">
           <div className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]" onClick={close} />
-          <div
-            role="dialog"
-            aria-label={label}
-            className="relative z-10 w-full max-w-lg overflow-hidden bg-card shadow-[0_24px_70px_rgba(30,35,45,0.3)]"
-          >
+          <div role="dialog" aria-label={label} className="relative z-10 w-full max-w-lg overflow-hidden bg-card shadow-[0_24px_70px_rgba(30,35,45,0.3)]">
             <div className="flex items-center gap-2.5 px-4 pb-2.5 pt-3">
               <span className="stamp text-[var(--sumire)]">{label}</span>
               <input
@@ -203,30 +265,22 @@ export function CommandPicker({
                   setQ(e.target.value);
                   setCursor(0);
                 }}
-                placeholder="type to filter…"
+                placeholder={searchPlaceholder(facets)}
                 className={`${KX_FIELD} min-w-0 flex-1`}
               />
               <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">esc</span>
             </div>
+            {facets.length > 0 ? (
+              <div className="px-4 pb-3">
+                <FacetChips facets={facets} active={active} onToggle={(k, v) => { toggle(setActive, k, v); setCursor(0); }} />
+              </div>
+            ) : null}
             <div className="sticker-perforation" />
             <div className="max-h-[52vh] overflow-y-auto py-1" role="listbox">
               {visible.map((it, i) => (
-                <ItemRow
-                  key={it.id}
-                  item={it}
-                  active={i === cursor}
-                  onPick={() => {
-                    onSelect(it.id);
-                    close();
-                  }}
-                />
+                <ItemRow key={it.id} item={it} active={i === cursor} onPick={() => { onSelect(it.id); close(); }} />
               ))}
-              {filtered.length === 0 ? <EmptyResults /> : null}
-              {filtered.length > visible.length ? (
-                <div className="px-3 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
-                  showing {visible.length} of {filtered.length}
-                </div>
-              ) : null}
+              {filtered.length === 0 ? <EmptyResults /> : <CountHint shown={visible.length} total={filtered.length} noun={noun} />}
             </div>
           </div>
         </div>
@@ -252,31 +306,11 @@ export function DrawerPicker({
   const [q, setQ] = useState("");
   const [active, setActive] = useState<Record<string, Set<string>>>({});
   const current = items.find((i) => i.id === value);
+  const facets = useFacets(items);
   const filtered = useFiltered(items, q, active);
   const visible = filtered.slice(0, RESULT_CAP);
   const panelRef = useRef<HTMLDivElement>(null);
-
-  const facets = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
-    for (const it of items) {
-      for (const [k, v] of Object.entries(it.facets ?? {})) {
-        if (!v) continue;
-        (map[k] ??= new Set()).add(v);
-      }
-    }
-    return Object.entries(map).map(([k, vs]) => [k, [...vs].sort()] as const);
-  }, [items]);
-
-  function toggleFacet(key: string, val: string) {
-    setActive((prev) => {
-      const next: Record<string, Set<string>> = {};
-      for (const [k, s] of Object.entries(prev)) next[k] = new Set(s);
-      const set = (next[key] ??= new Set());
-      if (set.has(val)) set.delete(val);
-      else set.add(val);
-      return next;
-    });
-  }
+  const noun = label.toLowerCase();
 
   useEffect(() => {
     if (!open) return;
@@ -293,77 +327,32 @@ export function DrawerPicker({
       {open ? (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-label={label}
-            className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-card shadow-[-24px_0_70px_rgba(30,35,45,0.25)]"
-          >
+          <div ref={panelRef} role="dialog" aria-label={label} className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-card shadow-[-24px_0_70px_rgba(30,35,45,0.25)]">
             <header className="flex items-center justify-between px-4 pb-2.5 pt-3.5">
               <span className="stamp text-[var(--sumire)]">{label}</span>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                close
-              </button>
+              <button type="button" onClick={() => setOpen(false)} className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground">close</button>
             </header>
             <div className="px-4 pb-3">
-              <input
-                autoFocus
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="search…"
-                className={KX_FIELD}
-              />
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={searchPlaceholder(facets)} className={KX_FIELD} />
             </div>
             {facets.length > 0 ? (
               <>
                 <div className="sticker-perforation mx-4" />
-                <div className="space-y-2 px-4 py-3">
-                  {facets.map(([key, vals]) => (
-                    <div key={key} className="flex flex-wrap items-center gap-1.5">
-                      <span className="mr-1 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">{key}</span>
-                      {vals.map((v) => {
-                        const on = active[key]?.has(v) ?? false;
-                        return (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => toggleFacet(key, v)}
-                            data-on={on}
-                            className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-0.5 font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground data-[on=true]:bg-foreground data-[on=true]:text-background"
-                          >
-                            {v}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
+                <div className="px-4 py-3">
+                  <FacetChips facets={facets} active={active} onToggle={(k, v) => toggle(setActive, k, v)} />
                 </div>
               </>
             ) : null}
             <div className="sticker-perforation mx-4" />
             <div className="flex-1 overflow-y-auto py-1" role="listbox">
               {visible.map((it) => (
-                <ItemRow
-                  key={it.id}
-                  item={it}
-                  active={it.id === value}
-                  onPick={() => {
-                    onSelect(it.id);
-                    setOpen(false);
-                  }}
-                />
+                <ItemRow key={it.id} item={it} active={it.id === value} onPick={() => { onSelect(it.id); setOpen(false); }} />
               ))}
               {filtered.length === 0 ? <EmptyResults /> : null}
             </div>
             <div className="sticker-perforation mx-4" />
             <footer className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
-              {filtered.length === items.length
-                ? `${items.length} ${label.toLowerCase()}`
-                : `${filtered.length} of ${items.length}`}
+              {filtered.length === items.length ? `${items.length} ${noun}` : `${filtered.length} of ${items.length} ${noun}`}
             </footer>
           </div>
         </div>

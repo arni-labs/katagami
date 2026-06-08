@@ -98,6 +98,7 @@ export function InlineRemix({
   fixed = {},
   variant = "command",
   enableSave = false,
+  initial,
 }: {
   languages: LanguageOpt[];
   palettes: PaletteOpt[];
@@ -105,13 +106,17 @@ export function InlineRemix({
   fixed?: { language?: string; palette?: string; art?: string };
   variant?: "command" | "drawer";
   enableSave?: boolean;
+  initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [langId, setLangId] = useState(fixed.language ?? languages[0]?.id ?? "");
-  const [palId, setPalId] = useState(fixed.palette ?? palettes[0]?.id ?? "");
-  const [artId, setArtId] = useState(fixed.art ?? art[0]?.id ?? "");
-  const [compIdx, setCompIdx] = useState(0);
+  const [langId, setLangId] = useState(fixed.language ?? initial?.langId ?? languages[0]?.id ?? "");
+  const [palId, setPalId] = useState(fixed.palette ?? initial?.palId ?? palettes[0]?.id ?? "");
+  const [artId, setArtId] = useState(fixed.art ?? initial?.artId ?? art[0]?.id ?? "");
+  const [compIdx, setCompIdx] = useState(() => {
+    const i = COMPS.findIndex((c) => c.key === initial?.compositionKey);
+    return i >= 0 ? i : 0;
+  });
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
