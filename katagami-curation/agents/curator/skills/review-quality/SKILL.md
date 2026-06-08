@@ -106,7 +106,6 @@ For each language specified in the job input (or ALL languages if none specified
    - Generate a DESIGN.md markdown string from the current Katagami fields.
    - YAML front matter must include `version: "alpha"`, `name`, `description`, `colors`, `typography`, `rounded`, `spacing`, and `components`.
    - Markdown sections must include Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, and Do's and Don'ts when source data exists.
-   - Include an explicit `## shadcn/ui Usage` section that points agents to DESIGN.md with shadcn (`/language/{language_id}/DESIGN.with-shadcn.md`) plus `/shadcn.json`, `/shadcn-components.md`, and `/shadcn-shots.json`. It must say to import local primitives from `@/components/ui/*`, apply the generated theme variables, and use the component recipes instead of inventing a second component system.
    - Preserve Katagami-only richness as extra markdown sections: Visual Character, Signature Patterns, Imagery Direction, Generative Canvas.
    - Write it to `/tmp/DESIGN.md` in the sandbox and run:
      ```python
@@ -246,12 +245,8 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     - `/katagami/shadcn/{slug}/components.md`
     - `/katagami/shadcn/{slug}/preview-shots.json`
 
-    `components.md` must include `shadcn/ui Components`, an author line naming
-    `katagami-agent`, `ShadSync visual profile`, `Signature component
-    recipes`, `Preview shots`, `Copy-paste component example`, and concrete
-    TSX that imports from `@/components/ui/*`. It must include concrete
-    Use the exact author line ``Author: `katagami-agent``` so finalizer
-    verification can distinguish agent work from deterministic placeholders.
+    `components.md` must include `shadcn/ui Components`, `ShadSync visual
+    profile`, `Signature component recipes`, `Preview shots`, and concrete
     recipes for `button`, `card`, `input`, `textarea`, `select`, `dialog`,
     `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`, `slider`,
     `tooltip`, `dropdown-menu`, and `table`. It must translate the language's
@@ -261,8 +256,7 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     `preview-shots.json` must use artifact
     `katagami:shadcn-preview-shots`, version `preview-shots-v1`, schema
     `katagami:shadcn-preview-shots/renderable-v1`, `renderable: true`, include
-    top-level `author: "katagami-agent"`, `generatedBy: "katagami-agent"`,
-    `requiresVisualProfile: true`, a top-level `visualProfile` object, include
+    a top-level `visualProfile` object, include
     at least three shots (`application-shell`, `detail-editor`,
     `data-operations`), and include `componentRecipes` for every required
     primitive. Each shot must include a renderable `scene` object with
@@ -331,14 +325,12 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
       `input.previous_file_ids.shadcn_preview_shots_file_id`
     - Both manifests include `author: "katagami-agent"` and
       `requiresVisualProfile: true`
-    - Reading the component spec file returns markdown with
-      an `Author` line naming `katagami-agent`, `## ShadSync visual profile`, and
-      `## Copy-paste component example` importing from `@/components/ui/*`
+    - Reading the component spec file returns markdown with a
+      `## ShadSync visual profile` section
     - Reading the preview-shots file returns JSON with
       `schema == "katagami:shadcn-preview-shots/renderable-v1"`,
-      `author == "katagami-agent"`, `generatedBy == "katagami-agent"`,
-      `requiresVisualProfile == true`, `renderable == true`, at least three
-      `shots`, three `scene` objects, and sixteen `componentRecipes`
+      `renderable == true`, at least three `shots`, three `scene` objects, and
+      sixteen `componentRecipes`
     - `visualProfile.family`, `visualProfile.material`,
       `visualProfile.contour`, and `visualProfile.border` are non-empty and
       visibly match the language's actual component recipes
@@ -350,11 +342,9 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     Do not hand-write or attach `AttachShadcnExport`. The CurationJob finalizer
     deterministically derives `/katagami/shadcn/{slug}/registry-theme.json`
     from the verified Katagami tokens, attaches it with `AttachShadcnExport`,
-    and marks `VerifyShadcnExport`. The finalizer does not author
-    `components.md` or `preview-shots.json`; it only verifies the agent-authored
-    versions and rejects placeholder projections. Your job is to keep native
-    tokens concrete enough to project into shadcn semantic variables and make the
-    component recipes good enough for real app UI.
+    and marks `VerifyShadcnExport`. Your job is to keep native tokens concrete
+    enough to project into shadcn semantic variables and make the component
+    recipes good enough for real app UI.
 16. **Mark reviewed after all artifacts are attached. Do not publish directly and do not archive.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
     files, derives and verifies the shadcn/ui registry theme, verifies

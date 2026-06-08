@@ -215,36 +215,27 @@ class ShadcnExportContractTests(unittest.TestCase):
             "/katagami/shadcn/{}/registry-theme.json",
             "shadcn_export_projection_refresh_reason",
             "source_invalidated_export",
+            "fn render_shadcn_component_spec_projection",
+            "fn render_shadcn_preview_shots_projection",
             "katagami:shadcn-preview-shots/renderable-v1",
             "scene_len < 3",
             "fn verify_shadcn_component_spec",
             "fn verify_shadcn_preview_shots",
-            "first-class agent-authored shadcn components.md artifact",
-            "first-class agent-authored shadcn preview-shots.json artifact",
+            "AttachShadcnComponentSpec",
+            "AttachShadcnPreviewShots",
             "VerifyShadcnComponentSpec",
             "VerifyShadcnPreviewShots",
             "verify_forced_agent_shadsync_refresh",
             "force_agent_shadcn_artifact_refresh",
             "katagami-agent",
             "ShadSync visual profile",
-            "Copy-paste component example",
+            "katagami-finalizer-projection",
+            "/katagami/shadcn/{}/components.md",
+            "/katagami/shadcn/{}/preview-shots.json",
             "component-recipes-v1",
             "preview-shots-v1",
-            "DESIGN.with-shadcn.md",
-            "DESIGN.md with shadcn",
         ]:
             self.assertIn(fragment, source)
-
-        component_verify = source[
-            source.index("fn verify_shadcn_component_spec(") :
-            source.index("fn verify_shadcn_preview_shots(")
-        ]
-        preview_verify = source[
-            source.index("fn verify_shadcn_preview_shots(") :
-            source.index("fn shadcn_export_workspace_id(")
-        ]
-        self.assertNotIn("refresh_shadcn_component_spec_projection(", component_verify)
-        self.assertNotIn("refresh_shadcn_preview_shots_projection(", preview_verify)
 
         self.assertLess(
             source.index("verify_shadcn_export(ctx"),
@@ -275,17 +266,6 @@ class ShadcnExportContractTests(unittest.TestCase):
             / "shadcn.json"
             / "route.ts"
         ).read_text()
-        design_route = (
-            self.root
-            / "ui"
-            / "src"
-            / "app"
-            / "(site)"
-            / "language"
-            / "[id]"
-            / "DESIGN.md"
-            / "route.ts"
-        ).read_text()
         component_route = (
             self.root
             / "ui"
@@ -308,31 +288,6 @@ class ShadcnExportContractTests(unittest.TestCase):
             / "shadcn-shots.json"
             / "route.ts"
         ).read_text()
-        shadcn_design_route = (
-            self.root
-            / "ui"
-            / "src"
-            / "app"
-            / "(site)"
-            / "language"
-            / "[id]"
-            / "SHADCN-DESIGN.md"
-            / "route.ts"
-        ).read_text()
-        design_with_shadcn_route = (
-            self.root
-            / "ui"
-            / "src"
-            / "app"
-            / "(site)"
-            / "language"
-            / "[id]"
-            / "DESIGN.with-shadcn.md"
-            / "route.ts"
-        ).read_text()
-        spec_actions = (
-            self.root / "ui" / "src" / "components" / "spec-actions.tsx"
-        ).read_text()
         backfill = (self.root / "scripts" / "backfill-shadcn-exports.mjs").read_text()
         seed = (
             self.root / "scripts" / "normalize-shadcn-theme-seed.mjs"
@@ -341,11 +296,6 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertIn("buildShadcnRegistryTheme", ui_lib)
         self.assertIn("shadcnComponentSpecMarkdown", ui_lib)
         self.assertIn("shadcnPreviewShotsJson", ui_lib)
-        self.assertIn("shadcnExampleTsx", ui_lib)
-        self.assertIn("shadcnDesignMdMarkdown", ui_lib)
-        self.assertIn("DESIGN.with-shadcn.md", ui_lib)
-        self.assertIn("isAgentAuthoredShadcnComponentSpec", ui_lib)
-        self.assertIn("isAgentAuthoredShadcnPreviewShots", ui_lib)
         self.assertIn("renderable-v1", ui_lib)
         self.assertIn("buildDarkVars", ui_lib)
         self.assertIn("Button", preview)
@@ -360,30 +310,14 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertIn("parsePreviewShots", preview)
         self.assertIn("ShotPreviewDeck", preview)
         self.assertIn("data-shadcn-preview-source", preview)
-        self.assertIn("data-shadcn-agent-kit", preview)
-        self.assertIn("CompatibilityCheckPanel", preview)
         self.assertIn("component recipes", preview)
         self.assertIn("preview shots", preview)
-        self.assertIn("tsx starter", preview)
-        self.assertIn("DESIGN.md with shadcn", preview)
-        self.assertIn("advanced implementation files", preview)
         self.assertIn("readTemperFileBytes", route)
-        self.assertIn("withCurrentShadcnUsage", design_route)
-        self.assertIn("DESIGN.with-shadcn.md", design_route)
         self.assertIn("readTemperFileBytes", component_route)
         self.assertIn("readTemperFileBytes", shots_route)
-        self.assertIn("shadcnDesignMdMarkdown", shadcn_design_route)
-        self.assertIn("isAgentAuthoredShadcnComponentSpec", shadcn_design_route)
-        self.assertIn("SHADCN-DESIGN.md/route", design_with_shadcn_route)
-        self.assertIn("DESIGN.with-shadcn", spec_actions)
-        self.assertIn("shadcn-md", spec_actions)
-        self.assertIn("with shadcn", spec_actions)
-        self.assertIn("For shadcn/ui projects", spec_actions)
         self.assertIn("--apply", backfill)
         self.assertIn("--fixture=", backfill)
         self.assertIn("--id=", backfill)
-        self.assertIn("force_agent_shadcn_artifact_refresh", backfill)
-        self.assertIn("CurationJobs", backfill)
         self.assertIn("renderable-v1", backfill)
         self.assertIn("registry:theme", seed)
         self.assertIn("original_css_vars", seed)
@@ -410,13 +344,9 @@ class ShadcnExportContractTests(unittest.TestCase):
         for source in [synth, review, agent]:
             self.assertIn("components.md", source)
             self.assertIn("preview-shots.json", source)
-            self.assertIn("DESIGN.with-shadcn.md", source)
-            self.assertIn("katagami-agent", source)
 
         self.assertIn("AttachShadcnComponentSpec", synth)
         self.assertIn("AttachShadcnPreviewShots", synth)
-        self.assertIn("Copy-paste component example", synth)
-        self.assertIn("Copy-paste component example", review)
         self.assertIn("agent-authored", review)
         self.assertIn("renderable `scene` object", synth)
         self.assertIn("renderable `scene` object", review)

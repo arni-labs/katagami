@@ -89,9 +89,8 @@ Workspace at `/katagami/`:
 - `/katagami/thumbnails/{slug}/desktop.jpg` — static desktop gallery thumbnails generated from verified embodiments
 - `/katagami/design-md/{slug}/DESIGN.md` — validated DESIGN.md exports
 - `/katagami/shadcn/{slug}/registry-theme.json` — finalizer-generated shadcn/ui registry theme projections
-- `/katagami/shadcn/{slug}/components.md` — agent-authored shadcn/ui component recipes for this language; mark authored artifacts with `katagami-agent`
-- `/katagami/shadcn/{slug}/preview-shots.json` — agent-authored renderable shadcn/ui preview-shot manifest for canonical component scenes; mark authored artifacts with `katagami-agent`
-- `/language/{language_id}/DESIGN.with-shadcn.md` — derived UI route that combines DESIGN.md, shadcn theme variables, component recipes, preview shots, and starter TSX for users who want one shadcn-targeted Markdown file
+- `/katagami/shadcn/{slug}/components.md` — agent-authored shadcn/ui component recipes for this language
+- `/katagami/shadcn/{slug}/preview-shots.json` — agent-authored renderable shadcn/ui preview-shot manifest for canonical component scenes
 - `/katagami/sources/{slug}.md` — deferred source archives, not the source-search hot path
 
 Use PawFS for governed artifacts: embodiments, DESIGN.md exports, shadcn/ui

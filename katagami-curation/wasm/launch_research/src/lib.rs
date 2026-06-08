@@ -117,6 +117,23 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             ),
         );
 
+        let record_body = json!({
+            "source_search_job_id": job_id
+        });
+        let record_resp = ctx.http_call(
+            "PATCH",
+            &format!("{api_url}/tdata/CurationQueries('{query_id}')"),
+            &headers,
+            &record_body.to_string(),
+        )?;
+        if !(200..300).contains(&record_resp.status) {
+            return Err(format!(
+                "Failed to record source_search job '{job_id}' on CurationQuery '{query_id}': HTTP {}: {}",
+                record_resp.status,
+                &record_resp.body[..record_resp.body.len().min(500)]
+            ));
+        }
+
         set_success_result(
             "",
             &json!({

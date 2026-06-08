@@ -351,21 +351,15 @@ Create `/katagami/shadcn/{slug}/components.md` with:
 The recipes must cover `button`, `card`, `input`, `textarea`, `select`,
 `dialog`, `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`,
 `slider`, `tooltip`, `dropdown-menu`, and `table`. It must include a
-top-level author line naming `katagami-agent`, a `ShadSync visual profile`
-section, and copy-paste TSX that imports from `@/components/ui/*`. Use the exact
-author line ``Author: `katagami-agent``` so finalizer verification can
-distinguish agent work from deterministic placeholders. The recipes must
-translate the language's
+`ShadSync visual profile` section. The recipes must translate the language's
 actual `visual_character`, `signature_patterns`, surfaces, borders, density,
 focus, and motion into shadcn component usage.
 
 Create `/katagami/shadcn/{slug}/preview-shots.json` with artifact
 `katagami:shadcn-preview-shots`, version `preview-shots-v1`, schema
-`katagami:shadcn-preview-shots/renderable-v1`, `renderable: true`, top-level
-`author: "katagami-agent"`, `generatedBy: "katagami-agent"`,
-`requiresVisualProfile: true`, at least three shots (`application-shell`,
-`detail-editor`, `data-operations`), a top-level `visualProfile` object, and a
-`componentRecipes` array covering every
+`katagami:shadcn-preview-shots/renderable-v1`, `renderable: true`, at least
+three shots (`application-shell`, `detail-editor`, `data-operations`), a
+top-level `visualProfile` object, and a `componentRecipes` array covering every
 required primitive. Each shot must name the shadcn primitives used, composition,
 must-show states, avoid rules, and a renderable `scene` object with `eyebrow`,
 `headline`, `description`, action labels, and concrete `stats`, `fields`, or
