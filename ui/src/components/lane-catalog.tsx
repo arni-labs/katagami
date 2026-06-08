@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Search } from "lucide-react";
 import { PaletteCard, type PaletteItem } from "@/components/palette-card";
 import { ArtStyleCard, type ArtStyleItem } from "@/components/art-style-card";
@@ -54,9 +55,9 @@ export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
       {filtered.length ? (
         <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <div key={p.id} className="group min-w-0">
+            <Link key={p.id} href={`/palettes/${p.id}`} prefetch={false} className="group block min-w-0">
               <PaletteCard palette={p} />
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
@@ -82,9 +83,9 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
       {filtered.length ? (
         <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((a) => (
-            <div key={a.id} className="group min-w-0">
+            <Link key={a.id} href={`/art-styles/${a.id}`} prefetch={false} className="group block min-w-0">
               <ArtStyleCard art={a} />
-            </div>
+            </Link>
           ))}
         </div>
       ) : (

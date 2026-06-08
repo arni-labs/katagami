@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getDesignLanguage, getFileUrl } from "@/lib/odata";
+import {
+  getDesignLanguage,
+  getFileUrl,
+  listPaletteSystems,
+  listArtStyles,
+} from "@/lib/odata";
+import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { InlineRemix } from "@/components/remix/inline-remix";
 import { readTemperFileText } from "@/lib/temper-files";
 import {
   designMdToMarkdown,
@@ -79,6 +86,19 @@ export default async function LanguageDetailPage({
   } catch {
     notFound();
   }
+
+  // Lanes for the in-page remix (swap palette + art on this language).
+  const [paletteRows, artRows] = await Promise.all([
+    listPaletteSystems().catch(() => []),
+    listArtStyles().catch(() => []),
+  ]);
+  const remixLangOpts = toLanguageOpts([lang]);
+  const remixPalOpts = toPaletteOpts(paletteRows);
+  const remixArtOpts = toArtOpts(artRows);
+  const canRemix =
+    remixLangOpts[0]?.landingUrl &&
+    remixPalOpts.length > 0 &&
+    remixArtOpts.length > 0;
 
   const f = lang.fields;
 
@@ -327,6 +347,27 @@ export default async function LanguageDetailPage({
           </section>
         </div>
       </div>
+
+      {canRemix ? (
+        <section>
+          <Perforation className="mb-8" />
+          <SectionHeading eyebrow="remix lane" eyebrowColor="salad">
+            <Marker color="salad">try a remix</Marker>
+          </SectionHeading>
+          <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
+            Keep <span className="text-foreground">{name}</span> and swap a palette and an art
+            style onto it — the landing &amp; dashboard recolor live. The Studio does the same
+            with all three lanes free.
+          </p>
+          <InlineRemix
+            languages={remixLangOpts}
+            palettes={remixPalOpts}
+            art={remixArtOpts}
+            fixed={{ language: id }}
+            variant="drawer"
+          />
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -3,11 +3,12 @@ import {
   listPaletteSystems,
   listArtStyles,
   listRemixes,
-  getFileUrl,
-  parseJson,
-  paletteRoles,
 } from "@/lib/odata";
-import { RemixStudio } from "@/components/remix-studio";
+import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import Link from "next/link";
+import { PageHero, Marker } from "@/components/page-hero";
+import { InlineRemix } from "@/components/remix/inline-remix";
+import { SavedMixes, type SavedMix } from "@/components/remix/saved-mixes";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,6 @@ export const metadata = {
   title: "Remix Studio — Katagami",
   description: "Mix a UI language, a palette, and an art style into a portable creative brief.",
 };
-
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
-}
 
 export default async function StudioPage() {
   const [languages, palettes, artStyles, savedRemixes] = await Promise.all([
@@ -29,31 +25,16 @@ export default async function StudioPage() {
     listRemixes("Status eq 'Saved'").catch(() => []),
   ]);
 
-  const ui = languages.map((l) => ({
-    id: l.entity_id,
-    name: l.fields.name ?? "Untitled",
-    tokens: l.fields.tokens ?? "",
-    landingUrl: l.fields.landing_file_id ? getFileUrl(l.fields.landing_file_id) : "",
-    dashboardUrl: l.fields.dashboard_file_id ? getFileUrl(l.fields.dashboard_file_id) : "",
-  }));
-  const pal = palettes.map((p) => ({
-    id: p.entity_id,
-    name: p.fields.name ?? "Untitled",
-    roles: JSON.stringify(paletteRoles(p.fields)),
-    thumb: p.fields.thumbnail_file_id ? getFileUrl(p.fields.thumbnail_file_id) : "",
-  }));
-  const art = artStyles.map((a) => ({
-    id: a.entity_id,
-    name: a.fields.name ?? "Untitled",
-    medium: a.fields.medium ?? "",
-    promptTemplate: a.fields.prompt_template ?? "",
-    negativePrompt: a.fields.negative_prompt ?? "",
-    slotRecipes: a.fields.slot_recipes ?? "{}",
-    refs: refUrls(a.fields.reference_image_file_ids),
-    thumb: a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "",
-  }));
+  const ui = toLanguageOpts(languages);
+  const pal = toPaletteOpts(palettes);
+  const art = toArtOpts(artStyles);
 
-  const saved = savedRemixes.map((r) => ({
+  const names = {
+    ui: Object.fromEntries(ui.map((o) => [o.id, o.name])),
+    palette: Object.fromEntries(pal.map((o) => [o.id, o.name])),
+    art: Object.fromEntries(art.map((o) => [o.id, o.name])),
+  };
+  const saved: SavedMix[] = savedRemixes.map((r) => ({
     id: r.entity_id,
     ui: r.fields.design_language_id ?? "",
     palette: r.fields.palette_system_id ?? "",
@@ -62,5 +43,29 @@ export default async function StudioPage() {
     rating: Number(r.fields.rating ?? r.fields.Rating ?? 0),
   }));
 
-  return <RemixStudio ui={ui} palettes={pal} art={art} saved={saved} />;
+  const haveAll = ui.length > 0 && pal.length > 0 && art.length > 0;
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
+      <PageHero
+        eyebrow="Remix lane"
+        eyebrowAccent="salad"
+        title={<>The <Marker color="salad">remix</Marker> studio</>}
+        description="Pick a UI language, a palette, and an art style. The preview is that language's own landing & dashboard — recolored by the palette, given the art style's hero. Live, no generation."
+      />
+
+      {!haveAll ? (
+        <div className="paper-card mt-8 rounded-[var(--radius-lg)] p-5 text-sm text-muted-foreground">
+          Needs a Published entry in each lane — see the{" "}
+          <Link href="/palettes" className="ink-underline text-foreground">palettes</Link> and{" "}
+          <Link href="/art-styles" className="ink-underline text-foreground">art styles</Link> catalogs.
+        </div>
+      ) : (
+        <div className="mt-8 space-y-5">
+          <InlineRemix languages={ui} palettes={pal} art={art} variant="command" enableSave />
+          <SavedMixes saved={saved} names={names} />
+        </div>
+      )}
+    </div>
+  );
 }
