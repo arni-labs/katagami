@@ -58,6 +58,17 @@ name = "design_language_ids"
 type = "string"
 initial = "[]"
 
+# Multi-lane remix: ids of palette/art-style entities created by a sourcing job.
+[[state]]
+name = "palette_system_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "art_style_ids"
+type = "string"
+initial = "[]"
+
 [[state]]
 name = "review_input"
 type = "string"
@@ -492,6 +503,42 @@ effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 # ADR-0046: inline trigger — migrated from [[integration]] below.
 # Post-parse expansion re-synthesizes the equivalent Integration so
 # the existing WASM runtime handles execution unchanged.
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
+[[action]]
+name = "CompletePaletteSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["palette_system_ids", "output"]
+hint = "Palette synthesis completed. Finalizer verifies attached artifacts and walks each PaletteSystem to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
+[[action]]
+name = "CompleteArtStyleSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["art_style_ids", "output"]
+hint = "Art-style synthesis completed. Finalizer verifies attached artifacts and walks each ArtStyle to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
 [[action.triggers]]
 name = "finalize_spawned_session"
 kind = "wasm"

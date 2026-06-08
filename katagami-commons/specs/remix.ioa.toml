@@ -1,0 +1,119 @@
+# Remix — I/O Automaton Specification
+#
+# A saved cross-lane mix: one DesignLanguage + one PaletteSystem + one ArtStyle +
+# a composition key, plus the per-slot reference-image assignments used in the
+# preview and an optional cached composite brief. Light by design — the live
+# preview works without persisting; a Remix exists only once a human hits Save.
+#
+# Rating a Remix emits RemixRatedEvent; the curation taste-distillation pipeline
+# consumes rated remixes to mint `remix-compatibility` TasteRules (the taste loop).
+# Coupling stays clean: commons emits the signal, curation distills it.
+#
+# Lifecycle: Draft -> Saved -> Archived
+#                       ^         |
+#                       └─────────┘ (Restore)
+
+[automaton]
+name = "Remix"
+states = ["Draft", "Saved", "Archived"]
+initial = "Draft"
+
+allow_indefinite_states = ["Draft", "Saved", "Archived"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_selection"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_rating"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "usage_count"
+type = "counter"
+initial = 0
+
+# --- Actions ---
+
+[[action]]
+name = "SetSelection"
+kind = "input"
+from = ["Draft"]
+effect = [{ type = "set_bool", var = "has_selection", value = "true" }]
+params = ["design_language_id", "palette_system_id", "art_style_id", "composition_key"]
+hint = "Set the three lane selections and the composition key for this mix."
+
+[[action]]
+name = "SetSlotAssignments"
+kind = "input"
+from = ["Draft", "Saved"]
+params = ["slot_assignments"]
+hint = "Set the per-slot reference-image assignments used in the preview (JSON: slot key -> reference image id/url)."
+
+[[action]]
+name = "AttachBrief"
+kind = "input"
+from = ["Draft", "Saved"]
+params = ["brief_file_id"]
+hint = "Attach a cached composite-brief artifact for this mix (optional; the brief route can also build on demand)."
+
+[[action]]
+name = "Save"
+kind = "internal"
+from = ["Draft"]
+to = "Saved"
+guard = [{ type = "is_true", var = "has_selection" }]
+hint = "Persist the mix once a selection exists. Pins it for sharing and rating."
+
+[[action]]
+name = "Rate"
+kind = "input"
+from = ["Saved"]
+effect = [{ type = "set_bool", var = "has_rating", value = "true" }]
+params = ["rating"]
+hint = "Record a 1-5 rating for this mix. Feeds the remix-compatibility taste loop via RemixRatedEvent."
+
+[[action]]
+name = "IncrementUsage"
+kind = "input"
+from = ["Saved"]
+effect = "increment usage_count"
+hint = "Record that this mix's brief was copied or fetched by an agent."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Saved"]
+to = "Archived"
+params = ["curator_notes"]
+hint = "Archive a saved mix while preserving a governed restore path. Only Saved mixes are archivable (a never-saved Draft is ephemeral); this keeps the SavedRequiresSelection invariant intact across Archive -> Restore."
+
+[[action]]
+name = "Restore"
+kind = "input"
+from = ["Archived"]
+to = "Saved"
+hint = "Restore an archived mix."
+
+# --- Output Actions ---
+
+[[action]]
+name = "RemixSavedEvent"
+kind = "output"
+hint = "Emitted when a mix is saved."
+
+[[action]]
+name = "RemixRatedEvent"
+kind = "output"
+hint = "Emitted when a mix is rated. Consumed by curation taste-distillation to mint remix-compatibility TasteRules."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "SavedRequiresSelection"
+when = ["Saved"]
+assert = "has_selection"

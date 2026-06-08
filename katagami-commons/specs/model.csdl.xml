@@ -54,6 +54,11 @@
         <Property Name="EmbodimentAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Composition embodiments: bespoke Landing + Dashboard screens (HTML), tokenized for remix. Gated like the embodiment. -->
+        <Property Name="LandingFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DashboardFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasCompositions" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CompositionsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
@@ -155,12 +160,154 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- PaletteSystem: a curated, remixable color system (roles + ramps + proof scenes + token export) -->
+      <EntityType Name="PaletteSystem">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Core spec (JSON). Identity = signature (ordered list, [0]=primary accent) + neutrals. -->
+        <Property Name="Signature" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Neutrals" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Semantic" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Mood" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Ramps" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="ProofScenes" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="UsageGuidance" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Token export: generated portable projection (CSS vars / DTCG) -->
+        <Property Name="TokensExportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TokensExportAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TokensExportAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TokensExportFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="tokens-v1" />
+        <Property Name="TokensExportManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasTokensExport" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="TokensExportVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Gallery thumbnail (swatch grid) -->
+        <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Lineage -->
+        <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LineageType" Type="Edm.String" Nullable="false" DefaultValue="original" />
+        <Property Name="GenerationNumber" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Classification -->
+        <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- Quality signals -->
+        <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewStatus" Type="Edm.String" Nullable="false" DefaultValue="unreviewed" />
+        <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Gallery display -->
+        <Property Name="Featured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DisplayOrder" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Timestamps -->
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- ArtStyle: an engine-agnostic style-transfer recipe (prompt template + reference images + slot recipes + proof shots) -->
+      <EntityType Name="ArtStyle">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Recipe -->
+        <Property Name="Medium" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PromptTemplate" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="NegativePrompt" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EngineHints" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="SlotRecipes" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasSlotRecipes" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Guidance" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Reference images: the look + the mixer's zero-generation preview material -->
+        <Property Name="ReferenceImageFileIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ReferenceManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="ReferenceAssets" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasReferenceImages" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReferenceImagesVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Proof shots: canonical subjects rendered in-style -->
+        <Property Name="ProofShotsFileIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ProofShotsManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasProofShots" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ProofShotsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Gallery thumbnail -->
+        <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Lineage -->
+        <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LineageType" Type="Edm.String" Nullable="false" DefaultValue="original" />
+        <Property Name="GenerationNumber" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Classification -->
+        <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- Quality signals -->
+        <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewStatus" Type="Edm.String" Nullable="false" DefaultValue="unreviewed" />
+        <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Gallery display -->
+        <Property Name="Featured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DisplayOrder" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Timestamps -->
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- Remix: a saved cross-lane mix (DesignLanguage + PaletteSystem + ArtStyle + composition) -->
+      <EntityType Name="Remix">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="PaletteSystemId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CompositionKey" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasSelection" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SlotAssignments" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="BriefFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Rating" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="HasRating" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <EntityContainer Name="KatagamiCommonsContainer">
         <EntitySet Name="DesignLanguages" EntityType="Katagami.DesignLanguage" />
         <EntitySet Name="DesignElements" EntityType="Katagami.DesignElement" />
         <EntitySet Name="DesignSources" EntityType="Katagami.DesignSource" />
         <EntitySet Name="ElementManifests" EntityType="Katagami.ElementManifest" />
         <EntitySet Name="Taxonomies" EntityType="Katagami.Taxonomy" />
+        <EntitySet Name="PaletteSystems" EntityType="Katagami.PaletteSystem" />
+        <EntitySet Name="ArtStyles" EntityType="Katagami.ArtStyle" />
+        <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
       </EntityContainer>
 
     </Schema>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Element embodiment · Swiss Grid System.
+     The canonical-elements showcase: every UI primitive rendered in this
+     language's taste (Helvetica, strict 12-col grid, hairline rules, a single
+     red accent, zero ornament). Tokenized so color stays honest, but it renders
+     in the language's own palette. This is the "in the wild" reference. -->
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f5f5f5; --text:#111111; --muted:#666666;
+    --border:#e0e0e0; --accent:#d72638; --on-accent:#ffffff;
+    --success:#2f7d4f; --warning:#b8860b; --error:#d72638; --info:#1f5f8b;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+
+  /* masthead */
+  header.mast{border-bottom:2px solid var(--text);position:sticky;top:0;background:var(--bg);z-index:5}
+  .mast .row{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+  .brand{font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .brand small{font-weight:400;color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-left:10px}
+  .nav{display:flex;gap:26px;font-size:13px;font-weight:500}
+  .nav a{padding-bottom:2px;border-bottom:2px solid transparent}
+  .nav a.on{border-color:var(--accent)}
+
+  /* section scaffolding */
+  section{border-top:1px solid var(--text);padding:40px 0}
+  .seclabel{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;align-items:baseline;margin-bottom:26px}
+  .seclabel .idx{grid-column:1/2;font-size:12px;font-weight:700;color:var(--accent)}
+  .seclabel h2{grid-column:2/8;font-size:24px;font-weight:700;letter-spacing:-.02em}
+  .seclabel p{grid-column:8/13;font-size:13px;color:var(--muted)}
+  .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:24px}
+
+  /* type scale */
+  .type .d{grid-column:1/9}
+  .type .d .l{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border);padding-top:6px;margin-top:18px}
+  .t-display{font-size:64px;line-height:.96;letter-spacing:-.04em;font-weight:700}
+  .t-h1{font-size:40px;line-height:1.02;letter-spacing:-.03em;font-weight:700}
+  .t-h2{font-size:26px;letter-spacing:-.02em;font-weight:700}
+  .t-body{font-size:16px;max-width:60ch;color:var(--text)}
+  .t-small{font-size:13px;color:var(--muted)}
+  .scale{grid-column:9/13;border-left:1px solid var(--border);padding-left:20px}
+  .scale div{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--border)}
+  .scale b{color:var(--text);font-variant-numeric:tabular-nums}
+
+  /* buttons */
+  .btnrow{grid-column:1/13;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--on-accent);padding:12px 22px;font-weight:700;font-size:14px;letter-spacing:.01em;border:0;cursor:pointer;transition:opacity .15s}
+  .btn:hover{opacity:.88}
+  .btn.sec{background:var(--text)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--text)}
+  .btn.link{background:transparent;color:var(--accent);padding:12px 0;text-decoration:underline;text-underline-offset:3px}
+  .btn.sm{padding:8px 14px;font-size:12px}
+  .btn[disabled]{opacity:.35;cursor:not-allowed}
+
+  /* form */
+  .form{grid-column:1/7;display:flex;flex-direction:column;gap:18px}
+  .field label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field input,.field select,.field textarea{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--text);background:var(--bg);color:var(--text);border-radius:0}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .field .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .choices{grid-column:7/13;display:flex;flex-direction:column;gap:16px}
+  .check{display:flex;gap:11px;align-items:flex-start;font-size:14px}
+  .box{width:18px;height:18px;border:1px solid var(--text);flex:none;display:grid;place-items:center;margin-top:1px}
+  .box.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .box.rad{border-radius:50%}
+  .switch{width:42px;height:22px;border:1px solid var(--text);border-radius:999px;position:relative;flex:none}
+  .switch.on{background:var(--accent);border-color:var(--accent)}
+  .switch i{position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--text);border-radius:50%;transition:left .15s}
+  .switch.on i{left:22px;background:#fff}
+
+  /* cards */
+  .cards{grid-column:1/13;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .card{border:1px solid var(--border);background:var(--surface);padding:0}
+  .card .cap{aspect-ratio:16/9;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  .card .body{padding:18px}
+  .card h3{font-size:17px;letter-spacing:-.01em;margin-bottom:8px}
+  .card p{font-size:13px;color:var(--muted);line-height:1.55}
+  .card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:12px}
+
+  /* badges + alerts */
+  .badges{grid-column:1/6;display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
+  .tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--text)}
+  .tag.solid{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .tag.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .alerts{grid-column:6/13;display:flex;flex-direction:column;gap:12px}
+  .alert{display:flex;gap:12px;padding:13px 16px;border:1px solid var(--text);border-left-width:4px;font-size:13px;align-items:center}
+  .alert .k{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+  .alert.s{border-left-color:var(--success)} .alert.s .k{color:var(--success)}
+  .alert.w{border-left-color:var(--warning)} .alert.w .k{color:var(--warning)}
+  .alert.e{border-left-color:var(--error)} .alert.e .k{color:var(--error)}
+  .alert.i{border-left-color:var(--info)} .alert.i .k{color:var(--info)}
+
+  /* tabs */
+  .tabs{grid-column:1/13}
+  .tablist{display:flex;gap:0;border-bottom:1px solid var(--text)}
+  .tablist button{font:inherit;font-size:13px;font-weight:600;background:none;border:0;border-bottom:2px solid transparent;padding:11px 18px;cursor:pointer;color:var(--muted);margin-bottom:-1px}
+  .tablist button.on{color:var(--text);border-color:var(--accent)}
+  .tabpane{padding:20px 0;font-size:14px;color:var(--muted);max-width:64ch}
+
+  /* table */
+  .tablewrap{grid-column:1/13;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
+  th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--surface)}
+  td.num{font-variant-numeric:tabular-nums;text-align:right}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px}
+  .pill.ok{color:var(--success);border:1px solid var(--success)}
+  .pill.pend{color:var(--warning);border:1px solid var(--warning)}
+
+  /* avatars + pagination */
+  .meta{grid-column:1/13;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+  .avatars{display:flex}
+  .avatars .a{width:38px;height:38px;border-radius:50%;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:13px;font-weight:700;border:2px solid var(--bg);margin-left:-8px}
+  .avatars .a:first-child{margin-left:0}
+  .avatars .a.acc{background:var(--accent)}
+  .pager{display:flex;gap:6px}
+  .pager a{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--border);font-size:13px;font-variant-numeric:tabular-nums}
+  .pager a.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+  footer.foot{border-top:2px solid var(--text);padding:30px 0;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);letter-spacing:.04em}
+</style>
+</head>
+<body>
+  <header class="mast"><div class="wrap row">
+    <div class="brand">SWISS<small>Grid System</small></div>
+    <nav class="nav"><a class="on">Elements</a><a>Type</a><a>Grid</a><a>Tokens</a><a>About</a></nav>
+  </div></header>
+
+  <main class="wrap">
+    <!-- TYPE -->
+    <section class="type">
+      <div class="seclabel"><span class="idx">01</span><h2>Typography</h2><p>Helvetica Neue. Hierarchy by size and weight, never decoration.</p></div>
+      <div class="grid12">
+        <div class="d">
+          <div class="t-display">Clarity</div>
+          <div class="l">Display · 64 / 700</div>
+          <div class="t-h1" style="margin-top:18px">Order is the visible form of clarity</div>
+          <div class="l">Heading · 40 / 700</div>
+          <p class="t-body" style="margin-top:18px">The grid is the instrument that keeps every element honest. Twelve columns, consistent gutters, flush-left ranging — and one accent reserved for the moment that matters.</p>
+          <div class="l">Body · 16 / 400</div>
+          <p class="t-small" style="margin-top:14px">Captions and metadata sit quietly in muted grey at thirteen pixels.</p>
+        </div>
+        <div class="scale">
+          <div><span>Display</span><b>64</b></div>
+          <div><span>H1</span><b>40</b></div>
+          <div><span>H2</span><b>26</b></div>
+          <div><span>Body</span><b>16</b></div>
+          <div><span>Small</span><b>13</b></div>
+          <div><span>Caption</span><b>11</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUTTONS -->
+    <section>
+      <div class="seclabel"><span class="idx">02</span><h2>Buttons</h2><p>Square corners, solid weight. One accent action per view.</p></div>
+      <div class="grid12"><div class="btnrow">
+        <button class="btn">Primary action</button>
+        <button class="btn sec">Secondary</button>
+        <button class="btn ghost">Ghost</button>
+        <button class="btn link">Text link →</button>
+        <button class="btn sm">Small</button>
+        <button class="btn" disabled>Disabled</button>
+      </div></div>
+    </section>
+
+    <!-- FORMS -->
+    <section>
+      <div class="seclabel"><span class="idx">03</span><h2>Forms</h2><p>Hairline inputs, accent focus ring, uppercase micro-labels.</p></div>
+      <div class="grid12">
+        <div class="form">
+          <div class="field"><label>Full name</label><input value="Jan Tschichold"></div>
+          <div class="field"><label>Email</label><input placeholder="you@studio.com"><div class="hint">We reply within one working day.</div></div>
+          <div class="field"><label>Discipline</label><select><option>Editorial design</option><option>Typography</option><option>Identity</option></select></div>
+          <div class="field"><label>Message</label><textarea rows="3">Set in Helvetica, themed live.</textarea></div>
+        </div>
+        <div class="choices">
+          <div class="check"><span class="box on">✓</span><span><b>Newsletter</b><br><span class="t-small">A monthly note on grids and type.</span></span></div>
+          <div class="check"><span class="box"></span><span>Share work in the index</span></div>
+          <div class="check"><span class="box rad on"></span><span>Plan — Studio</span></div>
+          <div class="check"><span class="box rad"></span><span>Plan — Individual</span></div>
+          <div class="check" style="align-items:center"><span class="switch on"><i></i></span><span>Tabular figures</span></div>
+          <div class="check" style="align-items:center"><span class="switch"><i></i></span><span>Reduce motion</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section>
+      <div class="seclabel"><span class="idx">04</span><h2>Cards</h2><p>Bordered, flush content, a single quiet image block.</p></div>
+      <div class="grid12"><div class="cards">
+        <div class="card"><div class="cap">Plate 01</div><div class="body"><h3>The Modular Grid</h3><p>Subdivisions that keep image and text in lockstep across the spread.</p><div class="foot"><span class="t-small">Essay</span><span class="btn link" style="padding:0">Read →</span></div></div></div>
+        <div class="card"><div class="cap">Plate 02</div><div class="body"><h3>Tabular Figures</h3><p>Numerals that align in columns so data reads as a single object.</p><div class="foot"><span class="t-small">Note</span><span class="btn link" style="padding:0">Read →</span></div></div></div>
+        <div class="card"><div class="cap">Plate 03</div><div class="body"><h3>One Accent</h3><p>Reserve color for the single action that deserves the eye.</p><div class="foot"><span class="t-small">Rule</span><span class="btn link" style="padding:0">Read →</span></div></div></div>
+      </div></div>
+    </section>
+
+    <!-- BADGES + ALERTS -->
+    <section>
+      <div class="seclabel"><span class="idx">05</span><h2>Badges &amp; status</h2><p>Outlined tags; semantic color confined to the rule.</p></div>
+      <div class="grid12">
+        <div class="badges">
+          <span class="tag">Default</span><span class="tag solid">Solid</span><span class="tag acc">Accent</span>
+          <span class="tag">Draft</span><span class="tag">Review</span><span class="tag">Published</span><span class="tag">v1.0</span>
+        </div>
+        <div class="alerts">
+          <div class="alert s"><span class="k">OK</span><span>Specification verified against all twelve checks.</span></div>
+          <div class="alert i"><span class="k">Info</span><span>The grid recalculates on viewport change.</span></div>
+          <div class="alert w"><span class="k">Hold</span><span>Two captions exceed the measure.</span></div>
+          <div class="alert e"><span class="k">Error</span><span>Accent used twice in a single view.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section>
+      <div class="seclabel"><span class="idx">06</span><h2>Tabs</h2><p>Underline indicator in the accent; flush-left set.</p></div>
+      <div class="grid12"><div class="tabs">
+        <div class="tablist"><button class="on">Overview</button><button>Specimen</button><button>Spacing</button><button>Tokens</button></div>
+        <div class="tabpane">A twelve-column grid with twenty-four-pixel gutters. Content ranges flush left; the right margin is allowed to vary. Hierarchy is built from the type scale alone — the accent is held in reserve.</div>
+      </div></div>
+    </section>
+
+    <!-- TABLE -->
+    <section>
+      <div class="seclabel"><span class="idx">07</span><h2>Table</h2><p>Hairline rows, tabular numerals, status pills.</p></div>
+      <div class="grid12"><div class="tablewrap"><table>
+        <thead><tr><th>Specimen</th><th>Weight</th><th class="num">Size</th><th class="num">Leading</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Display</td><td>Bold 700</td><td class="num">64</td><td class="num">0.96</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Heading</td><td>Bold 700</td><td class="num">40</td><td class="num">1.02</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Body</td><td>Regular 400</td><td class="num">16</td><td class="num">1.50</td><td><span class="pill ok">Set</span></td></tr>
+          <tr><td>Caption</td><td>Regular 400</td><td class="num">11</td><td class="num">1.40</td><td><span class="pill pend">Review</span></td></tr>
+        </tbody>
+      </table></div></div>
+    </section>
+
+    <!-- AVATARS + PAGINATION -->
+    <section>
+      <div class="seclabel"><span class="idx">08</span><h2>People &amp; paging</h2><p>Initial avatars, square pagination.</p></div>
+      <div class="grid12"><div class="meta">
+        <div class="avatars"><span class="a acc">JT</span><span class="a">AH</span><span class="a">MB</span><span class="a">+6</span></div>
+        <div class="pager"><a>‹</a><a class="on">1</a><a>2</a><a>3</a><a>4</a><a>›</a></div>
+      </div></div>
+    </section>
+  </main>
+
+  <footer class="foot wrap"><span>© Swiss Grid System — element embodiment</span><span>Helvetica Neue · 12 columns · one accent</span></footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Bespoke dashboard embodiment · Warm Editorial. Color tokens injected by studio. -->
+<style>
+  :root{
+    --bg:#faf6ef; --surface:#f3ece0; --text:#2b2117; --muted:#6b5d4f;
+    --border:#e3d8c6; --accent:#9c4f2b; --on-accent:#fff7ee;
+    --success:#5b6f52; --warning:#b8893f; --error:#a4402b; --info:#4f6470;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.55}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  aside{background:var(--surface);border-right:1px solid var(--border);padding:26px 18px}
+  aside .masthead{font-style:italic;font-size:18px;padding:0 8px 20px}
+  aside a{display:block;padding:10px 14px;font-size:14px;color:var(--muted);border-radius:8px;font-variant:small-caps;letter-spacing:.05em}
+  aside a.on{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-weight:700}
+  main{padding:28px 34px}
+  .bar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px}
+  .bar h1{font-size:30px;letter-spacing:-.01em}
+  .bar .sub{color:var(--muted);font-style:italic;font-size:14px}
+  .btn{background:var(--accent);color:var(--on-accent);padding:10px 20px;border-radius:8px;font-variant:small-caps;letter-spacing:.06em;font-size:14px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:20px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .card .l{font-variant:small-caps;letter-spacing:.08em;color:var(--muted);font-size:13px}
+  .card .n{font-size:34px;margin-top:6px;letter-spacing:-.01em}
+  .card .d{height:4px;border-radius:2px;margin-top:12px}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px}
+  .panel h3{font-size:17px;font-style:italic;margin-bottom:16px}
+  .chart{display:flex;align-items:flex-end;gap:12px;height:160px}
+  .chart .b{flex:1;border-radius:6px 6px 0 0;background:color-mix(in srgb,var(--accent) 70%,var(--surface))}
+  .empty{display:flex;gap:16px;align-items:center;margin-top:18px;padding:18px;border:1px dashed var(--border);border-radius:12px}
+  .empty .dot{width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--accent) 22%,var(--surface));flex:none}
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="masthead">The Warm Review</div>
+      <a class="on">Overview</a><a>Drafts</a><a>Subscribers</a><a>Letters</a><a>Settings</a>
+    </aside>
+    <main>
+      <div class="bar"><div><h1>Good morning</h1><div class="sub">Here is where things stand today.</div></div><span class="btn">New draft</span></div>
+      <div class="cards">
+        <div class="card"><div class="l">Readers</div><div class="n">12,840</div><div class="d" style="background:var(--success)"></div></div>
+        <div class="card"><div class="l">Open rate</div><div class="n">61%</div><div class="d" style="background:var(--accent)"></div></div>
+        <div class="card"><div class="l">Pending</div><div class="n">3</div><div class="d" style="background:var(--warning)"></div></div>
+      </div>
+      <div class="panel">
+        <h3>Engagement, this season</h3>
+        <div class="chart">
+          <div class="b" style="height:48%"></div><div class="b" style="height:64%"></div><div class="b" style="height:52%"></div><div class="b" style="height:88%"></div><div class="b" style="height:70%"></div><div class="b" style="height:60%"></div>
+        </div>
+        <div class="empty"><span class="dot"></span><div><div style="font-style:italic;font-size:16px">No letters scheduled</div><div style="color:var(--muted);font-size:14px">Draft a letter and it will appear here.</div></div></div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

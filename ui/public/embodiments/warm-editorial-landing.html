@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Bespoke landing embodiment · Warm Editorial. Color tokens + --hero-image injected by studio. -->
+<style>
+  :root{
+    --bg:#faf6ef; --surface:#f3ece0; --text:#2b2117; --muted:#6b5d4f;
+    --border:#e3d8c6; --accent:#9c4f2b; --on-accent:#fff7ee;
+    --hero-image:none;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.65}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:760px;margin:0 auto;padding:0 28px}
+  nav{position:absolute;inset:0 0 auto;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:22px 34px;color:#fff8ef}
+  nav .masthead{font-size:20px;font-style:italic;letter-spacing:.01em}
+  nav .n{display:flex;gap:24px;font-size:13px;font-variant:small-caps;letter-spacing:.08em}
+  .hero{position:relative;min-height:540px;display:flex;align-items:center;text-align:center;color:#fff8ef;overflow:hidden}
+  .hero .bg{position:absolute;inset:0;background-image:var(--hero-image);background-size:cover;background-position:center}
+  .hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(43,33,23,.35),rgba(43,33,23,.6))}
+  .hero .inner{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:0 28px}
+  .kicker{font-variant:small-caps;letter-spacing:.2em;font-size:13px;opacity:.9}
+  .hero h1{font-size:clamp(40px,6vw,72px);line-height:1.04;letter-spacing:-.01em;margin:14px 0 0;font-weight:700}
+  .hero .dek{font-size:19px;font-style:italic;opacity:.92;margin-top:18px}
+  .rule{display:flex;align-items:center;gap:14px;color:var(--muted);margin:44px auto 30px;max-width:760px;padding:0 28px}
+  .rule::before,.rule::after{content:"";flex:1;height:1px;background:var(--border)}
+  .rule .mark{color:var(--accent);font-size:18px}
+  article p{font-size:18px;margin:0 0 20px}
+  article p.lead::first-letter{font-size:62px;float:left;line-height:.78;padding:6px 12px 0 0;color:var(--accent);font-weight:700}
+  .pull{font-size:25px;font-style:italic;line-height:1.35;color:var(--accent);border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin:30px 0}
+  .cta{text-align:center;margin:40px 0 8px}
+  .btn{display:inline-block;background:var(--accent);color:var(--on-accent);padding:13px 30px;font-variant:small-caps;letter-spacing:.08em;font-size:16px;border-radius:3px}
+  footer{border-top:1px solid var(--border);margin-top:40px;padding:26px 0;text-align:center;color:var(--muted);font-size:13px;font-variant:small-caps;letter-spacing:.1em}
+</style>
+</head>
+<body>
+  <nav><span class="masthead">The Warm Review</span><span class="n"><span>Essays</span><span>Letters</span><span>Archive</span></span></nav>
+  <header class="hero">
+    <div class="bg"></div><div class="scrim"></div>
+    <div class="inner">
+      <div class="kicker">Volume One — On Craft</div>
+      <h1>Reading is an act of warmth.</h1>
+      <div class="dek">An interface should feel like paper that remembers the reader's hands.</div>
+    </div>
+  </header>
+  <div class="rule"><span class="mark">❧</span></div>
+  <article class="wrap">
+    <p class="lead">Type is the closest thing the web has to a voice. A serif at a comfortable measure, set on a warm ground, slows the eye just enough to let meaning arrive — and that small generosity is the whole of good editorial design.</p>
+    <div class="pull">"Comfort is not the absence of style. It is the highest form of it."</div>
+    <p>We compose for the long read: a single measured column near sixty-six characters, rules and ornaments to mark the turns, and one warm accent reserved for the moment that matters.</p>
+    <div class="cta"><a class="btn">Begin reading</a></div>
+  </article>
+  <footer>The Warm Review · set in Georgia · themed live</footer>
+</body>
+</html>
