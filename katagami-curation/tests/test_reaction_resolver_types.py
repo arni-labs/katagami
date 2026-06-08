@@ -101,6 +101,8 @@ class ReactionResolverTypeTests(unittest.TestCase):
                 "regenerate_embodiment",
                 "evolve_language",
                 "taste_distillation",
+                "synthesize_palette",
+                "synthesize_art_style",
             },
             job_types,
         )

@@ -94,13 +94,29 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn("fn ensure_language_published", source)
+        self.assertIn("fn ensure_language_under_review", source)
         self.assertIn("publish_rejected_because_already_published", source)
         self.assertIn("remained in state", source)
         self.assertIn("after quality finalizer Publish", source)
+        finalizer = source.index("fn verify_quality_reviewed_languages")
+        ensure_under_review = source.index(
+            "ensure_language_under_review(ctx, api_url, headers, language_id, &status)?",
+            finalizer,
+        )
+        mark_quality = source.index('"MarkQualityPassed"', finalizer)
+        ensure_published = source.index(
+            "ensure_language_published(ctx, api_url, headers, language_id)?",
+            finalizer,
+        )
         self.assertLess(
-            source.index('"MarkQualityPassed"'),
-            source.index("ensure_language_published(ctx, api_url, headers, language_id, &status)?"),
-            "quality finalization must mark quality before verifying Publish completion",
+            ensure_under_review,
+            mark_quality,
+            "quality finalization must submit Draft languages before marking quality passed",
+        )
+        self.assertLess(
+            mark_quality,
+            ensure_published,
+            "quality finalization must mark quality before publishing",
         )
 
     def test_regeneration_typed_fallback_continues_pipeline(self):

@@ -192,7 +192,7 @@ temper.done("synthesize_art_style complete")
 
 ## Tooling Rules
 
-- `json` is preloaded; do not import it. All array/object params via `json.dumps`.
+- `json` is preloaded; use it without importing. All array/object params via `json.dumps`.
 - `prompt_template` MUST contain the literal substrings `{subject}` and `{palette}`.
 - Do not fire finalizer-owned actions (Verify*, SubmitForReview, MarkQualityPassed,
   AttachPublishedAssets, Publish).

@@ -1089,6 +1089,7 @@ fn verify_quality_reviewed_languages(
         verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
+        ensure_language_under_review(ctx, api_url, headers, language_id, &status)?;
         dispatch_action(
             ctx,
             api_url,
@@ -1099,7 +1100,7 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
 
-        ensure_language_published(ctx, api_url, headers, language_id, &status)?;
+        ensure_language_published(ctx, api_url, headers, language_id)?;
         published.push(language_id.clone());
     }
 
@@ -1110,7 +1111,7 @@ fn verify_quality_reviewed_languages(
     }))
 }
 
-fn ensure_language_published(
+fn ensure_language_under_review(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
@@ -1140,6 +1141,28 @@ fn ensure_language_published(
     }
 
     if status == "UnderReview" {
+        return Ok(());
+    }
+
+    Err(format!(
+        "DesignLanguage '{language_id}' remained in state '{status}' after quality finalizer SubmitForReview"
+    ))
+}
+
+fn ensure_language_published(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    let current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| format!("DesignLanguage '{language_id}' disappeared before Publish"))?;
+    let status = entity_status_value(&current);
+    if status == "Published" {
+        return Ok(());
+    }
+
+    if status == "UnderReview" {
         dispatch_action(
             ctx,
             api_url,
@@ -1149,6 +1172,10 @@ fn ensure_language_published(
             "Publish",
             &json!({}),
         )?;
+    } else {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is in state '{status}', expected UnderReview or Published before quality finalizer Publish"
+        ));
     }
 
     let after_publish = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
@@ -3055,9 +3082,17 @@ fn render_shadsync_visual_profile(fields: &serde_json::Value) -> serde_json::Val
     let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
     let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
     let identity_text = identity_notes.join(" ").to_ascii_lowercase();
-    let is_paper = ["paper", "collage", "washi", "sticker", "scrap", "torn", "grain"].iter().any(|needle| identity_text.contains(needle));
-    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"].iter().any(|needle| identity_text.contains(needle));
-    let is_editorial = ["editorial", "magazine", "folio", "serif"].iter().any(|needle| identity_text.contains(needle));
+    let is_paper = [
+        "paper", "collage", "washi", "sticker", "scrap", "torn", "grain",
+    ]
+    .iter()
+    .any(|needle| identity_text.contains(needle));
+    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
+    let is_editorial = ["editorial", "magazine", "folio", "serif"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
 
     json!({
         "family": if is_paper { "paper-collage" } else if is_brutalist { "brutalist" } else if is_editorial { "editorial" } else { "system" },
@@ -3758,6 +3793,20 @@ fn design_md_projection_refresh_reason(
     fields: &serde_json::Value,
     design_md_file_id: &str,
 ) -> Option<&'static str> {
+    if let Some(reason) = design_md_lint_metadata_refresh_reason(fields, design_md_file_id) {
+        return Some(reason);
+    }
+
+    match read_file_value(ctx, api_url, headers, design_md_file_id) {
+        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
+        Err(_) => Some("unreadable_design_md_file"),
+    }
+}
+
+fn design_md_lint_metadata_refresh_reason(
+    fields: &serde_json::Value,
+    design_md_file_id: &str,
+) -> Option<&'static str> {
     if design_md_file_id.trim().is_empty() {
         return Some("missing_design_md_file_id");
     }
@@ -3789,10 +3838,7 @@ fn design_md_projection_refresh_reason(
         return Some("design_md_lint_warnings");
     }
 
-    match read_file_value(ctx, api_url, headers, design_md_file_id) {
-        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
-        Err(_) => Some("unreadable_design_md_file"),
-    }
+    None
 }
 
 fn design_md_body_refresh_reason(
@@ -3850,7 +3896,11 @@ fn shadcn_component_spec_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_component_spec_file_id) {
-        Ok(body) => shadcn_component_spec_body_refresh_reason(language_id, shadcn_component_spec_file_id, &body),
+        Ok(body) => shadcn_component_spec_body_refresh_reason(
+            language_id,
+            shadcn_component_spec_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_component_spec_file"),
     }
 }
@@ -3892,7 +3942,11 @@ fn shadcn_preview_shots_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_preview_shots_file_id) {
-        Ok(body) => shadcn_preview_shots_body_refresh_reason(language_id, shadcn_preview_shots_file_id, &body),
+        Ok(body) => shadcn_preview_shots_body_refresh_reason(
+            language_id,
+            shadcn_preview_shots_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_preview_shots_file"),
     }
 }
@@ -3902,13 +3956,7 @@ fn shadcn_preview_shots_body_refresh_reason(
     file_id: &str,
     body: &str,
 ) -> Option<&'static str> {
-    match verify_file_body(
-        language_id,
-        file_id,
-        "shadcn_preview_shots",
-        None,
-        body,
-    ) {
+    match verify_file_body(language_id, file_id, "shadcn_preview_shots", None, body) {
         Ok(()) => None,
         Err(_) => Some("invalid_shadcn_preview_shots_body"),
     }
@@ -5324,7 +5372,7 @@ fn submit_next_queued_regeneration(
 mod tests {
     use super::{
         bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any, json_object_field,
+        design_md_lint_metadata_refresh_reason, entity_bool_any, json_object_field,
         normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, verify_file_body,
@@ -5439,29 +5487,29 @@ mod tests {
     #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), ""),
+            design_md_lint_metadata_refresh_reason(&json!({}), ""),
             Some("missing_design_md_file_id")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), "fl-design-md"),
+            design_md_lint_metadata_refresh_reason(&json!({}), "fl-design-md"),
             Some("missing_design_md_lint_result")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":2}}"}),
                 "fl-design-md"
             ),
             Some("design_md_lint_warnings")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
                 "fl-design-md"
             ),
             None
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
                 "fl-design-md"
             ),

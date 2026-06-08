@@ -146,9 +146,8 @@ Render a 600x400 swatch grid of the role colors with PIL and attach as JPEG.
 
 ```python
 thumb_log = sandbox.bash("""python3 - <<'PY'
-import json
 from PIL import Image, ImageDraw
-roles = json.loads('''__ROLES__''')
+roles = __ROLES__
 order = ["bg","surface","text","muted","border","accent","success","warning","error","info"]
 img = Image.new("RGB", (600, 400), roles.get("bg", "#ffffff"))
 d = ImageDraw.Draw(img)
@@ -186,7 +185,7 @@ temper.done("synthesize_palette complete")
 
 ## Tooling Rules
 
-- The `json` helper is preloaded. Do not `import json`.
+- The `json` helper is preloaded; use it without importing.
 - ALL array/object params MUST use `json.dumps(...)`. Never `str()` / repr.
 - Use `for i in range(len(items))` — no `enumerate(..., start=...)`.
 - Do not fire finalizer-owned actions (Verify*, SubmitForReview, MarkQualityPassed,
