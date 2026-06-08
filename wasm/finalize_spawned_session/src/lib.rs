@@ -656,6 +656,13 @@ fn verify_typed_completion(
             "job_type": job_type,
             "scope": "source metadata and direction fan-out"
         })),
+        // Multi-lane remix: palette + art-style sourcing. Terminal lanes (no
+        // quality_review/organize cascade) — the curator session attaches
+        // artifacts, the finalizer verifies them and walks the entity to
+        // Published, preserving the same agent-attaches / finalizer-verifies
+        // trust boundary used for DesignLanguage.
+        "synthesize_palette" => verify_synthesized_palettes(ctx, api_url, headers, fields),
+        "synthesize_art_style" => verify_synthesized_art_styles(ctx, api_url, headers, fields),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
 }
@@ -745,6 +752,263 @@ fn verify_generated_language_identity(
     Ok(())
 }
 
+fn lane_ids_from_job(fields: &serde_json::Value, names: &[&str]) -> Vec<String> {
+    let mut ids = Vec::new();
+    for name in names {
+        ids.extend(string_array_flexible(fields.get(*name)));
+    }
+    if ids.is_empty() {
+        if let Some(output) = parse_json_field(fields.get("output")) {
+            for name in names {
+                ids.extend(string_array_flexible(output.get(*name)));
+            }
+        }
+    }
+    if ids.is_empty() {
+        if let Some(input) = parse_json_field(fields.get("input")) {
+            for name in names {
+                ids.extend(string_array_flexible(input.get(*name)));
+            }
+        }
+    }
+    let mut deduped = Vec::new();
+    for id in ids {
+        if !id.is_empty() && !deduped.contains(&id) {
+            deduped.push(id);
+        }
+    }
+    deduped
+}
+
+// Walk a freshly-synthesized lane entity (already populated + artifact-attached
+// by the curator session, in Draft) to Published: verify attached artifacts,
+// submit for review, mark the finalizer-owned quality gate, attach public
+// assets, publish. Idempotent w.r.t. the current status.
+fn walk_lane_entity_to_published(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    entity_id: &str,
+    verify_actions: &[&str],
+    published_assets_params: &serde_json::Value,
+) -> Result<(), String> {
+    for action in verify_actions {
+        dispatch_action(ctx, api_url, headers, set_name, entity_id, action, &json!({}))?;
+    }
+    let entity = load_entity(ctx, api_url, headers, set_name, entity_id)?
+        .ok_or_else(|| format!("{set_name} '{entity_id}' disappeared during finalization"))?;
+    if entity_status_value(&entity) == "Draft" {
+        dispatch_action(ctx, api_url, headers, set_name, entity_id, "SubmitForReview", &json!({}))?;
+    }
+    // For terminal lanes the curator session + finalizer verification IS the
+    // quality gate, so the finalizer marks it directly.
+    dispatch_action(ctx, api_url, headers, set_name, entity_id, "MarkQualityPassed", &json!({}))?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        set_name,
+        entity_id,
+        "AttachPublishedAssets",
+        published_assets_params,
+    )?;
+    let entity = load_entity(ctx, api_url, headers, set_name, entity_id)?
+        .ok_or_else(|| format!("{set_name} '{entity_id}' disappeared before Publish"))?;
+    if entity_status_value(&entity) != "Published" {
+        dispatch_action(ctx, api_url, headers, set_name, entity_id, "Publish", &json!({}))?;
+    }
+    Ok(())
+}
+
+// --- Deterministic palette gates (WCAG contrast) -----------------------------
+fn pal_hex_rgb(s: &str) -> Option<(f64, f64, f64)> {
+    let t = s.trim().trim_start_matches('#');
+    if t.len() != 6 || !t.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    let n = u32::from_str_radix(t, 16).ok()?;
+    Some((((n >> 16) & 255) as f64, ((n >> 8) & 255) as f64, (n & 255) as f64))
+}
+fn rel_lum(c: (f64, f64, f64)) -> f64 {
+    fn ch(v: f64) -> f64 {
+        let s = v / 255.0;
+        if s <= 0.03928 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+    }
+    0.2126 * ch(c.0) + 0.7152 * ch(c.1) + 0.0722 * ch(c.2)
+}
+fn contrast_ratio(a: &str, b: &str) -> Option<f64> {
+    let la = rel_lum(pal_hex_rgb(a)?);
+    let lb = rel_lum(pal_hex_rgb(b)?);
+    let (hi, lo) = if la > lb { (la, lb) } else { (lb, la) };
+    Some((hi + 0.05) / (lo + 0.05))
+}
+fn first_signature_hex(f: &serde_json::Value) -> Option<String> {
+    let sig = parse_json_field(f.get("signature"))?;
+    let first = sig.as_array()?.first()?;
+    if let Some(s) = first.as_str() {
+        return Some(s.to_string());
+    }
+    first.get("hex").and_then(|v| v.as_str()).map(|s| s.to_string())
+}
+// Returns Err with a human reason if the palette fails the deterministic gate.
+fn validate_palette_colors(f: &serde_json::Value) -> Result<(), String> {
+    let neutrals = parse_json_field(f.get("neutrals"))
+        .ok_or_else(|| "missing neutrals".to_string())?;
+    let get = |k: &str| neutrals.get(k).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let text = get("text").ok_or("neutrals.text missing")?;
+    let surface = get("surface").ok_or("neutrals.surface missing")?;
+    let bg = get("bg").ok_or("neutrals.bg missing")?;
+    let cs = contrast_ratio(&text, &surface).ok_or("invalid text/surface hex")?;
+    if cs < 4.5 {
+        return Err(format!("text-on-surface contrast {cs:.2} < 4.5 (WCAG AA)"));
+    }
+    let cbg = contrast_ratio(&text, &bg).ok_or("invalid text/bg hex")?;
+    if cbg < 4.5 {
+        return Err(format!("text-on-bg contrast {cbg:.2} < 4.5 (WCAG AA)"));
+    }
+    let accent = first_signature_hex(f).ok_or("signature[0] (primary accent) missing")?;
+    let ca = contrast_ratio(&accent, &surface).ok_or("invalid accent hex")?;
+    if ca < 3.0 {
+        return Err(format!("primary accent vs surface contrast {ca:.2} < 3.0 (not distinguishable)"));
+    }
+    Ok(())
+}
+
+fn verify_synthesized_palettes(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let ids = lane_ids_from_job(fields, &["palette_system_ids", "palette_ids"]);
+    if ids.is_empty() {
+        return Err("synthesize_palette completed without any palette_system_ids".to_string());
+    }
+    let mut published = Vec::new();
+    for id in &ids {
+        let entity = match load_entity(ctx, api_url, headers, "PaletteSystems", id)? {
+            Some(e) => e,
+            None => {
+                ctx.log(
+                    "warn",
+                    &format!("verify_palette: PaletteSystem '{id}' does not exist, skipping"),
+                );
+                continue;
+            }
+        };
+        let f = entity_fields(&entity);
+        let tokens_file = string_field_any(&f, "tokens_export_file_id", "");
+        let thumb_file = string_field_any(&f, "thumbnail_file_id", "");
+        if tokens_file.is_empty() {
+            return Err(format!(
+                "PaletteSystem '{id}' has no tokens_export_file_id; the curator must AttachTokensExport before completion"
+            ));
+        }
+        if thumb_file.is_empty() {
+            return Err(format!(
+                "PaletteSystem '{id}' has no thumbnail_file_id; the curator must AttachThumbnail before completion"
+            ));
+        }
+        // Deterministic legibility gate — reject palettes that fail WCAG contrast.
+        validate_palette_colors(&f).map_err(|e| {
+            format!("PaletteSystem '{id}' failed the deterministic palette gate: {e}. Fix the colors and resubmit.")
+        })?;
+        walk_lane_entity_to_published(
+            ctx,
+            api_url,
+            headers,
+            "PaletteSystems",
+            id,
+            &["VerifyTokensExport", "VerifyThumbnail"],
+            &json!({
+                "thumbnail_asset_id": thumb_file,
+                "thumbnail_asset_url": "",
+                "tokens_export_asset_id": tokens_file,
+                "tokens_export_asset_url": ""
+            }),
+        )?;
+        published.push(id.clone());
+    }
+    if published.is_empty() {
+        return Err("synthesize_palette produced palette IDs but none of them exist".to_string());
+    }
+    Ok(json!({
+        "validated": true,
+        "job_type": "synthesize_palette",
+        "published_palette_system_ids": published
+    }))
+}
+
+fn verify_synthesized_art_styles(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let ids = lane_ids_from_job(fields, &["art_style_ids", "artstyle_ids"]);
+    if ids.is_empty() {
+        return Err("synthesize_art_style completed without any art_style_ids".to_string());
+    }
+    let mut published = Vec::new();
+    for id in &ids {
+        let entity = match load_entity(ctx, api_url, headers, "ArtStyles", id)? {
+            Some(e) => e,
+            None => {
+                ctx.log(
+                    "warn",
+                    &format!("verify_art_style: ArtStyle '{id}' does not exist, skipping"),
+                );
+                continue;
+            }
+        };
+        let f = entity_fields(&entity);
+        if string_field_any(&f, "prompt_template", "").is_empty() {
+            return Err(format!(
+                "ArtStyle '{id}' has no prompt_template; the curator must SetPromptTemplate before completion"
+            ));
+        }
+        let thumb_file = string_field_any(&f, "thumbnail_file_id", "");
+        if string_array_flexible(f.get("reference_image_file_ids")).is_empty() {
+            return Err(format!(
+                "ArtStyle '{id}' has no reference_image_file_ids; the curator must AttachReferenceImages before completion"
+            ));
+        }
+        if string_array_flexible(f.get("proof_shots_file_ids")).is_empty() {
+            return Err(format!(
+                "ArtStyle '{id}' has no proof_shots_file_ids; the curator must AttachProofShots before completion"
+            ));
+        }
+        if thumb_file.is_empty() {
+            return Err(format!(
+                "ArtStyle '{id}' has no thumbnail_file_id; the curator must AttachThumbnail before completion"
+            ));
+        }
+        walk_lane_entity_to_published(
+            ctx,
+            api_url,
+            headers,
+            "ArtStyles",
+            id,
+            &["VerifyReferenceImages", "VerifyProofShots", "VerifyThumbnail"],
+            &json!({
+                "thumbnail_asset_id": thumb_file,
+                "thumbnail_asset_url": "",
+                "reference_assets": "{}"
+            }),
+        )?;
+        published.push(id.clone());
+    }
+    if published.is_empty() {
+        return Err("synthesize_art_style produced art style IDs but none of them exist".to_string());
+    }
+    Ok(json!({
+        "validated": true,
+        "job_type": "synthesize_art_style",
+        "published_art_style_ids": published
+    }))
+}
+
 fn verify_quality_reviewed_languages(
     ctx: &Context,
     api_url: &str,
@@ -825,6 +1089,7 @@ fn verify_quality_reviewed_languages(
         verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
+        ensure_language_under_review(ctx, api_url, headers, language_id, &status)?;
         dispatch_action(
             ctx,
             api_url,
@@ -835,7 +1100,7 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
 
-        ensure_language_published(ctx, api_url, headers, language_id, &status)?;
+        ensure_language_published(ctx, api_url, headers, language_id)?;
         published.push(language_id.clone());
     }
 
@@ -846,7 +1111,7 @@ fn verify_quality_reviewed_languages(
     }))
 }
 
-fn ensure_language_published(
+fn ensure_language_under_review(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
@@ -876,6 +1141,28 @@ fn ensure_language_published(
     }
 
     if status == "UnderReview" {
+        return Ok(());
+    }
+
+    Err(format!(
+        "DesignLanguage '{language_id}' remained in state '{status}' after quality finalizer SubmitForReview"
+    ))
+}
+
+fn ensure_language_published(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    let current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| format!("DesignLanguage '{language_id}' disappeared before Publish"))?;
+    let status = entity_status_value(&current);
+    if status == "Published" {
+        return Ok(());
+    }
+
+    if status == "UnderReview" {
         dispatch_action(
             ctx,
             api_url,
@@ -885,6 +1172,10 @@ fn ensure_language_published(
             "Publish",
             &json!({}),
         )?;
+    } else {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is in state '{status}', expected UnderReview or Published before quality finalizer Publish"
+        ));
     }
 
     let after_publish = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
@@ -973,6 +1264,44 @@ fn verify_language_core(
         "DesignLanguages",
         language_id,
         "VerifyEmbodiment",
+        &json!({}),
+    )?;
+    // Compositions: the bespoke Landing + Dashboard screens are gated identically
+    // to the element embodiment — both files must exist, be self-contained HTML,
+    // be tokenized (var(--…)), and the Landing must carry the --hero-image slot.
+    let landing_file_id = string_field_any(&fields, "landing_file_id", "");
+    let dashboard_file_id = string_field_any(&fields, "dashboard_file_id", "");
+    if landing_file_id.is_empty() || dashboard_file_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is missing a bespoke {} composition; AttachCompositions(landing + dashboard) is required before publish",
+            if landing_file_id.is_empty() { "landing" } else { "dashboard" }
+        ));
+    }
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &landing_file_id,
+        "composition_landing",
+        None,
+    )?;
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &dashboard_file_id,
+        "composition_dashboard",
+        None,
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyCompositions",
         &json!({}),
     )?;
     Ok(())
@@ -2142,6 +2471,26 @@ fn verify_file_body(
                 "DesignLanguage '{language_id}' thumbnail file '{file_id}' looks like text-encoded image or markup, not browser-renderable image bytes"
             ));
         }
+    } else if artifact_kind == "composition_landing" || artifact_kind == "composition_dashboard" {
+        // Bespoke Landing/Dashboard screens: self-contained HTML, tokenized with
+        // CSS custom properties (so the Remix Studio can recolor them). The Landing
+        // additionally carries the full-bleed --hero-image slot.
+        let lower = trimmed.to_ascii_lowercase();
+        if !lower.contains("<html") && !lower.contains("<!doctype") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is not self-contained HTML"
+            ));
+        }
+        if !lower.contains("var(--") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is not tokenized — composition embodiments must drive color/type through CSS custom properties (var(--…)) so the Remix Studio can recolor them"
+            ));
+        }
+        if artifact_kind == "composition_landing" && !lower.contains("--hero-image") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' landing composition file '{file_id}' is missing the full-bleed --hero-image hero slot"
+            ));
+        }
     }
 
     Ok(())
@@ -2733,9 +3082,17 @@ fn render_shadsync_visual_profile(fields: &serde_json::Value) -> serde_json::Val
     let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
     let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
     let identity_text = identity_notes.join(" ").to_ascii_lowercase();
-    let is_paper = ["paper", "collage", "washi", "sticker", "scrap", "torn", "grain"].iter().any(|needle| identity_text.contains(needle));
-    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"].iter().any(|needle| identity_text.contains(needle));
-    let is_editorial = ["editorial", "magazine", "folio", "serif"].iter().any(|needle| identity_text.contains(needle));
+    let is_paper = [
+        "paper", "collage", "washi", "sticker", "scrap", "torn", "grain",
+    ]
+    .iter()
+    .any(|needle| identity_text.contains(needle));
+    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
+    let is_editorial = ["editorial", "magazine", "folio", "serif"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
 
     json!({
         "family": if is_paper { "paper-collage" } else if is_brutalist { "brutalist" } else if is_editorial { "editorial" } else { "system" },
@@ -3436,6 +3793,20 @@ fn design_md_projection_refresh_reason(
     fields: &serde_json::Value,
     design_md_file_id: &str,
 ) -> Option<&'static str> {
+    if let Some(reason) = design_md_lint_metadata_refresh_reason(fields, design_md_file_id) {
+        return Some(reason);
+    }
+
+    match read_file_value(ctx, api_url, headers, design_md_file_id) {
+        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
+        Err(_) => Some("unreadable_design_md_file"),
+    }
+}
+
+fn design_md_lint_metadata_refresh_reason(
+    fields: &serde_json::Value,
+    design_md_file_id: &str,
+) -> Option<&'static str> {
     if design_md_file_id.trim().is_empty() {
         return Some("missing_design_md_file_id");
     }
@@ -3467,10 +3838,7 @@ fn design_md_projection_refresh_reason(
         return Some("design_md_lint_warnings");
     }
 
-    match read_file_value(ctx, api_url, headers, design_md_file_id) {
-        Ok(body) => design_md_body_refresh_reason(language_id, design_md_file_id, &body),
-        Err(_) => Some("unreadable_design_md_file"),
-    }
+    None
 }
 
 fn design_md_body_refresh_reason(
@@ -3528,7 +3896,11 @@ fn shadcn_component_spec_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_component_spec_file_id) {
-        Ok(body) => shadcn_component_spec_body_refresh_reason(language_id, shadcn_component_spec_file_id, &body),
+        Ok(body) => shadcn_component_spec_body_refresh_reason(
+            language_id,
+            shadcn_component_spec_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_component_spec_file"),
     }
 }
@@ -3570,7 +3942,11 @@ fn shadcn_preview_shots_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_preview_shots_file_id) {
-        Ok(body) => shadcn_preview_shots_body_refresh_reason(language_id, shadcn_preview_shots_file_id, &body),
+        Ok(body) => shadcn_preview_shots_body_refresh_reason(
+            language_id,
+            shadcn_preview_shots_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_preview_shots_file"),
     }
 }
@@ -3580,13 +3956,7 @@ fn shadcn_preview_shots_body_refresh_reason(
     file_id: &str,
     body: &str,
 ) -> Option<&'static str> {
-    match verify_file_body(
-        language_id,
-        file_id,
-        "shadcn_preview_shots",
-        None,
-        body,
-    ) {
+    match verify_file_body(language_id, file_id, "shadcn_preview_shots", None, body) {
         Ok(()) => None,
         Err(_) => Some("invalid_shadcn_preview_shots_body"),
     }
@@ -5002,7 +5372,7 @@ fn submit_next_queued_regeneration(
 mod tests {
     use super::{
         bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any, json_object_field,
+        design_md_lint_metadata_refresh_reason, entity_bool_any, json_object_field,
         normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, verify_file_body,
@@ -5117,29 +5487,29 @@ mod tests {
     #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), ""),
+            design_md_lint_metadata_refresh_reason(&json!({}), ""),
             Some("missing_design_md_file_id")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), "fl-design-md"),
+            design_md_lint_metadata_refresh_reason(&json!({}), "fl-design-md"),
             Some("missing_design_md_lint_result")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":2}}"}),
                 "fl-design-md"
             ),
             Some("design_md_lint_warnings")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
                 "fl-design-md"
             ),
             None
         );
         assert_eq!(
-            design_md_projection_refresh_reason(
+            design_md_lint_metadata_refresh_reason(
                 &json!({"DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
                 "fl-design-md"
             ),
