@@ -64,7 +64,7 @@ export function EmbodimentViewer({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-[3px] border border-border bg-card/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_2px_rgba(30,35,45,0.08)] transition-all hover:-translate-y-[1px] hover:text-foreground"
+        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-[3px] bg-card/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_3px_rgba(30,35,45,0.16)] backdrop-blur-[2px] transition-all hover:-translate-y-[1px] hover:text-foreground"
       >
         <span className="hidden sm:inline">open full</span>
         <span className="sm:hidden">full</span>
@@ -77,7 +77,7 @@ export function EmbodimentViewer({
 function UnavailablePreview() {
   return (
     <div
-      className="flex w-full items-center justify-center border border-dashed border-border bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
+      className="flex w-full items-center justify-center border border-dashed border-foreground/20 bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
       style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
     >
       embodiment not available

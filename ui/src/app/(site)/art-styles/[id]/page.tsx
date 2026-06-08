@@ -16,6 +16,9 @@ import { InlineRemix } from "@/components/remix/inline-remix";
 
 export const dynamic = "force-dynamic";
 
+const RING = "shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]";
+const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
+
 function refUrls(raw?: string): string[] {
   const ids = parseJson<string[]>(raw);
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
@@ -82,7 +85,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
 
       {/* hero + proof gallery */}
       <StickyNote tint="sakura" className="p-3">
-        <div className="overflow-hidden rounded-[2px] border border-border bg-muted" style={{ aspectRatio: "16/9" }}>
+        <div className={`overflow-hidden rounded-[2px] bg-muted ${RING}`} style={{ aspectRatio: "16/9" }}>
           {hero ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={hero} alt={`${name} hero`} className="h-full w-full object-cover" />
@@ -91,7 +94,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         {gallery.length > 0 ? (
           <div className="mt-2 grid grid-cols-3 gap-2">
             {gallery.slice(0, 3).map((src, i) => (
-              <div key={i} className="overflow-hidden rounded-[2px] border border-border bg-muted" style={{ aspectRatio: "1/1" }}>
+              <div key={i} className={`overflow-hidden rounded-[2px] bg-muted ${RING}`} style={{ aspectRatio: "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />
               </div>
@@ -106,11 +109,11 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       {/* recipe */}
       <StickyNote className="p-5 sm:p-6">
         <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt template</div>
-        <pre className="overflow-x-auto whitespace-pre-wrap rounded-[3px] border border-border bg-card p-3 font-mono text-[12px] leading-relaxed text-foreground">{promptTemplate}</pre>
+        <pre className={`overflow-x-auto whitespace-pre-wrap rounded-[3px] p-3 font-mono text-[12px] leading-relaxed text-foreground ${CHIP}`}>{promptTemplate}</pre>
         {negativePrompt ? (
           <>
             <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Negative prompt</div>
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[3px] border border-border bg-card p-3 font-mono text-[12px] leading-relaxed text-muted-foreground">{negativePrompt}</pre>
+            <pre className={`overflow-x-auto whitespace-pre-wrap rounded-[3px] p-3 font-mono text-[12px] leading-relaxed text-muted-foreground ${CHIP}`}>{negativePrompt}</pre>
           </>
         ) : null}
         {Object.keys(slotRecipes).length ? (
@@ -118,7 +121,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Slot recipes</div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {Object.entries(slotRecipes).map(([k, v]) => (
-                <div key={k} className="rounded-[3px] border border-border bg-card px-2.5 py-1.5 text-[12px] text-foreground">
+                <div key={k} className={`rounded-[3px] px-2.5 py-1.5 text-[12px] text-foreground ${CHIP}`}>
                   <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{k}</span> — {v}
                 </div>
               ))}
@@ -130,7 +133,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Engine hints</div>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(engineHints).map(([k, v]) => (
-                <span key={k} className="rounded-full border border-border px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
+                <span key={k} className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
                   <span className="text-foreground">{k}</span> · {v}
                 </span>
               ))}

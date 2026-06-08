@@ -14,6 +14,10 @@ import { PageHero, Marker } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
+import { KX_BTN_PAPER } from "@/lib/katagami-ui";
+
+const RING = "shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]";
+const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
 
 export const dynamic = "force-dynamic";
 
@@ -99,7 +103,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           {NEUTRAL_ORDER.map((k) => {
             const c = core.neutrals[k] ?? "#ddd";
             return (
-              <div key={k} className="flex-1 overflow-hidden rounded-[2px] border border-border">
+              <div key={k} className={`flex-1 overflow-hidden rounded-[2px] ${RING}`}>
                 <div style={{ background: c, height: 44 }} />
                 <div className="bg-card px-1.5 py-1 font-mono text-[9px] lowercase text-muted-foreground">
                   {k}<br />
@@ -115,7 +119,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
             <div className="mt-4 mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Semantic · functional accessory</div>
             <div className="flex gap-2">
               {SEMANTIC_ORDER.filter((k) => core.semantic[k]).map((k) => (
-                <div key={k} className="flex flex-1 items-center gap-2 rounded-[2px] border border-border bg-card px-2 py-1.5">
+                <div key={k} className={`flex flex-1 items-center gap-2 rounded-[2px] px-2 py-1.5 ${CHIP}`}>
                   <span className="h-4 w-4 rounded-[1px]" style={{ background: core.semantic[k] }} />
                   <span className="font-mono text-[10px] lowercase text-muted-foreground">{k}</span>
                 </div>
@@ -132,7 +136,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
                 ramps[r] ? (
                   <div key={r} className="flex items-center gap-2">
                     <span className="w-14 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{r}</span>
-                    <div className="flex h-5 flex-1 overflow-hidden rounded-[2px] border border-border">
+                    <div className={`flex h-5 flex-1 overflow-hidden rounded-[2px] ${RING}`}>
                       {Object.values(ramps[r]).map((c, i) => (
                         <span key={i} className="h-full flex-1" style={{ background: c }} />
                       ))}
@@ -150,7 +154,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           <a
             href={`data:text/css;charset=utf-8,${encodeURIComponent(tokensCss)}`}
             download={`${slug}.tokens.css`}
-            className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:border-foreground/40"
+            className={KX_BTN_PAPER}
           >
             Download .css
           </a>

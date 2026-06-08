@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { KX_BTN_INK, KX_BTN_PAPER } from "@/lib/katagami-ui";
 
-/** Minimal katagami copy button (no emoji). Shows "Copied" briefly on click. */
+/** Minimal katagami copy button (no emoji, no grey border). */
 export function CopyButton({
   text,
   label,
@@ -13,16 +14,10 @@ export function CopyButton({
   variant?: "outline" | "ink";
 }) {
   const [copied, setCopied] = useState(false);
-  const base =
-    "rounded-[var(--radius-md)] px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
-  const cls =
-    variant === "ink"
-      ? `${base} bg-foreground text-background hover:opacity-90`
-      : `${base} border border-border bg-card text-foreground hover:border-foreground/40`;
   return (
     <button
       type="button"
-      className={cls}
+      className={variant === "ink" ? KX_BTN_INK : KX_BTN_PAPER}
       onClick={() => {
         void navigator.clipboard.writeText(text);
         setCopied(true);

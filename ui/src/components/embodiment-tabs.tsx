@@ -33,13 +33,13 @@ export function EmbodimentTabs({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-[var(--radius-md)] border border-border p-0.5">
+        <div className="inline-flex bg-card/70 p-0.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)]">
           {tabs.map((t, i) => (
             <button
               key={t.key}
               onClick={() => setActive(i)}
               data-active={i === active}
-              className="rounded-[calc(var(--radius-md)-2px)] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background"
+              className="px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background data-[active=true]:shadow-[0_1px_0_rgba(30,35,45,0.18)]"
             >
               {t.label}
             </button>
@@ -55,7 +55,7 @@ export function EmbodimentTabs({
       <div className="relative">
         <WashiTape color="sakura" rotate={-4} className="-left-4 -top-3" width={100} />
         <WashiTape color="salad" rotate={5} className="-right-4 -top-3" width={80} />
-        <div className="relative rounded-[2px] border border-border bg-card p-3 pb-10 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
+        <div className="sticker-card relative p-3 pb-10">
           {/* key=url → remount on tab switch so height re-measures */}
           <EmbodimentViewer key={cur.url} src={cur.url} />
           <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">

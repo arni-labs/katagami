@@ -9,6 +9,9 @@ import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
+import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
+
+const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
 export interface LanguageOpt {
   id: string;
@@ -57,10 +60,10 @@ function safeParse(raw?: string): Record<string, unknown> {
 function FixedChip({ label, name, media }: { label: string; name: string; media: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+      <div className={`mb-1.5 ${KX_LABEL}`}>
         {label} <span className="text-muted-foreground/50">· fixed</span>
       </div>
-      <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-dashed border-border bg-[color-mix(in_srgb,var(--foreground)_3%,var(--card))] px-2.5 py-2">
+      <div className="flex items-center gap-2.5 border border-dashed border-foreground/25 bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2.5 py-2">
         {media}
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{name}</span>
       </div>
@@ -70,7 +73,7 @@ function FixedChip({ label, name, media }: { label: string; name: string; media:
 
 function Swatches({ colors }: { colors: string[] }) {
   return (
-    <span className="flex h-8 w-12 shrink-0 overflow-hidden rounded-[2px] border border-border">
+    <span className={`flex h-8 w-12 ${MEDIA}`}>
       {colors.slice(0, 6).map((c, i) => (
         <span key={i} className="h-full flex-1" style={{ background: c }} />
       ))}
@@ -79,7 +82,7 @@ function Swatches({ colors }: { colors: string[] }) {
 }
 function Thumb({ src }: { src?: string }) {
   return (
-    <span className="h-8 w-12 shrink-0 overflow-hidden rounded-[2px] border border-border bg-muted">
+    <span className={`h-8 w-12 bg-muted ${MEDIA}`}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" className="h-full w-full object-cover" />
@@ -239,14 +242,14 @@ export function InlineRemix({
 
       {/* toolbar: composition toggle + actions */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-[var(--radius-md)] border border-border bg-card p-0.5">
+        <div className="inline-flex bg-card/70 p-0.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)]">
           {COMPS.map((c, i) => (
             <button
               key={c.key}
               type="button"
               onClick={() => setCompIdx(i)}
               data-active={i === compIdx}
-              className="rounded-[calc(var(--radius-md)-2px)] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background"
+              className="px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background data-[active=true]:shadow-[0_1px_0_rgba(30,35,45,0.18)]"
             >
               {c.name}
             </button>
@@ -254,30 +257,16 @@ export function InlineRemix({
         </div>
         <div className="flex-1" />
         {canShuffle ? (
-          <button
-            type="button"
-            onClick={shuffle}
-            className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:border-foreground/40"
-          >
+          <button type="button" onClick={shuffle} className={KX_BTN_PAPER}>
             Shuffle
           </button>
         ) : null}
         {enableSave ? (
-          <button
-            type="button"
-            onClick={doSave}
-            disabled={!haveAll || pending}
-            className="rounded-[var(--radius-md)] border border-border bg-card px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground transition-colors hover:border-foreground/40 disabled:opacity-50"
-          >
+          <button type="button" onClick={doSave} disabled={!haveAll || pending} className={KX_BTN_PAPER}>
             {saved ? "Saved" : pending ? "Saving" : "Save mix"}
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={copyBrief}
-          disabled={!haveAll}
-          className="rounded-[var(--radius-md)] bg-foreground px-3.5 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
+        <button type="button" onClick={copyBrief} disabled={!haveAll} className={KX_BTN_INK}>
           {copied ? "Copied" : "Copy brief"}
         </button>
       </div>
@@ -286,14 +275,14 @@ export function InlineRemix({
       <div className="relative">
         <WashiTape color="sakura" rotate={-4} className="-left-4 -top-3" width={104} />
         <WashiTape color="salad" rotate={5} className="-right-4 -top-3" width={84} />
-        <div className="relative overflow-hidden rounded-[2px] border border-border bg-card p-3 pb-9 shadow-[0_4px_16px_rgba(30,35,45,0.08)]">
+        <div className="sticker-card relative overflow-hidden p-3 pb-9">
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{comp?.name ?? "Preview"}</span>
             <span className="hidden truncate font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground/75 sm:block">
               {lang?.name ?? "—"} · {pal?.name ?? "—"} · {sel?.name ?? "—"}
             </span>
           </div>
-          <div className="overflow-hidden rounded-[1px] border border-border">
+          <div className="overflow-hidden rounded-[1px] shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]">
             <RemixPreview compositionUrl={compositionUrl} roles={roles} hero={hero} />
           </div>
           <span className="absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/75">

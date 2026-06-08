@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { KX_FIELD, KX_LABEL } from "@/lib/katagami-ui";
 
 // One item model for all three lanes. The picker is generic; only the media
 // (swatch row vs thumbnail) differs by kind.
@@ -15,6 +16,7 @@ export interface PickItem {
 }
 
 const RESULT_CAP = 60; // render at most this many; the rest are summarized (thousands-safe)
+const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
 function haystack(it: PickItem): string {
   return [
@@ -50,7 +52,7 @@ function useFiltered(
 function ItemMedia({ item }: { item: PickItem }) {
   if (item.swatches && item.swatches.length) {
     return (
-      <span className="flex h-8 w-12 shrink-0 overflow-hidden rounded-[2px] border border-border">
+      <span className={`flex h-8 w-12 ${MEDIA}`}>
         {item.swatches.slice(0, 6).map((c, i) => (
           <span key={i} className="h-full flex-1" style={{ background: c }} />
         ))}
@@ -58,7 +60,7 @@ function ItemMedia({ item }: { item: PickItem }) {
     );
   }
   return (
-    <span className="h-8 w-12 shrink-0 overflow-hidden rounded-[2px] border border-border bg-muted">
+    <span className={`h-8 w-12 bg-muted ${MEDIA}`}>
       {item.thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={item.thumb} alt="" className="h-full w-full object-cover" />
@@ -83,7 +85,7 @@ function ItemRow({
       aria-selected={active}
       onClick={onPick}
       data-active={active}
-      className="flex w-full items-center gap-3 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))] data-[active=true]:border-foreground data-[active=true]:bg-[color-mix(in_srgb,var(--foreground)_5%,var(--card))]"
+      className="flex w-full items-center gap-3 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] data-[active=true]:border-foreground data-[active=true]:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]"
     >
       <ItemMedia item={item} />
       <span className="min-w-0 flex-1">
@@ -109,17 +111,17 @@ function Trigger({
 }) {
   return (
     <div>
-      <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
+      <div className={`mb-1.5 ${KX_LABEL}`}>{label}</div>
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-2.5 rounded-[var(--radius-md)] border border-border bg-card px-2.5 py-2 text-left transition-colors hover:border-foreground/40"
+        className="group flex w-full items-center gap-2.5 bg-card/70 px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)] backdrop-blur-[3px] transition-all hover:-translate-y-[1px] hover:bg-card"
       >
         {current ? <ItemMedia item={current} /> : null}
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
           {current?.name ?? "Choose…"}
         </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">change</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground transition-colors group-hover:text-foreground">change</span>
       </button>
     </div>
   );
@@ -186,14 +188,14 @@ export function CommandPicker({
       <Trigger label={label} current={current} onOpen={() => setOpen(true)} />
       {open ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh]">
-          <div className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]" onClick={close} />
+          <div className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]" onClick={close} />
           <div
             role="dialog"
             aria-label={label}
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_24px_60px_rgba(30,35,45,0.25)]"
+            className="relative z-10 w-full max-w-lg overflow-hidden bg-card shadow-[0_24px_70px_rgba(30,35,45,0.3)]"
           >
-            <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
+            <div className="flex items-center gap-2.5 px-4 pb-2.5 pt-3">
+              <span className="stamp text-[var(--sumire)]">{label}</span>
               <input
                 autoFocus
                 value={q}
@@ -201,11 +203,12 @@ export function CommandPicker({
                   setQ(e.target.value);
                   setCursor(0);
                 }}
-                placeholder="Type to filter…"
-                className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+                placeholder="type to filter…"
+                className={`${KX_FIELD} min-w-0 flex-1`}
               />
-              <span className="rounded-[3px] border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">esc</span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">esc</span>
             </div>
+            <div className="sticker-perforation" />
             <div className="max-h-[52vh] overflow-y-auto py-1" role="listbox">
               {visible.map((it, i) => (
                 <ItemRow
@@ -253,7 +256,6 @@ export function DrawerPicker({
   const visible = filtered.slice(0, RESULT_CAP);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Available facets → values, derived from the items.
   const facets = useMemo(() => {
     const map: Record<string, Set<string>> = {};
     for (const it of items) {
@@ -290,15 +292,15 @@ export function DrawerPicker({
       <Trigger label={label} current={current} onOpen={() => setOpen(true)} />
       {open ? (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
           <div
             ref={panelRef}
             role="dialog"
             aria-label={label}
-            className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col border-l border-border bg-card shadow-[-24px_0_60px_rgba(30,35,45,0.2)]"
+            className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-card shadow-[-24px_0_70px_rgba(30,35,45,0.25)]"
           >
-            <header className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
+            <header className="flex items-center justify-between px-4 pb-2.5 pt-3.5">
+              <span className="stamp text-[var(--sumire)]">{label}</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -307,38 +309,42 @@ export function DrawerPicker({
                 close
               </button>
             </header>
-            <div className="border-b border-border px-4 py-2.5">
+            <div className="px-4 pb-3">
               <input
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search…"
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+                placeholder="search…"
+                className={KX_FIELD}
               />
             </div>
             {facets.length > 0 ? (
-              <div className="space-y-2 border-b border-border px-4 py-3">
-                {facets.map(([key, vals]) => (
-                  <div key={key} className="flex flex-wrap items-center gap-1.5">
-                    <span className="mr-1 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">{key}</span>
-                    {vals.map((v) => {
-                      const on = active[key]?.has(v) ?? false;
-                      return (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => toggleFacet(key, v)}
-                          data-on={on}
-                          className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground transition-colors data-[on=true]:border-foreground data-[on=true]:bg-foreground data-[on=true]:text-background"
-                        >
-                          {v}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="sticker-perforation mx-4" />
+                <div className="space-y-2 px-4 py-3">
+                  {facets.map(([key, vals]) => (
+                    <div key={key} className="flex flex-wrap items-center gap-1.5">
+                      <span className="mr-1 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/70">{key}</span>
+                      {vals.map((v) => {
+                        const on = active[key]?.has(v) ?? false;
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => toggleFacet(key, v)}
+                            data-on={on}
+                            className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-0.5 font-mono text-[10px] lowercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground data-[on=true]:bg-foreground data-[on=true]:text-background"
+                          >
+                            {v}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : null}
+            <div className="sticker-perforation mx-4" />
             <div className="flex-1 overflow-y-auto py-1" role="listbox">
               {visible.map((it) => (
                 <ItemRow
@@ -353,7 +359,8 @@ export function DrawerPicker({
               ))}
               {filtered.length === 0 ? <EmptyResults /> : null}
             </div>
-            <footer className="border-t border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+            <div className="sticker-perforation mx-4" />
+            <footer className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
               {filtered.length === items.length
                 ? `${items.length} ${label.toLowerCase()}`
                 : `${filtered.length} of ${items.length}`}

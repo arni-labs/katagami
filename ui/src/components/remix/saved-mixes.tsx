@@ -45,7 +45,7 @@ export function SavedMixes({
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {saved.map((m) => (
-          <div key={m.id} className="rounded-[var(--radius-md)] border border-border/70 bg-card/70 px-3.5 py-3">
+          <div key={m.id} className="bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))] px-3.5 py-3">
             <div className="text-[13px] text-foreground">
               {nm(names.ui, m.ui)} · {nm(names.palette, m.palette)} · {nm(names.art, m.art)}
             </div>
@@ -63,7 +63,10 @@ export function SavedMixes({
                   className="h-3.5 w-3.5 rounded-[1px] border transition-colors disabled:cursor-default"
                   style={{
                     background: n <= m.rating ? "var(--foreground)" : "transparent",
-                    borderColor: n <= m.rating ? "var(--foreground)" : "var(--border)",
+                    borderColor:
+                      n <= m.rating
+                        ? "var(--foreground)"
+                        : "color-mix(in srgb, var(--foreground) 22%, transparent)",
                   }}
                 />
               ))}
