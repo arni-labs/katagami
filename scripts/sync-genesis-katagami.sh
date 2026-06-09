@@ -10,6 +10,82 @@ MODE="${1:-pull}"
 COMMONS_URL="${GENESIS_BASE}/katagami/katagami-commons.git"
 CURATION_URL="${GENESIS_BASE}/katagami/katagami-curation.git"
 
+curl_headers() {
+  printf '%s\n' "-H" "X-Tenant-Id: ${TENANT}"
+  if [[ -n "${GENESIS_API_KEY:-}" ]]; then
+    printf '%s\n' "-H" "Authorization: Bearer ${GENESIS_API_KEY}"
+  fi
+}
+
+app_id_for() {
+  local name="$1"
+  printf 'app-katagami-%s' "$name"
+}
+
+json_string() {
+  python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$1"
+}
+
+genesis_get() {
+  local path="$1"
+  local headers=()
+
+  mapfile -t headers < <(curl_headers)
+  curl -fsS "${headers[@]}" "${GENESIS_BASE}${path}"
+}
+
+latest_hash_for() {
+  local name="$1"
+  local app_id
+
+  app_id="$(app_id_for "$name")"
+  genesis_get "/tdata/Apps('${app_id}')" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin).get("LatestVersionHash", ""))'
+}
+
+publish_latest() {
+  local name="$1"
+  local hash="$2"
+  local app_id latest body response
+  local headers=()
+
+  app_id="$(app_id_for "$name")"
+  latest="$(latest_hash_for "$name")"
+  if [[ "$latest" == "$hash" ]]; then
+    echo "${name}: Genesis latest already ${hash}"
+    return 0
+  fi
+
+  body="$(printf '{"NewHash":%s,"RefName":"main"}' "$(json_string "$hash")")"
+  mapfile -t headers < <(curl_headers)
+  headers+=("-H" "Content-Type: application/json")
+
+  echo "${name}: promoting Genesis latest to ${hash} via Temper.Git.PublishNewVersion"
+  if ! response="$(
+    curl -fsS -X POST "${headers[@]}" \
+      "${GENESIS_BASE}/tdata/Apps('${app_id}')/Temper.Git.PublishNewVersion?await_integration=true" \
+      --data "$body" 2>&1
+  )"; then
+    latest="$(latest_hash_for "$name" || true)"
+    if [[ "$latest" == "$hash" ]]; then
+      echo "${name}: publish returned an error, but Genesis latest verified as ${hash}"
+      return 0
+    fi
+    echo "${name}: failed to publish Genesis latest for ${hash}" >&2
+    echo "$response" >&2
+    return 1
+  fi
+
+  latest="$(latest_hash_for "$name")"
+  if [[ "$latest" != "$hash" ]]; then
+    echo "${name}: publish completed but LatestVersionHash is ${latest:-<empty>} not ${hash}" >&2
+    echo "$response" >&2
+    return 1
+  fi
+
+  echo "${name}: verified LatestVersionHash=${hash}"
+}
+
 clone_app() {
   local url="$1"
   local dest="$2"
@@ -38,11 +114,12 @@ push_app() {
 
   if git -C "$repo" diff --cached --quiet; then
     echo "${name}: Genesis already matches ${source}/"
-    return
+  else
+    git -C "$repo" commit -m "Sync ${name} from katagami monorepo"
+    git -C "$repo" push origin main
   fi
 
-  git -C "$repo" commit -m "Sync ${name} from katagami monorepo"
-  git -C "$repo" push origin main
+  publish_latest "$name" "$(git -C "$repo" rev-parse HEAD)"
 }
 
 usage() {
@@ -50,11 +127,13 @@ usage() {
 Usage: scripts/sync-genesis-katagami.sh [pull|push]
 
   pull  Refresh katagami-commons/ and katagami-curation/ from Genesis and stage them.
-  push  Commit the current folder states back to the two Genesis app repos.
+  push  Commit the current folder states back to the two Genesis app repos,
+        publish/promote the pushed hashes, and verify Genesis latest.
 
 Genesis is the source of truth for these two app folders. The script uses clean
 temporary clones with Git protocol v0 because direct non-empty fetches from the
-current Genesis smart-HTTP service can fail during pack negotiation.
+current Genesis smart-HTTP service can fail during pack negotiation. Set
+GENESIS_API_KEY when the target Genesis deployment requires a bearer token.
 USAGE
 }
 
