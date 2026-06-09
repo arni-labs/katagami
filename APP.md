@@ -17,6 +17,8 @@ declared as Temper reactions.
 **Job Types:**
 - `source_search` — Research design movements and index compact authoritative source metadata
 - `synthesize` — Create DesignLanguage specs with embodiments and first-class shadcn/ui component artifacts
+- `synthesize_palette` — Create one PaletteSystem lane with signature colors, proof scenes, portable tokens, usage guidance, thumbnail evidence, and deterministic finalizer checks
+- `synthesize_art_style` — Create one ArtStyle lane with subject/palette prompt holes, negative prompts, engine hints, slot recipes, guidance, and preview evidence
 - `quality_review` — Validate DESIGN.md, derive shadcn/ui export, author/verify shadcn/ui component recipes and preview shots, fix embodiment fidelity against the spec, then publish
 - `organize_taxonomy` — Taxonomy maintenance and cross-referencing
 - `regenerate_embodiment` — Rebuild embodiment HTML for an existing language
@@ -74,6 +76,18 @@ belongs in a later artifact step.
 ## Pipeline
 
 `source_search` -> `CurationDirection` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
+
+Multi-lane remix work can also fan out into terminal palette and art-style
+lanes:
+
+`source_search` -> `synthesize_palette` -> `CompletePaletteSynthesis` -> Completed
+
+`source_search` -> `synthesize_art_style` -> `CompleteArtStyleSynthesis` -> Completed
+
+Palette and art-style lanes publish their commons entities directly after the
+finalizer verifies required files, contrast/prompt contracts, and referenced
+entity closure. They intentionally do not enter the language quality-review or
+taxonomy cascade.
 
 Each job spawns an agent session through a small WASM runtime bridge.
 `build_session_message` reads `CurationJobTemplate` records, loads the
