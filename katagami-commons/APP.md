@@ -1,6 +1,8 @@
 # katagami-commons
 
-Core data layer for the Katagami Design Language Commons. Stores design languages, design elements, design sources, taxonomy, and the element manifest.
+Core data layer for the Katagami Design Language Commons. Stores design
+languages, palette systems, art styles, design elements, design sources,
+taxonomy, and the element manifest.
 
 ## Entity Types
 
@@ -27,6 +29,22 @@ does not block on governed file writes.
 
 **States:** `Submitted` -> `Indexed` | `Failed`
 
+### PaletteSystem
+
+A portable color system for remix lanes. Stores signature colors, neutral and
+semantic roles, proof scenes, token projections, usage guidance, source links,
+thumbnail evidence, and publication verification flags.
+
+**States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
+
+### ArtStyle
+
+A portable image-style recipe for remix lanes. Stores medium, prompt template
+with `{subject}` and `{palette}` holes, negative prompt, engine hints, slot
+recipes, usage guidance, preview evidence, and publication verification flags.
+
+**States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
+
 ### ElementManifest
 
 Defines the canonical set of ~75 UI elements that every design language must render. Versioned and evolvable.
@@ -52,4 +70,8 @@ until a later archival step creates a governed artifact.
 
 ## Integration with katagami-curation
 
-DesignSources are created by bootstrap agent `source_search` jobs. DesignLanguages are synthesized by `synthesize` jobs. Quality reviews are handled by curator agent `review` jobs.
+DesignSources are created by bootstrap agent `source_search` jobs.
+DesignLanguages are synthesized by `synthesize` jobs and quality-reviewed before
+taxonomy organization. Multi-lane remix jobs use `synthesize_palette` to publish
+PaletteSystem records and `synthesize_art_style` to publish ArtStyle records as
+terminal lanes after deterministic finalizer verification.

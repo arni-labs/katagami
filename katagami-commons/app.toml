@@ -1,5 +1,5 @@
 name = "katagami-commons"
-description = "Design Language Commons — core data layer for versioned, agent-maintained design languages with canonical UI element coverage."
+description = "Design Language Commons — core data layer for versioned, agent-maintained design languages, palette systems, art styles, and canonical UI element coverage."
 version = "0.1.0"
 startup_install = "core"
 dependencies = ["temperpaw/paw-fs@65f3ee9659500d11a54c22b9e5519d52dd0db1d4"]
