@@ -10,16 +10,35 @@ MODE="${1:-pull}"
 COMMONS_URL="${GENESIS_BASE}/katagami/katagami-commons.git"
 CURATION_URL="${GENESIS_BASE}/katagami/katagami-curation.git"
 
-curl_headers() {
-  printf '%s\n' "-H" "X-Tenant-Id: ${TENANT}"
-  if [[ -n "${GENESIS_API_KEY:-}" ]]; then
-    printf '%s\n' "-H" "Authorization: Bearer ${GENESIS_API_KEY}"
-  fi
-}
-
 app_id_for() {
   local name="$1"
   printf 'app-katagami-%s' "$name"
+}
+
+configure_git_http_headers() {
+  local repo="$1"
+  local key="http.${GENESIS_BASE}/.extraHeader"
+
+  git -C "$repo" config --unset-all "$key" >/dev/null 2>&1 || true
+  git -C "$repo" config --add "$key" "X-Tenant-Id: ${TENANT}"
+  if [[ -n "${GENESIS_API_KEY:-}" ]]; then
+    git -C "$repo" config --add "$key" "Authorization: Bearer ${GENESIS_API_KEY}"
+  fi
+  git -C "$repo" config protocol.version 0
+}
+
+curl_header_args() {
+  CURL_HEADERS=(-H "X-Tenant-Id: ${TENANT}")
+  if [[ -n "${GENESIS_API_KEY:-}" ]]; then
+    CURL_HEADERS+=(-H "Authorization: Bearer ${GENESIS_API_KEY}")
+  fi
+}
+
+clean_generated_files() {
+  local dir="$1"
+
+  find "$dir" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} +
+  find "$dir" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 }
 
 json_string() {
@@ -30,7 +49,8 @@ genesis_get() {
   local path="$1"
   local headers=()
 
-  mapfile -t headers < <(curl_headers)
+  curl_header_args
+  headers=("${CURL_HEADERS[@]}")
   curl -fsS "${headers[@]}" "${GENESIS_BASE}${path}"
 }
 
@@ -40,7 +60,7 @@ latest_hash_for() {
 
   app_id="$(app_id_for "$name")"
   genesis_get "/tdata/Apps('${app_id}')" \
-    | python3 -c 'import json, sys; print(json.load(sys.stdin).get("LatestVersionHash", ""))'
+    | python3 -c 'import json, sys; d=json.load(sys.stdin); print(d.get("LatestVersionHash") or d.get("fields", {}).get("LatestVersionHash", ""))'
 }
 
 publish_latest() {
@@ -57,7 +77,8 @@ publish_latest() {
   fi
 
   body="$(printf '{"NewHash":%s,"RefName":"main"}' "$(json_string "$hash")")"
-  mapfile -t headers < <(curl_headers)
+  curl_header_args
+  headers=("${CURL_HEADERS[@]}")
   headers+=("-H" "Content-Type: application/json")
 
   echo "${name}: promoting Genesis latest to ${hash} via Temper.Git.PublishNewVersion"
@@ -95,13 +116,20 @@ clone_app() {
     -c "http.${GENESIS_BASE}/.extraHeader=X-Tenant-Id: ${TENANT}" \
     -c protocol.version=0 \
     clone "$url" "$dest"
+  configure_git_http_headers "$dest"
 }
 
 sync_app() {
   local source="$1"
   local dest="$2"
 
-  rsync -a --delete --exclude='.git' "${source}/" "${ROOT}/${dest}/"
+  rsync -a --delete \
+    --exclude='.git' \
+    --exclude='__pycache__/' \
+    --exclude='*.py[co]' \
+    --exclude='.pytest_cache/' \
+    "${source}/" "${ROOT}/${dest}/"
+  clean_generated_files "${ROOT}/${dest}"
 }
 
 push_app() {
@@ -109,7 +137,13 @@ push_app() {
   local source="$2"
   local repo="$3"
 
-  rsync -a --delete --exclude='.git' "${ROOT}/${source}/" "${repo}/"
+  rsync -a --delete \
+    --exclude='.git' \
+    --exclude='__pycache__/' \
+    --exclude='*.py[co]' \
+    --exclude='.pytest_cache/' \
+    "${ROOT}/${source}/" "${repo}/"
+  clean_generated_files "$repo"
   git -C "$repo" add -A
 
   if git -C "$repo" diff --cached --quiet; then
@@ -151,8 +185,7 @@ esac
 
 mkdir -p "$WORK_DIR"
 
-git -C "$ROOT" config --local "http.${GENESIS_BASE}/.extraHeader" "X-Tenant-Id: ${TENANT}"
-git -C "$ROOT" config --local protocol.version 0
+configure_git_http_headers "$ROOT"
 
 if ! git -C "$ROOT" remote get-url katagami-commons >/dev/null 2>&1; then
   git -C "$ROOT" remote add katagami-commons "$COMMONS_URL"

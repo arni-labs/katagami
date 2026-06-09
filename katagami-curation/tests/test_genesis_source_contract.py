@@ -42,6 +42,14 @@ class GenesisSourceContractTest(unittest.TestCase):
         self.assertIn("LatestVersionHash", script)
         self.assertIn("publish_latest", script)
         self.assertIn("latest_hash_for", script)
+        self.assertIn('d.get("fields", {}).get("LatestVersionHash", "")', script)
+        self.assertIn("configure_git_http_headers \"$dest\"", script)
+        self.assertIn("git -C \"$repo\" config --add \"$key\" \"X-Tenant-Id: ${TENANT}\"", script)
+        self.assertIn("clean_generated_files", script)
+        self.assertIn("find \"$dir\" -type d", script)
+        self.assertIn("--exclude='__pycache__/'", script)
+        self.assertIn("--exclude='*.py[co]'", script)
+        self.assertNotIn("mapfile", script)
         self.assertNotIn("App.PublishNewVersion", script)
         self.assertLess(
             script.index('push_app "katagami-commons"'),
