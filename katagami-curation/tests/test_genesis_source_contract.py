@@ -5,19 +5,20 @@ import unittest
 
 CURATION_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = CURATION_ROOT.parent
-CURRENT_COMMONS_HASH = "1cc425ef14205e9d63bdec5f8289bb110e4d4b3f"
+CURRENT_GENESIS_DEPS = {
+    "temperpaw/paw-fs": "bff862b415505f5a563998265a2f6ac29472f899",
+    "temperpaw/paw-agent": "81d8beb78923dc22aeda850828f510f3c6eab510",
+    "temperpaw/paw-research": "910d01612b2632362fb5f537c4357a5fb6c7bcdd",
+    "katagami/katagami-commons": "1cc425ef14205e9d63bdec5f8289bb110e4d4b3f",
+}
 
 
 class GenesisSourceContractTest(unittest.TestCase):
-    def test_curation_depends_on_current_genesis_commons(self):
+    def test_curation_depends_on_current_genesis_apps(self):
         app = tomllib.loads((CURATION_ROOT / "app.toml").read_text())
-        commons_deps = [
-            dep
-            for dep in app["dependencies"]
-            if dep.startswith("katagami/katagami-commons@")
-        ]
+        pinned_deps = dict(dep.rsplit("@", 1) for dep in app["dependencies"])
 
-        self.assertEqual([f"katagami/katagami-commons@{CURRENT_COMMONS_HASH}"], commons_deps)
+        self.assertEqual(CURRENT_GENESIS_DEPS, pinned_deps)
 
     def test_app_guides_describe_multi_lane_palette_and_art_style_jobs(self):
         curation_guide = (CURATION_ROOT / "APP.md").read_text()
