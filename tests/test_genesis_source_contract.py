@@ -5,7 +5,7 @@ import unittest
 
 CURATION_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = CURATION_ROOT.parent
-CURRENT_COMMONS_HASH = "9fb0622f3caa7a6d885856f233e42410fc19f3fc"
+CURRENT_COMMONS_HASH = "1cc425ef14205e9d63bdec5f8289bb110e4d4b3f"
 
 
 class GenesisSourceContractTest(unittest.TestCase):
