@@ -45,6 +45,8 @@ class GenesisSourceContractTest(unittest.TestCase):
         self.assertIn('d.get("fields", {}).get("LatestVersionHash", "")', script)
         self.assertIn("configure_git_http_headers \"$dest\"", script)
         self.assertIn("git -C \"$repo\" config --add \"$key\" \"X-Tenant-Id: ${TENANT}\"", script)
+        self.assertIn("--exclude='__pycache__/'", script)
+        self.assertIn("--exclude='*.py[co]'", script)
         self.assertNotIn("mapfile", script)
         self.assertNotIn("App.PublishNewVersion", script)
         self.assertLess(
