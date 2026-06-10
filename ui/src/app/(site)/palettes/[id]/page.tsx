@@ -16,7 +16,6 @@ import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { KX_BTN_PAPER } from "@/lib/katagami-ui";
 
-const RING = "shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]";
 const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
 
 export const dynamic = "force-dynamic";
@@ -103,7 +102,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           {NEUTRAL_ORDER.map((k) => {
             const c = core.neutrals[k] ?? "#ddd";
             return (
-              <div key={k} className={`flex-1 overflow-hidden rounded-[2px] ${RING}`}>
+              <div key={k} className="flex-1 overflow-hidden rounded-[2px]">
                 <div style={{ background: c, height: 44 }} />
                 <div className="bg-card px-1.5 py-1 font-mono text-[9px] lowercase text-muted-foreground">
                   {k}<br />
@@ -136,7 +135,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
                 ramps[r] ? (
                   <div key={r} className="flex items-center gap-2">
                     <span className="w-14 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{r}</span>
-                    <div className={`flex h-5 flex-1 overflow-hidden rounded-[2px] ${RING}`}>
+                    <div className="flex h-5 flex-1 overflow-hidden rounded-[2px]">
                       {Object.values(ramps[r]).map((c, i) => (
                         <span key={i} className="h-full flex-1" style={{ background: c }} />
                       ))}
@@ -202,7 +201,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
             variant="drawer"
           />
         ) : (
-          <div className="paper-card rounded-[var(--radius-lg)] p-5 text-sm text-muted-foreground">
+          <div className="sticker-card p-5 text-sm text-muted-foreground">
             Needs a Published language and art style to remix.
           </div>
         )}

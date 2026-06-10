@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aijiro — Kiribori Stencil &amp; Indigo Dye Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  button, input, textarea, select { font: inherit; color: inherit; appearance: none; -webkit-appearance: none; background: none; border: none; outline: none; }
+  :root {
+    --ground: #1c2230;
+    --bg: #161b27;
+    --surface: #1f2533;
+    --surface2: #2d3650;
+    --paste: #efe9dd;
+    --muted: #9aa2b8;
+    --accent: #7f93c4;
+    --border: #39415a;
+    --error: #c9645f;
+    --success: #6f9d7a;
+    --warning: #cba35a;
+    --info: #7f93c4;
+    --ma: 56px;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --dur: 180ms;
+    /* sub-3px reversed paste-white dot field on ~6px pitch — averages to flat indigo at distance */
+    --dotfield:
+      radial-gradient(circle at center, rgba(239,233,221,0.40) 0.8px, transparent 1.1px);
+    --dotpitch: 6px 6px;
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    color: var(--paste);
+    background-color: var(--bg);
+    background-image: var(--dotfield);
+    background-size: var(--dotpitch);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* SAMÉ sharkskin band: nested fan-curve arcs of dots — reads solid, resolves into drill rows up close */
+  .same {
+    background-color: var(--ground);
+    background-image:
+      radial-gradient(circle at 14px 28px, rgba(239,233,221,0.55) 0.7px, transparent 1px),
+      radial-gradient(circle at 14px 28px, rgba(239,233,221,0.32) 0.7px, transparent 1px),
+      radial-gradient(circle at 14px 28px, rgba(239,233,221,0.20) 0.7px, transparent 1px);
+    background-size: 5px 5px, 9px 9px, 13px 13px;
+    background-position: 0 0, 2px 1px, 4px 2px;
+  }
+  mark, .num { font-family: 'Space Mono', ui-monospace, monospace; }
+  h1, h2, h3, .brandname { font-family: 'Archivo', 'Inter', sans-serif; letter-spacing: 0.005em; }
+
+  /* ---------- shell ---------- */
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--ma) var(--ma); }
+
+  .topnav {
+    display: flex; align-items: center; gap: 28px;
+    padding: 18px var(--ma);
+    border-bottom: 1px solid var(--border);
+    background-color: var(--ground);
+    background-image: var(--dotfield);
+    background-size: var(--dotpitch);
+    position: sticky; top: 0; z-index: 20;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+  .seal {
+    width: 38px; height: 38px; border-radius: 2px;
+    border: 1px solid var(--paste);
+    flex: 0 0 auto;
+    background-color: var(--ground);
+    background-image:
+      radial-gradient(circle at 9px 18px, rgba(239,233,221,0.85) 0.8px, transparent 1.1px),
+      radial-gradient(circle at 9px 18px, rgba(239,233,221,0.45) 0.8px, transparent 1.1px);
+    background-size: 3px 3px, 6px 6px;
+  }
+  .brandname { font-size: 18px; font-weight: 700; line-height: 1.1; }
+  .brandsub { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .navlinks { display: flex; gap: 4px; flex-wrap: wrap; }
+  .navlinks a {
+    font-size: 13px; color: var(--muted); text-decoration: none;
+    padding: 7px 13px; border-radius: 2px;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+  }
+  .navlinks a:hover, .navlinks a:focus-visible { color: var(--paste); background: var(--surface2); }
+  .navlinks a.active { color: var(--paste); background: var(--surface); box-shadow: inset 0 -2px 0 var(--paste); }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em; cursor: pointer; border-radius: 2px;
+    padding: 10px 18px; transition: transform var(--dur) var(--ease), background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+  .btn-primary { background: var(--paste); color: var(--ground); }
+  .btn-primary:hover { box-shadow: 0 6px 18px rgba(8,11,18,0.5); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost { background: transparent; color: var(--paste); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--paste); background: var(--surface); }
+  .btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+  /* ---------- layout grid ---------- */
+  .console { display: grid; grid-template-columns: 1fr 340px; gap: var(--ma); margin-top: var(--ma); align-items: start; }
+  .stack { display: flex; flex-direction: column; gap: var(--ma); }
+
+  .pagehead { margin-top: var(--ma); display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .pagehead h1 { font-size: 30px; font-weight: 700; }
+  .crumb { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ---------- metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .metric { border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; background-color: var(--surface); background-image: var(--dotfield); background-size: var(--dotpitch); }
+  .metric .lbl { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .metric .val { font-family: 'Space Mono', monospace; font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -0.01em; }
+  .metric .delta { font-size: 12px; color: var(--success); margin-top: 2px; }
+  .metric .delta.down { color: var(--error); }
+
+  /* ---------- cards ---------- */
+  .card { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background-color: var(--surface); background-image: var(--dotfield); background-size: var(--dotpitch); box-shadow: 0 6px 18px rgba(8,11,18,0.5); }
+  .card-head { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card-head.same { border-bottom: 1px solid var(--border); }
+  .card-head h2 { font-size: 16px; font-weight: 600; }
+  .card-head .hint { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+  .card-body { padding: 22px; }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); padding: 0 22px; background: var(--surface); }
+  .tab {
+    font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted);
+    padding: 13px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .tab:hover { color: var(--paste); }
+  .tab.active { color: var(--paste); border-bottom-color: var(--paste); }
+
+  /* ---------- table ---------- */
+  table.lot { width: 100%; border-collapse: collapse; }
+  table.lot th {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 700;
+  }
+  table.lot td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  table.lot tr:last-child td { border-bottom: none; }
+  table.lot tr { transition: background var(--dur) var(--ease); }
+  table.lot tbody tr:hover { background: var(--surface2); }
+  .lotid { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--paste); }
+  .holes { font-family: 'Space Mono', monospace; font-size: 13px; }
+  .carver { color: var(--muted); }
+
+  /* ---------- badges ---------- */
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; border: 1px solid; }
+  .pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.drilling { color: var(--warning); border-color: rgba(203,163,90,0.45); }
+  .pill.dyeing { color: var(--info); border-color: rgba(127,147,196,0.45); }
+  .pill.cured { color: var(--success); border-color: rgba(111,157,122,0.45); }
+  .pill.flagged { color: var(--error); border-color: rgba(201,100,95,0.45); }
+
+  /* ---------- inspection rail (dual-scale magnifier) ---------- */
+  .scope { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--surface); }
+  .scope-body { padding: 0; }
+  .magnifier {
+    position: relative; height: 230px; overflow: hidden; cursor: zoom-in;
+    background-color: var(--ground);
+    /* faint resting hint: a 1px inner ring frames the loupe so the patch never reads as a flat rectangle */
+    box-shadow: inset 0 0 0 1px rgba(239,233,221,0.16);
+    background-image:
+      radial-gradient(circle at 8px 8px, rgba(239,233,221,0.92) 1.1px, transparent 1.5px),
+      radial-gradient(circle at 8px 8px, rgba(239,233,221,0.55) 1.1px, transparent 1.5px),
+      radial-gradient(circle at 8px 8px, rgba(239,233,221,0.34) 1.1px, transparent 1.5px);
+    background-size: 4px 4px, 8px 8px, 13px 13px;
+    background-position: 0 0, 2px 1px, 4px 2px;
+  }
+  /* hover MAGNIFIES the dot patch to reveal the individual hand-drilled holes — the dual-scale trick made interactive.
+     A larger resting pitch + higher dot opacity keeps the holes legible at rest, so scale(2.4) reads as a dramatic reveal. */
+  .magnifier .patch {
+    position: absolute; inset: 0; transform-origin: center;
+    transition: transform 320ms var(--ease);
+    background-color: var(--ground);
+    background-image:
+      radial-gradient(circle at 8px 8px, rgba(239,233,221,0.95) 1.2px, transparent 1.6px),
+      radial-gradient(circle at 8px 8px, rgba(239,233,221,0.55) 1.2px, transparent 1.6px);
+    background-size: 4px 4px, 8px 8px;
+    background-position: 0 0, 2px 1px;
+  }
+  .magnifier:hover .patch, .magnifier:focus-visible .patch { transform: scale(2.4); }
+  .magnifier:hover { box-shadow: inset 0 0 0 1px rgba(239,233,221,0.30); }
+  .magnifier:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+  .magnifier .tag { position: absolute; left: 12px; bottom: 12px; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paste); background: rgba(22,27,39,0.78); padding: 4px 8px; border-radius: 2px; border: 1px solid var(--border); }
+  .scope-meta { padding: 16px 18px; border-top: 1px solid var(--border); }
+  .scope-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; }
+  .scope-row .k { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.04em; }
+  .scope-row .v { font-family: 'Space Mono', monospace; }
+
+  /* ---------- form ---------- */
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  .control { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 11px 13px; font-size: 14px; color: var(--paste); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .control::placeholder { color: var(--muted); }
+  .control:hover { border-color: var(--accent); }
+  .control:focus-visible { border-color: var(--paste); box-shadow: 0 0 0 2px rgba(127,147,196,0.35); }
+  textarea.control { resize: vertical; min-height: 84px; line-height: 1.5; }
+  .selectwrap { position: relative; }
+  .selectwrap::after { content: ""; position: absolute; right: 14px; top: 50%; width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+  select.control { cursor: pointer; padding-right: 34px; }
+  .formrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .formactions { display: flex; gap: 10px; margin-top: 4px; }
+
+  /* ---------- footer note ---------- */
+  .footnote { margin-top: var(--ma); font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.05em; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 20px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1050px) {
+    :root { --ma: 36px; }
+    .topnav { padding: 16px 36px; }
+    .wrap { padding: 0 36px 36px; }
+    .console { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .pagehead h1 { font-size: 26px; }
+  }
+  @media (max-width: 640px) {
+    :root { --ma: 22px; }
+    .topnav { padding: 14px 22px; gap: 14px; }
+    .wrap { padding: 0 22px 22px; }
+    .navlinks { width: 100%; order: 3; }
+    .metrics { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .metric .val { font-size: 21px; }
+    .formrow { grid-template-columns: 1fr; }
+    .pagehead h1 { font-size: 22px; }
+    .tabs { padding: 0 12px; overflow-x: auto; }
+    table.lot th.col-hide, table.lot td.col-hide { display: none; }
+    .card-body { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="brand">
+      <div class="seal" aria-hidden="true"></div>
+      <div>
+        <div class="brandname">Aijiro</div>
+        <div class="brandsub">Kiribori &amp; Indigo Atelier</div>
+      </div>
+    </div>
+    <nav class="navlinks" aria-label="Primary">
+      <a href="#" class="active">Carving floor</a>
+      <a href="#">Dye vats</a>
+      <a href="#">Stencil archive</a>
+      <a href="#">Carvers</a>
+      <a href="#">Settings</a>
+    </nav>
+    <button class="btn btn-primary">New stencil lot</button>
+  </header>
+
+  <div class="wrap">
+    <div class="pagehead">
+      <div>
+        <div class="crumb">Carving floor / Goku-fine queue</div>
+        <h1>Today&rsquo;s drill schedule</h1>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-ghost">Export day sheet</button>
+        <button class="btn btn-ghost">Calibrate awls</button>
+      </div>
+    </div>
+
+    <section class="metrics" aria-label="Floor metrics" style="margin-top: var(--ma);">
+      <div class="metric">
+        <div class="lbl">Holes drilled today</div>
+        <div class="val num">812,400</div>
+        <div class="delta">+4.1% vs. yesterday</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Goku density (per 3cm²)</div>
+        <div class="val num">948</div>
+        <div class="delta">target 900–1000</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Lots in queue</div>
+        <div class="val num">17</div>
+        <div class="delta down">−2 vs. yesterday</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">Reject rate</div>
+        <div class="val num">0.6%</div>
+        <div class="delta">within tolerance</div>
+      </div>
+    </section>
+
+    <div class="console">
+      <div class="stack">
+        <section class="card">
+          <div class="card-head same">
+            <h2>Stencil lots on the floor</h2>
+            <span class="hint">samé arc-grid · reversed kiribori</span>
+          </div>
+          <div class="tabs" role="tablist">
+            <div class="tab active" role="tab" aria-selected="true">All lots</div>
+            <div class="tab" role="tab" aria-selected="false">Drilling</div>
+            <div class="tab" role="tab" aria-selected="false">In the vat</div>
+            <div class="tab" role="tab" aria-selected="false">Flagged</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="lot">
+              <thead>
+                <tr>
+                  <th>Lot</th>
+                  <th>Pattern</th>
+                  <th class="col-hide">Carver</th>
+                  <th>Holes / 3cm²</th>
+                  <th>Stage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="lotid">KB-2026-0418</span></td>
+                  <td>Samé goku-fine</td>
+                  <td class="col-hide carver">Ito Masako</td>
+                  <td class="holes">962</td>
+                  <td><span class="pill drilling">Drilling</span></td>
+                </tr>
+                <tr>
+                  <td><span class="lotid">KB-2026-0417</span></td>
+                  <td>Gyōgi micro-grid</td>
+                  <td class="col-hide carver">Sano Kenji</td>
+                  <td class="holes">874</td>
+                  <td><span class="pill dyeing">In the vat</span></td>
+                </tr>
+                <tr>
+                  <td><span class="lotid">KB-2026-0415</span></td>
+                  <td>Tōshi fine-line</td>
+                  <td class="col-hide carver">Ito Masako</td>
+                  <td class="holes">931</td>
+                  <td><span class="pill cured">Cured</span></td>
+                </tr>
+                <tr>
+                  <td><span class="lotid">KB-2026-0414</span></td>
+                  <td>Samé goku-fine</td>
+                  <td class="col-hide carver">Hayashi Rin</td>
+                  <td class="holes">1004</td>
+                  <td><span class="pill flagged">Over-drilled</span></td>
+                </tr>
+                <tr>
+                  <td><span class="lotid">KB-2026-0411</span></td>
+                  <td>Komon nano-dot</td>
+                  <td class="col-hide carver">Sano Kenji</td>
+                  <td class="holes">907</td>
+                  <td><span class="pill cured">Cured</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Open a carving order</h2>
+            <span class="hint">awl gauge logged per lot</span>
+          </div>
+          <div class="card-body">
+            <div class="formrow">
+              <div class="field">
+                <label for="pattern">Pattern family</label>
+                <div class="selectwrap">
+                  <select id="pattern" class="control">
+                    <option>Samé — sharkskin arc</option>
+                    <option>Gyōgi — staggered grid</option>
+                    <option>Tōshi — fine vertical line</option>
+                    <option>Komon — nano-dot field</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="grade">Refinement grade</label>
+                <div class="selectwrap">
+                  <select id="grade" class="control">
+                    <option>Goku (900–1000 holes / 3cm²)</option>
+                    <option>Chū (500–800 holes / 3cm²)</option>
+                    <option>Ara (under 400 holes / 3cm²)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="formrow">
+              <div class="field">
+                <label for="awl">Awl diameter (mm)</label>
+                <input id="awl" class="control" type="text" value="0.42" />
+              </div>
+              <div class="field">
+                <label for="carver">Assigned carver</label>
+                <input id="carver" class="control" type="text" placeholder="e.g. Ito Masako" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="notes">Bench notes for the carver</label>
+              <textarea id="notes" class="control" placeholder="Keep the fan curve continuous through the seam; reverse-out only, no over-drill past 1000 per square."></textarea>
+            </div>
+            <div class="formactions">
+              <button class="btn btn-primary">Queue lot for drilling</button>
+              <button class="btn btn-ghost">Save as draft</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="stack" aria-label="Inspection">
+        <section class="scope">
+          <div class="card-head">
+            <h2 style="font-size:15px;">Loupe inspection</h2>
+          </div>
+          <div class="scope-body">
+            <div class="magnifier" tabindex="0" role="img" aria-label="Hover or focus to magnify the dot field and reveal individual hand-drilled holes">
+              <div class="patch" aria-hidden="true"></div>
+              <span class="tag">Hover to resolve the dots</span>
+            </div>
+            <div class="scope-meta">
+              <div class="scope-row"><span class="k">Lot</span><span class="v">KB-2026-0418</span></div>
+              <div class="scope-row"><span class="k">Read at 1 m</span><span class="v">solid indigo</span></div>
+              <div class="scope-row"><span class="k">Read at loupe</span><span class="v num">948 dots</span></div>
+              <div class="scope-row"><span class="k">Pitch</span><span class="v num">0.31 mm</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head same">
+            <h2 style="font-size:15px;">Indigo vat #3</h2>
+            <span class="pill cured" style="margin:0;">Live</span>
+          </div>
+          <div class="card-body">
+            <div class="scope-row"><span class="k">pH</span><span class="v num">11.2</span></div>
+            <div class="scope-row"><span class="k">Temp</span><span class="v num">28.4&nbsp;°C</span></div>
+            <div class="scope-row"><span class="k">Reduction</span><span class="v num">good</span></div>
+            <div class="scope-row"><span class="k">Dips logged</span><span class="v num">6 / lot</span></div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+              <button class="btn btn-ghost" style="flex:1;">Log a dip</button>
+              <button class="btn btn-ghost" style="flex:1;">Feed the vat</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2 style="font-size:15px;">Carver on shift</h2>
+          </div>
+          <div class="card-body">
+            <div class="scope-row"><span class="k">Ito Masako</span><span class="v">2 lots</span></div>
+            <div class="scope-row"><span class="k">Sano Kenji</span><span class="v">2 lots</span></div>
+            <div class="scope-row"><span class="k">Hayashi Rin</span><span class="v">1 lot · review</span></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="footnote">
+      <span>Aijiro Atelier · Edo-komon since the Tenpō era</span>
+      <span>Field reads solid at a room&rsquo;s width · resolves to a thousand holes at the loupe</span>
+    </div>
+  </div>
+</body>
+</html>

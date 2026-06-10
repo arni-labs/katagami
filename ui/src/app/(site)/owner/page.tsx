@@ -369,7 +369,7 @@ export default async function OwnerPage({
                 </p>
               ) : null}
               <form action={lockOwnerMode}>
-                <button className="inline-flex h-9 items-center gap-1.5 border border-border bg-card/70 px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground">
+                <button className="inline-flex h-9 items-center gap-1.5 bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))] shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground">
                   <Lock className="h-3.5 w-3.5" />
                   lock owner mode
                 </button>
@@ -393,7 +393,7 @@ export default async function OwnerPage({
                       type="password"
                       autoComplete="current-password"
                       disabled={!configured}
-                      className="h-10 w-full min-w-0 rounded-[4px] border border-border bg-background/70 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-[color-mix(in_oklch,var(--sumire)_24%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="h-10 w-full min-w-0 border-0 border-b-2 border-foreground/15 bg-background/70 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-[var(--sumire)] disabled:cursor-not-allowed disabled:opacity-60"
                       placeholder={
                         configured
                           ? "Only the owner knows this"
@@ -403,7 +403,7 @@ export default async function OwnerPage({
                   </span>
                   <button
                     disabled={!configured}
-                    className="inline-flex h-10 items-center justify-center gap-1.5 border border-border bg-card/70 px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                    className="inline-flex h-10 items-center justify-center gap-1.5 bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))] shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                   >
                     <Unlock className="h-3.5 w-3.5" />
                     unlock
@@ -448,7 +448,7 @@ function TasteRulesPanel({
             <Marker color="ramune">Taste rules</Marker>
           </SectionHeading>
           <form action={queueTasteDistillation}>
-            <button className="inline-flex h-9 items-center gap-1.5 border border-border bg-card/70 px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground">
+            <button className="inline-flex h-9 items-center gap-1.5 bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))] shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground">
               <Sparkles className="h-3.5 w-3.5" />
               distill archive
             </button>
@@ -462,7 +462,13 @@ function TasteRulesPanel({
         </p>
 
         {unavailable ? (
-          <p className="mt-4 border border-dashed border-border bg-background/60 px-3 py-2 text-sm text-muted-foreground">
+          <p
+            className="mt-4 bg-background/60 px-3 py-2 text-sm text-muted-foreground"
+            style={{
+              boxShadow:
+                "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+            }}
+          >
             Taste rule storage is not available in this environment yet.
           </p>
         ) : (
@@ -514,7 +520,13 @@ function TasteRuleAuditPanel({
   audits: TasteDistillationAudit[];
 }) {
   return (
-    <div className="space-y-3 border border-border bg-background/55 p-3">
+    <div
+      className="space-y-3 bg-background/55 p-3"
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+      }}
+    >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           Rule hygiene reviews
@@ -531,7 +543,7 @@ function TasteRuleAuditPanel({
           ))}
         </div>
       ) : (
-        <p className="border border-dashed border-border bg-card/50 px-3 py-2 text-sm text-muted-foreground">
+        <p className="bg-card/50 px-3 py-2 text-sm text-muted-foreground">
           Future distillation runs will show duplicate, contradiction, and
           tension candidates here for owner review.
         </p>
@@ -557,7 +569,13 @@ function TasteRuleAuditCard({
       : "recent run";
 
   return (
-    <article className="border border-border bg-card/60 p-3">
+    <article
+      className="bg-card/60 p-3"
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+      }}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -573,7 +591,7 @@ function TasteRuleAuditCard({
             href={getFileUrl(audit.reportFileId)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 items-center gap-1.5 border border-border bg-background/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--teal)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--teal)_72%,var(--foreground))] transition-colors hover:text-foreground"
           >
             <FileText className="h-3.5 w-3.5" />
             report
@@ -625,14 +643,25 @@ function AuditCandidateGroup({
   if (candidates.length === 0) return null;
   const toneClass =
     tone === "sakura"
-      ? "border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] text-[var(--sakura)]"
+      ? "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]"
       : tone === "sumire"
-        ? "border-[color-mix(in_oklch,var(--sumire)_45%,var(--border))] text-[var(--sumire)]"
-        : "border-[color-mix(in_oklch,var(--ramune)_45%,var(--border))] text-[var(--ramune)]";
+        ? "bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))]"
+        : "bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))]";
+  const toneInk =
+    tone === "sakura"
+      ? "var(--sakura)"
+      : tone === "sumire"
+        ? "var(--sumire)"
+        : "var(--ramune)";
 
   return (
-    <div className="border border-border bg-background/55 p-3">
-      <div className={`inline-flex items-center gap-1.5 border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${toneClass}`}>
+    <div
+      className="bg-background/55 p-3"
+      style={{
+        boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, ${toneInk} 20%, transparent)`,
+      }}
+    >
+      <div className={`inline-flex items-center gap-1.5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${toneClass}`}>
         {icon}
         {title} · {candidates.length}
       </div>
@@ -653,7 +682,7 @@ function AuditCandidateGroup({
                 {candidate.ruleIds.slice(0, 6).map((id) => (
                   <span
                     key={id}
-                    className="border border-border bg-card/50 px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                    className="bg-[color-mix(in_srgb,var(--foreground)_8%,var(--paper-stamp-mix))] px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
                   >
                     {compactSourceId(id)}
                   </span>
@@ -685,7 +714,13 @@ function TasteRuleCount({
   value: number;
 }) {
   return (
-    <div className="border border-border bg-background/60 px-3 py-2">
+    <div
+      className="bg-background/60 px-3 py-2"
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--teal) 20%, transparent)",
+      }}
+    >
       <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </div>
@@ -712,7 +747,7 @@ function TasteRuleSection({
       {hasChildren ? (
         <div className="space-y-3">{children}</div>
       ) : (
-        <p className="border border-dashed border-border bg-background/50 px-3 py-2 text-sm text-muted-foreground">
+        <p className="bg-background/50 px-3 py-2 text-sm text-muted-foreground">
           {empty}
         </p>
       )}
@@ -778,15 +813,15 @@ function TasteRuleSourceTag({ rule }: { rule: TasteRule }) {
   const source = tasteRuleSource(rule);
   const sourceClass =
     source.tone === "foundation"
-      ? "border-[color-mix(in_oklch,var(--ramune)_50%,var(--border))] text-[var(--ramune)]"
+      ? "bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))]"
       : source.tone === "distillation"
-        ? "border-[color-mix(in_oklch,var(--sumire)_45%,var(--border))] text-[var(--sumire)]"
-        : "border-border text-muted-foreground";
+        ? "bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))]"
+        : "bg-[color-mix(in_srgb,var(--foreground)_8%,var(--paper-stamp-mix))] text-muted-foreground";
 
   return (
     <span
       title={source.detail}
-      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${sourceClass}`}
+      className={`px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${sourceClass}`}
     >
       source: {source.label}
     </span>
@@ -796,12 +831,12 @@ function TasteRuleSourceTag({ rule }: { rule: TasteRule }) {
 function TasteRulePolarityTag({ polarity }: { polarity: string }) {
   const polarityClass =
     polarity === "positive"
-      ? "border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] text-[var(--salad)]"
-      : "border-[color-mix(in_oklch,var(--sakura)_50%,var(--border))] text-[var(--sakura)]";
+      ? "bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))]"
+      : "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]";
 
   return (
     <span
-      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
+      className={`px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${polarityClass}`}
     >
       {polarity}
     </span>
@@ -811,14 +846,14 @@ function TasteRulePolarityTag({ polarity }: { polarity: string }) {
 function TasteRuleStatusTag({ status }: { status: string }) {
   const statusClass =
     status === "Accepted"
-      ? "border-[color-mix(in_oklch,var(--salad)_45%,var(--border))] text-[var(--salad)]"
+      ? "bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))]"
       : status === "Rejected"
-        ? "border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] text-[var(--sakura)]"
-        : "border-[color-mix(in_oklch,var(--ramune)_45%,var(--border))] text-[var(--ramune)]";
+        ? "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]"
+        : "bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))]";
 
   return (
     <span
-      className={`border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${statusClass}`}
+      className={`px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${statusClass}`}
     >
       {status}
     </span>
@@ -836,7 +871,7 @@ function TasteRuleRejectButton({
     <form action={rejectTasteRule.bind(null, id)}>
       <button
         title="Move this rule to Rejected so curator jobs stop reading it."
-        className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--sakura)_45%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--sakura)] transition-all hover:-translate-y-[1px]"
+        className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--beni)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--beni)_72%,var(--foreground))] transition-all hover:-translate-y-[1px]"
       >
         <X className="h-3.5 w-3.5" />
         {label}
@@ -848,7 +883,7 @@ function TasteRuleRejectButton({
 function TasteRuleAcceptButton({ id }: { id: string }) {
   return (
     <form action={acceptTasteRule.bind(null, id)}>
-      <button className="inline-flex h-8 items-center gap-1.5 border border-[color-mix(in_oklch,var(--salad)_50%,var(--border))] bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--salad)] transition-all hover:-translate-y-[1px]">
+      <button className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))] transition-all hover:-translate-y-[1px]">
         <Check className="h-3.5 w-3.5" />
         accept
       </button>
@@ -870,7 +905,13 @@ function TasteRuleLine({
   const status = tasteRuleStatus(rule);
 
   return (
-    <article className="border border-border bg-background/70 px-3 py-3 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
+    <article
+      className="bg-background/70 px-3 py-3"
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+      }}
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
         <div className="flex shrink-0 flex-wrap gap-1.5 lg:max-w-[15rem]">
           <TasteRuleStatusTag status={status} />
@@ -922,7 +963,13 @@ function TasteRuleCard({
   );
 
   return (
-    <article className="border border-border bg-background/70 p-4 shadow-[0_1px_2px_rgba(30,35,45,0.04)]">
+    <article
+      className="bg-background/70 p-4"
+      style={{
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--sumire) 20%, transparent)",
+      }}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <TasteRuleStatusTag status={tasteRuleStatus(rule)} />
         <TasteRulePolarityTag polarity={polarity} />
@@ -960,7 +1007,7 @@ function TasteRuleCard({
             href={getFileUrl(reportFileId)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 items-center gap-1.5 border border-border bg-card/60 px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--teal)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--teal)_72%,var(--foreground))] transition-colors hover:text-foreground"
           >
             <FileText className="h-3.5 w-3.5" />
             report
@@ -995,7 +1042,7 @@ function TasteRuleLanguageLinks({
         <Link
           key={id}
           href={`/language/${id}`}
-          className="border border-border bg-card/50 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          className="bg-[color-mix(in_srgb,var(--teal)_10%,var(--paper-stamp-mix))] px-2 py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
         >
           {id.slice(0, 8)}
         </Link>

@@ -75,7 +75,7 @@ export function SendToReviewLanguageButton({
           e.stopPropagation();
           sendToReview();
         }}
-        className="group/review relative flex h-7 w-7 items-center justify-center rounded-[3px] border border-[color-mix(in_oklch,var(--ramune)_54%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--ramune)_10%,var(--paper-tape-mix))] text-[color-mix(in_oklch,var(--ramune),black_18%)] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[-2deg] hover:bg-[color-mix(in_oklch,var(--ramune)_82%,white_8%)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklch,var(--ramune)_42%,transparent)] disabled:pointer-events-none disabled:opacity-60"
+        className="group/review relative flex h-7 w-7 items-center justify-center rounded-[3px] bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[-2deg] hover:bg-[color-mix(in_oklch,var(--ramune)_82%,white_8%)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklch,var(--ramune)_42%,transparent)] disabled:pointer-events-none disabled:opacity-60"
       >
         <span
           aria-hidden
@@ -85,7 +85,13 @@ export function SendToReviewLanguageButton({
         <span className="sr-only">{isPending ? "Sending" : "Send to review"}</span>
       </button>
       {error ? (
-        <div className="absolute right-0 top-9 z-40 w-48 rounded-[3px] border border-destructive/25 bg-background/95 px-2 py-1 text-[11px] font-medium leading-tight text-destructive shadow-[0_2px_8px_rgba(30,35,45,0.12)]">
+        <div
+          className="absolute right-0 top-9 z-40 w-48 rounded-[3px] bg-background/95 px-2 py-1 text-[11px] font-medium leading-tight text-destructive"
+          style={{
+            boxShadow:
+              "0 2px 8px rgba(30,35,45,0.12), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+          }}
+        >
           {error}
         </div>
       ) : null}

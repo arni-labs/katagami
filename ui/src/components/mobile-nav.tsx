@@ -41,26 +41,26 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-card/95 shadow-[0_-3px_0_color-mix(in_srgb,var(--ramune)_14%,transparent)] md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {/* washi tape peeking over the top edge */}
+      {/* spot-ink strips peeking over the top edge */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-2 left-[18%] h-[12px] w-14 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
+        className="pointer-events-none absolute -top-1.5 left-[18%] h-[10px] w-14 opacity-75"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--yuzu) 35%, var(--paper-tape-mix)) 6px 12px)",
-          transform: "rotate(-4deg)",
+          background: "var(--yuzu)",
+          mixBlendMode: "var(--ink-blend)" as never,
+          transform: "rotate(-4deg) skewX(-8deg)",
         }}
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-1.5 right-[14%] h-[10px] w-10 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
+        className="pointer-events-none absolute -top-1 right-[14%] h-[9px] w-10 opacity-70"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--teal) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--teal) 30%, var(--paper-tape-mix)) 6px 12px)",
-          transform: "rotate(6deg)",
+          background: "var(--teal)",
+          mixBlendMode: "var(--ink-blend)" as never,
+          transform: "rotate(6deg) skewX(-8deg)",
         }}
       />
 

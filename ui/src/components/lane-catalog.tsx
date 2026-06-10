@@ -26,11 +26,11 @@ function SearchBar({
     <div className="relative mb-7 flex flex-wrap items-center gap-x-5 gap-y-3 overflow-hidden bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px] sm:overflow-visible">
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-80"
+        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-75"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--salad) 35%, var(--paper-tape-mix)) 6px 12px)",
-          transform: "rotate(-6deg)",
+          background: "var(--salad)",
+          mixBlendMode: "var(--ink-blend)" as never,
+          transform: "rotate(-6deg) skewX(-8deg)",
         }}
       />
       <span className="stamp text-[var(--sumire)]">find</span>
@@ -108,7 +108,7 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
 
 function EmptyState({ noun }: { noun: string }) {
   return (
-    <div className="paper-card mx-auto max-w-md rounded-[var(--radius-lg)] p-8 text-center text-sm text-muted-foreground">
+    <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
       No {noun} found.
       <div className="mt-1 font-mono text-[11px]">try a different search</div>
     </div>

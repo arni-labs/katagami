@@ -9,7 +9,8 @@ type AccentColor =
   | "ramune"
   | "sumire";
 
-/** A generic sticky-note-style card (sharp corners, translucent, soft shadow). */
+/** A riso print note — flat paper sheet, no border; the edge is a
+    misregistered ink pass offset underneath, tinted by `tint`. */
 export function StickyNote({
   children,
   tint,
@@ -21,18 +22,16 @@ export function StickyNote({
   className?: string;
   style?: CSSProperties;
 }) {
+  const ink = `var(--${tint ?? "ramune"})`;
   const tintBg = tint
-    ? `color-mix(in srgb, var(--${tint}) 9%, var(--paper-tint-base))`
+    ? `color-mix(in srgb, var(--${tint}) 8%, var(--paper-tint-base))`
     : "var(--paper-tint-base)";
   return (
     <div
       className={`relative ${className}`}
       style={{
         background: tintBg,
-        backdropFilter: "blur(4px) saturate(1.05)",
-        WebkitBackdropFilter: "blur(4px) saturate(1.05)",
-        boxShadow:
-          "0 1px 2px rgba(30, 35, 45, 0.04), 0 6px 18px rgba(30, 35, 45, 0.06)",
+        boxShadow: `0 1px 2px rgba(33, 33, 60, 0.03), 4px 5px 0 color-mix(in srgb, ${ink} 15%, transparent)`,
         ...style,
       }}
     >
@@ -41,13 +40,13 @@ export function StickyNote({
   );
 }
 
-/** A small diagonal washi tape. Use absolute-positioned on a parent. */
+/** A strip of overprinted spot ink (was washi tape). Absolute-position on a parent. */
 export function WashiTape({
   color = "sakura",
   rotate = -5,
   className = "",
   width = 64,
-  height = 16,
+  height = 13,
   style,
 }: {
   color?: AccentColor;
@@ -60,12 +59,13 @@ export function WashiTape({
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] ${className}`}
+      className={`pointer-events-none absolute opacity-75 ${className}`}
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${color}) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${color}) 35%, var(--paper-tape-mix)) 6px 12px)`,
-        transform: `rotate(${rotate}deg)`,
+        background: `var(--${color})`,
+        mixBlendMode: "var(--ink-blend)" as CSSProperties["mixBlendMode"],
+        transform: `rotate(${rotate}deg) skewX(-8deg)`,
         ...style,
       }}
     />

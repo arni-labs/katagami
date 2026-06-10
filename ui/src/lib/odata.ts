@@ -1,3 +1,12 @@
+import {
+  demoArtStyles,
+  demoDesignLanguages,
+  demoPaletteSystems,
+  getDemoArtStyle,
+  getDemoDesignLanguage,
+  getDemoPaletteSystem,
+} from "@/lib/demo-catalog";
+
 function cleanEnv(value: string | undefined, fallback: string): string {
   const cleaned = (value ?? fallback).replace(/\\n/g, "").trim();
   return cleaned || fallback;
@@ -335,11 +344,20 @@ export async function listDesignLanguages(
   select?: readonly string[],
 ): Promise<DesignLanguage[]> {
   if (!filter) {
-    const rowsByStatus = await Promise.all(
-      DESIGN_LANGUAGE_LIFECYCLE_STATUSES.map((status) =>
-        collectDesignLanguageRows(`Status eq '${status}'`, orderby, select),
-      ),
-    );
+    let rowsByStatus: Record<string, unknown>[][];
+    try {
+      rowsByStatus = await Promise.all(
+        DESIGN_LANGUAGE_LIFECYCLE_STATUSES.map((status) =>
+          collectDesignLanguageRows(`Status eq '${status}'`, orderby, select),
+        ),
+      );
+    } catch (err) {
+      // Offline fallback: the local specimen catalog keeps the library
+      // browsable when the Temper backend is unreachable.
+      const demo = demoDesignLanguages();
+      if (demo.length > 0) return demo;
+      throw err;
+    }
     const languages = new Map<string, DesignLanguage>();
     for (const rows of rowsByStatus) {
       for (const row of rows) {
@@ -347,12 +365,21 @@ export async function listDesignLanguages(
         languages.set(language.entity_id, language);
       }
     }
+    for (const demo of demoDesignLanguages()) {
+      if (!languages.has(demo.entity_id)) languages.set(demo.entity_id, demo);
+    }
     return Array.from(languages.values());
   }
 
-  return (await collectDesignLanguageRows(filter, orderby, select)).map(
+  const rows = (await collectDesignLanguageRows(filter, orderby, select)).map(
     normalizeDesignLanguageRow,
   );
+  const statusMatch = filter.match(/^Status\s+eq\s+'([^']+)'$/i);
+  if (!statusMatch) return rows;
+  const demo = demoDesignLanguages().filter(
+    (d) => d.status === statusMatch[1],
+  );
+  return demo.length > 0 ? [...rows, ...demo] : rows;
 }
 
 async function collectDesignLanguageRows(
@@ -372,6 +399,8 @@ async function collectDesignLanguageRows(
 }
 
 export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
+  const demo = getDemoDesignLanguage(id);
+  if (demo) return demo;
   return normalizeDesignLanguageRow(
     await odata<Record<string, unknown>>(`DesignLanguages('${id}')`),
   );
@@ -672,12 +701,35 @@ async function getLane(set: string, id: string): Promise<LaneEntity> {
   );
 }
 
+async function listLaneWithDemo(
+  set: "PaletteSystems" | "ArtStyles",
+  filter: string,
+  demoRows: LaneEntity[],
+): Promise<LaneEntity[]> {
+  let rows: LaneEntity[] = [];
+  let remoteError: unknown;
+  try {
+    rows = await listLane(set, filter);
+  } catch (err) {
+    remoteError = err;
+  }
+  if (remoteError && demoRows.length === 0) throw remoteError;
+  const seen = new Set(rows.map((r) => r.entity_id));
+  return [...rows, ...demoRows.filter((d) => !seen.has(d.entity_id))];
+}
+
 export const listPaletteSystems = (filter = "Status eq 'Published'") =>
-  listLane("PaletteSystems", filter);
-export const getPaletteSystem = (id: string) => getLane("PaletteSystems", id);
+  listLaneWithDemo("PaletteSystems", filter, demoPaletteSystems());
+export const getPaletteSystem = (id: string) =>
+  getDemoPaletteSystem(id)
+    ? Promise.resolve(getDemoPaletteSystem(id)!)
+    : getLane("PaletteSystems", id);
 export const listArtStyles = (filter = "Status eq 'Published'") =>
-  listLane("ArtStyles", filter);
-export const getArtStyle = (id: string) => getLane("ArtStyles", id);
+  listLaneWithDemo("ArtStyles", filter, demoArtStyles());
+export const getArtStyle = (id: string) =>
+  getDemoArtStyle(id)
+    ? Promise.resolve(getDemoArtStyle(id)!)
+    : getLane("ArtStyles", id);
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 

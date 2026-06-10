@@ -143,12 +143,14 @@ export function SpecActions({
         <span
           aria-hidden
           className="washi-tape absolute -left-4 -top-2 z-10"
-          style={{
-            width: "86px",
-            height: "16px",
-            transform: "rotate(-5deg)",
-            background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${accent}) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${accent}) 30%, var(--paper-tape-mix)) 6px 12px)`,
-          }}
+          style={
+            {
+              width: "86px",
+              height: "16px",
+              transform: "rotate(-5deg) skewX(-8deg)",
+              "--strip-ink": `var(--${accent})`,
+            } as React.CSSProperties
+          }
         />
 
         <div className="relative overflow-hidden bg-card/85 px-5 py-5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_10px_28px_rgba(30,35,45,0.08)] sm:px-6">
@@ -202,7 +204,7 @@ export function SpecActions({
               <button
                 type="button"
                 onClick={handleDownload}
-                className="group inline-flex cursor-pointer items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
+                className="group inline-flex cursor-pointer items-center gap-2 bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
                 title={`Download ${actionTitle}`}
               >
                 <Download className="h-4 w-4" />
@@ -249,12 +251,14 @@ export function SpecActions({
       <span
         aria-hidden
         className="washi-tape absolute -left-3 -top-2 z-10"
-        style={{
-          width: "62px",
-          height: "14px",
-          transform: "rotate(-6deg)",
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${accent}) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${accent}) 30%, var(--paper-tape-mix)) 6px 12px)`,
-        }}
+        style={
+          {
+            width: "62px",
+            height: "14px",
+            transform: "rotate(-6deg) skewX(-8deg)",
+            "--strip-ink": `var(--${accent})`,
+          } as React.CSSProperties
+        }
       />
 
       <div className="relative flex flex-col gap-2 bg-card/70 px-3 pb-3 pt-2 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">

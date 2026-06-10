@@ -77,8 +77,12 @@ export function EmbodimentViewer({
 function UnavailablePreview() {
   return (
     <div
-      className="flex w-full items-center justify-center border border-dashed border-foreground/20 bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
-      style={{ aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}` }}
+      className="flex w-full items-center justify-center bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
+      style={{
+        aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}`,
+        boxShadow:
+          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--teal) 20%, transparent)",
+      }}
     >
       embodiment not available
     </div>

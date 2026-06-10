@@ -288,7 +288,7 @@ function ColorsGrid({ values }: { values: Record<string, unknown> }) {
             className="flex items-center gap-2.5 bg-card/60 p-2"
           >
             <span
-              className="h-8 w-8 shrink-0 rounded-[2px] border border-border shadow-[0_1px_0_rgba(30,35,45,0.06)]"
+              className="h-8 w-8 shrink-0 rounded-[2px] shadow-[inset_0_0_0_1px_rgba(33,33,60,0.10),0_1px_0_rgba(30,35,45,0.06)]"
               style={{ background: color ?? "#eee" }}
             />
             <div className="min-w-0 flex-1 leading-tight">

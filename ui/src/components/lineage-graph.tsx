@@ -100,7 +100,7 @@ export function LineageGraph({
               </div>
               <span
                 aria-hidden
-                className="hidden h-px flex-1 border-t border-dashed border-border sm:block"
+                className="sticker-perforation hidden flex-1 sm:block"
               />
               <span className="ml-auto font-mono text-[10px] text-muted-foreground sm:ml-0">
                 {genNodes.length}
@@ -156,9 +156,10 @@ function LineageCard({
       style={{ transform: `rotate(${rot}deg)` }}
     >
       <article
-        className="relative p-3.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_4px_12px_rgba(30,35,45,0.06)] transition-shadow duration-200 group-hover:shadow-[0_2px_4px_rgba(30,35,45,0.06),0_12px_24px_rgba(30,35,45,0.09)]"
+        className="relative p-3.5"
         style={{
           background: `color-mix(in srgb, var(--${tint}) 10%, var(--paper-tint-base))`,
+          boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${tint}) 20%, transparent)`,
         }}
       >
         {/* highlighted = yuzu marker wash behind everything */}
@@ -191,9 +192,10 @@ function LineageCard({
 
         <div className="relative mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
           <span
-            className="inline-flex items-center gap-1 rounded-[3px] border border-border px-1.5 py-0.5 font-mono uppercase tracking-[0.1em]"
+            className="inline-flex items-center gap-1 rounded-[3px] px-1.5 py-0.5 font-mono uppercase tracking-[0.1em]"
             style={{
-              background: `color-mix(in oklch, var(--${tint}) 30%, var(--paper-tape-mix))`,
+              background: `color-mix(in srgb, var(--${tint}) 14%, var(--paper-stamp-mix))`,
+              color: `color-mix(in oklch, var(--${tint}) 72%, var(--foreground))`,
             }}
           >
             {node.lineageType}
@@ -204,7 +206,8 @@ function LineageCard({
         </div>
 
         {node.parentIds.length > 0 && (
-          <div className="relative mt-2.5 border-t border-dashed border-border pt-2">
+          <div className="relative mt-2.5 pt-2">
+            <div aria-hidden className="sticker-perforation absolute inset-x-0 top-0" />
             <div className="flex items-start gap-1.5 font-mono text-[10px]">
               <CornerDownRight className="mt-[1px] h-3 w-3 shrink-0 text-[var(--sumire)]" />
               <span className="flex-1">
@@ -243,8 +246,11 @@ function LineageCard({
 function LegendChip({ label, color }: { label: string; color: AccentColor }) {
   return (
     <span
-      className="inline-flex items-center gap-2 border border-border bg-card/70 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-foreground/80"
-      style={{ boxShadow: "0 1px 2px rgba(30,35,45,0.04)" }}
+      className="inline-flex items-center gap-2 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em]"
+      style={{
+        background: `color-mix(in srgb, var(--${color}) 14%, var(--paper-stamp-mix))`,
+        color: `color-mix(in oklch, var(--${color}) 72%, var(--foreground))`,
+      }}
     >
       <span
         className="inline-block h-2 w-2 rounded-full"

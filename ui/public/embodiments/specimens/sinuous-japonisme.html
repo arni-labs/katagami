@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tsuru-kusa — Botanical Dye & Stencil Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Marcellus+SC&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  button, input, textarea, select { font: inherit; color: inherit; appearance: none; -webkit-appearance: none; background: none; border: none; outline: none; }
+  :root {
+    --primary: #7c8a6a; --secondary: #c7a0a0; --accent: #a86b6b;
+    --bg: #ece6d8; --surface: #f4efe3; --text: #3a3f44; --muted: #8b8775;
+    --border: #cfd6bf; --error: #9c4f4f; --success: #6d8a5f; --warning: #c2925a; --info: #6f8390;
+    --spine: #7c8a6a; --ma: 64px;
+    --ease: cubic-bezier(0.34, 0.01, 0.2, 1); --dur: 420ms;
+  }
+  html, body { max-width: 100%; overflow-x: hidden; }
+  body {
+    background: var(--bg); color: var(--text); font-family: "EB Garamond", Georgia, serif;
+    font-size: 16px; line-height: 1.62; letter-spacing: 0.01em; position: relative; min-height: 100vh;
+  }
+  /* fixed background whiplash stem climbing from lower-left */
+  .page-stem { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.5; }
+  .page-stem path { fill: none; stroke: var(--border); }
+  .shell { position: relative; z-index: 1; }
+  a { color: var(--accent); text-decoration: none; }
+  /* ——— Top nav / brand ——— */
+  .topbar {
+    display: flex; align-items: center; gap: 24px;
+    padding: 20px clamp(20px, 5vw, 56px);
+    border-bottom: 1.5px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .mark { width: 38px; height: 38px; flex: none; }
+  .brand .mark path { fill: none; stroke: var(--primary); stroke-width: 5; stroke-linecap: round; }
+  .brand .mark circle { fill: var(--secondary); }
+  .brand .words b { font-family: "Marcellus SC", serif; font-size: 19px; letter-spacing: 0.12em; display: block; line-height: 1.1; }
+  .brand .words span { font-size: 12.5px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+  .nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  .nav a { font-family: "Marcellus SC", serif; font-size: 13.5px; letter-spacing: 0.08em; color: var(--text); padding: 8px 14px; position: relative; transition: color var(--dur) var(--ease); }
+  .nav a::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 2px; height: 1.5px; background: var(--primary); transform: scaleX(0); transform-origin: left; transition: transform var(--dur) var(--ease); }
+  .nav a:hover { color: var(--accent); }
+  .nav a:hover::after, .nav a.active::after { transform: scaleX(1); }
+  .nav a.active { color: var(--accent); }
+  .topbar .who { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .topbar .who .dot { width: 26px; height: 26px; border-radius: 999px; background: var(--secondary); display: grid; place-items: center; font-family: "Marcellus SC"; font-size: 12px; color: var(--surface); }
+  .frame { max-width: 1180px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 56px); }
+  /* ——— Hero: continuous whiplash iris/wisteria stroke ——— */
+  .hero { position: relative; padding: 56px 0 24px; }
+  .hero-art { width: 100%; height: 340px; display: block; }
+  .hero-art .whip { fill: none; stroke: var(--primary); stroke-linecap: round; }
+  .hero-art .whip-2 { fill: none; stroke: var(--secondary); stroke-linecap: round; }
+  .hero-art .leaf { fill: var(--secondary); opacity: 0.85; }
+  .hero-art .leaf.sage { fill: var(--primary); opacity: 0.7; }
+  .hero-art .bloom { fill: var(--accent); }
+  .hero-copy { position: absolute; top: 92px; right: clamp(20px, 5vw, 40px); max-width: 430px; text-align: right; }
+  .hero-copy .eyebrow { font-family: "Spline Sans Mono", monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); }
+  .hero-copy h1 { font-family: "Marcellus SC", serif; font-weight: 400; letter-spacing: 0.08em; font-size: clamp(34px, 5vw, 56px); line-height: 1.04; margin: 14px 0 16px; color: var(--text); }
+  .hero-copy p { font-size: 17px; color: var(--muted); font-style: italic; }
+  .hero-copy .cta { margin-top: 24px; display: inline-flex; gap: 12px; }
+  /* ——— buttons ——— */
+  .btn { font-family: "Marcellus SC", serif; letter-spacing: 0.08em; font-size: 14px; padding: 11px 26px; cursor: pointer; border-radius: 4px 4px 4px 22px; transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .btn-primary { background: var(--primary); color: var(--surface); border: 1.5px solid var(--primary); }
+  .btn-primary:hover { background: #6b785a; transform: translateY(-2px); }
+  .btn-primary:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 3px; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--accent); transform: translateY(-2px); }
+  .btn-ghost:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 3px; }
+  /* ——— tendril divider (stem + leaf nodes) ——— */
+  .tendril { display: block; width: 100%; height: 40px; margin: 12px 0 8px; overflow: visible; }
+  .tendril path { fill: none; stroke: var(--border); stroke-width: 1.5; }
+  .tendril .lf { fill: var(--primary); opacity: 0.65; }
+  .tendril .lf.rose { fill: var(--secondary); opacity: 0.8; }
+  .section-head { display: flex; align-items: baseline; gap: 16px; margin: 8px 0 26px; }
+  .section-head h2 { font-family: "Marcellus SC", serif; font-weight: 400; font-size: 26px; letter-spacing: 0.06em; }
+  .section-head .idx { font-family: "Spline Sans Mono", monospace; font-size: 12px; color: var(--muted); letter-spacing: 0.18em; }
+  .section-head .trail { flex: 1; height: 1.5px; background: linear-gradient(90deg, var(--border), transparent); align-self: center; }
+  /* ——— the vine spine layout ——— */
+  .vine { position: relative; padding-left: 48px; }
+  .vine::before { content: ""; position: absolute; left: 14px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(180deg, transparent, var(--spine) 8%, var(--spine) 92%, transparent); opacity: 0.55; }
+  .node { position: relative; margin-bottom: var(--ma); }
+  .node::before { content: ""; position: absolute; left: -41px; top: 12px; width: 12px; height: 12px; border-radius: 999px; background: var(--secondary); border: 2px solid var(--bg); box-shadow: 0 0 0 1.5px var(--primary); }
+  /* trailing ma negative space on alternating sides */
+  .node.lean-right { margin-right: clamp(0px, 16vw, 180px); }
+  .node.lean-left { margin-left: clamp(0px, 9vw, 110px); }
+  /* ——— panels (petal-cornered) ——— */
+  .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 4px 4px 4px 32px; padding: 26px 28px; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+  .panel:hover { border-color: var(--primary); }
+  .panel h3 { font-family: "Marcellus SC", serif; font-weight: 400; font-size: 19px; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .panel .lede { color: var(--muted); font-style: italic; font-size: 15px; }
+  /* batch panel — accent variant with tendril mark */
+  .panel-feature { border-radius: 4px 32px 4px 4px; position: relative; overflow: hidden; }
+  .panel-feature .corner-stem { position: absolute; top: -6px; right: -6px; width: 78px; height: 78px; opacity: 0.5; }
+  .panel-feature .corner-stem path { fill: none; stroke: var(--secondary); stroke-width: 2; }
+  /* ——— grid of vat cards ——— */
+  .vats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 4px; }
+  .vat { background: var(--surface); border: 1.5px solid var(--border); border-radius: 4px 4px 4px 26px; padding: 20px; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+  .vat:hover { border-color: var(--primary); transform: translateY(-3px); }
+  .vat .top { display: flex; align-items: center; justify-content: space-between; }
+  .vat .name { font-family: "Marcellus SC", serif; font-size: 16px; letter-spacing: 0.05em; }
+  .vat .swatch { width: 30px; height: 30px; border-radius: 999px 999px 999px 4px; border: 1.5px solid rgba(58,63,68,0.18); }
+  .vat .meta { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .vat .meta b { color: var(--text); font-weight: 600; font-style: normal; }
+  .vat .gauge { height: 6px; border-radius: 999px; background: var(--border); margin-top: 14px; overflow: hidden; }
+  .vat .gauge i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+  /* ——— badges / pills ——— */
+  .badge { font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .badge.ok { color: var(--success); background: rgba(109,138,95,0.14); }
+  .badge.warn { color: var(--warning); background: rgba(194,146,90,0.16); }
+  .badge.rest { color: var(--info); background: rgba(111,131,144,0.16); }
+  .badge.due { color: var(--error); background: rgba(156,79,79,0.14); }
+  /* ——— metrics strip ——— */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .stat { border-left: 2.5px solid var(--primary); padding: 4px 0 4px 16px; }
+  .stat .n { font-family: "Marcellus SC", serif; font-size: 32px; letter-spacing: 0.03em; line-height: 1; }
+  .stat .n small { font-size: 15px; color: var(--muted); }
+  .stat .l { font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+  /* ——— tabs ——— */
+  .tabs { display: flex; gap: 2px; border-bottom: 1.5px solid var(--border); margin-bottom: 22px; flex-wrap: wrap; }
+  .tab { font-family: "Marcellus SC", serif; font-size: 14px; letter-spacing: 0.06em; cursor: pointer; padding: 10px 18px; color: var(--muted); position: relative; transition: color var(--dur) var(--ease); }
+  .tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1.5px; height: 2.5px; background: var(--accent); transform: scaleX(0); transition: transform var(--dur) var(--ease); }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); }
+  .tab.active::after { transform: scaleX(1); }
+  /* ——— row list / table ——— */
+  .rows { border: 1.5px solid var(--border); border-radius: 4px 4px 4px 28px; overflow: hidden; background: var(--surface); }
+  .rows .r { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.9fr 0.7fr; gap: 14px; align-items: center; padding: 14px 22px; border-bottom: 1.5px solid var(--border); transition: background var(--dur) var(--ease) }
+  .rows .r:last-child { border-bottom: none; }
+  .rows .r.head { background: rgba(124,138,106,0.10); font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .rows .r:not(.head):hover { background: rgba(199,160,160,0.10); }
+  .rows .stencil { font-family: "Marcellus SC", serif; font-size: 15.5px; letter-spacing: 0.03em; }
+  .rows .sub { display: block; font-size: 12.5px; color: var(--muted); font-style: italic; letter-spacing: 0; }
+  .rows .mono { font-family: "Spline Sans Mono", monospace; font-size: 13px; }
+  .rows .end { text-align: right; }
+  .iconbtn { font-family: "Spline Sans Mono", monospace; font-size: 12px; padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 999px; cursor: pointer; color: var(--muted); transition: all var(--dur) var(--ease); }
+  .iconbtn:hover { border-color: var(--primary); color: var(--accent); }
+  /* ——— intake form ——— */
+  .form { display: grid; gap: 18px; }
+  .field label { font-family: "Spline Sans Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 7px; }
+  .ctrl { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 4px 4px 4px 18px; padding: 11px 14px; font-size: 15px; color: var(--text); transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+  .ctrl::placeholder { color: var(--muted); font-style: italic; }
+  .ctrl:focus { border-color: var(--primary); background: var(--surface); }
+  .ctrl:focus-visible { outline: 2.5px solid rgba(124,138,106,0.4); outline-offset: 1px; }
+  textarea.ctrl { resize: vertical; min-height: 96px; line-height: 1.55; }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 9px; height: 9px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: translateY(-65%) rotate(45deg); pointer-events: none; }
+  .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  /* ——— footer ——— */
+  .foot { padding: 40px clamp(20px, 5vw, 56px) 56px; color: var(--muted); font-size: 13px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; border-top: 1.5px solid var(--border); margin-top: 32px; }
+  .foot .mono { font-family: "Spline Sans Mono", monospace; letter-spacing: 0.08em; }
+  /* ——— responsive ——— */
+  @media (max-width: 1050px) {
+    .hero-copy { position: static; text-align: left; max-width: none; margin-top: -40px; }
+    .hero-art { height: 240px; }
+    .vats { grid-template-columns: repeat(2, 1fr); }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .node.lean-right { margin-right: 0; }
+    .node.lean-left { margin-left: 0; }
+  }
+  @media (max-width: 660px) {
+    .nav { display: none; }
+    .topbar { gap: 14px; }
+    .hero-art { height: 180px; }
+    .hero-copy h1 { font-size: 32px; }
+    .vine { padding-left: 30px; }
+    .vine::before { left: 8px; }
+    .node::before { left: -27px; }
+    .vats { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .rows .r { grid-template-columns: 1.4fr 1fr 0.8fr; }
+    .rows .r .hide-m { display: none; }
+    .two-up { grid-template-columns: 1fr; }
+    .hero-copy .cta { flex-direction: column; }
+    .btn { text-align: center; }
+  }
+</style>
+</head>
+<body>
+  <!-- fixed background whiplash stem climbing from lower-left -->
+  <svg class="page-stem" viewBox="0 0 1440 900" preserveAspectRatio="xMinYMax slice" aria-hidden="true">
+    <path d="M-40 940 C 180 720, 80 560, 300 520 S 560 620, 520 380 S 360 120, 640 140 S 880 320, 980 180"
+          stroke-width="2.5" />
+    <path d="M520 380 C 600 360, 660 300, 700 320" stroke-width="1.5" />
+    <path d="M640 140 C 700 110, 760 130, 800 90" stroke-width="1.5" />
+  </svg>
+  <div class="shell">
+    <!-- TOP NAV / BRAND -->
+    <header class="topbar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M10 40 C 16 28, 12 20, 24 16 S 36 24, 32 10" />
+          <path d="M24 16 C 30 14, 34 18, 38 14" />
+          <circle cx="32" cy="10" r="3.5" />
+        </svg>
+        <div class="words">
+          <b>Tsuru-kusa</b>
+          <span>Dye &amp; Stencil Atelier</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="#" class="active">Workshop</a>
+        <a href="#">Vats</a>
+        <a href="#">Stencils</a>
+        <a href="#">Commissions</a>
+        <a href="#">Pigment Log</a>
+      </nav>
+      <div class="who">
+        <span>Maki Aizawa</span>
+        <span class="dot">MA</span>
+      </div>
+    </header>
+    <main class="frame">
+      <!-- HERO — single continuous whiplash iris/wisteria stroke -->
+      <section class="hero">
+        <svg class="hero-art" viewBox="0 0 1180 340" preserveAspectRatio="xMidYMid meet" aria-label="Whiplash wisteria stroke">
+          <!-- the one continuous variable-width stroke, drawn as tapering segments -->
+          <path class="whip" stroke-width="3"  d="M30 300 C 150 250, 120 180, 250 175" />
+          <path class="whip" stroke-width="5"  d="M250 175 C 360 170, 380 250, 470 235" />
+          <path class="whip" stroke-width="8"  d="M470 235 C 560 222, 540 120, 640 110" />
+          <path class="whip" stroke-width="11" d="M640 110 C 740 100, 760 200, 850 185" />
+          <path class="whip" stroke-width="7"  d="M850 185 C 930 173, 920 70, 1000 60" />
+          <path class="whip" stroke-width="3.5" d="M1000 60 C 1070 53, 1110 96, 1150 70" />
+          <!-- trailing tendril -->
+          <path class="whip-2" stroke-width="2" d="M640 110 C 600 70, 660 40, 700 56 C 660 70, 690 110, 660 130" />
+          <!-- leaves along the stem -->
+          <path class="leaf sage" d="M250 175 C 230 150, 270 138, 290 160 C 272 176, 248 192, 250 175 Z" />
+          <path class="leaf" d="M470 235 C 452 258, 490 270, 506 248 C 490 234, 470 218, 470 235 Z" />
+          <path class="leaf sage" d="M850 185 C 832 160, 872 150, 890 172 C 872 188, 848 202, 850 185 Z" />
+          <!-- bloom heads (wisteria/iris) -->
+          <circle class="bloom" cx="640" cy="110" r="9" />
+          <circle class="bloom" cx="1000" cy="60" r="7" />
+          <circle class="leaf" cx="470" cy="235" r="5" />
+        </svg>
+        <div class="hero-copy">
+          <span class="eyebrow">Spring indigo cycle · 2026</span>
+          <h1>The line is dyeing.</h1>
+          <p>Six fermentation vats running, eleven Ise-katagami stencils on the bench, and one commission due before the moon turns.</p>
+          <div class="cta">
+            <button class="btn btn-primary">Open today's vat log</button>
+            <button class="btn btn-ghost">Pull a stencil</button>
+          </div>
+        </div>
+      </section>
+      <!-- tendril divider -->
+      <svg class="tendril" viewBox="0 0 1180 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 20 C 200 20, 300 6, 480 20 S 760 34, 1180 20" />
+        <ellipse class="lf" cx="300" cy="10" rx="11" ry="6" transform="rotate(-22 300 10)" />
+        <ellipse class="lf rose" cx="760" cy="30" rx="11" ry="6" transform="rotate(20 760 30)" />
+      </svg>
+      <!-- METRICS hung as first vine node -->
+      <div class="vine">
+        <section class="node lean-right">
+          <div class="section-head">
+            <span class="idx">i.</span>
+            <h2>Atelier at a glance</h2>
+            <span class="trail"></span>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="n">6 <small>active</small></div><div class="l">Indigo vats</div></div>
+            <div class="stat"><div class="n">11</div><div class="l">Stencils on bench</div></div>
+            <div class="stat"><div class="n">3.8<small>pH avg</small></div><div class="l">Vat balance</div></div>
+            <div class="stat"><div class="n">2</div><div class="l">Commissions due</div></div>
+          </div>
+        </section>
+        <!-- VAT CARDS node -->
+        <section class="node lean-left">
+          <div class="section-head">
+            <span class="idx">ii.</span>
+            <h2>Fermentation vats</h2>
+            <span class="trail"></span>
+          </div>
+          <div class="vats">
+            <article class="vat">
+              <div class="top">
+                <span class="name">Sukumo No.1</span>
+                <span class="swatch" style="background:#2c3e54"></span>
+              </div>
+              <div class="meta"><b>Reduced</b> · pH 11.2 · 28°C</div>
+              <div class="meta"><span class="badge ok">Ready</span></div>
+              <div class="gauge"><i style="width:88%"></i></div>
+            </article>
+            <article class="vat">
+              <div class="top">
+                <span class="name">Sukumo No.2</span>
+                <span class="swatch" style="background:#3b5066"></span>
+              </div>
+              <div class="meta"><b>Reviving</b> · pH 10.6 · 26°C</div>
+              <div class="meta"><span class="badge warn">Feed lye</span></div>
+              <div class="gauge"><i style="width:54%"></i></div>
+            </article>
+            <article class="vat">
+              <div class="top">
+                <span class="name">Madder pot</span>
+                <span class="swatch" style="background:#a8503f"></span>
+              </div>
+              <div class="meta"><b>Steeping</b> · pH 6.8 · 60°C</div>
+              <div class="meta"><span class="badge rest">Resting 4h</span></div>
+              <div class="gauge"><i style="width:70%; background:var(--accent)"></i></div>
+            </article>
+            <article class="vat">
+              <div class="top">
+                <span class="name">Kariyasu (weld)</span>
+                <span class="swatch" style="background:#c2a44e"></span>
+              </div>
+              <div class="meta"><b>Mordanting</b> · alum bath</div>
+              <div class="meta"><span class="badge rest">Resting</span></div>
+              <div class="gauge"><i style="width:42%; background:var(--warning)"></i></div>
+            </article>
+            <article class="vat">
+              <div class="top">
+                <span class="name">Sukumo No.3</span>
+                <span class="swatch" style="background:#1f3247"></span>
+              </div>
+              <div class="meta"><b>Deep</b> · pH 11.5 · 29°C</div>
+              <div class="meta"><span class="badge ok">Ready</span></div>
+              <div class="gauge"><i style="width:95%"></i></div>
+            </article>
+            <article class="vat">
+              <div class="top">
+                <span class="name">Logwood test</span>
+                <span class="swatch" style="background:#5a4663"></span>
+              </div>
+              <div class="meta"><b>Cooling</b> · iron mod.</div>
+              <div class="meta"><span class="badge due">Skim now</span></div>
+              <div class="gauge"><i style="width:30%; background:var(--secondary)"></i></div>
+            </article>
+          </div>
+        </section>
+        <!-- STENCIL BENCH node — tabs + row list -->
+        <section class="node lean-right">
+          <div class="section-head">
+            <span class="idx">iii.</span>
+            <h2>The stencil bench</h2>
+            <span class="trail"></span>
+          </div>
+          <div class="tabs">
+            <span class="tab active">Cutting</span>
+            <span class="tab">Lacquer-curing</span>
+            <span class="tab">Archived</span>
+            <span class="tab">Loaned out</span>
+          </div>
+          <div class="rows">
+            <div class="r head">
+              <span>Stencil · pattern</span>
+              <span class="hide-m">Technique</span>
+              <span>Paper batch</span>
+              <span>State</span>
+              <span class="end">&nbsp;</span>
+            </div>
+            <div class="r">
+              <span class="stencil">Nobori-fuji<span class="sub">climbing wisteria</span></span>
+              <span class="mono hide-m">tsukibori</span>
+              <span class="mono">KZ-118</span>
+              <span><span class="badge ok">Cutting</span></span>
+              <span class="end"><button class="iconbtn">open</button></span>
+            </div>
+            <div class="r">
+              <span class="stencil">Kakitsubata<span class="sub">iris on water</span></span>
+              <span class="mono hide-m">kiribori</span>
+              <span class="mono">KZ-104</span>
+              <span><span class="badge warn">Re-glue</span></span>
+              <span class="end"><button class="iconbtn">open</button></span>
+            </div>
+            <div class="r">
+              <span class="stencil">Tsuru-karakusa<span class="sub">vine arabesque</span></span>
+              <span class="mono hide-m">dougubori</span>
+              <span class="mono">KZ-131</span>
+              <span><span class="badge rest">Curing</span></span>
+              <span class="end"><button class="iconbtn">open</button></span>
+            </div>
+            <div class="r">
+              <span class="stencil">Yanagi-ni-tsubame<span class="sub">willow &amp; swallow</span></span>
+              <span class="mono hide-m">tsukibori</span>
+              <span class="mono">KZ-097</span>
+              <span><span class="badge due">Due 06/14</span></span>
+              <span class="end"><button class="iconbtn">open</button></span>
+            </div>
+          </div>
+        </section>
+        <!-- INTAKE FORM + FEATURE PANEL node -->
+        <section class="node lean-left">
+          <div class="section-head">
+            <span class="idx">iv.</span>
+            <h2>Log a new dip</h2>
+            <span class="trail"></span>
+          </div>
+          <div class="two-up">
+            <div class="panel">
+              <h3>Dip record</h3>
+              <p class="lede">Note the cloth, the stencil pulled, and the vat before the indigo oxidizes.</p>
+              <form class="form" style="margin-top:18px" onsubmit="return false">
+                <div class="field">
+                  <label for="cloth">Cloth &amp; weight</label>
+                  <input id="cloth" class="ctrl" type="text" placeholder="Bleached ramie, 11 momme" />
+                </div>
+                <div class="two-up">
+                  <div class="field">
+                    <label for="vat">Vat</label>
+                    <div class="select-wrap">
+                      <select id="vat" class="ctrl">
+                        <option>Sukumo No.1 — ready</option>
+                        <option>Sukumo No.3 — deep</option>
+                        <option>Madder pot</option>
+                        <option>Kariyasu (weld)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="dips">Planned dips</label>
+                    <input id="dips" class="ctrl" type="text" placeholder="8" inputmode="numeric" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="notes">Bench notes</label>
+                  <textarea id="notes" class="ctrl" placeholder="Paste resist still tacky on the wisteria stems — dip short, oxidize fully between passes, watch the bronze flowering at the vat skin."></textarea>
+                </div>
+                <div class="cta" style="display:flex; gap:12px;">
+                  <button class="btn btn-primary" type="submit">Record dip</button>
+                  <button class="btn btn-ghost" type="reset">Clear</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel panel-feature">
+              <svg class="corner-stem" viewBox="0 0 78 78" aria-hidden="true">
+                <path d="M74 4 C 50 14, 58 34, 36 40 S 18 60, 28 74" />
+                <path d="M36 40 C 30 30, 18 32, 14 22" />
+              </svg>
+              <h3>Commission · Aoba screen</h3>
+              <p class="lede">A four-panel folding screen in graded indigo for the Nakagawa teahouse.</p>
+              <div style="margin:18px 0 6px; display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="badge due">Due 06/14</span>
+                <span class="badge ok">3 of 4 panels dyed</span>
+              </div>
+              <svg class="tendril" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true" style="margin:14px 0;">
+                <path d="M0 20 C 120 20, 160 8, 220 20 S 340 32, 400 20" stroke="var(--secondary)" />
+                <ellipse class="lf rose" cx="160" cy="12" rx="9" ry="5" transform="rotate(-20 160 12)" />
+              </svg>
+              <p style="font-size:15px; color:var(--muted);">Panel four still needs the <em>tsuru-karakusa</em> vine pulled over the seam so the line carries unbroken across all four leaves — the whole point of the piece.</p>
+              <button class="btn btn-ghost" style="margin-top:18px;">View dye schedule</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <!-- final tendril divider -->
+    <div class="frame">
+      <svg class="tendril" viewBox="0 0 1180 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 20 C 300 20, 420 32, 600 20 S 900 6, 1180 20" />
+        <ellipse class="lf rose" cx="420" cy="30" rx="11" ry="6" transform="rotate(18 420 30)" />
+        <ellipse class="lf" cx="900" cy="10" rx="11" ry="6" transform="rotate(-22 900 10)" />
+      </svg>
+    </div>
+    <footer class="foot">
+      <span class="mono">TSURU-KUSA ATELIER</span>
+      <span>·</span>
+      <span>Plant-dye &amp; Ise-katagami studio, Suzuka</span>
+      <span style="margin-left:auto" class="mono">vat readings synced 09:14</span>
+    </footer>
+  </div>
+</body>
+</html>

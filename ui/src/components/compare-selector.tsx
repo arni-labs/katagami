@@ -36,20 +36,20 @@ export function CompareSelector({
       {/* washi tapes pinning the card */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.06)]"
+        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-75"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--sakura) 35%, var(--paper-tape-mix)) 6px 12px)",
-          transform: "rotate(-6deg)",
+          background: "var(--sakura)",
+          mixBlendMode: "var(--ink-blend)" as never,
+          transform: "rotate(-6deg) skewX(-8deg)",
         }}
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-3 -bottom-2 h-[12px] w-12 rounded-[1px] opacity-75 shadow-[0_1px_2px_rgba(30,35,45,0.05)]"
+        className="pointer-events-none absolute -right-3 -bottom-2 h-[12px] w-12 rounded-[1px] opacity-75"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--teal) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--teal) 30%, var(--paper-tape-mix)) 6px 12px)",
-          transform: "rotate(4deg)",
+          background: "var(--teal)",
+          mixBlendMode: "var(--ink-blend)" as never,
+          transform: "rotate(4deg) skewX(-8deg)",
         }}
       />
 
@@ -132,7 +132,7 @@ function LangSearch({
     <div className="relative flex min-w-[180px] max-w-[320px] flex-1 items-center gap-2">
       <span
         aria-hidden
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-foreground/15 font-mono text-[9px] font-bold uppercase text-foreground/70"
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold uppercase text-foreground/70"
         style={{ background: `color-mix(in oklch, var(--${dotColor}) 45%, var(--paper-tape-mix))` }}
       >
         {sideLabel}
@@ -189,7 +189,10 @@ function LangSearch({
         {open && filtered.length > 0 && (
           <ul
             role="listbox"
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto border border-border bg-card shadow-[0_4px_16px_rgba(30,35,45,0.1)]"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto bg-card"
+            style={{
+              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${dotColor}) 20%, transparent)`,
+            }}
           >
             {filtered.map((l, i) => {
               const isActive = i === active;
@@ -239,7 +242,12 @@ function LangSearch({
         )}
 
         {open && filtered.length === 0 && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-dashed border-border bg-card/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground">
+          <div
+            className="absolute left-0 right-0 top-full z-50 mt-1 bg-card/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground"
+            style={{
+              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${dotColor}) 20%, transparent)`,
+            }}
+          >
             no matches for &ldquo;{query}&rdquo;
           </div>
         )}

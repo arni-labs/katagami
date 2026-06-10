@@ -7,7 +7,9 @@ import {
   getFileUrl,
   listPaletteSystems,
   listArtStyles,
+  parseJson,
 } from "@/lib/odata";
+import { RelatedLanguages } from "@/components/related-languages";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { readTemperFileText } from "@/lib/temper-files";
@@ -368,6 +370,11 @@ export default async function LanguageDetailPage({
           />
         </section>
       ) : null}
+
+      <RelatedLanguages
+        currentId={id}
+        currentTags={parseJson<string[]>(f.tags) ?? []}
+      />
     </div>
   );
 }

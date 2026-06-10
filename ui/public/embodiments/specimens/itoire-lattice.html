@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Spline+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>Itoire — Stencil Reinforcement Workbench</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input, textarea, select { font: inherit; color: inherit; appearance: none; -webkit-appearance: none; background: none; border: none; outline: none; }
+
+    :root {
+      --ground: #cbb48f;        /* tannin paper tan */
+      --back-ply: #d8c6a4;      /* back paper plane */
+      --front-ply: #efe9dd;     /* front cut plane / thread off-white */
+      --thread: #efe9dd;        /* silk thread */
+      --ink: #5c5247;           /* structural ink line */
+      --ink-2: #3a342c;         /* text */
+      --muted: #7d7361;
+      --secondary: #8a7a5f;
+      --rust: #9c5a3c;          /* accent: load-bearing */
+      --error: #a23a2c;
+      --success: #5f6b3a;
+      --warning: #b07a2e;
+      --info: #4d6470;
+      --head: "Archivo", "Arial Narrow", sans-serif;
+      --body: "Spline Sans", system-ui, sans-serif;
+      --mono: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+      --grid: 24px;
+      --fast: 180ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* persistent two-axis thread lattice over tannin ground */
+    html, body { min-height: 100%; }
+    body {
+      font-family: var(--body);
+      font-size: 15px;
+      line-height: 1.5;
+      letter-spacing: 0.01em;
+      color: var(--ink-2);
+      background-color: var(--ground);
+      background-image:
+        repeating-linear-gradient(0deg, transparent 0 23px, rgba(239,233,221,0.5) 23px 24px),
+        repeating-linear-gradient(90deg, transparent 0 23px, rgba(239,233,221,0.5) 23px 24px);
+      overflow-x: hidden;
+    }
+
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px 64px; }
+
+    /* ---- top nav / brand ---- */
+    .topbar {
+      display: flex; align-items: center; gap: 16px;
+      border-bottom: 2px solid var(--ink);
+      padding: 16px 24px;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 11px, rgba(92,82,71,0.06) 11px 12px),
+        var(--front-ply);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .glyph {
+      width: 34px; height: 34px; flex: none; position: relative;
+      border: 1px solid var(--ink); background: var(--back-ply);
+      background-image:
+        repeating-linear-gradient(0deg, transparent 0 5px, rgba(92,82,71,0.6) 5px 6px),
+        repeating-linear-gradient(90deg, transparent 0 5px, rgba(92,82,71,0.6) 5px 6px);
+    }
+    .glyph::after { /* bridging thread across the cut glyph */
+      content: ""; position: absolute; inset: 6px; border: 1px solid var(--rust);
+      background: repeating-linear-gradient(45deg, transparent 0 3px, rgba(156,90,60,0.5) 3px 4px);
+    }
+    .brand h1 { font-family: var(--head); font-size: 17px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+    .brand .sub { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+    .nav { display: flex; gap: 4px; margin-left: auto; }
+    .nav a {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+      text-decoration: none; color: var(--ink); padding: 7px 12px;
+      border: 1px solid transparent; transition: border-color var(--fast), color var(--fast);
+    }
+    .nav a:hover, .nav a:focus-visible { border-color: var(--ink); color: var(--ink-2); }
+    .nav a.active { border-color: var(--ink); background: var(--back-ply); color: var(--rust); }
+    .ident { display: flex; align-items: center; gap: 8px; margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--ink); }
+    .ident .who { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .avatar { width: 26px; height: 26px; border: 1px solid var(--ink); background: var(--rust); color: var(--front-ply); font-family: var(--head); font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+
+    /* ---- page head ---- */
+    .pagehead { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 24px; padding: 32px 0 16px; }
+    .pagehead h2 { font-family: var(--head); font-size: 30px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.05; }
+    .pagehead .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px; }
+    .pagehead .lede { color: var(--muted); max-width: 46ch; font-size: 14px; }
+    .pagehead .actions { margin-left: auto; display: flex; gap: 8px; }
+
+    /* ---- buttons ---- */
+    .btn {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; cursor: pointer;
+      padding: 9px 16px; border: 1px solid var(--ink); color: var(--ink-2);
+      background: var(--front-ply); transition: transform var(--fast), box-shadow var(--fast), background var(--fast), color var(--fast);
+      box-shadow: 2px 2px 0 0 rgba(92,82,71,0.22);
+    }
+    .btn:hover, .btn:focus-visible { box-shadow: 1px 1px 0 0 rgba(92,82,71,0.4); transform: translate(1px,1px); }
+    .btn-primary { background: var(--rust); color: var(--front-ply); border-color: var(--ink); }
+    .btn-primary:hover, .btn-primary:focus-visible { background: #874a30; }
+    .btn:focus-visible { outline: 2px solid var(--rust); outline-offset: 2px; }
+
+    /* ---- two-ply panel: back plane + front cut plane with thread sandwich ---- */
+    .grid-main { display: grid; grid-template-columns: 264px 1fr 320px; gap: 24px; align-items: start; }
+
+    .ply {
+      position: relative;
+      background: var(--back-ply); /* back paper plane */
+      border: 1px solid var(--ink);
+      padding: 4px;
+    }
+    .ply::before { /* thread lattice sandwiched on the back plane, denser */
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg, transparent 0 11px, rgba(92,82,71,0.16) 11px 12px),
+        repeating-linear-gradient(90deg, transparent 0 11px, rgba(92,82,71,0.16) 11px 12px);
+    }
+    .ply-front { /* inset front cut plane */
+      position: relative; z-index: 2;
+      background: var(--front-ply);
+      border: 1px solid var(--ink);
+      padding: 18px;
+    }
+    /* thread anchor ticks pinning front plane to lattice at corners */
+    .ply-front::before, .ply-front::after {
+      content: ""; position: absolute; width: 12px; height: 12px; pointer-events: none;
+      background-image:
+        linear-gradient(var(--rust), var(--rust)),
+        linear-gradient(var(--rust), var(--rust));
+      background-size: 12px 1px, 1px 12px;
+      background-position: center, center;
+      background-repeat: no-repeat;
+    }
+    .ply-front::before { top: -6px; left: -6px; }
+    .ply-front::after { bottom: -6px; right: -6px; }
+
+    .panel-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--ink); }
+    .panel-label .seam { color: var(--rust); }
+
+    /* ---- left rail: queue ---- */
+    .queue-item {
+      display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center;
+      padding: 10px; border: 1px solid transparent; cursor: pointer;
+      transition: border-color var(--fast), background var(--fast);
+    }
+    .queue-item + .queue-item { margin-top: 6px; }
+    .queue-item:hover { border-color: var(--ink); background: rgba(239,233,221,0.55); }
+    .queue-item.sel { border-color: var(--ink); background: var(--front-ply); }
+    .queue-item.sel::after { content: ""; grid-column: 1/3; height: 2px; background: var(--rust); margin-top: 6px; }
+    .qi-name { font-family: var(--head); font-weight: 600; font-size: 14px; }
+    .qi-id { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .qi-state { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; }
+
+    /* ---- cut-window card: front plane cut away, threads bridge the void ---- */
+    .cut-window {
+      position: relative; margin: 0 0 18px; min-height: 132px;
+      border: 1px solid var(--ink);
+      background:
+        repeating-linear-gradient(0deg, transparent 0 11px, rgba(92,82,71,0.2) 11px 12px),
+        repeating-linear-gradient(90deg, transparent 0 11px, rgba(92,82,71,0.2) 11px 12px),
+        var(--back-ply); /* exposed back plane + dense lattice */
+      overflow: hidden;
+    }
+    .cut-window::before, .cut-window::after { /* bridging thread strands spanning the void */
+      content: ""; position: absolute; left: 8px; right: 8px; height: 1px; background: var(--ink);
+      pointer-events: none;
+    }
+    .cut-window::before { top: 38%; box-shadow: 0 18px 0 0 var(--ink), 0 -16px 0 0 rgba(92,82,71,0.5); }
+    .cut-window::after { top: 64%; transform: rotate(0.4deg); background: var(--rust); }
+    .cw-tag { position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; background: var(--front-ply); border: 1px solid var(--ink); padding: 3px 7px; z-index: 3; }
+    .cw-foot { position: absolute; bottom: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: center; z-index: 3; }
+    .cw-metric { font-family: var(--mono); font-size: 11px; background: var(--front-ply); border: 1px solid var(--ink); padding: 4px 8px; }
+    .cw-metric b { font-family: var(--head); color: var(--rust); }
+
+    /* ---- tabs ---- */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--ink); margin-bottom: 18px; }
+    .tab {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em; cursor: pointer;
+      padding: 9px 14px; border: 1px solid var(--ink); border-bottom: none; margin-bottom: -2px;
+      background: var(--back-ply); color: var(--muted); transition: color var(--fast), background var(--fast);
+    }
+    .tab + .tab { margin-left: 4px; }
+    .tab:hover { color: var(--ink-2); }
+    .tab[aria-selected="true"] { background: var(--front-ply); color: var(--rust); border-bottom: 2px solid var(--front-ply); }
+
+    /* ---- form ---- */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .control {
+      width: 100%; padding: 9px 11px; font-size: 14px; color: var(--ink-2);
+      background: var(--front-ply); border: 1px solid var(--ink);
+      transition: box-shadow var(--fast), border-color var(--fast);
+    }
+    .control::placeholder { color: var(--muted); }
+    .control:hover { border-color: var(--ink-2); }
+    .control:focus-visible { box-shadow: inset 0 0 0 1px var(--rust); border-color: var(--rust); }
+    textarea.control { resize: vertical; min-height: 84px; font-family: var(--body); }
+    .selectwrap { position: relative; }
+    .selectwrap::after { content: "▾"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--ink); pointer-events: none; font-size: 12px; }
+    select.control { padding-right: 30px; cursor: pointer; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-foot { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+    .form-foot .note { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    /* ---- stats row ---- */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat { border: 1px solid var(--ink); background: var(--front-ply); padding: 12px 14px; position: relative; }
+    .stat::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--rust); }
+    .stat .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .stat .v { font-family: var(--head); font-weight: 700; font-size: 26px; line-height: 1.1; margin-top: 4px; }
+    .stat .d { font-family: var(--mono); font-size: 11px; color: var(--secondary); margin-top: 2px; }
+
+    /* ---- table / row list ---- */
+    .tablewrap { width: 100%; }
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table thead th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--ink); }
+    .table tbody td { padding: 9px 10px; border-bottom: 1px solid rgba(92,82,71,0.3); }
+    .table tbody tr { transition: background var(--fast); }
+    .table tbody tr:hover { background: rgba(239,233,221,0.6); }
+    .table .mono { font-family: var(--mono); font-size: 12px; color: var(--secondary); }
+    .table .nm { font-family: var(--head); font-weight: 600; }
+
+    /* ---- badges / pills ---- */
+    .pill { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; padding: 3px 8px; border: 1px solid var(--ink); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .pill::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .pill.ok { color: var(--success); }
+    .pill.warn { color: var(--warning); }
+    .pill.err { color: var(--error); }
+    .pill.info { color: var(--info); }
+    .pill.run { color: var(--rust); }
+
+    /* ---- tension meter (right rail) ---- */
+    .meter { margin-bottom: 16px; }
+    .meter .top { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .meter .top b { font-family: var(--head); color: var(--ink-2); }
+    .track { height: 12px; border: 1px solid var(--ink); background:
+      repeating-linear-gradient(90deg, transparent 0 5px, rgba(92,82,71,0.25) 5px 6px), var(--back-ply); }
+    .fill { height: 100%; background:
+      repeating-linear-gradient(90deg, var(--rust) 0 4px, #874a30 4px 5px); border-right: 1px solid var(--ink); transition: width var(--fast); }
+
+    .thread-note { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.5; padding: 10px; border: 1px solid var(--ink); border-left: 2px solid var(--rust); background: rgba(216,198,164,0.4); }
+
+    footer { margin-top: 40px; padding-top: 16px; border-top: 2px solid var(--ink); display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    footer .seam { color: var(--rust); }
+
+    .stack > * + * { margin-top: 14px; }
+
+    /* ---- responsive ---- */
+    @media (max-width: 1050px) {
+      .grid-main { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .nav { display: none; }
+      .topbar { position: static; }
+    }
+    @media (max-width: 640px) {
+      body { background-image:
+        repeating-linear-gradient(0deg, transparent 0 15px, rgba(239,233,221,0.55) 15px 16px),
+        repeating-linear-gradient(90deg, transparent 0 15px, rgba(239,233,221,0.55) 15px 16px); }
+      .wrap { padding: 0 14px 48px; }
+      .topbar { padding: 12px 14px; flex-wrap: wrap; }
+      .ident { margin: 0; padding: 0; border: none; }
+      .pagehead h2 { font-size: 23px; }
+      .pagehead .actions { margin-left: 0; width: 100%; }
+      .pagehead .actions .btn { flex: 1; text-align: center; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .field-row { grid-template-columns: 1fr; }
+      .table .hide-sm { display: none; }
+      .tabs { overflow-x: auto; }
+      /* keep the bench register inside the viewport — no horizontal overflow at 375px */
+      .tablewrap { max-width: 100%; overflow-x: auto; }
+      .table { table-layout: fixed; width: 100%; }
+      .table thead th, .table tbody td { padding: 8px 7px; }
+      .table .nm, .table td { word-break: break-word; overflow-wrap: anywhere; }
+      .pill { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="glyph" aria-hidden="true"></span>
+      <div>
+        <h1>Itoire Workbench</h1>
+        <span class="sub">ise-katagami · stencil reinforcement</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#" class="active">Reinforce</a>
+      <a href="#">Stencils</a>
+      <a href="#">Thread Stock</a>
+      <a href="#">Dye Trials</a>
+      <a href="#">Archive</a>
+    </nav>
+    <div class="ident">
+      <span class="who">conservator · Mishima studio</span>
+      <span class="avatar">KO</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="pagehead">
+      <div>
+        <span class="crumb">Reinforce / Active bench</span>
+        <h2>Thread the openwork before it tears</h2>
+        <p class="lede">Lay silk itoire between the two peeled plies so the cut sections survive repeated paste passes. Every window must be bridged before dye release.</p>
+      </div>
+      <div class="actions">
+        <button class="btn">Save draft</button>
+        <button class="btn btn-primary">Release for dye</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">Stencils on bench</div><div class="v">14</div><div class="d">3 awaiting itoire</div></div>
+      <div class="stat"><div class="k">Threads laminated</div><div class="v">1,208</div><div class="d">+96 this session</div></div>
+      <div class="stat"><div class="k">Unbridged windows</div><div class="v">7</div><div class="d">load-bearing risk</div></div>
+      <div class="stat"><div class="k">Tannin cure</div><div class="v">88%</div><div class="d">persimmon batch 04</div></div>
+    </div>
+
+    <div class="grid-main">
+      <!-- LEFT: queue, two-ply panel -->
+      <aside class="ply">
+        <div class="ply-front">
+          <div class="panel-label"><span>Reinforcement queue</span><span class="seam">load ↑</span></div>
+          <div class="queue-item sel">
+            <span class="qi-name">Shimabori stripes</span>
+            <span class="qi-state" style="color:var(--rust)">THREADING</span>
+            <span class="qi-id">KAT-0471 · Edo</span>
+          </div>
+          <div class="queue-item">
+            <span class="qi-name">Asanoha hemp-leaf</span>
+            <span class="qi-state" style="color:var(--warning)">UNBRIDGED</span>
+            <span class="qi-id">KAT-0466 · Meiji</span>
+          </div>
+          <div class="queue-item">
+            <span class="qi-name">Seigaiha waves</span>
+            <span class="qi-state" style="color:var(--success)">READY</span>
+            <span class="qi-id">KAT-0459 · Edo</span>
+          </div>
+          <div class="queue-item">
+            <span class="qi-name">Kikkō tortoiseshell</span>
+            <span class="qi-state" style="color:var(--warning)">UNBRIDGED</span>
+            <span class="qi-id">KAT-0452 · Taishō</span>
+          </div>
+          <div class="queue-item">
+            <span class="qi-name">Tsunagi komon dots</span>
+            <span class="qi-state" style="color:var(--info)">CURING</span>
+            <span class="qi-id">KAT-0448 · Edo</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER: cut-window preview + tabs + form -->
+      <main>
+        <div class="ply">
+          <div class="ply-front">
+            <div class="panel-label"><span>KAT-0471 · openwork map</span><span class="seam">2px seam · bridged 61%</span></div>
+
+            <div class="cut-window">
+              <span class="cw-tag">CUT REGION · shima 04</span>
+              <div class="cw-foot">
+                <span class="cw-metric">span <b>184mm</b></span>
+                <span class="pill run">threading</span>
+              </div>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab" role="tab" aria-selected="true">Bridge plan</button>
+              <button class="tab" role="tab" aria-selected="false">Thread log</button>
+              <button class="tab" role="tab" aria-selected="false">Tannin</button>
+            </div>
+
+            <form class="stack" onsubmit="return false">
+              <div class="field-row">
+                <div class="field">
+                  <label for="region">Cut region</label>
+                  <div class="selectwrap">
+                    <select id="region" class="control">
+                      <option>shima 04 — long stripe void</option>
+                      <option>shima 05 — paired stripe void</option>
+                      <option>corner key — anchor field</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="thread">Thread gauge</label>
+                  <div class="selectwrap">
+                    <select id="thread" class="control">
+                      <option>silk 0.10mm — fine itoire</option>
+                      <option>silk 0.14mm — standard</option>
+                      <option>ramie 0.18mm — heavy span</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="strands">Bridging strands across void</label>
+                <input id="strands" class="control" type="text" value="9 strands @ 18mm pitch" placeholder="strand count and pitch">
+              </div>
+
+              <div class="field">
+                <label for="notes">Conservator note</label>
+                <textarea id="notes" class="control" placeholder="Record where the back ply was peeled and how the threads were laid.">Peeled to two plies along the grain; laid 9 weft threads bridging the stripe void, fixed with persimmon tannin batch 04. Long span still slack at the lower seam — add one warp.</textarea>
+              </div>
+
+              <div class="form-foot">
+                <button class="btn btn-primary" type="submit">Laminate threads</button>
+                <button class="btn" type="button">Mark unbridged</button>
+                <span class="note">last save 12:41 · autosaved</span>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="ply" style="margin-top:24px;">
+          <div class="ply-front">
+            <div class="panel-label"><span>Bench register</span><span class="seam">14 active</span></div>
+            <div class="tablewrap">
+              <table class="table">
+                <thead>
+                  <tr><th>Stencil</th><th>Pattern</th><th class="hide-sm">Windows</th><th class="hide-sm">Itoire</th><th>State</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="nm">KAT-0471</td><td>Shimabori stripes</td><td class="mono hide-sm">11 / 18</td><td class="mono hide-sm">silk 0.10</td><td><span class="pill run">threading</span></td></tr>
+                  <tr><td class="nm">KAT-0466</td><td>Asanoha hemp-leaf</td><td class="mono hide-sm">0 / 24</td><td class="mono hide-sm">—</td><td><span class="pill warn">unbridged</span></td></tr>
+                  <tr><td class="nm">KAT-0459</td><td>Seigaiha waves</td><td class="mono hide-sm">16 / 16</td><td class="mono hide-sm">silk 0.14</td><td><span class="pill ok">ready</span></td></tr>
+                  <tr><td class="nm">KAT-0452</td><td>Kikkō tortoiseshell</td><td class="mono hide-sm">3 / 21</td><td class="mono hide-sm">silk 0.10</td><td><span class="pill err">tear risk</span></td></tr>
+                  <tr><td class="nm">KAT-0448</td><td>Tsunagi komon</td><td class="mono hide-sm">19 / 19</td><td class="mono hide-sm">silk 0.14</td><td><span class="pill info">curing</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT: integrity rail, two-ply panel -->
+      <aside class="ply">
+        <div class="ply-front">
+          <div class="panel-label"><span>Structural integrity</span><span class="seam">KAT-0471</span></div>
+
+          <div class="meter">
+            <div class="top"><span>Lattice tension</span><b>0.74 N</b></div>
+            <div class="track"><div class="fill" style="width:74%"></div></div>
+          </div>
+          <div class="meter">
+            <div class="top"><span>Void coverage</span><b>61%</b></div>
+            <div class="track"><div class="fill" style="width:61%"></div></div>
+          </div>
+          <div class="meter">
+            <div class="top"><span>Tannin bond</span><b>88%</b></div>
+            <div class="track"><div class="fill" style="width:88%"></div></div>
+          </div>
+
+          <div class="cut-window" style="min-height:96px; margin-top:18px;">
+            <span class="cw-tag">DENSEST CUT</span>
+            <div class="cw-foot">
+              <span class="cw-metric">threads <b>9</b></span>
+              <span class="pill err">slack seam</span>
+            </div>
+          </div>
+
+          <p class="thread-note">Densify itoire where the paper is most cut away. The lower stripe seam carries the dye-paste load — add one warp thread before release or the openwork tears on the second pass.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <span>Itoire Workbench · structure shown, not hidden</span>
+      <span class="seam">load-bearing seams marked rust</span>
+      <span>persimmon tannin batch 04 · 2026-06-09</span>
+      <span style="margin-left:auto">v0.7 · drafting build</span>
+    </footer>
+  </div>
+
+  <script>
+    // tab switching — taut, no flourish
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+        t.setAttribute('aria-selected', 'true');
+      });
+    });
+    document.querySelectorAll('.queue-item').forEach(function (q) {
+      q.addEventListener('click', function () {
+        document.querySelectorAll('.queue-item').forEach(function (x) { x.classList.remove('sel'); });
+        q.classList.add('sel');
+      });
+    });
+  </script>
+</body>
+</html>

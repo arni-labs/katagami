@@ -85,17 +85,14 @@ export function FeaturedLanguageButton({
           e.stopPropagation();
           toggleFeatured();
         }}
-        className="group/feature relative flex h-7 w-7 items-center justify-center rounded-[3px] border shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[-3deg] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklch,var(--sumire)_40%,transparent)] disabled:pointer-events-none disabled:opacity-60"
+        className="group/feature relative flex h-7 w-7 items-center justify-center rounded-[3px] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[-3deg] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklch,var(--sumire)_40%,transparent)] disabled:pointer-events-none disabled:opacity-60"
         style={{
-          borderColor: featured
-            ? "color-mix(in oklch, var(--sakura) 72%, var(--paper-tape-mix))"
-            : "color-mix(in oklch, var(--sumire) 60%, var(--paper-tape-mix))",
           color: featured
-            ? "color-mix(in oklch, var(--sakura), black 22%)"
-            : "color-mix(in oklch, var(--sumire), black 12%)",
+            ? "color-mix(in oklch, var(--sakura) 72%, var(--foreground))"
+            : "color-mix(in oklch, var(--sumire) 72%, var(--foreground))",
           background: featured
-            ? "color-mix(in oklch, var(--sakura) 18%, var(--paper-tape-mix))"
-            : "color-mix(in oklch, var(--sumire) 10%, var(--paper-tape-mix))",
+            ? "color-mix(in srgb, var(--sakura) 14%, var(--paper-stamp-mix))"
+            : "color-mix(in srgb, var(--sumire) 14%, var(--paper-stamp-mix))",
         }}
       >
         <span
@@ -115,7 +112,13 @@ export function FeaturedLanguageButton({
         </span>
       </button>
       {error ? (
-        <div className="absolute left-0 top-9 z-40 w-44 rounded-[3px] border border-destructive/25 bg-background/95 px-2 py-1 text-[11px] font-medium leading-tight text-destructive shadow-[0_2px_8px_rgba(30,35,45,0.12)]">
+        <div
+          className="absolute left-0 top-9 z-40 w-44 rounded-[3px] bg-background/95 px-2 py-1 text-[11px] font-medium leading-tight text-destructive"
+          style={{
+            boxShadow:
+              "0 2px 8px rgba(30,35,45,0.12), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+          }}
+        >
           {error}
         </div>
       ) : null}

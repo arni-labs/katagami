@@ -50,7 +50,7 @@ export default async function StudioPage() {
       />
 
       {!haveAll ? (
-        <div className="paper-card mt-8 rounded-[var(--radius-lg)] p-5 text-sm text-muted-foreground">
+        <div className="sticker-card mt-8 p-5 text-sm text-muted-foreground">
           Needs a Published entry in each lane — see the{" "}
           <Link href="/palettes" className="ink-underline text-foreground">palettes</Link> and{" "}
           <Link href="/art-styles" className="ink-underline text-foreground">art styles</Link> catalogs.
