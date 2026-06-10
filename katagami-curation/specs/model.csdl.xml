@@ -38,6 +38,7 @@
         <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
         <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ParentSessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
