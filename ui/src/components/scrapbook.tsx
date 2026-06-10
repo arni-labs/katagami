@@ -9,8 +9,7 @@ type AccentColor =
   | "ramune"
   | "sumire";
 
-/** A riso print note — flat paper sheet, no border; the edge is a
-    misregistered ink pass offset underneath, tinted by `tint`. */
+/** A generic sticky-note-style card (sharp corners, translucent, soft shadow). */
 export function StickyNote({
   children,
   tint,
@@ -22,7 +21,6 @@ export function StickyNote({
   className?: string;
   style?: CSSProperties;
 }) {
-  const ink = `var(--${tint ?? "ramune"})`;
   const tintBg = tint
     ? `color-mix(in srgb, var(--${tint}) 8%, var(--paper-tint-base))`
     : "var(--paper-tint-base)";
@@ -31,7 +29,7 @@ export function StickyNote({
       className={`relative ${className}`}
       style={{
         background: tintBg,
-        boxShadow: `0 1px 2px rgba(33, 33, 60, 0.03), 4px 5px 0 color-mix(in srgb, ${ink} 15%, transparent)`,
+        boxShadow: "var(--shadow-card)",
         ...style,
       }}
     >
@@ -46,7 +44,7 @@ export function WashiTape({
   rotate = -5,
   className = "",
   width = 64,
-  height = 13,
+  height = 16,
   style,
 }: {
   color?: AccentColor;
@@ -59,22 +57,19 @@ export function WashiTape({
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute opacity-75 ${className}`}
+      className={`washi-tape pointer-events-none ${className}`}
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        background: `var(--${color})`,
-        mixBlendMode: "var(--ink-blend)" as CSSProperties["mixBlendMode"],
-        transform: `rotate(${rotate}deg) skewX(-8deg)`,
+        ["--strip-ink" as string]: `var(--${color})`,
+        transform: `rotate(${rotate}deg)`,
         ...style,
       }}
     />
   );
 }
 
-/** Section heading: display font + optional marker highlight + eyebrow stamp.
-    The stamp sits on a short strip of overprinted ink — tape holds the
-    label to the page. */
+/** Section heading: display font + optional marker highlight + eyebrow stamp. */
 export function SectionHeading({
   eyebrow,
   eyebrowColor = "ramune",
@@ -87,22 +82,11 @@ export function SectionHeading({
   return (
     <div className="mb-5 flex items-end gap-3">
       {eyebrow && (
-        <span className="relative shrink-0">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -left-2 -top-1.5 h-[11px] w-[calc(100%+16px)] opacity-70"
-            style={{
-              background: `var(--${eyebrowColor})`,
-              mixBlendMode: "var(--ink-blend)" as CSSProperties["mixBlendMode"],
-              transform: "rotate(-2deg) skewX(-8deg)",
-            }}
-          />
-          <span
-            className="stamp relative"
-            style={{ color: `var(--${eyebrowColor})` }}
-          >
-            {eyebrow}
-          </span>
+        <span
+          className="stamp shrink-0"
+          style={{ color: `var(--${eyebrowColor})` }}
+        >
+          {eyebrow}
         </span>
       )}
       <h2 className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">

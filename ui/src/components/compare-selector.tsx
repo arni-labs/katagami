@@ -40,7 +40,7 @@ export function CompareSelector({
         style={{
           background: "var(--sakura)",
           mixBlendMode: "var(--ink-blend)" as never,
-          transform: "rotate(-6deg) skewX(-8deg)",
+          transform: "rotate(-6deg)",
         }}
       />
       <span
@@ -49,7 +49,7 @@ export function CompareSelector({
         style={{
           background: "var(--teal)",
           mixBlendMode: "var(--ink-blend)" as never,
-          transform: "rotate(4deg) skewX(-8deg)",
+          transform: "rotate(4deg)",
         }}
       />
 
@@ -191,7 +191,7 @@ function LangSearch({
             role="listbox"
             className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto bg-card"
             style={{
-              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${dotColor}) 20%, transparent)`,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             {filtered.map((l, i) => {
@@ -245,7 +245,7 @@ function LangSearch({
           <div
             className="absolute left-0 right-0 top-full z-50 mt-1 bg-card/80 px-3 py-2 text-center font-mono text-[11px] text-muted-foreground"
             style={{
-              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${dotColor}) 20%, transparent)`,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             no matches for &ldquo;{query}&rdquo;

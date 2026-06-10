@@ -224,11 +224,10 @@ function FullCard({
 
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 top-3 z-20 h-[13px] w-20 opacity-75"
+        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
         style={{
-          background: tapeColor,
-          mixBlendMode: "var(--ink-blend)" as CSSProperties["mixBlendMode"],
-          transform: `rotate(${tapeRot}deg) skewX(-8deg)`,
+          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeColor} 74%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, ${tapeColor} 36%, var(--paper-tape-mix)) 7px 14px)`,
+          transform: `rotate(${tapeRot}deg)`,
         }}
       />
 
@@ -240,7 +239,7 @@ function FullCard({
           <div
             className="relative bg-card p-1.5 pb-3"
             style={{
-              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, ${stickyTint} 22%, transparent)`,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <div
@@ -348,17 +347,21 @@ function StatusStamp({
 
   return (
     <span
-      className="relative inline-flex h-[18px] shrink-0 items-center px-2 font-sans text-[8.5px] font-bold uppercase leading-none tracking-[0.14em]"
+      className="relative inline-flex h-[18px] shrink-0 items-center rounded-[2px] border px-2 font-sans text-[8.5px] font-bold uppercase leading-none tracking-[0.14em]"
       style={{
-        color: `color-mix(in oklch, ${tone} 72%, var(--foreground))`,
-        background: `color-mix(in oklch, ${tone} 16%, var(--paper-stamp-mix))`,
+        color: tone,
+        background: `color-mix(in oklch, ${tone} 7%, var(--paper-stamp-mix))`,
+        borderColor: `color-mix(in oklch, ${tone} 62%, var(--border))`,
+        boxShadow: "inset 0 0 0 1px color-mix(in oklch, var(--card) 72%, transparent)",
         transform: "rotate(-0.7deg)",
       }}
     >
       <span
         aria-hidden
-        className="absolute -left-1 top-1/2 h-2.5 w-1 -translate-y-1/2"
-        style={{ background: tone }}
+        className="absolute -left-1 top-1/2 h-2.5 w-1 -translate-y-1/2 rounded-l-[1px]"
+        style={{
+          background: `color-mix(in oklch, ${tone} 30%, var(--paper-tape-mix))`,
+        }}
       />
       {label}
     </span>
@@ -372,10 +375,9 @@ function FeaturedSeal({ tint }: { tint: string }) {
     <span
       aria-label="Featured language"
       title="Featured"
-      className="relative inline-grid h-6 w-6 shrink-0 place-items-center"
+      className="relative inline-grid h-6 w-6 shrink-0 place-items-center rounded-[3px] border border-dashed bg-[color-mix(in_oklch,var(--paper-stamp-mix)_86%,transparent)] shadow-[0_1px_0_rgba(30,35,45,0.05)]"
       style={{
-        background: `color-mix(in oklch, ${tint} 14%, var(--paper-stamp-mix))`,
-        boxShadow: `2px 2px 0 color-mix(in srgb, ${tint} 28%, transparent)`,
+        borderColor: `color-mix(in oklch, ${tint} 48%, var(--border))`,
         transform: "rotate(2deg)",
       }}
     >

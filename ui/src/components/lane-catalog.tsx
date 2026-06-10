@@ -30,7 +30,7 @@ function SearchBar({
         style={{
           background: "var(--salad)",
           mixBlendMode: "var(--ink-blend)" as never,
-          transform: "rotate(-6deg) skewX(-8deg)",
+          transform: "rotate(-6deg)",
         }}
       />
       <span className="stamp text-[var(--sumire)]">find</span>

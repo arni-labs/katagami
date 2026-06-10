@@ -147,7 +147,7 @@ export function SpecActions({
             {
               width: "86px",
               height: "16px",
-              transform: "rotate(-5deg) skewX(-8deg)",
+              transform: "rotate(-5deg)",
               "--strip-ink": `var(--${accent})`,
             } as React.CSSProperties
           }
@@ -255,7 +255,7 @@ export function SpecActions({
           {
             width: "62px",
             height: "14px",
-            transform: "rotate(-6deg) skewX(-8deg)",
+            transform: "rotate(-6deg)",
             "--strip-ink": `var(--${accent})`,
           } as React.CSSProperties
         }

@@ -152,7 +152,7 @@ function ShowcaseCard({
         style={{
           width: "84px",
           height: "13px",
-          transform: "rotate(-4deg) skewX(-8deg)",
+          transform: "rotate(-4deg)",
           ["--strip-ink" as string]: `var(--${tape})`,
         }}
       />

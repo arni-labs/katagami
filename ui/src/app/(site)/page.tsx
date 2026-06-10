@@ -8,6 +8,7 @@ import {
 } from "@/lib/odata";
 import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
+import { RisoInkField } from "@/components/riso-ink-field";
 import { SurpriseChip } from "@/components/hero-actions";
 import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
@@ -244,13 +245,13 @@ function TodaysPull({
       prefetch={false}
       className="group relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/80 px-5 py-4 transition-all duration-200 hover:-translate-y-[2px] sm:flex-nowrap"
       style={{
-        boxShadow: `0 1px 2px rgba(33,33,60,0.03), 5px 6px 0 color-mix(in srgb, ${ink} 20%, transparent)`,
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <span
         aria-hidden
         className="washi-tape -left-3 -top-2"
-        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(-5deg) skewX(-8deg)" }}
+        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(-5deg)" }}
       />
       <span className="ink-stamp shrink-0" style={{ ["--ink" as string]: "var(--sakura)" }}>
         ✦ today&apos;s pull
@@ -303,7 +304,10 @@ export default async function GalleryPage({
     <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-4 py-6 sm:space-y-14 sm:overflow-visible sm:py-10">
       {/* ── Hero: the print bed ─────────────────────────────────── */}
       <section className="relative min-w-0 overflow-x-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
-        <RisoHeroPress className="opacity-90 max-sm:opacity-40" />
+        <div aria-hidden className="absolute inset-0 overflow-hidden">
+          <RisoInkField />
+        </div>
+        <RisoHeroPress className="opacity-80 max-sm:opacity-40" />
 
         <div className="relative max-w-3xl">
           <div
@@ -325,9 +329,9 @@ export default async function GalleryPage({
               <span className="relative z-10">@arni0x9053</span>
               <span
                 aria-hidden
-                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] bg-[var(--yuzu)] opacity-85"
+                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px] bg-[var(--yuzu)] opacity-85"
                 style={{
-                  transform: "rotate(-0.8deg) skewX(-6deg)",
+                  transform: "rotate(-0.8deg)",
                   mixBlendMode: "var(--ink-blend)" as never,
                 }}
               />
@@ -338,20 +342,16 @@ export default async function GalleryPage({
             className="riso-reveal font-display text-[44px] font-bold leading-[0.98] tracking-[-0.03em] sm:text-[64px] lg:text-[76px]"
             style={{ ["--reveal-i" as string]: 1 }}
           >
-            <span
-              className="riso-double"
-              data-text="Design"
-              style={{ ["--ink" as string]: "var(--sakura)" }}
-            >
-              Design
-            </span>{" "}
-            <span
-              className="riso-double"
-              data-text="languages."
-              style={{ ["--ink" as string]: "var(--ramune)" }}
-            >
-              languages.
+            Design{" "}
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{ background: "var(--sakura)" }}
+              />
+              <span className="marker-text">languages</span>
             </span>
+            .
           </h1>
 
           <p
@@ -386,11 +386,7 @@ export default async function GalleryPage({
           >
             <a
               href="#gallery"
-              className="group relative inline-flex items-center gap-2 bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
-              style={{
-                boxShadow:
-                  "4px 5px 0 color-mix(in srgb, var(--sakura) 38%, transparent)",
-              }}
+              className="group relative inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
             >
               Browse gallery
               <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
@@ -434,9 +430,10 @@ export default async function GalleryPage({
           <div key={step.n} className="relative pl-12">
             <span
               aria-hidden
-              className="riso-double absolute left-0 top-0 font-display text-[34px] font-bold leading-none text-foreground/90"
-              data-text={step.n}
-              style={{ ["--ink" as string]: `var(--${step.ink})` }}
+              className="absolute left-0 top-0 font-display text-[34px] font-bold leading-none"
+              style={{
+                color: `color-mix(in oklch, var(--${step.ink}) 70%, var(--foreground))`,
+              }}
             >
               {step.n}
             </span>
@@ -455,17 +452,10 @@ export default async function GalleryPage({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <span
-                className="inline-block h-[7px] w-9 skew-x-[-8deg] bg-[var(--ramune)]"
-                style={{ mixBlendMode: "var(--ink-blend)" as never }}
-              />
+              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--ramune)]" />
               choose a language
             </div>
-            <h2
-              className="riso-double font-display text-[28px] font-bold leading-none tracking-[-0.02em]"
-              data-text="Gallery"
-              style={{ ["--ink" as string]: "var(--ramune)" }}
-            >
+            <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.02em]">
               Gallery
             </h2>
           </div>

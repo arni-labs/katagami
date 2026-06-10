@@ -465,8 +465,7 @@ function TasteRulesPanel({
           <p
             className="mt-4 bg-background/60 px-3 py-2 text-sm text-muted-foreground"
             style={{
-              boxShadow:
-                "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             Taste rule storage is not available in this environment yet.
@@ -523,8 +522,7 @@ function TasteRuleAuditPanel({
     <div
       className="space-y-3 bg-background/55 p-3"
       style={{
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -572,8 +570,7 @@ function TasteRuleAuditCard({
     <article
       className="bg-card/60 p-3"
       style={{
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -658,7 +655,7 @@ function AuditCandidateGroup({
     <div
       className="bg-background/55 p-3"
       style={{
-        boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, ${toneInk} 20%, transparent)`,
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className={`inline-flex items-center gap-1.5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] ${toneClass}`}>
@@ -717,8 +714,7 @@ function TasteRuleCount({
     <div
       className="bg-background/60 px-3 py-2"
       style={{
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--teal) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -908,8 +904,7 @@ function TasteRuleLine({
     <article
       className="bg-background/70 px-3 py-3"
       style={{
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--ramune) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -966,8 +961,7 @@ function TasteRuleCard({
     <article
       className="bg-background/70 p-4"
       style={{
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--sumire) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div className="flex flex-wrap items-center gap-2">

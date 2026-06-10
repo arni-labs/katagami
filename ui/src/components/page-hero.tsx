@@ -35,11 +35,8 @@ export function PageHero({
           {eyebrow && (
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
               <span
-                className="inline-block h-[7px] w-9 skew-x-[-8deg]"
-                style={{
-                  background: `var(--${eyebrowAccent})`,
-                  mixBlendMode: "var(--ink-blend)" as never,
-                }}
+                className="inline-block h-[3px] w-9 rounded-[2px]"
+                style={{ background: `var(--${eyebrowAccent})` }}
               />
               {eyebrow}
             </div>

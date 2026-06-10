@@ -170,8 +170,7 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
       <div
         className="relative w-full max-w-xl bg-card"
         style={{
-          boxShadow:
-            "0 2px 4px rgba(33,33,60,0.08), 8px 9px 0 color-mix(in srgb, var(--ramune) 30%, transparent)",
+          boxShadow: "var(--shadow-paper-lg)",
         }}
       >
         <div className="flex items-center gap-3 px-4 pt-4">

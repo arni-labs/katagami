@@ -19,8 +19,7 @@ export function SurpriseChip() {
       style={{
         background:
           "color-mix(in srgb, var(--sakura) 20%, var(--paper-stamp-mix))",
-        boxShadow:
-          "3px 4px 0 color-mix(in srgb, var(--sakura) 30%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <span aria-hidden>✦</span>

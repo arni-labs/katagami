@@ -80,8 +80,7 @@ function UnavailablePreview() {
       className="flex w-full items-center justify-center bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground"
       style={{
         aspectRatio: `${VIEWPORT_WIDTH} / ${DEFAULT_HEIGHT}`,
-        boxShadow:
-          "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--teal) 20%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       embodiment not available

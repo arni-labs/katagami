@@ -60,10 +60,10 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --shadow-paper-sm: 0 1px 2px rgba(30, 35, 45, 0.04);
-  --shadow-paper: 0 1px 2px rgba(30, 35, 45, 0.04), 3px 4px 0 var(--ink-shadow);
-  --shadow-paper-lg: 0 1px 2px rgba(30, 35, 45, 0.04), 6px 7px 0 var(--ink-shadow);
-  --shadow-sticker: 0 1px 0 rgba(30, 35, 45, 0.05), 4px 5px 0 var(--ink-shadow);
-  --shadow-sticker-lift: 0 2px 0 rgba(30, 35, 45, 0.06), 7px 8px 0 var(--ink-shadow);
+  --shadow-paper: 0 1px 2px rgba(30, 35, 45, 0.04), 0 3px 10px rgba(30, 35, 45, 0.05);
+  --shadow-paper-lg: 0 4px 6px rgba(30, 35, 45, 0.05), 0 12px 28px rgba(30, 35, 45, 0.07);
+  --shadow-sticker: 0 1px 0 rgba(30, 35, 45, 0.06), 0 4px 10px rgba(30, 35, 45, 0.05);
+  --shadow-sticker-lift: 0 2px 0 rgba(30, 35, 45, 0.08), 0 10px 22px rgba(30, 35, 45, 0.08);
 }
 
 :root {
@@ -73,10 +73,11 @@
      paper, a fixed drum of spot inks, misregistered second passes
      instead of borders, grain instead of gloss. */
 
-  /* Paper & ink */
-  --washi: oklch(0.978 0.009 92);              /* warm uncoated cream paper */
-  --sumi: oklch(0.27 0.022 270);               /* dense indigo-black ink */
-  --graphite: oklch(0.5 0.015 270);
+  /* Paper & ink — pure white paper, warm-ink text (the original katagami
+     ground; riso lives in the accents and effects, not the paper) */
+  --washi: oklch(1 0 0);
+  --sumi: oklch(0.26 0.015 260);
+  --graphite: oklch(0.5 0.01 260);
 
   /* Spot-ink drum. The SIGNATURE TRIO carries all site chrome:
      sakura (fluor pink) · yuzu (yellow) · ramune (blue).
@@ -92,44 +93,44 @@
   --sumire: oklch(0.55 0.09 290);              /* ink violet, subdued */
   --beni: oklch(0.62 0.19 27);                 /* red — destructive only */
 
-  /* Print effects */
+  /* Print effects — the riso layer, kept subtle */
   --ink-blend: multiply;                       /* overprint blend; screen at night */
-  --ink-shadow: color-mix(in srgb, var(--ramune) 16%, transparent); /* misprint pass */
+  --ink-shadow: rgba(30, 35, 45, 0.06);        /* legacy alias — soft, not chunky */
   --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  --grain-opacity: 0.05;
+  --grain-opacity: 0.03;
 
   /* Paper surface abstractions — flip in .dark */
-  --paper-sticker: oklch(0.985 0.007 92 / 0.92);   /* card bg — one shade off body */
-  --paper-sticker-hover: oklch(0.99 0.006 92);
-  --paper-tape-mix: oklch(0.985 0.007 92);     /* mixed into ink-strip tints */
-  --paper-stamp-mix: oklch(0.985 0.007 92);    /* mixed into stamp bg */
-  --paper-tint-base: oklch(0.985 0.007 92 / 0.88); /* color-mix base for tinted cards */
-  --paper-dot: oklch(0.5 0.02 270 / 0.07);     /* faint halftone field on body */
-  --marker-opacity: 0.7;                       /* overprint swipe alpha */
+  --paper-sticker: rgba(255, 255, 255, 0.85);  /* sticker-card bg */
+  --paper-sticker-hover: rgba(255, 255, 255, 0.95);
+  --paper-tape-mix: white;                     /* mixed into washi-tape gradient */
+  --paper-stamp-mix: white;                    /* mixed into stamp bg */
+  --paper-tint-base: rgba(255, 255, 255, 0.78); /* color-mix base for tinted cards */
+  --paper-dot: oklch(0.65 0.008 260 / 0.08);   /* body dot-grid color */
+  --marker-opacity: 0.85;                      /* highlighter tint alpha */
   --shadow-card:
-    0 1px 2px rgba(33, 33, 60, 0.03),
-    5px 6px 0 var(--ink-shadow);
+    0 1px 2px rgba(30, 35, 45, 0.04),
+    0 6px 18px rgba(30, 35, 45, 0.06);
   --shadow-card-hover:
-    0 2px 3px rgba(33, 33, 60, 0.05),
-    8px 9px 0 color-mix(in srgb, var(--ramune) 22%, transparent);
+    0 2px 4px rgba(30, 35, 45, 0.06),
+    0 18px 36px rgba(30, 35, 45, 0.09);
 
   --background: var(--washi);
   --foreground: var(--sumi);
-  --card: oklch(0.985 0.007 92);
+  --card: oklch(1 0 0);
   --card-foreground: var(--sumi);
-  --popover: oklch(0.985 0.007 92);
+  --popover: oklch(1 0 0);
   --popover-foreground: var(--sumi);
   --primary: var(--sumi);
-  --primary-foreground: oklch(0.978 0.009 92);
-  --secondary: oklch(0.955 0.012 92);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.975 0.004 260);
   --secondary-foreground: var(--sumi);
-  --muted: oklch(0.95 0.012 92);
-  --muted-foreground: oklch(0.49 0.02 270);
-  --accent: oklch(0.94 0.035 245);             /* faint ramune wash */
+  --muted: oklch(0.97 0.004 260);
+  --muted-foreground: oklch(0.52 0.012 260);
+  --accent: oklch(0.96 0.03 245);              /* faint ramune wash */
   --accent-foreground: var(--sumi);
   --destructive: var(--beni);
-  --border: oklch(0.88 0.014 92);
-  --input: oklch(0.87 0.014 92);
+  --border: oklch(0.9 0.006 260);
+  --input: oklch(0.88 0.006 260);
   --ring: var(--ramune);
   --chart-1: var(--sakura);
   --chart-2: var(--salad);
@@ -140,10 +141,10 @@
   --sidebar: var(--washi);
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
-  --sidebar-primary-foreground: oklch(0.978 0.009 92);
-  --sidebar-accent: oklch(0.94 0.035 245);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.96 0.03 245);
   --sidebar-accent-foreground: var(--sumi);
-  --sidebar-border: oklch(0.88 0.014 92);
+  --sidebar-border: oklch(0.9 0.006 260);
   --sidebar-ring: var(--ramune);
 }
 
@@ -152,9 +153,9 @@
      Printing on deep indigo card stock: paper goes near-black blue,
      inks turn luminous and overprint with screen instead of multiply
      (light ink on dark paper glows; it doesn't darken). */
-  --washi: oklch(0.2 0.022 272);               /* indigo card stock */
-  --sumi: oklch(0.94 0.008 92);                /* warm paper-white ink */
-  --graphite: oklch(0.7 0.014 270);
+  --washi: oklch(0.19 0.012 265);              /* warm deep night paper */
+  --sumi: oklch(0.94 0.006 85);                /* warm off-white ink */
+  --graphite: oklch(0.7 0.012 260);
 
   /* Night inks — slightly lifted lightness, moderated chroma so they
      read as printed ink, not neon. Same drum, same trio-first tuning. */
@@ -170,37 +171,37 @@
 
   /* Print effects at night */
   --ink-blend: screen;
-  --ink-shadow: color-mix(in srgb, var(--ramune) 26%, transparent);
-  --grain-opacity: 0.08;
+  --ink-shadow: rgba(0, 0, 0, 0.4);            /* legacy alias — soft */
+  --grain-opacity: 0.05;
 
   /* Night surfaces — cards are LIFTED (slightly lighter than body). */
-  --paper-sticker: oklch(0.25 0.024 272 / 0.85);
-  --paper-sticker-hover: oklch(0.28 0.025 272 / 0.92);
-  --paper-tape-mix: oklch(0.3 0.022 272);
-  --paper-stamp-mix: oklch(0.23 0.022 272);
-  --paper-tint-base: oklch(0.25 0.024 272 / 0.86);
-  --paper-dot: oklch(0.9 0.012 92 / 0.05);
-  --marker-opacity: 0.5;                       /* dim the overprint swipe at night */
+  --paper-sticker: oklch(0.24 0.013 265 / 0.78);
+  --paper-sticker-hover: oklch(0.27 0.014 265 / 0.88);
+  --paper-tape-mix: oklch(0.3 0.012 265);
+  --paper-stamp-mix: oklch(0.22 0.012 265);
+  --paper-tint-base: oklch(0.24 0.013 265 / 0.82);
+  --paper-dot: oklch(0.88 0.012 85 / 0.05);
+  --marker-opacity: 0.55;                      /* dim the highlighter at night */
   --shadow-card:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    5px 6px 0 var(--ink-shadow);
+    0 6px 18px rgba(0, 0, 0, 0.45);
   --shadow-card-hover:
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    8px 9px 0 color-mix(in srgb, var(--ramune) 36%, transparent);
+    0 18px 36px rgba(0, 0, 0, 0.55);
 
   --background: var(--washi);
   --foreground: var(--sumi);
-  --card: oklch(0.24 0.024 272);
+  --card: oklch(0.23 0.013 265);
   --card-foreground: var(--sumi);
-  --popover: oklch(0.24 0.024 272);
+  --popover: oklch(0.23 0.013 265);
   --popover-foreground: var(--sumi);
   --primary: var(--sumi);
   --primary-foreground: var(--washi);
-  --secondary: oklch(0.28 0.024 272);
+  --secondary: oklch(0.27 0.013 265);
   --secondary-foreground: var(--sumi);
-  --muted: oklch(0.28 0.024 272);
-  --muted-foreground: oklch(0.72 0.014 270);
-  --accent: oklch(0.31 0.04 245);
+  --muted: oklch(0.27 0.013 265);
+  --muted-foreground: oklch(0.72 0.012 260);
+  --accent: oklch(0.3 0.04 245);
   --accent-foreground: var(--sumi);
   --destructive: oklch(0.7 0.18 25);
   --border: oklch(1 0 0 / 10%);
@@ -233,15 +234,14 @@
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
-    /* Faint halftone field — the paper was run through the drum once
-       before anything was printed on it. Flips to light specks in .dark. */
+    /* faint Hobonichi-style grid-paper dots — flips to light specks in .dark */
     background-image:
       radial-gradient(
-        circle at 1.5px 1.5px,
-        var(--paper-dot) 1.5px,
+        circle at 1px 1px,
+        var(--paper-dot) 1px,
         transparent 0
       );
-    background-size: 26px 26px;
+    background-size: 24px 24px;
     /* background-attachment: fixed triggers full-page repaints on scroll;
        default (scroll) is ~free */
   }
@@ -988,52 +988,40 @@
      No borders anywhere in this layer. Surfaces are defined by ink:
      misregistered second passes, overprint, halftone, grain. */
 
-  /* Print card — flat paper pulled fresh off the drum. The "edge" is a
-     misregistered ink pass underneath (hard offset, no blur). On hover
-     the registration slips a little further and the sheet lifts.
-     Set `--card-ink` inline to tint the misprint pass per card. */
+  /* Sticky-note card — the original katagami sheet: translucent paper,
+     sharp corners, soft shadow-only edges. The riso character is a faint
+     ink edge on hover (one subtle pass, not a misprint block). */
   .sticker-card {
     position: relative;
     background: var(--paper-sticker);
     border: none;
     border-radius: 0;
-    box-shadow:
-      0 1px 2px rgba(33, 33, 60, 0.03),
-      5px 6px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 16%, transparent);
+    box-shadow: var(--shadow-card);
     transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 220ms ease,
                 background-color 220ms ease;
   }
   .sticker-card:hover {
-    transform: translate(-2px, -3px) rotate(-0.3deg);
+    transform: translateY(-3px) rotate(-0.4deg);
     background: var(--paper-sticker-hover);
     box-shadow:
-      0 2px 3px rgba(33, 33, 60, 0.05),
-      9px 10px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 24%, transparent);
-  }
-  .dark .sticker-card {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.04) inset,
-      5px 6px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 28%, transparent);
-  }
-  .dark .sticker-card:hover {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.06) inset,
-      9px 10px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 38%, transparent);
+      var(--shadow-card-hover),
+      2px 2px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 7%, transparent);
   }
 
-  /* Overprint swipe behind text — one pass of translucent ink. */
+  /* Marker highlight behind text — the original, with a whisper of
+     overprint blend so the ink reads printed, not painted. */
   .marker {
     position: relative;
     display: inline-block;
   }
   .marker > .marker-fill {
     position: absolute;
-    inset: auto -3px 1px -3px;
-    height: 48%;
+    inset: auto -2px 2px -2px;
+    height: 42%;
     z-index: 0;
-    border-radius: 1px;
-    transform: rotate(-0.4deg) skewX(-4deg);
+    border-radius: 2px;
+    transform: rotate(-0.3deg);
     opacity: var(--marker-opacity);
     mix-blend-mode: var(--ink-blend);
   }
@@ -1067,81 +1055,76 @@
     transform: rotate(-0.3deg) skewX(-6deg) scaleX(1);
   }
 
-  /* Ink strip — a solid bar of overprinted spot ink (was washi tape).
-     Set the ink via background or `--strip-ink`. */
+  /* Washi tape — the original striped tape. Ink set via `--strip-ink`;
+     tape-mix flips from white to dark paper in .dark. */
   .washi-tape {
     position: absolute;
     width: 70px;
-    height: 14px;
-    background: var(--strip-ink, var(--sakura));
-    opacity: 0.75;
-    border-radius: 0;
-    mix-blend-mode: var(--ink-blend);
-    transform: skewX(-8deg);
+    height: 16px;
+    background: repeating-linear-gradient(
+      45deg,
+      color-mix(in oklch, var(--strip-ink, var(--sakura)) 75%, var(--paper-tape-mix)) 0 7px,
+      color-mix(in oklch, var(--strip-ink, var(--sakura)) 40%, var(--paper-tape-mix)) 7px 14px
+    );
+    opacity: 0.85;
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(30, 35, 45, 0.05);
   }
 
-  /* Stamp — borderless spot-ink label. Ink tint block + ink text;
-     reads like a one-pass riso imprint, keyed off currentColor so all
-     existing `style={{ color: var(--ink) }}` call sites keep working. */
+  /* Stamp pill — the original: tilted, marker-weight border, keyed off
+     currentColor. A whisper of grain keeps it printed. */
   .stamp {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: none;
-    border-radius: 1px;
-    padding: 3px 10px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+    padding: 2px 9px;
     font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     transform: rotate(-2deg);
-    background: color-mix(in srgb, currentColor 16%, var(--paper-stamp-mix));
+    opacity: 0.95;
+    background: color-mix(in oklch, currentColor 10%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
   }
 
-  /* Knockout stamp — full ink slab, paper-colored type. The loud one. */
+  /* Same stamp, keyed off `--ink` instead of currentColor — for contexts
+     where the text color can't carry the ink. */
   .ink-stamp {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.4em;
-    border: none;
-    border-radius: 1px;
-    padding: 4px 11px;
+    border: 1.5px solid var(--ink, var(--sumi));
+    border-radius: 3px;
+    padding: 2px 9px;
     font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    background: var(--ink, var(--sumi));
-    color: var(--washi);
-    transform: rotate(-1.5deg);
+    color: var(--ink, var(--sumi));
+    transform: rotate(-2deg);
+    opacity: 0.95;
+    background: color-mix(in oklch, var(--ink, var(--sumi)) 10%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
-    background-blend-mode: soft-light;
-  }
-  .dark .ink-stamp {
-    color: oklch(0.2 0.022 272);
+    background-blend-mode: var(--ink-blend);
   }
 
-  /* Halftone rule — the divider is a row of riso dots fading like a
-     screen-printed gradient (was a dashed perforation). */
+  /* Dashed sticker die-cut — the original perforation. */
   .sticker-perforation {
-    height: 4px;
+    height: 1px;
     border: none;
-    background-image: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--sumi) 34%, transparent) 1.2px,
-      transparent 1.45px
-    );
-    background-size: 8px 4px;
-    background-position: center;
+    background-image:
+      linear-gradient(90deg, var(--border) 50%, transparent 50%);
+    background-size: 6px 1px;
     background-repeat: repeat-x;
-    -webkit-mask-image: linear-gradient(90deg, black 0%, black 78%, transparent 100%);
-    mask-image: linear-gradient(90deg, black 0%, black 78%, transparent 100%);
   }
 
   /* Misregistered display type — give the element `data-text` equal to
@@ -1156,8 +1139,8 @@
     inset: 0;
     z-index: -1;
     color: var(--ink, var(--sakura));
-    transform: translate(0.045em, 0.05em);
-    opacity: 0.85;
+    transform: translate(0.028em, 0.03em);
+    opacity: 0.55;
     mix-blend-mode: var(--ink-blend);
     pointer-events: none;
   }
@@ -1248,8 +1231,8 @@
   }
   [data-dealt="true"] .sticker-card {
     box-shadow:
-      0 2px 3px rgba(33, 33, 60, 0.05),
-      10px 11px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 40%, transparent);
+      var(--shadow-card-hover),
+      3px 3px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 14%, transparent);
   }
 
   /* Staggered page-load reveal — set `--reveal-i` per item. */

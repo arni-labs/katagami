@@ -80,14 +80,6 @@ export function LanguageGallery({
               {label !== null && (
                 <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span
-                    aria-hidden
-                    className="h-[11px] w-10 shrink-0 skew-x-[-8deg] opacity-75"
-                    style={{
-                      background: ink,
-                      mixBlendMode: "var(--ink-blend)" as never,
-                    }}
-                  />
-                  <span
                     className="ink-stamp shrink-0"
                     style={{ ["--ink" as string]: ink }}
                   >

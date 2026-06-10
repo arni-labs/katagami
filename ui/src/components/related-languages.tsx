@@ -72,7 +72,7 @@ export async function RelatedLanguages({
               prefetch={false}
               className="group relative flex items-center gap-3 bg-card/80 px-4 py-3.5 transition-all duration-200 hover:-translate-y-[2px]"
               style={{
-                boxShadow: `0 1px 2px rgba(33,33,60,0.03), 3px 4px 0 color-mix(in srgb, ${ink} 18%, transparent)`,
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <span aria-hidden className="flex shrink-0 flex-col gap-[2px]">

@@ -175,17 +175,17 @@ export function GalleryFilters({
   }, [status, taxonomy, search, tag, hue, source]);
 
   return (
-    <div className="sticky top-2 z-30 flex min-w-0 max-w-full flex-col gap-3 bg-card/95 px-5 py-4 shadow-[0_1px_2px_rgba(33,33,60,0.03),4px_5px_0_color-mix(in_srgb,var(--ramune)_13%,transparent)] backdrop-blur-sm">
+    <div className="sticky top-2 z-30 flex min-w-0 max-w-full flex-col gap-3 bg-card/95 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-sm">
       {/* spot-ink corner strips */}
       <span
         aria-hidden
         className="washi-tape -left-3 -top-2"
-        style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-6deg) skewX(-8deg)" }}
+        style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-6deg)" }}
       />
       <span
         aria-hidden
         className="washi-tape -bottom-2 -right-3 w-12"
-        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(4deg) skewX(-8deg)" }}
+        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(4deg)" }}
       />
 
       {/* Row 1 — search, live count, shuffle */}

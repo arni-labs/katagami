@@ -159,7 +159,7 @@ function LineageCard({
         className="relative p-3.5"
         style={{
           background: `color-mix(in srgb, var(--${tint}) 10%, var(--paper-tint-base))`,
-          boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${tint}) 20%, transparent)`,
+          boxShadow: "var(--shadow-card)",
         }}
       >
         {/* highlighted = yuzu marker wash behind everything */}

@@ -88,8 +88,7 @@ export function SendToReviewLanguageButton({
         <div
           className="absolute right-0 top-9 z-40 w-48 rounded-[3px] bg-background/95 px-2 py-1 text-[11px] font-medium leading-tight text-destructive"
           style={{
-            boxShadow:
-              "0 2px 8px rgba(30,35,45,0.12), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           {error}

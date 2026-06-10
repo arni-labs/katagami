@@ -50,7 +50,7 @@ export function PaletteCard({ palette }: { palette: PaletteItem }) {
         style={{
           background: tint,
           mixBlendMode: "var(--ink-blend)" as never,
-          transform: `rotate(${tapeRot}deg) skewX(-8deg)`,
+          transform: `rotate(${tapeRot}deg)`,
         }}
       />
 
@@ -63,7 +63,7 @@ export function PaletteCard({ palette }: { palette: PaletteItem }) {
           <div
             className="relative bg-card p-1.5 pb-2.5"
             style={{
-              boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, ${tint} 20%, transparent)`,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             {/* SIGNATURE — large, leads the card */}

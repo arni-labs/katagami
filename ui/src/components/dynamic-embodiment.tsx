@@ -76,8 +76,7 @@ function HtmlEmbodiment({
         className={`flex w-full items-center justify-center bg-muted text-center font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground ${className ?? ""}`}
         style={{
           aspectRatio: `${VIEWPORT_WIDTH} / ${VIEWPORT_HEIGHT}`,
-          boxShadow:
-            "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--teal) 20%, transparent)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         embodiment not available
@@ -159,8 +158,7 @@ function TsxEmbodiment({
         className={`flex w-full flex-col items-center justify-center gap-2 bg-destructive/5 p-8 ${className ?? ""}`}
         style={{
           minHeight: 200,
-          boxShadow:
-            "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <span className="font-mono text-xs uppercase tracking-[0.22em] text-destructive">
@@ -212,8 +210,7 @@ class EmbodimentErrorBoundary extends Component<
         <div
           className="flex w-full flex-col items-center justify-center gap-2 bg-destructive/5 p-8"
           style={{
-            boxShadow:
-              "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <span className="font-mono text-xs uppercase tracking-[0.22em] text-destructive">

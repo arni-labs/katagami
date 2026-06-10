@@ -189,19 +189,8 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
   return (
     <section aria-label="Taste finder" className="relative">
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <span className="relative shrink-0">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -left-2 -top-1.5 h-[11px] w-[calc(100%+16px)] opacity-70"
-            style={{
-              background: "var(--sakura)",
-              mixBlendMode: "var(--ink-blend)" as never,
-              transform: "rotate(-2deg) skewX(-8deg)",
-            }}
-          />
-          <span className="stamp relative" style={{ color: "var(--sakura)" }}>
-            taste finder
-          </span>
+        <span className="stamp shrink-0" style={{ color: "var(--sakura)" }}>
+          taste finder
         </span>
         <h2 className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">
           Deal yourself in
@@ -215,13 +204,13 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
         key={entry.id}
         className="deck-deal relative flex flex-col gap-0 bg-card/90 sm:flex-row"
         style={{
-          boxShadow: `0 1px 2px rgba(33,33,60,0.04), 6px 7px 0 color-mix(in srgb, ${primary} 22%, transparent)`,
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <span
           aria-hidden
           className="washi-tape -top-2 left-8"
-          style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-4deg) skewX(-8deg)" }}
+          style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-4deg)" }}
         />
 
         {/* the sheet — thumbnail if it exists, else a proof printed from
@@ -314,8 +303,7 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
               style={{
                 background:
                   "color-mix(in srgb, var(--sakura) 20%, var(--paper-stamp-mix))",
-                boxShadow:
-                  "3px 3px 0 color-mix(in srgb, var(--sakura) 28%, transparent)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               ♥ more like this
@@ -348,8 +336,7 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
               prefetch={false}
               className="inline-flex items-center gap-1.5 bg-foreground px-3 py-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] text-background transition-all hover:-translate-y-[1px]"
               style={{
-                boxShadow:
-                  "3px 3px 0 color-mix(in srgb, var(--ramune) 32%, transparent)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               open this sheet →

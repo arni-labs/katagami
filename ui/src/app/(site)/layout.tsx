@@ -300,8 +300,7 @@ function SocialSticker({
       className="group relative inline-flex h-10 w-10 items-center justify-center bg-card text-foreground/80 transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-4deg] hover:text-foreground"
       style={{
         ["--accent" as string]: accent,
-        boxShadow:
-          "3px 4px 0 color-mix(in srgb, var(--accent) 30%, transparent)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <span

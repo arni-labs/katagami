@@ -41,26 +41,24 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 bg-card/95 shadow-[0_-3px_0_color-mix(in_srgb,var(--ramune)_14%,transparent)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 bg-card/95 shadow-[0_-1px_0_rgba(30,35,45,0.06)] md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {/* spot-ink strips peeking over the top edge */}
+      {/* washi tape peeking over the top edge */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-1.5 left-[18%] h-[10px] w-14 opacity-75"
+        className="washi-tape pointer-events-none -top-2 left-[18%] h-[12px] w-14"
         style={{
-          background: "var(--yuzu)",
-          mixBlendMode: "var(--ink-blend)" as never,
-          transform: "rotate(-4deg) skewX(-8deg)",
+          ["--strip-ink" as string]: "var(--yuzu)",
+          transform: "rotate(-4deg)",
         }}
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -top-1 right-[14%] h-[9px] w-10 opacity-70"
+        className="washi-tape pointer-events-none -top-1.5 right-[14%] h-[10px] w-10"
         style={{
-          background: "var(--ramune)",
-          mixBlendMode: "var(--ink-blend)" as never,
-          transform: "rotate(6deg) skewX(-8deg)",
+          ["--strip-ink" as string]: "var(--ramune)",
+          transform: "rotate(6deg)",
         }}
       />
 

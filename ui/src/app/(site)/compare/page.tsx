@@ -126,7 +126,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
               <div
                 className="relative rounded-[2px] bg-card p-3 pb-8"
                 style={{
-                  boxShadow: `0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--${tape}) 20%, transparent)`,
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 {(() => {

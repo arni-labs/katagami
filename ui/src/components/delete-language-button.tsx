@@ -155,8 +155,7 @@ export function DeleteLanguageDialog({
           aria-describedby={`delete-language-${target.id}-description`}
           className="relative w-full max-w-[420px] overflow-hidden bg-[var(--paper-sticker)] p-5 text-foreground dark:bg-popover"
           style={{
-            boxShadow:
-              "0 22px 52px rgba(30,35,45,0.26), 4px 5px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+            boxShadow: "var(--shadow-card)",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -167,7 +166,7 @@ export function DeleteLanguageDialog({
               background: "var(--sakura)",
               opacity: 0.75,
               mixBlendMode: "var(--ink-blend)" as never,
-              transform: "rotate(-8deg) skewX(-8deg)",
+              transform: "rotate(-8deg)",
             }}
           />
           <span
@@ -177,7 +176,7 @@ export function DeleteLanguageDialog({
               background: "var(--yuzu)",
               opacity: 0.75,
               mixBlendMode: "var(--ink-blend)" as never,
-              transform: "rotate(8deg) skewX(-8deg)",
+              transform: "rotate(8deg)",
             }}
           />
           <button
@@ -221,8 +220,7 @@ export function DeleteLanguageDialog({
               <div
                 className="relative bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
                 style={{
-                  boxShadow:
-                    "0 1px 2px rgba(33,33,60,0.04), 3px 4px 0 color-mix(in srgb, var(--beni) 20%, transparent)",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 <AlertTriangle className="mr-2 inline h-4 w-4 align-[-3px]" />
