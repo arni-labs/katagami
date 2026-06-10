@@ -164,9 +164,13 @@ async function GalleryGrid({
       typography?: { heading_font?: string };
     }>(l.fields.tokens);
     const colors = tokens?.colors ?? {};
+    const name = l.fields.name ?? "Untitled";
     return {
       id: l.entity_id,
-      name: l.fields.name ?? "Untitled",
+      name,
+      // editions of one house ("Art Deco Gilt · Night") share a family so
+      // the deck never deals near-clones back to back
+      family: name.split("·")[0].trim(),
       href: `/language/${l.entity_id}`,
       summary: parseJson<{ summary?: string }>(l.fields.philosophy)
         ?.summary?.replace(/\s+/g, " ")

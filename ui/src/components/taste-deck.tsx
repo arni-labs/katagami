@@ -2,15 +2,26 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  emptyProfile,
+  explainPick,
+  featuresFor,
+  scoreCandidate,
+  withDislike,
+  withLike,
+  type TasteFeatures,
+  type TasteProfile,
+} from "@/lib/taste";
 
 export interface DeckEntry {
   id: string;
   name: string;
   href: string;
+  /** Edition family — "Art Deco Gilt · Night" and "· Coastal" share one. */
+  family: string;
   summary?: string;
   tags: string[];
   hue: string;
-  /** primary, secondary, accent, background, text — whatever exists */
   colors: {
     primary?: string;
     secondary?: string;
@@ -22,76 +33,110 @@ export interface DeckEntry {
   thumb?: string;
 }
 
+/** How many recently dealt sheets the redundancy penalty looks back at. */
+const RECENT_WINDOW = 4;
+
 /**
- * Taste deck — for the browser who has no idea what they're looking for.
- * The press deals one sheet at a time; "more like this" and "not for me"
- * tune a session-local weight over tags + hue, and the next deal homes in.
- * No accounts, no tracking — the weights die with the page.
+ * Taste deck — relevance feedback made tactile. Likes and dislikes move a
+ * Rocchio profile through the catalog's visual feature space (see
+ * lib/taste.ts); an MMR redundancy penalty guarantees the next deal is
+ * never a near-clone of what's already on the table, so every reaction
+ * visibly changes what you're shown.
  */
 export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
+  // Feature extraction is deterministic — do it once.
+  const features = useMemo(() => {
+    const map = new Map<string, TasteFeatures>();
+    for (const e of entries) {
+      map.set(
+        e.id,
+        featuresFor({
+          id: e.id,
+          family: e.family,
+          tags: e.tags,
+          colors: e.colors,
+          headingFont: e.headingFont,
+        }),
+      );
+    }
+    return map;
+  }, [entries]);
+
   const [current, setCurrent] = useState(0);
   const [seen, setSeen] = useState<Set<number>>(() => new Set([0]));
-  const [weights, setWeights] = useState<Map<string, number>>(() => new Map());
+  const [recent, setRecent] = useState<TasteFeatures[]>([]);
+  const [profile, setProfile] = useState<TasteProfile>(emptyProfile);
   const [dealCount, setDealCount] = useState(0);
+  const [reasons, setReasons] = useState<string[]>([]);
 
   const entry = entries[current];
 
-  const keysFor = useCallback((e: DeckEntry) => {
-    const keys = e.tags.filter((t) => t !== "specimen").map((t) => `tag:${t}`);
-    keys.push(`hue:${e.hue}`);
-    return keys;
-  }, []);
-
   const deal = useCallback(
-    (nextWeights: Map<string, number>, nextSeen: Set<number>) => {
-      let pool = entries
-        .map((e, i) => ({ e, i }))
-        .filter(({ i }) => !nextSeen.has(i));
+    (
+      nextProfile: TasteProfile,
+      opts: { wild?: boolean } = {},
+    ) => {
+      const currentFeatures = features.get(entries[current]?.id ?? "");
+      const nextRecent = currentFeatures
+        ? [...recent, currentFeatures].slice(-RECENT_WINDOW)
+        : recent;
+
+      let nextSeen = new Set(seen);
+      let pool = entries.map((_, i) => i).filter((i) => !nextSeen.has(i));
       if (pool.length === 0) {
-        nextSeen = new Set();
-        pool = entries.map((e, i) => ({ e, i })).filter(({ i }) => i !== current);
+        nextSeen = new Set([current]);
+        pool = entries.map((_, i) => i).filter((i) => i !== current);
       }
-      const scored = pool
-        .map(({ e, i }) => {
-          let score = Math.random() * 1.2; // exploration jitter
-          for (const key of keysFor(e)) score += nextWeights.get(key) ?? 0;
-          return { i, score };
-        })
-        .sort((a, b) => b.score - a.score);
-      // weighted pick among the top few keeps it surprising
-      const top = scored.slice(0, 4);
-      const pick = top[Math.floor(Math.random() * top.length)] ?? scored[0];
-      nextSeen.add(pick.i);
-      setSeen(new Set(nextSeen));
-      setWeights(new Map(nextWeights));
-      setCurrent(pick.i);
+
+      let pickIdx: number;
+      if (opts.wild) {
+        pickIdx = pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        let best = pool[0];
+        let bestScore = -Infinity;
+        for (const i of pool) {
+          const f = features.get(entries[i].id);
+          if (!f) continue;
+          const s = scoreCandidate(f, nextProfile, nextRecent, Math.random());
+          if (s > bestScore) {
+            bestScore = s;
+            best = i;
+          }
+        }
+        pickIdx = best;
+      }
+
+      nextSeen.add(pickIdx);
+      const pickedFeatures = features.get(entries[pickIdx].id);
+      setSeen(nextSeen);
+      setRecent(nextRecent);
+      setProfile(nextProfile);
+      setCurrent(pickIdx);
       setDealCount((c) => c + 1);
+      setReasons(
+        opts.wild || !pickedFeatures
+          ? []
+          : explainPick(pickedFeatures, nextProfile),
+      );
     },
-    [entries, current, keysFor],
+    [entries, features, current, recent, seen],
   );
 
   const like = useCallback(() => {
-    if (!entry) return;
-    const next = new Map(weights);
-    for (const key of keysFor(entry)) next.set(key, (next.get(key) ?? 0) + 2);
-    deal(next, new Set(seen));
-  }, [entry, weights, seen, deal, keysFor]);
+    const f = features.get(entry?.id ?? "");
+    if (!f) return;
+    deal(withLike(profile, f));
+  }, [entry, features, profile, deal]);
 
   const skip = useCallback(() => {
-    if (!entry) return;
-    const next = new Map(weights);
-    for (const key of keysFor(entry)) next.set(key, (next.get(key) ?? 0) - 0.6);
-    deal(next, new Set(seen));
-  }, [entry, weights, seen, deal, keysFor]);
+    const f = features.get(entry?.id ?? "");
+    if (!f) return;
+    deal(withDislike(profile, f));
+  }, [entry, features, profile, deal]);
 
-  // The two strongest positive signals, surfaced so the magic is legible.
-  const homingIn = useMemo(() => {
-    return Array.from(weights.entries())
-      .filter(([k, v]) => v > 1 && k.startsWith("tag:"))
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2)
-      .map(([k]) => k.slice(4));
-  }, [weights]);
+  const wild = useCallback(() => {
+    deal(profile, { wild: true });
+  }, [profile, deal]);
 
   if (!entry) return null;
 
@@ -104,6 +149,15 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
   const swatch = [c.primary, c.secondary, c.accent, c.background].filter(
     (x): x is string => Boolean(x),
   );
+  const liked = profile.liked.length;
+  const statusLine =
+    reasons.length > 0
+      ? `why this: ${reasons.join(" · ")}`
+      : liked > 0
+        ? "tuned — keep reacting"
+        : dealCount > 0
+          ? `${dealCount} dealt`
+          : "fresh deck";
 
   return (
     <section aria-label="Taste finder" className="relative">
@@ -250,6 +304,18 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
             >
               ↯ not for me
             </button>
+            <button
+              type="button"
+              onClick={wild}
+              title="Deal a completely random sheet"
+              className="inline-flex items-center gap-1.5 px-3 py-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] text-foreground/75 transition-all hover:-translate-y-[1px] hover:text-foreground"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--yuzu) 18%, var(--paper-stamp-mix))",
+              }}
+            >
+              ↻ wild card
+            </button>
             <Link
               href={entry.href}
               prefetch={false}
@@ -262,11 +328,7 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
               open this sheet →
             </Link>
             <span className="ml-auto font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
-              {homingIn.length > 0
-                ? `homing in: ${homingIn.join(" · ")}`
-                : dealCount > 0
-                  ? `${dealCount} dealt`
-                  : "fresh deck"}
+              {statusLine}
             </span>
           </div>
         </div>
