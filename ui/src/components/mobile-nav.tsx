@@ -16,7 +16,7 @@ const tabs = [
     href: "/taxonomy",
     label: "Taxonomy",
     Icon: Layers,
-    accent: "salad" as const,
+    accent: "yuzu" as const,
     match: (p: string) => p.startsWith("/taxonomy"),
   },
   {
@@ -30,7 +30,7 @@ const tabs = [
     href: "/compare",
     label: "Compare",
     Icon: GitCompare,
-    accent: "sumire" as const,
+    accent: "sakura" as const,
     match: (p: string) => p.startsWith("/compare"),
   },
 ];
@@ -58,7 +58,7 @@ export function MobileNav() {
         aria-hidden
         className="pointer-events-none absolute -top-1 right-[14%] h-[9px] w-10 opacity-70"
         style={{
-          background: "var(--teal)",
+          background: "var(--ramune)",
           mixBlendMode: "var(--ink-blend)" as never,
           transform: "rotate(6deg) skewX(-8deg)",
         }}

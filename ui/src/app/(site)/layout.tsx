@@ -14,15 +14,13 @@ import {
   paletteCore,
   parseJson,
 } from "@/lib/odata";
+import { HankoSeal } from "@/components/scrapbook";
 
-/** Drum inks, in registration-bar order. */
+/** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
   "var(--sakura)",
   "var(--yuzu)",
-  "var(--salad)",
-  "var(--teal)",
   "var(--ramune)",
-  "var(--sumire)",
 ];
 
 interface TokensLite {
@@ -181,7 +179,7 @@ export default async function SiteLayout({
         <span
           aria-hidden
           className="washi-tape -top-1.5 left-[12%] hidden md:block"
-          style={{ ["--strip-ink" as string]: "var(--matcha)", position: "absolute" }}
+          style={{ ["--strip-ink" as string]: "var(--ramune)", position: "absolute" }}
         />
         <span
           aria-hidden
@@ -209,18 +207,19 @@ export default async function SiteLayout({
                     katagami
                   </span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    stencil press · no.001
+                    no.001
                   </span>
                 </div>
+                <HankoSeal className="self-center" size={40} />
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 A DESIGN.md-compatible library of design languages — versioned,
-                forked, and curated for agents. Printed in spot inks.
+                forked, and curated for agents.
               </p>
             </div>
 
             <div className="flex flex-col items-start gap-3 md:items-end">
-              <span className="stamp text-[var(--sumire)]">say hi</span>
+              <span className="stamp text-[var(--sakura)]">say hi</span>
               <div className="flex items-center gap-2">
                 <SocialSticker
                   href="https://x.com/arni0x9053"
@@ -232,7 +231,7 @@ export default async function SiteLayout({
                 <SocialSticker
                   href="https://github.com/rita-aga"
                   label="GitHub (@rita-aga)"
-                  accent="var(--matcha)"
+                  accent="var(--ramune)"
                 >
                   <GithubIcon />
                 </SocialSticker>
@@ -265,11 +264,11 @@ export default async function SiteLayout({
             </span>
             <span className="flex items-center gap-2">
               <span aria-hidden className="flex gap-[2px]">
-                {REGISTRATION_INKS.slice(0, 4).map((ink) => (
+                {REGISTRATION_INKS.map((ink) => (
                   <span key={ink} className="h-2 w-2" style={{ background: ink }} />
                 ))}
               </span>
-              型紙 · v0.2.0
+              型紙 · v0.1.0
             </span>
           </div>
         </div>

@@ -78,16 +78,19 @@
   --sumi: oklch(0.27 0.022 270);               /* dense indigo-black ink */
   --graphite: oklch(0.5 0.015 270);
 
-  /* Spot-ink drum — classic riso inks, same Japanese names */
-  --sakura: oklch(0.7 0.21 0);                 /* fluorescent pink */
-  --yuzu: oklch(0.88 0.18 96);                 /* riso yellow */
-  --salad: oklch(0.8 0.19 138);                /* bright leaf green */
-  --matcha: oklch(0.67 0.14 152);              /* riso green */
-  --shiso: oklch(0.78 0.1 172);                /* mint */
-  --teal: oklch(0.66 0.11 200);                /* riso teal */
-  --ramune: oklch(0.58 0.13 245);              /* riso medium blue */
-  --sumire: oklch(0.56 0.14 300);              /* riso violet */
-  --beni: oklch(0.62 0.21 27);                 /* bright red / destructive */
+  /* Spot-ink drum. The SIGNATURE TRIO carries all site chrome:
+     sakura (fluor pink) · yuzu (yellow) · ramune (blue).
+     The rest are support inks kept for data-driven surfaces; they are
+     tuned to sit quietly in the trio's family, never to compete. */
+  --sakura: oklch(0.7 0.21 0);                 /* fluorescent pink — trio */
+  --yuzu: oklch(0.88 0.18 96);                 /* riso yellow — trio */
+  --ramune: oklch(0.58 0.13 245);              /* riso medium blue — trio */
+  --salad: oklch(0.82 0.13 112);               /* yellow-green, yuzu family */
+  --matcha: oklch(0.68 0.09 150);              /* quiet green */
+  --shiso: oklch(0.78 0.06 175);               /* quiet mint */
+  --teal: oklch(0.62 0.08 222);                /* slate blue, ramune family */
+  --sumire: oklch(0.55 0.09 290);              /* ink violet, subdued */
+  --beni: oklch(0.62 0.19 27);                 /* red — destructive only */
 
   /* Print effects */
   --ink-blend: multiply;                       /* overprint blend; screen at night */
@@ -122,12 +125,12 @@
   --secondary-foreground: var(--sumi);
   --muted: oklch(0.95 0.012 92);
   --muted-foreground: oklch(0.49 0.02 270);
-  --accent: oklch(0.94 0.04 200);              /* faint teal wash */
+  --accent: oklch(0.94 0.035 245);             /* faint ramune wash */
   --accent-foreground: var(--sumi);
   --destructive: var(--beni);
   --border: oklch(0.88 0.014 92);
   --input: oklch(0.87 0.014 92);
-  --ring: var(--sumire);
+  --ring: var(--ramune);
   --chart-1: var(--sakura);
   --chart-2: var(--salad);
   --chart-3: var(--yuzu);
@@ -138,10 +141,10 @@
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
   --sidebar-primary-foreground: oklch(0.978 0.009 92);
-  --sidebar-accent: oklch(0.94 0.04 200);
+  --sidebar-accent: oklch(0.94 0.035 245);
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(0.88 0.014 92);
-  --sidebar-ring: var(--sumire);
+  --sidebar-ring: var(--ramune);
 }
 
 .dark {
@@ -154,15 +157,15 @@
   --graphite: oklch(0.7 0.014 270);
 
   /* Night inks — slightly lifted lightness, moderated chroma so they
-     read as printed ink, not neon. Same drum, same names. */
+     read as printed ink, not neon. Same drum, same trio-first tuning. */
   --sakura: oklch(0.74 0.16 0);
   --yuzu: oklch(0.85 0.13 96);
-  --salad: oklch(0.78 0.14 138);
-  --matcha: oklch(0.72 0.11 152);
-  --shiso: oklch(0.78 0.09 172);
-  --teal: oklch(0.74 0.1 200);
   --ramune: oklch(0.7 0.11 245);
-  --sumire: oklch(0.7 0.12 300);
+  --salad: oklch(0.8 0.1 112);
+  --matcha: oklch(0.73 0.07 150);
+  --shiso: oklch(0.78 0.05 175);
+  --teal: oklch(0.7 0.07 222);
+  --sumire: oklch(0.68 0.08 290);
   --beni: oklch(0.7 0.17 25);
 
   /* Print effects at night */
@@ -197,20 +200,20 @@
   --secondary-foreground: var(--sumi);
   --muted: oklch(0.28 0.024 272);
   --muted-foreground: oklch(0.72 0.014 270);
-  --accent: oklch(0.31 0.04 200);
+  --accent: oklch(0.31 0.04 245);
   --accent-foreground: var(--sumi);
   --destructive: oklch(0.7 0.18 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
-  --ring: var(--sumire);
+  --ring: var(--ramune);
   --sidebar: var(--washi);
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
   --sidebar-primary-foreground: var(--washi);
-  --sidebar-accent: oklch(0.31 0.04 200);
+  --sidebar-accent: oklch(0.31 0.04 245);
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: var(--sumire);
+  --sidebar-ring: var(--ramune);
 }
 
 @layer base {

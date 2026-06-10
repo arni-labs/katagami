@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 
 const fieldBase =
-  "rounded-none border-0 border-b-2 border-foreground/15 bg-transparent px-1 font-mono text-sm text-foreground shadow-none transition-colors focus-visible:border-[var(--sumire)] focus-visible:ring-0 focus-visible:ring-offset-0";
+  "rounded-none border-0 border-b-2 border-foreground/15 bg-transparent px-1 font-mono text-sm text-foreground shadow-none transition-colors focus-visible:border-[var(--ramune)] focus-visible:ring-0 focus-visible:ring-offset-0";
 
 /** Hue buckets for the ink explorer — order matters for display. */
 export const HUE_BUCKETS = [
@@ -76,6 +76,7 @@ export function GalleryFilters({
       document.querySelectorAll<HTMLElement>("[data-gallery-card]"),
     );
     let count = 0;
+    const drawerCounts = new Map<string, number>();
 
     for (const card of cards) {
       const cardStatus = card.dataset.status ?? "";
@@ -104,7 +105,19 @@ export function GalleryFilters({
         matchesHue &&
         matchesSource;
       card.hidden = !visible;
-      if (visible) count += 1;
+      if (visible) {
+        count += 1;
+        const drawer = card.dataset.drawer;
+        if (drawer) drawerCounts.set(drawer, (drawerCounts.get(drawer) ?? 0) + 1);
+      }
+    }
+
+    // A drawer label with nothing visible underneath disappears with it.
+    for (const header of document.querySelectorAll<HTMLElement>(
+      "[data-drawer-header]",
+    )) {
+      const drawer = header.dataset.drawerHeader ?? "";
+      header.hidden = (drawerCounts.get(drawer) ?? 0) === 0;
     }
 
     const empty = document.querySelector<HTMLElement>("[data-gallery-empty]");
@@ -162,12 +175,12 @@ export function GalleryFilters({
   }, [status, taxonomy, search, tag, hue, source]);
 
   return (
-    <div className="relative flex min-w-0 max-w-full flex-col gap-3 bg-card/70 px-5 py-4 shadow-[0_1px_2px_rgba(33,33,60,0.03),4px_5px_0_color-mix(in_srgb,var(--teal)_13%,transparent)]">
+    <div className="relative flex min-w-0 max-w-full flex-col gap-3 bg-card/70 px-5 py-4 shadow-[0_1px_2px_rgba(33,33,60,0.03),4px_5px_0_color-mix(in_srgb,var(--ramune)_13%,transparent)]">
       {/* spot-ink corner strips */}
       <span
         aria-hidden
         className="washi-tape -left-3 -top-2"
-        style={{ ["--strip-ink" as string]: "var(--salad)", transform: "rotate(-6deg) skewX(-8deg)" }}
+        style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-6deg) skewX(-8deg)" }}
       />
       <span
         aria-hidden
@@ -177,7 +190,7 @@ export function GalleryFilters({
 
       {/* Row 1 — search, live count, shuffle */}
       <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
-        <span className="ink-stamp" style={{ ["--ink" as string]: "var(--sumire)" }}>
+        <span className="ink-stamp" style={{ ["--ink" as string]: "var(--sumi)" }}>
           find
         </span>
 
@@ -195,7 +208,7 @@ export function GalleryFilters({
           className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
           aria-live="polite"
         >
-          <span ref={countRef}>{totalCount}</span> / {totalCount} sheets
+          <span ref={countRef}>{totalCount}</span> / {totalCount} languages
         </span>
 
         <button
@@ -274,7 +287,7 @@ export function GalleryFilters({
                         ? { background: "var(--sumi)", color: "var(--washi)" }
                         : {
                             background:
-                              "color-mix(in srgb, var(--teal) 12%, var(--paper-stamp-mix))",
+                              "color-mix(in srgb, var(--ramune) 11%, var(--paper-stamp-mix))",
                             color: "var(--foreground)",
                           }
                     }

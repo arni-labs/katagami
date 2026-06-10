@@ -22,9 +22,9 @@ const KIND_LABEL: Record<PaletteIndexItem["kind"], string> = {
 
 const KIND_INK: Record<PaletteIndexItem["kind"], string> = {
   language: "var(--sakura)",
-  palette: "var(--teal)",
-  "art-style": "var(--sumire)",
-  page: "var(--matcha)",
+  palette: "var(--ramune)",
+  "art-style": "var(--yuzu)",
+  page: "var(--graphite)",
 };
 
 const KIND_ORDER: PaletteIndexItem["kind"][] = [
@@ -199,7 +199,7 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
         <div ref={listRef} className="max-h-[46vh] overflow-y-auto px-2 py-2">
           {results.length === 0 ? (
             <div className="px-3 py-8 text-center font-mono text-[12px] text-muted-foreground">
-              nothing on the drum for &ldquo;{query}&rdquo;
+              no matches for &ldquo;{query}&rdquo;
             </div>
           ) : (
             results.map((item, i) => {
@@ -285,7 +285,7 @@ export function CommandPaletteTrigger({ className = "" }: { className?: string }
       title="Search the library (⌘K)"
       className={`group inline-flex h-7 items-center gap-2 px-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/75 transition-all hover:-translate-y-[1px] hover:text-foreground ${className}`}
       style={{
-        background: "color-mix(in srgb, var(--teal) 14%, var(--paper-stamp-mix))",
+        background: "color-mix(in srgb, var(--ramune) 12%, var(--paper-stamp-mix))",
       }}
     >
       <svg

@@ -1,8 +1,10 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   listDesignLanguages,
   listTaxonomies,
+  parseJson,
 } from "@/lib/odata";
 import { LanguageGallery } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
@@ -148,20 +150,94 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
+  // Today's pull — one sheet from the drawer, rotated daily. A fixed
+  // starting point for browsers who arrive with no destination.
+  const pullPool = languages.filter((l) => l.status === "Published");
+  const pull =
+    pullPool.length > 0 ? pullPool[dailyIndex(pullPool.length)] : undefined;
+
   return (
-    <LanguageGallery
-      languages={languages}
-      canDelete={canDelete}
-      taxonomies={taxonomies}
-      initialFilters={{
-        status: status ?? "Published",
-        taxonomy: taxonomy ?? "all",
-        search: search ?? "",
-        tag: tag ?? "all",
-        hue: hue ?? "all",
-        source: source ?? "all",
+    <>
+      {pull ? <TodaysPull lang={pull} /> : null}
+      <LanguageGallery
+        languages={languages}
+        canDelete={canDelete}
+        taxonomies={taxonomies}
+        initialFilters={{
+          status: status ?? "Published",
+          taxonomy: taxonomy ?? "all",
+          search: search ?? "",
+          tag: tag ?? "all",
+          hue: hue ?? "all",
+          source: source ?? "all",
+        }}
+      />
+    </>
+  );
+}
+
+/** Which sheet gets pulled today — server-side daily rotation. */
+function dailyIndex(poolSize: number): number {
+  if (poolSize <= 0) return 0;
+  return Math.floor(Date.now() / 86_400_000) % poolSize;
+}
+
+function TodaysPull({
+  lang,
+}: {
+  lang: Awaited<ReturnType<typeof listDesignLanguages>>[number];
+}) {
+  const tokens = parseJson<{ colors?: Record<string, string> }>(
+    lang.fields.tokens,
+  );
+  const colors = tokens?.colors ?? {};
+  const swatch = [
+    colors.primary,
+    colors.secondary,
+    colors.accent,
+    colors.background,
+  ].filter((c): c is string => Boolean(c));
+  const ink = swatch[0] ?? "var(--sakura)";
+  const summary = parseJson<{ summary?: string }>(lang.fields.philosophy)
+    ?.summary?.replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    <Link
+      href={`/language/${lang.entity_id}`}
+      prefetch={false}
+      className="group relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/80 px-5 py-4 transition-all duration-200 hover:-translate-y-[2px] sm:flex-nowrap"
+      style={{
+        boxShadow: `0 1px 2px rgba(33,33,60,0.03), 5px 6px 0 color-mix(in srgb, ${ink} 20%, transparent)`,
       }}
-    />
+    >
+      <span
+        aria-hidden
+        className="washi-tape -left-3 -top-2"
+        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(-5deg) skewX(-8deg)" }}
+      />
+      <span className="ink-stamp shrink-0" style={{ ["--ink" as string]: "var(--sakura)" }}>
+        ✦ today&apos;s pull
+      </span>
+      <span aria-hidden className="flex shrink-0 gap-[3px]">
+        {swatch.slice(0, 4).map((c, i) => (
+          <span key={i} className="h-3.5 w-3.5" style={{ background: c }} />
+        ))}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-display text-[18px] font-bold leading-tight tracking-[-0.015em] text-foreground">
+          {lang.fields.name}
+        </span>
+        {summary ? (
+          <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
+            {summary}
+          </span>
+        ) : null}
+      </span>
+      <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-foreground transition-transform group-hover:translate-x-1">
+        open →
+      </span>
+    </Link>
   );
 }
 
@@ -199,13 +275,11 @@ export default async function GalleryPage({
             style={{ ["--reveal-i" as string]: 0 }}
           >
             <span aria-hidden className="flex gap-[2px]">
-              {["var(--sakura)", "var(--yuzu)", "var(--ramune)", "var(--sumire)"].map(
-                (ink) => (
-                  <span key={ink} className="h-2.5 w-2.5" style={{ background: ink }} />
-                ),
-              )}
+              {["var(--sakura)", "var(--yuzu)", "var(--ramune)"].map((ink) => (
+                <span key={ink} className="h-2.5 w-2.5" style={{ background: ink }} />
+              ))}
             </span>
-            <span>stencil-printed · agent-maintained · ideas by</span>
+            <span>agent-maintained · ideas by</span>
             <a
               href="https://x.com/arni0x9053"
               target="_blank"
@@ -237,29 +311,33 @@ export default async function GalleryPage({
             </span>{" "}
             <span
               className="riso-double"
-              data-text="languages,"
+              data-text="languages."
               style={{ ["--ink" as string]: "var(--ramune)" }}
             >
-              languages,
+              languages.
             </span>
-            <br />
+          </h1>
+
+          <p
+            className="riso-reveal mt-6 font-display text-[22px] font-bold leading-snug tracking-[-0.015em] text-foreground sm:text-[26px]"
+            style={{ ["--reveal-i" as string]: 2 }}
+          >
+            Give your agent{" "}
             <span className="marker">
               <span
                 aria-hidden
                 className="marker-fill"
                 style={{ background: "var(--yuzu)" }}
               />
-              <span className="marker-text">printed for agents.</span>
+              <span className="marker-text">taste</span>
             </span>
-          </h1>
-
+            .
+          </p>
           <p
-            className="riso-reveal mt-6 max-w-xl text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]"
+            className="riso-reveal mt-3 max-w-xl text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]"
             style={{ ["--reveal-i" as string]: 2 }}
           >
-            A living specimen wall of design movements — palettes, type, rules,
-            and working embodiments. Browse it like a flat file in a print
-            shop, then hand any sheet to your agent as{" "}
+            a vocabulary of design movements you can hand off as{" "}
             <span className="font-mono text-[0.92em] font-semibold text-foreground">
               DESIGN.md
             </span>
@@ -278,7 +356,7 @@ export default async function GalleryPage({
                   "4px 5px 0 color-mix(in srgb, var(--sakura) 38%, transparent)",
               }}
             >
-              Browse the wall
+              Browse gallery
               <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
             </a>
             <SurpriseChip />
@@ -300,18 +378,18 @@ export default async function GalleryPage({
             {
               n: "01",
               ink: "sakura",
-              title: "Browse the wall",
-              body: "Filter by ink, vibe, or movement — or let the shuffle deal you a sheet you didn't know you wanted.",
+              title: "Browse",
+              body: "Filter by ink, vibe, or movement — or let the shuffle pick a language you didn't know you wanted.",
             },
             {
               n: "02",
               ink: "ramune",
-              title: "Open a specimen",
+              title: "Open a language",
               body: "Every language ships its philosophy, tokens, rules, and working landing + dashboard embodiments.",
             },
             {
               n: "03",
-              ink: "matcha",
+              ink: "yuzu",
               title: "Hand it to your agent",
               body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style, session after session.",
             },
@@ -336,26 +414,26 @@ export default async function GalleryPage({
         ))}
       </section>
 
-      {/* ── The specimen wall ────────────────────────────────────── */}
+      {/* ── Gallery ──────────────────────────────────────────────── */}
       <section id="gallery" className="scroll-mt-20 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               <span
-                className="inline-block h-[7px] w-9 skew-x-[-8deg] bg-[var(--teal)]"
+                className="inline-block h-[7px] w-9 skew-x-[-8deg] bg-[var(--ramune)]"
                 style={{ mixBlendMode: "var(--ink-blend)" as never }}
               />
-              flat file no.001
+              choose a language
             </div>
             <h2
               className="riso-double font-display text-[28px] font-bold leading-none tracking-[-0.02em]"
-              data-text="The specimen wall"
-              style={{ ["--ink" as string]: "var(--teal)" }}
+              data-text="Gallery"
+              style={{ ["--ink" as string]: "var(--ramune)" }}
             >
-              The specimen wall
+              Gallery
             </h2>
           </div>
-          <span className="stamp text-[var(--salad)]">details inside</span>
+          <span className="stamp text-[var(--ramune)]">details inside</span>
         </div>
 
         <Suspense

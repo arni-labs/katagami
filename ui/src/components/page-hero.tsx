@@ -11,7 +11,7 @@ type AccentColor =
 
 export function PageHero({
   eyebrow,
-  eyebrowAccent = "teal",
+  eyebrowAccent = "ramune",
   title,
   description,
   rightSlot,

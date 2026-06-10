@@ -30,7 +30,7 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
     };
 
     // Each pass slips at a different rate — misregistration you can feel.
-    const rates = [10, -7, 14];
+    const rates = [10, -7, 14, -16];
     const tick = () => {
       frame.current = 0;
       current.current.x += (target.current.x - current.current.x) * 0.08;
@@ -143,6 +143,28 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
             style={{ color: "var(--yuzu)" }}
             opacity="0.75"
           />
+        </g>
+
+        {/* pass 4 — the press operator's registration crosses, drifting
+            against everything else */}
+        <g
+          ref={(el) => {
+            layersRef.current[3] = el;
+          }}
+          style={{ willChange: "transform", color: "var(--graphite)" }}
+          opacity="0.55"
+        >
+          {[
+            [475, 105],
+            [870, 95],
+            [545, 470],
+            [860, 500],
+          ].map(([x, y]) => (
+            <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle r="7" />
+              <path d="M -12 0 H 12 M 0 -12 V 12" />
+            </g>
+          ))}
         </g>
       </svg>
     </div>
