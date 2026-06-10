@@ -266,6 +266,36 @@
     letter-spacing: -0.02em;
     font-feature-settings: "ss02", "ss04";
   }
+
+  /* Everything clickable says so: pointer cursor + a soft default
+     transition so hover states never snap. Element classes override. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label[for] {
+    cursor: pointer;
+  }
+  a,
+  button,
+  summary,
+  [role="button"] {
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      opacity 150ms ease,
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    a,
+    button,
+    summary,
+    [role="button"] {
+      transition: none;
+    }
+  }
 }
 
 @layer components {
@@ -1071,26 +1101,30 @@
     box-shadow: 0 1px 2px rgba(30, 35, 45, 0.05);
   }
 
-  /* Stamp pill — the original: tilted, marker-weight border, keyed off
-     currentColor. A whisper of grain keeps it printed. */
+  /* Stamp pill — tilted, keyed off currentColor. The border is an ink
+     impression (translucent, hairline) rather than a hard outline, so
+     names and labels read printed, not boxed. A whisper of grain. */
   .stamp {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid currentColor;
+    border: 1px solid color-mix(in oklch, currentColor 45%, transparent);
     border-radius: 3px;
-    padding: 2px 9px;
+    padding: 2px 8px;
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    transform: rotate(-2deg);
+    transform: rotate(-1.5deg);
     opacity: 0.95;
-    background: color-mix(in oklch, currentColor 10%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, currentColor 8%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 150ms ease,
+                background-color 150ms ease;
   }
 
   /* Same stamp, keyed off `--ink` instead of currentColor — for contexts
@@ -1101,20 +1135,23 @@
     align-items: center;
     justify-content: center;
     gap: 0.4em;
-    border: 1.5px solid var(--ink, var(--sumi));
+    border: 1px solid color-mix(in oklch, var(--ink, var(--sumi)) 45%, transparent);
     border-radius: 3px;
-    padding: 2px 9px;
+    padding: 2px 8px;
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink, var(--sumi));
-    transform: rotate(-2deg);
+    transform: rotate(-1.5deg);
     opacity: 0.95;
-    background: color-mix(in oklch, var(--ink, var(--sumi)) 10%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, var(--ink, var(--sumi)) 8%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 150ms ease,
+                background-color 150ms ease;
   }
 
   /* Dashed sticker die-cut — the original perforation. */
@@ -1233,6 +1270,27 @@
     box-shadow:
       var(--shadow-card-hover),
       3px 3px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 14%, transparent);
+  }
+
+  /* Route transition — every navigation slides the new sheet onto the
+     press bed. Applied by (site)/template.tsx, which remounts per route. */
+  @keyframes route-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .route-enter {
+    animation: route-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .route-enter {
+      animation: none;
+    }
   }
 
   /* Staggered page-load reveal — set `--reveal-i` per item. */

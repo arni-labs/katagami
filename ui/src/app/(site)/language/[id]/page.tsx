@@ -33,12 +33,7 @@ import {
   Perforation,
 } from "@/components/scrapbook";
 
-const statusColor: Record<string, string> = {
-  Draft: "ramune",
-  UnderReview: "yuzu",
-  Published: "sakura",
-  Archived: "teal",
-};
+
 
 type LanguagePageProps = {
   params: Promise<{ id: string }>;
@@ -104,8 +99,12 @@ export default async function LanguageDetailPage({
 
   const f = lang.fields;
 
-  const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
+  // The page chrome stays neutral so the language's own design reads
+  // clearly — the one accent we allow is the language's OWN primary ink.
+  const ownColors = parseJson<{ colors?: Record<string, string> }>(f.tokens)
+    ?.colors;
+  const ownInk = ownColors?.primary ?? ownColors?.accent ?? "var(--graphite)";
   const isPublished = lang.status === "Published";
 
   // Three embodiments, each a served self-contained HTML file: the element
@@ -231,7 +230,7 @@ export default async function LanguageDetailPage({
 
       {/* Hero */}
       <PageHero
-        eyebrowAccent={accent as never}
+        eyebrowAccent="graphite"
         eyebrow={
           <>
             <span>design language</span>
@@ -241,7 +240,18 @@ export default async function LanguageDetailPage({
             </span>
           </>
         }
-        title={<Marker color={accent as never}>{name}</Marker>}
+        title={
+          <span className="marker">
+            <span
+              aria-hidden
+              className="marker-fill"
+              style={{
+                background: `color-mix(in srgb, ${ownInk} 28%, var(--washi))`,
+              }}
+            />
+            <span className="marker-text">{name}</span>
+          </span>
+        }
         description={
           <>
             A portable design language for agents: download the markdown first,
@@ -250,7 +260,7 @@ export default async function LanguageDetailPage({
         }
         rightSlot={
           <>
-            <Stamp color={accent as never}>{lang.status}</Stamp>
+            <Stamp color="graphite">{lang.status}</Stamp>
           </>
         }
       />
@@ -270,8 +280,8 @@ export default async function LanguageDetailPage({
       {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
         <section className="order-2 md:order-1 md:col-start-1">
-          <SectionHeading eyebrow="the spec" eyebrowColor="ramune">
-            <Marker color="ramune">specification</Marker>
+          <SectionHeading eyebrow="the spec" eyebrowColor="graphite">
+            <Marker color="graphite">specification</Marker>
           </SectionHeading>
           <StickyNote className="p-4 sm:p-6">
             <SpecPanel {...specProps} showActions={false} />
@@ -280,8 +290,8 @@ export default async function LanguageDetailPage({
 
         <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
           <section className="order-1 space-y-8 md:space-y-6">
-            <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
-              <Marker color="yuzu">embodiments</Marker>
+            <SectionHeading eyebrow="in the wild" eyebrowColor="graphite">
+              <Marker color="graphite">embodiments</Marker>
             </SectionHeading>
             {embodimentTabs.length > 0 ? (
               <EmbodimentTabs
@@ -305,8 +315,8 @@ export default async function LanguageDetailPage({
 
           {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
           <section className="order-3">
-            <SectionHeading eyebrow="DESIGN.md" eyebrowColor="ramune">
-              <Marker color="ramune">at a glance</Marker>
+            <SectionHeading eyebrow="DESIGN.md" eyebrowColor="graphite">
+              <Marker color="graphite">at a glance</Marker>
             </SectionHeading>
             <DesignMdShowcase
               name={name}
@@ -323,8 +333,8 @@ export default async function LanguageDetailPage({
           </section>
 
           <section className="order-4">
-            <SectionHeading eyebrow="shadcn/ui" eyebrowColor="ramune">
-              <Marker color="ramune">implementation kit</Marker>
+            <SectionHeading eyebrow="shadcn/ui" eyebrowColor="graphite">
+              <Marker color="graphite">implementation kit</Marker>
             </SectionHeading>
             <StickyNote tint="teal" className="p-4 sm:p-5">
               <ShadcnPreview
@@ -353,8 +363,8 @@ export default async function LanguageDetailPage({
       {canRemix ? (
         <section>
           <Perforation className="mb-8" />
-          <SectionHeading eyebrow="remix lane" eyebrowColor="yuzu">
-            <Marker color="yuzu">try a remix</Marker>
+          <SectionHeading eyebrow="remix lane" eyebrowColor="graphite">
+            <Marker color="graphite">try a remix</Marker>
           </SectionHeading>
           <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
             Keep <span className="text-foreground">{name}</span> and swap a palette and an art

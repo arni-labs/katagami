@@ -76,8 +76,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
 
       <PageHero
         eyebrow="Art lane"
-        eyebrowAccent="sakura"
-        title={<Marker color="sakura">{name}</Marker>}
+        eyebrowAccent="graphite"
+        title={<Marker color="graphite">{name}</Marker>}
         description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable subject/palette prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
@@ -172,8 +172,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
 
       {/* remix hook */}
       <section>
-        <SectionHeading eyebrow="try it" eyebrowColor="salad">
-          <Marker color="salad">remix with this style</Marker>
+        <SectionHeading eyebrow="try it" eyebrowColor="graphite">
+          <Marker color="graphite">remix with this style</Marker>
         </SectionHeading>
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Apply <span className="text-foreground">{name}</span> to any UI language and swap the palette — the preview takes this style&apos;s hero image.

@@ -71,8 +71,8 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
 
       <PageHero
         eyebrow="Color lane"
-        eyebrowAccent="ramune"
-        title={<Marker color="ramune">{name}</Marker>}
+        eyebrowAccent="graphite"
+        title={<Marker color="graphite">{name}</Marker>}
         description={core.mood.summary ?? "A curated color system: signature, neutral ground, and a small semantic accessory."}
         rightSlot={
           <>
@@ -186,8 +186,8 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
 
       {/* remix hook */}
       <section>
-        <SectionHeading eyebrow="try it" eyebrowColor="salad">
-          <Marker color="salad">remix with this palette</Marker>
+        <SectionHeading eyebrow="try it" eyebrowColor="graphite">
+          <Marker color="graphite">remix with this palette</Marker>
         </SectionHeading>
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Drop <span className="text-foreground">{name}</span> onto any UI language and swap the art style — the preview recolors live.

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 type AccentColor =
+  | "graphite"
   | "sakura"
   | "yuzu"
   | "salad"

@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react";
 
 /**
- * RisoInkField — a WebGL ink wash behind the hero. Three soft blobs of
- * the signature trio drift on slow Lissajous paths, screened through a
- * halftone dot mask so they read as riso ink, not gradients. The canvas
+ * RisoInkField — a WebGL ink wash that lives behind the WHOLE page, not
+ * just the hero. Three soft blobs of the signature trio drift on slow
+ * Lissajous paths across the full viewport, screened through a halftone
+ * dot mask so they read as riso ink, not gradients. The canvas
  * multiply-blends over the paper by day and screen-blends at night
  * (handled by the --ink-blend CSS variable), so one shader serves both.
  *
@@ -39,17 +40,17 @@ float blob(vec2 uv, vec2 center, float radius) {
 void main() {
   vec2 uv = gl_FragCoord.xy / u_res;
   uv.x *= u_res.x / u_res.y;
-  float t = u_time * 0.05;
-  vec2 pull = (u_pointer - 0.5) * 0.12;
+  float t = u_time * 0.04;
+  vec2 pull = (u_pointer - 0.5) * 0.1;
 
-  vec2 c1 = vec2(0.75 + 0.18 * sin(t * 0.9), 0.62 + 0.14 * cos(t * 0.7)) + pull;
-  vec2 c2 = vec2(1.05 + 0.16 * cos(t * 0.6 + 2.1), 0.35 + 0.18 * sin(t * 0.8 + 1.3)) + pull * 0.6;
-  vec2 c3 = vec2(0.55 + 0.2 * sin(t * 0.5 + 4.2), 0.28 + 0.12 * cos(t * 1.1 + 0.7)) + pull * 1.4;
-  c1.x *= u_res.x / u_res.y / (u_res.x / u_res.y); // keep centers in aspect space
+  // blobs roam the full sheet, not one corner
+  vec2 c1 = vec2(0.22 + 0.22 * sin(t * 0.9), 0.74 + 0.18 * cos(t * 0.7)) + pull;
+  vec2 c2 = vec2(0.82 + 0.2 * cos(t * 0.6 + 2.1), 0.6 + 0.22 * sin(t * 0.8 + 1.3)) + pull * 0.6;
+  vec2 c3 = vec2(0.5 + 0.26 * sin(t * 0.5 + 4.2), 0.2 + 0.16 * cos(t * 1.1 + 0.7)) + pull * 1.4;
   vec2 aspect = vec2(u_res.x / u_res.y, 1.0);
-  float k1 = blob(uv, c1 * aspect, 0.42);
-  float k2 = blob(uv, c2 * aspect, 0.38);
-  float k3 = blob(uv, c3 * aspect, 0.46);
+  float k1 = blob(uv, c1 * aspect, 0.4);
+  float k2 = blob(uv, c2 * aspect, 0.36);
+  float k3 = blob(uv, c3 * aspect, 0.44);
 
   // halftone screen: ink coverage becomes dot size on a rotated grid
   vec2 grid = gl_FragCoord.xy;
@@ -77,7 +78,13 @@ void main() {
 }
 `;
 
-export function RisoInkField({ className = "" }: { className?: string }) {
+export function RisoInkField({
+  className = "",
+  opacity = 0.4,
+}: {
+  className?: string;
+  opacity?: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -205,7 +212,7 @@ export function RisoInkField({ className = "" }: { className?: string }) {
       className={`pointer-events-none h-full w-full ${className}`}
       style={{
         mixBlendMode: "var(--ink-blend)" as never,
-        opacity: 0.4,
+        opacity,
       }}
     />
   );

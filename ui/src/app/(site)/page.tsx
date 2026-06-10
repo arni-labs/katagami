@@ -8,7 +8,6 @@ import {
 } from "@/lib/odata";
 import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
-import { RisoInkField } from "@/components/riso-ink-field";
 import { SurpriseChip } from "@/components/hero-actions";
 import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
@@ -304,9 +303,6 @@ export default async function GalleryPage({
     <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-4 py-6 sm:space-y-14 sm:overflow-visible sm:py-10">
       {/* ── Hero: the print bed ─────────────────────────────────── */}
       <section className="relative min-w-0 overflow-x-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
-        <div aria-hidden className="absolute inset-0 overflow-hidden">
-          <RisoInkField />
-        </div>
         <RisoHeroPress className="opacity-80 max-sm:opacity-40" />
 
         <div className="relative max-w-3xl">
