@@ -2,10 +2,10 @@ import type { DesignLanguage } from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
 import { GalleryFilters } from "@/components/gallery-filters";
 import { RegMark } from "@/components/scrapbook";
+import { ShelfSpread } from "@/components/shelf-spread";
 
-/** Drawers only make sense once the catalog outgrows a single wall. */
-const DRAWER_THRESHOLD = 24;
-const DRAWER_INKS = ["var(--ramune)", "var(--sakura)", "var(--yuzu)"];
+/** Shelves only make sense once the catalog outgrows a single wall. */
+const SHELF_THRESHOLD = 24;
 
 export function LanguageGallery({
   languages,
@@ -40,13 +40,14 @@ export function LanguageGallery({
   const topTags = collectTopTags(attrsById.values());
   const hasSpecimens = Array.from(attrsById.values()).some((a) => a.specimen);
 
-  // Organize the wall into labeled drawers by dominant vibe, like a flat
-  // file in a print shop — a browser who doesn't know what they want can
-  // pull a drawer instead of scanning an undifferentiated grid. Below the
-  // threshold everything lives in one unlabeled drawer.
-  const drawers = buildDrawers(languages, attrsById, topTags);
-  // Global card position across drawers — drives eager thumbnail loading.
-  const indexById = assignGlobalIndices(drawers);
+  // The catalog is a cabinet of shelves, not a list. Each shelf is a
+  // color-mood computed from the languages' own tokens (dark stock, loud
+  // inks, quiet paper, warm/cold press) — a browser who doesn't know what
+  // they want slides along shelves instead of scanning one huge grid.
+  // Below the threshold everything lives on a single unlabeled wall.
+  const shelves = buildShelves(languages);
+  // Global card position across shelves — drives eager thumbnail loading.
+  const indexById = assignGlobalIndices(shelves);
 
   return (
     <>
@@ -63,21 +64,21 @@ export function LanguageGallery({
         initialSource={filters.source}
       />
 
-      <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-        {drawers.map((drawer, drawerIdx) => {
-          const { label, languages } = drawer;
-          const ink = DRAWER_INKS[drawerIdx % DRAWER_INKS.length];
+      <div className="space-y-10">
+        {shelves.map((shelf) => {
+          const { key, label, blurb, ink, languages } = shelf;
           const anyVisible = languages.some((lang) =>
             matchesFilters(attrsById.get(lang.entity_id)!, filters),
           );
           return (
-            <div key={label ?? "all"} className="contents">
+            <section
+              key={key}
+              data-shelf-section={key}
+              hidden={label !== null && !anyVisible}
+              className="min-w-0"
+            >
               {label !== null && (
-                <div
-                  data-drawer-header={label}
-                  hidden={!anyVisible}
-                  className="col-span-full mt-3 flex min-w-0 items-center gap-3 first:mt-0"
-                >
+                <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span
                     aria-hidden
                     className="h-[11px] w-10 shrink-0 skew-x-[-8deg] opacity-75"
@@ -92,37 +93,46 @@ export function LanguageGallery({
                   >
                     {label}
                   </span>
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {languages.length}
+                  <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {blurb} · {languages.length}
                   </span>
-                  <span className="sticker-perforation min-w-0 flex-1" />
-                  <RegMark className="shrink-0" />
+                  <span className="sticker-perforation hidden min-w-0 flex-1 sm:block" />
+                  <ShelfSpread />
+                  <RegMark className="hidden shrink-0 sm:block" />
                 </div>
               )}
-              {languages.map((lang) => {
-                const attrs = attrsById.get(lang.entity_id)!;
-                return (
-                  <div
-                    key={lang.entity_id}
-                    data-gallery-card
-                    data-status={attrs.status}
-                    data-taxonomy-ids={attrs.taxonomyIds}
-                    data-search-text={attrs.searchText}
-                    data-tags={attrs.tags.join("\t")}
-                    data-hue={attrs.hue}
-                    data-specimen={attrs.specimen ? "true" : undefined}
-                    data-drawer={label ?? undefined}
-                    hidden={!matchesFilters(attrs, filters)}
-                  >
-                    <LanguageCard
-                      lang={lang}
-                      index={indexById.get(lang.entity_id) ?? 0}
-                      canDelete={canDelete}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+              <div
+                className={
+                  label === null
+                    ? "grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3"
+                    : "shelf-row"
+                }
+              >
+                {languages.map((lang) => {
+                  const attrs = attrsById.get(lang.entity_id)!;
+                  return (
+                    <div
+                      key={lang.entity_id}
+                      data-gallery-card
+                      data-status={attrs.status}
+                      data-taxonomy-ids={attrs.taxonomyIds}
+                      data-search-text={attrs.searchText}
+                      data-tags={attrs.tags.join("\t")}
+                      data-hue={attrs.hue}
+                      data-specimen={attrs.specimen ? "true" : undefined}
+                      data-shelf={key}
+                      hidden={!matchesFilters(attrs, filters)}
+                    >
+                      <LanguageCard
+                        lang={lang}
+                        index={indexById.get(lang.entity_id) ?? 0}
+                        canDelete={canDelete}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           );
         })}
       </div>
@@ -143,44 +153,99 @@ export function LanguageGallery({
   );
 }
 
-interface Drawer {
-  /** null = the single unlabeled drawer used for small catalogs. */
+interface Shelf {
+  key: string;
+  /** null = the single unlabeled wall used for small catalogs. */
   label: string | null;
+  blurb: string;
+  ink: string;
   languages: DesignLanguage[];
 }
 
-/** Assign every language to its most popular tag's drawer (first match in
- *  topTags order). Languages matching no top tag land in "miscellany". */
-function buildDrawers(
-  languages: DesignLanguage[],
-  attrsById: Map<string, ReturnType<typeof galleryCardAttributes>>,
-  topTags: Array<{ tag: string; count: number }>,
-): Drawer[] {
-  if (languages.length <= DRAWER_THRESHOLD || topTags.length === 0) {
-    return [{ label: null, languages }];
-  }
-  const order = topTags.map((t) => t.tag);
-  const byLabel = new Map<string, DesignLanguage[]>();
-  for (const lang of languages) {
-    const attrs = attrsById.get(lang.entity_id)!;
-    const home = order.find((tag) => attrs.tags.includes(tag)) ?? "miscellany";
-    const bucket = byLabel.get(home) ?? [];
-    bucket.push(lang);
-    byLabel.set(home, bucket);
-  }
-  const drawers: Drawer[] = [];
-  for (const tag of [...order, "miscellany"]) {
-    const bucket = byLabel.get(tag);
-    if (bucket && bucket.length > 0) drawers.push({ label: tag, languages: bucket });
-  }
-  return drawers;
+/** Shelf definitions, in display order. Membership is computed from each
+ *  language's OWN token colors — the cabinet organizes itself by what the
+ *  designs actually look like, not by tag bookkeeping. */
+const SHELF_DEFS = [
+  { key: "picks", label: "curator's picks", blurb: "pinned to the corkboard", ink: "var(--sakura)" },
+  { key: "night", label: "night stock", blurb: "printed on dark paper", ink: "var(--ramune)" },
+  { key: "loud", label: "loud inks", blurb: "full coverage, no apologies", ink: "var(--sakura)" },
+  { key: "quiet", label: "quiet paper", blurb: "restraint and whitespace", ink: "var(--ramune)" },
+  { key: "warm", label: "warm press", blurb: "earth, amber, ember", ink: "var(--yuzu)" },
+  { key: "cold", label: "cold press", blurb: "sea, slate, shade", ink: "var(--ramune)" },
+  { key: "misc", label: "miscellany", blurb: "sheets that fit no drawer", ink: "var(--graphite)" },
+] as const;
+
+function hexParts(hex?: string): { h: number; s: number; l: number } | null {
+  if (!hex || !/^#[0-9a-f]{3,8}$/i.test(hex)) return null;
+  const m = hex.replace("#", "");
+  const v =
+    m.length === 3
+      ? m.split("").map((c) => parseInt(c + c, 16) / 255)
+      : [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = v;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h: number;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / d + 2) * 60;
+  else h = ((r - g) / d + 4) * 60;
+  return { h, s, l };
 }
 
-function assignGlobalIndices(drawers: Drawer[]): Map<string, number> {
+function isFeaturedLanguage(lang: DesignLanguage): boolean {
+  const bag = lang as unknown as Record<string, unknown>;
+  for (const c of [bag.booleans, bag.fields, bag.counters, bag]) {
+    if (!c || typeof c !== "object") continue;
+    const v = (c as Record<string, unknown>).featured;
+    if (v === true || v === 1) return true;
+    if (typeof v === "string" && v.toLowerCase() === "true") return true;
+  }
+  return false;
+}
+
+function shelfKeyFor(lang: DesignLanguage): string {
+  if (isFeaturedLanguage(lang)) return "picks";
+  const tokens = parseMaybeJson(lang.fields.tokens) as
+    | { colors?: Record<string, string> }
+    | undefined;
+  const colors = tokens?.colors ?? {};
+  const bg = hexParts(colors.background);
+  const prim = hexParts(colors.primary ?? colors.accent);
+  if (bg && bg.l < 0.38) return "night";
+  if (!prim) return "misc";
+  if (prim.s < 0.24) return "quiet";
+  if (prim.s > 0.6 && prim.l > 0.28 && prim.l < 0.82) return "loud";
+  const warm = prim.h < 90 || prim.h >= 330;
+  return warm ? "warm" : "cold";
+}
+
+function buildShelves(languages: DesignLanguage[]): Shelf[] {
+  if (languages.length <= SHELF_THRESHOLD) {
+    return [
+      { key: "all", label: null, blurb: "", ink: "var(--ramune)", languages },
+    ];
+  }
+  const buckets = new Map<string, DesignLanguage[]>();
+  for (const lang of languages) {
+    const key = shelfKeyFor(lang);
+    const bucket = buckets.get(key) ?? [];
+    bucket.push(lang);
+    buckets.set(key, bucket);
+  }
+  return SHELF_DEFS.filter((def) => (buckets.get(def.key)?.length ?? 0) > 0).map(
+    (def) => ({ ...def, languages: buckets.get(def.key)! }),
+  );
+}
+
+function assignGlobalIndices(shelves: Shelf[]): Map<string, number> {
   const indexById = new Map<string, number>();
   let i = 0;
-  for (const drawer of drawers) {
-    for (const lang of drawer.languages) {
+  for (const shelf of shelves) {
+    for (const lang of shelf.languages) {
       indexById.set(lang.entity_id, i);
       i += 1;
     }
@@ -257,8 +322,9 @@ function collectTopTags(
 }
 
 /** Bucket a language's primary token color into a hue family so the ink
- *  explorer can filter the wall by color. */
-function dominantHueBucket(lang: DesignLanguage): string {
+ *  explorer can filter the wall by color. Shared with the taste deck so
+ *  both speak the same hue vocabulary. */
+export function dominantHueBucket(lang: DesignLanguage): string {
   const tokens = parseMaybeJson(lang.fields.tokens) as
     | { colors?: Record<string, string> }
     | undefined;

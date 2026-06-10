@@ -107,17 +107,17 @@ export function GalleryFilters({
       card.hidden = !visible;
       if (visible) {
         count += 1;
-        const drawer = card.dataset.drawer;
-        if (drawer) drawerCounts.set(drawer, (drawerCounts.get(drawer) ?? 0) + 1);
+        const shelf = card.dataset.shelf;
+        if (shelf) drawerCounts.set(shelf, (drawerCounts.get(shelf) ?? 0) + 1);
       }
     }
 
-    // A drawer label with nothing visible underneath disappears with it.
-    for (const header of document.querySelectorAll<HTMLElement>(
-      "[data-drawer-header]",
+    // A shelf with nothing visible on it slides shut entirely.
+    for (const section of document.querySelectorAll<HTMLElement>(
+      "[data-shelf-section]",
     )) {
-      const drawer = header.dataset.drawerHeader ?? "";
-      header.hidden = (drawerCounts.get(drawer) ?? 0) === 0;
+      const shelf = section.dataset.shelfSection ?? "";
+      section.hidden = (drawerCounts.get(shelf) ?? 0) === 0;
     }
 
     const empty = document.querySelector<HTMLElement>("[data-gallery-empty]");
@@ -175,7 +175,7 @@ export function GalleryFilters({
   }, [status, taxonomy, search, tag, hue, source]);
 
   return (
-    <div className="relative flex min-w-0 max-w-full flex-col gap-3 bg-card/70 px-5 py-4 shadow-[0_1px_2px_rgba(33,33,60,0.03),4px_5px_0_color-mix(in_srgb,var(--ramune)_13%,transparent)]">
+    <div className="sticky top-2 z-30 flex min-w-0 max-w-full flex-col gap-3 bg-card/95 px-5 py-4 shadow-[0_1px_2px_rgba(33,33,60,0.03),4px_5px_0_color-mix(in_srgb,var(--ramune)_13%,transparent)] backdrop-blur-sm">
       {/* spot-ink corner strips */}
       <span
         aria-hidden

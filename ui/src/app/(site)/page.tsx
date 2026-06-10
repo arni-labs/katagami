@@ -6,9 +6,10 @@ import {
   listTaxonomies,
   parseJson,
 } from "@/lib/odata";
-import { LanguageGallery } from "@/components/language-gallery";
+import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { SurpriseChip } from "@/components/hero-actions";
+import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
 
 async function GalleryGrid({
@@ -156,9 +157,40 @@ async function GalleryGrid({
   const pull =
     pullPool.length > 0 ? pullPool[dailyIndex(pullPool.length)] : undefined;
 
+  // The taste deck deals from the published catalog.
+  const deckEntries: DeckEntry[] = pullPool.map((l) => {
+    const tokens = parseJson<{
+      colors?: Record<string, string>;
+      typography?: { heading_font?: string };
+    }>(l.fields.tokens);
+    const colors = tokens?.colors ?? {};
+    return {
+      id: l.entity_id,
+      name: l.fields.name ?? "Untitled",
+      href: `/language/${l.entity_id}`,
+      summary: parseJson<{ summary?: string }>(l.fields.philosophy)
+        ?.summary?.replace(/\s+/g, " ")
+        .trim(),
+      tags: (parseJson<string[]>(l.fields.tags) ?? []).map((t) =>
+        t.toLowerCase(),
+      ),
+      hue: dominantHueBucket(l),
+      colors: {
+        primary: colors.primary,
+        secondary: colors.secondary,
+        accent: colors.accent,
+        background: colors.background,
+        text: colors.text,
+      },
+      headingFont: tokens?.typography?.heading_font,
+      thumb: l.fields.thumbnail_asset_url || undefined,
+    };
+  });
+
   return (
     <>
       {pull ? <TodaysPull lang={pull} /> : null}
+      {deckEntries.length > 2 ? <TasteDeck entries={deckEntries} /> : null}
       <LanguageGallery
         languages={languages}
         canDelete={canDelete}

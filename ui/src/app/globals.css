@@ -1178,6 +1178,58 @@
     opacity: 0.6;
   }
 
+  /* ============ DRAWER SHELVES ============
+     The catalog is a cabinet, not a list: each shelf is a horizontal
+     rail of sheets you slide through. "Spread out" pulls the drawer
+     all the way open into a grid. */
+  .shelf-row {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    padding: 6px 4px 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--sumi) 25%, transparent) transparent;
+    /* right-edge fade — there is always more in the drawer */
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 64px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 64px), transparent);
+  }
+  .shelf-row > [data-gallery-card] {
+    flex: 0 0 300px;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+  [data-spread="true"] .shelf-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  [data-spread="true"] .shelf-row > [data-gallery-card] {
+    flex: none;
+  }
+
+  /* Taste deck — a fresh sheet slides off the press. */
+  @keyframes deck-deal {
+    from {
+      opacity: 0;
+      transform: translateX(16px) rotate(0.7deg);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .deck-deal {
+    animation: deck-deal 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .deck-deal {
+      animation: none;
+    }
+  }
+
   /* "Dealt" flash — the shuffle landed on this sheet; its registration
      slips for a beat, then settles. */
   @keyframes riso-deal {
