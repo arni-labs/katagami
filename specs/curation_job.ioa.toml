@@ -151,13 +151,18 @@ name = "session_id"
 type = "string"
 initial = ""
 
+[[state]]
+name = "parent_session_id"
+type = "string"
+initial = ""
+
 # --- Queued ---
 
 [[action]]
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
 hint = "Set or update job parameters before execution."
 
 [[action]]
@@ -165,7 +170,7 @@ name = "ConfigureAndSubmit"
 kind = "internal"
 from = ["Queued"]
 to = "Ready"
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
 hint = "Configure a trigger-created job and start session spawning in one transition."
 effect = [{ type = "trigger", name = "build_session_message" }]
 

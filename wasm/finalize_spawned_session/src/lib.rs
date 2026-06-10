@@ -42,6 +42,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+        let parent_session_id = parent_session_id_from_fields(&fields);
         let job_id = ctx
             .entity_state
             .get("entity_id")
@@ -241,6 +242,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &headers,
                             &workspace_id,
                             &query_id,
+                            &parent_session_id,
                             input_json.as_ref(),
                             output_json.as_ref(),
                         )?;
@@ -274,6 +276,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &headers,
                             &workspace_id,
                             &query_id,
+                            &parent_session_id,
                             output_json.as_ref(),
                         )?;
                         if !query_id.is_empty() {
@@ -322,6 +325,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             &headers,
                             &workspace_id,
                             &query_id,
+                            &parent_session_id,
                             review_output.as_ref(),
                         )?;
                         JobProgression {
@@ -4492,6 +4496,7 @@ fn run_typed_completion_fallback(
                     &direction_workspace,
                     &direction_query,
                     Some(direction_id),
+                    &parent_session_id_from_fields(fields),
                     &synth_input,
                 )?;
                 actions.push(json!({
@@ -4565,6 +4570,7 @@ fn run_typed_completion_fallback(
                     workspace_id,
                     query_id,
                     None,
+                    &parent_session_id_from_fields(fields),
                     &review_input,
                 )?;
                 actions
@@ -4603,6 +4609,7 @@ fn run_typed_completion_fallback(
                     workspace_id,
                     query_id,
                     None,
+                    &parent_session_id_from_fields(fields),
                     &organize_input,
                 )?;
                 actions
@@ -4633,6 +4640,7 @@ fn run_typed_completion_fallback(
                     workspace_id,
                     query_id,
                     None,
+                    &parent_session_id_from_fields(fields),
                     &review_input,
                 )?;
                 actions.push(json!({
@@ -4681,6 +4689,26 @@ fn string_field(fields: &serde_json::Value, name: &str, default: &str) -> String
         .filter(|s| !s.is_empty())
         .unwrap_or(default)
         .to_string()
+}
+
+fn parent_session_id_from_fields(fields: &serde_json::Value) -> String {
+    string_field_any(fields, "parent_session_id", "")
+        .trim()
+        .to_string()
+}
+
+fn curation_job_create_body(parent_session_id: &str) -> serde_json::Value {
+    if parent_session_id.starts_with("ss-") {
+        json!({"fields": {"ParentSessionId": parent_session_id}})
+    } else {
+        json!({"fields": {}})
+    }
+}
+
+fn add_parent_session_id(body: &mut serde_json::Value, parent_session_id: &str) {
+    if parent_session_id.starts_with("ss-") {
+        body["parent_session_id"] = serde_json::Value::String(parent_session_id.to_string());
+    }
 }
 
 fn parse_json_string_array(value: Option<&serde_json::Value>) -> Vec<String> {
@@ -4831,13 +4859,15 @@ fn create_configure_submit_job(
     workspace_id: &str,
     query_id: &str,
     direction_id: Option<&str>,
+    parent_session_id: &str,
     input: &str,
 ) -> Result<String, String> {
+    let create_body = curation_job_create_body(parent_session_id);
     let create_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs"),
         headers,
-        "{}",
+        &create_body.to_string(),
     )?;
     if !(200..300).contains(&create_resp.status) {
         return Err(format!(
@@ -4864,6 +4894,7 @@ fn create_configure_submit_job(
     if let Some(direction_id) = direction_id.filter(|id| !id.is_empty()) {
         body["direction_id"] = serde_json::Value::String(direction_id.to_string());
     }
+    add_parent_session_id(&mut body, parent_session_id);
 
     dispatch_action(
         ctx,
@@ -4944,6 +4975,7 @@ fn spawn_synth_followup(
     headers: &[(String, String)],
     workspace_id: &str,
     query_id: &str,
+    parent_session_id: &str,
     input_json: Option<&serde_json::Value>,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
@@ -5040,11 +5072,12 @@ fn spawn_synth_followup(
         });
 
         // Create new CurationJob
+        let create_body = curation_job_create_body(parent_session_id);
         let create_resp = ctx.http_call(
             "POST",
             &format!("{api_url}/tdata/CurationJobs"),
             headers,
-            r#"{"fields":{}}"#,
+            &create_body.to_string(),
         )?;
         if !(200..300).contains(&create_resp.status) {
             ctx.log(
@@ -5065,13 +5098,14 @@ fn spawn_synth_followup(
             .to_string();
 
         // Configure with synthesize job_type
-        let configure_body = json!({
+        let mut configure_body = json!({
             "job_type": "synthesize",
             "workspace_id": workspace_id,
             "input": synth_input.to_string(),
             "query_id": query_id,
             "inline_job_docs": true
         });
+        add_parent_session_id(&mut configure_body, parent_session_id);
         let configure_resp = ctx.http_call(
             "POST",
             &format!("{api_url}/tdata/CurationJobs('{synth_job_id}')/Katagami.Curation.Configure"),
@@ -5129,6 +5163,7 @@ fn spawn_quality_review_followup(
     headers: &[(String, String)],
     workspace_id: &str,
     query_id: &str,
+    parent_session_id: &str,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
     let language_ids = string_array(output_json.and_then(|v| v.get("language_ids")));
@@ -5146,11 +5181,12 @@ fn spawn_quality_review_followup(
     });
 
     // Create new CurationJob
+    let create_body = curation_job_create_body(parent_session_id);
     let create_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs"),
         headers,
-        r#"{"fields":{}}"#,
+        &create_body.to_string(),
     )?;
     if !(200..300).contains(&create_resp.status) {
         return Err(format!(
@@ -5169,13 +5205,14 @@ fn spawn_quality_review_followup(
         .to_string();
 
     // Configure
-    let configure_body = json!({
+    let mut configure_body = json!({
         "job_type": "quality_review",
         "workspace_id": workspace_id,
         "input": review_input.to_string(),
         "query_id": query_id,
         "inline_job_docs": true
     });
+    add_parent_session_id(&mut configure_body, parent_session_id);
     let configure_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs('{review_job_id}')/Katagami.Curation.Configure"),
@@ -5220,6 +5257,7 @@ fn spawn_organize_followup(
     headers: &[(String, String)],
     workspace_id: &str,
     query_id: &str,
+    parent_session_id: &str,
     output_json: Option<&serde_json::Value>,
 ) -> Result<Option<String>, String> {
     let language_ids = string_array(output_json.and_then(|v| v.get("language_ids")));
@@ -5237,11 +5275,12 @@ fn spawn_organize_followup(
     });
 
     // Create new CurationJob
+    let create_body = curation_job_create_body(parent_session_id);
     let create_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs"),
         headers,
-        r#"{"fields":{}}"#,
+        &create_body.to_string(),
     )?;
     if !(200..300).contains(&create_resp.status) {
         return Err(format!(
@@ -5259,12 +5298,13 @@ fn spawn_organize_followup(
         .to_string();
 
     // Configure
-    let configure_body = json!({
+    let mut configure_body = json!({
         "job_type": "organize_taxonomy",
         "workspace_id": workspace_id,
         "input": organize_input.to_string(),
         "query_id": query_id
     });
+    add_parent_session_id(&mut configure_body, parent_session_id);
     let configure_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs('{organize_job_id}')/Katagami.Curation.Configure"),
