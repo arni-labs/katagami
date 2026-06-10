@@ -39,6 +39,9 @@ export interface TasteFeatures {
   family: string;
   vec: number[];
   tags: Set<string>;
+  /** Semantic embedding (MiniLM, normalized) when available — computed by
+   *  the curation pipeline / taste API. Token features remain the floor. */
+  sem?: number[];
 }
 
 export interface TasteProfile {
@@ -190,6 +193,26 @@ function centroid(items: TasteFeatures[]): number[] | null {
   return out.map((v) => v / items.length);
 }
 
+function semCentroid(items: TasteFeatures[]): number[] | null {
+  const withSem = items.filter((i) => i.sem && i.sem.length > 0);
+  if (withSem.length === 0) return null;
+  const dim = withSem[0].sem!.length;
+  const out = new Array<number>(dim).fill(0);
+  for (const item of withSem) {
+    for (let i = 0; i < dim; i++) out[i] += item.sem![i];
+  }
+  return out.map((v) => v / withSem.length);
+}
+
+/** Similarity between two entries: semantic embedding when both sides
+ *  have one (the intelligent path), token features as the floor. */
+function pairSimilarity(a: TasteFeatures, b: TasteFeatures): number {
+  if (a.sem && b.sem && a.sem.length === b.sem.length) {
+    return 0.75 * cosine(a.sem, b.sem) + 0.25 * cosine(a.vec, b.vec);
+  }
+  return cosine(a.vec, b.vec);
+}
+
 function tagAffinity(candidate: TasteFeatures, profile: TasteProfile): number {
   if (candidate.tags.size === 0 || profile.tagWeights.size === 0) return 0;
   let sum = 0;
@@ -228,16 +251,35 @@ export function scoreCandidate(
 ): number {
   let score = 0;
 
-  const likedC = centroid(profile.liked);
-  if (likedC) score += ALPHA * cosine(candidate.vec, likedC);
-  const dislikedC = centroid(profile.disliked);
-  if (dislikedC) score -= BETA * cosine(candidate.vec, dislikedC);
+  // Pull toward likes: semantic space when available, token space always.
+  const likedSemC = semCentroid(profile.liked);
+  if (likedSemC && candidate.sem && candidate.sem.length === likedSemC.length) {
+    score += ALPHA * 0.75 * cosine(candidate.sem, likedSemC);
+    const likedC = centroid(profile.liked);
+    if (likedC) score += ALPHA * 0.25 * cosine(candidate.vec, likedC);
+  } else {
+    const likedC = centroid(profile.liked);
+    if (likedC) score += ALPHA * cosine(candidate.vec, likedC);
+  }
+
+  const dislikedSemC = semCentroid(profile.disliked);
+  if (
+    dislikedSemC &&
+    candidate.sem &&
+    candidate.sem.length === dislikedSemC.length
+  ) {
+    score -= BETA * cosine(candidate.sem, dislikedSemC);
+  } else {
+    const dislikedC = centroid(profile.disliked);
+    if (dislikedC) score -= BETA * cosine(candidate.vec, dislikedC);
+  }
+
   score += TAU * tagAffinity(candidate, profile);
 
   // MMR: how redundant is this against what was just on the table?
   let redundancy = 0;
   for (const r of recent) {
-    let sim = cosine(candidate.vec, r.vec);
+    let sim = pairSimilarity(candidate, r);
     if (candidate.family === r.family) sim += FAMILY_PENALTY;
     if (sim > redundancy) redundancy = sim;
   }

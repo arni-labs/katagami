@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   emptyProfile,
@@ -44,23 +44,49 @@ const RECENT_WINDOW = 4;
  * visibly changes what you're shown.
  */
 export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
-  // Feature extraction is deterministic — do it once.
+  // Semantic embeddings arrive async from /api/taste/vectors (stored
+  // pipeline vectors when present, computed server-side otherwise). The
+  // deck works immediately on token features and upgrades when they land.
+  const [sems, setSems] = useState<Map<string, number[]> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/taste/vectors");
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          vectors?: Record<string, number[]>;
+        };
+        if (cancelled || !data.vectors) return;
+        setSems(new Map(Object.entries(data.vectors)));
+      } catch {
+        // semantic layer is an upgrade, not a dependency
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Feature extraction is deterministic — recomputed only when the
+  // semantic layer lands.
   const features = useMemo(() => {
     const map = new Map<string, TasteFeatures>();
     for (const e of entries) {
-      map.set(
-        e.id,
-        featuresFor({
-          id: e.id,
-          family: e.family,
-          tags: e.tags,
-          colors: e.colors,
-          headingFont: e.headingFont,
-        }),
-      );
+      const f = featuresFor({
+        id: e.id,
+        family: e.family,
+        tags: e.tags,
+        colors: e.colors,
+        headingFont: e.headingFont,
+      });
+      const sem = sems?.get(e.id);
+      if (sem) f.sem = sem;
+      map.set(e.id, f);
     }
     return map;
-  }, [entries]);
+  }, [entries, sems]);
 
   const [current, setCurrent] = useState(0);
   const [seen, setSeen] = useState<Set<number>>(() => new Set([0]));
@@ -150,14 +176,15 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
     (x): x is string => Boolean(x),
   );
   const liked = profile.liked.length;
+  const deckMode = sems && sems.size > 0 ? "semantic" : "token";
   const statusLine =
     reasons.length > 0
       ? `why this: ${reasons.join(" · ")}`
       : liked > 0
-        ? "tuned — keep reacting"
+        ? `tuned — keep reacting (${deckMode})`
         : dealCount > 0
-          ? `${dealCount} dealt`
-          : "fresh deck";
+          ? `${dealCount} dealt · ${deckMode} deck`
+          : `fresh ${deckMode} deck`;
 
   return (
     <section aria-label="Taste finder" className="relative">

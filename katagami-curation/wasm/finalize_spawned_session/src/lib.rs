@@ -1026,6 +1026,7 @@ fn verify_quality_reviewed_languages(
     }
 
     let mut published = Vec::new();
+    let mut taste_vector_results = Vec::new();
     for language_id in &language_ids {
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
@@ -1093,6 +1094,17 @@ fn verify_quality_reviewed_languages(
         verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
         verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
+
+        // Semantic taste vector for discovery surfaces — best effort, never
+        // a publish gate. Errors are surfaced in the job result.
+        let taste_result =
+            attach_taste_vector(ctx, api_url, headers, language_id, &language)
+                .unwrap_or_else(|err| format!("error: {err}"));
+        taste_vector_results.push(json!({
+            "language_id": language_id,
+            "taste_vector": taste_result,
+        }));
+
         ensure_language_under_review(ctx, api_url, headers, language_id, &status)?;
         dispatch_action(
             ctx,
@@ -1111,7 +1123,8 @@ fn verify_quality_reviewed_languages(
     Ok(json!({
         "validated": true,
         "job_type": "quality_review",
-        "published_language_ids": published
+        "published_language_ids": published,
+        "taste_vector_results": taste_vector_results
     }))
 }
 
@@ -4906,6 +4919,167 @@ fn create_configure_submit_job(
         &body,
     )?;
     Ok(job_id)
+}
+
+/// Mirror of the UI's buildEmbeddingDocument (taste-doc-v1) in
+/// ui/src/lib/embeddings.ts. The two MUST stay in lockstep: vectors
+/// computed by the pipeline and by the taste API share one embedding
+/// space only while the document format is identical.
+fn taste_embedding_document(language: &serde_json::Value) -> String {
+    let fields = entity_fields(language);
+    let mut lines: Vec<String> = Vec::new();
+
+    let name = string_field_any(&fields, "name", "");
+    if !name.trim().is_empty() {
+        lines.push(format!("design language: {}", name.trim()));
+    }
+
+    let tags_raw = string_field_any(&fields, "tags", "[]");
+    if let Ok(serde_json::Value::Array(tags)) =
+        serde_json::from_str::<serde_json::Value>(&tags_raw).map(|v| v)
+    {
+        let tags: Vec<String> = tags
+            .into_iter()
+            .filter_map(|t| t.as_str().map(|s| s.to_string()))
+            .filter(|t| t != "specimen")
+            .collect();
+        if !tags.is_empty() {
+            lines.push(format!("movements and qualities: {}", tags.join(", ")));
+        }
+    }
+
+    let philosophy_raw = string_field_any(&fields, "philosophy", "");
+    if let Ok(philosophy) = serde_json::from_str::<serde_json::Value>(&philosophy_raw) {
+        if let Some(summary) = philosophy.get("summary").and_then(|v| v.as_str()) {
+            if !summary.trim().is_empty() {
+                lines.push(summary.trim().to_string());
+            }
+        }
+    }
+
+    let tokens_raw = string_field_any(&fields, "tokens", "");
+    if let Ok(tokens) = serde_json::from_str::<serde_json::Value>(&tokens_raw) {
+        let typography = tokens.get("typography").cloned().unwrap_or_else(|| json!({}));
+        let mut type_parts: Vec<String> = Vec::new();
+        if let Some(heading) = typography
+            .get("heading_font")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+        {
+            type_parts.push(format!("headings in {heading}"));
+        }
+        if let Some(body) = typography
+            .get("body_font")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+        {
+            type_parts.push(format!("body in {body}"));
+        }
+        if !type_parts.is_empty() {
+            lines.push(format!("typography: {}", type_parts.join(", ")));
+        }
+
+        let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+        let mut palette_parts: Vec<String> = Vec::new();
+        for role in ["primary", "secondary", "accent", "background", "text"] {
+            if let Some(value) = colors
+                .get(role)
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+            {
+                palette_parts.push(format!("{role} {value}"));
+            }
+        }
+        if !palette_parts.is_empty() {
+            lines.push(format!("palette: {}", palette_parts.join(", ")));
+        }
+    }
+
+    lines.join("\n")
+}
+
+/// Compute and attach the semantic taste vector via the Katagami embed
+/// service (the deployed UI's /api/taste/embed). Optional: skipped when
+/// katagami_embed_url is not configured. Failures are reported to the
+/// caller but MUST NOT block publication — the taste vector is a
+/// discovery enhancement, not a quality gate.
+fn attach_taste_vector(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<String, String> {
+    let embed_url = ctx
+        .config
+        .get("katagami_embed_url")
+        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+        .cloned();
+    let Some(embed_url) = embed_url else {
+        return Ok("skipped: katagami_embed_url not configured".to_string());
+    };
+    let embed_key = ctx
+        .config
+        .get("katagami_embed_key")
+        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+        .cloned()
+        .unwrap_or_default();
+
+    let doc = taste_embedding_document(language);
+    if doc.trim().is_empty() {
+        return Ok("skipped: empty embedding document".to_string());
+    }
+
+    let mut embed_headers = vec![(
+        "Content-Type".to_string(),
+        "application/json".to_string(),
+    )];
+    if !embed_key.is_empty() {
+        embed_headers.push(("Authorization".to_string(), format!("Bearer {embed_key}")));
+    }
+    let resp = ctx
+        .http_call(
+            "POST",
+            &embed_url,
+            &embed_headers,
+            &json!({ "doc": doc }).to_string(),
+        )
+        .map_err(|e| format!("embed service call failed: {e}"))?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "embed service returned HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("embed service returned invalid JSON: {e}"))?;
+    let model = parsed
+        .get("model")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let vector = parsed.get("vector").cloned();
+    let Some(vector @ serde_json::Value::Array(_)) = vector else {
+        return Err("embed service response missing vector array".to_string());
+    };
+    if model.is_empty() {
+        return Err("embed service response missing model id".to_string());
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachTasteVector",
+        &json!({
+            "taste_vector": vector.to_string(),
+            "taste_vector_model": model,
+        }),
+    )?;
+    Ok("attached".to_string())
 }
 
 fn dispatch_action(

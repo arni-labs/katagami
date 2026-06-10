@@ -127,6 +127,8 @@ export interface DesignLanguage {
     generation_number?: string;
     taxonomy_ids?: string;
     tags?: string;
+    taste_vector?: string;
+    taste_vector_model?: string;
     curator_notes?: string;
     source_ids?: string;
     element_count?: string;
