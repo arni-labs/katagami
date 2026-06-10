@@ -205,6 +205,9 @@
         <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
+        <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
@@ -265,6 +268,9 @@
         <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
+        <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

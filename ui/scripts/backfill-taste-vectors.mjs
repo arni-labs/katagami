@@ -33,59 +33,94 @@ const headers = {
   "X-Tenant-Id": tenant,
 };
 
-const languages = await fetchPublishedLanguages();
-const candidates = languages.filter((language) => {
-  const fields = language.fields ?? {};
-  if (!fields.name) return false;
-  if (force) return true;
-  return fields.taste_vector_model !== EXPECTED_MODEL || !fields.taste_vector;
-});
-
-console.log(`published languages: ${languages.length}`);
-console.log(`taste-vector candidates: ${candidates.length}`);
-if (dryRun) {
-  for (const language of candidates) {
-    console.log(`${language.entity_id}\t${language.fields?.name ?? ""}`);
-  }
-  process.exit(0);
-}
-
-let updated = 0;
-for (const language of candidates) {
-  const fields = language.fields ?? {};
-  const id = language.entity_id;
-  const name = fields.name ?? id;
-
-  const tokens = parseJson(fields.tokens) ?? {};
-  const embedRes = await fetch(embedUrl, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
+// All three lanes share the contract: AttachTasteVector(taste_vector,
+// taste_vector_model) on the entity, document built by the embed service.
+const LANES = [
+  {
+    set: "DesignLanguages",
+    embedBody: (fields) => {
+      const tokens = parseJson(fields.tokens) ?? {};
+      return {
+        kind: "language",
+        name: fields.name,
+        tags: parseJson(fields.tags) ?? [],
+        philosophy_summary: (parseJson(fields.philosophy) ?? {}).summary ?? "",
+        heading_font: tokens.typography?.heading_font ?? "",
+        body_font: tokens.typography?.body_font ?? "",
+        colors: tokens.colors ?? {},
+      };
+    },
+  },
+  {
+    set: "PaletteSystems",
+    embedBody: (fields) => ({
+      kind: "palette",
       name: fields.name,
       tags: parseJson(fields.tags) ?? [],
-      philosophy_summary: (parseJson(fields.philosophy) ?? {}).summary ?? "",
-      heading_font: tokens.typography?.heading_font ?? "",
-      body_font: tokens.typography?.body_font ?? "",
-      colors: tokens.colors ?? {},
+      signature: parseJson(fields.signature) ?? [],
+      neutrals: parseJson(fields.neutrals) ?? {},
+      semantic: parseJson(fields.semantic) ?? {},
+      mood: parseJson(fields.mood) ?? {},
     }),
+  },
+  {
+    set: "ArtStyles",
+    embedBody: (fields) => ({
+      kind: "art-style",
+      name: fields.name,
+      tags: parseJson(fields.tags) ?? [],
+      medium: fields.medium ?? "",
+      prompt_template: fields.prompt_template ?? "",
+    }),
+  },
+];
+
+let totalUpdated = 0;
+for (const lane of LANES) {
+  const entities = await fetchPublished(lane.set);
+  const candidates = entities.filter((entity) => {
+    const fields = entity.fields ?? {};
+    if (!fields.name) return false;
+    if (force) return true;
+    return fields.taste_vector_model !== EXPECTED_MODEL || !fields.taste_vector;
   });
-  if (!embedRes.ok) {
-    throw new Error(`embed service failed for ${name}: HTTP ${embedRes.status}`);
-  }
-  const { model, vector } = await embedRes.json();
-  if (!Array.isArray(vector) || !model) {
-    throw new Error(`embed service returned no vector for ${name}`);
+
+  console.log(`${lane.set}: ${entities.length} published, ${candidates.length} candidates`);
+  if (dryRun) {
+    for (const entity of candidates) {
+      console.log(`  ${entity.entity_id}\t${entity.fields?.name ?? ""}`);
+    }
+    continue;
   }
 
-  await postJson(
-    `/tdata/DesignLanguages('${encodeURIComponent(id)}')/Temper.AttachTasteVector`,
-    { taste_vector: JSON.stringify(vector), taste_vector_model: model },
-  );
-  updated += 1;
-  console.log(`attached ${vector.length}-dim vector (${model}) → ${name}`);
+  for (const entity of candidates) {
+    const fields = entity.fields ?? {};
+    const id = entity.entity_id;
+    const name = fields.name ?? id;
+
+    const embedRes = await fetch(embedUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(lane.embedBody(fields)),
+    });
+    if (!embedRes.ok) {
+      throw new Error(`embed service failed for ${name}: HTTP ${embedRes.status}`);
+    }
+    const { model, vector } = await embedRes.json();
+    if (!Array.isArray(vector) || !model) {
+      throw new Error(`embed service returned no vector for ${name}`);
+    }
+
+    await postJson(
+      `/tdata/${lane.set}('${encodeURIComponent(id)}')/Temper.AttachTasteVector`,
+      { taste_vector: JSON.stringify(vector), taste_vector_model: model },
+    );
+    totalUpdated += 1;
+    console.log(`  attached ${vector.length}-dim vector (${model}) → ${name}`);
+  }
 }
 
-console.log(`done: ${updated} languages updated`);
+console.log(dryRun ? "dry run complete" : `done: ${totalUpdated} entities updated`);
 
 // ── helpers ──
 
@@ -107,15 +142,15 @@ function parseJson(raw) {
   }
 }
 
-async function fetchPublishedLanguages() {
+async function fetchPublished(set) {
   const out = [];
-  let url = `${apiUrl}/tdata/DesignLanguages?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=200`;
+  let url = `${apiUrl}/tdata/${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=200`;
   while (url) {
     const res = await fetch(url, { headers });
-    if (!res.ok) throw new Error(`list DesignLanguages failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`list ${set} failed: HTTP ${res.status}`);
     const data = await res.json();
     for (const row of data.value ?? []) {
-      out.push(normalizeRow(row));
+      out.push(normalizeRow(row, set));
     }
     url = data["@odata.nextLink"]
       ? new URL(data["@odata.nextLink"], apiUrl).toString()
@@ -124,7 +159,7 @@ async function fetchPublishedLanguages() {
   return out;
 }
 
-function normalizeRow(row) {
+function normalizeRow(row, set) {
   if (row && typeof row.fields === "object" && row.fields !== null) {
     return { entity_id: row.entity_id, fields: row.fields };
   }
@@ -132,7 +167,7 @@ function normalizeRow(row) {
   let entityId = row.entity_id ?? "";
   for (const [key, value] of Object.entries(row)) {
     if (key === "@odata.id" && typeof value === "string") {
-      const match = value.match(/DesignLanguages\('([^']+)'\)/);
+      const match = value.match(new RegExp(`${set}\\('([^']+)'\\)`));
       if (match) entityId = match[1];
       continue;
     }

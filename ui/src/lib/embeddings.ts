@@ -45,6 +45,52 @@ export function buildEmbeddingDocument(input: EmbeddingDocInput): string {
   return lines.join("\n");
 }
 
+/** Canonical text a palette system is embedded from (taste-doc-v1). */
+export function buildPaletteEmbeddingDocument(fields: {
+  name?: string;
+  tags?: string[];
+  signature?: Array<{ hex?: string; name?: string } | string>;
+  neutrals?: Record<string, string>;
+  semantic?: Record<string, string>;
+  mood?: { temperature?: string; key_hue?: string; summary?: string };
+}): string {
+  const lines: string[] = [];
+  if (fields.name) lines.push(`palette system: ${fields.name}`);
+  const tags = (fields.tags ?? []).filter((t) => t !== "specimen");
+  if (tags.length > 0) lines.push(`qualities: ${tags.join(", ")}`);
+  if (fields.mood?.summary) lines.push(fields.mood.summary.trim());
+  const moodBits = [fields.mood?.temperature, fields.mood?.key_hue]
+    .filter(Boolean)
+    .join(", ");
+  if (moodBits) lines.push(`mood: ${moodBits}`);
+  const signature = (fields.signature ?? [])
+    .map((s) => (typeof s === "string" ? s : [s.name, s.hex].filter(Boolean).join(" ")))
+    .filter(Boolean)
+    .join(", ");
+  if (signature) lines.push(`signature colors: ${signature}`);
+  const neutrals = Object.entries(fields.neutrals ?? {})
+    .map(([role, hex]) => `${role} ${hex}`)
+    .join(", ");
+  if (neutrals) lines.push(`neutrals: ${neutrals}`);
+  return lines.join("\n");
+}
+
+/** Canonical text an art style is embedded from (taste-doc-v1). */
+export function buildArtStyleEmbeddingDocument(fields: {
+  name?: string;
+  tags?: string[];
+  medium?: string;
+  promptTemplate?: string;
+}): string {
+  const lines: string[] = [];
+  if (fields.name) lines.push(`art style: ${fields.name}`);
+  const tags = (fields.tags ?? []).filter((t) => t !== "specimen");
+  if (tags.length > 0) lines.push(`qualities: ${tags.join(", ")}`);
+  if (fields.medium) lines.push(`medium: ${fields.medium}`);
+  if (fields.promptTemplate) lines.push(`recipe: ${fields.promptTemplate.trim()}`);
+  return lines.join("\n");
+}
+
 type FeatureExtractor = (
   text: string,
   opts: { pooling: "mean"; normalize: boolean },

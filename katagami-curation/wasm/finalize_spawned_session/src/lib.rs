@@ -819,6 +819,31 @@ fn walk_lane_entity_to_published(
     )?;
     let entity = load_entity(ctx, api_url, headers, set_name, entity_id)?
         .ok_or_else(|| format!("{set_name} '{entity_id}' disappeared before Publish"))?;
+
+    // Semantic taste vector for discovery surfaces — best effort, never a
+    // publish gate. Failures are logged, not fatal.
+    match attach_taste_vector(
+        ctx,
+        api_url,
+        headers,
+        set_name,
+        entity_id,
+        &lane_taste_embedding_document(set_name, &entity),
+    ) {
+        Ok(status) => {
+            if status != "attached" {
+                ctx.log(
+                    "info",
+                    &format!("taste vector for {set_name} '{entity_id}': {status}"),
+                );
+            }
+        }
+        Err(err) => ctx.log(
+            "warn",
+            &format!("taste vector for {set_name} '{entity_id}' failed: {err}"),
+        ),
+    }
+
     if entity_status_value(&entity) != "Published" {
         dispatch_action(ctx, api_url, headers, set_name, entity_id, "Publish", &json!({}))?;
     }
@@ -1097,9 +1122,15 @@ fn verify_quality_reviewed_languages(
 
         // Semantic taste vector for discovery surfaces — best effort, never
         // a publish gate. Errors are surfaced in the job result.
-        let taste_result =
-            attach_taste_vector(ctx, api_url, headers, language_id, &language)
-                .unwrap_or_else(|err| format!("error: {err}"));
+        let taste_result = attach_taste_vector(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            &taste_embedding_document(&language),
+        )
+        .unwrap_or_else(|err| format!("error: {err}"));
         taste_vector_results.push(json!({
             "language_id": language_id,
             "taste_vector": taste_result,
@@ -4998,6 +5029,106 @@ fn taste_embedding_document(language: &serde_json::Value) -> String {
     lines.join("\n")
 }
 
+/// Mirror of the UI's buildPaletteEmbeddingDocument /
+/// buildArtStyleEmbeddingDocument (taste-doc-v1) in ui/src/lib/embeddings.ts.
+/// Must stay in lockstep with the TS builders.
+fn lane_taste_embedding_document(set_name: &str, entity: &serde_json::Value) -> String {
+    let fields = entity_fields(entity);
+    let mut lines: Vec<String> = Vec::new();
+
+    let label = match set_name {
+        "PaletteSystems" => "palette system",
+        "ArtStyles" => "art style",
+        _ => "entity",
+    };
+    let name = string_field_any(&fields, "name", "");
+    if !name.trim().is_empty() {
+        lines.push(format!("{label}: {}", name.trim()));
+    }
+
+    let tags_raw = string_field_any(&fields, "tags", "[]");
+    if let Ok(serde_json::Value::Array(tags)) = serde_json::from_str::<serde_json::Value>(&tags_raw) {
+        let tags: Vec<String> = tags
+            .into_iter()
+            .filter_map(|t| t.as_str().map(|s| s.to_string()))
+            .filter(|t| t != "specimen")
+            .collect();
+        if !tags.is_empty() {
+            lines.push(format!("qualities: {}", tags.join(", ")));
+        }
+    }
+
+    if set_name == "PaletteSystems" {
+        let mood_raw = string_field_any(&fields, "mood", "");
+        if let Ok(mood) = serde_json::from_str::<serde_json::Value>(&mood_raw) {
+            if let Some(summary) = mood.get("summary").and_then(|v| v.as_str()) {
+                if !summary.trim().is_empty() {
+                    lines.push(summary.trim().to_string());
+                }
+            }
+            let bits: Vec<String> = ["temperature", "key_hue"]
+                .iter()
+                .filter_map(|k| mood.get(*k).and_then(|v| v.as_str()))
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| s.to_string())
+                .collect();
+            if !bits.is_empty() {
+                lines.push(format!("mood: {}", bits.join(", ")));
+            }
+        }
+        let signature_raw = string_field_any(&fields, "signature", "[]");
+        if let Ok(serde_json::Value::Array(sig)) =
+            serde_json::from_str::<serde_json::Value>(&signature_raw)
+        {
+            let parts: Vec<String> = sig
+                .into_iter()
+                .filter_map(|s| {
+                    if let Some(text) = s.as_str() {
+                        return Some(text.to_string());
+                    }
+                    let name = s.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                    let hex = s.get("hex").and_then(|v| v.as_str()).unwrap_or("");
+                    let joined = [name, hex]
+                        .iter()
+                        .filter(|p| !p.is_empty())
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    if joined.is_empty() { None } else { Some(joined) }
+                })
+                .collect();
+            if !parts.is_empty() {
+                lines.push(format!("signature colors: {}", parts.join(", ")));
+            }
+        }
+        let neutrals_raw = string_field_any(&fields, "neutrals", "{}");
+        if let Ok(serde_json::Value::Object(neutrals)) =
+            serde_json::from_str::<serde_json::Value>(&neutrals_raw)
+        {
+            let parts: Vec<String> = neutrals
+                .iter()
+                .filter_map(|(role, hex)| hex.as_str().map(|h| format!("{role} {h}")))
+                .collect();
+            if !parts.is_empty() {
+                lines.push(format!("neutrals: {}", parts.join(", ")));
+            }
+        }
+    }
+
+    if set_name == "ArtStyles" {
+        let medium = string_field_any(&fields, "medium", "");
+        if !medium.trim().is_empty() {
+            lines.push(format!("medium: {}", medium.trim()));
+        }
+        let prompt = string_field_any(&fields, "prompt_template", "");
+        if !prompt.trim().is_empty() {
+            lines.push(format!("recipe: {}", prompt.trim()));
+        }
+    }
+
+    lines.join("\n")
+}
+
 /// Compute and attach the semantic taste vector via the Katagami embed
 /// service (the deployed UI's /api/taste/embed). Optional: skipped when
 /// katagami_embed_url is not configured. Failures are reported to the
@@ -5007,8 +5138,9 @@ fn attach_taste_vector(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    language_id: &str,
-    language: &serde_json::Value,
+    set_name: &str,
+    entity_id: &str,
+    doc: &str,
 ) -> Result<String, String> {
     let embed_url = ctx
         .config
@@ -5025,7 +5157,6 @@ fn attach_taste_vector(
         .cloned()
         .unwrap_or_default();
 
-    let doc = taste_embedding_document(language);
     if doc.trim().is_empty() {
         return Ok("skipped: empty embedding document".to_string());
     }
@@ -5071,8 +5202,8 @@ fn attach_taste_vector(
         ctx,
         api_url,
         headers,
-        "DesignLanguages",
-        language_id,
+        set_name,
+        entity_id,
         "AttachTasteVector",
         &json!({
             "taste_vector": vector.to_string(),
