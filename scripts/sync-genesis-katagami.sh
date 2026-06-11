@@ -38,6 +38,7 @@ clean_generated_files() {
   local dir="$1"
 
   find "$dir" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} +
+  find "$dir" -type d -name 'target' -prune -exec rm -rf {} +
   find "$dir" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 }
 
@@ -128,6 +129,7 @@ sync_app() {
     --exclude='__pycache__/' \
     --exclude='*.py[co]' \
     --exclude='.pytest_cache/' \
+    --exclude='target/' \
     "${source}/" "${ROOT}/${dest}/"
   clean_generated_files "${ROOT}/${dest}"
 }
@@ -142,6 +144,7 @@ push_app() {
     --exclude='__pycache__/' \
     --exclude='*.py[co]' \
     --exclude='.pytest_cache/' \
+    --exclude='target/' \
     "${ROOT}/${source}/" "${repo}/"
   clean_generated_files "$repo"
   git -C "$repo" add -A
