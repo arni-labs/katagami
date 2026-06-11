@@ -28,8 +28,8 @@ declared as Temper reactions.
 ### CurationDirection
 
 One researched direction created by a `source_search` job. `QueueSynthesis`
-uses a reaction to create and submit the matching `synthesize`
-CurationJob.
+uses `output_type` plus `synthesis_job_type` to create and submit the matching
+lane job: `synthesize`, `synthesize_palette`, or `synthesize_art_style`.
 
 ### CurationJobTemplate
 
@@ -75,14 +75,20 @@ belongs in a later artifact step.
 
 ## Pipeline
 
-`source_search` -> `CurationDirection` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
+`CurationQuery.output_type` is explicit. `launch_research` infers it from the
+query text when it is `auto`, records the normalized value, and passes it to
+`source_search`. `source_search` persists that lane on every
+`CurationDirection`, so palette and art-style requests never enter the
+DesignLanguage worker by accident.
+
+`source_search` -> `CurationDirection(output_type=design_language, synthesis_job_type=synthesize)` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
 
 Multi-lane remix work can also fan out into terminal palette and art-style
 lanes:
 
-`source_search` -> `synthesize_palette` -> `CompletePaletteSynthesis` -> Completed
+`source_search` -> `CurationDirection(output_type=palette, synthesis_job_type=synthesize_palette)` fan-out -> `synthesize_palette` -> `CompletePaletteSynthesis` -> Completed
 
-`source_search` -> `synthesize_art_style` -> `CompleteArtStyleSynthesis` -> Completed
+`source_search` -> `CurationDirection(output_type=art_style, synthesis_job_type=synthesize_art_style)` fan-out -> `synthesize_art_style` -> `CompleteArtStyleSynthesis` -> Completed
 
 Palette and art-style lanes publish their commons entities directly after the
 finalizer verifies required files, contrast/prompt contracts, and referenced
