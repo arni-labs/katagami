@@ -21,6 +21,15 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             return Err("launch_research: query_text is empty".to_string());
         }
 
+        let configured_output_type = fields
+            .get("output_type")
+            .or_else(|| fields.get("OutputType"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let output_type = normalize_output_type(configured_output_type)
+            .filter(|value| value != "auto")
+            .unwrap_or_else(|| infer_output_type(&query_text));
+
         let query_id = ctx
             .entity_state
             .get("entity_id")
@@ -53,7 +62,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         let input = json!({
             "task": query_text,
             "scope": "targeted",
-            "query_id": query_id
+            "query_id": query_id,
+            "output_type": output_type
         });
 
         // --- Create CurationJob ---
@@ -118,7 +128,9 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         );
 
         let record_body = json!({
-            "source_search_job_id": job_id
+            "source_search_job_id": job_id,
+            "workspace_id": workspace_id,
+            "output_type": output_type
         });
         let record_resp = ctx.http_call(
             "PATCH",
@@ -213,4 +225,98 @@ fn urlenc(s: &str) -> String {
         .replace('?', "%3F")
         .replace('#', "%23")
         .replace('\'', "%27")
+}
+
+fn normalize_output_type(raw: &str) -> Option<String> {
+    let normalized = raw.trim().to_ascii_lowercase().replace('-', "_");
+    match normalized.as_str() {
+        "auto" => Some("auto".to_string()),
+        "palette" | "palettes" | "palettesystem" | "palettesystems" | "palette_system"
+        | "palette_systems" | "color" | "colors" | "colour" | "colours" => {
+            Some("palette".to_string())
+        }
+        "art" | "artstyle" | "artstyles" | "art_style" | "art_styles" | "image_style"
+        | "visual_style" => Some("art_style".to_string()),
+        "language" | "languages" | "designlanguage" | "designlanguages" | "design_language"
+        | "design_languages" | "design-system" | "design_system" => {
+            Some("design_language".to_string())
+        }
+        "" => None,
+        _ => None,
+    }
+}
+
+fn infer_output_type(query_text: &str) -> String {
+    let q = query_text.to_ascii_lowercase();
+    let palette_markers = [
+        "palette",
+        "palettes",
+        "pallet",
+        "pallets",
+        "color system",
+        "color palette",
+        "colour palette",
+        "colors",
+        "colours",
+        "ramps",
+        "swatches",
+    ];
+    if palette_markers.iter().any(|marker| q.contains(marker)) {
+        return "palette".to_string();
+    }
+
+    let art_style_markers = [
+        "art style",
+        "art styles",
+        "image style",
+        "visual style",
+        "illustration style",
+        "rendering style",
+        "style transfer",
+        "prompt template",
+    ];
+    if art_style_markers.iter().any(|marker| q.contains(marker)) {
+        return "art_style".to_string();
+    }
+
+    "design_language".to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{infer_output_type, normalize_output_type};
+
+    #[test]
+    fn infers_palette_queries_even_with_common_typo() {
+        assert_eq!(infer_output_type("palettes trending in 2026"), "palette");
+        assert_eq!(infer_output_type("pallets trending in 2026"), "palette");
+    }
+
+    #[test]
+    fn infers_art_style_and_design_language_queries() {
+        assert_eq!(
+            infer_output_type("art styles for editorial product shots"),
+            "art_style"
+        );
+        assert_eq!(
+            infer_output_type("new fintech dashboard design language"),
+            "design_language"
+        );
+    }
+
+    #[test]
+    fn normalizes_configured_output_types() {
+        assert_eq!(
+            normalize_output_type("PaletteSystems").as_deref(),
+            Some("palette")
+        );
+        assert_eq!(
+            normalize_output_type("art-style").as_deref(),
+            Some("art_style")
+        );
+        assert_eq!(
+            normalize_output_type("design_language").as_deref(),
+            Some("design_language")
+        );
+    }
 }
