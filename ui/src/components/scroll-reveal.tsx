@@ -4,11 +4,17 @@ import { useEffect } from "react";
 
 /**
  * ScrollReveal — reveals every element marked `data-reveal` or
- * `data-reveal-children` once its top crosses a trigger line near the
- * bottom of the viewport (adds `.reveal-in`, one-shot). A scroll-line
- * check (rather than a bare IntersectionObserver) is deliberate: it also
- * reveals anything ABOVE the line, so anchor jumps / fast scrolls can
- * never strand a block hidden.
+ * `data-reveal-children` as it enters the viewport (adds `.reveal-in`,
+ * one-shot).
+ *
+ * It uses an IntersectionObserver on purpose: the callback fires
+ * ASYNCHRONOUSLY, always after React has finished hydrating, so adding
+ * `.reveal-in` can never diverge the DOM mid-hydration (which would throw
+ * a hydration-mismatch error). A large top rootMargin keeps the
+ * jump-past guarantee a bare observer lacks: any element at or above the
+ * trigger line — including ones skipped by an anchor jump or fast scroll
+ * — counts as intersecting and reveals, so nothing is ever stranded
+ * hidden.
  *
  * The hidden state lives in CSS behind `html.reveal-ready`, set by an
  * inline pre-paint script only when motion is allowed — so JS-off and
@@ -18,49 +24,46 @@ export function ScrollReveal() {
   useEffect(() => {
     if (!document.documentElement.classList.contains("reveal-ready")) return;
 
-    const armed = new Set<Element>();
-    const collect = () => {
-      document
-        .querySelectorAll("[data-reveal],[data-reveal-children]")
-        .forEach((el) => {
-          if (!el.classList.contains("reveal-in")) armed.add(el);
-        });
-    };
-
-    let ticking = false;
-    const check = () => {
-      ticking = false;
-      const line = window.innerHeight * 0.9;
-      for (const el of [...armed]) {
-        if (el.getBoundingClientRect().top < line) {
-          el.classList.add("reveal-in");
-          armed.delete(el);
+    const io = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("reveal-in");
+          obs.unobserve(entry.target);
         }
-      }
+      },
+      // Root reaches far above the viewport (catch anything scrolled past)
+      // and stops ~10% from the bottom (the reveal trigger line).
+      { rootMargin: "9999px 0px -10% 0px", threshold: 0 },
+    );
+
+    const observed = new WeakSet<Element>();
+    const SELECTOR = "[data-reveal],[data-reveal-children]";
+    const watch = (el: Element) => {
+      if (observed.has(el) || el.classList.contains("reveal-in")) return;
+      observed.add(el);
+      io.observe(el);
     };
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(check);
+    const observe = (root: ParentNode) => {
+      if (root instanceof Element && root.matches(SELECTOR)) watch(root);
+      root.querySelectorAll?.(SELECTOR).forEach(watch);
     };
 
-    collect();
-    requestAnimationFrame(check);
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    observe(document);
 
     // Catch content mounted after first paint (client islands, route
-    // transitions): register new armed nodes and re-check.
-    const mo = new MutationObserver(() => {
-      collect();
-      onScroll();
+    // transitions).
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === 1) observe(node as Element);
+        }
+      }
     });
     mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      io.disconnect();
       mo.disconnect();
     };
   }, []);
