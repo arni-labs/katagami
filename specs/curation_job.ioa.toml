@@ -522,7 +522,7 @@ name = "CompletePaletteSynthesis"
 kind = "input"
 from = ["Running"]
 to = "Finalizing"
-params = ["palette_system_ids", "output"]
+params = ["palette_system_ids", "palette_ids", "output"]
 hint = "Palette synthesis completed. Finalizer verifies attached artifacts and walks each PaletteSystem to Published. Terminal lane (no quality_review/organize cascade)."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 

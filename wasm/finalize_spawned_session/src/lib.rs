@@ -4467,17 +4467,6 @@ fn run_typed_completion_fallback(
         "source_search" => {
             let direction_ids = parse_json_string_array(fields.get("direction_ids"));
             for direction_id in &direction_ids {
-                if job_exists(
-                    ctx,
-                    api_url,
-                    headers,
-                    "synthesize",
-                    query_id,
-                    Some(direction_id),
-                )? {
-                    continue;
-                }
-
                 let Some(direction) =
                     load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
                 else {
@@ -4485,6 +4474,27 @@ fn run_typed_completion_fallback(
                 };
                 let direction_fields = direction.get("fields").cloned().unwrap_or(json!({}));
                 let synth_input = string_field(&direction_fields, "synth_input", "{}");
+                let output_type = infer_output_type_from_task(
+                    &string_field(&direction_fields, "title", ""),
+                    &synth_input,
+                    &string_field(&direction_fields, "brief", ""),
+                    &string_field(&direction_fields, "palette_direction", ""),
+                );
+                let synth_job_type = if output_type == "palette_system" {
+                    "synthesize_palette"
+                } else {
+                    "synthesize"
+                };
+                if job_exists(
+                    ctx,
+                    api_url,
+                    headers,
+                    synth_job_type,
+                    query_id,
+                    Some(direction_id),
+                )? {
+                    continue;
+                }
                 let direction_workspace =
                     string_field(&direction_fields, "workspace_id", workspace_id);
                 let direction_query = string_field(&direction_fields, "query_id", query_id);
@@ -4492,17 +4502,20 @@ fn run_typed_completion_fallback(
                     ctx,
                     api_url,
                     headers,
-                    "synthesize",
+                    synth_job_type,
                     &direction_workspace,
                     &direction_query,
                     Some(direction_id),
                     &parent_session_id_from_fields(fields),
-                    &synth_input,
+                    &format!("{}
+
+output_type: {}", synth_input, output_type),
                 )?;
                 actions.push(json!({
                     "action": "created_synthesis_job",
                     "direction_id": direction_id,
                     "job_id": synth_job_id,
+                    "output_type": output_type,
                 }));
             }
 
@@ -4530,7 +4543,10 @@ fn run_typed_completion_fallback(
                 actions.push(json!({"action": "query_research_complete", "query_id": query_id}));
             }
         }
-        "synthesize" => {
+        "synthesize" | "synthesize_palette" => {
+            let is_palette = job_type == "synthesize_palette"
+                || string_field(fields, "input", "").to_ascii_lowercase().contains("output_type: palette_system")
+                || !lane_ids_from_job(fields, &["palette_system_ids", "palette_ids"]).is_empty();
             let direction_id = string_field(fields, "direction_id", "");
             if !direction_id.is_empty()
                 && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
@@ -4543,12 +4559,26 @@ fn run_typed_completion_fallback(
                     "CurationDirections",
                     &direction_id,
                     "Complete",
-                    &json!({
-                        "design_language_ids": fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                    }),
+                    &if is_palette {
+                        json!({
+                            "design_language_ids": "[]",
+                            "palette_system_ids": fields
+                                .get("palette_system_ids")
+                                .or_else(|| fields.get("palette_ids"))
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("[]"),
+                            "output_type": "palette_system",
+                        })
+                    } else {
+                        json!({
+                            "design_language_ids": fields
+                                .get("design_language_ids")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("[]"),
+                            "palette_system_ids": "[]",
+                            "output_type": "design_language",
+                        })
+                    },
                 )?;
                 actions.push(json!({"action": "direction_complete", "direction_id": direction_id}));
             }
@@ -4584,14 +4614,30 @@ fn run_typed_completion_fallback(
                     "CurationQueries",
                     query_id,
                     "SynthesisComplete",
-                    &json!({
-                        "design_language_ids": fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                        "organize_job_id": "",
-                        "quality_review_job_ids": "[]",
-                    }),
+                    &if is_palette {
+                        json!({
+                            "design_language_ids": "[]",
+                            "palette_system_ids": fields
+                                .get("palette_system_ids")
+                                .or_else(|| fields.get("palette_ids"))
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("[]"),
+                            "organize_job_id": "",
+                            "quality_review_job_ids": "[]",
+                            "output_type": "palette_system",
+                        })
+                    } else {
+                        json!({
+                            "design_language_ids": fields
+                                .get("design_language_ids")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("[]"),
+                            "palette_system_ids": "[]",
+                            "organize_job_id": "",
+                            "quality_review_job_ids": "[]",
+                            "output_type": "design_language",
+                        })
+                    },
                 )?;
                 actions.push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
             }
@@ -4968,6 +5014,20 @@ fn string_array_flexible(value: Option<&serde_json::Value>) -> Vec<String> {
     Vec::new()
 }
 
+fn infer_output_type_from_task(task: &str, scope: &str, direction: &str, palette: &str) -> &'static str {
+    let haystack = format!("{} {} {} {}", task, scope, direction, palette).to_ascii_lowercase();
+    if haystack.contains("palette")
+        || haystack.contains("colour palette")
+        || haystack.contains("color palette")
+        || haystack.contains("colorway")
+        || haystack.contains("colourway")
+    {
+        "palette_system"
+    } else {
+        "design_language"
+    }
+}
+
 /// Spawn one synthesize CurationJob per discovered movement after a successful source_search.
 fn spawn_synth_followup(
     ctx: &Context,
@@ -5060,6 +5120,12 @@ fn spawn_synth_followup(
     // Fan out: one synth job per direction
     let mut first_job_id: Option<String> = None;
     for (direction, palette) in &directions {
+        let output_type = infer_output_type_from_task(&task, &scope, direction, palette);
+        let synth_job_type = if output_type == "palette_system" {
+            "synthesize_palette"
+        } else {
+            "synthesize"
+        };
         let synth_input = json!({
             "task": task,
             "scope": scope,
@@ -5068,7 +5134,8 @@ fn spawn_synth_followup(
             "topic_allowlist": topic_allowlist,
             "source_ids": source_ids,
             "priority": "high",
-            "query_id": query_id
+            "query_id": query_id,
+            "output_type": output_type
         });
 
         // Create new CurationJob
@@ -5097,9 +5164,9 @@ fn spawn_synth_followup(
             .ok_or("Created synth CurationJob has no entity_id")?
             .to_string();
 
-        // Configure with synthesize job_type
+        // Configure with the artifact-specific synthesize job_type.
         let mut configure_body = json!({
-            "job_type": "synthesize",
+            "job_type": synth_job_type,
             "workspace_id": workspace_id,
             "input": synth_input.to_string(),
             "query_id": query_id,
@@ -5144,8 +5211,8 @@ fn spawn_synth_followup(
         ctx.log(
             "info",
             &format!(
-                "Spawned synth job '{}' for direction '{}'",
-                synth_job_id, direction
+                "Spawned {} job '{}' for direction '{}' (output_type={})",
+                synth_job_type, synth_job_id, direction, output_type
             ),
         );
         if first_job_id.is_none() {

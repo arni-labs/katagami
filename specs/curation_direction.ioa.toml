@@ -60,7 +60,17 @@ type = "string"
 initial = "{}"
 
 [[state]]
+name = "output_type"
+type = "string"
+initial = "design_language"
+
+[[state]]
 name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "palette_system_ids"
 type = "string"
 initial = "[]"
 
@@ -73,7 +83,7 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Discovered"]
-params = ["query_id", "source_search_job_id", "workspace_id", "task", "scope", "target_direction", "palette_direction", "source_ids", "topic_allowlist", "synth_input"]
+params = ["query_id", "source_search_job_id", "workspace_id", "task", "scope", "target_direction", "palette_direction", "source_ids", "topic_allowlist", "synth_input", "output_type"]
 hint = "Record the researched direction and the exact synthesize input payload."
 
 [[action]]
@@ -94,6 +104,8 @@ target_action = "ConfigureAndSubmit"
 [action.triggers.params]
 job_type = "synthesize"
 completion_contract = "typed-v1"
+# NOTE: finalize_spawned_session bypasses this static trigger when output_type is
+# palette_system and creates a CurationJob with job_type = "synthesize_palette".
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -109,7 +121,7 @@ name = "Complete"
 kind = "input"
 from = ["Synthesizing"]
 to = "Completed"
-params = ["design_language_ids"]
+params = ["design_language_ids", "palette_system_ids", "output_type"]
 hint = "The synthesize job for this direction completed."
 
 [[action]]

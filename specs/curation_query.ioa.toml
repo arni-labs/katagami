@@ -122,8 +122,8 @@ name = "SynthesisComplete"
 kind = "input"
 from = ["Synthesizing"]
 to = "Organizing"
-params = ["design_language_ids", "organize_job_id", "quality_review_job_ids"]
-hint = "Synthesis completed. Quality review is now driving the organizing stage."
+params = ["design_language_ids", "palette_system_ids", "organize_job_id", "quality_review_job_ids", "output_type"]
+hint = "Synthesis completed. Downstream routing records the synthesized artifact type and lineage."
 
 [[action]]
 name = "OrganizationComplete"
