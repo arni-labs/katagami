@@ -290,7 +290,7 @@ export default async function LanguageDetailPage({
 
       {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
-        <section className="order-2 md:order-1 md:col-start-1">
+        <section data-reveal className="order-2 md:order-1 md:col-start-1">
           <SectionHeading eyebrow="the spec" eyebrowColor="graphite">
             specification
           </SectionHeading>
@@ -300,7 +300,7 @@ export default async function LanguageDetailPage({
         </section>
 
         <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
-          <section className="order-1 space-y-8 md:space-y-6">
+          <section data-reveal className="order-1 space-y-8 md:space-y-6">
             <SectionHeading eyebrow="in the wild" eyebrowColor="graphite">
               embodiments
             </SectionHeading>
@@ -325,7 +325,7 @@ export default async function LanguageDetailPage({
           </section>
 
           {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
-          <section className="order-3">
+          <section data-reveal className="order-3">
             <SectionHeading eyebrow="DESIGN.md" eyebrowColor="graphite">
               at a glance
             </SectionHeading>
@@ -343,7 +343,7 @@ export default async function LanguageDetailPage({
             />
           </section>
 
-          <section className="order-4">
+          <section data-reveal className="order-4">
             <SectionHeading eyebrow="shadcn/ui" eyebrowColor="graphite">
               implementation kit
             </SectionHeading>

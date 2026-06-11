@@ -243,6 +243,7 @@ function TodaysPull({
     <Link
       href={`/language/${lang.entity_id}`}
       prefetch={false}
+      data-reveal
       className="group relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/80 px-5 py-4 transition-all duration-200 hover:-translate-y-[2px] sm:flex-nowrap"
       style={{
         boxShadow: "var(--shadow-card)",
@@ -415,8 +416,8 @@ export default async function GalleryPage({
       {/* ── How it works — one quiet strip, three passes ─────────── */}
       <section
         aria-label="How katagami works"
-        className="riso-reveal relative grid gap-6 sm:grid-cols-3"
-        style={{ ["--reveal-i" as string]: 4 }}
+        data-reveal-children
+        className="relative grid gap-6 sm:grid-cols-3"
       >
         {(
           [
@@ -462,7 +463,7 @@ export default async function GalleryPage({
 
       {/* ── Gallery ──────────────────────────────────────────────── */}
       <section id="gallery" className="scroll-mt-20 space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+        <div data-reveal className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--ramune)]" />

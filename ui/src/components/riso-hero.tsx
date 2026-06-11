@@ -178,27 +178,6 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           />
         </g>
 
-        {/* pass 4 — registration crosses, kept on the right interior so
-            `slice` never trims them, however the hero is proportioned */}
-        <g
-          ref={(el) => {
-            layersRef.current[3] = el;
-          }}
-          style={{ willChange: "transform", color: "var(--graphite)" }}
-          opacity="0.45"
-        >
-          {[
-            [720, 120],
-            [1180, 130],
-            [800, 390],
-            [1110, 390],
-          ].map(([x, y]) => (
-            <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="2">
-              <circle r="9" />
-              <path d="M -16 0 H 16 M 0 -16 V 16" />
-            </g>
-          ))}
-        </g>
       </svg>
     </div>
   );

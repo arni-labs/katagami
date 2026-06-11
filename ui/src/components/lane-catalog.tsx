@@ -64,7 +64,7 @@ export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
     <>
       <SearchBar value={q} onChange={setQ} placeholder="Search palettes by name, tag, or hex…" count={filtered.length} total={items.length} noun="palettes" />
       {filtered.length ? (
-        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-children className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
             <Link key={p.id} href={`/palettes/${p.id}`} prefetch={false} className="group block min-w-0">
               <PaletteCard palette={p} />
@@ -92,7 +92,7 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
     <>
       <SearchBar value={q} onChange={setQ} placeholder="Search art styles by name, medium, or prompt…" count={filtered.length} total={items.length} noun="art styles" />
       {filtered.length ? (
-        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-children className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((a) => (
             <Link key={a.id} href={`/art-styles/${a.id}`} prefetch={false} className="group block min-w-0">
               <ArtStyleCard art={a} />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import {
   CommandPalette,
   CommandPaletteTrigger,
@@ -273,6 +274,7 @@ export default async function SiteLayout({
       </footer>
       <MobileNav />
       <CommandPalette items={searchIndex} />
+      <ScrollReveal />
     </div>
   );
 }

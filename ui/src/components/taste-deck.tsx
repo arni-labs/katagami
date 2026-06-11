@@ -176,27 +176,26 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
     (x): x is string => Boolean(x),
   );
   const liked = profile.liked.length;
-  const deckMode = sems && sems.size > 0 ? "semantic" : "token";
   const statusLine =
     reasons.length > 0
       ? `why this: ${reasons.join(" · ")}`
       : liked > 0
-        ? `tuned — keep reacting (${deckMode})`
+        ? "tuned to your taste — keep going"
         : dealCount > 0
-          ? `${dealCount} dealt · ${deckMode} deck`
-          : `fresh ${deckMode} deck`;
+          ? `${dealCount} seen`
+          : "react to start";
 
   return (
-    <section aria-label="Taste finder" className="relative">
+    <section aria-label="Taste finder" data-reveal className="relative">
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <span className="stamp shrink-0" style={{ color: "var(--sakura)" }}>
           taste finder
         </span>
         <h2 className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">
-          Deal yourself in
+          Find your style
         </h2>
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          react to a few sheets — the deck homes in
+          react to a few and we&apos;ll home in
         </span>
       </div>
 
@@ -322,14 +321,14 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
             <button
               type="button"
               onClick={wild}
-              title="Deal a completely random sheet"
+              title="Show a completely random design"
               className="inline-flex items-center gap-1.5 px-3 py-2 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] text-foreground/75 transition-all hover:-translate-y-[1px] hover:text-foreground"
               style={{
                 background:
                   "color-mix(in srgb, var(--yuzu) 18%, var(--paper-stamp-mix))",
               }}
             >
-              ↻ wild card
+              ↻ surprise me
             </button>
             <Link
               href={entry.href}
@@ -339,7 +338,7 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
                 boxShadow: "var(--shadow-card)",
               }}
             >
-              open this sheet →
+              open design →
             </Link>
             <span className="ml-auto font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
               {statusLine}

@@ -8,6 +8,7 @@ import {
   Nunito,
 } from "next/font/google";
 import "./globals.css";
+import { REVEAL_INIT_SCRIPT } from "@/components/scroll-reveal";
 
 const nunito = Nunito({
   variable: "--font-sans",
@@ -102,6 +103,7 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full">{children}</body>
     </html>

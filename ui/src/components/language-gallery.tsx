@@ -1,7 +1,6 @@
 import type { DesignLanguage } from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
 import { GalleryFilters } from "@/components/gallery-filters";
-import { RegMark } from "@/components/scrapbook";
 import { ShelfSpread } from "@/components/shelf-spread";
 
 /** Shelves only make sense once the catalog outgrows a single wall. */
@@ -90,7 +89,6 @@ export function LanguageGallery({
                   </span>
                   <span className="sticker-perforation hidden min-w-0 flex-1 sm:block" />
                   <ShelfSpread />
-                  <RegMark className="hidden shrink-0 sm:block" />
                 </div>
               )}
               <div
@@ -164,7 +162,7 @@ const SHELF_DEFS = [
   { key: "quiet", label: "quiet paper", blurb: "restraint and whitespace", ink: "var(--ramune)" },
   { key: "warm", label: "warm press", blurb: "earth, amber, ember", ink: "var(--yuzu)" },
   { key: "cold", label: "cold press", blurb: "sea, slate, shade", ink: "var(--ramune)" },
-  { key: "misc", label: "miscellany", blurb: "sheets that fit no drawer", ink: "var(--graphite)" },
+  { key: "misc", label: "miscellany", blurb: "everything else", ink: "var(--graphite)" },
 ] as const;
 
 function hexParts(hex?: string): { h: number; s: number; l: number } | null {

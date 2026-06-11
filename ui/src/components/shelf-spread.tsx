@@ -25,7 +25,7 @@ export function ShelfSpread() {
           "color-mix(in srgb, var(--ramune) 11%, var(--paper-stamp-mix))",
       }}
     >
-      {spread ? "← slide in" : "spread out →"}
+      {spread ? "show less" : "show all"}
     </button>
   );
 }

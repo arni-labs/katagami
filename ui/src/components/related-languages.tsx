@@ -51,13 +51,13 @@ export async function RelatedLanguages({
       <div className="sticker-perforation mb-8" />
       <div className="mb-5 flex items-end gap-3">
         <span className="ink-stamp shrink-0" style={{ ["--ink" as string]: "var(--ramune)" }}>
-          same drawer
+          related
         </span>
         <h2 className="font-display text-2xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">
           More like this
         </h2>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div data-reveal-children className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {scored.map(({ lang, shared }) => {
           const colors =
             parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};

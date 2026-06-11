@@ -97,31 +97,6 @@ export function SectionHeading({
   );
 }
 
-/** Print registration cross — the press operator's alignment mark.
-    Decorative punctuation for section corners and drawer labels. */
-export function RegMark({
-  className = "",
-  size = 14,
-}: {
-  className?: string;
-  size?: number;
-}) {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={`text-[var(--graphite)] opacity-60 ${className}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <circle cx="12" cy="12" r="6" />
-      <path d="M 0 12 H 24 M 12 0 V 24" />
-    </svg>
-  );
-}
 
 /** Vermillion hanko seal — 型 pressed in ink. The library's chop. */
 export function HankoSeal({
