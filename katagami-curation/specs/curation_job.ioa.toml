@@ -330,6 +330,11 @@ principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
 
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
 [action.triggers.params]
 job_type = "quality_review"
 completion_contract = "typed-v1"
@@ -362,6 +367,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "SynthesisComplete"
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
 
 [action.triggers.params]
 organize_job_id = ""
@@ -535,6 +545,20 @@ timeout_secs = "300"
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
 
+[[action.triggers]]
+name = "palette_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompletePalette"
+
+[action.triggers.params_from]
+palette_system_ids = "palette_system_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
 [[action]]
 name = "CompleteArtStyleSynthesis"
 kind = "input"
@@ -552,6 +576,20 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+
+[[action.triggers]]
+name = "art_style_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompleteArtStyle"
+
+[action.triggers.params_from]
+art_style_ids = "art_style_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
 
 # --- Finalizing ---
 
