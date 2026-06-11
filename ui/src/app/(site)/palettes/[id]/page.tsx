@@ -10,13 +10,12 @@ import {
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { readableTextColor } from "@/lib/shadcn-export";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { KX_BTN_PAPER } from "@/lib/katagami-ui";
 
-const RING = "shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]";
 const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
 
 export const dynamic = "force-dynamic";
@@ -72,8 +71,23 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
 
       <PageHero
         eyebrow="Color lane"
-        eyebrowAccent="ramune"
-        title={<Marker color="ramune">{name}</Marker>}
+        eyebrowAccent="graphite"
+        title={
+          core.signature[0]?.hex ? (
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{
+                  background: `color-mix(in srgb, ${core.signature[0].hex} 55%, white)`,
+                }}
+              />
+              <span className="marker-text">{name}</span>
+            </span>
+          ) : (
+            name
+          )
+        }
         description={core.mood.summary ?? "A curated color system: signature, neutral ground, and a small semantic accessory."}
         rightSlot={
           <>
@@ -103,7 +117,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           {NEUTRAL_ORDER.map((k) => {
             const c = core.neutrals[k] ?? "#ddd";
             return (
-              <div key={k} className={`flex-1 overflow-hidden rounded-[2px] ${RING}`}>
+              <div key={k} className="flex-1 overflow-hidden rounded-[2px]">
                 <div style={{ background: c, height: 44 }} />
                 <div className="bg-card px-1.5 py-1 font-mono text-[9px] lowercase text-muted-foreground">
                   {k}<br />
@@ -136,7 +150,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
                 ramps[r] ? (
                   <div key={r} className="flex items-center gap-2">
                     <span className="w-14 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{r}</span>
-                    <div className={`flex h-5 flex-1 overflow-hidden rounded-[2px] ${RING}`}>
+                    <div className="flex h-5 flex-1 overflow-hidden rounded-[2px]">
                       {Object.values(ramps[r]).map((c, i) => (
                         <span key={i} className="h-full flex-1" style={{ background: c }} />
                       ))}
@@ -187,8 +201,8 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
 
       {/* remix hook */}
       <section>
-        <SectionHeading eyebrow="try it" eyebrowColor="salad">
-          <Marker color="salad">remix with this palette</Marker>
+        <SectionHeading eyebrow="try it" eyebrowColor="graphite">
+          remix with this palette
         </SectionHeading>
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Drop <span className="text-foreground">{name}</span> onto any UI language and swap the art style — the preview recolors live.
@@ -202,7 +216,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
             variant="drawer"
           />
         ) : (
-          <div className="paper-card rounded-[var(--radius-lg)] p-5 text-sm text-muted-foreground">
+          <div className="sticker-card p-5 text-sm text-muted-foreground">
             Needs a Published language and art style to remix.
           </div>
         )}

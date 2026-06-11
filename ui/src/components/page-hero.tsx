@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 type AccentColor =
+  | "graphite"
   | "sakura"
   | "yuzu"
   | "salad"
@@ -11,7 +12,7 @@ type AccentColor =
 
 export function PageHero({
   eyebrow,
-  eyebrowAccent = "teal",
+  eyebrowAccent = "ramune",
   title,
   description,
   rightSlot,
@@ -24,8 +25,14 @@ export function PageHero({
 }) {
   return (
     <section className="relative">
+      {/* corner halftone — one screened pass of the eyebrow ink */}
+      <span
+        aria-hidden
+        className="halftone-wash -right-8 -top-10 hidden h-44 w-64 sm:block"
+        style={{ ["--wash-ink" as string]: `var(--${eyebrowAccent})` }}
+      />
       <div className="flex items-end justify-between gap-6">
-        <div className="max-w-2xl">
+        <div className="riso-reveal max-w-2xl">
           {eyebrow && (
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
               <span
@@ -45,7 +52,10 @@ export function PageHero({
           )}
         </div>
         {rightSlot && (
-          <div className="hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
+          <div
+            className="riso-reveal hidden shrink-0 flex-col items-end gap-1.5 sm:flex"
+            style={{ ["--reveal-i" as string]: 2 }}
+          >
             {rightSlot}
           </div>
         )}

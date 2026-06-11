@@ -1,6 +1,7 @@
 import type { ReactNode, CSSProperties } from "react";
 
 type AccentColor =
+  | "graphite"
   | "sakura"
   | "yuzu"
   | "salad"
@@ -22,17 +23,14 @@ export function StickyNote({
   style?: CSSProperties;
 }) {
   const tintBg = tint
-    ? `color-mix(in srgb, var(--${tint}) 9%, var(--paper-tint-base))`
+    ? `color-mix(in srgb, var(--${tint}) 8%, var(--paper-tint-base))`
     : "var(--paper-tint-base)";
   return (
     <div
       className={`relative ${className}`}
       style={{
         background: tintBg,
-        backdropFilter: "blur(4px) saturate(1.05)",
-        WebkitBackdropFilter: "blur(4px) saturate(1.05)",
-        boxShadow:
-          "0 1px 2px rgba(30, 35, 45, 0.04), 0 6px 18px rgba(30, 35, 45, 0.06)",
+        boxShadow: "var(--shadow-card)",
         ...style,
       }}
     >
@@ -41,7 +39,7 @@ export function StickyNote({
   );
 }
 
-/** A small diagonal washi tape. Use absolute-positioned on a parent. */
+/** A strip of overprinted spot ink (was washi tape). Absolute-position on a parent. */
 export function WashiTape({
   color = "sakura",
   rotate = -5,
@@ -60,11 +58,11 @@ export function WashiTape({
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] ${className}`}
+      className={`washi-tape pointer-events-none ${className}`}
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${color}) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${color}) 35%, var(--paper-tape-mix)) 6px 12px)`,
+        ["--strip-ink" as string]: `var(--${color})`,
         transform: `rotate(${rotate}deg)`,
         ...style,
       }}
@@ -75,7 +73,7 @@ export function WashiTape({
 /** Section heading: display font + optional marker highlight + eyebrow stamp. */
 export function SectionHeading({
   eyebrow,
-  eyebrowColor = "sumire",
+  eyebrowColor = "ramune",
   children,
 }: {
   eyebrow?: string;
@@ -96,6 +94,69 @@ export function SectionHeading({
         {children}
       </h2>
     </div>
+  );
+}
+
+/** Print registration cross — the press operator's alignment mark.
+    Decorative punctuation for section corners and drawer labels. */
+export function RegMark({
+  className = "",
+  size = 14,
+}: {
+  className?: string;
+  size?: number;
+}) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      className={`text-[var(--graphite)] opacity-60 ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <circle cx="12" cy="12" r="6" />
+      <path d="M 0 12 H 24 M 12 0 V 24" />
+    </svg>
+  );
+}
+
+/** Vermillion hanko seal — 型 pressed in ink. The library's chop. */
+export function HankoSeal({
+  className = "",
+  size = 44,
+  glyph = "型",
+}: {
+  className?: string;
+  size?: number;
+  glyph?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`inline-grid place-items-center font-display font-bold ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 9999,
+        background: "color-mix(in oklch, var(--sakura) 55%, var(--beni))",
+        backgroundImage: "var(--grain-url)",
+        backgroundSize: "90px 90px",
+        backgroundBlendMode: "soft-light",
+        color: "var(--washi)",
+        fontSize: size * 0.5,
+        lineHeight: 1,
+        transform: "rotate(-6deg)",
+        maskImage:
+          "radial-gradient(circle at 30% 35%, black 52%, rgba(0,0,0,0.82) 78%, rgba(0,0,0,0.92) 100%)",
+        WebkitMaskImage:
+          "radial-gradient(circle at 30% 35%, black 52%, rgba(0,0,0,0.82) 78%, rgba(0,0,0,0.92) 100%)",
+      }}
+    >
+      {glyph}
+    </span>
   );
 }
 

@@ -36,14 +36,20 @@ export function PaletteCard({ palette }: { palette: PaletteItem }) {
   return (
     <article
       className="sticker-card relative flex h-full min-h-[420px] w-full flex-col overflow-hidden"
-      style={{ background: `color-mix(in srgb, ${tint} 7%, var(--paper-tint-base))` }}
+      style={
+        {
+          background: `color-mix(in srgb, ${tint} 7%, var(--paper-tint-base))`,
+          "--card-ink": tint,
+        } as React.CSSProperties
+      }
     >
-      {/* washi tape */}
+      {/* ink strip */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
+        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-75"
         style={{
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tint} 74%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, ${tint} 36%, var(--paper-tape-mix)) 7px 14px)`,
+          background: tint,
+          mixBlendMode: "var(--ink-blend)" as never,
           transform: `rotate(${tapeRot}deg)`,
         }}
       />
@@ -54,7 +60,12 @@ export function PaletteCard({ palette }: { palette: PaletteItem }) {
           className="relative mx-auto w-[96%] rotate-[-0.7deg] transition-transform duration-300 ease-out group-hover:rotate-0"
           style={{ transformOrigin: "center top" }}
         >
-          <div className="relative border border-border bg-card p-1.5 pb-2.5 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
+          <div
+            className="relative bg-card p-1.5 pb-2.5"
+            style={{
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
             {/* SIGNATURE — large, leads the card */}
             <div className="flex overflow-hidden rounded-[1px]" style={{ height: 96 }}>
               {sig.slice(0, 4).map((s, i) => {
@@ -158,7 +169,7 @@ export function PaletteCard({ palette }: { palette: PaletteItem }) {
               <span key={`${s.hex}-${i}`} className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden
-                  className="h-2.5 w-2.5 rounded-[1px] border border-border"
+                  className="h-2.5 w-2.5 rounded-[1px]"
                   style={{ background: s.hex }}
                 />
                 <span className="font-mono text-[10px] lowercase text-muted-foreground/80">

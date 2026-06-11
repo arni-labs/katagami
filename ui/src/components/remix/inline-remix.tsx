@@ -63,7 +63,7 @@ function FixedChip({ label, name, media }: { label: string; name: string; media:
       <div className={`mb-1.5 ${KX_LABEL}`}>
         {label} <span className="text-muted-foreground/50">· fixed</span>
       </div>
-      <div className="flex items-center gap-2.5 border border-dashed border-foreground/25 bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2.5 py-2">
+      <div className="flex items-center gap-2.5 bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] px-2.5 py-2">
         {media}
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{name}</span>
       </div>
@@ -287,7 +287,7 @@ export function InlineRemix({
               {lang?.name ?? "—"} · {pal?.name ?? "—"} · {sel?.name ?? "—"}
             </span>
           </div>
-          <div className="overflow-hidden rounded-[1px] shadow-[inset_0_0_0_1px_rgba(30,35,45,0.06)]">
+          <div className="overflow-hidden rounded-[1px]">
             <RemixPreview compositionUrl={compositionUrl} roles={roles} hero={hero} />
           </div>
           <span className="absolute inset-x-0 bottom-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/75">

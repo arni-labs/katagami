@@ -151,9 +151,9 @@ function ShowcaseCard({
         className="washi-tape absolute -left-3 -top-2 z-10"
         style={{
           width: "84px",
-          height: "14px",
+          height: "13px",
           transform: "rotate(-4deg)",
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${tape}) 70%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${tape}) 30%, var(--paper-tape-mix)) 6px 12px)`,
+          ["--strip-ink" as string]: `var(--${tape})`,
         }}
       />
       <header className="mb-6 flex items-baseline justify-between gap-3">

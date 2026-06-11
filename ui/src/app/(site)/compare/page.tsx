@@ -123,7 +123,12 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
                 className={i === 0 ? "-left-3 -top-3" : "-right-3 -top-3"}
                 width={90}
               />
-              <div className="relative rounded-[2px] border border-border bg-card p-3 pb-8 shadow-[0_3px_12px_rgba(30,35,45,0.07)]">
+              <div
+                className="relative rounded-[2px] bg-card p-3 pb-8"
+                style={{
+                  boxShadow: "var(--shadow-card)",
+                }}
+              >
                 {(() => {
                   const isPublished = lang.status === "Published";
                   const embodimentFileId = isPublished
@@ -196,7 +201,15 @@ function TokenDiff({
     <div className="overflow-x-auto">
       <table className="w-full font-mono text-xs">
         <thead>
-          <tr className="border-b border-dashed border-border">
+          <tr
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, color-mix(in srgb, var(--sumi) 34%, transparent) 1.2px, transparent 1.45px)",
+              backgroundSize: "8px 4px",
+              backgroundPosition: "left bottom",
+              backgroundRepeat: "repeat-x",
+            }}
+          >
             <th className="p-2 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               token
             </th>
@@ -216,7 +229,6 @@ function TokenDiff({
             return (
               <tr
                 key={key}
-                className="border-b border-dotted border-border/60"
                 style={
                   differs
                     ? {
@@ -295,8 +307,8 @@ export default async function ComparePage({
         <Suspense
           fallback={
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="h-80 animate-pulse border border-border bg-muted/50" />
-              <div className="h-80 animate-pulse border border-border bg-muted/50" />
+              <div className="h-80 animate-pulse bg-muted/50" />
+              <div className="h-80 animate-pulse bg-muted/50" />
             </div>
           }
         >

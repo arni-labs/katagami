@@ -2,33 +2,155 @@ import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  CommandPalette,
+  CommandPaletteTrigger,
+  type PaletteIndexItem,
+} from "@/components/command-palette";
+import {
+  listArtStyles,
+  listDesignLanguages,
+  listPaletteSystems,
+  paletteCore,
+  parseJson,
+} from "@/lib/odata";
+import { HankoSeal } from "@/components/scrapbook";
 
-export default function SiteLayout({
+/** The signature trio, in registration-bar order. */
+const REGISTRATION_INKS = [
+  "var(--sakura)",
+  "var(--yuzu)",
+  "var(--ramune)",
+];
+
+interface TokensLite {
+  colors?: Record<string, string | undefined>;
+}
+
+async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
+  const items: PaletteIndexItem[] = [];
+
+  try {
+    const languages = await listDesignLanguages(undefined, undefined, [
+      "Id",
+      "Status",
+      "name",
+      "slug",
+      "tags",
+      "tokens",
+    ]);
+    for (const lang of languages) {
+      if (!lang.fields.name) continue;
+      const colors = parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};
+      const swatch = [colors.primary, colors.secondary, colors.accent].filter(
+        (c): c is string => Boolean(c),
+      );
+      items.push({
+        id: lang.entity_id,
+        kind: "language",
+        name: lang.fields.name,
+        href: `/language/${lang.entity_id}`,
+        tags: parseJson<string[]>(lang.fields.tags) ?? undefined,
+        swatch,
+      });
+    }
+  } catch {
+    // search degrades to whatever lanes loaded
+  }
+
+  try {
+    for (const palette of await listPaletteSystems()) {
+      if (!palette.fields.name) continue;
+      const core = paletteCore(palette.fields);
+      items.push({
+        id: palette.entity_id,
+        kind: "palette",
+        name: palette.fields.name,
+        href: `/palettes/${palette.entity_id}`,
+        tags: parseJson<string[]>(palette.fields.tags) ?? undefined,
+        swatch: core.signature.slice(0, 4).map((s) => s.hex),
+      });
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    for (const style of await listArtStyles()) {
+      if (!style.fields.name) continue;
+      items.push({
+        id: style.entity_id,
+        kind: "art-style",
+        name: style.fields.name,
+        href: `/art-styles/${style.entity_id}`,
+        tags: parseJson<string[]>(style.fields.tags) ?? undefined,
+      });
+    }
+  } catch {
+    // ignore
+  }
+
+  for (const page of [
+    { name: "Gallery", href: "/" },
+    { name: "Palettes", href: "/palettes" },
+    { name: "Art Styles", href: "/art-styles" },
+    { name: "Studio", href: "/studio" },
+    { name: "Taxonomy", href: "/taxonomy" },
+    { name: "Lineage", href: "/lineage" },
+    { name: "Compare", href: "/compare" },
+  ]) {
+    items.push({
+      id: page.href,
+      kind: "page",
+      name: page.name,
+      href: page.href,
+    });
+  }
+
+  return items;
+}
+
+export default async function SiteLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const searchIndex = await buildSearchIndex();
+
   return (
     <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-      <header className="relative max-w-full overflow-x-clip border-b border-border/70 bg-background/70 backdrop-blur-sm">
+      {/* Registration bar — the printer's color check, run across the top
+          of every sheet. Doubles as the site's signature. */}
+      <div aria-hidden className="flex h-[5px] w-full">
+        {REGISTRATION_INKS.map((ink) => (
+          <span key={ink} className="h-full flex-1" style={{ background: ink }} />
+        ))}
+      </div>
+
+      <header className="relative max-w-full overflow-x-clip bg-background/80 backdrop-blur-sm">
         <nav className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:gap-6 md:gap-8">
           <Link
             href="/"
             aria-label="katagami home"
             className="group flex shrink-0 items-center gap-2 font-display sm:gap-2.5"
           >
+            {/* Three overprinting ink dots — the trademark, now blended
+                with the drum (multiply by day, screen by night). */}
             <span className="relative block h-8 w-9 sm:h-9 sm:w-10">
               <span
                 aria-hidden
-                className="absolute left-0 top-0 h-5 w-5 rounded-full bg-[var(--sakura)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg] dark:mix-blend-screen sm:h-6 sm:w-6"
+                className="absolute left-0 top-0 h-5 w-5 rounded-full bg-[var(--sakura)] transition-transform duration-300 ease-out group-hover:-translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[-6deg] sm:h-6 sm:w-6"
+                style={{ mixBlendMode: "var(--ink-blend)" as never }}
               />
               <span
                 aria-hidden
-                className="absolute right-0 top-0 h-5 w-5 rounded-full bg-[var(--yuzu)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg] dark:mix-blend-screen sm:h-6 sm:w-6"
+                className="absolute right-0 top-0 h-5 w-5 rounded-full bg-[var(--yuzu)] transition-transform duration-300 ease-out group-hover:translate-x-[3px] group-hover:-translate-y-[1px] group-hover:rotate-[6deg] sm:h-6 sm:w-6"
+                style={{ mixBlendMode: "var(--ink-blend)" as never }}
               />
               <span
                 aria-hidden
-                className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-[var(--sumire)] mix-blend-multiply transition-transform duration-300 ease-out group-hover:translate-y-[3px] dark:mix-blend-screen sm:h-6 sm:w-6"
+                className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full bg-[var(--ramune)] transition-transform duration-300 ease-out group-hover:translate-y-[3px] sm:h-6 sm:w-6"
+                style={{ mixBlendMode: "var(--ink-blend)" as never }}
               />
             </span>
             <span className="text-[18px] font-semibold leading-none tracking-[-0.02em] sm:text-[22px]">
@@ -36,47 +158,36 @@ export default function SiteLayout({
             </span>
           </Link>
           <HeaderNav />
-          <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="ml-auto hidden items-center gap-2.5 md:flex">
+            <CommandPaletteTrigger />
             <ThemeToggle />
-            <span className="stamp text-[var(--teal)]">v0.1.0</span>
           </div>
-          <div className="ml-auto flex items-center md:hidden">
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            <CommandPaletteTrigger />
             <ThemeToggle />
           </div>
         </nav>
-        <span
-          className="washi-tape absolute -top-2 right-24 hidden rotate-[-6deg] md:block"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--salad) 40%, var(--paper-tape-mix)) 7px 14px)",
-          }}
-        />
-        <span
-          className="washi-tape absolute -top-1.5 right-6 hidden rotate-[8deg] md:block"
-          style={{
-            width: "48px",
-            background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sumire) 70%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--sumire) 30%, var(--paper-tape-mix)) 7px 14px)",
-          }}
-        />
+        {/* Halftone rule instead of a border — the header's bottom edge
+            screens out like a printed gradient. */}
+        <div className="sticker-perforation mx-auto max-w-7xl px-4" />
       </header>
+
       <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
-      <footer className="relative mt-24 max-w-full overflow-x-clip border-t border-border/70">
+
+      <footer className="relative mt-24 max-w-full overflow-x-clip">
+        <div className="sticker-perforation mx-auto max-w-7xl px-4" />
         <span
           aria-hidden
-          className="washi-tape absolute -top-2 left-[12%] hidden rotate-[-5deg] md:block"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--matcha) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--matcha) 40%, var(--paper-tape-mix)) 7px 14px)",
-          }}
+          className="washi-tape -top-1.5 left-[12%] hidden md:block"
+          style={{ ["--strip-ink" as string]: "var(--ramune)", position: "absolute" }}
         />
         <span
           aria-hidden
-          className="washi-tape absolute -top-1.5 right-[14%] hidden rotate-[7deg] md:block"
+          className="washi-tape -top-1 right-[14%] hidden md:block"
           style={{
+            ["--strip-ink" as string]: "var(--sakura)",
+            position: "absolute",
             width: "52px",
-            background:
-              "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--sakura) 35%, var(--paper-tape-mix)) 7px 14px)",
           }}
         />
 
@@ -84,7 +195,11 @@ export default function SiteLayout({
           <div className="flex flex-wrap items-start justify-between gap-6 sm:gap-10">
             <div className="space-y-3">
               <div className="flex items-baseline gap-3">
-                <span className="font-display text-5xl font-bold leading-none tracking-[-0.04em] sm:text-[56px]">
+                <span
+                  className="riso-double font-display text-5xl font-bold leading-none tracking-[-0.04em] sm:text-[56px]"
+                  data-text="型紙"
+                  style={{ ["--ink" as string]: "var(--sakura)" }}
+                >
                   型紙
                 </span>
                 <div className="flex flex-col leading-tight">
@@ -95,6 +210,7 @@ export default function SiteLayout({
                     no.001
                   </span>
                 </div>
+                <HankoSeal className="self-center" size={40} />
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 A DESIGN.md-compatible library of design languages — versioned,
@@ -103,7 +219,7 @@ export default function SiteLayout({
             </div>
 
             <div className="flex flex-col items-start gap-3 md:items-end">
-              <span className="stamp text-[var(--sumire)]">say hi</span>
+              <span className="stamp text-[var(--sakura)]">say hi</span>
               <div className="flex items-center gap-2">
                 <SocialSticker
                   href="https://x.com/arni0x9053"
@@ -115,7 +231,7 @@ export default function SiteLayout({
                 <SocialSticker
                   href="https://github.com/rita-aga"
                   label="GitHub (@rita-aga)"
-                  accent="var(--matcha)"
+                  accent="var(--ramune)"
                 >
                   <GithubIcon />
                 </SocialSticker>
@@ -137,17 +253,28 @@ export default function SiteLayout({
                 <span className="relative z-10">@arni0x9053</span>
                 <span
                   aria-hidden
-                  className="absolute inset-x-[-2px] bottom-0 z-0 h-[5px] rounded-[1px] bg-[var(--yuzu)] opacity-80"
-                  style={{ transform: "rotate(-1deg)" }}
+                  className="absolute inset-x-[-2px] bottom-0 z-0 h-[5px] bg-[var(--yuzu)] opacity-80"
+                  style={{
+                    transform: "rotate(-1deg) skewX(-6deg)",
+                    mixBlendMode: "var(--ink-blend)" as never,
+                  }}
                 />
               </a>{" "}
               · 2026
             </span>
-            <span>型紙 · v0.1.0</span>
+            <span className="flex items-center gap-2">
+              <span aria-hidden className="flex gap-[2px]">
+                {REGISTRATION_INKS.map((ink) => (
+                  <span key={ink} className="h-2 w-2" style={{ background: ink }} />
+                ))}
+              </span>
+              型紙 · v0.1.0
+            </span>
           </div>
         </div>
       </footer>
       <MobileNav />
+      <CommandPalette items={searchIndex} />
     </div>
   );
 }
@@ -170,14 +297,16 @@ function SocialSticker({
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
-      className="group relative inline-flex h-10 w-10 items-center justify-center border border-border bg-card/70 text-foreground/80 shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-4deg] hover:text-foreground"
+      className="group relative inline-flex h-10 w-10 items-center justify-center bg-card text-foreground/80 transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-4deg] hover:text-foreground"
       style={{
         ["--accent" as string]: accent,
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <span
         aria-hidden
         className="absolute inset-0 bg-[var(--accent)] opacity-0 transition-opacity duration-200 group-hover:opacity-40"
+        style={{ mixBlendMode: "var(--ink-blend)" as never }}
       />
       <span className="relative">{children}</span>
     </a>

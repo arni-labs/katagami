@@ -171,7 +171,7 @@ function LanguageChip({ lang }: { lang: DesignLanguage }) {
   return (
     <Link
       href={`/language/${lang.entity_id}`}
-      className="inline-flex max-w-full items-center gap-1 border border-border/70 bg-[var(--paper-sticker)] px-2 py-1 text-[11px] font-medium text-foreground/80 shadow-[0_1px_0_rgba(30,35,45,0.04)] transition-colors hover:border-foreground/30 hover:bg-[var(--paper-sticker-hover)] hover:text-foreground"
+      className="inline-flex max-w-full items-center gap-1 bg-[color-mix(in_srgb,var(--teal)_14%,var(--paper-stamp-mix))] px-2 py-1 text-[11px] font-medium text-[color:color-mix(in_oklch,var(--teal)_72%,var(--foreground))] transition-colors hover:bg-[color-mix(in_srgb,var(--teal)_22%,var(--paper-stamp-mix))] hover:text-foreground"
     >
       <span className="truncate">{languageName(lang)}</span>
       <ArrowUpRight className="h-3 w-3 shrink-0 text-muted-foreground" />
@@ -224,7 +224,10 @@ function TaxonomyCard({
           {visibleLangs.length > 5 && (
             <Link
               href={`/?taxonomy=${tax.entity_id}`}
-              className="inline-flex items-center gap-1 border border-dashed border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-solid hover:text-foreground"
+              className="inline-flex items-center gap-1 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+              style={{
+                background: `color-mix(in srgb, var(--${tint}) 14%, var(--paper-stamp-mix))`,
+              }}
             >
               +{visibleLangs.length - 5} more
               <ArrowUpRight className="h-3 w-3" />
@@ -259,10 +262,10 @@ function FoldControl({
       aria-controls={contentId}
       aria-label={`${collapsed ? "Open" : "Fold"} ${labelName}`}
       onClick={onToggle}
-      className="group/fold relative isolate inline-flex h-8 -rotate-1 items-center gap-1.5 overflow-hidden border-[1.5px] border-current px-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] transition-all duration-200 hover:rotate-0 hover:-translate-y-[1px] hover:shadow-[var(--shadow-sticker-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      className="group/fold relative isolate inline-flex h-8 -rotate-1 items-center gap-1.5 overflow-hidden px-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] shadow-[var(--shadow-sticker)] transition-all duration-200 hover:rotate-0 hover:-translate-y-[1px] hover:shadow-[var(--shadow-sticker-lift)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       style={{
         color: `var(--${tint})`,
-        background: `color-mix(in oklch, var(--${tint}) 9%, var(--paper-stamp-mix))`,
+        background: `color-mix(in srgb, var(--${tint}) 14%, var(--paper-stamp-mix))`,
       }}
     >
       <span

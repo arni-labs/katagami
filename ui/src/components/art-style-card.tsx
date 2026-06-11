@@ -44,13 +44,19 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
   return (
     <article
       className="sticker-card relative flex h-full min-h-[420px] w-full flex-col overflow-hidden"
-      style={{ background: `color-mix(in srgb, ${tint} 7%, var(--paper-tint-base))` }}
+      style={
+        {
+          background: `color-mix(in srgb, ${tint} 7%, var(--paper-tint-base))`,
+          "--card-ink": tint,
+        } as React.CSSProperties
+      }
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
+        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-75"
         style={{
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tint} 74%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, ${tint} 36%, var(--paper-tape-mix)) 7px 14px)`,
+          background: tint,
+          mixBlendMode: "var(--ink-blend)" as never,
           transform: `rotate(${tapeRot}deg)`,
         }}
       />
@@ -61,7 +67,12 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
           className="relative mx-auto w-[96%] rotate-[-0.7deg] transition-transform duration-300 ease-out group-hover:rotate-0"
           style={{ transformOrigin: "center top" }}
         >
-          <div className="relative border border-border bg-card p-1.5 pb-3 shadow-[0_2px_10px_rgba(30,35,45,0.09)]">
+          <div
+            className="relative bg-card p-1.5 pb-3"
+            style={{
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
             <div className="relative w-full overflow-hidden rounded-[1px] bg-muted" style={{ aspectRatio: "16 / 9" }}>
               {hero ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -76,13 +87,19 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
             {stripShots.length > 0 && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 {stripShots.map((src, i) => (
-                  <div key={i} className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[1px] border border-border bg-muted">
+                  <div key={i} className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[1px] bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`${art.name} proof ${i + 1}`} className="h-full w-full object-cover" />
                   </div>
                 ))}
                 {overflow > 0 && (
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[1px] border border-dashed border-border font-mono text-[10px] text-muted-foreground">
+                  <span
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-[1px] font-mono text-[10px]"
+                    style={{
+                      background: `color-mix(in srgb, ${tint} 14%, var(--paper-stamp-mix))`,
+                      color: `color-mix(in oklch, ${tint} 72%, var(--foreground))`,
+                    }}
+                  >
                     +{overflow}
                   </span>
                 )}
