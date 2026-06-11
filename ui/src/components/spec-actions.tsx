@@ -140,19 +140,6 @@ export function SpecActions({
   if (variant === "hero") {
     return (
       <div className="relative">
-        <span
-          aria-hidden
-          className="washi-tape absolute -left-4 -top-2 z-10"
-          style={
-            {
-              width: "86px",
-              height: "16px",
-              transform: "rotate(-5deg)",
-              "--strip-ink": `var(--${accent})`,
-            } as React.CSSProperties
-          }
-        />
-
         <div className="relative overflow-hidden bg-card/85 px-5 py-5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_10px_28px_rgba(30,35,45,0.08)] sm:px-6">
           <div
             aria-hidden
@@ -247,20 +234,6 @@ export function SpecActions({
 
   return (
     <div className="relative inline-block">
-      {/* Washi tape pinning the packet's top-left corner */}
-      <span
-        aria-hidden
-        className="washi-tape absolute -left-3 -top-2 z-10"
-        style={
-          {
-            width: "62px",
-            height: "14px",
-            transform: "rotate(-6deg)",
-            "--strip-ink": `var(--${accent})`,
-          } as React.CSSProperties
-        }
-      />
-
       <div className="relative flex flex-col gap-2 bg-card/70 px-3 pb-3 pt-2 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)]">
         {/* Tab strip — active one tilts forward */}
         <div className="flex items-end gap-2">

@@ -145,31 +145,15 @@ function ShowcaseCard({
   children: React.ReactNode;
 }) {
   return (
-    <article className="relative bg-card/95 px-6 py-7 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_8px_22px_rgba(30,35,45,0.05)] sm:px-8 sm:py-8">
-      <span
-        aria-hidden
-        className="washi-tape absolute -left-3 -top-2 z-10"
-        style={{
-          width: "84px",
-          height: "13px",
-          transform: "rotate(-4deg)",
-          ["--strip-ink" as string]: `var(--${tape})`,
-        }}
-      />
-      <header className="mb-6 flex items-baseline justify-between gap-3">
-        <h3 className="inline-flex items-center font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]">
-          <span className="relative">
-            <span
-              aria-hidden
-              className="absolute inset-x-[-4px] bottom-[1px] z-0 h-[10px] rounded-[1px]"
-              style={{
-                background: `var(--${tape})`,
-                opacity: 0.85,
-                transform: "rotate(-0.4deg)",
-              }}
-            />
-            <span className="relative z-10">{title}</span>
-          </span>
+    <article className="relative bg-card px-6 py-7 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_8px_22px_rgba(30,35,45,0.05)] sm:px-8 sm:py-8">
+      <header className="mb-6 flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="inline-block h-[3px] w-7 rounded-[2px]"
+          style={{ background: `var(--${tape})` }}
+        />
+        <h3 className="font-display text-[20px] font-bold leading-none tracking-[-0.02em] sm:text-[24px]">
+          {title}
         </h3>
       </header>
       {children}

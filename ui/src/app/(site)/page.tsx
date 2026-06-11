@@ -302,19 +302,17 @@ export default async function GalleryPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-4 py-6 sm:space-y-14 sm:overflow-visible sm:py-10">
-      {/* ── Hero: the print bed ─────────────────────────────────── */}
-      <section className="relative min-w-0 overflow-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
-        {/* Hero imagery — a big reactive ink composition that fills the
-            whole hero band and answers BOTH the pointer and the scroll.
-            A soft left fade keeps the headline crisp without shrinking the
-            illustration. */}
+    <div className="w-full overflow-x-hidden">
+      {/* ── Hero: full-bleed print bed — the ink connects to the header
+          and both screen edges, no padding around it ─────────────── */}
+      <section className="relative overflow-hidden">
         <div aria-hidden className="hero-art pointer-events-none">
           <RisoInkField opacity={0.9} />
           <RisoHeroPress className="opacity-95" />
         </div>
 
-        <div className="relative max-w-3xl">
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:pb-14 sm:pt-12">
+          <div className="relative max-w-3xl">
           <div
             className="riso-reveal mb-4 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
             style={{ ["--reveal-i" as string]: 0 }}
@@ -401,9 +399,12 @@ export default async function GalleryPage({
               or press <kbd className="font-bold text-foreground">⌘K</kbd> to search
             </span>
           </div>
+          </div>
         </div>
       </section>
 
+      {/* ── Everything below the hero stays in the content column ── */}
+      <div className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 pt-10 sm:space-y-16">
       {/* ── How it works — one quiet strip, three passes ─────────── */}
       <section
         aria-label="How katagami works"
@@ -491,6 +492,7 @@ export default async function GalleryPage({
           />
         </Suspense>
       </section>
+      </div>
     </div>
   );
 }

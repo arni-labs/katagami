@@ -63,7 +63,7 @@ export function LanguageGallery({
         initialSource={filters.source}
       />
 
-      <div className="space-y-10">
+      <div className="space-y-7">
         {shelves.map((shelf) => {
           const { key, label, blurb, ink, languages } = shelf;
           const anyVisible = languages.some((lang) =>
@@ -94,7 +94,7 @@ export function LanguageGallery({
               <div
                 className={
                   label === null
-                    ? "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
+                    ? "grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
                     : "shelf-row"
                 }
               >

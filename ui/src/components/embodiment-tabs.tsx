@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
-import { WashiTape } from "@/components/scrapbook";
 
 export type EmbodimentTab = {
   key: string;
@@ -53,8 +52,6 @@ export function EmbodimentTabs({
       </div>
 
       <div className="relative">
-        <WashiTape color="sakura" rotate={-4} className="-left-4 -top-3" width={100} />
-        <WashiTape color="salad" rotate={5} className="-right-4 -top-3" width={80} />
         <div className="sticker-card relative p-3 pb-10">
           {/* key=url → remount on tab switch so height re-measures */}
           <EmbodimentViewer key={cur.url} src={cur.url} />

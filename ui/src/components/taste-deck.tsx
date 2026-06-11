@@ -212,16 +212,20 @@ export function TasteDeck({ entries }: { entries: DeckEntry[] }) {
           style={{ ["--strip-ink" as string]: "var(--yuzu)", transform: "rotate(-4deg)" }}
         />
 
-        {/* the sheet — thumbnail if it exists, else a proof printed from
-            the language's own inks */}
-        <div className="relative w-full shrink-0 overflow-hidden sm:w-[360px]">
-          <div className="relative h-full min-h-[200px] w-full" style={{ background: paper }}>
+        {/* the sheet — the full design screenshot if it exists, else a
+            proof printed from the language's own inks. The shot keeps its
+            natural 16:10 frame so you can actually read the design. */}
+        <div className="relative w-full shrink-0 overflow-hidden sm:w-[420px]">
+          <div
+            className="relative w-full"
+            style={{ background: paper, aspectRatio: "16 / 10" }}
+          >
             {entry.thumb ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={entry.thumb}
                 alt={`${entry.name} preview`}
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover object-top"
               />
             ) : (
               <>
