@@ -48,8 +48,10 @@ class GenesisSourceContractTest(unittest.TestCase):
         self.assertIn("git -C \"$repo\" config --add \"$key\" \"X-Tenant-Id: ${TENANT}\"", script)
         self.assertIn("clean_generated_files", script)
         self.assertIn("find \"$dir\" -type d", script)
+        self.assertIn("-name 'target'", script)
         self.assertIn("--exclude='__pycache__/'", script)
         self.assertIn("--exclude='*.py[co]'", script)
+        self.assertIn("--exclude='target/'", script)
         self.assertNotIn("mapfile", script)
         self.assertNotIn("App.PublishNewVersion", script)
         self.assertLess(
