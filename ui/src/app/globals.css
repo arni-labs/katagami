@@ -1204,24 +1204,30 @@
      all the way open into a grid. */
   .shelf-row {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.9rem;
     overflow-x: auto;
-    padding: 6px 4px 16px;
+    padding: 4px 2px 14px;
     scroll-snap-type: x proximity;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--sumi) 25%, transparent) transparent;
     /* right-edge fade — there is always more in the drawer */
-    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 64px), transparent);
-    mask-image: linear-gradient(90deg, black calc(100% - 64px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 56px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 56px), transparent);
   }
   .shelf-row > [data-gallery-card] {
-    flex: 0 0 300px;
+    flex: 0 0 220px;
     min-width: 0;
     scroll-snap-align: start;
   }
+  @media (min-width: 640px) {
+    .shelf-row > [data-gallery-card] {
+      flex-basis: 240px;
+    }
+  }
   [data-spread="true"] .shelf-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem 0.9rem;
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;
@@ -1381,6 +1387,48 @@
   @media (prefers-reduced-motion: reduce) {
     html.reveal-ready [data-gallery-card] {
       animation: none;
+    }
+  }
+
+  /* ============ HERO ART (responsive) ============
+     Phone: a faint top-right corner wash that never crosses the text
+     column. Tablet+: the big right-anchored composition beside the
+     headline. One element, two masks — no clipped panels, no stray
+     padding, legible at every width. */
+  .hero-art {
+    position: absolute;
+    inset: -4px -6px;
+    overflow: hidden;
+    opacity: 0.3;
+    -webkit-mask-image: radial-gradient(
+      135% 78% at 100% 6%,
+      #000 6%,
+      rgba(0, 0, 0, 0.4) 34%,
+      transparent 62%
+    );
+    mask-image: radial-gradient(
+      135% 78% at 100% 6%,
+      #000 6%,
+      rgba(0, 0, 0, 0.4) 34%,
+      transparent 62%
+    );
+  }
+  @media (min-width: 640px) {
+    .hero-art {
+      inset: -48px -16px;
+      opacity: 1;
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 42%,
+        rgba(0, 0, 0, 0.55) 60%,
+        #000 78%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        transparent 42%,
+        rgba(0, 0, 0, 0.55) 60%,
+        #000 78%
+      );
     }
   }
 }

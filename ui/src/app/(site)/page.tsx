@@ -309,18 +309,9 @@ export default async function GalleryPage({
             whole hero band and answers BOTH the pointer and the scroll.
             A soft left fade keeps the headline crisp without shrinking the
             illustration. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-x-4 -inset-y-8 overflow-hidden sm:-inset-y-12"
-          style={{
-            maskImage:
-              "linear-gradient(90deg, transparent 44%, rgba(0,0,0,0.55) 62%, #000 80%)",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent 44%, rgba(0,0,0,0.55) 62%, #000 80%)",
-          }}
-        >
+        <div aria-hidden className="hero-art pointer-events-none">
           <RisoInkField opacity={0.9} />
-          <RisoHeroPress className="opacity-95 max-sm:opacity-45" />
+          <RisoHeroPress className="opacity-95" />
         </div>
 
         <div className="relative max-w-3xl">

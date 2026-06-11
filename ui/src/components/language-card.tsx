@@ -66,21 +66,6 @@ function tintFor(lang: DesignLanguage): string {
   return accentColors[hashInt(id, "tint") % accentColors.length];
 }
 
-function tapeTintFor(
-  paletteColors: string[],
-  id: string,
-): string {
-  const secondaryPaletteColors = [
-    paletteColors[1],
-    paletteColors[2],
-  ].filter((color): color is string => Boolean(color));
-  if (secondaryPaletteColors.length > 0) {
-    return secondaryPaletteColors[
-      hashInt(id, "palette-tape") % secondaryPaletteColors.length
-    ];
-  }
-  return accentColors[hashInt(id, "tape-fallback") % accentColors.length];
-}
 
 function isFeaturedLanguage(lang: DesignLanguage): boolean {
   const bag = lang as unknown as Record<string, unknown>;
@@ -196,110 +181,78 @@ function FullCard({
   const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
   const hasThumbnailPreview = Boolean(thumbnailAssetUrl || thumbnailProxyFileId);
 
-  const tapeColor = tapeTintFor(paletteColors, id);
-  const tapeRot = ((hashInt(id, "ra") % 11) - 5) * 0.55 - 3;
 
   return (
     <article
-      className="sticker-card relative flex h-full min-h-[430px] w-full max-w-full flex-col overflow-hidden"
+      className="sticker-card relative flex h-full w-full max-w-full flex-col overflow-hidden"
       style={{
-        background: `color-mix(in srgb, ${stickyTint} 7%, var(--paper-tint-base))`,
+        background: `color-mix(in srgb, ${stickyTint} 5%, var(--paper-tint-base))`,
         ["--card-ink" as string]: stickyTint,
       }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 z-10 flex h-[6px] overflow-hidden"
-      >
-        {(paletteColors.length > 0 ? paletteColors : [stickyTint])
-          .slice(0, 5)
-          .map((color, i) => (
-            <span
-              key={`${color}-${i}`}
-              className="h-full flex-1"
-              style={{ background: color }}
-            />
-          ))}
+      {/* preview — edge to edge, with the palette as a thin ink strip on top */}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "16 / 10" }}>
+        <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[5px] overflow-hidden">
+          {(paletteColors.length > 0 ? paletteColors : [stickyTint])
+            .slice(0, 5)
+            .map((color, i) => (
+              <span key={`${color}-${i}`} className="h-full flex-1" style={{ background: color }} />
+            ))}
+        </div>
+        {hasThumbnailPreview ? (
+          <ThumbnailPreview
+            fileId={thumbnailProxyFileId}
+            src={thumbnailAssetUrl}
+            alt={`${f.name || "Design language"} preview`}
+            eager={eagerThumbnail}
+            placeholderTint={stickyTint}
+            paletteColors={paletteColors.slice(0, 4)}
+          />
+        ) : embodimentFormat === "tsx" ? (
+          <TsxPlaceholder
+            paletteColors={paletteColors}
+            headingFont={headingFont}
+            bodyFont={bodyFont}
+          />
+        ) : (
+          <PreviewPlaceholder
+            paletteColors={paletteColors}
+            stickyTint={stickyTint}
+            colors={colors}
+            headingFont={headingFont}
+            seed={hashInt(id, "swatch")}
+          />
+        )}
+        {isFeatured ? (
+          <span className="absolute right-2 top-2 z-20">
+            <FeaturedSeal tint={stickyTint} />
+          </span>
+        ) : null}
       </div>
 
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -left-3 top-3 z-20 h-[15px] w-20 rounded-[1px] opacity-80 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
-        style={{
-          background: `repeating-linear-gradient(45deg, color-mix(in oklch, ${tapeColor} 74%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, ${tapeColor} 36%, var(--paper-tape-mix)) 7px 14px)`,
-          transform: `rotate(${tapeRot}deg)`,
-        }}
-      />
-
-      <div className="px-4 pb-1 pt-7">
-        <div
-          className="relative mx-auto w-[96%] rotate-[-0.7deg] transition-transform duration-300 ease-out group-hover:rotate-0"
-          style={{ transformOrigin: "center top" }}
-        >
-          <div
-            className="relative bg-card p-1.5 pb-3"
-            style={{
-              boxShadow: "var(--shadow-card)",
-            }}
-          >
-            <div
-              className="relative w-full overflow-hidden bg-muted"
-              style={{ aspectRatio: "3 / 2" }}
-            >
-              {hasThumbnailPreview ? (
-                <ThumbnailPreview
-                  fileId={thumbnailProxyFileId}
-                  src={thumbnailAssetUrl}
-                  alt={`${f.name || "Design language"} preview`}
-                  eager={eagerThumbnail}
-                  placeholderTint={stickyTint}
-                  paletteColors={paletteColors.slice(0, 4)}
-                />
-              ) : embodimentFormat === "tsx" ? (
-                <TsxPlaceholder
-                  paletteColors={paletteColors}
-                  headingFont={headingFont}
-                  bodyFont={bodyFont}
-                />
-              ) : (
-                <PreviewPlaceholder
-                  paletteColors={paletteColors}
-                  stickyTint={stickyTint}
-                  colors={colors}
-                  headingFont={headingFont}
-                  seed={hashInt(id, "swatch")}
-                />
-              )}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card/55 to-transparent"
-              />
-              <span aria-hidden className="absolute inset-0 z-10 cursor-pointer" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
-        <div className="mb-2 flex min-h-6 items-center justify-between gap-3">
-          <StatusStamp status={lang.status} tint={stickyTint} />
-          {isFeatured ? <FeaturedSeal tint={stickyTint} /> : null}
+      {/* footer — compact meta */}
+      <div className="flex flex-1 flex-col gap-1.5 px-3.5 py-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="min-w-0 font-display text-[16px] font-bold leading-tight tracking-[-0.02em] text-foreground">
+            {f.name || "Untitled"}
+          </h3>
+          {lang.status !== "Published" ? (
+            <StatusStamp status={lang.status} tint={stickyTint} />
+          ) : null}
         </div>
 
-        <h3 className="font-display text-[22px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground">
-          {f.name || "Untitled"}
-        </h3>
-
-        <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-muted-foreground">
-          {summary ?? "A design language ready to inspect, remix, and hand to an agent."}
-        </p>
+        {summary ? (
+          <p className="line-clamp-2 text-[13px] leading-snug text-muted-foreground">
+            {summary}
+          </p>
+        ) : null}
 
         {tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+          <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
             {tags.slice(0, 3).map((t, i) => (
               <span
                 key={t}
-                className="inline-flex min-w-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/85"
+                className="inline-flex min-w-0 items-center gap-1 font-mono text-[8.5px] uppercase tracking-[0.12em] text-muted-foreground/85"
               >
                 <span
                   aria-hidden
@@ -315,18 +268,6 @@ function FullCard({
             ))}
           </div>
         )}
-
-        <div className="mt-auto pt-5">
-          <div className="sticker-perforation mb-3" />
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-foreground transition-transform duration-200 group-hover:translate-x-1">
-            View details
-            <span
-              aria-hidden
-              className="inline-block h-[7px] w-10 rounded-[2px]"
-              style={{ background: stickyTint }}
-            />
-          </span>
-        </div>
       </div>
     </article>
   );
