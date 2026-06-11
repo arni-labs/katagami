@@ -10,7 +10,7 @@ import {
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { readableTextColor } from "@/lib/shadcn-export";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
@@ -72,7 +72,22 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
       <PageHero
         eyebrow="Color lane"
         eyebrowAccent="graphite"
-        title={<Marker color="graphite">{name}</Marker>}
+        title={
+          core.signature[0]?.hex ? (
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{
+                  background: `color-mix(in srgb, ${core.signature[0].hex} 55%, white)`,
+                }}
+              />
+              <span className="marker-text">{name}</span>
+            </span>
+          ) : (
+            name
+          )
+        }
         description={core.mood.summary ?? "A curated color system: signature, neutral ground, and a small semantic accessory."}
         rightSlot={
           <>
@@ -187,7 +202,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
       {/* remix hook */}
       <section>
         <SectionHeading eyebrow="try it" eyebrowColor="graphite">
-          <Marker color="graphite">remix with this palette</Marker>
+          remix with this palette
         </SectionHeading>
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Drop <span className="text-foreground">{name}</span> onto any UI language and swap the art style — the preview recolors live.

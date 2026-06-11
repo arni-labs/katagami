@@ -97,7 +97,7 @@
   --ink-blend: multiply;                       /* overprint blend; screen at night */
   --ink-shadow: rgba(30, 35, 45, 0.06);        /* legacy alias — soft, not chunky */
   --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  --grain-opacity: 0.03;
+  --grain-opacity: 0.018;
 
   /* Paper surface abstractions — flip in .dark */
   --paper-sticker: rgba(255, 255, 255, 0.85);  /* sticker-card bg */
@@ -105,7 +105,7 @@
   --paper-tape-mix: white;                     /* mixed into washi-tape gradient */
   --paper-stamp-mix: white;                    /* mixed into stamp bg */
   --paper-tint-base: rgba(255, 255, 255, 0.78); /* color-mix base for tinted cards */
-  --paper-dot: oklch(0.65 0.008 260 / 0.08);   /* body dot-grid color */
+  --paper-dot: oklch(0.65 0.008 260 / 0.045);  /* body dot-grid color */
   --marker-opacity: 0.85;                      /* highlighter tint alpha */
   --shadow-card:
     0 1px 2px rgba(30, 35, 45, 0.04),
@@ -172,7 +172,7 @@
   /* Print effects at night */
   --ink-blend: screen;
   --ink-shadow: rgba(0, 0, 0, 0.4);            /* legacy alias — soft */
-  --grain-opacity: 0.05;
+  --grain-opacity: 0.03;
 
   /* Night surfaces — cards are LIFTED (slightly lighter than body). */
   --paper-sticker: oklch(0.24 0.013 265 / 0.78);
@@ -180,7 +180,7 @@
   --paper-tape-mix: oklch(0.3 0.012 265);
   --paper-stamp-mix: oklch(0.22 0.012 265);
   --paper-tint-base: oklch(0.24 0.013 265 / 0.82);
-  --paper-dot: oklch(0.88 0.012 85 / 0.05);
+  --paper-dot: oklch(0.88 0.012 85 / 0.03);
   --marker-opacity: 0.55;                      /* dim the highlighter at night */
   --shadow-card:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
@@ -1101,30 +1101,30 @@
     box-shadow: 0 1px 2px rgba(30, 35, 45, 0.05);
   }
 
-  /* Stamp pill — tilted, keyed off currentColor. The border is an ink
-     impression (translucent, hairline) rather than a hard outline, so
-     names and labels read printed, not boxed. A whisper of grain. */
+  /* Stamp pill — tilted ink impression, NO border. A soft tint of the
+     ink + a whisper of grain reads as printed, not boxed. Keyed off
+     currentColor so call sites set `style={{ color }}`. */
   .stamp {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid color-mix(in oklch, currentColor 45%, transparent);
+    border: none;
     border-radius: 3px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     transform: rotate(-1.5deg);
     opacity: 0.95;
-    background: color-mix(in oklch, currentColor 8%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, currentColor 12%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 150ms ease,
-                background-color 150ms ease;
+                background-color 150ms ease,
+                color 150ms ease;
   }
 
   /* Same stamp, keyed off `--ink` instead of currentColor — for contexts
@@ -1135,9 +1135,9 @@
     align-items: center;
     justify-content: center;
     gap: 0.4em;
-    border: 1px solid color-mix(in oklch, var(--ink, var(--sumi)) 45%, transparent);
+    border: none;
     border-radius: 3px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -1145,13 +1145,13 @@
     color: var(--ink, var(--sumi));
     transform: rotate(-1.5deg);
     opacity: 0.95;
-    background: color-mix(in oklch, var(--ink, var(--sumi)) 8%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, var(--ink, var(--sumi)) 12%, var(--paper-stamp-mix));
     background-image: var(--grain-url);
     background-size: 90px 90px;
     background-blend-mode: var(--ink-blend);
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 150ms ease,
-                background-color 150ms ease;
+                background-color 150ms ease,
+                color 150ms ease;
   }
 
   /* Dashed sticker die-cut — the original perforation. */

@@ -15,7 +15,6 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { HankoSeal } from "@/components/scrapbook";
-import { RisoInkField } from "@/components/riso-ink-field";
 
 /** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
@@ -120,12 +119,6 @@ export default async function SiteLayout({
 
   return (
     <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-      {/* The ink field drifts behind the WHOLE page — one continuous
-          atmosphere, not a hero decoration that cuts off. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <RisoInkField opacity={0.2} />
-      </div>
-
       {/* Registration bar — the printer's color check, run across the top
           of every sheet. Doubles as the site's signature. */}
       <div aria-hidden className="flex h-[5px] w-full">

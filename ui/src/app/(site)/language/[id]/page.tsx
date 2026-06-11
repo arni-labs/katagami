@@ -24,7 +24,7 @@ import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
   StickyNote,
@@ -42,6 +42,52 @@ type LanguagePageProps = {
 function pageTitle(name?: string): string {
   const trimmed = name?.trim();
   return trimmed ? `katagami ✦ ${trimmed}` : "katagami ✦ language";
+}
+
+/** Choose the cleanest highlight for a detail title from a design's own
+ *  colors. A colorful design gets a marker wash in its most saturated
+ *  ink; a near-monochrome design gets a crisp underline in its darkest
+ *  ink — never a muddy grey box. */
+function pickTitleHighlight(colors?: Record<string, string>): {
+  kind: "marker" | "underline";
+  ink: string;
+} {
+  const entries = Object.values(colors ?? {}).filter(
+    (c): c is string => typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c),
+  );
+  let best: { hex: string; sat: number } | null = null;
+  let darkest: { hex: string; light: number } | null = null;
+  for (const hex of entries) {
+    const { s, l } = hexToHsl(hex);
+    if (!best || s > best.sat) best = { hex, sat: s };
+    if (!darkest || l < darkest.light) darkest = { hex, light: l };
+  }
+  // Saturated enough → a clean colored highlight (washed lightly so dark
+  // text stays legible but the ink reads as its own hue, not grey).
+  if (best && best.sat >= 0.28) {
+    return {
+      kind: "marker",
+      ink: `color-mix(in srgb, ${best.hex} 60%, white)`,
+    };
+  }
+  // Monochrome → crisp underline in the design's darkest ink.
+  return { kind: "underline", ink: darkest?.hex ?? "var(--sumi)" };
+}
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = hex.replace("#", "").slice(0, 6);
+  const v =
+    m.length === 3
+      ? m.split("").map((c) => parseInt(c + c, 16) / 255)
+      : [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = v;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  return { h: 0, s, l };
 }
 
 export async function generateMetadata({
@@ -101,10 +147,12 @@ export default async function LanguageDetailPage({
 
   const name = f.name || "Untitled";
   // The page chrome stays neutral so the language's own design reads
-  // clearly — the one accent we allow is the language's OWN primary ink.
+  // clearly — the one accent we allow is the language's OWN ink. We pick
+  // the most COLORFUL ink for a highlight; a monochrome design gets a
+  // crisp underline instead of a muddy grey wash.
   const ownColors = parseJson<{ colors?: Record<string, string> }>(f.tokens)
     ?.colors;
-  const ownInk = ownColors?.primary ?? ownColors?.accent ?? "var(--graphite)";
+  const titleHighlight = pickTitleHighlight(ownColors);
   const isPublished = lang.status === "Published";
 
   // Three embodiments, each a served self-contained HTML file: the element
@@ -241,16 +289,25 @@ export default async function LanguageDetailPage({
           </>
         }
         title={
-          <span className="marker">
-            <span
-              aria-hidden
-              className="marker-fill"
-              style={{
-                background: `color-mix(in srgb, ${ownInk} 28%, var(--washi))`,
-              }}
-            />
-            <span className="marker-text">{name}</span>
-          </span>
+          titleHighlight.kind === "marker" ? (
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{ background: titleHighlight.ink }}
+              />
+              <span className="marker-text">{name}</span>
+            </span>
+          ) : (
+            <span className="relative inline-block">
+              {name}
+              <span
+                aria-hidden
+                className="absolute -bottom-1 left-0 h-[3px] w-full rounded-[2px]"
+                style={{ background: titleHighlight.ink }}
+              />
+            </span>
+          )
         }
         description={
           <>
@@ -281,7 +338,7 @@ export default async function LanguageDetailPage({
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
         <section className="order-2 md:order-1 md:col-start-1">
           <SectionHeading eyebrow="the spec" eyebrowColor="graphite">
-            <Marker color="graphite">specification</Marker>
+            specification
           </SectionHeading>
           <StickyNote className="p-4 sm:p-6">
             <SpecPanel {...specProps} showActions={false} />
@@ -291,7 +348,7 @@ export default async function LanguageDetailPage({
         <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
           <section className="order-1 space-y-8 md:space-y-6">
             <SectionHeading eyebrow="in the wild" eyebrowColor="graphite">
-              <Marker color="graphite">embodiments</Marker>
+              embodiments
             </SectionHeading>
             {embodimentTabs.length > 0 ? (
               <EmbodimentTabs
@@ -316,7 +373,7 @@ export default async function LanguageDetailPage({
           {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
           <section className="order-3">
             <SectionHeading eyebrow="DESIGN.md" eyebrowColor="graphite">
-              <Marker color="graphite">at a glance</Marker>
+              at a glance
             </SectionHeading>
             <DesignMdShowcase
               name={name}
@@ -334,7 +391,7 @@ export default async function LanguageDetailPage({
 
           <section className="order-4">
             <SectionHeading eyebrow="shadcn/ui" eyebrowColor="graphite">
-              <Marker color="graphite">implementation kit</Marker>
+              implementation kit
             </SectionHeading>
             <StickyNote tint="teal" className="p-4 sm:p-5">
               <ShadcnPreview
@@ -364,7 +421,7 @@ export default async function LanguageDetailPage({
         <section>
           <Perforation className="mb-8" />
           <SectionHeading eyebrow="remix lane" eyebrowColor="graphite">
-            <Marker color="graphite">try a remix</Marker>
+            try a remix
           </SectionHeading>
           <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
             Keep <span className="text-foreground">{name}</span> and swap a palette and an art

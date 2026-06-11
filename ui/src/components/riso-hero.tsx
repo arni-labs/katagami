@@ -59,9 +59,12 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
       aria-hidden
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
     >
+      {/* viewBox tuned to a wide band; `meet` fits the WHOLE composition so
+          no stencil pass is ever clipped. Every shape sits inside generous
+          margins (≥40 from each edge) so it always spreads cleanly. */}
       <svg
-        viewBox="0 0 900 560"
-        preserveAspectRatio="xMaxYMid slice"
+        viewBox="0 0 1200 460"
+        preserveAspectRatio="xMidYMid meet"
         className="h-full w-full"
         style={{ mixBlendMode: "var(--ink-blend)" as never }}
       >
@@ -92,7 +95,7 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           </pattern>
         </defs>
 
-        {/* pass 1 — sakura seigaiha block, stencil-cut as a big circle */}
+        {/* pass 1 — sakura seigaiha, left of the cluster */}
         <g
           ref={(el) => {
             layersRef.current[0] = el;
@@ -100,16 +103,16 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="660"
-            cy="180"
-            r="210"
+            cx="560"
+            cy="220"
+            r="150"
             fill="url(#riso-seigaiha)"
             style={{ color: "var(--sakura)" }}
-            opacity="0.55"
+            opacity="0.4"
           />
         </g>
 
-        {/* pass 2 — ramune lattice, cut as a tilted rectangle */}
+        {/* pass 2 — ramune lattice, the tilted rectangle in the middle */}
         <g
           ref={(el) => {
             layersRef.current[1] = el;
@@ -117,18 +120,18 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <rect
-            x="520"
-            y="120"
-            width="330"
-            height="330"
-            transform="rotate(8 685 285)"
+            x="730"
+            y="95"
+            width="250"
+            height="250"
+            transform="rotate(8 855 220)"
             fill="url(#riso-asanoha)"
             style={{ color: "var(--ramune)" }}
-            opacity="0.4"
+            opacity="0.3"
           />
         </g>
 
-        {/* pass 3 — yuzu halftone disc overprinting both */}
+        {/* pass 3 — yuzu halftone disc, right of the cluster */}
         <g
           ref={(el) => {
             layersRef.current[2] = el;
@@ -136,29 +139,28 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="780"
-            cy="330"
-            r="150"
+            cx="1010"
+            cy="270"
+            r="130"
             fill="url(#riso-halftone)"
             style={{ color: "var(--yuzu)" }}
-            opacity="0.75"
+            opacity="0.55"
           />
         </g>
 
-        {/* pass 4 — the press operator's registration crosses, drifting
-            against everything else */}
+        {/* pass 4 — registration crosses spread across the band */}
         <g
           ref={(el) => {
             layersRef.current[3] = el;
           }}
           style={{ willChange: "transform", color: "var(--graphite)" }}
-          opacity="0.55"
+          opacity="0.4"
         >
           {[
-            [475, 105],
-            [870, 95],
-            [545, 470],
-            [860, 500],
+            [470, 90],
+            [1130, 95],
+            [600, 405],
+            [1080, 400],
           ].map(([x, y]) => (
             <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="1.6">
               <circle r="7" />

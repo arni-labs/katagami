@@ -8,6 +8,7 @@ import {
 } from "@/lib/odata";
 import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
+import { RisoInkField } from "@/components/riso-ink-field";
 import { SurpriseChip } from "@/components/hero-actions";
 import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
@@ -302,8 +303,23 @@ export default async function GalleryPage({
   return (
     <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-4 py-6 sm:space-y-14 sm:overflow-visible sm:py-10">
       {/* ── Hero: the print bed ─────────────────────────────────── */}
-      <section className="relative min-w-0 overflow-x-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
-        <RisoHeroPress className="opacity-80 max-sm:opacity-40" />
+      <section className="relative min-w-0 overflow-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
+        {/* Hero imagery — a reactive WebGL ink wash + a stencil press,
+            both fully CONTAINED in the right of the hero so nothing is
+            ever clipped. A soft left fade keeps the headline legible. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-y-6 right-0 left-[34%] overflow-hidden sm:-inset-y-10 sm:left-[42%]"
+          style={{
+            maskImage:
+              "linear-gradient(90deg, transparent 0%, #000 30%)",
+            WebkitMaskImage:
+              "linear-gradient(90deg, transparent 0%, #000 30%)",
+          }}
+        >
+          <RisoInkField opacity={0.85} />
+          <RisoHeroPress className="opacity-90 max-sm:opacity-40" />
+        </div>
 
         <div className="relative max-w-3xl">
           <div

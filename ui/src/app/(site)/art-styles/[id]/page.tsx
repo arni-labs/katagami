@@ -9,7 +9,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
@@ -77,7 +77,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       <PageHero
         eyebrow="Art lane"
         eyebrowAccent="graphite"
-        title={<Marker color="graphite">{name}</Marker>}
+        title={name}
         description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable subject/palette prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
@@ -173,7 +173,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       {/* remix hook */}
       <section>
         <SectionHeading eyebrow="try it" eyebrowColor="graphite">
-          <Marker color="graphite">remix with this style</Marker>
+          remix with this style
         </SectionHeading>
         <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
           Apply <span className="text-foreground">{name}</span> to any UI language and swap the palette — the preview takes this style&apos;s hero image.
