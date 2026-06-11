@@ -23,8 +23,8 @@ class PaletteRoutingContractTest(unittest.TestCase):
         self.assertIn('name = "output_type"', direction_spec)
         self.assertIn('name = "palette_system_ids"', direction_spec)
         self.assertIn('params = ["design_language_ids", "palette_system_ids", "output_type"]', direction_spec)
-        self.assertIn('palette_system_ids', query_spec)
-        self.assertIn('output_type', query_spec)
+        self.assertIn('name = "output_type"', query_spec)
+        self.assertIn('name = "palette_system_ids"', query_spec)
 
         self.assertIn("PaletteSystems", palette_skill)
         self.assertIn("CompletePaletteSynthesis", palette_skill)

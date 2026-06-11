@@ -64,7 +64,17 @@ initial = ""
 
 # JSON array of DesignLanguage entity IDs created by this query
 [[state]]
+name = "output_type"
+type = "string"
+initial = "design_language"
+
+[[state]]
 name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "palette_system_ids"
 type = "string"
 initial = "[]"
 
