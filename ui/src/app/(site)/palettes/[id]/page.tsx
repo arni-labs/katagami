@@ -73,20 +73,14 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
         eyebrow="Color lane"
         eyebrowAccent="graphite"
         title={
-          core.signature[0]?.hex ? (
-            <span className="marker">
-              <span
-                aria-hidden
-                className="marker-fill"
-                style={{
-                  background: `color-mix(in srgb, ${core.signature[0].hex} 55%, white)`,
-                }}
-              />
-              <span className="marker-text">{name}</span>
-            </span>
-          ) : (
-            name
-          )
+          <span className="relative inline-block">
+            {name}
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 left-0 h-[3px] w-12 rounded-[2px]"
+              style={{ background: core.signature[0]?.hex ?? "var(--sumi)" }}
+            />
+          </span>
         }
         description={core.mood.summary ?? "A curated color system: signature, neutral ground, and a small semantic accessory."}
         rightSlot={

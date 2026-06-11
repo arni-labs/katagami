@@ -313,9 +313,9 @@ export default async function GalleryPage({
           className="pointer-events-none absolute -inset-x-4 -inset-y-8 overflow-hidden sm:-inset-y-12"
           style={{
             maskImage:
-              "linear-gradient(90deg, transparent 2%, rgba(0,0,0,0.5) 26%, #000 52%)",
+              "linear-gradient(90deg, transparent 44%, rgba(0,0,0,0.55) 62%, #000 80%)",
             WebkitMaskImage:
-              "linear-gradient(90deg, transparent 2%, rgba(0,0,0,0.5) 26%, #000 52%)",
+              "linear-gradient(90deg, transparent 44%, rgba(0,0,0,0.55) 62%, #000 80%)",
           }}
         >
           <RisoInkField opacity={0.9} />

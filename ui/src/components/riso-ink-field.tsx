@@ -42,15 +42,17 @@ void main() {
   vec2 uv = gl_FragCoord.xy / u_res;
   uv.x *= u_res.x / u_res.y;
   float t = u_time * 0.04;
-  vec2 pull = (u_pointer - 0.5) * 0.14;
+  // generous pointer span — the ink answers the mouse across a wide area
+  vec2 pull = (u_pointer - 0.5) * 0.2;
   // scroll drives a parallax: each pass slides at its own rate, so the
   // ink keeps moving as the page does, not just on hover.
   float sc = u_scroll;
 
-  // big blobs roam the full sheet, not one corner; scroll parallaxes them
-  vec2 c1 = vec2(0.24 + 0.22 * sin(t * 0.9), 0.76 + 0.18 * cos(t * 0.7) + sc * 0.45) + pull;
-  vec2 c2 = vec2(0.80 + 0.2 * cos(t * 0.6 + 2.1), 0.58 + 0.22 * sin(t * 0.8 + 1.3) + sc * 0.78) + pull * 0.6;
-  vec2 c3 = vec2(0.52 + 0.26 * sin(t * 0.5 + 4.2), 0.26 + 0.16 * cos(t * 1.1 + 0.7) + sc * 0.30) + pull * 1.5;
+  // blobs anchored to the RIGHT of the sheet (keeping the left headline
+  // clean); pointer + scroll still drift them across a wide area.
+  vec2 c1 = vec2(0.66 + 0.2 * sin(t * 0.9), 0.74 + 0.18 * cos(t * 0.7) + sc * 0.45) + pull;
+  vec2 c2 = vec2(0.92 + 0.18 * cos(t * 0.6 + 2.1), 0.56 + 0.22 * sin(t * 0.8 + 1.3) + sc * 0.78) + pull * 0.6;
+  vec2 c3 = vec2(0.80 + 0.24 * sin(t * 0.5 + 4.2), 0.28 + 0.16 * cos(t * 1.1 + 0.7) + sc * 0.30) + pull * 1.5;
   vec2 aspect = vec2(u_res.x / u_res.y, 1.0);
   float k1 = blob(uv, c1 * aspect, 0.52);
   float k2 = blob(uv, c2 * aspect, 0.46);

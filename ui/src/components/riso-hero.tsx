@@ -122,7 +122,10 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           </pattern>
         </defs>
 
-        {/* pass 1 — sakura seigaiha, a big disc anchoring the left */}
+        {/* The whole cluster is anchored to the RIGHT half of the band so
+            the headline on the left stays clean; pointer + scroll still
+            drift the passes across a wider area. */}
+        {/* pass 1 — sakura seigaiha, a big disc, right-of-centre */}
         <g
           ref={(el) => {
             layersRef.current[0] = el;
@@ -130,16 +133,16 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="340"
+            cx="760"
             cy="250"
-            r="280"
+            r="270"
             fill="url(#riso-seigaiha)"
             style={{ color: "var(--sakura)" }}
             opacity="0.5"
           />
         </g>
 
-        {/* pass 2 — ramune lattice, a large tilted rectangle through the middle */}
+        {/* pass 2 — ramune lattice, a large tilted rectangle on the right */}
         <g
           ref={(el) => {
             layersRef.current[1] = el;
@@ -147,18 +150,18 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <rect
-            x="470"
+            x="850"
             y="0"
             width="460"
             height="460"
-            transform="rotate(8 700 230)"
+            transform="rotate(8 1080 230)"
             fill="url(#riso-asanoha)"
             style={{ color: "var(--ramune)" }}
             opacity="0.42"
           />
         </g>
 
-        {/* pass 3 — yuzu halftone disc, big, anchoring the right */}
+        {/* pass 3 — yuzu halftone disc, big, far right */}
         <g
           ref={(el) => {
             layersRef.current[2] = el;
@@ -166,7 +169,7 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="1060"
+            cx="1160"
             cy="250"
             r="280"
             fill="url(#riso-halftone)"
@@ -175,7 +178,7 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           />
         </g>
 
-        {/* pass 4 — registration crosses, kept in a safe interior band so
+        {/* pass 4 — registration crosses, kept on the right interior so
             `slice` never trims them, however the hero is proportioned */}
         <g
           ref={(el) => {
@@ -185,10 +188,10 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           opacity="0.45"
         >
           {[
-            [230, 120],
-            [1050, 130],
-            [330, 380],
-            [980, 390],
+            [720, 120],
+            [1180, 130],
+            [800, 390],
+            [1110, 390],
           ].map(([x, y]) => (
             <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="2">
               <circle r="9" />

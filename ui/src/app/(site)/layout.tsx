@@ -14,7 +14,6 @@ import {
   paletteCore,
   parseJson,
 } from "@/lib/odata";
-import { HankoSeal } from "@/components/scrapbook";
 
 /** The signature trio, in registration-bar order. */
 const REGISTRATION_INKS = [
@@ -207,10 +206,9 @@ export default async function SiteLayout({
                     katagami
                   </span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    no.001
+                    no.002
                   </span>
                 </div>
-                <HankoSeal className="self-center" size={40} />
               </div>
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 A DESIGN.md-compatible library of design languages — versioned,
@@ -268,7 +266,7 @@ export default async function SiteLayout({
                   <span key={ink} className="h-2 w-2" style={{ background: ink }} />
                 ))}
               </span>
-              型紙 · v0.1.0
+              型紙 · v0.2.0
             </span>
           </div>
         </div>

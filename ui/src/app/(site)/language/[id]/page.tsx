@@ -44,50 +44,15 @@ function pageTitle(name?: string): string {
   return trimmed ? `katagami ✦ ${trimmed}` : "katagami ✦ language";
 }
 
-/** Choose the cleanest highlight for a detail title from a design's own
- *  colors. A colorful design gets a marker wash in its most saturated
- *  ink; a near-monochrome design gets a crisp underline in its darkest
- *  ink — never a muddy grey box. */
-function pickTitleHighlight(colors?: Record<string, string>): {
-  kind: "marker" | "underline";
-  ink: string;
-} {
-  const entries = Object.values(colors ?? {}).filter(
-    (c): c is string => typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c),
+/** The detail accent is simply the design's OWN identity ink — primary,
+ *  then accent, then text — shown as a thin underline. Clear logic, one
+ *  minimal mark, no big highlighter box. */
+function pickTitleInk(colors?: Record<string, string>): string {
+  const isHex = (c?: string): c is string =>
+    typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c);
+  return (
+    [colors?.primary, colors?.accent, colors?.text].find(isHex) ?? "var(--sumi)"
   );
-  let best: { hex: string; sat: number } | null = null;
-  let darkest: { hex: string; light: number } | null = null;
-  for (const hex of entries) {
-    const { s, l } = hexToHsl(hex);
-    if (!best || s > best.sat) best = { hex, sat: s };
-    if (!darkest || l < darkest.light) darkest = { hex, light: l };
-  }
-  // Saturated enough → a clean colored highlight (washed lightly so dark
-  // text stays legible but the ink reads as its own hue, not grey).
-  if (best && best.sat >= 0.28) {
-    return {
-      kind: "marker",
-      ink: `color-mix(in srgb, ${best.hex} 60%, white)`,
-    };
-  }
-  // Monochrome → crisp underline in the design's darkest ink.
-  return { kind: "underline", ink: darkest?.hex ?? "var(--sumi)" };
-}
-
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  const m = hex.replace("#", "").slice(0, 6);
-  const v =
-    m.length === 3
-      ? m.split("").map((c) => parseInt(c + c, 16) / 255)
-      : [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
-  const [r, g, b] = v;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return { h: 0, s: 0, l };
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  return { h: 0, s, l };
 }
 
 export async function generateMetadata({
@@ -152,7 +117,7 @@ export default async function LanguageDetailPage({
   // crisp underline instead of a muddy grey wash.
   const ownColors = parseJson<{ colors?: Record<string, string> }>(f.tokens)
     ?.colors;
-  const titleHighlight = pickTitleHighlight(ownColors);
+  const titleInk = pickTitleInk(ownColors);
   const isPublished = lang.status === "Published";
 
   // Three embodiments, each a served self-contained HTML file: the element
@@ -289,25 +254,14 @@ export default async function LanguageDetailPage({
           </>
         }
         title={
-          titleHighlight.kind === "marker" ? (
-            <span className="marker">
-              <span
-                aria-hidden
-                className="marker-fill"
-                style={{ background: titleHighlight.ink }}
-              />
-              <span className="marker-text">{name}</span>
-            </span>
-          ) : (
-            <span className="relative inline-block">
-              {name}
-              <span
-                aria-hidden
-                className="absolute -bottom-1 left-0 h-[3px] w-full rounded-[2px]"
-                style={{ background: titleHighlight.ink }}
-              />
-            </span>
-          )
+          <span className="relative inline-block">
+            {name}
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 left-0 h-[3px] w-12 rounded-[2px]"
+              style={{ background: titleInk }}
+            />
+          </span>
         }
         description={
           <>

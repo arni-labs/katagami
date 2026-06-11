@@ -77,7 +77,16 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
       <PageHero
         eyebrow="Art lane"
         eyebrowAccent="graphite"
-        title={name}
+        title={
+          <span className="relative inline-block">
+            {name}
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 left-0 h-[3px] w-12 rounded-[2px]"
+              style={{ background: "var(--graphite)" }}
+            />
+          </span>
+        }
         description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable subject/palette prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
