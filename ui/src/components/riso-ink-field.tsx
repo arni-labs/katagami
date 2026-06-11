@@ -26,6 +26,7 @@ uniform vec2 u_res;
 uniform float u_time;
 uniform vec2 u_pointer;
 uniform float u_night;
+uniform float u_scroll;
 
 // signature trio, approximated in linear-ish sRGB
 const vec3 SAKURA = vec3(0.95, 0.35, 0.55);
@@ -41,16 +42,19 @@ void main() {
   vec2 uv = gl_FragCoord.xy / u_res;
   uv.x *= u_res.x / u_res.y;
   float t = u_time * 0.04;
-  vec2 pull = (u_pointer - 0.5) * 0.1;
+  vec2 pull = (u_pointer - 0.5) * 0.14;
+  // scroll drives a parallax: each pass slides at its own rate, so the
+  // ink keeps moving as the page does, not just on hover.
+  float sc = u_scroll;
 
-  // blobs roam the full sheet, not one corner
-  vec2 c1 = vec2(0.22 + 0.22 * sin(t * 0.9), 0.74 + 0.18 * cos(t * 0.7)) + pull;
-  vec2 c2 = vec2(0.82 + 0.2 * cos(t * 0.6 + 2.1), 0.6 + 0.22 * sin(t * 0.8 + 1.3)) + pull * 0.6;
-  vec2 c3 = vec2(0.5 + 0.26 * sin(t * 0.5 + 4.2), 0.2 + 0.16 * cos(t * 1.1 + 0.7)) + pull * 1.4;
+  // big blobs roam the full sheet, not one corner; scroll parallaxes them
+  vec2 c1 = vec2(0.24 + 0.22 * sin(t * 0.9), 0.76 + 0.18 * cos(t * 0.7) + sc * 0.45) + pull;
+  vec2 c2 = vec2(0.80 + 0.2 * cos(t * 0.6 + 2.1), 0.58 + 0.22 * sin(t * 0.8 + 1.3) + sc * 0.78) + pull * 0.6;
+  vec2 c3 = vec2(0.52 + 0.26 * sin(t * 0.5 + 4.2), 0.26 + 0.16 * cos(t * 1.1 + 0.7) + sc * 0.30) + pull * 1.5;
   vec2 aspect = vec2(u_res.x / u_res.y, 1.0);
-  float k1 = blob(uv, c1 * aspect, 0.4);
-  float k2 = blob(uv, c2 * aspect, 0.36);
-  float k3 = blob(uv, c3 * aspect, 0.44);
+  float k1 = blob(uv, c1 * aspect, 0.52);
+  float k2 = blob(uv, c2 * aspect, 0.46);
+  float k3 = blob(uv, c3 * aspect, 0.56);
 
   // halftone screen: ink coverage becomes dot size on a rotated grid
   vec2 grid = gl_FragCoord.xy;
@@ -125,8 +129,10 @@ export function RisoInkField({
     const uTime = gl.getUniformLocation(program, "u_time");
     const uPointer = gl.getUniformLocation(program, "u_pointer");
     const uNight = gl.getUniformLocation(program, "u_night");
+    const uScroll = gl.getUniformLocation(program, "u_scroll");
 
     const pointer = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
+    const scroll = { v: 0, t: 0 };
     let night = document.documentElement.classList.contains("dark") ? 1 : 0;
     let raf = 0;
     let running = false;
@@ -151,10 +157,12 @@ export function RisoInkField({
       resize();
       pointer.x += (pointer.tx - pointer.x) * 0.04;
       pointer.y += (pointer.ty - pointer.y) * 0.04;
+      scroll.v += (scroll.t - scroll.v) * 0.06;
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, (now - start) / 1000);
       gl.uniform2f(uPointer, pointer.x, 1 - pointer.y);
       gl.uniform1f(uNight, night);
+      gl.uniform1f(uScroll, scroll.v);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
@@ -179,6 +187,17 @@ export function RisoInkField({
       pointer.tx = e.clientX / window.innerWidth;
       pointer.ty = e.clientY / window.innerHeight;
     };
+    // Normalize scroll against a viewport-height so the parallax is
+    // consistent across page lengths; the still-frame path samples it once.
+    const readScroll = () => {
+      scroll.t = Math.min(1.4, window.scrollY / Math.max(1, window.innerHeight));
+    };
+    readScroll();
+    scroll.v = scroll.t;
+    const onScroll = () => {
+      readScroll();
+      if (reducedMotion) draw(performance.now());
+    };
     const onVisibility = () => setRunning(visible && !document.hidden);
     const io = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
@@ -194,6 +213,7 @@ export function RisoInkField({
       attributeFilter: ["class"],
     });
     window.addEventListener("pointermove", onPointer, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
@@ -201,6 +221,7 @@ export function RisoInkField({
       io.disconnect();
       mo.disconnect();
       window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);

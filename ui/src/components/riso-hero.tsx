@@ -20,35 +20,61 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
     const root = rootRef.current;
     if (!root) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (window.matchMedia("(pointer: coarse)").matches) return;
+
+    const scroll = { v: 0, t: 0 };
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
 
     const onMove = (e: PointerEvent) => {
       const rect = root.getBoundingClientRect();
       target.current.x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
       target.current.y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      kick();
+    };
+    const readScroll = () => {
+      // Clamp: the hero leaves the viewport after ~1 screen, so parallax
+      // past that just wastes frames and flings shapes off.
+      scroll.t = Math.min(1.4, window.scrollY / Math.max(1, window.innerHeight));
+    };
+    const onScroll = () => {
+      readScroll();
+      kick();
+    };
+    const kick = () => {
       if (!frame.current) frame.current = requestAnimationFrame(tick);
     };
 
-    // Each pass slips at a different rate — misregistration you can feel.
-    const rates = [10, -7, 14, -16];
+    // Each pass slips at its own rate — pointer (x/y) and scroll (y) both
+    // feed the same misregistration you can feel.
+    const pRates = [16, -11, 22, -24];
+    const sRates = [34, -56, 22, -74];
     const tick = () => {
       frame.current = 0;
       current.current.x += (target.current.x - current.current.x) * 0.08;
       current.current.y += (target.current.y - current.current.y) * 0.08;
+      scroll.v += (scroll.t - scroll.v) * 0.1;
       layersRef.current.forEach((g, i) => {
         if (!g) return;
-        const r = rates[i] ?? 8;
-        g.style.transform = `translate(${current.current.x * r}px, ${current.current.y * r}px)`;
+        const pr = pRates[i] ?? 8;
+        const sr = sRates[i] ?? 30;
+        const x = current.current.x * pr;
+        const y = current.current.y * pr + scroll.v * sr;
+        g.style.transform = `translate(${x}px, ${y}px)`;
       });
       const settled =
         Math.abs(target.current.x - current.current.x) < 0.002 &&
-        Math.abs(target.current.y - current.current.y) < 0.002;
+        Math.abs(target.current.y - current.current.y) < 0.002 &&
+        Math.abs(scroll.t - scroll.v) < 0.0005;
       if (!settled) frame.current = requestAnimationFrame(tick);
     };
 
-    window.addEventListener("pointermove", onMove, { passive: true });
+    readScroll();
+    scroll.v = scroll.t;
+    if (!coarse) window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    kick();
     return () => {
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("scroll", onScroll);
       if (frame.current) cancelAnimationFrame(frame.current);
     };
   }, []);
@@ -59,12 +85,13 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
       aria-hidden
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
     >
-      {/* viewBox tuned to a wide band; `meet` fits the WHOLE composition so
-          no stencil pass is ever clipped. Every shape sits inside generous
-          margins (≥40 from each edge) so it always spreads cleanly. */}
+      {/* Wide viewBox matched to the hero band; the BIG stencil passes
+          spread edge-to-edge. `xMidYMid slice` lets them fill the whole
+          hero at scale — they're sized so the only thing ever trimmed is
+          empty margin, never a stencil pass. */}
       <svg
-        viewBox="0 0 1200 460"
-        preserveAspectRatio="xMidYMid meet"
+        viewBox="0 0 1280 480"
+        preserveAspectRatio="xMidYMid slice"
         className="h-full w-full"
         style={{ mixBlendMode: "var(--ink-blend)" as never }}
       >
@@ -95,7 +122,7 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           </pattern>
         </defs>
 
-        {/* pass 1 — sakura seigaiha, left of the cluster */}
+        {/* pass 1 — sakura seigaiha, a big disc anchoring the left */}
         <g
           ref={(el) => {
             layersRef.current[0] = el;
@@ -103,16 +130,16 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="560"
-            cy="220"
-            r="150"
+            cx="340"
+            cy="250"
+            r="280"
             fill="url(#riso-seigaiha)"
             style={{ color: "var(--sakura)" }}
-            opacity="0.4"
+            opacity="0.5"
           />
         </g>
 
-        {/* pass 2 — ramune lattice, the tilted rectangle in the middle */}
+        {/* pass 2 — ramune lattice, a large tilted rectangle through the middle */}
         <g
           ref={(el) => {
             layersRef.current[1] = el;
@@ -120,18 +147,18 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <rect
-            x="730"
-            y="95"
-            width="250"
-            height="250"
-            transform="rotate(8 855 220)"
+            x="470"
+            y="0"
+            width="460"
+            height="460"
+            transform="rotate(8 700 230)"
             fill="url(#riso-asanoha)"
             style={{ color: "var(--ramune)" }}
-            opacity="0.3"
+            opacity="0.42"
           />
         </g>
 
-        {/* pass 3 — yuzu halftone disc, right of the cluster */}
+        {/* pass 3 — yuzu halftone disc, big, anchoring the right */}
         <g
           ref={(el) => {
             layersRef.current[2] = el;
@@ -139,32 +166,33 @@ export function RisoHeroPress({ className = "" }: { className?: string }) {
           style={{ willChange: "transform" }}
         >
           <circle
-            cx="1010"
-            cy="270"
-            r="130"
+            cx="1060"
+            cy="250"
+            r="280"
             fill="url(#riso-halftone)"
             style={{ color: "var(--yuzu)" }}
-            opacity="0.55"
+            opacity="0.68"
           />
         </g>
 
-        {/* pass 4 — registration crosses spread across the band */}
+        {/* pass 4 — registration crosses, kept in a safe interior band so
+            `slice` never trims them, however the hero is proportioned */}
         <g
           ref={(el) => {
             layersRef.current[3] = el;
           }}
           style={{ willChange: "transform", color: "var(--graphite)" }}
-          opacity="0.4"
+          opacity="0.45"
         >
           {[
-            [470, 90],
-            [1130, 95],
-            [600, 405],
-            [1080, 400],
+            [230, 120],
+            [1050, 130],
+            [330, 380],
+            [980, 390],
           ].map(([x, y]) => (
-            <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="1.6">
-              <circle r="7" />
-              <path d="M -12 0 H 12 M 0 -12 V 12" />
+            <g key={`${x}-${y}`} transform={`translate(${x} ${y})`} fill="none" stroke="currentColor" strokeWidth="2">
+              <circle r="9" />
+              <path d="M -16 0 H 16 M 0 -16 V 16" />
             </g>
           ))}
         </g>

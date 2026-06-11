@@ -304,21 +304,22 @@ export default async function GalleryPage({
     <div className="mx-auto w-full max-w-7xl space-y-10 overflow-x-hidden px-4 py-6 sm:space-y-14 sm:overflow-visible sm:py-10">
       {/* ── Hero: the print bed ─────────────────────────────────── */}
       <section className="relative min-w-0 overflow-hidden pb-2 pt-4 sm:overflow-visible sm:pt-8">
-        {/* Hero imagery — a reactive WebGL ink wash + a stencil press,
-            both fully CONTAINED in the right of the hero so nothing is
-            ever clipped. A soft left fade keeps the headline legible. */}
+        {/* Hero imagery — a big reactive ink composition that fills the
+            whole hero band and answers BOTH the pointer and the scroll.
+            A soft left fade keeps the headline crisp without shrinking the
+            illustration. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-y-6 right-0 left-[34%] overflow-hidden sm:-inset-y-10 sm:left-[42%]"
+          className="pointer-events-none absolute -inset-x-4 -inset-y-8 overflow-hidden sm:-inset-y-12"
           style={{
             maskImage:
-              "linear-gradient(90deg, transparent 0%, #000 30%)",
+              "linear-gradient(90deg, transparent 2%, rgba(0,0,0,0.5) 26%, #000 52%)",
             WebkitMaskImage:
-              "linear-gradient(90deg, transparent 0%, #000 30%)",
+              "linear-gradient(90deg, transparent 2%, rgba(0,0,0,0.5) 26%, #000 52%)",
           }}
         >
-          <RisoInkField opacity={0.85} />
-          <RisoHeroPress className="opacity-90 max-sm:opacity-40" />
+          <RisoInkField opacity={0.9} />
+          <RisoHeroPress className="opacity-95 max-sm:opacity-45" />
         </div>
 
         <div className="relative max-w-3xl">
