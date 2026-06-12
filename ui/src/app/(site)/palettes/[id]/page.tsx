@@ -6,6 +6,8 @@ import {
   listDesignLanguages,
   listArtStyles,
   paletteCore,
+  paletteDisplayName,
+  paletteRampStopHex,
   parseJson,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
@@ -23,6 +25,15 @@ export const dynamic = "force-dynamic";
 
 const NEUTRAL_ORDER = ["bg", "surface", "text", "muted", "border"];
 const SEMANTIC_ORDER = ["success", "warning", "error", "info"];
+type PaletteRamp = Record<string, string | { hex?: string }>;
+
+function rampHexes(ramp: PaletteRamp | undefined): string[] {
+  if (!ramp) return [];
+  return Object.entries(ramp)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([, stop]) => paletteRampStopHex(stop))
+    .filter((hex): hex is string => Boolean(hex));
+}
 
 export default async function PaletteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,10 +45,10 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
   }
   const f = pal.fields;
   const core = paletteCore(f);
-  const ramps = parseJson<Record<string, Record<string, string>>>(f.ramps) ?? {};
+  const ramps = parseJson<Record<string, PaletteRamp>>(f.ramps) ?? {};
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.usage_guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
-  const name = f.name ?? "Untitled";
+  const name = paletteDisplayName(f, core);
   const slug = f.slug ?? id.slice(0, 8);
 
   const flat: Record<string, string> = {
@@ -128,22 +139,23 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           </>
         ) : null}
 
-        {ramps.accent || ramps.neutral ? (
+        {rampHexes(ramps.accent).length || rampHexes(ramps.neutral).length ? (
           <>
             <div className="mt-4 mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Ramps</div>
             <div className="space-y-1.5">
-              {(["accent", "neutral"] as const).map((r) =>
-                ramps[r] ? (
+              {(["accent", "neutral"] as const).map((r) => {
+                const hexes = rampHexes(ramps[r]);
+                return hexes.length ? (
                   <div key={r} className="flex items-center gap-2">
                     <span className="w-14 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{r}</span>
                     <div className={`flex h-5 flex-1 overflow-hidden rounded-[2px] ${RING}`}>
-                      {Object.values(ramps[r]).map((c, i) => (
-                        <span key={i} className="h-full flex-1" style={{ background: c }} />
+                      {hexes.map((hex, i) => (
+                        <span key={i} className="h-full flex-1" style={{ background: hex }} />
                       ))}
                     </div>
                   </div>
-                ) : null,
-              )}
+                ) : null;
+              })}
             </div>
           </>
         ) : null}

@@ -1,10 +1,12 @@
 // Shared builders that turn OData rows into the option shapes InlineRemix needs,
 // so the studio and every detail-page remix map data identically.
 import {
+  artStyleDisplayName,
   getFileUrl,
   parseJson,
   paletteRoles,
   paletteCore,
+  paletteDisplayName,
 } from "@/lib/odata";
 import type { LanguageOpt, PaletteOpt, ArtOpt } from "@/components/remix/inline-remix";
 
@@ -49,7 +51,7 @@ export function toPaletteOpts(rows: Row[]): PaletteOpt[] {
     ].filter(Boolean) as string[];
     return {
       id: p.entity_id,
-      name: p.fields.name ?? "Untitled",
+      name: paletteDisplayName(p.fields, core),
       roles,
       swatches,
       mood: core.mood.summary,
@@ -66,7 +68,7 @@ export function toArtOpts(rows: Row[]): ArtOpt[] {
     const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
     return {
       id: a.entity_id,
-      name: a.fields.name ?? "Untitled",
+      name: artStyleDisplayName(a.fields),
       medium: a.fields.medium ?? "",
       hero: refs[0] || thumb || "",
       promptTemplate: a.fields.prompt_template ?? "",

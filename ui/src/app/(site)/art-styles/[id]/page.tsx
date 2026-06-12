@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
+  artStyleDisplayName,
   getArtStyle,
   listDesignLanguages,
   listPaletteSystems,
@@ -33,7 +34,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     notFound();
   }
   const f = art.fields;
-  const name = f.name ?? "Untitled";
+  const name = artStyleDisplayName(f);
   const medium = f.medium ?? "mixed";
   const promptTemplate = f.prompt_template ?? "";
   const negativePrompt = f.negative_prompt ?? "";
