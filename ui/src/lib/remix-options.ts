@@ -1,6 +1,7 @@
 // Shared builders that turn OData rows into the option shapes InlineRemix needs,
 // so the studio and every detail-page remix map data identically.
 import {
+  artStyleDisplayName,
   getFileUrl,
   parseJson,
   paletteRoles,
@@ -67,7 +68,7 @@ export function toArtOpts(rows: Row[]): ArtOpt[] {
     const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
     return {
       id: a.entity_id,
-      name: a.fields.name ?? "Untitled",
+      name: artStyleDisplayName(a.fields),
       medium: a.fields.medium ?? "",
       hero: refs[0] || thumb || "",
       promptTemplate: a.fields.prompt_template ?? "",

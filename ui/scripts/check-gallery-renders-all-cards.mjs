@@ -14,10 +14,16 @@ const mutationsSource = readProjectFile("src/lib/odata-mutations.ts");
 const actionsSource = readProjectFile("src/app/actions.ts");
 const palettesPageSource = readProjectFile("src/app/(site)/palettes/page.tsx");
 const paletteDetailSource = readProjectFile("src/app/(site)/palettes/[id]/page.tsx");
+const artStylesPageSource = readProjectFile("src/app/(site)/art-styles/page.tsx");
+const artStyleDetailSource = readProjectFile("src/app/(site)/art-styles/[id]/page.tsx");
+const remixOptionsSource = readProjectFile("src/lib/remix-options.ts");
 const ownerPageSource = readProjectFile("src/app/(site)/owner/page.tsx");
 const sendToReviewSource = readProjectFile("src/components/send-to-review-language-button.tsx");
 const synthesizePaletteSkillSource = readProjectFile(
   "../katagami-curation/agents/curator/skills/synthesize-palette/SKILL.md",
+);
+const synthesizeArtStyleSkillSource = readProjectFile(
+  "../katagami-curation/agents/curator/skills/synthesize-art-style/SKILL.md",
 );
 const deferredComponentPath = resolve("src/components/deferred-language-cards.tsx");
 
@@ -218,6 +224,12 @@ if (!/temper\.action\('PaletteSystems',\s*eid,\s*'SetName'/.test(synthesizePalet
   });
 }
 
+if (!/temper\.action\('ArtStyles',\s*eid,\s*'SetName'/.test(synthesizeArtStyleSkillSource)) {
+  violations.push({
+    label: "art-style synthesis skill does not set ArtStyle names before publishing",
+  });
+}
+
 if (!/function normalizeLaneFields/.test(odataSource) || !/snakeCaseFieldName/.test(odataSource)) {
   violations.push({
     label: "lane OData rows are not normalized across PascalCase and snake_case fields",
@@ -233,6 +245,24 @@ if (!/export function paletteDisplayName/.test(odataSource)) {
 if (!/paletteDisplayName/.test(palettesPageSource) || !/paletteDisplayName/.test(paletteDetailSource)) {
   violations.push({
     label: "palette catalog/detail pages do not use the shared display-name helper",
+  });
+}
+
+if (!/export function artStyleDisplayName/.test(odataSource)) {
+  violations.push({
+    label: "public art-style UI lacks a display-name fallback for legacy unnamed rows",
+  });
+}
+
+if (!/artStyleDisplayName/.test(artStylesPageSource) || !/artStyleDisplayName/.test(artStyleDetailSource)) {
+  violations.push({
+    label: "art-style catalog/detail pages do not use the shared display-name helper",
+  });
+}
+
+if (!/artStyleDisplayName/.test(remixOptionsSource)) {
+  violations.push({
+    label: "studio remix options do not use the shared art-style display-name helper",
   });
 }
 

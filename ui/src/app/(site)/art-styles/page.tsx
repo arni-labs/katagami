@@ -1,4 +1,9 @@
-import { listArtStyles, getFileUrl, parseJson } from "@/lib/odata";
+import {
+  artStyleDisplayName,
+  getFileUrl,
+  listArtStyles,
+  parseJson,
+} from "@/lib/odata";
 import { PageHero, Marker } from "@/components/page-hero";
 import { ArtStyleCatalog } from "@/components/lane-catalog";
 import type { ArtStyleItem } from "@/components/art-style-card";
@@ -18,7 +23,7 @@ export default async function ArtStylesPage() {
   const rows = await listArtStyles("Status eq 'Published'").catch(() => []);
   const items: ArtStyleItem[] = rows.map((r) => ({
     id: r.entity_id,
-    name: r.fields.name ?? "Untitled",
+    name: artStyleDisplayName(r.fields),
     slug: r.fields.slug ?? "",
     status: r.status,
     medium: r.fields.medium ?? "",

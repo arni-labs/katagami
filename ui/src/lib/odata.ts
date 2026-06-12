@@ -774,6 +774,27 @@ export function paletteDisplayName(
   return "Untitled palette";
 }
 
+export function artStyleDisplayName(
+  fields: Record<string, string | undefined>,
+): string {
+  const explicit = [fields.name, fields.Name].find((value) => value?.trim());
+  if (explicit) return explicit.trim();
+
+  const slug = [fields.slug, fields.Slug].find((value) => value?.trim());
+  if (slug) return titleFromSlug(slug.trim());
+
+  const prompt = [fields.prompt_template, fields.PromptTemplate].find((value) =>
+    value?.trim(),
+  );
+  const promptLead = prompt?.split(",")[0]?.trim();
+  if (promptLead && !promptLead.includes("{")) return titleFromSlug(promptLead);
+
+  const medium = [fields.medium, fields.Medium].find((value) => value?.trim());
+  if (medium) return `${titleFromSlug(medium.trim())} Art Style`;
+
+  return "Untitled art style";
+}
+
 export function paletteRampStopHex(stop: unknown): string | undefined {
   if (typeof stop === "string") return stop;
   if (!stop || typeof stop !== "object") return undefined;
