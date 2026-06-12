@@ -46,6 +46,7 @@ art = temper.create('ArtStyles', {})
 eid = art['entity_id']
 created_ids.append(eid)
 
+temper.action('ArtStyles', eid, 'SetName', {'name': name, 'slug': slug})
 temper.action('ArtStyles', eid, 'SetMedium', {'medium': 'print'})  # illustration|photography|painting|print|3d|collage|mixed
 ```
 
