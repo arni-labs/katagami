@@ -5,6 +5,7 @@ import {
   parseJson,
   paletteRoles,
   paletteCore,
+  paletteDisplayName,
 } from "@/lib/odata";
 import type { LanguageOpt, PaletteOpt, ArtOpt } from "@/components/remix/inline-remix";
 
@@ -49,7 +50,7 @@ export function toPaletteOpts(rows: Row[]): PaletteOpt[] {
     ].filter(Boolean) as string[];
     return {
       id: p.entity_id,
-      name: p.fields.name ?? "Untitled",
+      name: paletteDisplayName(p.fields, core),
       roles,
       swatches,
       mood: core.mood.summary,

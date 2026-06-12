@@ -47,6 +47,7 @@ name = 'Muted Hobonichi Ink'
 ps = temper.create('PaletteSystems', {})
 eid = ps['entity_id']
 created_ids.append(eid)
+temper.action('PaletteSystems', eid, 'SetName', {'name': name, 'slug': slug})
 ```
 
 **Core — the palette's identity.** A palette IS its **signature** (1–4 key colors,

@@ -12,8 +12,13 @@ const ownerControlsSource = readProjectFile("src/components/language-card-owner-
 const odataSource = readProjectFile("src/lib/odata.ts");
 const mutationsSource = readProjectFile("src/lib/odata-mutations.ts");
 const actionsSource = readProjectFile("src/app/actions.ts");
+const palettesPageSource = readProjectFile("src/app/(site)/palettes/page.tsx");
+const paletteDetailSource = readProjectFile("src/app/(site)/palettes/[id]/page.tsx");
 const ownerPageSource = readProjectFile("src/app/(site)/owner/page.tsx");
 const sendToReviewSource = readProjectFile("src/components/send-to-review-language-button.tsx");
+const synthesizePaletteSkillSource = readProjectFile(
+  "../katagami-curation/agents/curator/skills/synthesize-palette/SKILL.md",
+);
 const deferredComponentPath = resolve("src/components/deferred-language-cards.tsx");
 
 const violations = [
@@ -204,6 +209,36 @@ if (!/Rejected history/.test(ownerPageSource) || !/rejected\.map\(\(rule\)/.test
 if (!/listTaxonomies[\s\S]*let rows = await collectODataPages<Taxonomy>\([\s\S]*Taxonomies\$\{q \? `\?\$\{q\}` : ""\}[\s\S]*rows = rows\.filter\(\(row\)/.test(odataSource)) {
   violations.push({
     label: "listTaxonomies does not fetch canonical taxonomy rows before local lifecycle filtering",
+  });
+}
+
+if (!/temper\.action\('PaletteSystems',\s*eid,\s*'SetName'/.test(synthesizePaletteSkillSource)) {
+  violations.push({
+    label: "palette synthesis skill does not set PaletteSystem names before publishing",
+  });
+}
+
+if (!/function normalizeLaneFields/.test(odataSource) || !/snakeCaseFieldName/.test(odataSource)) {
+  violations.push({
+    label: "lane OData rows are not normalized across PascalCase and snake_case fields",
+  });
+}
+
+if (!/export function paletteDisplayName/.test(odataSource)) {
+  violations.push({
+    label: "public palette UI lacks a display-name fallback for legacy unnamed rows",
+  });
+}
+
+if (!/paletteDisplayName/.test(palettesPageSource) || !/paletteDisplayName/.test(paletteDetailSource)) {
+  violations.push({
+    label: "palette catalog/detail pages do not use the shared display-name helper",
+  });
+}
+
+if (!/paletteRampStopHex/.test(odataSource) || !/paletteRampStopHex/.test(paletteDetailSource)) {
+  violations.push({
+    label: "palette detail page cannot render object-shaped ramp stops",
   });
 }
 
