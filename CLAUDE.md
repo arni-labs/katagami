@@ -15,7 +15,7 @@ Katagami is the **design commons**: an agent-managed library of design languages
 
 ## Working discipline
 
-- Work in a **worktree branched from up-to-date `main`** (`codex/<short-task-name>`); never commit to `main` directly; never touch dirty checkouts. State which repo/worktree/branch you're on before mutating anything. Open a **draft PR as soon as changes begin**; one PR per repo per effort.
+- Work in a **worktree branched from up-to-date `main`** (`<agent>/<short-task-name>` — prefix with the agent's short name, e.g. `claude`/`codex`, not a hardcoded `codex`); never commit to `main` directly; never touch dirty checkouts. State which repo/worktree/branch you're on before mutating anything. Open a **draft PR as soon as changes begin**; one PR per repo per effort.
 - **DO NOT PUNT**; no band-aid or temporary fixes; fix classes of problems generically ("so this doesn't happen again"), not the instance in front of you.
 - **Definition of done**: run everything live locally end-to-end, seeded with real content, and verify in a real browser that pages render, links open, and images show — *before* handing over. Then merge, deploy, publish to Genesis, and verify the deployed system. Use **Datadog** for production diagnosis. Hand over PR links, deployment links, and live evidence. "The link doesn't open" is a failed task.
 - Batch pipeline jobs run at most **10 concurrent**.
