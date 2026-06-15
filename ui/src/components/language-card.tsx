@@ -137,9 +137,13 @@ interface FullCardProps {
   eagerThumbnail: boolean;
 }
 
+// content-visibility skips off-screen cards for scroll perf; the intrinsic
+// size is the placeholder height reserved while a card is off-screen. It
+// MUST track the real compact card height (~260px) — a stale, too-tall
+// value leaves a tall empty gap inside every off-screen card.
 const cardVisibilityStyle = {
   contentVisibility: "auto",
-  containIntrinsicBlockSize: "430px",
+  containIntrinsicBlockSize: "260px",
 } as CSSProperties;
 
 function compactSummary(value?: string): string | undefined {

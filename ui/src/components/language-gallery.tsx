@@ -63,7 +63,7 @@ export function LanguageGallery({
         initialSource={filters.source}
       />
 
-      <div className="space-y-7">
+      <div className="space-y-5">
         {shelves.map((shelf) => {
           const { key, label, blurb, ink, languages } = shelf;
           const anyVisible = languages.some((lang) =>
@@ -77,7 +77,7 @@ export function LanguageGallery({
               className="min-w-0"
             >
               {label !== null && (
-                <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span
                     className="ink-stamp shrink-0"
                     style={{ ["--ink" as string]: ink }}

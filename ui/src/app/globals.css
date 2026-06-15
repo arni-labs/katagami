@@ -1207,7 +1207,7 @@
     align-items: start;
     gap: 0.9rem;
     overflow-x: auto;
-    padding: 4px 2px 14px;
+    padding: 2px 2px 6px;
     scroll-snap-type: x proximity;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--sumi) 25%, transparent) transparent;
