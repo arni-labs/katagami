@@ -3,23 +3,56 @@
 import { useEffect } from "react";
 
 /**
- * ScrollReveal — reveals every element marked `data-reveal` or
- * `data-reveal-children` as it enters the viewport (adds `.reveal-in`,
- * one-shot).
+ * ScrollReveal — reveals every element marked `data-reveal` (and the direct
+ * children of `data-reveal-children`, staggered) as it enters the viewport.
  *
- * It uses an IntersectionObserver on purpose: the callback fires
- * ASYNCHRONOUSLY, always after React has finished hydrating, so adding
- * `.reveal-in` can never diverge the DOM mid-hydration (which would throw
- * a hydration-mismatch error). A large top rootMargin keeps the
- * jump-past guarantee a bare observer lacks: any element at or above the
- * trigger line — including ones skipped by an anchor jump or fast scroll
- * — counts as intersecting and reveals, so nothing is ever stranded
- * hidden.
+ * Why it is hydration-safe: the reveal is played with the Web Animations API
+ * (`element.animate`), NOT by toggling a class or inline style. WAAPI applies
+ * its values through the animation cascade origin, so it never touches the
+ * element's `class`/`style` ATTRIBUTE — the thing React reconciles during
+ * hydration. That means it cannot diverge the server and client DOM even if it
+ * fires before a Suspense boundary has finished hydrating (the cause of the
+ * earlier class-toggle hydration mismatch).
  *
- * The hidden state lives in CSS behind `html.reveal-ready`, set by an
+ * Why it is robust: the observer's root is the viewport, so unlike CSS
+ * view-timelines it does not depend on the overflow/scroll-container topology
+ * of ancestors (several wrappers here use `overflow-x: hidden`, which would
+ * silently hijack a `view()` timeline's scroll root).
+ *
+ * The hidden START state lives in CSS behind `html.reveal-ready`, set by an
  * inline pre-paint script only when motion is allowed — so JS-off and
  * reduced-motion users see everything immediately, with no flash.
  */
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+function play(el: HTMLElement) {
+  el.animate(
+    [
+      { opacity: 0, transform: "translateY(18px)" },
+      { opacity: 1, transform: "translateY(0)" },
+    ],
+    { duration: 620, easing: EASE, fill: "forwards" },
+  );
+}
+
+function playChildren(container: Element) {
+  const kids = Array.from(container.children) as HTMLElement[];
+  kids.forEach((kid, i) => {
+    kid.animate(
+      [
+        { opacity: 0, transform: "translateY(14px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      {
+        duration: 560,
+        delay: Math.min(i, 6) * 55,
+        easing: EASE,
+        fill: "both",
+      },
+    );
+  });
+}
+
 export function ScrollReveal() {
   useEffect(() => {
     if (!document.documentElement.classList.contains("reveal-ready")) return;
@@ -28,8 +61,10 @@ export function ScrollReveal() {
       (entries, obs) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-          entry.target.classList.add("reveal-in");
-          obs.unobserve(entry.target);
+          const el = entry.target as HTMLElement;
+          if (el.hasAttribute("data-reveal-children")) playChildren(el);
+          else play(el);
+          obs.unobserve(el);
         }
       },
       // Root reaches far above the viewport (catch anything scrolled past)
@@ -40,7 +75,7 @@ export function ScrollReveal() {
     const observed = new WeakSet<Element>();
     const SELECTOR = "[data-reveal],[data-reveal-children]";
     const watch = (el: Element) => {
-      if (observed.has(el) || el.classList.contains("reveal-in")) return;
+      if (observed.has(el)) return;
       observed.add(el);
       io.observe(el);
     };
