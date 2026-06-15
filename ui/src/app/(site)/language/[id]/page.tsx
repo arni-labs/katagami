@@ -7,7 +7,9 @@ import {
   getFileUrl,
   listPaletteSystems,
   listArtStyles,
+  parseJson,
 } from "@/lib/odata";
+import { RelatedLanguages } from "@/components/related-languages";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { readTemperFileText } from "@/lib/temper-files";
@@ -22,7 +24,7 @@ import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
   StickyNote,
@@ -31,12 +33,7 @@ import {
   Perforation,
 } from "@/components/scrapbook";
 
-const statusColor: Record<string, string> = {
-  Draft: "matcha",
-  UnderReview: "yuzu",
-  Published: "salad",
-  Archived: "sakura",
-};
+
 
 type LanguagePageProps = {
   params: Promise<{ id: string }>;
@@ -45,6 +42,17 @@ type LanguagePageProps = {
 function pageTitle(name?: string): string {
   const trimmed = name?.trim();
   return trimmed ? `katagami ✦ ${trimmed}` : "katagami ✦ language";
+}
+
+/** The detail accent is simply the design's OWN identity ink — primary,
+ *  then accent, then text — shown as a thin underline. Clear logic, one
+ *  minimal mark, no big highlighter box. */
+function pickTitleInk(colors?: Record<string, string>): string {
+  const isHex = (c?: string): c is string =>
+    typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c);
+  return (
+    [colors?.primary, colors?.accent, colors?.text].find(isHex) ?? "var(--sumi)"
+  );
 }
 
 export async function generateMetadata({
@@ -102,8 +110,14 @@ export default async function LanguageDetailPage({
 
   const f = lang.fields;
 
-  const accent = statusColor[lang.status] ?? "teal";
   const name = f.name || "Untitled";
+  // The page chrome stays neutral so the language's own design reads
+  // clearly — the one accent we allow is the language's OWN ink. We pick
+  // the most COLORFUL ink for a highlight; a monochrome design gets a
+  // crisp underline instead of a muddy grey wash.
+  const ownColors = parseJson<{ colors?: Record<string, string> }>(f.tokens)
+    ?.colors;
+  const titleInk = pickTitleInk(ownColors);
   const isPublished = lang.status === "Published";
 
   // Three embodiments, each a served self-contained HTML file: the element
@@ -229,7 +243,7 @@ export default async function LanguageDetailPage({
 
       {/* Hero */}
       <PageHero
-        eyebrowAccent={accent as never}
+        eyebrowAccent="graphite"
         eyebrow={
           <>
             <span>design language</span>
@@ -239,7 +253,16 @@ export default async function LanguageDetailPage({
             </span>
           </>
         }
-        title={<Marker color={accent as never}>{name}</Marker>}
+        title={
+          <span className="relative inline-block">
+            {name}
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 left-0 h-[3px] w-12 rounded-[2px]"
+              style={{ background: titleInk }}
+            />
+          </span>
+        }
         description={
           <>
             A portable design language for agents: download the markdown first,
@@ -248,7 +271,7 @@ export default async function LanguageDetailPage({
         }
         rightSlot={
           <>
-            <Stamp color={accent as never}>{lang.status}</Stamp>
+            <Stamp color="graphite">{lang.status}</Stamp>
           </>
         }
       />
@@ -267,9 +290,9 @@ export default async function LanguageDetailPage({
 
       {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
-        <section className="order-2 md:order-1 md:col-start-1">
-          <SectionHeading eyebrow="the spec" eyebrowColor="teal">
-            <Marker color="teal">specification</Marker>
+        <section data-reveal className="order-2 md:order-1 md:col-start-1">
+          <SectionHeading eyebrow="the spec" eyebrowColor="graphite">
+            specification
           </SectionHeading>
           <StickyNote className="p-4 sm:p-6">
             <SpecPanel {...specProps} showActions={false} />
@@ -277,9 +300,9 @@ export default async function LanguageDetailPage({
         </section>
 
         <div className="contents md:order-2 md:col-start-2 md:flex md:flex-col md:gap-8">
-          <section className="order-1 space-y-8 md:space-y-6">
-            <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
-              <Marker color="salad">embodiments</Marker>
+          <section data-reveal className="order-1 space-y-8 md:space-y-6">
+            <SectionHeading eyebrow="in the wild" eyebrowColor="graphite">
+              embodiments
             </SectionHeading>
             {embodimentTabs.length > 0 ? (
               <EmbodimentTabs
@@ -302,9 +325,9 @@ export default async function LanguageDetailPage({
           </section>
 
           {/* DESIGN.md preview — palette / type / spacing / shape at-a-glance */}
-          <section className="order-3">
-            <SectionHeading eyebrow="DESIGN.md" eyebrowColor="sumire">
-              <Marker color="sumire">at a glance</Marker>
+          <section data-reveal className="order-3">
+            <SectionHeading eyebrow="DESIGN.md" eyebrowColor="graphite">
+              at a glance
             </SectionHeading>
             <DesignMdShowcase
               name={name}
@@ -320,9 +343,9 @@ export default async function LanguageDetailPage({
             />
           </section>
 
-          <section className="order-4">
-            <SectionHeading eyebrow="shadcn/ui" eyebrowColor="teal">
-              <Marker color="teal">implementation kit</Marker>
+          <section data-reveal className="order-4">
+            <SectionHeading eyebrow="shadcn/ui" eyebrowColor="graphite">
+              implementation kit
             </SectionHeading>
             <StickyNote tint="teal" className="p-4 sm:p-5">
               <ShadcnPreview
@@ -351,8 +374,8 @@ export default async function LanguageDetailPage({
       {canRemix ? (
         <section>
           <Perforation className="mb-8" />
-          <SectionHeading eyebrow="remix lane" eyebrowColor="salad">
-            <Marker color="salad">try a remix</Marker>
+          <SectionHeading eyebrow="remix lane" eyebrowColor="graphite">
+            try a remix
           </SectionHeading>
           <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
             Keep <span className="text-foreground">{name}</span> and swap a palette and an art
@@ -368,6 +391,11 @@ export default async function LanguageDetailPage({
           />
         </section>
       ) : null}
+
+      <RelatedLanguages
+        currentId={id}
+        currentTags={parseJson<string[]>(f.tags) ?? []}
+      />
     </div>
   );
 }

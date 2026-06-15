@@ -67,29 +67,45 @@
 }
 
 :root {
-  /* Paper & ink */
-  --washi: oklch(1 0 0);                       /* pure white paper */
-  --sumi: oklch(0.26 0.015 260);               /* warm-ink text */
+  /* ============ RISO PRESS — DAY EDITION ============
+     Katagami were dye stencils; risograph is stencil duplication.
+     The site reads as a riso-printed specimen catalog: warm uncoated
+     paper, a fixed drum of spot inks, misregistered second passes
+     instead of borders, grain instead of gloss. */
+
+  /* Paper & ink — pure white paper, warm-ink text (the original katagami
+     ground; riso lives in the accents and effects, not the paper) */
+  --washi: oklch(1 0 0);
+  --sumi: oklch(0.26 0.015 260);
   --graphite: oklch(0.5 0.01 260);
 
-  /* Bright fresh palette */
-  --sakura: oklch(0.82 0.15 12);               /* bright pink */
-  --yuzu: oklch(0.93 0.17 98);                 /* bright yellow */
-  --salad: oklch(0.88 0.2 135);                /* bright salad green */
-  --matcha: oklch(0.78 0.16 155);              /* deeper matcha */
-  --shiso: oklch(0.85 0.12 170);               /* mint leaf */
-  --teal: oklch(0.8 0.13 200);                 /* bright teal */
-  --ramune: oklch(0.78 0.16 235);              /* bright blue */
-  --sumire: oklch(0.75 0.16 300);              /* violet */
-  --beni: oklch(0.65 0.2 25);                  /* destructive */
+  /* Spot-ink drum. The SIGNATURE TRIO carries all site chrome:
+     sakura (fluor pink) · yuzu (yellow) · ramune (blue).
+     The rest are support inks kept for data-driven surfaces; they are
+     tuned to sit quietly in the trio's family, never to compete. */
+  --sakura: oklch(0.7 0.21 0);                 /* fluorescent pink — trio */
+  --yuzu: oklch(0.88 0.18 96);                 /* riso yellow — trio */
+  --ramune: oklch(0.58 0.13 245);              /* riso medium blue — trio */
+  --salad: oklch(0.82 0.13 112);               /* yellow-green, yuzu family */
+  --matcha: oklch(0.68 0.09 150);              /* quiet green */
+  --shiso: oklch(0.78 0.06 175);               /* quiet mint */
+  --teal: oklch(0.62 0.08 222);                /* slate blue, ramune family */
+  --sumire: oklch(0.55 0.09 290);              /* ink violet, subdued */
+  --beni: oklch(0.62 0.19 27);                 /* red — destructive only */
 
-  /* Scrapbook surface abstractions — flip in .dark */
+  /* Print effects — the riso layer, kept subtle */
+  --ink-blend: multiply;                       /* overprint blend; screen at night */
+  --ink-shadow: rgba(30, 35, 45, 0.06);        /* legacy alias — soft, not chunky */
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --grain-opacity: 0.018;
+
+  /* Paper surface abstractions — flip in .dark */
   --paper-sticker: rgba(255, 255, 255, 0.85);  /* sticker-card bg */
   --paper-sticker-hover: rgba(255, 255, 255, 0.95);
   --paper-tape-mix: white;                     /* mixed into washi-tape gradient */
   --paper-stamp-mix: white;                    /* mixed into stamp bg */
   --paper-tint-base: rgba(255, 255, 255, 0.78); /* color-mix base for tinted cards */
-  --paper-dot: oklch(0.65 0.008 260 / 0.08);   /* body dot-grid color */
+  --paper-dot: oklch(0.65 0.008 260 / 0.045);  /* body dot-grid color */
   --marker-opacity: 0.85;                      /* highlighter tint alpha */
   --shadow-card:
     0 1px 2px rgba(30, 35, 45, 0.04),
@@ -110,12 +126,12 @@
   --secondary-foreground: var(--sumi);
   --muted: oklch(0.97 0.004 260);
   --muted-foreground: oklch(0.52 0.012 260);
-  --accent: oklch(0.96 0.03 200);              /* faint teal */
+  --accent: oklch(0.96 0.03 245);              /* faint ramune wash */
   --accent-foreground: var(--sumi);
   --destructive: var(--beni);
   --border: oklch(0.9 0.006 260);
   --input: oklch(0.88 0.006 260);
-  --ring: var(--sumire);
+  --ring: var(--ramune);
   --chart-1: var(--sakura);
   --chart-2: var(--salad);
   --chart-3: var(--yuzu);
@@ -126,41 +142,46 @@
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.96 0.03 200);
+  --sidebar-accent: oklch(0.96 0.03 245);
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(0.9 0.006 260);
-  --sidebar-ring: var(--sumire);
+  --sidebar-ring: var(--ramune);
 }
 
 .dark {
-  /* Night paper — warm deep ink, not pure black. Text is warm off-white. */
-  --washi: oklch(0.19 0.012 265);
-  --sumi: oklch(0.94 0.006 85);
+  /* ============ RISO PRESS — NIGHT EDITION ============
+     Printing on deep indigo card stock: paper goes near-black blue,
+     inks turn luminous and overprint with screen instead of multiply
+     (light ink on dark paper glows; it doesn't darken). */
+  --washi: oklch(0.19 0.012 265);              /* warm deep night paper */
+  --sumi: oklch(0.94 0.006 85);                /* warm off-white ink */
   --graphite: oklch(0.7 0.012 260);
 
-  /* Desaturated parallel palette — bright pastels glow on dark,
-     so we drop chroma ~35-45% while keeping hue & similar lightness.
-     Result: same "family" of colors, readable on dark paper. */
-  --sakura: oklch(0.72 0.1 12);
-  --yuzu: oklch(0.85 0.12 98);
-  --salad: oklch(0.78 0.14 135);
-  --matcha: oklch(0.7 0.11 155);
-  --shiso: oklch(0.76 0.09 170);
-  --teal: oklch(0.72 0.09 200);
-  --ramune: oklch(0.72 0.11 235);
-  --sumire: oklch(0.7 0.12 300);
+  /* Night inks — slightly lifted lightness, moderated chroma so they
+     read as printed ink, not neon. Same drum, same trio-first tuning. */
+  --sakura: oklch(0.74 0.16 0);
+  --yuzu: oklch(0.85 0.13 96);
+  --ramune: oklch(0.7 0.11 245);
+  --salad: oklch(0.8 0.1 112);
+  --matcha: oklch(0.73 0.07 150);
+  --shiso: oklch(0.78 0.05 175);
+  --teal: oklch(0.7 0.07 222);
+  --sumire: oklch(0.68 0.08 290);
   --beni: oklch(0.7 0.17 25);
 
-  /* Scrapbook surfaces on dark — cards are LIFTED (slightly lighter than body),
-     not white-translucent. Tape & stamp mixes use a mid-dark tone so tints
-     don't bleach to white. Dot grid flips to faint light specks. */
+  /* Print effects at night */
+  --ink-blend: screen;
+  --ink-shadow: rgba(0, 0, 0, 0.4);            /* legacy alias — soft */
+  --grain-opacity: 0.03;
+
+  /* Night surfaces — cards are LIFTED (slightly lighter than body). */
   --paper-sticker: oklch(0.24 0.013 265 / 0.78);
   --paper-sticker-hover: oklch(0.27 0.014 265 / 0.88);
   --paper-tape-mix: oklch(0.3 0.012 265);
   --paper-stamp-mix: oklch(0.22 0.012 265);
   --paper-tint-base: oklch(0.24 0.013 265 / 0.82);
-  --paper-dot: oklch(0.88 0.012 85 / 0.05);
-  --marker-opacity: 0.55;                      /* dim the highlighter on dark */
+  --paper-dot: oklch(0.88 0.012 85 / 0.03);
+  --marker-opacity: 0.55;                      /* dim the highlighter at night */
   --shadow-card:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 6px 18px rgba(0, 0, 0, 0.45);
@@ -180,20 +201,20 @@
   --secondary-foreground: var(--sumi);
   --muted: oklch(0.27 0.013 265);
   --muted-foreground: oklch(0.72 0.012 260);
-  --accent: oklch(0.3 0.035 200);
+  --accent: oklch(0.3 0.04 245);
   --accent-foreground: var(--sumi);
   --destructive: oklch(0.7 0.18 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
-  --ring: var(--sumire);
+  --ring: var(--ramune);
   --sidebar: var(--washi);
   --sidebar-foreground: var(--sumi);
   --sidebar-primary: var(--sumi);
   --sidebar-primary-foreground: var(--washi);
-  --sidebar-accent: oklch(0.3 0.035 200);
+  --sidebar-accent: oklch(0.31 0.04 245);
   --sidebar-accent-foreground: var(--sumi);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: var(--sumire);
+  --sidebar-ring: var(--ramune);
 }
 
 @layer base {
@@ -201,7 +222,7 @@
     @apply border-border outline-ring/50;
   }
   html {
-    /* Stop rogue horizontal scroll at narrow widths (rotated stamps/tapes).
+    /* Stop rogue horizontal scroll at narrow widths (rotated stamps/strips).
        Use hidden, not only clip: iOS Safari has been flaky here and can still
        expose a right-side gutter when decorative elements protrude. */
     width: 100%;
@@ -224,6 +245,19 @@
     /* background-attachment: fixed triggers full-page repaints on scroll;
        default (scroll) is ~free */
   }
+  /* Paper-fiber grain over everything — a single fixed compositing layer.
+     feTurbulence noise; multiply by day, soft-light glow by night. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    background-image: var(--grain-url);
+    background-size: 180px 180px;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--ink-blend);
+  }
   html {
     @apply font-sans;
   }
@@ -231,6 +265,36 @@
     font-family: var(--font-display), var(--font-sans);
     letter-spacing: -0.02em;
     font-feature-settings: "ss02", "ss04";
+  }
+
+  /* Everything clickable says so: pointer cursor + a soft default
+     transition so hover states never snap. Element classes override. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label[for] {
+    cursor: pointer;
+  }
+  a,
+  button,
+  summary,
+  [role="button"] {
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      opacity 150ms ease,
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    a,
+    button,
+    summary,
+    [role="button"] {
+      transition: none;
+    }
   }
 }
 
@@ -950,11 +1014,15 @@
 }
 
 @layer components {
-  /* Sticky-note card — semi-transparent, sharp corners, shadow-only edges.
-     NOTE: backdrop-filter was removed — at 30+ cards it forced too many
-     GPU compositing layers and contributed to scroll crashes. The
-     translucent bg + soft shadow reads "sticky note" on its own. */
+  /* ============ RISO PRINT PRIMITIVES ============
+     No borders anywhere in this layer. Surfaces are defined by ink:
+     misregistered second passes, overprint, halftone, grain. */
+
+  /* Sticky-note card — the original katagami sheet: translucent paper,
+     sharp corners, soft shadow-only edges. The riso character is a faint
+     ink edge on hover (one subtle pass, not a misprint block). */
   .sticker-card {
+    position: relative;
     background: var(--paper-sticker);
     border: none;
     border-radius: 0;
@@ -966,10 +1034,13 @@
   .sticker-card:hover {
     transform: translateY(-3px) rotate(-0.4deg);
     background: var(--paper-sticker-hover);
-    box-shadow: var(--shadow-card-hover);
+    box-shadow:
+      var(--shadow-card-hover),
+      2px 2px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 7%, transparent);
   }
 
-  /* Thicker marker highlight (behind text) */
+  /* Marker highlight behind text — the original, with a whisper of
+     overprint blend so the ink reads printed, not painted. */
   .marker {
     position: relative;
     display: inline-block;
@@ -982,17 +1053,18 @@
     border-radius: 2px;
     transform: rotate(-0.3deg);
     opacity: var(--marker-opacity);
+    mix-blend-mode: var(--ink-blend);
   }
   .marker > .marker-text {
     position: relative;
     z-index: 1;
   }
 
-  /* Active-nav highlighter */
+  /* Active-nav ink pass */
   .ink-underline {
     position: relative;
   }
-  .ink-underline[data-active="true"]::after {
+  .ink-underline::after {
     content: "";
     position: absolute;
     left: -2px;
@@ -1001,50 +1073,342 @@
     height: 7px;
     background: var(--yuzu);
     z-index: -1;
-    border-radius: 2px;
-    transform: rotate(-0.3deg);
+    border-radius: 1px;
+    transform: rotate(-0.3deg) skewX(-6deg) scaleX(0);
+    transform-origin: left center;
     opacity: 0.9;
+    mix-blend-mode: var(--ink-blend);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .ink-underline[data-active="true"]::after,
+  .ink-underline:hover::after {
+    transform: rotate(-0.3deg) skewX(-6deg) scaleX(1);
   }
 
-  /* Washi tape — bright & airy. Tape-mix flips from white to dark paper
-     in .dark so the tint reads against the night surface. */
+  /* Washi tape — the original striped tape. Ink set via `--strip-ink`;
+     tape-mix flips from white to dark paper in .dark. */
   .washi-tape {
     position: absolute;
     width: 70px;
-    height: 18px;
+    height: 16px;
     background: repeating-linear-gradient(
       45deg,
-      color-mix(in oklch, var(--sakura) 75%, var(--paper-tape-mix)) 0 7px,
-      color-mix(in oklch, var(--sakura) 40%, var(--paper-tape-mix)) 7px 14px
+      color-mix(in oklch, var(--strip-ink, var(--sakura)) 75%, var(--paper-tape-mix)) 0 7px,
+      color-mix(in oklch, var(--strip-ink, var(--sakura)) 40%, var(--paper-tape-mix)) 7px 14px
     );
     opacity: 0.85;
     border-radius: 1px;
     box-shadow: 0 1px 2px rgba(30, 35, 45, 0.05);
   }
 
-  /* Stamp pill — tilted, marker-weight border */
+  /* Stamp pill — tilted ink impression, NO border. A soft tint of the
+     ink + a whisper of grain reads as printed, not boxed. Keyed off
+     currentColor so call sites set `style={{ color }}`. */
   .stamp {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid currentColor;
+    border: none;
     border-radius: 3px;
-    padding: 2px 9px;
+    padding: 3px 9px;
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    transform: rotate(-2deg);
+    transform: rotate(-1.5deg);
     opacity: 0.95;
-    background: color-mix(in oklch, currentColor 10%, var(--paper-stamp-mix));
+    background: color-mix(in oklch, currentColor 12%, var(--paper-stamp-mix));
+    background-image: var(--grain-url);
+    background-size: 90px 90px;
+    background-blend-mode: var(--ink-blend);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease;
   }
 
-  /* Dashed sticker die-cut */
+  /* Same stamp, keyed off `--ink` instead of currentColor — for contexts
+     where the text color can't carry the ink. */
+  .ink-stamp {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    border: none;
+    border-radius: 3px;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink, var(--sumi));
+    transform: rotate(-1.5deg);
+    opacity: 0.95;
+    background: color-mix(in oklch, var(--ink, var(--sumi)) 12%, var(--paper-stamp-mix));
+    background-image: var(--grain-url);
+    background-size: 90px 90px;
+    background-blend-mode: var(--ink-blend);
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 150ms ease,
+                color 150ms ease;
+  }
+
+  /* Dashed sticker die-cut — the original perforation. */
   .sticker-perforation {
+    height: 1px;
+    border: none;
     background-image:
       linear-gradient(90deg, var(--border) 50%, transparent 50%);
     background-size: 6px 1px;
     background-repeat: repeat-x;
-    height: 1px;
+  }
+
+  /* Misregistered display type — give the element `data-text` equal to
+     its text and an `--ink`; a second pass prints offset underneath. */
+  .riso-double {
+    position: relative;
+    z-index: 0;
+  }
+  .riso-double::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    color: var(--ink, var(--sakura));
+    transform: translate(0.028em, 0.03em);
+    opacity: 0.55;
+    mix-blend-mode: var(--ink-blend);
+    pointer-events: none;
+  }
+
+  /* Halftone wash — corner dot-field for section backgrounds. */
+  .halftone-wash {
+    position: absolute;
+    pointer-events: none;
+    background-image: radial-gradient(
+      circle at 2px 2px,
+      color-mix(in srgb, var(--wash-ink, var(--teal)) 38%, transparent) 1.6px,
+      transparent 0
+    );
+    background-size: 12px 12px;
+    -webkit-mask-image: radial-gradient(closest-side, black 20%, transparent 100%);
+    mask-image: radial-gradient(closest-side, black 20%, transparent 100%);
+    mix-blend-mode: var(--ink-blend);
+    opacity: 0.6;
+  }
+
+  /* ============ DRAWER SHELVES ============
+     The catalog is a cabinet, not a list: each shelf is a horizontal
+     rail of sheets you slide through. "Spread out" pulls the drawer
+     all the way open into a grid. */
+  .shelf-row {
+    display: flex;
+    align-items: start;
+    gap: 0.9rem;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--sumi) 25%, transparent) transparent;
+    /* right-edge fade — there is always more in the drawer */
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 56px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 56px), transparent);
+  }
+  .shelf-row > [data-gallery-card] {
+    flex: 0 0 220px;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+  @media (min-width: 640px) {
+    .shelf-row > [data-gallery-card] {
+      flex-basis: 240px;
+    }
+  }
+  [data-spread="true"] .shelf-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    align-items: start;
+    gap: 1rem 0.9rem;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  [data-spread="true"] .shelf-row > [data-gallery-card] {
+    flex: none;
+  }
+
+  /* Taste deck — a fresh sheet slides off the press. */
+  @keyframes deck-deal {
+    from {
+      opacity: 0;
+      transform: translateX(16px) rotate(0.7deg);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .deck-deal {
+    animation: deck-deal 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .deck-deal {
+      animation: none;
+    }
+  }
+
+  /* "Dealt" flash — the shuffle landed on this sheet; its registration
+     slips for a beat, then settles. */
+  @keyframes riso-deal {
+    0%, 100% {
+      transform: none;
+    }
+    25% {
+      transform: rotate(-1.4deg) scale(1.02);
+    }
+    60% {
+      transform: rotate(0.9deg) scale(1.01);
+    }
+  }
+  [data-dealt="true"] {
+    animation: riso-deal 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-dealt="true"] .sticker-card {
+    box-shadow:
+      var(--shadow-card-hover),
+      3px 3px 0 color-mix(in srgb, var(--card-ink, var(--ramune)) 14%, transparent);
+  }
+
+  /* Route transition — every navigation slides the new sheet onto the
+     press bed. Applied by (site)/template.tsx, which remounts per route. */
+  @keyframes route-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .route-enter {
+    animation: route-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .route-enter {
+      animation: none;
+    }
+  }
+
+  /* Staggered page-load reveal — set `--reveal-i` per item. */
+  @keyframes riso-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .riso-reveal {
+    animation: riso-reveal 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--reveal-i, 0) * 70ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .riso-reveal {
+      animation: none;
+    }
+    .sticker-card,
+    .sticker-card:hover {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  /* ============ SCROLL REVEAL ============
+     Elements marked [data-reveal] — and the direct children of
+     [data-reveal-children] — rise and fade in as they enter the viewport.
+     Only the hidden START state lives in CSS, behind html.reveal-ready (an
+     inline pre-paint class set by JS only when motion is allowed) so JS-off
+     and reduced-motion users see everything immediately, with no flash. The
+     reveal itself is played by the Web Animations API (element.animate),
+     which animates through the animation cascade origin and never mutates
+     the element's class or style ATTRIBUTE — so it can never diverge the
+     DOM during hydration, even for content streamed inside a Suspense
+     boundary. The observer's root is the viewport, so it is immune to the
+     overflow/scroll-container topology that breaks CSS view-timelines. */
+  html.reveal-ready [data-reveal],
+  html.reveal-ready [data-reveal-children] > * {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  html.reveal-ready [data-reveal-children] > * {
+    transform: translateY(14px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html.reveal-ready [data-reveal],
+    html.reveal-ready [data-reveal-children] > * {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Gallery cards get a one-shot staggered entrance on load. Pure CSS
+     keyframe (not a persistent hidden state), so it ends at the natural
+     opacity and never interferes with the filter's display toggling. */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-gallery-card] {
+      animation: riso-reveal 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    [data-gallery-card]:nth-child(1) { animation-delay: 0ms; }
+    [data-gallery-card]:nth-child(2) { animation-delay: 50ms; }
+    [data-gallery-card]:nth-child(3) { animation-delay: 100ms; }
+    [data-gallery-card]:nth-child(4) { animation-delay: 145ms; }
+    [data-gallery-card]:nth-child(5) { animation-delay: 185ms; }
+    [data-gallery-card]:nth-child(6) { animation-delay: 220ms; }
+    [data-gallery-card]:nth-child(n + 7) { animation-delay: 250ms; }
+  }
+
+  /* ============ HERO ART (responsive) ============
+     Phone: a faint top-right corner wash that never crosses the text
+     column. Tablet+: the big right-anchored composition beside the
+     headline. One element, two masks — no clipped panels, no stray
+     padding, legible at every width. */
+  .hero-art {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.3;
+    -webkit-mask-image: radial-gradient(
+      135% 82% at 100% 0%,
+      #000 8%,
+      rgba(0, 0, 0, 0.4) 36%,
+      transparent 64%
+    );
+    mask-image: radial-gradient(
+      135% 82% at 100% 0%,
+      #000 8%,
+      rgba(0, 0, 0, 0.4) 36%,
+      transparent 64%
+    );
+  }
+  @media (min-width: 640px) {
+    .hero-art {
+      opacity: 1;
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 40%,
+        rgba(0, 0, 0, 0.55) 58%,
+        #000 76%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        transparent 40%,
+        rgba(0, 0, 0, 0.55) 58%,
+        #000 76%
+      );
+    }
   }
 }

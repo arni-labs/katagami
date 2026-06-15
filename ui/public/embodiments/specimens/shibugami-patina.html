@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>Shibuko — Kakishibu Cure Atelier</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    * { margin: 0; padding: 0; }
+
+    :root {
+      --primary: #b07a3e;
+      --secondary: #7a4a22;
+      --accent: #4a5a5e;
+      --accent-soft: rgba(74, 90, 94, 0.16);
+      --bg: #3a2210;
+      --surface: #5a3618;
+      --surface-hi: #6a4220;
+      --text: #f3e4c8;
+      --muted: #c9a878;
+      --rim: #2c1809;
+      --error: #9c4a2e;
+      --success: #6f7a4a;
+      --warning: #d8b27a;
+      --info: #6a7e82;
+      --serif: "Spectral", Georgia, serif;
+      --body: "Fraunces", "Spectral", serif;
+      --mono: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+      --gut: 32px;
+      --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --rim-shadow: inset 0 0 22px rgba(44,24,9,0.55), 0 6px 18px rgba(20,11,4,0.45);
+    }
+
+    html, body { min-height: 100%; }
+    body {
+      font-family: var(--body);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.55;
+      letter-spacing: 0.01em;
+      overflow-x: hidden;
+      background:
+        radial-gradient(120% 90% at 18% 0%, #b07a3e 0%, #7a4a22 38%, #3a2210 78%),
+        linear-gradient(150deg, #4a2c12 0%, #2c1809 100%);
+      background-attachment: fixed;
+    }
+    /* mulberry washi fiber grain — feTurbulence, multiply-blended, fixed behind all */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23f)' opacity='0.55'/></svg>");
+      background-size: 220px 220px;
+    }
+    /* slow second cure layer for uneven oxidation memory */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.4;
+      mix-blend-mode: multiply;
+      background:
+        radial-gradient(60% 50% at 80% 18%, rgba(44,24,9,0.0) 40%, rgba(28,15,6,0.7) 100%),
+        radial-gradient(40% 40% at 12% 88%, rgba(28,15,6,0.55) 0%, rgba(28,15,6,0) 70%);
+    }
+
+    button, input, textarea, select {
+      appearance: none; -webkit-appearance: none;
+      border: 0; border-radius: 0; background: none;
+      color: inherit; font: inherit; outline: none;
+    }
+    button { cursor: pointer; }
+    ::placeholder { color: rgba(201,168,120,0.6); }
+    ::selection { background: rgba(74,90,94,0.4); color: var(--text); }
+
+    .shell { position: relative; z-index: 1; max-width: 1320px; margin: 0 auto; padding: var(--gut); }
+
+    /* ---- TOP NAV / BRAND ---- */
+    .topbar {
+      display: flex; align-items: center; gap: 24px;
+      padding: 18px 24px;
+      background: linear-gradient(155deg, var(--surface-hi), var(--secondary));
+      border: 1px solid var(--rim);
+      box-shadow: var(--rim-shadow);
+      border-radius: 8px;
+    }
+    .brand { display: flex; align-items: baseline; gap: 14px; }
+    .seal {
+      width: 44px; height: 44px; flex: none; align-self: center;
+      display: grid; place-items: center;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, var(--primary), var(--rim));
+      border: 2px solid rgba(243,228,200,0.3);
+      box-shadow: inset 0 0 12px rgba(44,24,9,0.7);
+      font-family: var(--serif); font-size: 22px; color: var(--text);
+    }
+    .brand h1 { font-family: var(--serif); font-weight: 600; font-size: 25px; letter-spacing: 0.02em; }
+    .brand .tag { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .navlinks { display: flex; gap: 4px; margin-left: auto; }
+    .navlinks a {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none; padding: 8px 14px; border-radius: 4px;
+      transition: color var(--ease), background var(--ease);
+    }
+    .navlinks a:hover, .navlinks a:focus-visible { color: var(--text); background: rgba(44,24,9,0.4); }
+    .navlinks a.on { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+    .who { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .who .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--success); box-shadow: 0 0 8px rgba(111,122,74,0.8); }
+
+    /* ---- LAYOUT ---- */
+    .masthead {
+      margin: var(--gut) 0 28px;
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+    }
+    .masthead h2 { font-family: var(--serif); font-weight: 600; font-size: 42px; line-height: 1.08; max-width: 18ch; }
+    .masthead .lede { font-style: italic; color: var(--muted); max-width: 46ch; font-size: 16px; margin-top: 10px; }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .btn {
+      font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 12px 20px; border-radius: 4px; transition: transform var(--ease), box-shadow var(--ease), background var(--ease), color var(--ease);
+    }
+    .btn-primary {
+      background: linear-gradient(160deg, var(--primary), var(--secondary));
+      color: var(--text);
+      border: 1px solid var(--rim);
+      box-shadow: inset 0 1px 0 rgba(243,228,200,0.18), 0 6px 16px rgba(20,11,4,0.4);
+    }
+    .btn-primary:hover, .btn-primary:focus-visible { box-shadow: inset 0 0 20px rgba(44,24,9,0.6), 0 8px 22px rgba(20,11,4,0.5); transform: translateY(-1px); }
+    .btn-iron {
+      background: linear-gradient(160deg, var(--accent), #344044);
+      color: var(--text); border: 1px solid #2a3437;
+      box-shadow: inset 0 1px 0 rgba(243,228,200,0.12), 0 6px 16px rgba(20,11,4,0.4);
+    }
+    .btn-iron:hover, .btn-iron:focus-visible { transform: translateY(-1px); box-shadow: inset 0 0 18px rgba(20,30,32,0.7), 0 0 0 2px var(--accent-soft), 0 8px 22px rgba(20,11,4,0.5); }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--rim);
+      box-shadow: inset 0 0 0 1px rgba(122,74,34,0.4);
+    }
+    .btn-ghost:hover, .btn-ghost:focus-visible { color: var(--text); border-color: var(--primary); }
+
+    .grid { display: grid; grid-template-columns: 280px 1fr; gap: var(--gut); }
+    .col-stack { display: grid; gap: var(--gut); align-content: start; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gut); }
+
+    /* ---- CURED PANEL ---- */
+    .panel {
+      position: relative;
+      background: linear-gradient(158deg, var(--surface-hi) 0%, var(--surface) 55%, var(--secondary) 100%);
+      border: 1px solid var(--rim);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: var(--rim-shadow);
+    }
+    /* irregular cured rim — tannin pools heavier at the edge */
+    .panel::after {
+      content: "";
+      position: absolute; inset: 0;
+      border-radius: 8px;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(44,24,9,0.5), inset 0 0 26px rgba(44,24,9,0.5);
+      mask: radial-gradient(120% 120% at 50% 0%, #000 60%, transparent 100%);
+    }
+    .panel > * { position: relative; z-index: 1; }
+    .panel h3 { font-family: var(--serif); font-weight: 600; font-size: 22px; margin-bottom: 4px; }
+    .panel .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 14px; }
+    .panel .hr { height: 1px; background: linear-gradient(90deg, var(--rim), transparent); margin: 18px 0; }
+
+    /* ---- SIDEBAR VAT LIST ---- */
+    .vat { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 6px; text-decoration: none; color: inherit; transition: background var(--ease); }
+    .vat:hover, .vat:focus-visible { background: rgba(44,24,9,0.4); }
+    .vat .swatch { width: 30px; height: 30px; flex: none; border-radius: 4px; border: 1px solid var(--rim); box-shadow: inset 0 0 8px rgba(44,24,9,0.6); }
+    .vat .nm { font-family: var(--serif); font-size: 16px; line-height: 1.1; }
+    .vat .sub { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* ---- FORM ---- */
+    .field { display: block; margin-bottom: 16px; }
+    .field > label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+    .control {
+      width: 100%; padding: 11px 13px;
+      background: rgba(28,15,6,0.5);
+      border: 1px solid var(--rim);
+      border-radius: 4px;
+      color: var(--text); font-family: var(--body); font-size: 15px;
+      box-shadow: inset 0 1px 4px rgba(20,11,4,0.5);
+      transition: border-color var(--ease), box-shadow var(--ease);
+    }
+    .control:focus { border-color: var(--accent); box-shadow: inset 0 1px 4px rgba(20,11,4,0.5), 0 0 0 3px var(--accent-soft); }
+    textarea.control { resize: vertical; min-height: 84px; line-height: 1.5; }
+    .selwrap { position: relative; }
+    .selwrap::after { content: "▾"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 12px; }
+    select.control { padding-right: 32px; cursor: pointer; }
+
+    /* ---- TABS ---- */
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rim); margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 10px 16px; color: var(--muted); border-radius: 4px 4px 0 0;
+      transition: color var(--ease), background var(--ease); position: relative; top: 1px;
+    }
+    .tab:hover, .tab:focus-visible { color: var(--text); }
+    .tab[aria-selected="true"] { color: var(--text); background: rgba(44,24,9,0.35); box-shadow: inset 0 -2px 0 var(--accent); }
+
+    /* ---- TABLE ---- */
+    .ledger { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .ledger th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0 14px 10px; border-bottom: 1px solid var(--rim); }
+    .ledger td { padding: 13px 14px; border-bottom: 1px solid rgba(44,24,9,0.45); }
+    .ledger tr { transition: background var(--ease); }
+    .ledger tbody tr:hover { background: rgba(44,24,9,0.32); }
+    .ledger .lot { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .ledger .sheet { font-family: var(--serif); font-size: 16px; }
+
+    /* depth-of-cure meter */
+    .cure { display: flex; align-items: center; gap: 9px; }
+    .cure .bar { flex: 1; height: 7px; border-radius: 999px; background: rgba(28,15,6,0.6); overflow: hidden; box-shadow: inset 0 1px 2px rgba(20,11,4,0.6); min-width: 70px; }
+    .cure .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #d8b27a, #b07a3e 55%, #7a4a22); }
+    .cure .num { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+    /* ---- BADGES / PILLS ---- */
+    .pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--rim); }
+    .pill::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .pill.curing { color: var(--warning); background: rgba(216,178,122,0.12); }
+    .pill.sunning { color: var(--primary); background: rgba(176,122,62,0.16); }
+    .pill.iron { color: var(--info); background: var(--accent-soft); }
+    .pill.held { color: var(--error); background: rgba(156,74,46,0.16); }
+    .pill.sealed { color: var(--success); background: rgba(111,122,74,0.16); }
+
+    /* ---- METRICS ---- */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stat { padding: 16px; border-radius: 6px; background: rgba(28,15,6,0.32); border: 1px solid var(--rim); box-shadow: inset 0 0 14px rgba(44,24,9,0.4); }
+    .stat .v { font-family: var(--serif); font-size: 30px; font-weight: 600; line-height: 1; }
+    .stat .v .u { font-size: 14px; color: var(--muted); font-weight: 400; }
+    .stat .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+    .stat.iron .v { color: var(--info); }
+
+    /* ---- BATCH CARD ---- */
+    .batch { display: grid; gap: 12px; }
+    .batch .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .batch .sheetname { font-family: var(--serif); font-size: 19px; }
+    .batch .meta { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+    .swatch-strip { display: flex; height: 26px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rim); box-shadow: inset 0 0 10px rgba(44,24,9,0.6); }
+    .swatch-strip span { flex: 1; }
+
+    /* footer note */
+    .footnote { margin-top: var(--gut); font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-align: center; opacity: 0.8; }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 1050px) {
+      .grid { grid-template-columns: 1fr; }
+      .sidebar { order: 2; }
+      .navlinks { display: none; }
+    }
+    @media (max-width: 640px) {
+      :root { --gut: 16px; }
+      .shell { padding: 16px; }
+      .topbar { flex-wrap: wrap; gap: 14px; padding: 14px 16px; }
+      .who { margin-left: auto; }
+      .masthead h2 { font-size: 30px; }
+      .two { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .cta-row { width: 100%; }
+      .cta-row .btn { flex: 1; text-align: center; }
+      .ledger thead { display: none; }
+      .ledger, .ledger tbody, .ledger tr, .ledger td { display: block; width: 100%; }
+      .ledger tr { padding: 12px 0; border-bottom: 1px solid var(--rim); }
+      .ledger td { border: 0; padding: 4px 0; display: flex; justify-content: space-between; gap: 16px; }
+      .ledger td::before { content: attr(data-label); font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+      .cure { min-width: 140px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- TOP NAV / BRAND -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="seal">渋</span>
+        <span>
+          <h1>Shibuko Atelier</h1>
+          <span class="tag">Kakishibu Cure &amp; Patina Ledger</span>
+        </span>
+      </div>
+      <nav class="navlinks" aria-label="Primary">
+        <a href="#" class="on">Cure Floor</a>
+        <a href="#">Vats</a>
+        <a href="#">Sun Yard</a>
+        <a href="#">Archive</a>
+      </nav>
+      <div class="who"><span class="dot"></span>Naoko · Dye Master</div>
+    </header>
+
+    <!-- MASTHEAD -->
+    <section class="masthead">
+      <div>
+        <h2>Autumn cure, third sunning</h2>
+        <p class="lede">Eleven sheets of mulberry washi are oxidizing under persimmon tannin. Two are due for an iron-modifier pull before the frost.</p>
+      </div>
+      <div class="cta-row">
+        <button class="btn btn-primary">Log a sunning</button>
+        <button class="btn btn-iron">Pull for iron bath</button>
+        <button class="btn btn-ghost">Export ledger</button>
+      </div>
+    </section>
+
+    <div class="grid">
+
+      <!-- SIDEBAR: VATS -->
+      <aside class="col-stack sidebar">
+        <section class="panel">
+          <span class="kicker">Fermenting vats</span>
+          <h3 style="margin-bottom:14px;">Persimmon stock</h3>
+          <a class="vat" href="#"><span class="swatch" style="background:linear-gradient(135deg,#d8b27a,#b07a3e)"></span><span><span class="nm">Vat Asa</span><br><span class="sub">8 mo · golden-brown</span></span></a>
+          <a class="vat" href="#"><span class="swatch" style="background:linear-gradient(135deg,#b07a3e,#7a4a22)"></span><span><span class="nm">Vat Kuri</span><br><span class="sub">19 mo · walnut</span></span></a>
+          <a class="vat" href="#"><span class="swatch" style="background:linear-gradient(135deg,#7a4a22,#3a2210)"></span><span><span class="nm">Vat Sumi</span><br><span class="sub">31 mo · dark-brown</span></span></a>
+          <a class="vat" href="#"><span class="swatch" style="background:linear-gradient(135deg,#6a7e82,#4a5a5e)"></span><span><span class="nm">Iron mordant</span><br><span class="sub">tetsu · cold shift</span></span></a>
+        </section>
+
+        <section class="panel">
+          <span class="kicker">Yard conditions</span>
+          <div class="stat" style="margin-bottom:12px;">
+            <div class="v">4.6<span class="u"> hrs sun</span></div>
+            <div class="k">today, west terrace</div>
+          </div>
+          <div class="stat">
+            <div class="v">61<span class="u"> % RH</span></div>
+            <div class="k">humidity · curing-safe</div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- MAIN COLUMN -->
+      <div class="col-stack">
+
+        <!-- METRICS -->
+        <section class="panel">
+          <span class="kicker">Cure floor at a glance</span>
+          <div class="stats">
+            <div class="stat"><div class="v">11</div><div class="k">sheets curing</div></div>
+            <div class="stat"><div class="v">3<span class="u">rd</span></div><div class="k">sunning pass</div></div>
+            <div class="stat iron"><div class="v">2</div><div class="k">due for iron pull</div></div>
+          </div>
+        </section>
+
+        <!-- TABBED LEDGER -->
+        <section class="panel">
+          <div class="tabs" role="tablist" aria-label="Cure stages">
+            <button class="tab" role="tab" aria-selected="true">On the racks</button>
+            <button class="tab" role="tab" aria-selected="false">In sun yard</button>
+            <button class="tab" role="tab" aria-selected="false">Sealed &amp; archived</button>
+          </div>
+
+          <table class="ledger">
+            <thead>
+              <tr>
+                <th>Lot</th><th>Sheet</th><th>Vat</th><th>Depth of cure</th><th>Stage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Lot" class="lot">KS-118</td>
+                <td data-label="Sheet" class="sheet">Kozo, 64gsm</td>
+                <td data-label="Vat">Vat Kuri</td>
+                <td data-label="Depth"><div class="cure"><div class="bar"><div class="fill" style="width:74%"></div></div><span class="num">74%</span></div></td>
+                <td data-label="Stage"><span class="pill sunning">Sunning</span></td>
+              </tr>
+              <tr>
+                <td data-label="Lot" class="lot">KS-122</td>
+                <td data-label="Sheet" class="sheet">Gampi, 48gsm</td>
+                <td data-label="Vat">Vat Asa</td>
+                <td data-label="Depth"><div class="cure"><div class="bar"><div class="fill" style="width:41%"></div></div><span class="num">41%</span></div></td>
+                <td data-label="Stage"><span class="pill curing">Curing</span></td>
+              </tr>
+              <tr>
+                <td data-label="Lot" class="lot">KS-097</td>
+                <td data-label="Sheet" class="sheet">Mitsumata, 70gsm</td>
+                <td data-label="Vat">Vat Sumi</td>
+                <td data-label="Depth"><div class="cure"><div class="bar"><div class="fill" style="width:92%"></div></div><span class="num">92%</span></div></td>
+                <td data-label="Stage"><span class="pill iron">Iron pull</span></td>
+              </tr>
+              <tr>
+                <td data-label="Lot" class="lot">KS-130</td>
+                <td data-label="Sheet" class="sheet">Kozo, 80gsm</td>
+                <td data-label="Vat">Vat Asa</td>
+                <td data-label="Depth"><div class="cure"><div class="bar"><div class="fill" style="width:18%"></div></div><span class="num">18%</span></div></td>
+                <td data-label="Stage"><span class="pill held">On hold</span></td>
+              </tr>
+              <tr>
+                <td data-label="Lot" class="lot">KS-088</td>
+                <td data-label="Sheet" class="sheet">Gampi, 52gsm</td>
+                <td data-label="Vat">Vat Kuri</td>
+                <td data-label="Depth"><div class="cure"><div class="bar"><div class="fill" style="width:100%"></div></div><span class="num">100%</span></div></td>
+                <td data-label="Stage"><span class="pill sealed">Sealed</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <div class="two">
+          <!-- BATCH DETAIL CARD -->
+          <section class="panel">
+            <span class="kicker">Selected lot · KS-097</span>
+            <div class="batch">
+              <div class="row">
+                <span class="sheetname">Mitsumata, 70gsm</span>
+                <span class="pill iron">Iron pull</span>
+              </div>
+              <p class="meta">Vat Sumi · started 31 Mar · 3 sunnings logged · last turned 06:40</p>
+              <div class="hr"></div>
+              <span class="kicker" style="margin-bottom:8px;">Oxidation arc → today</span>
+              <div class="swatch-strip" aria-hidden="true">
+                <span style="background:#d8b27a"></span>
+                <span style="background:#b07a3e"></span>
+                <span style="background:#8a5a2c"></span>
+                <span style="background:#7a4a22"></span>
+                <span style="background:#5a3618"></span>
+                <span style="background:#4a5a5e"></span>
+              </div>
+              <p class="meta">Amber → walnut over eight weeks. The final band is the projected iron-modifier shift once pulled into the tetsu bath.</p>
+            </div>
+          </section>
+
+          <!-- LOG / FORM CARD -->
+          <section class="panel">
+            <span class="kicker">Record a cure note</span>
+            <h3 style="margin-bottom:16px;">Sunning log</h3>
+            <form onsubmit="return false">
+              <div class="field">
+                <label for="lot">Lot</label>
+                <input id="lot" class="control" type="text" value="KS-097 · Mitsumata" />
+              </div>
+              <div class="field">
+                <label for="vat">Modifier bath</label>
+                <div class="selwrap">
+                  <select id="vat" class="control">
+                    <option>None — continue sun cure</option>
+                    <option selected>Iron mordant (tetsu) — cold shift</option>
+                    <option>Second persimmon dip — deepen amber</option>
+                    <option>Lye rinse — soften paste resist</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="note">Observation</label>
+                <textarea id="note" class="control" placeholder="Edge near the rim is curing two shades darker than the field…">Tannin pooling at the bottom-left rim; field still reads golden. Ready to move toward walnut.</textarea>
+              </div>
+              <div class="cta-row">
+                <button class="btn btn-primary" type="submit">Save note</button>
+                <button class="btn btn-ghost" type="button">Discard</button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="footnote">Shibuko Atelier · color is not chosen, it is cured · every shade derived from one persimmon-tannin process</p>
+  </div>
+
+  <script>
+    // tab toggling — purely visual stage switching
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+        t.setAttribute('aria-selected', 'true');
+      });
+    });
+    document.querySelectorAll('.navlinks a').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('.navlinks a').forEach(function (x) { x.classList.remove('on'); });
+        a.classList.add('on');
+      });
+    });
+  </script>
+</body>
+</html>

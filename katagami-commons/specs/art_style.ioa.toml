@@ -227,6 +227,13 @@ effect = [{ type = "set_bool", var = "has_published_assets", value = "true" }]
 params = ["thumbnail_asset_id", "thumbnail_asset_url", "reference_assets"]
 hint = "Attach immutable public artifact URLs from the generic Temper publish-artifact flow. `reference_assets` is a JSON map of reference file id -> public url for the mixer to composite without auth. PawFS file ids remain the governed source."
 
+[[action]]
+name = "AttachTasteVector"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["taste_vector", "taste_vector_model"]
+hint = "Attach the semantic taste embedding computed from this entity's canonical taste document. taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer or the backfill job."
+
 # --- Actions: Classification ---
 
 [[action]]

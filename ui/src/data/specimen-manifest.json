@@ -1,0 +1,212 @@
+{
+  "generated_by": "katagami-fresh-batch workflow (salvaged + consolidated)",
+  "theme": "Japanese craft x modern product UI",
+  "count": 5,
+  "languages": [
+    {
+      "name": "Goku Dot Storm",
+      "slug": "goku-dot-storm",
+      "status": "Published",
+      "family": "Craft-Material",
+      "sub_movement": "Japanese Edo-Komon Micro-Texture",
+      "summary": "Built on the optical paradox of goku-fine Edo-komon: a field that reads as one calm indigo solid across a room and dissolves into a storm of a thousand reversed-out paste-white dots up close. It believes restraint and density are the same gesture, and rejects loud color blocking, hero gradients, and any pattern that announces itself before you lean in.",
+      "tags": [
+        "edo-komon",
+        "kiribori",
+        "same-sharkskin",
+        "micro-dots",
+        "indigo",
+        "dual-scale",
+        "two-tone",
+        "optical-texture",
+        "tabular-mono",
+        "japanese-craft",
+        "reverse-engraving",
+        "density"
+      ],
+      "fonts": {
+        "heading": "Archivo",
+        "body": "Inter",
+        "mono": "Space Mono"
+      },
+      "palette": {
+        "primary": "#1c2230",
+        "secondary": "#2d3650",
+        "accent": "#7f93c4",
+        "background": "#161b27",
+        "surface": "#1f2533",
+        "text": "#efe9dd"
+      },
+      "files": {
+        "spec": "goku-dot-storm/spec.json",
+        "embodiment": "goku-dot-storm/embodiment.html",
+        "design_md": "goku-dot-storm/DESIGN.md",
+        "shot_desktop": "goku-dot-storm/shots/shot_desktop.png"
+      }
+    },
+    {
+      "name": "Shibugami Patina",
+      "slug": "shibugami-patina",
+      "status": "Published",
+      "family": "Craft-Material",
+      "sub_movement": "Kakishibu-Patina",
+      "summary": "Believes a surface should look cured rather than printed: the interface is mulberry washi sealed in fermented persimmon tannin (kakishibu), an aged amber-brown deepened by years of sun, not a swatch from a picker. It rejects flat pure-white canvases and crisp synthetic neutrals for a warm, uneven substrate that carries the memory of oxidation and smoke-curing.",
+      "tags": [
+        "kakishibu",
+        "persimmon-tannin",
+        "washi",
+        "patina",
+        "amber-brown",
+        "oxidation",
+        "weatherworn",
+        "humanist-serif",
+        "iron-reaction",
+        "katagami",
+        "material-aging",
+        "shibugami"
+      ],
+      "fonts": {
+        "heading": "Spectral",
+        "body": "Fraunces",
+        "mono": "Spline Sans Mono"
+      },
+      "palette": {
+        "primary": "#b07a3e",
+        "secondary": "#7a4a22",
+        "accent": "#4a5a5e",
+        "background": "#3a2210",
+        "surface": "#5a3618",
+        "text": "#f3e4c8"
+      },
+      "files": {
+        "spec": "shibugami-patina/spec.json",
+        "embodiment": "shibugami-patina/embodiment.html",
+        "design_md": "shibugami-patina/DESIGN.md",
+        "shot_desktop": "shibugami-patina/shots/shot_desktop.png"
+      }
+    },
+    {
+      "name": "Sinuous Japonisme",
+      "slug": "sinuous-japonisme",
+      "status": "Published",
+      "family": "Craft-Material",
+      "sub_movement": "Art-Nouveau-Japonisme",
+      "summary": "It believes a layout is a living stem system grown from a single whiplash line lifted by Art Nouveau out of katagami's reduction of flora into rhythmic silhouette; it rejects the rigid 12-column grid, right-angle box stacking, and drop-shadow depth in favor of asymmetric organic growth where negative space is as active as the figure.",
+      "tags": [
+        "art-nouveau",
+        "japonisme",
+        "whiplash-line",
+        "secessionist",
+        "katagami",
+        "botanical",
+        "asymmetric",
+        "vine-layout",
+        "sage-rose-gunmetal",
+        "flat-resist",
+        "organic",
+        "wisteria"
+      ],
+      "fonts": {
+        "heading": "Marcellus SC",
+        "body": "EB Garamond",
+        "mono": "Spline Sans Mono"
+      },
+      "palette": {
+        "primary": "#7c8a6a",
+        "secondary": "#c7a0a0",
+        "accent": "#a86b6b",
+        "background": "#ece6d8",
+        "surface": "#f4efe3",
+        "text": "#3a3f44"
+      },
+      "files": {
+        "spec": "sinuous-japonisme/spec.json",
+        "embodiment": "sinuous-japonisme/embodiment.html",
+        "design_md": "sinuous-japonisme/DESIGN.md",
+        "shot_desktop": "sinuous-japonisme/shots/shot_desktop.png"
+      }
+    },
+    {
+      "name": "Itoire Lattice",
+      "slug": "itoire-lattice",
+      "status": "Published",
+      "family": "Craft-Material",
+      "sub_movement": "Honest-Structure Textile",
+      "summary": "Itoire Lattice believes structure should be visible and load-bearing, not hidden behind seamless surfaces. It foregrounds a fine thread-grid (the itoire reinforcement that keeps fragile katagami openwork from tearing) as the dominant visual system, and it rejects floating cards with no apparent support, magic gradients, and any decoration that pretends content holds itself up.",
+      "tags": [
+        "katagami",
+        "itoire",
+        "thread-lattice",
+        "structural",
+        "drafting-grotesque",
+        "kraft-paper",
+        "two-ply",
+        "openwork",
+        "engineered",
+        "washi",
+        "honest-structure",
+        "monospace-spec"
+      ],
+      "fonts": {
+        "heading": "Archivo",
+        "body": "Spline Sans",
+        "mono": "Spline Sans Mono"
+      },
+      "palette": {
+        "primary": "#5c5247",
+        "secondary": "#8a7a5f",
+        "accent": "#9c5a3c",
+        "background": "#cbb48f",
+        "surface": "#efe9dd",
+        "text": "#3a342c"
+      },
+      "files": {
+        "spec": "itoire-lattice/spec.json",
+        "embodiment": "itoire-lattice/embodiment.html",
+        "design_md": "itoire-lattice/DESIGN.md",
+        "shot_desktop": "itoire-lattice/shots/shot_desktop.png"
+      }
+    },
+    {
+      "name": "Dogubori Repeat Block",
+      "slug": "dogubori-repeat-block",
+      "status": "Published",
+      "family": "Craft-Material",
+      "sub_movement": "Japanese Stencil-Resist (Katazome / Dogubori)",
+      "summary": "Believes a system is built from a tiny kit of crisp die-cut motif units stamped into a strict gapless repeat; rejects gradients, soft shadows, and one-off bespoke illustration in favor of flat punched silhouettes and tessellated rhythm.",
+      "tags": [
+        "katazome",
+        "dogubori",
+        "stencil",
+        "tessellation",
+        "asanoha",
+        "die-cut",
+        "indigo-resist",
+        "vermilion",
+        "modular",
+        "flat-silhouette",
+        "japonisme",
+        "stamped-repeat"
+      ],
+      "fonts": {
+        "heading": "Archivo",
+        "body": "Archivo Narrow",
+        "mono": "Space Mono"
+      },
+      "palette": {
+        "primary": "#1f3a6d",
+        "secondary": "#c0362c",
+        "accent": "#c0362c",
+        "background": "#ece4d2",
+        "surface": "#f4eedd",
+        "text": "#1c2434"
+      },
+      "files": {
+        "spec": "dogubori-repeat-block/spec.json",
+        "embodiment": "dogubori-repeat-block/embodiment.html",
+        "design_md": "dogubori-repeat-block/DESIGN.md",
+        "shot_desktop": "dogubori-repeat-block/shots/shot_desktop.png"
+      }
+    }
+  ]
+}

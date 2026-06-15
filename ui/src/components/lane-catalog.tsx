@@ -26,10 +26,10 @@ function SearchBar({
     <div className="relative mb-7 flex flex-wrap items-center gap-x-5 gap-y-3 overflow-hidden bg-card/65 px-5 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_4px_14px_rgba(30,35,45,0.05)] backdrop-blur-[4px] sm:overflow-visible">
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-80"
+        className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-75"
         style={{
-          background:
-            "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 75%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--salad) 35%, var(--paper-tape-mix)) 6px 12px)",
+          background: "var(--salad)",
+          mixBlendMode: "var(--ink-blend)" as never,
           transform: "rotate(-6deg)",
         }}
       />
@@ -64,7 +64,7 @@ export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
     <>
       <SearchBar value={q} onChange={setQ} placeholder="Search palettes by name, tag, or hex…" count={filtered.length} total={items.length} noun="palettes" />
       {filtered.length ? (
-        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((p) => (
             <Link key={p.id} href={`/palettes/${p.id}`} prefetch={false} className="group block min-w-0">
               <PaletteCard palette={p} />
@@ -92,7 +92,7 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
     <>
       <SearchBar value={q} onChange={setQ} placeholder="Search art styles by name, medium, or prompt…" count={filtered.length} total={items.length} noun="art styles" />
       {filtered.length ? (
-        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((a) => (
             <Link key={a.id} href={`/art-styles/${a.id}`} prefetch={false} className="group block min-w-0">
               <ArtStyleCard art={a} />
@@ -108,7 +108,7 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
 
 function EmptyState({ noun }: { noun: string }) {
   return (
-    <div className="paper-card mx-auto max-w-md rounded-[var(--radius-lg)] p-8 text-center text-sm text-muted-foreground">
+    <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
       No {noun} found.
       <div className="mt-1 font-mono text-[11px]">try a different search</div>
     </div>

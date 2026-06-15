@@ -19,7 +19,7 @@ export function ThemeToggle() {
       suppressHydrationWarning
       className="stamp group inline-flex h-7 items-center gap-1.5 px-2.5 text-[10px] transition-transform duration-200 hover:-translate-y-[1px] hover:rotate-[-6deg]"
       style={{
-        color: isDark ? "var(--yuzu)" : "var(--sumire)",
+        color: isDark ? "var(--yuzu)" : "var(--ramune)",
       }}
     >
       <span

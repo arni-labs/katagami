@@ -1,23 +1,34 @@
 import { Suspense } from "react";
-import { Search } from "lucide-react";
+import Link from "next/link";
 import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   listDesignLanguages,
   listTaxonomies,
+  parseJson,
 } from "@/lib/odata";
-import { LanguageGallery } from "@/components/language-gallery";
+import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
+import { RisoHeroPress } from "@/components/riso-hero";
+import { RisoInkField } from "@/components/riso-ink-field";
+import { SurpriseChip } from "@/components/hero-actions";
+import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
 
 async function GalleryGrid({
   status,
   taxonomy,
   search,
+  tag,
+  hue,
+  source,
   demo,
   taxonomies,
 }: {
   status?: string;
   taxonomy?: string;
   search?: string;
+  tag?: string;
+  hue?: string;
+  source?: string;
   demo?: boolean;
   taxonomies: { entity_id: string; fields: { name?: string } }[];
 }) {
@@ -32,7 +43,7 @@ async function GalleryGrid({
     );
   } catch {
     return (
-      <div className="paper-card mx-auto max-w-md rounded-[var(--radius-lg)] p-8 text-center text-sm text-muted-foreground">
+      <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
         Could not load design languages.
         <div className="mt-1 font-mono text-[11px]">check the Temper server</div>
       </div>
@@ -44,7 +55,7 @@ async function GalleryGrid({
 
   if (languages.length === 0) {
     return (
-      <div className="paper-card mx-auto max-w-md rounded-[var(--radius-lg)] p-8 text-center text-sm text-muted-foreground">
+      <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
         No design languages found.
         <div className="mt-1 font-mono text-[11px]">
           run the bootstrap pipeline
@@ -141,17 +152,130 @@ async function GalleryGrid({
     return a.entity_id.localeCompare(b.entity_id);
   });
 
+  // Today's pull — one sheet from the drawer, rotated daily. A fixed
+  // starting point for browsers who arrive with no destination.
+  const pullPool = languages.filter((l) => l.status === "Published");
+  const pull =
+    pullPool.length > 0 ? pullPool[dailyIndex(pullPool.length)] : undefined;
+
+  // The taste deck deals from the published catalog.
+  const deckEntries: DeckEntry[] = pullPool.map((l) => {
+    const tokens = parseJson<{
+      colors?: Record<string, string>;
+      typography?: { heading_font?: string };
+    }>(l.fields.tokens);
+    const colors = tokens?.colors ?? {};
+    const name = l.fields.name ?? "Untitled";
+    return {
+      id: l.entity_id,
+      name,
+      // editions of one house ("Art Deco Gilt · Night") share a family so
+      // the deck never deals near-clones back to back
+      family: name.split("·")[0].trim(),
+      href: `/language/${l.entity_id}`,
+      summary: parseJson<{ summary?: string }>(l.fields.philosophy)
+        ?.summary?.replace(/\s+/g, " ")
+        .trim(),
+      tags: (parseJson<string[]>(l.fields.tags) ?? []).map((t) =>
+        t.toLowerCase(),
+      ),
+      hue: dominantHueBucket(l),
+      colors: {
+        primary: colors.primary,
+        secondary: colors.secondary,
+        accent: colors.accent,
+        background: colors.background,
+        text: colors.text,
+      },
+      headingFont: tokens?.typography?.heading_font,
+      thumb: l.fields.thumbnail_asset_url || undefined,
+    };
+  });
+
   return (
-    <LanguageGallery
-      languages={languages}
-      canDelete={canDelete}
-      taxonomies={taxonomies}
-      initialFilters={{
-        status: status ?? "Published",
-        taxonomy: taxonomy ?? "all",
-        search: search ?? "",
+    <>
+      {pull ? <TodaysPull lang={pull} /> : null}
+      {deckEntries.length > 2 ? <TasteDeck entries={deckEntries} /> : null}
+      <LanguageGallery
+        languages={languages}
+        canDelete={canDelete}
+        taxonomies={taxonomies}
+        initialFilters={{
+          status: status ?? "Published",
+          taxonomy: taxonomy ?? "all",
+          search: search ?? "",
+          tag: tag ?? "all",
+          hue: hue ?? "all",
+          source: source ?? "all",
+        }}
+      />
+    </>
+  );
+}
+
+/** Which sheet gets pulled today — server-side daily rotation. */
+function dailyIndex(poolSize: number): number {
+  if (poolSize <= 0) return 0;
+  return Math.floor(Date.now() / 86_400_000) % poolSize;
+}
+
+function TodaysPull({
+  lang,
+}: {
+  lang: Awaited<ReturnType<typeof listDesignLanguages>>[number];
+}) {
+  const tokens = parseJson<{ colors?: Record<string, string> }>(
+    lang.fields.tokens,
+  );
+  const colors = tokens?.colors ?? {};
+  const swatch = [
+    colors.primary,
+    colors.secondary,
+    colors.accent,
+    colors.background,
+  ].filter((c): c is string => Boolean(c));
+  const ink = swatch[0] ?? "var(--sakura)";
+  const summary = parseJson<{ summary?: string }>(lang.fields.philosophy)
+    ?.summary?.replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    <Link
+      href={`/language/${lang.entity_id}`}
+      prefetch={false}
+      data-reveal
+      className="group relative flex flex-wrap items-center gap-x-5 gap-y-3 bg-card/80 px-5 py-4 transition-all duration-200 hover:-translate-y-[2px] sm:flex-nowrap"
+      style={{
+        boxShadow: "var(--shadow-card)",
       }}
-    />
+    >
+      <span
+        aria-hidden
+        className="washi-tape -left-3 -top-2"
+        style={{ ["--strip-ink" as string]: "var(--sakura)", transform: "rotate(-5deg)" }}
+      />
+      <span className="ink-stamp shrink-0" style={{ ["--ink" as string]: "var(--sakura)" }}>
+        ✦ today&apos;s pull
+      </span>
+      <span aria-hidden className="flex shrink-0 gap-[3px]">
+        {swatch.slice(0, 4).map((c, i) => (
+          <span key={i} className="h-3.5 w-3.5" style={{ background: c }} />
+        ))}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-display text-[18px] font-bold leading-tight tracking-[-0.015em] text-foreground">
+          {lang.fields.name}
+        </span>
+        {summary ? (
+          <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
+            {summary}
+          </span>
+        ) : null}
+      </span>
+      <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-foreground transition-transform group-hover:translate-x-1">
+        open →
+      </span>
+    </Link>
   );
 }
 
@@ -162,6 +286,9 @@ export default async function GalleryPage({
     status?: string;
     taxonomy?: string;
     q?: string;
+    tag?: string;
+    hue?: string;
+    src?: string;
     demo?: string;
   }>;
 }) {
@@ -175,518 +302,197 @@ export default async function GalleryPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden px-4 py-6 sm:space-y-8 sm:overflow-visible sm:py-10">
-      <section className="relative min-w-0 overflow-x-hidden sm:overflow-visible">
-        <div className="flex min-w-0 items-end justify-between gap-6">
-          <div className="min-w-0 max-w-4xl">
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--teal)]" />
-              <span>agent-maintained · ideas by</span>
-              <a
-                href="https://x.com/arni0x9053"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative inline-flex items-center text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
-              >
-                <span className="relative z-10">@arni0x9053</span>
-                <span
-                  aria-hidden
-                  className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px] bg-[var(--yuzu)] opacity-85"
-                  style={{ transform: "rotate(-0.8deg)" }}
-                />
-              </a>
-            </div>
-            {/* Title + stamps flow inline on the same line; wraps cleanly
-                on narrow widths. */}
-            <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
-              <h1 className="font-display text-[40px] font-bold leading-[1] tracking-[-0.03em] sm:text-[56px] lg:text-[68px]">
-                Design{" "}
-                <span className="marker">
-                  <span
-                    aria-hidden
-                    className="marker-fill"
-                    style={{ background: "var(--salad)" }}
-                  />
-                  <span className="marker-text">languages</span>
-                </span>
-                .
-              </h1>
-              <div className="relative z-10 flex flex-wrap items-center gap-2.5 pb-2">
-                <span
-                  className="stamp text-[var(--sakura)] whitespace-nowrap"
-                  style={{
-                    transform: "rotate(-5deg)",
-                    fontSize: 14,
-                    padding: "5px 12px",
-                    letterSpacing: "0.14em",
-                    borderWidth: 2,
-                  }}
-                >
-                  <span className="mr-1 text-[var(--sumire)]">✦</span>
-                  for agents
-                </span>
-                <span
-                  className="stamp text-[var(--sumire)] whitespace-nowrap"
-                  style={{
-                    transform: "rotate(4deg)",
-                    fontSize: 11,
-                    padding: "3px 10px",
-                    letterSpacing: "0.14em",
-                    borderWidth: 1.5,
-                  }}
-                >
-                  by agents
-                </span>
-              </div>
-            </div>
+    <div className="w-full overflow-x-hidden">
+      {/* ── Hero: full-bleed print bed — the ink connects to the header
+          and both screen edges, no padding around it ─────────────── */}
+      <section className="relative overflow-hidden">
+        <div aria-hidden className="hero-art pointer-events-none">
+          <RisoInkField opacity={0.9} />
+          <RisoHeroPress className="opacity-95" />
+        </div>
 
-            {/* "Give your agent taste" — styled like a handwritten planner
-                note in the margin: tiny sparkle, wavy underline doodle,
-                hand-drawn circle around DESIGN.md, slight card tilt. */}
-            <div
-              className="relative mt-6 max-w-xl"
-              style={{ transform: "rotate(-0.4deg)" }}
-            >
-              {/* Margin doodle — ✦ + "note" running up the side (desktop) */}
-              <div className="pointer-events-none absolute -left-9 top-1 hidden flex-col items-center gap-1 lg:flex">
-                <svg
-                  viewBox="0 0 12 12"
-                  className="h-3 w-3 text-[var(--sumire)]"
-                  fill="currentColor"
-                  aria-hidden
-                >
-                  <path d="M6 0.5 L7 4.9 L11.5 6 L7 7.1 L6 11.5 L5 7.1 L0.5 6 L5 4.9 Z" />
-                </svg>
-                <span
-                  className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80"
-                  style={{ writingMode: "vertical-rl" }}
-                >
-                  margin note
-                </span>
-              </div>
-
-              <div className="relative px-2 py-3">
-                <p className="font-display text-[20px] font-bold leading-snug tracking-[-0.015em] text-foreground sm:text-[24px]">
-                  Give your agent{" "}
-                  <span className="relative inline-block">
-                    <span className="marker">
-                      <span
-                        aria-hidden
-                        className="marker-fill"
-                        style={{ background: "var(--sakura)" }}
-                      />
-                      <span className="marker-text">taste</span>
-                    </span>
-                    {/* Squiggly hand-drawn underline under "taste" */}
-                    <svg
-                      aria-hidden
-                      viewBox="0 0 100 10"
-                      preserveAspectRatio="none"
-                      className="absolute -bottom-[6px] left-0 h-[7px] w-full text-[var(--sumire)]"
-                    >
-                      <path
-                        d="M 2 6 Q 12 1, 22 5 T 44 5 T 66 5 T 88 5 T 100 5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  .{" "}
-                  {/* Inline doodle: little arrow "→ yes." */}
-                  <span
-                    className="ml-1 inline-block font-mono text-[13px] font-semibold text-[var(--beni)]"
-                    style={{ transform: "rotate(-4deg)" }}
-                  >
-                    ← yes.
-                  </span>
-                </p>
-
-                <p className="mt-4 font-mono text-[12px] leading-relaxed text-foreground/80 sm:text-[13px]">
-                  a vocabulary of{" "}
-                  <span className="font-semibold text-foreground">
-                    design movements
-                  </span>
-                  <br />
-                  you can hand off as{" "}
-                  {/* DESIGN.md — wrapped in a slightly-irregular SVG circle,
-                      no border/chip, the doodle IS the highlight */}
-                  <span className="relative inline-block px-2.5">
-                    <svg
-                      aria-hidden
-                      viewBox="0 0 96 26"
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 h-full w-full text-[var(--teal)]"
-                    >
-                      <path
-                        d="M 10 4 C 2 6, 2 20, 14 22 C 34 25, 72 24, 86 20 C 98 17, 94 4, 78 3 C 58 1, 20 2, 10 4 Z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="relative font-semibold text-foreground">
-                      DESIGN.md
-                    </span>
-                  </span>
-                  .
-                </p>
-
-                {/* Bottom corner doodle — curly arrow pointing to DESIGN.md */}
-                <svg
-                  aria-hidden
-                  viewBox="0 0 60 40"
-                  className="pointer-events-none absolute -bottom-3 right-4 h-8 w-14 text-[var(--sumire)]"
-                >
-                  <path
-                    d="M 4 34 C 10 28, 14 20, 26 16 C 38 12, 48 12, 54 8"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M 48 4 L 54 8 L 50 14"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -bottom-1 left-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70"
-                  style={{ transform: "rotate(-3deg)" }}
-                >
-                  ✎ hand it over
-                </span>
-              </div>
-            </div>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <a
-                href="#gallery"
-                className="group relative inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
-              >
-                <Search className="h-3.5 w-3.5" />
-                Browse gallery
-              </a>
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                card → detail → DESIGN.md
-              </span>
-            </div>
-          </div>
-          <div className="relative hidden shrink-0 flex-col items-end gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground sm:flex">
-            <span className="stamp text-[var(--sakura)]">katagami</span>
-            <span className="stamp text-[var(--teal)] rotate-[3deg]">
-              no.001
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:pb-14 sm:pt-12">
+          <div className="relative max-w-3xl">
+          <div
+            className="riso-reveal mb-4 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
+            style={{ ["--reveal-i" as string]: 0 }}
+          >
+            <span aria-hidden className="flex gap-[2px]">
+              {["var(--sakura)", "var(--yuzu)", "var(--ramune)"].map((ink) => (
+                <span key={ink} className="h-2.5 w-2.5" style={{ background: ink }} />
+              ))}
             </span>
-            <span className="pt-1">since 2026</span>
+            <span>agent-maintained · ideas by</span>
+            <a
+              href="https://x.com/arni0x9053"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative inline-flex items-center text-foreground transition-transform duration-200 hover:-translate-y-[1px]"
+            >
+              <span className="relative z-10">@arni0x9053</span>
+              <span
+                aria-hidden
+                className="absolute inset-x-[-3px] bottom-[1px] z-0 h-[6px] rounded-[1px] bg-[var(--yuzu)] opacity-85"
+                style={{
+                  transform: "rotate(-0.8deg)",
+                  mixBlendMode: "var(--ink-blend)" as never,
+                }}
+              />
+            </a>
+          </div>
+
+          <h1
+            className="riso-reveal font-display text-[44px] font-bold leading-[0.98] tracking-[-0.03em] sm:text-[64px] lg:text-[76px]"
+            style={{ ["--reveal-i" as string]: 1 }}
+          >
+            Design{" "}
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{ background: "var(--sakura)" }}
+              />
+              <span className="marker-text">languages</span>
+            </span>
+            .
+          </h1>
+
+          <p
+            className="riso-reveal mt-6 font-display text-[22px] font-bold leading-snug tracking-[-0.015em] text-foreground sm:text-[26px]"
+            style={{ ["--reveal-i" as string]: 2 }}
+          >
+            Give your agent{" "}
+            <span className="marker">
+              <span
+                aria-hidden
+                className="marker-fill"
+                style={{ background: "var(--yuzu)" }}
+              />
+              <span className="marker-text">taste</span>
+            </span>
+            .
+          </p>
+          <p
+            className="riso-reveal mt-3 max-w-xl text-[15.5px] leading-relaxed text-muted-foreground sm:text-[17px]"
+            style={{ ["--reveal-i" as string]: 2 }}
+          >
+            a vocabulary of design movements you can hand off as{" "}
+            <span className="font-mono text-[0.92em] font-semibold text-foreground">
+              DESIGN.md
+            </span>
+            .
+          </p>
+
+          <div
+            className="riso-reveal mt-8 flex flex-wrap items-center gap-3"
+            style={{ ["--reveal-i" as string]: 3 }}
+          >
+            <a
+              href="#gallery"
+              className="group relative inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-background shadow-[0_2px_0_rgba(30,35,45,0.16)] transition-all duration-200 hover:-translate-y-[2px] hover:rotate-[-1deg]"
+            >
+              Browse gallery
+              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+            </a>
+            <SurpriseChip />
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              or press <kbd className="font-bold text-foreground">⌘K</kbd> to search
+            </span>
+          </div>
           </div>
         </div>
       </section>
 
-      {/* Collapsible "What you can do" — compact 4-card row, scrapbook vibe.
-          Folds up so the gallery below is always quick to reach. */}
-      <details
-        className="group/cando relative min-w-0 overflow-x-hidden sm:overflow-visible"
-        aria-labelledby="what-you-can-do"
+      {/* ── Everything below the hero stays in the content column ── */}
+      <div className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 pt-10 sm:space-y-16">
+      {/* ── How it works — one quiet strip, three passes ─────────── */}
+      <section
+        aria-label="How katagami works"
+        data-reveal-children
+        className="relative grid gap-6 sm:grid-cols-3"
       >
-        <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-          <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--sumire)]" />
-              <h2
-                id="what-you-can-do"
-                className="min-w-0 font-display text-[22px] font-bold leading-none tracking-[-0.02em] sm:text-[26px]"
-              >
-                Browse and share with{" "}
-                <span className="marker">
-                  <span
-                    aria-hidden
-                    className="marker-fill"
-                    style={{ background: "var(--yuzu)" }}
-                  />
-                  <span className="marker-text">agents</span>
-                </span>{" "}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="stamp text-[var(--teal)] shrink-0"
-                style={{
-                  transform: "rotate(3deg)",
-                  fontSize: 10,
-                  padding: "3px 9px",
-                  letterSpacing: "0.14em",
-                }}
-              >
-                optional notes
-              </span>
-              {/* Fold/unfold toggle — styled as a stamp pill; rotates +
-                  swaps its label based on open state */}
-              <span
-                className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-transform hover:-translate-y-[1px]"
-                style={{
-                  transform: "rotate(-2deg)",
-                  border: "1.5px solid var(--sumire)",
-                  color: "var(--sumire)",
-                  background:
-                    "color-mix(in oklch, var(--sumire) 8%, var(--paper-tape-mix))",
-                  padding: "4px 10px",
-                  borderRadius: 2,
-                }}
-              >
-                <svg
-                  aria-hidden
-                  viewBox="0 0 12 12"
-                  className="h-3 w-3 shrink-0 transition-transform group-open/cando:rotate-180"
-                  fill="currentColor"
-                >
-                  <path d="M6 8.5 L1.5 4 L10.5 4 Z" />
-                </svg>
-                <span className="hidden group-open/cando:inline">fold</span>
-                <span className="inline group-open/cando:hidden">show</span>
-              </span>
-            </div>
-          </div>
-        </summary>
-
-        {/* Card row — responsive across every size:
-              mobile (< sm):  horizontal scroll-snap, 240px fixed cards
-              sm–md:          2-col grid
-              lg+:            4-col grid
-            No gray borders anywhere. */}
-        {/* Mobile: single column stack. sm: 2-col grid. lg: 4-col grid. */}
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-          {(
-            [
-              {
-                outcome: "Skip the cold start.",
-                you: "Name what you like.",
-                agent: "Receive a vocabulary.",
-                prompt: "rebuild this landing in Sumi-e Editorial",
-                tint: "sakura",
-                tape: "yuzu",
-                tapeRot: -4,
-              },
-              {
-                outcome: "Commit with confidence.",
-                you: "Compare moods quickly.",
-                agent: "Stay on-style, session to session.",
-                prompt: "preview this page — calm, aggressive, playful",
-                tint: "salad",
-                tape: "sumire",
-                tapeRot: 5,
-              },
-              {
-                outcome: "Remix freely.",
-                you: "Remix languages.",
-                agent: "Cite tokens precisely.",
-                prompt: "apply CRT Terminal tokens to the Sumi-e layout",
-                tint: "teal",
-                tape: "sakura",
-                tapeRot: -6,
-              },
-              {
-                outcome: "Explore wider.",
-                you: "Discover new movements.",
-                agent: "Stop inventing defaults.",
-                prompt: "research sci-fi × editorial typography",
-                tint: "sumire",
-                tape: "salad",
-                tapeRot: 4,
-              },
-            ] as const
-          ).map((row, i) => (
-            <article
-              key={row.outcome}
-              className="relative w-full sm:max-w-[360px] lg:max-w-none"
-            >
-              {/* Washi tape corner */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -left-1.5 -top-1.5 z-20 h-[13px] w-[62px] rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
-                style={{
-                  background: `repeating-linear-gradient(45deg, color-mix(in oklch, var(--${row.tape}) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--${row.tape}) 42%, var(--paper-tape-mix)) 6px 12px)`,
-                  transform: `rotate(${row.tapeRot}deg)`,
-                }}
-              />
-              {/* Index sticker — small round, in card corner */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -right-2 -top-2.5 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full bg-card font-mono text-[11px] font-black text-foreground shadow-[1px_1px_0_rgba(30,35,45,0.1)]"
-                style={{
-                  transform: "rotate(6deg)",
-                  border: `1.5px solid var(--${row.tint})`,
-                  color: `color-mix(in oklch, var(--${row.tint}), black 30%)`,
-                }}
-              >
-                {i + 1}
-              </span>
-
-              <div
-                className="relative flex h-full flex-col overflow-hidden px-4 py-4 shadow-[0_1px_2px_rgba(30,35,45,0.04),0_6px_18px_rgba(30,35,45,0.06)]"
-                style={{
-                  background: `color-mix(in srgb, var(--${row.tint}) 10%, var(--paper-tint-base))`,
-                }}
-              >
-                {/* Thin colored top ribbon — card identity */}
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 top-0 h-[4px]"
-                  style={{ background: `var(--${row.tint})` }}
-                />
-
-                <h3 className="mt-2 font-display text-[17px] font-bold leading-[1.12] tracking-[-0.015em]">
-                  {row.outcome}
-                </h3>
-
-                {/* Stacked for you / for agent — hand-written style, no borders */}
-                <div className="mt-3 space-y-2.5">
-                  <div>
-                    <span
-                      className="font-mono text-[9px] font-bold uppercase tracking-[0.2em]"
-                      style={{
-                        color: `color-mix(in oklch, var(--teal), black 25%)`,
-                      }}
-                    >
-                      ✎ for you
-                    </span>
-                    <p className="mt-0.5 text-[12.5px] leading-snug text-foreground/90">
-                      {row.you}
-                    </p>
-                  </div>
-                  <div>
-                    <span
-                      className="font-mono text-[9px] font-bold uppercase tracking-[0.2em]"
-                      style={{
-                        color: `color-mix(in oklch, var(--sumire), black 20%)`,
-                      }}
-                    >
-                      ✦ for agent
-                    </span>
-                    <p className="mt-0.5 text-[12.5px] leading-snug text-foreground/90">
-                      {row.agent}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Perforation separator */}
-                <div className="sticker-perforation my-3" />
-
-                {/* Prompt — scroll-note style, no border, just yuzu wash */}
-                <div className="mt-auto flex items-start gap-1.5">
-                  <span
-                    aria-hidden
-                    className="mt-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: "var(--beni)" }}
-                  >
-                    → try
-                  </span>
-                  <span
-                    className="flex-1 font-mono text-[10.5px] italic leading-snug text-foreground/75"
-                    style={{
-                      background:
-                        "linear-gradient(transparent 68%, color-mix(in oklch, var(--yuzu) 60%, var(--paper-tape-mix)) 68%)",
-                      padding: "0 2px",
-                    }}
-                  >
-                    &ldquo;{row.prompt}&rdquo;
-                  </span>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Gallery cue — dashed perforation, washi tape snippet, and a
-            tilted "gallery below" stamp in place of the plain text hint. */}
-        <div className="relative mt-6 flex items-center justify-center">
-          <div
-            aria-hidden
-            className="absolute inset-x-0 top-1/2 border-t border-dashed border-border"
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-[18%] top-1/2 hidden h-[12px] w-[52px] -translate-y-1/2 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] sm:block"
-            style={{
-              background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--salad) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--salad) 42%, var(--paper-tape-mix)) 6px 12px)",
-              transform: "translateY(-50%) rotate(-6deg)",
-            }}
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute right-[18%] top-1/2 hidden h-[12px] w-[52px] -translate-y-1/2 rounded-[1px] opacity-85 shadow-[0_1px_2px_rgba(30,35,45,0.06)] sm:block"
-            style={{
-              background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 78%, var(--paper-tape-mix)) 0 6px, color-mix(in oklch, var(--yuzu) 42%, var(--paper-tape-mix)) 6px 12px)",
-              transform: "translateY(-50%) rotate(5deg)",
-            }}
-          />
-          <span
-            className="relative inline-flex items-center gap-1.5 bg-background px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em]"
-            style={{
-              transform: "rotate(-2deg)",
-              border: "1.5px solid var(--sumire)",
-              color: "var(--sumire)",
-              background:
-                "color-mix(in oklch, var(--sumire) 8%, var(--background))",
-              padding: "3px 12px",
-              borderRadius: 2,
-            }}
-          >
-            <svg
+        {(
+          [
+            {
+              n: "01",
+              ink: "sakura",
+              title: "Browse",
+              body: "Filter by ink, vibe, or movement — or let the shuffle pick a language you didn't know you wanted.",
+            },
+            {
+              n: "02",
+              ink: "ramune",
+              title: "Open a language",
+              body: "Every language ships its philosophy, tokens, rules, and working landing + dashboard embodiments.",
+            },
+            {
+              n: "03",
+              ink: "yuzu",
+              title: "Hand it to your agent",
+              body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style, session after session.",
+            },
+          ] as const
+        ).map((step) => (
+          <div key={step.n} className="relative pl-12">
+            <span
               aria-hidden
-              viewBox="0 0 12 12"
-              className="h-3 w-3 shrink-0"
-              fill="currentColor"
+              className="absolute left-0 top-0 font-display text-[34px] font-bold leading-none"
+              style={{
+                color: `color-mix(in oklch, var(--${step.ink}) 70%, var(--foreground))`,
+              }}
             >
-              <path d="M6 9.5 L1.5 4.5 L10.5 4.5 Z" />
-            </svg>
-            the gallery
-          </span>
-        </div>
-      </details>
+              {step.n}
+            </span>
+            <h3 className="font-display text-[17px] font-bold leading-tight tracking-[-0.015em]">
+              {step.title}
+            </h3>
+            <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
+              {step.body}
+            </p>
+          </div>
+        ))}
+      </section>
 
+      {/* ── Gallery ──────────────────────────────────────────────── */}
       <section id="gallery" className="scroll-mt-20 space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+        <div data-reveal className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--teal)]" />
+              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--ramune)]" />
               choose a language
             </div>
             <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.02em]">
               Gallery
             </h2>
           </div>
-          <span className="stamp text-[var(--salad)]">details inside</span>
+          <span className="stamp text-[var(--ramune)]">details inside</span>
         </div>
-      </section>
 
-      <Suspense
-        fallback={
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-72 animate-pulse rounded-[var(--radius-xl)] border border-border bg-muted/50"
-              />
-            ))}
-          </div>
-        }
-      >
-        <GalleryGrid
-          status={sp.status}
-          taxonomy={sp.taxonomy}
-          search={sp.q}
-          demo={demo}
-          taxonomies={taxonomies}
-        />
-      </Suspense>
+        <Suspense
+          fallback={
+            <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-72 animate-pulse bg-muted/50"
+                />
+              ))}
+            </div>
+          }
+        >
+          <GalleryGrid
+            status={sp.status}
+            taxonomy={sp.taxonomy}
+            search={sp.q}
+            tag={sp.tag}
+            hue={sp.hue}
+            source={sp.src}
+            demo={demo}
+            taxonomies={taxonomies}
+          />
+        </Suspense>
+      </section>
+      </div>
     </div>
   );
 }

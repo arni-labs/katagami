@@ -586,8 +586,8 @@ function ArtifactBlock({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+    <div className="overflow-hidden bg-card shadow-[var(--shadow-paper)]">
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             {label}
@@ -635,7 +635,7 @@ function ShadcnKitCopyPanel({
     previewShotsStatus === "validated";
 
   return (
-    <div className="rounded-lg border border-border bg-card/95 p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
+    <div className="bg-card/95 p-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -693,7 +693,7 @@ function ImplementationKitNotice({
   return (
     <Card
       className={cn(
-        "shadsync-kit-notice border-border/70 bg-card/95",
+        "shadsync-kit-notice border-0 ring-0 bg-card/95 shadow-[var(--shadow-card)]",
         hasAgentKit ? "shadsync-kit-ready" : "shadsync-kit-missing",
       )}
       data-testid="shadcn-implementation-kit-status"
@@ -2011,7 +2011,7 @@ export function ShadcnPreview({
         />
       ) : null}
 
-      <details className="group rounded-lg border border-border bg-card/70">
+      <details className="group bg-card/70 shadow-[var(--shadow-card)]">
         <summary className="flex cursor-pointer list-none flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             advanced implementation files
@@ -2020,7 +2020,7 @@ export function ShadcnPreview({
             optional machine-readable theme, CSS, TSX starter, recipes, and preview contract
           </span>
         </summary>
-        <div className="grid gap-3 border-t border-border p-3 lg:grid-cols-3">
+        <div className="grid gap-3 p-3 pt-0 lg:grid-cols-3">
         <ArtifactBlock label="shadcn add" value={shadcnInstallCommand()} />
         <ArtifactBlock label="theme css" value={css} />
         <ArtifactBlock label="tsx starter" value={tsxExample} />

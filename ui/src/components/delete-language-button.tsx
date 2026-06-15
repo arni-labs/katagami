@@ -40,7 +40,7 @@ export function DeleteLanguageButton({
       <>
         <button
           type="button"
-          className="group/delete relative flex h-7 w-7 items-center justify-center rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_38%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_8%,var(--paper-tape-mix))] text-[color-mix(in_oklch,var(--beni),black_10%)] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[2deg] hover:bg-[var(--beni)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
+          className="group/delete relative flex h-7 w-7 items-center justify-center rounded-[3px] bg-[color-mix(in_srgb,var(--beni)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--beni)_72%,var(--foreground))] shadow-[0_1px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[2deg] hover:bg-[var(--beni)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
           aria-label={`Archive ${name}`}
           title={`Archive ${name}`}
           onClick={(e) => {
@@ -153,23 +153,30 @@ export function DeleteLanguageDialog({
           aria-modal="true"
           aria-labelledby={`delete-language-${target.id}-title`}
           aria-describedby={`delete-language-${target.id}-description`}
-          className="relative w-full max-w-[420px] overflow-hidden rounded-[4px] border border-[color-mix(in_oklch,var(--beni)_22%,var(--border))] bg-[var(--paper-sticker)] p-5 text-foreground shadow-[0_22px_52px_rgba(30,35,45,0.26)] ring-1 ring-foreground/10 dark:bg-popover"
+          className="relative w-full max-w-[420px] overflow-hidden bg-[var(--paper-sticker)] p-5 text-foreground dark:bg-popover"
+          style={{
+            boxShadow: "var(--shadow-card)",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <span
             aria-hidden
-            className="pointer-events-none absolute -left-5 top-3 h-[18px] w-28 rotate-[-8deg] rounded-[1px] opacity-95 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
+            className="pointer-events-none absolute -left-5 top-3 h-[18px] w-28 rounded-[1px]"
             style={{
-              background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--sakura) 78%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--sakura) 38%, var(--paper-tape-mix)) 7px 14px)",
+              background: "var(--sakura)",
+              opacity: 0.75,
+              mixBlendMode: "var(--ink-blend)" as never,
+              transform: "rotate(-8deg)",
             }}
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute -right-3 top-5 h-[16px] w-20 rotate-[8deg] rounded-[1px] opacity-90 shadow-[0_1px_2px_rgba(30,35,45,0.08)]"
+            className="pointer-events-none absolute -right-3 top-5 h-[16px] w-20 rounded-[1px]"
             style={{
-              background:
-                "repeating-linear-gradient(45deg, color-mix(in oklch, var(--yuzu) 78%, var(--paper-tape-mix)) 0 7px, color-mix(in oklch, var(--yuzu) 36%, var(--paper-tape-mix)) 7px 14px)",
+              background: "var(--yuzu)",
+              opacity: 0.75,
+              mixBlendMode: "var(--ink-blend)" as never,
+              transform: "rotate(8deg)",
             }}
           />
           <button
@@ -184,7 +191,7 @@ export function DeleteLanguageDialog({
 
           <div className="relative space-y-4 pt-5">
             <div className="flex items-start gap-3">
-              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] border border-destructive/25 bg-destructive/10 text-destructive shadow-[0_1px_0_rgba(30,35,45,0.08)]">
+              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] bg-[color-mix(in_srgb,var(--beni)_14%,var(--paper-stamp-mix))] text-destructive shadow-[0_1px_0_rgba(30,35,45,0.08)]">
                 <Archive className="h-5 w-5 rotate-[-8deg]" />
               </span>
               <div className="min-w-0 space-y-1">
@@ -210,7 +217,12 @@ export function DeleteLanguageDialog({
             </p>
 
             {error ? (
-              <div className="relative rounded-[4px] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              <div
+                className="relative bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
+                style={{
+                  boxShadow: "var(--shadow-card)",
+                }}
+              >
                 <AlertTriangle className="mr-2 inline h-4 w-4 align-[-3px]" />
                 {error}
               </div>
@@ -223,7 +235,7 @@ export function DeleteLanguageDialog({
                 type="button"
                 onClick={() => onOpenChange(false)}
                 disabled={isPending}
-                className="h-8 rounded-[3px] border border-border bg-background px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                className="h-8 rounded-[3px] bg-[color-mix(in_srgb,var(--foreground)_8%,var(--paper-stamp-mix))] px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
               >
                 keep it
               </button>
@@ -231,7 +243,7 @@ export function DeleteLanguageDialog({
                 type="button"
                 onClick={handleDelete}
                 disabled={isPending}
-                className="h-8 rounded-[3px] border border-[color-mix(in_oklch,var(--beni)_58%,var(--paper-tape-mix))] bg-[color-mix(in_oklch,var(--beni)_13%,var(--paper-tape-mix))] px-3 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-[color-mix(in_oklch,var(--beni),black_12%)] shadow-[0_2px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[0.6deg] hover:bg-[var(--beni)] hover:text-white disabled:pointer-events-none disabled:opacity-60"
+                className="h-8 rounded-[3px] bg-[color-mix(in_srgb,var(--beni)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-[color-mix(in_oklch,var(--beni)_72%,var(--foreground))] shadow-[0_2px_0_rgba(30,35,45,0.08)] transition-all hover:-translate-y-0.5 hover:rotate-[0.6deg] hover:bg-[var(--beni)] hover:text-white disabled:pointer-events-none disabled:opacity-60"
               >
                 {isPending ? "archiving..." : "archive"}
               </button>
