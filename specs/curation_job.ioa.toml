@@ -261,6 +261,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteResearch"
@@ -282,6 +284,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "research_completion_advances_query"
@@ -322,6 +326,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "synthesis_creates_quality_review_job"
@@ -404,6 +410,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "review_creates_organization_job"
@@ -452,6 +460,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "organization_completion_finishes_query"
@@ -484,6 +494,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteEvolution"
@@ -505,6 +517,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteTasteDistillation"
@@ -526,6 +540,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompletePaletteSynthesis"
@@ -544,6 +560,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "palette_synthesis_completes_direction"
@@ -576,6 +594,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "art_style_synthesis_completes_direction"
@@ -693,6 +713,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[state_timeout]]
 state = "Queued"
