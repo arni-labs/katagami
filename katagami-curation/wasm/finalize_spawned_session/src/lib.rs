@@ -798,16 +798,40 @@ fn walk_lane_entity_to_published(
     published_assets_params: &serde_json::Value,
 ) -> Result<(), String> {
     for action in verify_actions {
-        dispatch_action(ctx, api_url, headers, set_name, entity_id, action, &json!({}))?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            set_name,
+            entity_id,
+            action,
+            &json!({}),
+        )?;
     }
     let entity = load_entity(ctx, api_url, headers, set_name, entity_id)?
         .ok_or_else(|| format!("{set_name} '{entity_id}' disappeared during finalization"))?;
     if entity_status_value(&entity) == "Draft" {
-        dispatch_action(ctx, api_url, headers, set_name, entity_id, "SubmitForReview", &json!({}))?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            set_name,
+            entity_id,
+            "SubmitForReview",
+            &json!({}),
+        )?;
     }
     // For terminal lanes the curator session + finalizer verification IS the
     // quality gate, so the finalizer marks it directly.
-    dispatch_action(ctx, api_url, headers, set_name, entity_id, "MarkQualityPassed", &json!({}))?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        set_name,
+        entity_id,
+        "MarkQualityPassed",
+        &json!({}),
+    )?;
     dispatch_action(
         ctx,
         api_url,
@@ -845,7 +869,15 @@ fn walk_lane_entity_to_published(
     }
 
     if entity_status_value(&entity) != "Published" {
-        dispatch_action(ctx, api_url, headers, set_name, entity_id, "Publish", &json!({}))?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            set_name,
+            entity_id,
+            "Publish",
+            &json!({}),
+        )?;
     }
     Ok(())
 }
@@ -857,12 +889,20 @@ fn pal_hex_rgb(s: &str) -> Option<(f64, f64, f64)> {
         return None;
     }
     let n = u32::from_str_radix(t, 16).ok()?;
-    Some((((n >> 16) & 255) as f64, ((n >> 8) & 255) as f64, (n & 255) as f64))
+    Some((
+        ((n >> 16) & 255) as f64,
+        ((n >> 8) & 255) as f64,
+        (n & 255) as f64,
+    ))
 }
 fn rel_lum(c: (f64, f64, f64)) -> f64 {
     fn ch(v: f64) -> f64 {
         let s = v / 255.0;
-        if s <= 0.03928 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+        if s <= 0.03928 {
+            s / 12.92
+        } else {
+            ((s + 0.055) / 1.055).powf(2.4)
+        }
     }
     0.2126 * ch(c.0) + 0.7152 * ch(c.1) + 0.0722 * ch(c.2)
 }
@@ -878,13 +918,21 @@ fn first_signature_hex(f: &serde_json::Value) -> Option<String> {
     if let Some(s) = first.as_str() {
         return Some(s.to_string());
     }
-    first.get("hex").and_then(|v| v.as_str()).map(|s| s.to_string())
+    first
+        .get("hex")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
 }
 // Returns Err with a human reason if the palette fails the deterministic gate.
 fn validate_palette_colors(f: &serde_json::Value) -> Result<(), String> {
-    let neutrals = parse_json_field(f.get("neutrals"))
-        .ok_or_else(|| "missing neutrals".to_string())?;
-    let get = |k: &str| neutrals.get(k).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let neutrals =
+        parse_json_field(f.get("neutrals")).ok_or_else(|| "missing neutrals".to_string())?;
+    let get = |k: &str| {
+        neutrals
+            .get(k)
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    };
     let text = get("text").ok_or("neutrals.text missing")?;
     let surface = get("surface").ok_or("neutrals.surface missing")?;
     let bg = get("bg").ok_or("neutrals.bg missing")?;
@@ -899,7 +947,9 @@ fn validate_palette_colors(f: &serde_json::Value) -> Result<(), String> {
     let accent = first_signature_hex(f).ok_or("signature[0] (primary accent) missing")?;
     let ca = contrast_ratio(&accent, &surface).ok_or("invalid accent hex")?;
     if ca < 3.0 {
-        return Err(format!("primary accent vs surface contrast {ca:.2} < 3.0 (not distinguishable)"));
+        return Err(format!(
+            "primary accent vs surface contrast {ca:.2} < 3.0 (not distinguishable)"
+        ));
     }
     Ok(())
 }
@@ -1019,7 +1069,11 @@ fn verify_synthesized_art_styles(
             headers,
             "ArtStyles",
             id,
-            &["VerifyReferenceImages", "VerifyProofShots", "VerifyThumbnail"],
+            &[
+                "VerifyReferenceImages",
+                "VerifyProofShots",
+                "VerifyThumbnail",
+            ],
             &json!({
                 "thumbnail_asset_id": thumb_file,
                 "thumbnail_asset_url": "",
@@ -1029,7 +1083,9 @@ fn verify_synthesized_art_styles(
         published.push(id.clone());
     }
     if published.is_empty() {
-        return Err("synthesize_art_style produced art style IDs but none of them exist".to_string());
+        return Err(
+            "synthesize_art_style produced art style IDs but none of them exist".to_string(),
+        );
     }
     Ok(json!({
         "validated": true,
@@ -4511,17 +4567,6 @@ fn run_typed_completion_fallback(
         "source_search" => {
             let direction_ids = parse_json_string_array(fields.get("direction_ids"));
             for direction_id in &direction_ids {
-                if job_exists(
-                    ctx,
-                    api_url,
-                    headers,
-                    "synthesize",
-                    query_id,
-                    Some(direction_id),
-                )? {
-                    continue;
-                }
-
                 let Some(direction) =
                     load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
                 else {
@@ -4532,11 +4577,23 @@ fn run_typed_completion_fallback(
                 let direction_workspace =
                     string_field(&direction_fields, "workspace_id", workspace_id);
                 let direction_query = string_field(&direction_fields, "query_id", query_id);
+                let synthesis_job_type = synthesis_job_type_for_direction(&direction_fields);
+                if job_exists(
+                    ctx,
+                    api_url,
+                    headers,
+                    &synthesis_job_type,
+                    query_id,
+                    Some(direction_id),
+                )? {
+                    continue;
+                }
+
                 let synth_job_id = create_configure_submit_job(
                     ctx,
                     api_url,
                     headers,
-                    "synthesize",
+                    &synthesis_job_type,
                     &direction_workspace,
                     &direction_query,
                     Some(direction_id),
@@ -4545,6 +4602,7 @@ fn run_typed_completion_fallback(
                 )?;
                 actions.push(json!({
                     "action": "created_synthesis_job",
+                    "job_type": synthesis_job_type,
                     "direction_id": direction_id,
                     "job_id": synth_job_id,
                 }));
@@ -4602,42 +4660,196 @@ fn run_typed_completion_fallback(
             } else {
                 entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
             };
-            if query_status.as_deref() == Some("Synthesizing")
-                && !job_exists(ctx, api_url, headers, "quality_review", query_id, None)?
-            {
-                let review_input = string_field(fields, "review_input", "{}");
-                let review_job_id = create_configure_submit_job(
-                    ctx,
-                    api_url,
-                    headers,
-                    "quality_review",
-                    workspace_id,
-                    query_id,
-                    None,
-                    &parent_session_id_from_fields(fields),
-                    &review_input,
-                )?;
-                actions
-                    .push(json!({"action": "created_quality_review_job", "job_id": review_job_id}));
-            }
             if query_status.as_deref() == Some("Synthesizing") {
+                let aggregate = query_direction_aggregate(ctx, api_url, headers, query_id)?;
+                let should_advance = direction_id.is_empty() || aggregate.all_completed;
+                if should_advance {
+                    let language_ids = if aggregate.design_language_ids.is_empty() {
+                        design_language_ids_from_job(fields)
+                    } else {
+                        aggregate.design_language_ids
+                    };
+                    if language_ids.is_empty() {
+                        return Err(
+                            "synthesize completed but no design_language_ids were available"
+                                .to_string(),
+                        );
+                    }
+                    let mut quality_review_job_ids = Vec::new();
+                    if !job_exists(ctx, api_url, headers, "quality_review", query_id, None)? {
+                        let review_input = json!({
+                            "language_ids": language_ids,
+                            "query_id": query_id
+                        })
+                        .to_string();
+                        let review_job_id = create_configure_submit_job(
+                            ctx,
+                            api_url,
+                            headers,
+                            "quality_review",
+                            workspace_id,
+                            query_id,
+                            None,
+                            &parent_session_id_from_fields(fields),
+                            &review_input,
+                        )?;
+                        quality_review_job_ids.push(review_job_id.clone());
+                        actions.push(json!({
+                            "action": "created_quality_review_job",
+                            "job_id": review_job_id
+                        }));
+                    }
+                    dispatch_action(
+                        ctx,
+                        api_url,
+                        headers,
+                        "CurationQueries",
+                        query_id,
+                        "SynthesisComplete",
+                        &json!({
+                            "design_language_ids": json_string_array(&language_ids),
+                            "organize_job_id": "",
+                            "quality_review_job_ids": json_string_array(&quality_review_job_ids),
+                        }),
+                    )?;
+                    actions.push(json!({
+                        "action": "query_synthesis_complete",
+                        "query_id": query_id,
+                        "design_language_ids": language_ids
+                    }));
+                } else {
+                    actions.push(json!({
+                        "action": "query_waiting_for_remaining_directions",
+                        "query_id": query_id,
+                        "completed_direction_id": direction_id
+                    }));
+                }
+            }
+        }
+        "synthesize_palette" => {
+            let direction_id = string_field(fields, "direction_id", "");
+            if !direction_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
+                    == Some("Synthesizing".to_string())
+            {
                 dispatch_action(
                     ctx,
                     api_url,
                     headers,
-                    "CurationQueries",
-                    query_id,
-                    "SynthesisComplete",
+                    "CurationDirections",
+                    &direction_id,
+                    "CompletePalette",
                     &json!({
-                        "design_language_ids": fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                        "organize_job_id": "",
-                        "quality_review_job_ids": "[]",
+                        "palette_system_ids": json_string_array(&lane_ids_from_job(
+                            fields,
+                            &["palette_system_ids", "palette_ids"],
+                        )),
                     }),
                 )?;
-                actions.push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
+                actions.push(json!({
+                    "action": "palette_direction_complete",
+                    "direction_id": direction_id
+                }));
+            }
+
+            if !query_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
+                    == Some("Synthesizing".to_string())
+            {
+                let aggregate = query_direction_aggregate(ctx, api_url, headers, query_id)?;
+                let all_completed = aggregate.all_completed;
+                let palette_system_ids = if aggregate.palette_system_ids.is_empty() {
+                    lane_ids_from_job(fields, &["palette_system_ids", "palette_ids"])
+                } else {
+                    aggregate.palette_system_ids
+                };
+                if all_completed || direction_id.is_empty() {
+                    if palette_system_ids.is_empty() {
+                        return Err(
+                            "synthesize_palette completed but no palette_system_ids were available"
+                                .to_string(),
+                        );
+                    }
+                    dispatch_action(
+                        ctx,
+                        api_url,
+                        headers,
+                        "CurationQueries",
+                        query_id,
+                        "PaletteSynthesisComplete",
+                        &json!({
+                            "palette_system_ids": json_string_array(&palette_system_ids),
+                        }),
+                    )?;
+                    actions.push(json!({
+                        "action": "query_palette_synthesis_complete",
+                        "query_id": query_id,
+                        "palette_system_ids": palette_system_ids
+                    }));
+                }
+            }
+        }
+        "synthesize_art_style" => {
+            let direction_id = string_field(fields, "direction_id", "");
+            if !direction_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
+                    == Some("Synthesizing".to_string())
+            {
+                dispatch_action(
+                    ctx,
+                    api_url,
+                    headers,
+                    "CurationDirections",
+                    &direction_id,
+                    "CompleteArtStyle",
+                    &json!({
+                        "art_style_ids": json_string_array(&lane_ids_from_job(
+                            fields,
+                            &["art_style_ids", "artstyle_ids"],
+                        )),
+                    }),
+                )?;
+                actions.push(json!({
+                    "action": "art_style_direction_complete",
+                    "direction_id": direction_id
+                }));
+            }
+
+            if !query_id.is_empty()
+                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
+                    == Some("Synthesizing".to_string())
+            {
+                let aggregate = query_direction_aggregate(ctx, api_url, headers, query_id)?;
+                let all_completed = aggregate.all_completed;
+                let art_style_ids = if aggregate.art_style_ids.is_empty() {
+                    lane_ids_from_job(fields, &["art_style_ids", "artstyle_ids"])
+                } else {
+                    aggregate.art_style_ids
+                };
+                if all_completed || direction_id.is_empty() {
+                    if art_style_ids.is_empty() {
+                        return Err(
+                            "synthesize_art_style completed but no art_style_ids were available"
+                                .to_string(),
+                        );
+                    }
+                    dispatch_action(
+                        ctx,
+                        api_url,
+                        headers,
+                        "CurationQueries",
+                        query_id,
+                        "ArtStyleSynthesisComplete",
+                        &json!({
+                            "art_style_ids": json_string_array(&art_style_ids),
+                        }),
+                    )?;
+                    actions.push(json!({
+                        "action": "query_art_style_synthesis_complete",
+                        "query_id": query_id,
+                        "art_style_ids": art_style_ids
+                    }));
+                }
             }
         }
         "quality_review" => {
@@ -4724,6 +4936,126 @@ fn run_typed_completion_fallback(
     }
 
     Ok(json!(actions))
+}
+
+#[derive(Default)]
+struct DirectionAggregate {
+    all_completed: bool,
+    design_language_ids: Vec<String>,
+    palette_system_ids: Vec<String>,
+    art_style_ids: Vec<String>,
+}
+
+fn query_direction_aggregate(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+) -> Result<DirectionAggregate, String> {
+    let Some(query) = load_entity(ctx, api_url, headers, "CurationQueries", query_id)? else {
+        return Ok(DirectionAggregate::default());
+    };
+    let query_fields = entity_fields(&query);
+    let direction_ids = string_array_field(&query_fields, "direction_ids");
+    if direction_ids.is_empty() {
+        return Ok(DirectionAggregate {
+            all_completed: false,
+            ..DirectionAggregate::default()
+        });
+    }
+
+    let mut aggregate = DirectionAggregate {
+        all_completed: true,
+        ..DirectionAggregate::default()
+    };
+    for direction_id in direction_ids {
+        let Some(direction) =
+            load_entity(ctx, api_url, headers, "CurationDirections", &direction_id)?
+        else {
+            aggregate.all_completed = false;
+            continue;
+        };
+        if entity_status_value(&direction) != "Completed" {
+            aggregate.all_completed = false;
+        }
+        let fields = entity_fields(&direction);
+        aggregate
+            .design_language_ids
+            .extend(string_array_field(&fields, "design_language_ids"));
+        aggregate
+            .palette_system_ids
+            .extend(string_array_field(&fields, "palette_system_ids"));
+        aggregate
+            .art_style_ids
+            .extend(string_array_field(&fields, "art_style_ids"));
+    }
+    dedupe_strings(&mut aggregate.design_language_ids);
+    dedupe_strings(&mut aggregate.palette_system_ids);
+    dedupe_strings(&mut aggregate.art_style_ids);
+    Ok(aggregate)
+}
+
+fn synthesis_job_type_for_direction(fields: &serde_json::Value) -> String {
+    let configured = string_field_any(fields, "synthesis_job_type", "");
+    if matches!(
+        configured.as_str(),
+        "synthesize" | "synthesize_palette" | "synthesize_art_style"
+    ) {
+        return configured;
+    }
+
+    let output_type = string_field_any(fields, "output_type", "")
+        .trim()
+        .to_ascii_lowercase()
+        .replace('-', "_");
+    let direct_job_type = synthesis_job_type_for_output_type(&output_type);
+    match direct_job_type {
+        "synthesize_palette" | "synthesize_art_style" => direct_job_type.to_string(),
+        _ => parse_json_field(fields.get("synth_input"))
+            .and_then(|input| {
+                input
+                    .get("output_type")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().to_ascii_lowercase().replace('-', "_"))
+            })
+            .map(|input_output_type| synthesis_job_type_for_output_type(&input_output_type))
+            .unwrap_or("synthesize")
+            .to_string(),
+    }
+}
+
+fn synthesis_job_type_for_output_type(output_type: &str) -> &'static str {
+    match output_type
+        .trim()
+        .to_ascii_lowercase()
+        .replace('-', "_")
+        .as_str()
+    {
+        "palette" | "palettes" | "palette_system" | "palette_systems" | "color" | "colors"
+        | "colour" | "colours" => "synthesize_palette",
+        "art_style" | "art_styles" | "image_style" | "visual_style" | "illustration_style" => {
+            "synthesize_art_style"
+        }
+        _ => "synthesize",
+    }
+}
+
+fn string_array_field(fields: &serde_json::Value, name: &str) -> Vec<String> {
+    string_array_flexible(fields.get(name).or_else(|| fields.get(&pascal_case(name))))
+}
+
+fn json_string_array(values: &[String]) -> String {
+    serde_json::to_string(values).unwrap_or_else(|_| "[]".to_string())
+}
+
+fn dedupe_strings(values: &mut Vec<String>) {
+    let mut deduped = Vec::new();
+    for value in values.drain(..) {
+        if !value.is_empty() && !deduped.contains(&value) {
+            deduped.push(value);
+        }
+    }
+    *values = deduped;
 }
 
 fn string_field(fields: &serde_json::Value, name: &str, default: &str) -> String {
@@ -5318,13 +5650,23 @@ fn spawn_synth_followup(
             .and_then(|v| v.get("topic_allowlist"))
             .or_else(|| input_json.and_then(|v| v.get("topic_allowlist"))),
     );
+    let default_output_type = output_json
+        .and_then(|v| v.get("output_type"))
+        .and_then(|v| v.as_str())
+        .or_else(|| {
+            input_json
+                .and_then(|v| v.get("output_type"))
+                .and_then(|v| v.as_str())
+        })
+        .unwrap_or("design_language")
+        .to_string();
 
     // Parse discovered_movements — supports both object format [{name, palette_direction}]
     // and legacy string format ["direction name"]
     let raw_movements = output_json
         .and_then(|v| v.get("discovered_movements"))
         .and_then(|v| v.as_array());
-    let directions: Vec<(String, String)> = match raw_movements {
+    let directions: Vec<(String, String, String)> = match raw_movements {
         Some(arr) => arr
             .iter()
             .filter_map(|item| {
@@ -5339,23 +5681,28 @@ fn spawn_synth_followup(
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .to_string();
+                    let output_type = obj
+                        .get("output_type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(&default_output_type)
+                        .to_string();
                     if name.is_empty() {
                         None
                     } else {
-                        Some((name, palette))
+                        Some((name, palette, output_type))
                     }
                 } else if let Some(s) = item.as_str() {
                     if s.is_empty() {
                         None
                     } else {
-                        Some((s.to_string(), String::new()))
+                        Some((s.to_string(), String::new(), default_output_type.clone()))
                     }
                 } else {
                     None
                 }
             })
             .collect(),
-        None => vec![(task.clone(), String::new())],
+        None => vec![(task.clone(), String::new(), default_output_type.clone())],
     };
 
     if directions.is_empty() {
@@ -5364,12 +5711,14 @@ fn spawn_synth_followup(
 
     // Fan out: one synth job per direction
     let mut first_job_id: Option<String> = None;
-    for (direction, palette) in &directions {
+    for (direction, palette, output_type) in &directions {
+        let synthesis_job_type = synthesis_job_type_for_output_type(output_type);
         let synth_input = json!({
             "task": task,
             "scope": scope,
             "target_direction": direction,
             "palette_direction": palette,
+            "output_type": output_type,
             "topic_allowlist": topic_allowlist,
             "source_ids": source_ids,
             "priority": "high",
@@ -5404,7 +5753,7 @@ fn spawn_synth_followup(
 
         // Configure with synthesize job_type
         let mut configure_body = json!({
-            "job_type": "synthesize",
+            "job_type": synthesis_job_type,
             "workspace_id": workspace_id,
             "input": synth_input.to_string(),
             "query_id": query_id,
@@ -5449,8 +5798,8 @@ fn spawn_synth_followup(
         ctx.log(
             "info",
             &format!(
-                "Spawned synth job '{}' for direction '{}'",
-                synth_job_id, direction
+                "Spawned '{}' job '{}' for direction '{}'",
+                synthesis_job_type, synth_job_id, direction
             ),
         );
         if first_job_id.is_none() {

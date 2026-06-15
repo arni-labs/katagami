@@ -654,14 +654,35 @@ export type Remix = LaneEntity;
 
 const LANE_PAGE_SIZE = 200;
 
+function snakeCaseFieldName(key: string): string {
+  return key
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
+function normalizeLaneFields(
+  raw: Record<string, unknown>,
+): Record<string, string | undefined> {
+  const fields: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value !== "string") continue;
+    fields[key] = value;
+    const snake = snakeCaseFieldName(key);
+    if (!fields[snake]) fields[snake] = value;
+  }
+  return fields;
+}
+
 function normalizeLaneRow(raw: Record<string, unknown>, set: string): LaneEntity {
   if (raw && typeof raw.fields === "object" && raw.fields !== null) {
     const row = raw as unknown as LaneEntity;
-    const f = row.fields as Record<string, string | undefined>;
-    const status = row.status ?? f.State ?? f.Status ?? "";
-    return { entity_id: row.entity_id, status, fields: f };
+    const f = normalizeLaneFields(row.fields as Record<string, unknown>);
+    const status = row.status ?? f.State ?? f.Status ?? f.state ?? f.status ?? "";
+    return { entity_id: row.entity_id || f.Id || "", status, fields: f };
   }
-  const fields: Record<string, string | undefined> = {};
+  const rawFields: Record<string, unknown> = {};
   let entityId = "";
   let status = "";
   for (const [key, value] of Object.entries(raw)) {
@@ -676,11 +697,12 @@ function normalizeLaneRow(raw: Record<string, unknown>, set: string): LaneEntity
     }
     if ((key === "status" || key === "State" || key === "Status") && typeof value === "string") {
       status = value;
-      fields[key === "status" ? "State" : key] = value;
+      rawFields[key === "status" ? "State" : key] = value;
       continue;
     }
-    if (typeof value === "string") fields[key] = value;
+    if (typeof value === "string") rawFields[key] = value;
   }
+  const fields = normalizeLaneFields(rawFields);
   entityId = (fields.Id as string) ?? entityId;
   return { entity_id: entityId, status, fields };
 }
@@ -772,6 +794,66 @@ export function paletteCore(fields: Record<string, string | undefined>): Palette
     .filter((s) => /^#?[0-9a-f]{3,8}$/i.test(s.hex));
   const mood = parseJson<{ temperature?: string; key_hue?: string; summary?: string }>(fields.mood) ?? {};
   return { signature, neutrals, semantic, mood };
+}
+
+function titleFromSlug(value: string): string {
+  return value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function paletteDisplayName(
+  fields: Record<string, string | undefined>,
+  core = paletteCore(fields),
+): string {
+  const explicit = [fields.name, fields.Name].find((value) => value?.trim());
+  if (explicit) return explicit.trim();
+
+  const slug = [fields.slug, fields.Slug].find((value) => value?.trim());
+  if (slug) return titleFromSlug(slug.trim());
+
+  const signatureNames = core.signature
+    .map((swatch) => swatch.name?.trim())
+    .filter((name): name is string => Boolean(name));
+  if (signatureNames.length > 0) {
+    return signatureNames.slice(0, 2).join(" + ");
+  }
+
+  if (core.mood.key_hue?.trim()) {
+    return `${titleFromSlug(core.mood.key_hue.trim())} Palette`;
+  }
+
+  return "Untitled palette";
+}
+
+export function artStyleDisplayName(
+  fields: Record<string, string | undefined>,
+): string {
+  const explicit = [fields.name, fields.Name].find((value) => value?.trim());
+  if (explicit) return explicit.trim();
+
+  const slug = [fields.slug, fields.Slug].find((value) => value?.trim());
+  if (slug) return titleFromSlug(slug.trim());
+
+  const prompt = [fields.prompt_template, fields.PromptTemplate].find((value) =>
+    value?.trim(),
+  );
+  const promptLead = prompt?.split(",")[0]?.trim();
+  if (promptLead && !promptLead.includes("{")) return titleFromSlug(promptLead);
+
+  const medium = [fields.medium, fields.Medium].find((value) => value?.trim());
+  if (medium) return `${titleFromSlug(medium.trim())} Art Style`;
+
+  return "Untitled art style";
+}
+
+export function paletteRampStopHex(stop: unknown): string | undefined {
+  if (typeof stop === "string") return stop;
+  if (!stop || typeof stop !== "object") return undefined;
+  const hex = (stop as { hex?: unknown }).hex;
+  return typeof hex === "string" ? hex : undefined;
 }
 
 // ── Files (embodiment HTML) ──
