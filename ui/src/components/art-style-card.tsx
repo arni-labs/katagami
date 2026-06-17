@@ -1,3 +1,6 @@
+import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
+import { ArchivedStamp } from "@/components/archived-stamp";
+
 export interface ArtStyleItem {
   id: string;
   name: string;
@@ -26,8 +29,15 @@ function hashInt(s: string) {
   return Math.abs(h);
 }
 
-export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
+export function ArtStyleCard({
+  art,
+  owner = false,
+}: {
+  art: ArtStyleItem;
+  owner?: boolean;
+}) {
   const tint = accentColors[hashInt(art.id) % accentColors.length];
+  const archived = art.status === "Archived";
 
   // A wide hero (the establishing shot) leads; the proof shots read as a tidy
   // contact strip of fixed-size squares (never a stretched orphan). Falls back
@@ -42,7 +52,7 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
 
   return (
     <article
-      className="sticker-card group/card relative flex h-full w-full flex-col overflow-hidden"
+      className={`sticker-card group/card relative flex h-full w-full flex-col overflow-hidden${archived ? " opacity-60 saturate-[0.85]" : ""}`}
       style={
         {
           background: `color-mix(in srgb, ${tint} 5%, var(--paper-tint-base))`,
@@ -50,6 +60,16 @@ export function ArtStyleCard({ art }: { art: ArtStyleItem }) {
         } as React.CSSProperties
       }
     >
+      {archived ? <ArchivedStamp /> : null}
+      {owner ? (
+        <CatalogCardOwnerControls
+          entitySet="ArtStyles"
+          id={art.id}
+          name={art.name}
+          noun="art style"
+          status={art.status}
+        />
+      ) : null}
       {/* hero reference — edge to edge; proofs ride as a small strip in the corner */}
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
         {hero ? (

@@ -7,6 +7,7 @@ import {
 import { PageHero, Marker } from "@/components/page-hero";
 import { ArtStyleCatalog } from "@/components/lane-catalog";
 import type { ArtStyleItem } from "@/components/art-style-card";
+import { isOwner } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -20,19 +21,28 @@ function refUrls(raw?: string): string[] {
 }
 
 export default async function ArtStylesPage() {
-  const rows = await listArtStyles("Status eq 'Published'").catch(() => []);
-  const items: ArtStyleItem[] = rows.map((r) => ({
-    id: r.entity_id,
-    name: artStyleDisplayName(r.fields),
-    slug: r.fields.slug ?? "",
-    status: r.status,
-    medium: r.fields.medium ?? "",
-    promptTemplate: r.fields.prompt_template ?? "",
-    refs: refUrls(r.fields.reference_image_file_ids),
-    proofs: refUrls(r.fields.proof_shots_file_ids),
-    thumb: r.fields.thumbnail_file_id ? getFileUrl(r.fields.thumbnail_file_id) : "",
-    tags: parseJson<string[]>(r.fields.tags) ?? [],
-  }));
+  // Owners also see archived art styles (so they can spot what's hidden); the
+  // public catalog stays Published-only.
+  const owner = await isOwner();
+  const filter = owner
+    ? "Status eq 'Published' or Status eq 'Archived'"
+    : "Status eq 'Published'";
+  const rows = await listArtStyles(filter).catch(() => []);
+  const items: ArtStyleItem[] = rows
+    .map((r) => ({
+      id: r.entity_id,
+      name: artStyleDisplayName(r.fields),
+      slug: r.fields.slug ?? "",
+      status: r.status,
+      medium: r.fields.medium ?? "",
+      promptTemplate: r.fields.prompt_template ?? "",
+      refs: refUrls(r.fields.reference_image_file_ids),
+      proofs: refUrls(r.fields.proof_shots_file_ids),
+      thumb: r.fields.thumbnail_file_id ? getFileUrl(r.fields.thumbnail_file_id) : "",
+      tags: parseJson<string[]>(r.fields.tags) ?? [],
+    }))
+    // Keep archived items last so they never crowd the live catalog.
+    .sort((a, b) => Number(a.status === "Archived") - Number(b.status === "Archived"));
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">

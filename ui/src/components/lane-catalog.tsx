@@ -50,7 +50,13 @@ function SearchBar({
   );
 }
 
-export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
+export function PaletteCatalog({
+  items,
+  canArchive = false,
+}: {
+  items: PaletteItem[];
+  canArchive?: boolean;
+}) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -67,7 +73,7 @@ export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
         <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((p) => (
             <Link key={p.id} href={`/palettes/${p.id}`} prefetch={false} className="group block min-w-0">
-              <PaletteCard palette={p} />
+              <PaletteCard palette={p} owner={canArchive} />
             </Link>
           ))}
         </div>
@@ -78,7 +84,13 @@ export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
   );
 }
 
-export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
+export function ArtStyleCatalog({
+  items,
+  canArchive = false,
+}: {
+  items: ArtStyleItem[];
+  canArchive?: boolean;
+}) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -95,7 +107,7 @@ export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
         <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((a) => (
             <Link key={a.id} href={`/art-styles/${a.id}`} prefetch={false} className="group block min-w-0">
-              <ArtStyleCard art={a} />
+              <ArtStyleCard art={a} owner={canArchive} />
             </Link>
           ))}
         </div>

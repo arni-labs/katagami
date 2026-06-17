@@ -29,6 +29,33 @@ export async function deleteLanguage(id: string): Promise<void> {
   revalidatePath(`/language/${id}`);
 }
 
+/**
+ * Catalog lanes whose cards can be archived from owner-mode controls, mapped
+ * to the paths to revalidate after the status changes. Design languages keep
+ * their own `deleteLanguage` action; this covers the other lanes the same way.
+ */
+const CATALOG_ARCHIVE_TARGETS: Record<string, (id: string) => string[]> = {
+  PaletteSystems: (id) => ["/palettes", `/palettes/${id}`],
+  ArtStyles: (id) => ["/art-styles", `/art-styles/${id}`],
+};
+
+export async function archiveCatalogItem(
+  entitySet: string,
+  id: string,
+): Promise<void> {
+  await assertOwner();
+  const revalidate = CATALOG_ARCHIVE_TARGETS[entitySet];
+  if (!revalidate) {
+    throw new Error(`Archiving ${entitySet} is not supported.`);
+  }
+  await dispatchAction(entitySet, id, "Archive", {
+    curator_notes: OWNER_ARCHIVE_NOTE,
+  });
+  for (const path of revalidate(id)) {
+    revalidatePath(path);
+  }
+}
+
 export async function sendLanguageToReview(id: string): Promise<void> {
   await assertOwner();
   const lang = await getDesignLanguage(id);

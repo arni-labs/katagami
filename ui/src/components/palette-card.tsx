@@ -1,4 +1,6 @@
 import { readableTextColor } from "@/lib/shadcn-export";
+import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
+import { ArchivedStamp } from "@/components/archived-stamp";
 import type { PaletteCore } from "@/lib/odata";
 
 export interface PaletteItem {
@@ -21,16 +23,33 @@ const NEUTRAL_ORDER = ["bg", "surface", "text", "muted", "border"];
  * card. A tall signature band (the star) sits over a thin neutrals strip;
  * a quiet footer carries the name + mood. No frame, no chrome.
  */
-export function PaletteCard({ palette }: { palette: PaletteItem }) {
+export function PaletteCard({
+  palette,
+  owner = false,
+}: {
+  palette: PaletteItem;
+  owner?: boolean;
+}) {
   const { signature, neutrals, mood } = palette.core;
   const sig = signature.length ? signature : [{ hex: "#888888", name: "—" }];
   const tint = sig[0].hex || "var(--teal)";
+  const archived = palette.status === "Archived";
 
   return (
     <article
-      className="sticker-card group/card relative flex h-full w-full flex-col overflow-hidden"
+      className={`sticker-card group/card relative flex h-full w-full flex-col overflow-hidden${archived ? " opacity-60 saturate-[0.85]" : ""}`}
       style={{ ["--card-ink" as string]: tint }}
     >
+      {archived ? <ArchivedStamp /> : null}
+      {owner ? (
+        <CatalogCardOwnerControls
+          entitySet="PaletteSystems"
+          id={palette.id}
+          name={palette.name}
+          noun="palette"
+          status={palette.status}
+        />
+      ) : null}
       {/* SIGNATURE — the star, full-bleed colour band */}
       <div className="flex h-32 w-full sm:h-36">
         {sig.slice(0, 5).map((s, i) => {
