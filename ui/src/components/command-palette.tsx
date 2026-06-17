@@ -156,7 +156,7 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[12vh]"
+      className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[7vh] sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"
       aria-label="Search the library"
@@ -189,13 +189,13 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
             aria-label="Search the library"
             className="w-full bg-transparent py-2 font-mono text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
           />
-          <kbd className="shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          <kbd className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:block">
             esc
           </kbd>
         </div>
         <div className="sticker-perforation mx-4 mt-3" />
 
-        <div ref={listRef} className="max-h-[46vh] overflow-y-auto px-2 py-2">
+        <div ref={listRef} className="max-h-[58vh] overflow-y-auto px-2 py-2 sm:max-h-[46vh]">
           {results.length === 0 ? (
             <div className="px-3 py-8 text-center font-mono text-[12px] text-muted-foreground">
               no matches for &ldquo;{query}&rdquo;

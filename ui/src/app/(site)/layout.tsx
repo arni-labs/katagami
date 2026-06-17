@@ -31,7 +31,9 @@ async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
   const items: PaletteIndexItem[] = [];
 
   try {
-    const languages = await listDesignLanguages(undefined, undefined, [
+    // Search only surfaces the public catalog — Published only (palettes and
+    // art styles are already Published-only via their default filter).
+    const languages = await listDesignLanguages("Status eq 'Published'", undefined, [
       "Id",
       "Status",
       "name",
