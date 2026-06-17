@@ -1,11 +1,83 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { PaletteCard, type PaletteItem } from "@/components/palette-card";
 import { ArtStyleCard, type ArtStyleItem } from "@/components/art-style-card";
 import { KX_FIELD } from "@/lib/katagami-ui";
+import {
+  COLOR_MOOD_SHELVES,
+  colorMoodShelfKey,
+  groupIntoShelves,
+  type ShelfBucket,
+  type ShelfDef,
+} from "@/lib/color-shelves";
+
+const GRID =
+  "grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4";
+
+/** A lane shelves itself once it outgrows a flat wall; below this it's a
+ *  single grid. Lower than the language gallery's threshold because the
+ *  palette/art catalogs are smaller. */
+const LANE_SHELF_THRESHOLD = 8;
+
+/** Archived items collect in a trailing shelf (owners only ever see these). */
+const ARCHIVED_SHELF: ShelfDef = {
+  key: "archived",
+  label: "archived",
+  blurb: "hidden from the public catalog",
+  ink: "var(--beni)",
+};
+
+/** Palette shelves reuse the language color-mood cabinet, plus archived. */
+const PALETTE_SHELVES: ShelfDef[] = [...COLOR_MOOD_SHELVES, ARCHIVED_SHELF];
+
+const MEDIUM_INKS = [
+  "var(--sakura)", "var(--yuzu)", "var(--salad)",
+  "var(--teal)", "var(--ramune)", "var(--sumire)",
+];
+
+function paletteShelfKey(p: PaletteItem): string {
+  if (p.status === "Archived") return "archived";
+  return colorMoodShelfKey({
+    primary: p.core.signature?.[0]?.hex,
+    background: p.core.neutrals?.bg,
+    featured: p.featured,
+  });
+}
+
+/** Art styles have no token palette, so they shelve by medium (largest medium
+ *  first), with archived collected last. */
+function mediumShelves(items: ArtStyleItem[]): ShelfBucket<ArtStyleItem>[] {
+  const buckets = new Map<string, ArtStyleItem[]>();
+  const archived: ArtStyleItem[] = [];
+  for (const a of items) {
+    if (a.status === "Archived") {
+      archived.push(a);
+      continue;
+    }
+    const key = (a.medium || "mixed").trim().toLowerCase() || "mixed";
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(a);
+    else buckets.set(key, [a]);
+  }
+  const shelves: ShelfBucket<ArtStyleItem>[] = [...buckets.entries()]
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+    .map(([key, arr], i) => ({
+      key,
+      label: key,
+      blurb: "",
+      ink: MEDIUM_INKS[i % MEDIUM_INKS.length],
+      items: arr,
+    }));
+  if (archived.length) shelves.push({ ...ARCHIVED_SHELF, items: archived });
+  return shelves;
+}
+
+function activeCount(items: { status: string }[]): number {
+  return items.reduce((n, i) => n + (i.status === "Archived" ? 0 : 1), 0);
+}
 
 function SearchBar({
   value,
@@ -50,57 +122,155 @@ function SearchBar({
   );
 }
 
-export function PaletteCatalog({ items }: { items: PaletteItem[] }) {
+function LaneGrid<T extends { id: string }>({
+  items,
+  hrefBase,
+  renderCard,
+}: {
+  items: T[];
+  hrefBase: string;
+  renderCard: (item: T) => ReactNode;
+}) {
+  return (
+    <div data-reveal-children className={GRID}>
+      {items.map((item) => (
+        <Link
+          key={item.id}
+          href={`${hrefBase}/${item.id}`}
+          prefetch={false}
+          className="group block min-w-0"
+        >
+          {renderCard(item)}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/** Labeled color-mood / medium shelves — a stamp label + count over a grid,
+ *  matching the home gallery's cabinet. */
+function ShelfSections<T extends { id: string }>({
+  shelves,
+  hrefBase,
+  renderCard,
+}: {
+  shelves: ShelfBucket<T>[];
+  hrefBase: string;
+  renderCard: (item: T) => ReactNode;
+}) {
+  return (
+    <div className="space-y-7">
+      {shelves.map((shelf) => (
+        <section key={shelf.key} data-shelf-section={shelf.key} className="min-w-0">
+          <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+            <span
+              className="ink-stamp shrink-0"
+              style={{ ["--ink" as string]: shelf.ink }}
+            >
+              {shelf.label}
+            </span>
+            <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              {shelf.blurb ? `${shelf.blurb} · ` : ""}
+              {shelf.items.length}
+            </span>
+            <span className="sticker-perforation hidden min-w-0 flex-1 sm:block" />
+          </div>
+          <LaneGrid items={shelf.items} hrefBase={hrefBase} renderCard={renderCard} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+export function PaletteCatalog({
+  items,
+  canArchive = false,
+}: {
+  items: PaletteItem[];
+  canArchive?: boolean;
+}) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return items;
     return items.filter((p) =>
-      `${p.name} ${p.tags.join(" ")} ${Object.values(p.roles).join(" ")}`.toLowerCase().includes(query),
+      `${p.name} ${p.tags.join(" ")} ${Object.values(p.roles).join(" ")}`
+        .toLowerCase()
+        .includes(query),
     );
   }, [q, items]);
+  const shelves = useMemo(() => {
+    if (q.trim() || activeCount(items) <= LANE_SHELF_THRESHOLD) return null;
+    return groupIntoShelves(items, paletteShelfKey, PALETTE_SHELVES);
+  }, [q, items]);
+
+  const renderCard = (p: PaletteItem) => (
+    <PaletteCard palette={p} owner={canArchive} />
+  );
 
   return (
     <>
-      <SearchBar value={q} onChange={setQ} placeholder="Search palettes by name, tag, or hex…" count={filtered.length} total={items.length} noun="palettes" />
-      {filtered.length ? (
-        <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((p) => (
-            <Link key={p.id} href={`/palettes/${p.id}`} prefetch={false} className="group block min-w-0">
-              <PaletteCard palette={p} />
-            </Link>
-          ))}
-        </div>
-      ) : (
+      <SearchBar
+        value={q}
+        onChange={setQ}
+        placeholder="Search palettes by name, tag, or hex…"
+        count={filtered.length}
+        total={items.length}
+        noun="palettes"
+      />
+      {filtered.length === 0 ? (
         <EmptyState noun="palettes" />
+      ) : shelves ? (
+        <ShelfSections shelves={shelves} hrefBase="/palettes" renderCard={renderCard} />
+      ) : (
+        <LaneGrid items={filtered} hrefBase="/palettes" renderCard={renderCard} />
       )}
     </>
   );
 }
 
-export function ArtStyleCatalog({ items }: { items: ArtStyleItem[] }) {
+export function ArtStyleCatalog({
+  items,
+  canArchive = false,
+}: {
+  items: ArtStyleItem[];
+  canArchive?: boolean;
+}) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return items;
     return items.filter((a) =>
-      `${a.name} ${a.medium} ${a.tags.join(" ")} ${a.promptTemplate}`.toLowerCase().includes(query),
+      `${a.name} ${a.medium} ${a.tags.join(" ")} ${a.promptTemplate}`
+        .toLowerCase()
+        .includes(query),
     );
   }, [q, items]);
+  const shelves = useMemo(() => {
+    if (q.trim() || activeCount(items) <= LANE_SHELF_THRESHOLD) return null;
+    return mediumShelves(items);
+  }, [q, items]);
+
+  const renderCard = (a: ArtStyleItem) => (
+    <ArtStyleCard art={a} owner={canArchive} />
+  );
 
   return (
     <>
-      <SearchBar value={q} onChange={setQ} placeholder="Search art styles by name, medium, or prompt…" count={filtered.length} total={items.length} noun="art styles" />
-      {filtered.length ? (
-        <div data-reveal-children className="grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((a) => (
-            <Link key={a.id} href={`/art-styles/${a.id}`} prefetch={false} className="group block min-w-0">
-              <ArtStyleCard art={a} />
-            </Link>
-          ))}
-        </div>
-      ) : (
+      <SearchBar
+        value={q}
+        onChange={setQ}
+        placeholder="Search art styles by name, medium, or prompt…"
+        count={filtered.length}
+        total={items.length}
+        noun="art styles"
+      />
+      {filtered.length === 0 ? (
         <EmptyState noun="art styles" />
+      ) : shelves ? (
+        <ShelfSections shelves={shelves} hrefBase="/art-styles" renderCard={renderCard} />
+      ) : (
+        <LaneGrid items={filtered} hrefBase="/art-styles" renderCard={renderCard} />
       )}
     </>
   );
