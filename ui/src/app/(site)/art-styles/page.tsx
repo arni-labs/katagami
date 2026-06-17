@@ -53,7 +53,7 @@ export default async function ArtStylesPage() {
         description="Engine-agnostic style recipes — reference images plus a portable subject/palette prompt. Remix them onto any UI language and palette in the Studio."
       />
       <div className="mt-10">
-        <ArtStyleCatalog items={items} />
+        <ArtStyleCatalog items={items} canArchive={owner} />
       </div>
     </div>
   );
