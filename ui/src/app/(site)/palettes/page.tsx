@@ -36,6 +36,7 @@ export default async function PalettesPage() {
         core,
         ramps: parseJson<Record<string, Record<string, string>>>(r.fields.ramps) ?? {},
         tags: parseJson<string[]>(r.fields.tags) ?? [],
+        featured: /^(true|1)$/i.test(String(r.fields.featured ?? "")),
       };
     })
     // Keep archived items last so they never crowd the live catalog.

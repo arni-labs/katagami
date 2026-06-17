@@ -14,6 +14,8 @@ export interface PaletteItem {
   core: PaletteCore;
   ramps: Record<string, Record<string, string>>;
   tags: string[];
+  /** Owner-pinned — floats to the "curator's picks" shelf. */
+  featured?: boolean;
 }
 
 const NEUTRAL_ORDER = ["bg", "surface", "text", "muted", "border"];

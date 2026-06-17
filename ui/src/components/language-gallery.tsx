@@ -2,6 +2,7 @@ import type { DesignLanguage } from "@/lib/odata";
 import { LanguageCard } from "@/components/language-card";
 import { GalleryFilters } from "@/components/gallery-filters";
 import { ShelfSpread } from "@/components/shelf-spread";
+import { COLOR_MOOD_SHELVES, colorMoodShelfKey } from "@/lib/color-shelves";
 
 /** Shelves only make sense once the catalog outgrows a single wall. */
 const SHELF_THRESHOLD = 24;
@@ -152,40 +153,6 @@ interface Shelf {
   languages: DesignLanguage[];
 }
 
-/** Shelf definitions, in display order. Membership is computed from each
- *  language's OWN token colors — the cabinet organizes itself by what the
- *  designs actually look like, not by tag bookkeeping. */
-const SHELF_DEFS = [
-  { key: "picks", label: "curator's picks", blurb: "pinned to the corkboard", ink: "var(--sakura)" },
-  { key: "night", label: "night stock", blurb: "printed on dark paper", ink: "var(--ramune)" },
-  { key: "loud", label: "loud inks", blurb: "full coverage, no apologies", ink: "var(--sakura)" },
-  { key: "quiet", label: "quiet paper", blurb: "restraint and whitespace", ink: "var(--ramune)" },
-  { key: "warm", label: "warm press", blurb: "earth, amber, ember", ink: "var(--yuzu)" },
-  { key: "cold", label: "cold press", blurb: "sea, slate, shade", ink: "var(--ramune)" },
-  { key: "misc", label: "miscellany", blurb: "everything else", ink: "var(--graphite)" },
-] as const;
-
-function hexParts(hex?: string): { h: number; s: number; l: number } | null {
-  if (!hex || !/^#[0-9a-f]{3,8}$/i.test(hex)) return null;
-  const m = hex.replace("#", "");
-  const v =
-    m.length === 3
-      ? m.split("").map((c) => parseInt(c + c, 16) / 255)
-      : [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
-  const [r, g, b] = v;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return { h: 0, s: 0, l };
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h: number;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
-  else if (max === g) h = ((b - r) / d + 2) * 60;
-  else h = ((r - g) / d + 4) * 60;
-  return { h, s, l };
-}
-
 function isFeaturedLanguage(lang: DesignLanguage): boolean {
   const bag = lang as unknown as Record<string, unknown>;
   for (const c of [bag.booleans, bag.fields, bag.counters, bag]) {
@@ -198,19 +165,15 @@ function isFeaturedLanguage(lang: DesignLanguage): boolean {
 }
 
 function shelfKeyFor(lang: DesignLanguage): string {
-  if (isFeaturedLanguage(lang)) return "picks";
   const tokens = parseMaybeJson(lang.fields.tokens) as
     | { colors?: Record<string, string> }
     | undefined;
   const colors = tokens?.colors ?? {};
-  const bg = hexParts(colors.background);
-  const prim = hexParts(colors.primary ?? colors.accent);
-  if (bg && bg.l < 0.38) return "night";
-  if (!prim) return "misc";
-  if (prim.s < 0.24) return "quiet";
-  if (prim.s > 0.6 && prim.l > 0.28 && prim.l < 0.82) return "loud";
-  const warm = prim.h < 90 || prim.h >= 330;
-  return warm ? "warm" : "cold";
+  return colorMoodShelfKey({
+    primary: colors.primary ?? colors.accent,
+    background: colors.background,
+    featured: isFeaturedLanguage(lang),
+  });
 }
 
 function buildShelves(languages: DesignLanguage[]): Shelf[] {
@@ -226,9 +189,9 @@ function buildShelves(languages: DesignLanguage[]): Shelf[] {
     bucket.push(lang);
     buckets.set(key, bucket);
   }
-  return SHELF_DEFS.filter((def) => (buckets.get(def.key)?.length ?? 0) > 0).map(
-    (def) => ({ ...def, languages: buckets.get(def.key)! }),
-  );
+  return COLOR_MOOD_SHELVES.filter(
+    (def) => (buckets.get(def.key)?.length ?? 0) > 0,
+  ).map((def) => ({ ...def, languages: buckets.get(def.key)! }));
 }
 
 function assignGlobalIndices(shelves: Shelf[]): Map<string, number> {
