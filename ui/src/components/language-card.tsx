@@ -46,11 +46,6 @@ interface Tokens {
   };
 }
 
-interface Philosophy {
-  summary?: string;
-  [key: string]: unknown;
-}
-
 function hashInt(s: string, salt = "") {
   let h = 0;
   const str = s + salt;
@@ -137,21 +132,15 @@ interface FullCardProps {
   eagerThumbnail: boolean;
 }
 
-// content-visibility skips off-screen cards for scroll perf; the intrinsic
-// size is the placeholder height reserved while a card is off-screen. It
-// MUST track the real compact card height (~260px) — a stale, too-tall
-// value leaves a tall empty gap inside every off-screen card.
+// content-visibility skips off-screen cards for scroll perf. The intrinsic
+// size is the placeholder reserved while a card is off-screen; the `auto`
+// keyword makes the browser remember each card's real rendered height after
+// it first paints, so the reservation self-corrects across breakpoints and
+// never leaves a stale empty gap. The length is only the first-paint fallback.
 const cardVisibilityStyle = {
   contentVisibility: "auto",
-  containIntrinsicBlockSize: "260px",
+  containIntrinsicBlockSize: "auto 220px",
 } as CSSProperties;
-
-function compactSummary(value?: string): string | undefined {
-  if (!value) return undefined;
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= 190) return normalized;
-  return `${normalized.slice(0, 187).trimEnd()}...`;
-}
 
 function FullCard({
   lang,
@@ -164,7 +153,6 @@ function FullCard({
 
   const tags = parseJson<string[]>(f.tags) ?? [];
   const tokens = parseJson<Tokens>(f.tokens);
-  const philosophy = parseJson<Philosophy>(f.philosophy);
 
   const colors = tokens?.colors ?? {};
   const paletteColors = [
@@ -177,7 +165,6 @@ function FullCard({
 
   const headingFont = tokens?.typography?.heading_font;
   const bodyFont = tokens?.typography?.body_font;
-  const summary = compactSummary(philosophy?.summary);
   const embodimentFormat = (f.embodiment_format as "html" | "tsx") ?? "html";
   const thumbnailFileId = f.thumbnail_file_id;
   const thumbnailAssetUrl = f.thumbnail_asset_url;
@@ -244,12 +231,6 @@ function FullCard({
             <StatusStamp status={lang.status} tint={stickyTint} />
           ) : null}
         </div>
-
-        {summary ? (
-          <p className="line-clamp-2 text-[13px] leading-snug text-muted-foreground">
-            {summary}
-          </p>
-        ) : null}
 
         {tags.length > 0 && (
           <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
