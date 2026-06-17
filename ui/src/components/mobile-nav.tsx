@@ -2,36 +2,36 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Layers, GitBranch, GitCompare } from "lucide-react";
+import { LayoutGrid, Palette, Brush, Wand2 } from "lucide-react";
 
 const tabs = [
   {
     href: "/",
-    label: "Gallery",
+    label: "Languages",
     Icon: LayoutGrid,
     accent: "sakura" as const,
-    match: (p: string) => p === "/",
+    match: (p: string) => p === "/" || p.startsWith("/language"),
   },
   {
-    href: "/taxonomy",
-    label: "Taxonomy",
-    Icon: Layers,
-    accent: "yuzu" as const,
-    match: (p: string) => p.startsWith("/taxonomy"),
-  },
-  {
-    href: "/lineage",
-    label: "Lineage",
-    Icon: GitBranch,
+    href: "/palettes",
+    label: "Palettes",
+    Icon: Palette,
     accent: "ramune" as const,
-    match: (p: string) => p.startsWith("/lineage"),
+    match: (p: string) => p.startsWith("/palettes"),
   },
   {
-    href: "/compare",
-    label: "Compare",
-    Icon: GitCompare,
+    href: "/art-styles",
+    label: "Art Styles",
+    Icon: Brush,
+    accent: "yuzu" as const,
+    match: (p: string) => p.startsWith("/art-styles"),
+  },
+  {
+    href: "/studio",
+    label: "Studio",
+    Icon: Wand2,
     accent: "sakura" as const,
-    match: (p: string) => p.startsWith("/compare"),
+    match: (p: string) => p.startsWith("/studio"),
   },
 ];
 
