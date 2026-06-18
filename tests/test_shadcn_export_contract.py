@@ -235,8 +235,9 @@ class ShadcnExportContractTests(unittest.TestCase):
             "AttachShadcnExport",
             "VerifyShadcnExport",
             "/katagami/shadcn/{}/registry-theme.json",
-            "shadcn_export_projection_refresh_reason",
-            "source_invalidated_export",
+            "has no shadcn_export_file_id",
+            "has no shadcn_component_spec_file_id",
+            "has no shadcn_preview_shots_file_id",
             "fn render_shadcn_component_spec_projection",
             "fn render_shadcn_preview_shots_projection",
             "katagami:shadcn-preview-shots/renderable-v1",
@@ -271,6 +272,13 @@ class ShadcnExportContractTests(unittest.TestCase):
             source.index("verify_shadcn_preview_shots(ctx"),
             source.index('"MarkQualityPassed"'),
         )
+        for fn_name, refresh_name in [
+            ("fn verify_shadcn_export", "fn refresh_shadcn_export_projection"),
+            ("fn verify_shadcn_component_spec", "fn refresh_shadcn_component_spec_projection"),
+            ("fn verify_shadcn_preview_shots", "fn refresh_shadcn_preview_shots_projection"),
+        ]:
+            body = source.split(fn_name, 1)[1].split(refresh_name, 1)[0]
+            self.assertNotIn(f"{refresh_name.replace('fn ', '')}(", body)
 
     def test_ui_exposes_preview_route_and_backfill(self):
         self._require_full_repo()

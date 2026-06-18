@@ -1487,15 +1487,6 @@ fn verify_synthesized_languages(
                 defects.push(contract_defect(job_type, Some(language_id), &e));
                 continue;
             }
-            language = repair_synthesis_partial_language(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                job_type,
-                language_id,
-                &language,
-            )?;
         }
         let durable_defects =
             partial_design_language_contract_defects(job_type, language_id, &language);
@@ -2793,58 +2784,15 @@ fn verify_compositions(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    workspace_id: &str,
+    _workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<bool, String> {
-    let mut fields = entity_fields(language);
+    let fields = entity_fields(language);
     let status = entity_status_value(language);
     let mut revised = false;
-    let mut landing_file_id = string_field_any(&fields, "landing_file_id", "");
-    let mut dashboard_file_id = string_field_any(&fields, "dashboard_file_id", "");
-    let landing_invalid = landing_file_id.trim().is_empty()
-        || verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &landing_file_id,
-            "composition_landing",
-            None,
-        )
-        .is_err();
-    let dashboard_invalid = dashboard_file_id.trim().is_empty()
-        || verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &dashboard_file_id,
-            "composition_dashboard",
-            None,
-        )
-        .is_err();
-
-    if !entity_bool_any(language, "has_compositions")
-        || !entity_bool_any(language, "compositions_verified")
-        || landing_invalid
-        || dashboard_invalid
-    {
-        let (refreshed_fields, refreshed_landing_file_id, refreshed_dashboard_file_id, did_revise) =
-            refresh_composition_projections(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                language_id,
-                &fields,
-                &status,
-            )?;
-        fields = refreshed_fields;
-        landing_file_id = refreshed_landing_file_id;
-        dashboard_file_id = refreshed_dashboard_file_id;
-        revised = revised || did_revise;
-    }
+    let landing_file_id = string_field_any(&fields, "landing_file_id", "");
+    let dashboard_file_id = string_field_any(&fields, "dashboard_file_id", "");
 
     if landing_file_id.trim().is_empty() {
         return Err(format!(
@@ -2878,9 +2826,13 @@ fn verify_compositions(
 
     let fresh =
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
-            format!("DesignLanguage '{language_id}' disappeared before VerifyCompositions")
+            format!("DesignLanguage '{language_id}' disappeared before composition attach")
         })?;
     if !entity_bool_any(&fresh, "has_compositions") {
+        if status == "Published" {
+            revise_published_for_compositions(ctx, api_url, headers, language_id)?;
+            revised = true;
+        }
         dispatch_action(
             ctx,
             api_url,
@@ -3001,40 +2953,21 @@ fn verify_design_md(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    workspace_id: &str,
+    _workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<bool, String> {
-    let mut fields = entity_fields(language);
-    let mut status = entity_status_value(language);
+    let fields = entity_fields(language);
+    let status = entity_status_value(language);
     let mut revised = false;
-    let mut design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
-    let mut attached_design_md_this_run = false;
-    let refresh_reason = design_md_projection_refresh_reason(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        &design_md_file_id,
-    );
-    if let Some(refresh_reason) = refresh_reason {
-        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
-            ctx,
-            api_url,
-            headers,
-            workspace_id,
-            language_id,
-            &fields,
-            &status,
-            refresh_reason,
-        )?;
-        fields = refreshed_fields;
-        design_md_file_id = refreshed_file_id;
-        revised = revised || did_revise;
-        attached_design_md_this_run = true;
+    let design_md_file_id = string_field_any(&fields, "design_md_file_id", "");
+    if design_md_file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no design_md_file_id"
+        ));
     }
-    if let Err(err) = verify_file_value(
+
+    verify_file_value(
         ctx,
         api_url,
         headers,
@@ -3042,46 +2975,16 @@ fn verify_design_md(
         &design_md_file_id,
         "design_md",
         None,
-    ) {
-        let refresh_reason = if err.contains("Failed to read Files") {
-            "unreadable_design_md_file"
-        } else {
-            "invalid_design_md_file"
-        };
-        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_design_md_projection(
-            ctx,
-            api_url,
-            headers,
-            workspace_id,
-            language_id,
-            &fields,
-            &status,
-            refresh_reason,
-        )?;
-        fields = refreshed_fields;
-        design_md_file_id = refreshed_file_id;
-        revised = revised || did_revise;
-        attached_design_md_this_run = true;
-        verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &design_md_file_id,
-            "design_md",
-            None,
-        )?;
-    }
+    )?;
     verify_design_md_lint_result(language_id, &fields)?;
 
     // Revise resets has_design_md but leaves design_md_file_id intact.
-    // Re-attach if the boolean is false so the Publish guard passes.
+    // Re-attach only when the agent already produced a valid file.
     let fresh =
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyDesignMd")
         })?;
-    if !attached_design_md_this_run && !entity_bool_any(&fresh, "has_design_md") {
-        status = entity_status_value(&fresh);
+    if !entity_bool_any(&fresh, "has_design_md") {
         if status == "Published" {
             revise_published_for_design_md(ctx, api_url, headers, language_id)?;
             revised = true;
@@ -3204,37 +3107,21 @@ fn verify_shadcn_export(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    workspace_id: &str,
+    _workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<bool, String> {
-    let mut fields = entity_fields(language);
-    let mut status = entity_status_value(language);
+    let fields = entity_fields(language);
+    let status = entity_status_value(language);
     let mut revised = false;
-    let mut export_file_id = string_field_any(&fields, "shadcn_export_file_id", "");
-    let initial_bools = language
-        .get("booleans")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let source_invalidated_export = !bool_field(&initial_bools, "has_shadcn_export");
-    if source_invalidated_export
-        || shadcn_export_projection_refresh_reason(&fields, &export_file_id).is_some()
-    {
-        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_shadcn_export_projection(
-            ctx,
-            api_url,
-            headers,
-            workspace_id,
-            language_id,
-            &fields,
-            &status,
-        )?;
-        fields = refreshed_fields;
-        export_file_id = refreshed_file_id;
-        revised = revised || did_revise;
+    let export_file_id = string_field_any(&fields, "shadcn_export_file_id", "");
+    if export_file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no shadcn_export_file_id"
+        ));
     }
 
-    if let Err(err) = verify_file_value(
+    verify_file_value(
         ctx,
         api_url,
         headers,
@@ -3242,38 +3129,13 @@ fn verify_shadcn_export(
         &export_file_id,
         "shadcn_export",
         None,
-    ) {
-        let (refreshed_fields, refreshed_file_id, did_revise) = refresh_shadcn_export_projection(
-            ctx,
-            api_url,
-            headers,
-            workspace_id,
-            language_id,
-            &fields,
-            &status,
-        )?;
-        fields = refreshed_fields;
-        export_file_id = refreshed_file_id;
-        revised = revised || did_revise;
-        verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &export_file_id,
-            "shadcn_export",
-            None,
-        )
-        .map_err(|verify_err| format!("{verify_err}; initial shadcn export error: {err}"))?;
-    }
+    )?;
 
     let fresh =
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnExport")
         })?;
-    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
-    if !bool_field(&fresh_bools, "has_shadcn_export") {
-        status = entity_status_value(&fresh);
+    if !entity_bool_any(&fresh, "has_shadcn_export") {
         if status == "Published" {
             revise_published_for_shadcn_export(ctx, api_url, headers, language_id)?;
             revised = true;
@@ -3378,47 +3240,21 @@ fn verify_shadcn_component_spec(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    workspace_id: &str,
+    _workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<bool, String> {
-    let mut fields = entity_fields(language);
-    let mut status = entity_status_value(language);
+    let fields = entity_fields(language);
+    let status = entity_status_value(language);
     let mut revised = false;
-    let mut file_id = string_field_any(&fields, "shadcn_component_spec_file_id", "");
-    let initial_bools = language
-        .get("booleans")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let source_invalidated_component_spec =
-        !bool_field(&initial_bools, "has_shadcn_component_spec");
-    if source_invalidated_component_spec
-        || shadcn_component_spec_projection_refresh_reason(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &fields,
-            &file_id,
-        )
-        .is_some()
-    {
-        let (refreshed_fields, refreshed_file_id, did_revise) =
-            refresh_shadcn_component_spec_projection(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                language_id,
-                &fields,
-                &status,
-            )?;
-        fields = refreshed_fields;
-        file_id = refreshed_file_id;
-        revised = revised || did_revise;
+    let file_id = string_field_any(&fields, "shadcn_component_spec_file_id", "");
+    if file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no shadcn_component_spec_file_id"
+        ));
     }
 
-    if let Err(err) = verify_file_value(
+    verify_file_value(
         ctx,
         api_url,
         headers,
@@ -3426,41 +3262,13 @@ fn verify_shadcn_component_spec(
         &file_id,
         "shadcn_component_spec",
         None,
-    ) {
-        let (refreshed_fields, refreshed_file_id, did_revise) =
-            refresh_shadcn_component_spec_projection(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                language_id,
-                &fields,
-                &status,
-            )?;
-        fields = refreshed_fields;
-        file_id = refreshed_file_id;
-        revised = revised || did_revise;
-        verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &file_id,
-            "shadcn_component_spec",
-            None,
-        )
-        .map_err(|verify_err| {
-            format!("{verify_err}; initial shadcn component spec error: {err}")
-        })?;
-    }
+    )?;
 
     let fresh =
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnComponentSpec")
         })?;
-    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
-    if !bool_field(&fresh_bools, "has_shadcn_component_spec") {
-        status = entity_status_value(&fresh);
+    if !entity_bool_any(&fresh, "has_shadcn_component_spec") {
         if status == "Published" {
             revise_published_for_shadcn_component_spec(ctx, api_url, headers, language_id)?;
             revised = true;
@@ -3566,46 +3374,21 @@ fn verify_shadcn_preview_shots(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
-    workspace_id: &str,
+    _workspace_id: &str,
     language_id: &str,
     language: &serde_json::Value,
 ) -> Result<bool, String> {
-    let mut fields = entity_fields(language);
-    let mut status = entity_status_value(language);
+    let fields = entity_fields(language);
+    let status = entity_status_value(language);
     let mut revised = false;
-    let mut file_id = string_field_any(&fields, "shadcn_preview_shots_file_id", "");
-    let initial_bools = language
-        .get("booleans")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let source_invalidated_preview_shots = !bool_field(&initial_bools, "has_shadcn_preview_shots");
-    if source_invalidated_preview_shots
-        || shadcn_preview_shots_projection_refresh_reason(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &fields,
-            &file_id,
-        )
-        .is_some()
-    {
-        let (refreshed_fields, refreshed_file_id, did_revise) =
-            refresh_shadcn_preview_shots_projection(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                language_id,
-                &fields,
-                &status,
-            )?;
-        fields = refreshed_fields;
-        file_id = refreshed_file_id;
-        revised = revised || did_revise;
+    let file_id = string_field_any(&fields, "shadcn_preview_shots_file_id", "");
+    if file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no shadcn_preview_shots_file_id"
+        ));
     }
 
-    if let Err(err) = verify_file_value(
+    verify_file_value(
         ctx,
         api_url,
         headers,
@@ -3613,41 +3396,13 @@ fn verify_shadcn_preview_shots(
         &file_id,
         "shadcn_preview_shots",
         None,
-    ) {
-        let (refreshed_fields, refreshed_file_id, did_revise) =
-            refresh_shadcn_preview_shots_projection(
-                ctx,
-                api_url,
-                headers,
-                workspace_id,
-                language_id,
-                &fields,
-                &status,
-            )?;
-        fields = refreshed_fields;
-        file_id = refreshed_file_id;
-        revised = revised || did_revise;
-        verify_file_value(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            &file_id,
-            "shadcn_preview_shots",
-            None,
-        )
-        .map_err(|verify_err| {
-            format!("{verify_err}; initial shadcn preview-shot manifest error: {err}")
-        })?;
-    }
+    )?;
 
     let fresh =
         load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
             format!("DesignLanguage '{language_id}' disappeared before VerifyShadcnPreviewShots")
         })?;
-    let fresh_bools = fresh.get("booleans").cloned().unwrap_or_else(|| json!({}));
-    if !bool_field(&fresh_bools, "has_shadcn_preview_shots") {
-        status = entity_status_value(&fresh);
+    if !entity_bool_any(&fresh, "has_shadcn_preview_shots") {
         if status == "Published" {
             revise_published_for_shadcn_preview_shots(ctx, api_url, headers, language_id)?;
             revised = true;
@@ -8340,78 +8095,6 @@ mod tests {
         assert!(thumbnail_mime_type_is_acceptable("image/svg+xml", &svg));
         verify_file_body("dl-test", "fl-svg", "thumbnail", None, &svg)
             .expect("SVG thumbnails are browser-renderable image payloads");
-    }
-
-    #[test]
-    fn recovery_projection_materializes_partial_synthesis_fields() {
-        let partial = json!({
-            "name": "AYA Quiet Margin Grid",
-            "slug": "aya-quiet-margin-grid",
-            "summary": "A text-first workspace language with calm margin rhythm.",
-            "rationale": "Recover the same partial language instead of creating a duplicate.",
-            "principles": [
-                "Use woven margin lines to orient reading.",
-                "Keep data surfaces quiet and text led."
-            ],
-            "components": ["navigation", "table", "editor"],
-            "dos": ["Preserve readable density."],
-            "donts": ["Do not turn it into generic dashboard chrome."],
-            "tokens": json!({
-                "color": {
-                    "background": "#fbfaf7",
-                    "surface": "#ffffff",
-                    "text": "#111827",
-                    "primary": "#1f2937",
-                    "accent": "#2563eb",
-                    "border": "#d4d4d8"
-                }
-            }).to_string(),
-            "target_direction": "AYA text-first knowledge workspace",
-            "topic_allowlist": json!(["aya", "knowledge-workspace"]).to_string()
-        });
-
-        assert!(synthesis_spec_repair_needed(&partial));
-        let params = recovery_set_spec_params("en-partial", &partial);
-        for key in [
-            "philosophy",
-            "tokens",
-            "rules",
-            "layout_principles",
-            "guidance",
-            "tags",
-        ] {
-            serde_json::from_str::<serde_json::Value>(params[key].as_str().unwrap())
-                .unwrap_or_else(|error| panic!("{key} should be JSON: {error}"));
-        }
-
-        let repaired_fields = json!({
-            "name": params["name"].as_str().unwrap(),
-            "slug": params["slug"].as_str().unwrap(),
-            "philosophy": params["philosophy"].as_str().unwrap(),
-            "tokens": params["tokens"].as_str().unwrap(),
-            "rules": params["rules"].as_str().unwrap(),
-            "layout_principles": params["layout_principles"].as_str().unwrap(),
-            "guidance": params["guidance"].as_str().unwrap(),
-            "tags": params["tags"].as_str().unwrap()
-        });
-        let embodiment = render_recovery_embodiment_projection("en-partial", &repaired_fields);
-        verify_file_body(
-            "en-partial",
-            "fl-embodiment",
-            "embodiment",
-            Some("html"),
-            &embodiment,
-        )
-        .expect("recovery embodiment should be self-contained HTML");
-
-        let thumbnail = render_recovery_thumbnail_svg("en-partial", &repaired_fields);
-        assert!(thumbnail.len() > 1024);
-        assert!(thumbnail_mime_type_is_acceptable(
-            "image/svg+xml",
-            &thumbnail
-        ));
-        verify_file_body("en-partial", "fl-thumbnail", "thumbnail", None, &thumbnail)
-            .expect("recovery thumbnail should be browser-renderable SVG");
     }
 
     #[test]

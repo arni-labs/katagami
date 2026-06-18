@@ -83,7 +83,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             source,
         )
 
-    def test_finalize_refreshes_unreadable_design_md_reference(self):
+    def test_finalize_verifies_design_md_without_generating_projections(self):
         source = (
             self.curation_root
             / "wasm"
@@ -92,14 +92,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn refresh_design_md_projection", source)
-        self.assertIn('"unreadable_design_md_file"', source)
-        self.assertIn('"invalid_design_md_file"', source)
-        self.assertLess(
-            source.index('"unreadable_design_md_file"'),
-            source.index("verify_design_md_lint_result(language_id, &fields)?"),
-            "stale DESIGN.md file references must refresh before lint verification",
-        )
+        verify_design_md = source.split("fn verify_design_md", 1)[1].split(
+            "fn refresh_design_md_projection", 1
+        )[0]
+        self.assertIn("has no design_md_file_id", verify_design_md)
+        self.assertIn("verify_design_md_lint_result(language_id, &fields)?", verify_design_md)
+        self.assertNotIn("refresh_design_md_projection(", verify_design_md)
 
     def test_quality_finalizer_verifies_publish_reached_terminal_state(self):
         source = (
@@ -136,7 +134,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "quality finalization must mark quality before publishing",
         )
 
-    def test_finalizer_generates_missing_compositions_before_review(self):
+    def test_finalizer_verifies_agent_compositions_without_generation(self):
         source = (
             self.curation_root
             / "wasm"
@@ -145,16 +143,17 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn verify_compositions", source)
-        self.assertIn("fn refresh_composition_projections", source)
-        self.assertIn("render_landing_composition_projection", source)
-        self.assertIn("render_dashboard_composition_projection", source)
-        self.assertIn('"AttachCompositions"', source)
-        self.assertIn('"VerifyCompositions"', source)
-        self.assertIn("--hero-image", source)
+        verify_compositions = source.split("fn verify_compositions", 1)[1].split(
+            "fn refresh_composition_projections", 1
+        )[0]
+        self.assertIn("has no landing_file_id", verify_compositions)
+        self.assertIn("has no dashboard_file_id", verify_compositions)
+        self.assertIn('"AttachCompositions"', verify_compositions)
+        self.assertIn('"VerifyCompositions"', verify_compositions)
+        self.assertNotIn("refresh_composition_projections(", verify_compositions)
 
         finalizer = source.index("fn verify_quality_reviewed_languages")
-        verify_compositions = source.index(
+        verify_call = source.index(
             "verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?",
             finalizer,
         )
@@ -163,9 +162,9 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             finalizer,
         )
         self.assertLess(
-            verify_compositions,
+            verify_call,
             ensure_under_review,
-            "quality finalization must attach and verify compositions before Draft review transition",
+            "quality finalization must verify compositions before Draft review transition",
         )
 
     def test_finalizer_pawfs_writes_use_direct_keys(self):
@@ -352,7 +351,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("partial_design_language_contract_defects", source)
         self.assertIn("design_language_ids_for_contract_validation", source)
 
-    def test_synthesis_finalizer_self_heals_deterministic_artifacts(self):
+    def test_synthesis_finalizer_verifies_agent_artifacts_without_generation(self):
         source = (
             self.curation_root
             / "wasm"
@@ -360,49 +359,17 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "src"
             / "lib.rs"
         ).read_text()
-
-        self.assertIn("fn verify_synthesis_finalizer_owned_artifacts", source)
 
         synth_start = source.index("fn verify_synthesized_languages")
         synth_end = source.index("fn verify_generated_language_identity", synth_start)
         synth = source[synth_start:synth_end]
 
         self.assertIn("verify_synthesis_finalizer_owned_artifacts", synth)
+        self.assertNotIn("repair_synthesis_partial_language(", synth)
         self.assertLess(
-            synth.index("verify_compositions("),
-            synth.index("verify_synthesis_finalizer_owned_artifacts("),
-            "synthesis must validate core embodiment/compositions before deriving DESIGN.md and shadcn artifacts",
-        )
-        self.assertLess(
-            synth.index("verify_synthesis_finalizer_owned_artifacts("),
-            synth.index('"SubmitForReview"'),
-            "synthesis must self-heal deterministic artifacts before advancing to review",
-        )
-
-    def test_synthesis_finalizer_repairs_partial_language_before_defects(self):
-        source = (
-            self.curation_root
-            / "wasm"
-            / "finalize_spawned_session"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn("fn repair_synthesis_partial_language", source)
-        self.assertIn("fn render_recovery_embodiment_projection", source)
-        self.assertIn("fn render_recovery_thumbnail_svg", source)
-        self.assertIn('"SetSpec"', source)
-        self.assertIn('"AttachEmbodiment"', source)
-        self.assertIn('"AttachThumbnail"', source)
-
-        synth_start = source.index("fn verify_synthesized_languages")
-        synth_end = source.index("fn verify_generated_language_identity", synth_start)
-        synth = source[synth_start:synth_end]
-
-        self.assertLess(
-            synth.index("repair_synthesis_partial_language("),
             synth.index("partial_design_language_contract_defects("),
-            "synthesis must repair deterministic partial language fields before returning durable defects",
+            synth.index('"SubmitForReview"'),
+            "synthesis must return agent-repairable defects before advancing to review",
         )
 
     def test_record_result_terminal_race_is_non_fatal(self):

@@ -65,6 +65,26 @@ class ArtifactReadyContractTests(unittest.TestCase):
             self.finalizer,
         )
 
+    def test_finalizer_does_not_deterministically_generate_creative_artifacts(self):
+        synth = self.finalizer[
+            self.finalizer.index("fn verify_synthesized_languages") : self.finalizer.index(
+                "fn verify_generated_language_identity"
+            )
+        ]
+        self.assertNotIn("repair_synthesis_partial_language(", synth)
+        verify_compositions = self.finalizer.split("fn verify_compositions", 1)[1].split(
+            "fn refresh_composition_projections", 1
+        )[0]
+        self.assertNotIn("refresh_composition_projections(", verify_compositions)
+        verify_design_md = self.finalizer.split("fn verify_design_md", 1)[1].split(
+            "fn refresh_design_md_projection", 1
+        )[0]
+        self.assertNotIn("refresh_design_md_projection(", verify_design_md)
+        verify_shadcn = self.finalizer.split("fn verify_shadcn_export", 1)[1].split(
+            "fn refresh_shadcn_export_projection", 1
+        )[0]
+        self.assertNotIn("refresh_shadcn_export_projection(", verify_shadcn)
+
     def test_finalizer_surfaces_structured_slug_entity_defects(self):
         self.assertIn("missing_design_language_entity", self.finalizer)
         self.assertIn("invalid_reported_language_ids", self.finalizer)
