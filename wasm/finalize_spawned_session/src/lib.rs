@@ -5518,33 +5518,29 @@ fn run_typed_completion_fallback(
                     continue;
                 };
                 let direction_status = entity_status_value(&direction);
-                if direction_status.as_str() != "Discovered" {
-                    actions.push(json!({
-                        "action": "skipped_synthesis_job_direction_already_queued",
-                        "direction_id": direction_id,
-                        "status": direction_status,
-                    }));
-                    continue;
-                }
-
-                if job_exists(
-                    ctx,
-                    api_url,
-                    headers,
-                    "synthesize",
-                    query_id,
-                    Some(direction_id),
-                )? {
-                    if dispatch_action_or_already_in_state(
-                        ctx,
-                        api_url,
-                        headers,
-                        "CurationDirections",
-                        direction_id,
-                        "QueueSynthesis",
-                        &json!({}),
-                        &["Synthesizing", "Completed"],
-                    )? {
+                let existing_synth_ids =
+                    synthesis_job_ids_for_direction(ctx, api_url, headers, query_id, direction_id)?;
+                if !existing_synth_ids.is_empty() {
+                    for existing_id in existing_synth_ids {
+                        if !synthesize_job_ids
+                            .iter()
+                            .any(|job_id| job_id == &existing_id)
+                        {
+                            synthesize_job_ids.push(existing_id);
+                        }
+                    }
+                    if direction_status.as_str() == "Discovered"
+                        && dispatch_action_or_already_in_state(
+                            ctx,
+                            api_url,
+                            headers,
+                            "CurationDirections",
+                            direction_id,
+                            "QueueSynthesis",
+                            &json!({}),
+                            &["Synthesizing", "Completed"],
+                        )?
+                    {
                         actions.push(json!({
                             "action": "marked_existing_synthesis_job_direction_queued",
                             "direction_id": direction_id,
@@ -5552,6 +5548,20 @@ fn run_typed_completion_fallback(
                     }
                     actions.push(json!({
                         "action": "skipped_synthesis_job_existing_job",
+                        "direction_id": direction_id,
+                    }));
+                    continue;
+                }
+                if direction_status.as_str() == "Failed" {
+                    actions.push(json!({
+                        "action": "skipped_synthesis_job_direction_failed",
+                        "direction_id": direction_id,
+                    }));
+                    continue;
+                }
+                if direction_status.as_str() == "Completed" {
+                    actions.push(json!({
+                        "action": "skipped_synthesis_job_direction_completed_without_job",
                         "direction_id": direction_id,
                     }));
                     continue;
@@ -5578,16 +5588,18 @@ fn run_typed_completion_fallback(
                     parent_session_id.as_deref(),
                 )?;
                 synthesize_job_ids.push(synth_job_id.clone());
-                if dispatch_action_or_already_in_state(
-                    ctx,
-                    api_url,
-                    headers,
-                    "CurationDirections",
-                    direction_id,
-                    "QueueSynthesis",
-                    &json!({}),
-                    &["Synthesizing", "Completed"],
-                )? {
+                if direction_status.as_str() == "Discovered"
+                    && dispatch_action_or_already_in_state(
+                        ctx,
+                        api_url,
+                        headers,
+                        "CurationDirections",
+                        direction_id,
+                        "QueueSynthesis",
+                        &json!({}),
+                        &["Synthesizing", "Completed"],
+                    )?
+                {
                     actions.push(json!({
                         "action": "created_and_queued_synthesis_job",
                         "direction_id": direction_id,
@@ -5615,6 +5627,12 @@ fn run_typed_completion_fallback(
                 {
                     synthesize_job_ids.push(existing_id);
                 }
+            }
+            if synthesize_job_ids.is_empty() {
+                return Err(
+                    "source_search finalizer could not create or find any synthesize jobs for the completed direction_ids; refusing to publish ResearchComplete with an empty synthesize_job_ids contract"
+                        .to_string(),
+                );
             }
             actions.push(json!({
                 "action": "collected_synthesis_jobs",
@@ -5840,6 +5858,69 @@ fn list_curation_jobs(
         .unwrap_or_default())
 }
 
+fn list_curation_jobs_filtered(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    filter: &str,
+    top: usize,
+) -> Result<Vec<serde_json::Value>, String> {
+    let resp = ctx.http_call(
+        "GET",
+        &format!(
+            "{api_url}/tdata/CurationJobs?$filter={}&$top={top}",
+            url_query_component(filter)
+        ),
+        headers,
+        "",
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(format!(
+            "Failed to list filtered CurationJobs with '{filter}': HTTP {}: {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(300)]
+        ));
+    }
+    let body: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|e| format!("Failed to parse filtered CurationJobs response: {e}"))?;
+    Ok(body
+        .get("value")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default())
+}
+
+fn curation_job_filter(job_type: &str, query_id: &str, direction_id: Option<&str>) -> String {
+    let mut clauses = vec![format!("job_type eq '{}'", odata_string_literal(job_type))];
+    if !query_id.is_empty() {
+        clauses.push(format!("query_id eq '{}'", odata_string_literal(query_id)));
+    }
+    if let Some(direction_id) = direction_id.filter(|id| !id.is_empty()) {
+        clauses.push(format!(
+            "direction_id eq '{}'",
+            odata_string_literal(direction_id)
+        ));
+    }
+    clauses.join(" and ")
+}
+
+fn odata_string_literal(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
+fn url_query_component(value: &str) -> String {
+    let mut out = String::new();
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char)
+            }
+            _ => out.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    out
+}
+
 fn job_exists(
     ctx: &Context,
     api_url: &str,
@@ -5848,21 +5929,37 @@ fn job_exists(
     query_id: &str,
     direction_id: Option<&str>,
 ) -> Result<bool, String> {
-    Ok(list_curation_jobs(ctx, api_url, headers)?
-        .iter()
-        .any(|job| {
-            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
-            let matches_type = fields.get("job_type").and_then(|v| v.as_str()) == Some(job_type);
-            let matches_query = query_id.is_empty()
-                || fields.get("query_id").and_then(|v| v.as_str()) == Some(query_id);
-            let matches_direction = match direction_id {
-                Some(expected) => {
-                    fields.get("direction_id").and_then(|v| v.as_str()) == Some(expected)
-                }
-                None => true,
-            };
-            matches_type && matches_query && matches_direction
-        }))
+    let filter = curation_job_filter(job_type, query_id, direction_id);
+    Ok(!list_curation_jobs_filtered(ctx, api_url, headers, &filter, 1)?.is_empty())
+}
+
+fn synthesis_job_ids_for_direction(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+    direction_id: &str,
+) -> Result<Vec<String>, String> {
+    let filter = curation_job_filter("synthesize", query_id, Some(direction_id));
+    let jobs = list_curation_jobs_filtered(ctx, api_url, headers, &filter, 25)?;
+    Ok(job_entity_ids(&jobs))
+}
+
+fn job_entity_ids(jobs: &[serde_json::Value]) -> Vec<String> {
+    let mut ids = Vec::new();
+    for job in jobs {
+        let Some(job_id) = job
+            .get("entity_id")
+            .or_else(|| job.get("Id"))
+            .and_then(|value| value.as_str())
+        else {
+            continue;
+        };
+        if !ids.iter().any(|existing| existing == job_id) {
+            ids.push(job_id.to_string());
+        }
+    }
+    ids
 }
 
 fn synthesis_job_ids_for_directions(
@@ -5872,29 +5969,13 @@ fn synthesis_job_ids_for_directions(
     query_id: &str,
     direction_ids: &[String],
 ) -> Result<Vec<String>, String> {
-    let jobs = list_curation_jobs(ctx, api_url, headers)?;
     let mut ids = Vec::new();
     for direction_id in direction_ids {
-        for job in &jobs {
-            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
-            let matches_type =
-                fields.get("job_type").and_then(|v| v.as_str()) == Some("synthesize");
-            let matches_query = query_id.is_empty()
-                || fields.get("query_id").and_then(|v| v.as_str()) == Some(query_id);
-            let matches_direction =
-                fields.get("direction_id").and_then(|v| v.as_str()) == Some(direction_id);
-            if !(matches_type && matches_query && matches_direction) {
-                continue;
-            }
-            let Some(job_id) = job
-                .get("entity_id")
-                .or_else(|| job.get("Id"))
-                .and_then(|value| value.as_str())
-            else {
-                continue;
-            };
-            if !ids.iter().any(|existing| existing == job_id) {
-                ids.push(job_id.to_string());
+        for job_id in
+            synthesis_job_ids_for_direction(ctx, api_url, headers, query_id, direction_id)?
+        {
+            if !ids.iter().any(|existing| existing == &job_id) {
+                ids.push(job_id);
             }
         }
     }
@@ -6671,7 +6752,7 @@ mod tests {
     use super::{
         action_rejected_for_current_state, bool_field, canonicalize_katagami_public_asset_url,
         contract_defect, contract_repair_existing_language_ids, contract_repair_input,
-        curation_job_create_body, design_language_ids_from_completion,
+        curation_job_create_body, curation_job_filter, design_language_ids_from_completion,
         design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
         is_repairable_contract_error, is_repairable_language_artifact_error,
         is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
@@ -6680,8 +6761,8 @@ mod tests {
         render_design_md_projection, render_landing_composition_projection, same_string_set,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
-        typed_success_terminal_action, validation_needs_repair, verify_file_body,
-        verify_source_search_completion,
+        typed_success_terminal_action, url_query_component, validation_needs_repair,
+        verify_file_body, verify_source_search_completion,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -7017,6 +7098,20 @@ mod tests {
                 "synthesize repair target mismatch: duplicate DesignLanguage created"
             )["code"],
             "repair_target_mismatch"
+        );
+    }
+
+    #[test]
+    fn curation_job_filter_uses_query_and_direction_without_bounded_scan() {
+        let filter = curation_job_filter("synthesize", "query-with-'quote'", Some("direction-1"));
+
+        assert_eq!(
+            filter,
+            "job_type eq 'synthesize' and query_id eq 'query-with-''quote''' and direction_id eq 'direction-1'"
+        );
+        assert_eq!(
+            url_query_component(&filter),
+            "job_type%20eq%20%27synthesize%27%20and%20query_id%20eq%20%27query-with-%27%27quote%27%27%27%20and%20direction_id%20eq%20%27direction-1%27"
         );
     }
 

@@ -297,18 +297,36 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         fallback = source[source_search_start:synthesize_start]
 
         self.assertIn("direction_status", fallback)
+        self.assertIn("synthesis_job_ids_for_direction", fallback)
         self.assertIn("skipped_synthesis_job_direction_already_queued", fallback)
+        self.assertIn("skipped_synthesis_job_direction_failed", fallback)
         self.assertIn("skipped_synthesis_job_existing_job", fallback)
         self.assertIn("created_and_queued_synthesis_job", fallback)
         self.assertIn("collected_synthesis_jobs", fallback)
         self.assertIn("synthesis_job_ids_for_directions", fallback)
+        self.assertIn("could not create or find any synthesize jobs", fallback)
         self.assertIn('"QueueSynthesis"', fallback)
-        self.assertIn('!= "Discovered"', fallback)
+        self.assertNotIn('!= "Discovered"', fallback)
         self.assertIn(
             "create_configure_submit_job",
             fallback,
             "source_search fallback must create synthesize jobs inside the validated finalizer so ResearchComplete receives exact job IDs",
         )
+
+    def test_source_search_job_lookup_uses_filtered_queries(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn list_curation_jobs_filtered", source)
+        self.assertIn("fn curation_job_filter", source)
+        self.assertIn("query_id eq", source)
+        self.assertIn("direction_id eq", source)
+        self.assertIn("synthesis_job_ids_for_direction", source)
 
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
