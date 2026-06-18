@@ -38,6 +38,25 @@ class ArtifactReadyContractTests(unittest.TestCase):
             verify_file_value.index("read_file_value("),
         )
 
+    def test_finalizer_recovers_created_thumbnail_files_before_defecting(self):
+        self.assertIn("fn recover_created_file_artifact", self.finalizer)
+        self.assertIn("fn recoverable_image_bytes_from_text", self.finalizer)
+
+        ready_check = self.finalizer[
+            self.finalizer.index("fn verify_ready_file_artifact") : self.finalizer.index(
+                "fn verify_thumbnail"
+            )
+        ]
+        self.assertIn('file_status == "Created"', ready_check)
+        self.assertIn("recover_created_file_artifact(", ready_check)
+        self.assertLess(
+            ready_check.index("recover_created_file_artifact("),
+            ready_check.index("expected Ready"),
+            "Created file recovery must happen before returning the Ready-state defect",
+        )
+        self.assertIn("streaming PUT $value", self.finalizer)
+        self.assertIn("same file id", self.finalizer)
+
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [
             "def require_ready_file",

@@ -35,12 +35,17 @@ they must not directly create follow-up jobs or advance parent queries.
 2. If the contract passes, emit the validated internal completion action
    (`PublishResearchCompletion`, `PublishSynthesisCompletion`,
    `PublishOrganizationCompletion`, or `FinalizeCompletion`).
-3. If repairable defects remain, emit `RepairRequired` with exact defects,
+3. If a defect is deterministic and recoverable from durable state, repair it
+   inside the finalizer first, then reload and revalidate the same artifact IDs.
+   Example: a thumbnail `File` in `Created` with inline base64 image content is
+   decoded and streamed back through `Files('<id>')/$value` so the same File can
+   reach `Ready` without creating a duplicate.
+4. If repairable defects remain, emit `RepairRequired` with exact defects,
    existing artifact IDs, and retry metadata.
-4. `RepairRequired` re-enters the same CurationJob through `Ready` and
+5. `RepairRequired` re-enters the same CurationJob through `Ready` and
    `build_session_message` so the next agent turn repairs the same partial
    artifacts instead of creating duplicates.
-5. If repair attempts are exhausted, fail the job and propagate failure through
+6. If repair attempts are exhausted, fail the job and propagate failure through
    the existing finalizer failure path.
 
 The parent query only advances after validated internal actions. Publish only
