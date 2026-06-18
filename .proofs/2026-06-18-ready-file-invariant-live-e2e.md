@@ -134,3 +134,86 @@ Local red/green verification for the direct-key finalizer PawFS write patch:
 The finalizer's PawFS writer now derives stable directory and file IDs from
 workspace plus normalized path, then reads `Directories` and `Files` directly
 by ID instead of querying broad `Path` + `WorkspaceId` filters.
+
+## Production Published E2E
+
+Installed in production:
+
+- App ref: `katagami/katagami-curation@9dc9f859f40a87f27614a8a6ef6c3a75fe9f50f5`
+- Live `finalize_spawned_session` SHA-256:
+  `a5061217dd8c437191892f4140e6a209671f983cd55c869bbce214cdca362a9f`
+
+Retried the original failed repair job:
+
+- Regeneration job: `en-019edbb6-6205-7230-b053-12a413f49a81`
+- Regeneration session: `ss-019edbf4-d384-7f62-a095-8da7123558f8`
+- Result: `Completed`
+- Language after regeneration: `UnderReview`
+- Composition files:
+  - Landing: `fl-e94aee6960b0eed5`
+  - Dashboard: `fl-8bddfbb96511ee66`
+- Composition state: `has_compositions = true`,
+  `compositions_verified = true`
+
+The follow-up quality-review job then completed and published the language:
+
+- Quality job: `en-019edbf7-f4c0-7380-a79e-a36adf6a1c19`
+- Quality session: `ss-019edbf7-fab7-7700-b5c8-908b8490f495`
+- DesignLanguage: `en-019edb01-bbbc-75a2-be14-b6530caaad41`
+- Final state: `Published`
+
+Verified final DesignLanguage booleans:
+
+- `has_compositions = true`
+- `compositions_verified = true`
+- `has_design_md = true`
+- `design_md_verified = true`
+- `has_shadcn_export = true`
+- `shadcn_export_verified = true`
+- `has_shadcn_component_spec = true`
+- `shadcn_component_spec_verified = true`
+- `has_shadcn_preview_shots = true`
+- `shadcn_preview_shots_verified = true`
+- `has_published_assets = true`
+- `quality_review_passed = true`
+- `embodiment_verified = true`
+- `thumbnail_verified = true`
+
+Verified generated files:
+
+- Landing composition: `fl-e94aee6960b0eed5`
+  - Path:
+    `/katagami/compositions/codex-fresh-workspace-repair-proof-1781790784/landing.html`
+  - Status: `Ready`
+  - Workspace: `os-app-docs`
+  - MIME: `text/html`
+  - Size: `5050`
+  - Hash:
+    `sha256:9cb3966c9d2803d55e7a0fb2d1f04e13e0a878ec0427b332a624a4b5dc591c70`
+- Dashboard composition: `fl-8bddfbb96511ee66`
+  - Path:
+    `/katagami/compositions/codex-fresh-workspace-repair-proof-1781790784/dashboard.html`
+  - Status: `Ready`
+  - Workspace: `os-app-docs`
+  - MIME: `text/html`
+  - Size: `5469`
+  - Hash:
+    `sha256:c13783ae4c759afc5ecb63c5b24ce1a3c157aded6e1dac2be3ae01c447514b7e`
+- DESIGN.md: `fl-bc0cde0938b08643`
+  - Path:
+    `/katagami/design-md/codex-fresh-workspace-repair-proof-1781790784/DESIGN.md`
+  - Status: `Ready`
+  - Workspace: `os-app-docs`
+  - MIME: `text/markdown`
+  - Size: `4033`
+  - Hash:
+    `sha256:5cfa21bb9bea3eef4d7841e1097cb88c58a717608c167c5cfe35a98ca3a7d12a`
+
+Verified public asset URLs:
+
+- DESIGN.md:
+  `https://assets.katagami.ai/katagami/design-languages/DesignLanguage/en-019edb01-bbbc-75a2-be14-b6530caaad41/design_md-5cfa21bb9bea3eef4d7841e1097cb88c58a717608c167c5cfe35a98ca3a7d12a.md`
+- Embodiment:
+  `https://assets.katagami.ai/katagami/design-languages/DesignLanguage/en-019edb01-bbbc-75a2-be14-b6530caaad41/embodiment-4fe3ea4eb35b71d7ecf70b8d01ac601d6d7a17ab29c3f6ffdad4fa7abc65b559.html`
+- Thumbnail:
+  `https://assets.katagami.ai/katagami/design-languages/DesignLanguage/en-019edb01-bbbc-75a2-be14-b6530caaad41/thumbnail-c15fdc7a0a00ccb534b8af8bfd950316dd7a68bc45487b2d6ff70f6d15118e58.jpg`
