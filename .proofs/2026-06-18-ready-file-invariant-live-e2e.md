@@ -45,6 +45,51 @@ Local verification:
 - `git diff --check`
   - Result: clean.
 
+## Live E2E Identity Repair Blocker
+
+Fresh production E2E after installing
+`katagami/katagami-curation@4654b3ce5c05fa0347b6c244af95d3ff11206bae`
+exposed a separate synthesis identity defect.
+
+Run:
+
+- Query: `en-019edcfd-acbe-7cd0-80d8-a69945641aec`
+- Source-search job: `en-019edcfd-af67-7662-b6de-e2383297de3b`
+- Direction created after source-search repair:
+  `en-019edd01-bb89-75f3-8574-042c66563a82`
+- Synthesis job: `en-019edd01-bf37-7860-acf7-07be7803e155`
+- Final query state: `Failed`
+
+Observed:
+
+- Source-search first reported missing `direction_ids`; the validator kept the
+  query in `Researching`, retried, and then produced a direction.
+- Synthesis first reported missing `design_language_ids`; the validator kept
+  the query in `Synthesizing` and retried.
+- The retry then reported `aya-quiet-woven-knowledge-workspace` as a
+  `DesignLanguage` entity ID even though that value was the slug.
+- `verify_generated_language_identity` rejected the output, but this error was
+  still treated as fatal instead of contract-repairable.
+
+Patch:
+
+- Slug-as-entity-ID violations now map to the contract defect code
+  `invalid_design_language_identity`.
+- `is_repairable_contract_error` classifies the same error as repairable so the
+  CurationJob re-enters `RepairRequired` instead of failing the parent query.
+
+Local verification:
+
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml`
+  - Result: 35 passed.
+- `python3 -m unittest tests.test_artifact_ready_contract tests.test_quality_review_finalize_contract tests.test_reaction_resolver_types tests.test_source_search_hot_path tests.test_curation_liveness_contract tests.test_thumbnail_contract`
+  - Result: 55 ran, 5 skipped, OK.
+- `./wasm/build.sh`
+  - Result: `build_session_message`, `finalize_spawned_session`, and
+    `launch_research` built successfully.
+- `git diff --check`
+  - Result: clean.
+
 Production deployment:
 
 - Pushed GitHub branch:

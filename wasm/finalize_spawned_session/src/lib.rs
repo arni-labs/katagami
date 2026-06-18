@@ -1055,6 +1055,8 @@ fn contract_defect(job_type: &str, language_id: Option<&str>, message: &str) -> 
         "missing_or_invalid_thumbnail"
     } else if lower.contains("design_language_ids") || lower.contains("language ids") {
         "missing_design_language_ids"
+    } else if lower.contains("slug as the entity id") {
+        "invalid_design_language_identity"
     } else if lower.contains("direction_ids") || lower.contains("direction ids") {
         "missing_direction_ids"
     } else if lower.contains("repair target") || lower.contains("duplicate") {
@@ -1090,6 +1092,7 @@ fn is_repairable_contract_error(job_type: &str, error: &str) -> bool {
         || lower.contains("did not report any design_language_ids")
         || lower.contains("did not report any direction_ids")
         || lower.contains("completed without any design_language_ids")
+        || lower.contains("slug as the entity id")
         || lower.contains("unfinished tool call")
         || (job_type == "quality_review" && lower.contains("without any design_language_ids"))
 }
@@ -8564,6 +8567,18 @@ mod tests {
             "synthesize",
             "synthesize typed completion did not report any design_language_ids"
         ));
+        assert!(is_repairable_contract_error(
+            "synthesize",
+            "DesignLanguage 'aya-quiet-woven-knowledge-workspace' uses its slug as the entity ID; synthesize/evolve_language must use the generated entity_id"
+        ));
+        assert_eq!(
+            contract_defect(
+                "synthesize",
+                Some("aya-quiet-woven-knowledge-workspace"),
+                "DesignLanguage 'aya-quiet-woven-knowledge-workspace' uses its slug as the entity ID"
+            )["code"],
+            "invalid_design_language_identity"
+        );
     }
 
     #[test]
