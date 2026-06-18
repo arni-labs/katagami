@@ -174,6 +174,25 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "thumbnail validation or repair must happen before public publish",
         )
 
+    def test_failed_quality_review_can_queue_repair_before_query_failure(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("recover_failed_quality_review_job", source)
+        self.assertIn("repair_submitted_after_failed_quality_review", source)
+        self.assertIn("deeply empty", source)
+        self.assertIn("missing required native katagami spec sections", source)
+        self.assertLess(
+            source.index("recover_failed_quality_review_job"),
+            source.index("propagate_failed_job(&ctx"),
+            "repairable quality_review failures must queue repair before failing the parent query",
+        )
+
     def test_failed_provider_streams_retry_without_failing_query(self):
         source = (
             self.curation_root

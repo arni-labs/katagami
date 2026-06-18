@@ -500,6 +500,27 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     );
                     return Ok(());
                 }
+                if recover_failed_quality_review_job(
+                    &ctx,
+                    &api_url,
+                    &headers,
+                    &workspace_id,
+                    &query_id,
+                    &job_id,
+                    &job_type,
+                    &fields,
+                    error_message,
+                )? {
+                    set_success_result(
+                        "",
+                        &json!({
+                            "status": "repair_submitted_after_failed_quality_review",
+                            "session_id": session_id,
+                            "record_status": record_status,
+                        }),
+                    );
+                    return Ok(());
+                }
                 propagate_failed_job(&ctx, &api_url, &headers, &fields, error_message)?;
                 set_success_result(
                     "",
@@ -700,6 +721,51 @@ fn auto_retry_failed_job(
     Ok(true)
 }
 
+fn recover_failed_quality_review_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    query_id: &str,
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    error_message: &str,
+) -> Result<bool, String> {
+    if job_type != "quality_review" || !is_repairable_language_artifact_error(error_message) {
+        return Ok(false);
+    }
+
+    let language_ids = design_language_ids_from_job(fields);
+    if language_ids.is_empty() {
+        return Ok(false);
+    }
+
+    let mut repair_job_ids = Vec::new();
+    for language_id in &language_ids {
+        if let Some(repair_job_id) = queue_artifact_repair_job(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            query_id,
+            fields,
+            language_id,
+            error_message,
+        )? {
+            repair_job_ids.push(repair_job_id);
+        }
+    }
+
+    ctx.log(
+        "warn",
+        &format!(
+            "finalize_spawned_session: recovered failed quality_review job '{job_id}' by queuing artifact/spec repair jobs {repair_job_ids:?} for languages {language_ids:?}: {error_message}"
+        ),
+    );
+    Ok(true)
+}
+
 fn propagate_failed_job(
     ctx: &Context,
     api_url: &str,
@@ -831,6 +897,10 @@ fn is_repairable_language_artifact_error(error: &str) -> bool {
         "has no embodiment_file_id",
         "embodiment file",
         "missing required spec sections",
+        "missing required native katagami spec sections",
+        "deeply empty",
+        "deeply empty/incoherent",
+        "run synthesize or regenerate_embodiment",
         "expected ready",
         "missing usable metadata",
         "failed to read files",
@@ -5694,6 +5764,7 @@ mod tests {
             "DesignLanguage 'dl' thumbnail file 'fl' is too small (92 bytes)",
             "DesignLanguage 'dl' has no embodiment_file_id",
             "DesignLanguage 'dl' embodiment file 'fl' expected Ready",
+            "Quality review cannot proceed: DesignLanguage dl is deeply empty/incoherent and missing required native Katagami spec sections; run synthesize or regenerate_embodiment first",
         ] {
             assert!(
                 is_repairable_language_artifact_error(error),
