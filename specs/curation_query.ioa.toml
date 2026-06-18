@@ -112,25 +112,25 @@ temper_api_url = "{secret:temper_api_url}"
 [[action]]
 name = "ResearchComplete"
 kind = "input"
-from = ["Researching"]
+from = ["Researching", "Synthesizing"]
 to = "Synthesizing"
 params = ["source_search_job_id", "synthesize_job_id", "direction_ids", "synthesize_job_ids"]
-hint = "Research phase completed. CurationDirection records have queued synthesis jobs."
+hint = "Research phase completed. CurationDirection records have queued synthesis jobs. Duplicate completion dispatches are idempotent after synthesis has already started."
 
 [[action]]
 name = "SynthesisComplete"
 kind = "input"
-from = ["Synthesizing"]
+from = ["Synthesizing", "Organizing"]
 to = "Organizing"
 params = ["design_language_ids", "organize_job_id", "quality_review_job_ids"]
-hint = "Synthesis completed. Quality review is now driving the organizing stage."
+hint = "Synthesis completed. Quality review is now driving the organizing stage. Duplicate completion dispatches are idempotent after another synthesis branch already advanced the query."
 
 [[action]]
 name = "OrganizationComplete"
 kind = "input"
-from = ["Organizing"]
+from = ["Organizing", "Completed"]
 to = "Completed"
-hint = "Taxonomy organization finished. Pipeline complete."
+hint = "Taxonomy organization finished. Duplicate completion dispatches are idempotent once the query is already complete."
 
 [[action]]
 name = "Fail"

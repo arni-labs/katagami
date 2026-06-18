@@ -217,3 +217,55 @@ Verified public asset URLs:
   `https://assets.katagami.ai/katagami/design-languages/DesignLanguage/en-019edb01-bbbc-75a2-be14-b6530caaad41/embodiment-4fe3ea4eb35b71d7ecf70b8d01ac601d6d7a17ab29c3f6ffdad4fa7abc65b559.html`
 - Thumbnail:
   `https://assets.katagami.ai/katagami/design-languages/DesignLanguage/en-019edb01-bbbc-75a2-be14-b6530caaad41/thumbnail-c15fdc7a0a00ccb534b8af8bfd950316dd7a68bc45487b2d6ff70f6d15118e58.jpg`
+
+## Concurrent Synthesis Orchestration Patch
+
+Fresh AYA batch run after the publish fix exposed an earlier orchestration
+failure mode:
+
+- Four synthesis jobs ended with unfinished typed-completion tool calls.
+- Three synthesis jobs attempted `CurationQuery.SynthesisComplete` after the
+  query had already advanced to `Organizing`.
+- One synthesis job attempted to complete a `CurationDirection` that was
+  already `Completed`.
+- No new DesignLanguage records were attached to that batch.
+
+Root cause: concurrent synthesis branches were all allowed to dispatch
+completion actions against the same query/direction state machine. One branch
+could legitimately advance the entity first, while later branches treated the
+already-advanced state as fatal.
+
+Patch:
+
+- `CurationDirection.Complete` now accepts duplicate dispatches from
+  `Completed`.
+- `CurationQuery.ResearchComplete` now accepts duplicate dispatches from
+  `Synthesizing`.
+- `CurationQuery.SynthesisComplete` now accepts duplicate dispatches from
+  `Organizing`.
+- `CurationQuery.OrganizationComplete` now accepts duplicate dispatches from
+  `Completed`.
+- `finalize_spawned_session` now treats rejected completion dispatches as
+  idempotent if the target entity is already in the desired state.
+- Transient provider/unfinished typed-completion retry budget increased from
+  2 to 4.
+
+Local verification:
+
+- `python3 -m unittest tests.test_reaction_resolver_types.ReactionResolverTypeTests.test_completion_state_transitions_are_idempotent_for_concurrent_finalizers`
+  - Result: passed.
+- `python3 -m unittest tests.test_quality_review_finalize_contract.QualityReviewFinalizeContractTests.test_concurrent_completion_dispatches_are_idempotent tests.test_quality_review_finalize_contract.QualityReviewFinalizeContractTests.test_failed_provider_streams_retry_without_failing_query`
+  - Result: 2 passed.
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml action_state_rejections_are_detected_for_idempotent_completion`
+  - Result: 1 passed.
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml`
+  - Result: 22 passed.
+- `python3 -m unittest tests.test_quality_review_finalize_contract`
+  - Result: 17 passed.
+- `python3 -m unittest tests.test_reaction_resolver_types`
+  - Result: 7 passed.
+- `python3 -m unittest discover -s tests`
+  - Result: 68 passed, 16 skipped.
+- `./wasm/build.sh`
+  - Result: `build_session_message`, `finalize_spawned_session`, and
+    `launch_research` built successfully.

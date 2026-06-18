@@ -107,10 +107,10 @@ type = "create"
 [[action]]
 name = "Complete"
 kind = "input"
-from = ["Synthesizing"]
+from = ["Synthesizing", "Completed"]
 to = "Completed"
 params = ["design_language_ids"]
-hint = "The synthesize job for this direction completed."
+hint = "The synthesize job for this direction completed. Duplicate completion dispatches are idempotent so concurrent finalizers do not fail after the direction has already completed."
 
 [[action]]
 name = "Fail"

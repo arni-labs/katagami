@@ -251,6 +251,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("is_transient_provider_failure", source)
         self.assertIn("auto_retry_failed_job", source)
+        self.assertIn("const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 4", source)
         self.assertIn("OpenAI stream ended early", source)
         self.assertIn('"auto_retry_submitted"', source)
         self.assertIn("propagate_failed_job", source)
@@ -259,6 +260,21 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             source.index("propagate_failed_job"),
             "transient provider failures must retry before non-repairable failure propagation",
         )
+
+    def test_concurrent_completion_dispatches_are_idempotent(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn dispatch_action_or_already_in_state", source)
+        self.assertIn("fn action_rejected_for_current_state", source)
+        self.assertIn("query_synthesis_complete_already_advanced", source)
+        self.assertIn("direction_complete_already_completed", source)
+        self.assertIn('&["Organizing", "Completed"]', source)
 
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (

@@ -1,7 +1,7 @@
 use temper_wasm_sdk::prelude::*;
 
 const MAX_ARTIFACT_REPAIR_ATTEMPTS: i64 = 2;
-const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 2;
+const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 4;
 
 /// Finalize a CurationJob's spawned session.
 ///
@@ -5216,7 +5216,7 @@ fn run_typed_completion_fallback(
                 && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
                     == Some("Researching".to_string())
             {
-                dispatch_action(
+                if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
                     headers,
@@ -5232,8 +5232,15 @@ fn run_typed_completion_fallback(
                             .unwrap_or("[]"),
                         "synthesize_job_ids": "[]",
                     }),
-                )?;
-                actions.push(json!({"action": "query_research_complete", "query_id": query_id}));
+                    &["Synthesizing", "Organizing", "Completed"],
+                )? {
+                    actions
+                        .push(json!({"action": "query_research_complete", "query_id": query_id}));
+                } else {
+                    actions.push(
+                        json!({"action": "query_research_complete_already_advanced", "query_id": query_id}),
+                    );
+                }
             }
         }
         "synthesize" => {
@@ -5242,7 +5249,7 @@ fn run_typed_completion_fallback(
                 && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
                     == Some("Synthesizing".to_string())
             {
-                dispatch_action(
+                if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
                     headers,
@@ -5255,8 +5262,16 @@ fn run_typed_completion_fallback(
                             .and_then(|v| v.as_str())
                             .unwrap_or("[]"),
                     }),
-                )?;
-                actions.push(json!({"action": "direction_complete", "direction_id": direction_id}));
+                    &["Completed"],
+                )? {
+                    actions.push(
+                        json!({"action": "direction_complete", "direction_id": direction_id}),
+                    );
+                } else {
+                    actions.push(
+                        json!({"action": "direction_complete_already_completed", "direction_id": direction_id}),
+                    );
+                }
             }
 
             let query_status = if query_id.is_empty() {
@@ -5283,7 +5298,7 @@ fn run_typed_completion_fallback(
                     .push(json!({"action": "created_quality_review_job", "job_id": review_job_id}));
             }
             if query_status.as_deref() == Some("Synthesizing") {
-                dispatch_action(
+                if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
                     headers,
@@ -5298,8 +5313,15 @@ fn run_typed_completion_fallback(
                         "organize_job_id": "",
                         "quality_review_job_ids": "[]",
                     }),
-                )?;
-                actions.push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
+                    &["Organizing", "Completed"],
+                )? {
+                    actions
+                        .push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
+                } else {
+                    actions.push(
+                        json!({"action": "query_synthesis_complete_already_advanced", "query_id": query_id}),
+                    );
+                }
             }
         }
         "quality_review" => {
@@ -5391,7 +5413,7 @@ fn run_typed_completion_fallback(
                 && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
                     == Some("Organizing".to_string())
             {
-                dispatch_action(
+                if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
                     headers,
@@ -5399,9 +5421,16 @@ fn run_typed_completion_fallback(
                     query_id,
                     "OrganizationComplete",
                     &json!({}),
-                )?;
-                actions
-                    .push(json!({"action": "query_organization_complete", "query_id": query_id}));
+                    &["Completed"],
+                )? {
+                    actions.push(
+                        json!({"action": "query_organization_complete", "query_id": query_id}),
+                    );
+                } else {
+                    actions.push(
+                        json!({"action": "query_organization_complete_already_completed", "query_id": query_id}),
+                    );
+                }
             }
         }
         _ => {}
@@ -5766,6 +5795,45 @@ fn dispatch_action(
         ));
     }
     Ok(())
+}
+
+fn dispatch_action_or_already_in_state(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &str,
+    entity_id: &str,
+    action: &str,
+    params: &serde_json::Value,
+    already_ok_states: &[&str],
+) -> Result<bool, String> {
+    match dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params) {
+        Ok(()) => Ok(true),
+        Err(error) if action_rejected_for_current_state(&error) => {
+            let status =
+                entity_status(ctx, api_url, headers, set_name, entity_id)?.unwrap_or_default();
+            if already_ok_states
+                .iter()
+                .any(|expected| *expected == status.as_str())
+            {
+                ctx.log(
+                    "info",
+                    &format!(
+                        "finalize_spawned_session: treating duplicate {set_name}('{entity_id}').{action} dispatch as idempotent because current state is '{status}'"
+                    ),
+                );
+                Ok(false)
+            } else {
+                Err(error)
+            }
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn action_rejected_for_current_state(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    lower.contains("not valid from state") || lower.contains("\"code\":\"actionfailed\"")
 }
 
 fn string_array(value: Option<&serde_json::Value>) -> Vec<String> {
@@ -6256,9 +6324,9 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::{
-        bool_field, canonicalize_katagami_public_asset_url, curation_job_create_body,
-        design_language_ids_from_completion, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any,
+        action_rejected_for_current_state, bool_field, canonicalize_katagami_public_asset_url,
+        curation_job_create_body, design_language_ids_from_completion,
+        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
         incomplete_regeneration_completion_error, is_repairable_language_artifact_error,
         is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
         next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
@@ -6491,6 +6559,16 @@ mod tests {
         ));
         assert!(!is_transient_provider_failure(
             "DesignLanguage 'dl' is missing required spec sections"
+        ));
+    }
+
+    #[test]
+    fn action_state_rejections_are_detected_for_idempotent_completion() {
+        assert!(action_rejected_for_current_state(
+            "Failed to dispatch CurationQueries('q').SynthesisComplete: HTTP 409: {\"error\":{\"code\":\"ActionFailed\",\"message\":\"Action 'SynthesisComplete' not valid from state 'Organizing'\"}}"
+        ));
+        assert!(!action_rejected_for_current_state(
+            "Failed to dispatch CurationQueries('q').SynthesisComplete: HTTP 500"
         ));
     }
 

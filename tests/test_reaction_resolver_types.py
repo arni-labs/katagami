@@ -73,6 +73,21 @@ class ReactionResolverTypeTests(unittest.TestCase):
             "failed jobs must be classified by finalize_spawned_session so transient provider streams can retry",
         )
 
+    def test_completion_state_transitions_are_idempotent_for_concurrent_finalizers(self):
+        root = Path(__file__).resolve().parents[1]
+        query_spec = tomllib.loads((root / "specs" / "curation_query.ioa.toml").read_text())
+        direction_spec = tomllib.loads(
+            (root / "specs" / "curation_direction.ioa.toml").read_text()
+        )
+
+        query_actions = {action["name"]: action for action in query_spec["action"]}
+        direction_actions = {action["name"]: action for action in direction_spec["action"]}
+
+        self.assertIn("Synthesizing", query_actions["ResearchComplete"]["from"])
+        self.assertIn("Organizing", query_actions["SynthesisComplete"]["from"])
+        self.assertIn("Completed", query_actions["OrganizationComplete"]["from"])
+        self.assertIn("Completed", direction_actions["Complete"]["from"])
+
     def test_typed_completion_actions_keep_legacy_complete_compatibility(self):
         root = Path(__file__).resolve().parents[1]
         spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
