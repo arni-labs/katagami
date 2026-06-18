@@ -6146,11 +6146,7 @@ fn string_field(fields: &serde_json::Value, name: &str, default: &str) -> String
 }
 
 fn parse_json_string_array(value: Option<&serde_json::Value>) -> Vec<String> {
-    value
-        .and_then(|v| v.as_str())
-        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
-        .map(|parsed| string_array_flexible(Some(&parsed)))
-        .unwrap_or_default()
+    string_array_flexible(value)
 }
 
 fn load_entity(
@@ -6657,9 +6653,8 @@ fn string_array_flexible(value: Option<&serde_json::Value>) -> Vec<String> {
     }
     if let Some(raw) = value.as_str().map(str::trim).filter(|raw| !raw.is_empty()) {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-            let parsed_ids = string_array_flexible(Some(&parsed));
-            if !parsed_ids.is_empty() {
-                return parsed_ids;
+            if parsed.is_array() || parsed.is_string() {
+                return string_array_flexible(Some(&parsed));
             }
         }
         return vec![raw.to_string()];
@@ -7127,11 +7122,11 @@ mod tests {
         design_md_projection_refresh_reason, entity_bool_any, is_repairable_contract_error,
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
         merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
-        parent_session_id_from_fields, partial_design_language_contract_defects,
-        pawfs_directory_id, pawfs_file_id, recoverable_image_bytes_from_text,
-        render_dashboard_composition_projection, render_design_md_projection,
-        render_landing_composition_projection, same_string_set, session_can_be_finalized,
-        session_is_terminal, split_pawfs_file_path, string_field_any,
+        parent_session_id_from_fields, parse_json_string_array,
+        partial_design_language_contract_defects, pawfs_directory_id, pawfs_file_id,
+        recoverable_image_bytes_from_text, render_dashboard_composition_projection,
+        render_design_md_projection, render_landing_composition_projection, same_string_set,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
         typed_success_terminal_action, url_query_component, validation_needs_repair,
         verify_file_body, verify_source_search_completion,
@@ -7418,6 +7413,23 @@ mod tests {
 
         let validation =
             verify_source_search_completion(&fields).expect("non-empty directions are valid");
+
+        assert_eq!(validation["validated"], true);
+        assert_eq!(validation["direction_count"], 1);
+    }
+
+    #[test]
+    fn source_search_completion_accepts_native_direction_id_arrays() {
+        let fields = json!({
+            "direction_ids": ["dir-1"]
+        });
+
+        assert_eq!(
+            parse_json_string_array(fields.get("direction_ids")),
+            vec!["dir-1"]
+        );
+        let validation = verify_source_search_completion(&fields)
+            .expect("native arrays are valid action params");
 
         assert_eq!(validation["validated"], true);
         assert_eq!(validation["direction_count"], 1);
