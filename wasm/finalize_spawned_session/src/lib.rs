@@ -1760,6 +1760,62 @@ fn revise_published_for_thumbnail(
     )
 }
 
+fn verify_ready_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    file_id: &str,
+    artifact_kind: &str,
+) -> Result<serde_json::Value, String> {
+    let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        format!("DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' does not exist")
+    })?;
+    let file_status = entity_status_value(&file);
+    if file_status != "Ready" {
+        return Err(format!(
+            "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is in state '{file_status}', expected Ready"
+        ));
+    }
+
+    let file_fields = entity_fields(&file);
+    let path = first_nonempty(&[
+        string_field_any(&file_fields, "path", ""),
+        string_field_any(&file_fields, "Path", ""),
+    ]);
+    let name = first_nonempty(&[
+        string_field_any(&file_fields, "name", ""),
+        string_field_any(&file_fields, "Name", ""),
+    ]);
+    let mime_type = first_nonempty(&[
+        string_field_any(&file_fields, "mime_type", ""),
+        string_field_any(&file_fields, "MimeType", ""),
+    ]);
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
+
+    let mut missing = Vec::new();
+    if path.trim().is_empty() {
+        missing.push("Path");
+    }
+    if name.trim().is_empty() {
+        missing.push("Name");
+    }
+    if mime_type.trim().is_empty() {
+        missing.push("MimeType");
+    }
+    if size_bytes <= 0 {
+        missing.push("SizeBytes");
+    }
+    if !missing.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is Ready but missing usable metadata: {}",
+            missing.join(", ")
+        ));
+    }
+
+    Ok(file)
+}
+
 fn verify_thumbnail(
     ctx: &Context,
     api_url: &str,
@@ -1775,17 +1831,14 @@ fn verify_thumbnail(
         ));
     }
 
-    let file = load_entity(ctx, api_url, headers, "Files", &thumbnail_file_id)?
-        .ok_or_else(|| {
-            format!("DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' does not exist")
-        })?;
-    let file_status = entity_status_value(&file);
-    if !file_status.is_empty() && !matches!(file_status.as_str(), "Ready" | "Locked") {
-        return Err(format!(
-            "DesignLanguage '{language_id}' thumbnail file '{thumbnail_file_id}' is in state '{file_status}', expected Ready"
-        ));
-    }
-
+    let file = verify_ready_file_artifact(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &thumbnail_file_id,
+        "thumbnail",
+    )?;
     let file_fields = entity_fields(&file);
     let mime_type = first_nonempty(&[
         string_field_any(&file_fields, "mime_type", ""),
@@ -1981,6 +2034,7 @@ fn verify_file_value(
     artifact_kind: &str,
     embodiment_format: Option<&str>,
 ) -> Result<(), String> {
+    verify_ready_file_artifact(ctx, api_url, headers, language_id, file_id, artifact_kind)?;
     let body = read_file_value(ctx, api_url, headers, file_id)?;
     verify_file_body(
         language_id,
@@ -2733,9 +2787,17 @@ fn render_shadsync_visual_profile(fields: &serde_json::Value) -> serde_json::Val
     let signature_patterns = string_array_path(&rules, &["signature_patterns"]);
     let identity_notes = first_nonempty_list(vec![visual_character, signature_patterns]);
     let identity_text = identity_notes.join(" ").to_ascii_lowercase();
-    let is_paper = ["paper", "collage", "washi", "sticker", "scrap", "torn", "grain"].iter().any(|needle| identity_text.contains(needle));
-    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"].iter().any(|needle| identity_text.contains(needle));
-    let is_editorial = ["editorial", "magazine", "folio", "serif"].iter().any(|needle| identity_text.contains(needle));
+    let is_paper = [
+        "paper", "collage", "washi", "sticker", "scrap", "torn", "grain",
+    ]
+    .iter()
+    .any(|needle| identity_text.contains(needle));
+    let is_brutalist = ["brutalist", "industrial", "terminal", "mechanical"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
+    let is_editorial = ["editorial", "magazine", "folio", "serif"]
+        .iter()
+        .any(|needle| identity_text.contains(needle));
 
     json!({
         "family": if is_paper { "paper-collage" } else if is_brutalist { "brutalist" } else if is_editorial { "editorial" } else { "system" },
@@ -3528,7 +3590,11 @@ fn shadcn_component_spec_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_component_spec_file_id) {
-        Ok(body) => shadcn_component_spec_body_refresh_reason(language_id, shadcn_component_spec_file_id, &body),
+        Ok(body) => shadcn_component_spec_body_refresh_reason(
+            language_id,
+            shadcn_component_spec_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_component_spec_file"),
     }
 }
@@ -3570,7 +3636,11 @@ fn shadcn_preview_shots_projection_refresh_reason(
     }
 
     match read_file_value(ctx, api_url, headers, shadcn_preview_shots_file_id) {
-        Ok(body) => shadcn_preview_shots_body_refresh_reason(language_id, shadcn_preview_shots_file_id, &body),
+        Ok(body) => shadcn_preview_shots_body_refresh_reason(
+            language_id,
+            shadcn_preview_shots_file_id,
+            &body,
+        ),
         Err(_) => Some("unreadable_shadcn_preview_shots_file"),
     }
 }
@@ -3580,13 +3650,7 @@ fn shadcn_preview_shots_body_refresh_reason(
     file_id: &str,
     body: &str,
 ) -> Option<&'static str> {
-    match verify_file_body(
-        language_id,
-        file_id,
-        "shadcn_preview_shots",
-        None,
-        body,
-    ) {
+    match verify_file_body(language_id, file_id, "shadcn_preview_shots", None, body) {
         Ok(()) => None,
         Err(_) => Some("invalid_shadcn_preview_shots_body"),
     }
@@ -5117,11 +5181,25 @@ mod tests {
     #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), ""),
+            design_md_projection_refresh_reason(
+                &test_context(),
+                "",
+                &[],
+                "dl-test",
+                &json!({}),
+                ""
+            ),
             Some("missing_design_md_file_id")
         );
         assert_eq!(
-            design_md_projection_refresh_reason(&test_context(), "", &[], "dl-test", &json!({}), "fl-design-md"),
+            design_md_projection_refresh_reason(
+                &test_context(),
+                "",
+                &[],
+                "dl-test",
+                &json!({}),
+                "fl-design-md"
+            ),
             Some("missing_design_md_lint_result")
         );
         assert_eq!(
