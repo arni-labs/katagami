@@ -879,11 +879,15 @@ fn verify_typed_completion(
 
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
-            let validation =
-                verify_synthesized_languages(ctx, api_url, headers, fields, job_type)?;
-            if let Some(error) =
-                incomplete_regeneration_completion_error(job_type, &validation)
-            {
+            let validation = verify_synthesized_languages(
+                ctx,
+                api_url,
+                headers,
+                fields,
+                job_type,
+                workspace_id,
+            )?;
+            if let Some(error) = incomplete_regeneration_completion_error(job_type, &validation) {
                 return Err(error);
             }
             Ok(validation)
@@ -958,6 +962,12 @@ fn is_repairable_language_artifact_error(error: &str) -> bool {
         "thumbnail file",
         "has no embodiment_file_id",
         "embodiment file",
+        "has no landing_file_id",
+        "has no dashboard_file_id",
+        "composition file",
+        "composition_landing file",
+        "composition_dashboard file",
+        "missing required compositions",
         "missing required spec sections",
         "missing required native katagami spec sections",
         "deeply empty",
@@ -1003,6 +1013,7 @@ fn verify_synthesized_languages(
     headers: &[(String, String)],
     fields: &serde_json::Value,
     job_type: &str,
+    workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
     let language_ids = design_language_ids_from_completion(fields);
     if language_ids.is_empty() {
@@ -1044,6 +1055,19 @@ fn verify_synthesized_languages(
         }
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
+                let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+                    .ok_or_else(|| {
+                        format!(
+                            "DesignLanguage '{language_id}' disappeared after core verification"
+                        )
+                    })?;
+                verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?;
+                let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+                    .ok_or_else(|| {
+                        format!(
+                            "DesignLanguage '{language_id}' disappeared after composition verification"
+                        )
+                    })?;
                 let status = entity_status_value(&language);
                 if status == "Draft" {
                     dispatch_action(
@@ -1142,6 +1166,19 @@ fn verify_quality_reviewed_languages(
             }
             return Err(error);
         }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after core verification")
+            })?;
+        if verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?
+            && status == "Published"
+        {
+            status = "UnderReview".to_string();
+        }
+        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+            .ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after composition verification")
+            })?;
         if verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?
             && status == "Published"
         {
@@ -1399,6 +1436,214 @@ fn verify_language_core(
         &json!({}),
     )?;
     Ok(())
+}
+
+fn verify_compositions(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<bool, String> {
+    let mut fields = entity_fields(language);
+    let status = entity_status_value(language);
+    let mut revised = false;
+    let mut landing_file_id = string_field_any(&fields, "landing_file_id", "");
+    let mut dashboard_file_id = string_field_any(&fields, "dashboard_file_id", "");
+    let landing_invalid = landing_file_id.trim().is_empty()
+        || verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &landing_file_id,
+            "composition_landing",
+            None,
+        )
+        .is_err();
+    let dashboard_invalid = dashboard_file_id.trim().is_empty()
+        || verify_file_value(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &dashboard_file_id,
+            "composition_dashboard",
+            None,
+        )
+        .is_err();
+
+    if !entity_bool_any(language, "has_compositions")
+        || !entity_bool_any(language, "compositions_verified")
+        || landing_invalid
+        || dashboard_invalid
+    {
+        let (refreshed_fields, refreshed_landing_file_id, refreshed_dashboard_file_id, did_revise) =
+            refresh_composition_projections(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                language_id,
+                &fields,
+                &status,
+            )?;
+        fields = refreshed_fields;
+        landing_file_id = refreshed_landing_file_id;
+        dashboard_file_id = refreshed_dashboard_file_id;
+        revised = revised || did_revise;
+    }
+
+    if landing_file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no landing_file_id for required compositions"
+        ));
+    }
+    if dashboard_file_id.trim().is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' has no dashboard_file_id for required compositions"
+        ));
+    }
+
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &landing_file_id,
+        "composition_landing",
+        None,
+    )?;
+    verify_file_value(
+        ctx,
+        api_url,
+        headers,
+        language_id,
+        &dashboard_file_id,
+        "composition_dashboard",
+        None,
+    )?;
+
+    let fresh =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before VerifyCompositions")
+        })?;
+    if !entity_bool_any(&fresh, "has_compositions") {
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachCompositions",
+            &json!({
+                "landing_file_id": landing_file_id,
+                "dashboard_file_id": dashboard_file_id,
+                "composition_count": string_field_any(&fields, "composition_count", "2")
+            }),
+        )?;
+    }
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "VerifyCompositions",
+        &json!({}),
+    )?;
+    Ok(revised)
+}
+
+fn refresh_composition_projections(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    fields: &serde_json::Value,
+    status: &str,
+) -> Result<(serde_json::Value, String, String, bool), String> {
+    if workspace_id.is_empty() {
+        return Err(format!(
+            "DesignLanguage '{language_id}' is missing required compositions and the CurationJob has no workspace_id"
+        ));
+    }
+
+    let mut revised = false;
+    if status == "Published" {
+        revise_published_for_compositions(ctx, api_url, headers, language_id)?;
+        revised = true;
+    }
+
+    let artifact_workspace_id = design_md_workspace_id(ctx, workspace_id);
+    let slug = design_md_slug(language_id, fields);
+    let landing = render_landing_composition_projection(language_id, fields);
+    let dashboard = render_dashboard_composition_projection(language_id, fields);
+    let landing_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!("/katagami/compositions/{slug}/landing.html"),
+        "text/html",
+        &landing,
+    )?;
+    let dashboard_file_id = write_workspace_file(
+        ctx,
+        api_url,
+        &artifact_workspace_id,
+        &format!("/katagami/compositions/{slug}/dashboard.html"),
+        "text/html",
+        &dashboard,
+    )?;
+
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "AttachCompositions",
+        &json!({
+            "landing_file_id": landing_file_id,
+            "dashboard_file_id": dashboard_file_id,
+            "composition_count": string_field_any(fields, "composition_count", "2")
+        }),
+    )?;
+    let refreshed = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after AttachCompositions")
+        })?;
+    let refreshed_fields = entity_fields(&refreshed);
+    let refreshed_landing_file_id = string_field_any(&refreshed_fields, "landing_file_id", "");
+    let refreshed_dashboard_file_id = string_field_any(&refreshed_fields, "dashboard_file_id", "");
+    Ok((
+        refreshed_fields,
+        refreshed_landing_file_id,
+        refreshed_dashboard_file_id,
+        revised,
+    ))
+}
+
+fn revise_published_for_compositions(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "Revise",
+        &json!({
+            "curator_notes": "Refreshing deterministic landing and dashboard composition projections during quality finalization"
+        }),
+    )
 }
 
 fn verify_design_md(
@@ -2503,6 +2748,28 @@ fn verify_file_body(
         return Err(format!(
             "DesignLanguage '{language_id}' DESIGN.md file '{file_id}' is missing required design.md front matter"
         ));
+    } else if matches!(
+        artifact_kind,
+        "composition_landing" | "composition_dashboard"
+    ) {
+        let lower = trimmed.to_ascii_lowercase();
+        if !lower.contains("<html") && !lower.contains("<!doctype") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' {artifact_kind} file '{file_id}' is not self-contained HTML"
+            ));
+        }
+        if artifact_kind == "composition_landing" && !trimmed.contains("--hero-image") {
+            return Err(format!(
+                "DesignLanguage '{language_id}' composition_landing file '{file_id}' is missing required --hero-image projection"
+            ));
+        }
+        if artifact_kind == "composition_dashboard"
+            && (!lower.contains("dashboard") || !lower.contains("status"))
+        {
+            return Err(format!(
+                "DesignLanguage '{language_id}' composition_dashboard file '{file_id}' is missing required dashboard/status projection"
+            ));
+        }
     } else if artifact_kind == "shadcn_export"
         && (!trimmed.contains("\"registry:theme\"")
             || !trimmed.contains("\"cssVars\"")
@@ -2963,6 +3230,309 @@ fn extract_entity_id(entity: &serde_json::Value) -> Option<String> {
 
 fn truncate_body(body: &str, max_len: usize) -> &str {
     &body[..body.len().min(max_len)]
+}
+
+fn render_landing_composition_projection(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let tokens = json_object_field(fields, "tokens");
+    let rules = json_object_field(fields, "rules");
+    let guidance = json_object_field(fields, "guidance");
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let background = color_value(&colors, &["background", "bg", "paper"], "#f8fafc");
+    let foreground = color_value(&colors, &["foreground", "text", "ink"], "#111827");
+    let surface = color_value(&colors, &["surface", "card"], "#ffffff");
+    let primary = color_value(&colors, &["primary", "ink"], "#111827");
+    let accent = color_value(&colors, &["accent", "info"], "#2563eb");
+    let border = color_value(&colors, &["border", "line"], "#d4d4d8");
+    let summary = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        string_path(&philosophy, &["description"]),
+        format!("A Katagami landing composition for {name}."),
+    ]);
+    let identity = first_nonempty_list(vec![
+        string_array_path(&philosophy, &["visual_character"]),
+        string_array_path(&rules, &["signature_patterns"]),
+    ]);
+    let do_rules = string_array_path(&guidance, &["do"]);
+
+    format!(
+        r##"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} Landing Composition</title>
+  <style>
+    :root {{
+      --bg: {background};
+      --fg: {foreground};
+      --surface: {surface};
+      --primary: {primary};
+      --accent: {accent};
+      --border: {border};
+      --hero-image: linear-gradient(135deg, color-mix(in srgb, var(--primary) 26%, transparent), transparent 56%), linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, var(--surface)), var(--bg));
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; color: var(--fg); background: var(--bg); }}
+    .page {{ min-height: 100vh; background-image: var(--hero-image); }}
+    .nav {{ display: flex; align-items: center; justify-content: space-between; padding: 24px clamp(20px, 5vw, 72px); border-bottom: 1px solid var(--border); }}
+    .brand {{ font-weight: 800; letter-spacing: 0; }}
+    .hero {{ display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: clamp(28px, 6vw, 88px); align-items: center; padding: clamp(44px, 8vw, 108px) clamp(20px, 5vw, 72px); }}
+    .eyebrow {{ margin: 0 0 16px; text-transform: uppercase; font-size: 12px; letter-spacing: .08em; color: var(--primary); font-weight: 800; }}
+    h1 {{ margin: 0; max-width: 880px; font-size: clamp(44px, 6vw, 86px); line-height: .95; letter-spacing: 0; }}
+    .summary {{ max-width: 720px; margin: 24px 0 0; font-size: 19px; line-height: 1.6; }}
+    .actions {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }}
+    .button {{ border: 1px solid var(--primary); background: var(--primary); color: var(--surface); padding: 12px 18px; font-weight: 800; text-decoration: none; }}
+    .button.secondary {{ background: transparent; color: var(--fg); border-color: var(--border); }}
+    .panel {{ background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border); padding: 24px; }}
+    .panel h2 {{ margin: 0 0 16px; font-size: 20px; }}
+    ul {{ margin: 0; padding-left: 20px; line-height: 1.55; }}
+    .proof {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--border); margin-top: 28px; border: 1px solid var(--border); }}
+    .proof div {{ background: var(--surface); padding: 16px; }}
+    .proof strong {{ display: block; font-size: 22px; }}
+    @media (max-width: 760px) {{
+      .hero {{ grid-template-columns: 1fr; }}
+      h1 {{ font-size: 44px; }}
+      .proof {{ grid-template-columns: 1fr; }}
+    }}
+  </style>
+</head>
+<body>
+  <main class="page" data-language-id="{language_id}" data-slug="{slug}">
+    <nav class="nav" aria-label="Primary">
+      <div class="brand">{title}</div>
+      <a class="button secondary" href="#principles">Principles</a>
+    </nav>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Katagami landing system</p>
+        <h1>{title}</h1>
+        <p class="summary">{summary}</p>
+        <div class="actions">
+          <a class="button" href="#principles">Apply language</a>
+          <a class="button secondary" href="#proof">Review proof</a>
+        </div>
+      </div>
+      <aside class="panel" id="principles">
+        <h2>Visible language cues</h2>
+        <ul>{identity_items}</ul>
+      </aside>
+    </section>
+    <section class="proof" id="proof" aria-label="Landing composition proof">
+      <div><strong>Hero</strong><span>Uses --hero-image as the first-viewport signal.</span></div>
+      <div><strong>Rules</strong><span>{rule_count} source cues represented.</span></div>
+      <div><strong>Status</strong><span>Ready for review guard verification.</span></div>
+    </section>
+    <section class="hero">
+      <aside class="panel">
+        <h2>Usage guidance</h2>
+        <ul>{do_items}</ul>
+      </aside>
+      <div>
+        <p class="eyebrow">Composition role</p>
+        <h2>Landing pages expose the language before any dashboard chrome.</h2>
+        <p class="summary">This deterministic projection keeps review moving when an agent omits composition files, while preserving the language's source tokens and rules.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+"##,
+        title = html_escape(&name),
+        language_id = html_escape(language_id),
+        slug = html_escape(&slug),
+        background = background,
+        foreground = foreground,
+        surface = surface,
+        primary = primary,
+        accent = accent,
+        border = border,
+        summary = html_escape(&summary),
+        identity_items = html_list_items(
+            &identity,
+            "Use the language philosophy as visible structure."
+        ),
+        do_items = html_list_items(
+            &do_rules,
+            "Apply the documented visual character consistently."
+        ),
+        rule_count = identity.len().max(do_rules.len()).max(1)
+    )
+}
+
+fn render_dashboard_composition_projection(
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let tokens = json_object_field(fields, "tokens");
+    let rules = json_object_field(fields, "rules");
+    let layout = json_object_field(fields, "layout_principles");
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let background = color_value(&colors, &["background", "bg", "paper"], "#f8fafc");
+    let foreground = color_value(&colors, &["foreground", "text", "ink"], "#111827");
+    let surface = color_value(&colors, &["surface", "card"], "#ffffff");
+    let primary = color_value(&colors, &["primary", "ink"], "#111827");
+    let accent = color_value(&colors, &["accent", "info"], "#2563eb");
+    let border = color_value(&colors, &["border", "line"], "#d4d4d8");
+    let summary = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        format!("A dashboard composition proving {name} in dense product use."),
+    ]);
+    let patterns = first_nonempty_list(vec![
+        string_array_path(&rules, &["signature_patterns"]),
+        string_array_path(&philosophy, &["visual_character"]),
+    ]);
+    let grid_note = first_nonempty(&[
+        string_path(&layout, &["grid"]),
+        string_path(&layout, &["structure"]),
+        "Responsive work surface with stable side navigation and dense review rows.".to_string(),
+    ]);
+
+    format!(
+        r##"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} Dashboard Composition</title>
+  <style>
+    :root {{
+      --bg: {background};
+      --fg: {foreground};
+      --surface: {surface};
+      --primary: {primary};
+      --accent: {accent};
+      --border: {border};
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; color: var(--fg); background: var(--bg); }}
+    .dashboard {{ min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); }}
+    .sidebar {{ border-right: 1px solid var(--border); padding: 24px; background: color-mix(in srgb, var(--surface) 88%, var(--bg)); }}
+    .brand {{ font-size: 20px; font-weight: 900; margin-bottom: 28px; }}
+    .nav-item {{ display: block; padding: 10px 0; color: var(--fg); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }}
+    .nav-item[aria-current="page"] {{ color: var(--primary); font-weight: 800; }}
+    .main {{ padding: clamp(20px, 4vw, 52px); }}
+    .topbar {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; }}
+    .eyebrow {{ margin: 0 0 10px; text-transform: uppercase; font-size: 12px; letter-spacing: .08em; font-weight: 800; color: var(--primary); }}
+    h1 {{ margin: 0; font-size: clamp(34px, 5vw, 62px); line-height: 1; letter-spacing: 0; }}
+    .summary {{ max-width: 760px; margin: 16px 0 0; line-height: 1.6; }}
+    .button {{ border: 1px solid var(--primary); background: var(--primary); color: var(--surface); padding: 11px 16px; font-weight: 800; }}
+    .metrics {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 28px; }}
+    .metric {{ background: var(--surface); padding: 18px; }}
+    .metric span {{ display: block; color: color-mix(in srgb, var(--fg) 70%, transparent); }}
+    .metric strong {{ display: block; margin-top: 8px; font-size: 26px; }}
+    .work {{ display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .8fr); gap: 20px; }}
+    .panel {{ background: var(--surface); border: 1px solid var(--border); padding: 20px; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: 14px; }}
+    th, td {{ text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); }}
+    .status {{ display: inline-flex; border: 1px solid var(--border); padding: 4px 8px; font-weight: 800; color: var(--primary); }}
+    ul {{ margin: 0; padding-left: 20px; line-height: 1.55; }}
+    @media (max-width: 820px) {{
+      .dashboard {{ grid-template-columns: 1fr; }}
+      .sidebar {{ border-right: 0; border-bottom: 1px solid var(--border); }}
+      .topbar, .work {{ display: block; }}
+      .metrics {{ grid-template-columns: 1fr; }}
+      .panel {{ margin-top: 16px; }}
+    }}
+  </style>
+</head>
+<body>
+  <main class="dashboard" data-language-id="{language_id}" data-slug="{slug}">
+    <aside class="sidebar">
+      <div class="brand">{title}</div>
+      <a class="nav-item" aria-current="page" href="#overview">Dashboard</a>
+      <a class="nav-item" href="#status">Status</a>
+      <a class="nav-item" href="#rules">Rules</a>
+    </aside>
+    <section class="main">
+      <header class="topbar" id="overview">
+        <div>
+          <p class="eyebrow">Katagami dashboard system</p>
+          <h1>{title}</h1>
+          <p class="summary">{summary}</p>
+        </div>
+        <button class="button" type="button">Sync review</button>
+      </header>
+      <section class="metrics" aria-label="Dashboard status metrics">
+        <div class="metric"><span>Composition files</span><strong>2</strong></div>
+        <div class="metric"><span>Review status</span><strong>Ready</strong></div>
+        <div class="metric"><span>Layout</span><strong>Verified</strong></div>
+      </section>
+      <section class="work">
+        <article class="panel" id="status">
+          <h2>Review queue</h2>
+          <table>
+            <thead><tr><th>Area</th><th>Evidence</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Landing</td><td>Hero signal and source rules</td><td><span class="status">ready</span></td></tr>
+              <tr><td>Dashboard</td><td>{grid_note}</td><td><span class="status">ready</span></td></tr>
+              <tr><td>Publish guard</td><td>AttachCompositions and VerifyCompositions</td><td><span class="status">ready</span></td></tr>
+            </tbody>
+          </table>
+        </article>
+        <aside class="panel" id="rules">
+          <h2>Signature rules</h2>
+          <ul>{pattern_items}</ul>
+        </aside>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
+"##,
+        title = html_escape(&name),
+        language_id = html_escape(language_id),
+        slug = html_escape(&slug),
+        background = background,
+        foreground = foreground,
+        surface = surface,
+        primary = primary,
+        accent = accent,
+        border = border,
+        summary = html_escape(&summary),
+        grid_note = html_escape(&grid_note),
+        pattern_items = html_list_items(
+            &patterns,
+            "Keep product states dense, legible, and visibly tied to source tokens."
+        )
+    )
+}
+
+fn html_list_items(values: &[String], fallback: &str) -> String {
+    let source = if values.is_empty() {
+        vec![fallback.to_string()]
+    } else {
+        values.to_vec()
+    };
+    source
+        .iter()
+        .map(|value| format!("<li>{}</li>", html_escape(value)))
+        .collect::<Vec<_>>()
+        .join("")
+}
+
+fn html_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 fn render_design_md_projection(language_id: &str, fields: &serde_json::Value) -> String {
@@ -5728,10 +6298,10 @@ mod tests {
         incomplete_regeneration_completion_error, is_repairable_language_artifact_error,
         is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
         next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
-        pawfs_filter_url, render_design_md_projection, session_can_be_finalized,
-        session_is_terminal, split_pawfs_file_path, string_field_any,
-        thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
-        verify_file_body,
+        pawfs_filter_url, render_dashboard_composition_projection, render_design_md_projection,
+        render_landing_composition_projection, session_can_be_finalized, session_is_terminal,
+        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
+        typed_completion_output_is_unfinished_tool_call, verify_file_body,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -5790,6 +6360,56 @@ mod tests {
         assert!(md.contains("Tight column grids"));
         assert!(md.contains("## Do's and Don'ts"));
         assert!(md.contains("editorial"));
+    }
+
+    #[test]
+    fn composition_projections_are_self_contained_and_guard_ready() {
+        let fields = json!({
+            "name": "Margin Signal Ledger",
+            "slug": "margin-signal-ledger",
+            "philosophy": json!({
+                "summary": "Dense margin-led knowledge work surfaces.",
+                "visual_character": ["Thin rules and annotated side rails."]
+            }).to_string(),
+            "tokens": json!({
+                "colors": {
+                    "background": "#f8fafc",
+                    "foreground": "#111827",
+                    "primary": "#1f2937",
+                    "accent": "#2563eb",
+                    "border": "#d4d4d8"
+                }
+            }).to_string(),
+            "rules": json!({
+                "signature_patterns": ["Use ledgers and status rails to organize review work."]
+            }).to_string(),
+            "layout_principles": json!({"grid": "side rail and dense content well"}).to_string(),
+            "guidance": json!({"do": ["Preserve density without hiding hierarchy."]}).to_string()
+        });
+
+        let landing = render_landing_composition_projection("dl-ledger", &fields);
+        let dashboard = render_dashboard_composition_projection("dl-ledger", &fields);
+
+        assert!(landing.contains("--hero-image"));
+        assert!(landing.contains("<html"));
+        assert!(dashboard.contains("Dashboard"));
+        assert!(dashboard.contains("status"));
+        verify_file_body(
+            "dl-ledger",
+            "fl-landing",
+            "composition_landing",
+            None,
+            &landing,
+        )
+        .expect("landing composition should verify");
+        verify_file_body(
+            "dl-ledger",
+            "fl-dashboard",
+            "composition_dashboard",
+            None,
+            &dashboard,
+        )
+        .expect("dashboard composition should verify");
     }
 
     #[test]
@@ -5928,9 +6548,8 @@ mod tests {
             "incomplete_language_ids": ["en-incomplete"]
         });
 
-        let error =
-            incomplete_regeneration_completion_error("regenerate_embodiment", &validation)
-                .expect("incomplete regeneration should be rejected");
+        let error = incomplete_regeneration_completion_error("regenerate_embodiment", &validation)
+            .expect("incomplete regeneration should be rejected");
 
         assert!(error.contains("typed completion ended"));
         assert!(error.contains("en-incomplete"));

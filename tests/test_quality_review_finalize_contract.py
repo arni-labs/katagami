@@ -136,6 +136,38 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "quality finalization must mark quality before publishing",
         )
 
+    def test_finalizer_generates_missing_compositions_before_review(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn verify_compositions", source)
+        self.assertIn("fn refresh_composition_projections", source)
+        self.assertIn("render_landing_composition_projection", source)
+        self.assertIn("render_dashboard_composition_projection", source)
+        self.assertIn('"AttachCompositions"', source)
+        self.assertIn('"VerifyCompositions"', source)
+        self.assertIn("--hero-image", source)
+
+        finalizer = source.index("fn verify_quality_reviewed_languages")
+        verify_compositions = source.index(
+            "verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?",
+            finalizer,
+        )
+        ensure_under_review = source.index(
+            "ensure_language_under_review(ctx, api_url, headers, language_id, &status)?",
+            finalizer,
+        )
+        self.assertLess(
+            verify_compositions,
+            ensure_under_review,
+            "quality finalization must attach and verify compositions before Draft review transition",
+        )
+
     def test_regeneration_typed_fallback_continues_pipeline(self):
         source = (
             self.curation_root
