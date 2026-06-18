@@ -5173,6 +5173,21 @@ fn run_typed_completion_fallback(
         "source_search" => {
             let direction_ids = parse_json_string_array(fields.get("direction_ids"));
             for direction_id in &direction_ids {
+                let Some(direction) =
+                    load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
+                else {
+                    continue;
+                };
+                let direction_status = entity_status_value(&direction);
+                if direction_status.as_str() != "Discovered" {
+                    actions.push(json!({
+                        "action": "skipped_synthesis_job_direction_already_queued",
+                        "direction_id": direction_id,
+                        "status": direction_status,
+                    }));
+                    continue;
+                }
+
                 if job_exists(
                     ctx,
                     api_url,
@@ -5181,35 +5196,33 @@ fn run_typed_completion_fallback(
                     query_id,
                     Some(direction_id),
                 )? {
+                    actions.push(json!({
+                        "action": "skipped_synthesis_job_existing_job",
+                        "direction_id": direction_id,
+                    }));
                     continue;
                 }
 
-                let Some(direction) =
-                    load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
-                else {
-                    continue;
-                };
-                let direction_fields = direction.get("fields").cloned().unwrap_or(json!({}));
-                let synth_input = string_field(&direction_fields, "synth_input", "{}");
-                let direction_workspace =
-                    string_field(&direction_fields, "workspace_id", workspace_id);
-                let direction_query = string_field(&direction_fields, "query_id", query_id);
-                let synth_job_id = create_configure_submit_job(
+                if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
                     headers,
-                    "synthesize",
-                    &direction_workspace,
-                    &direction_query,
-                    Some(direction_id),
-                    &synth_input,
-                    parent_session_id.as_deref(),
-                )?;
-                actions.push(json!({
-                    "action": "created_synthesis_job",
-                    "direction_id": direction_id,
-                    "job_id": synth_job_id,
-                }));
+                    "CurationDirections",
+                    direction_id,
+                    "QueueSynthesis",
+                    &json!({}),
+                    &["Synthesizing", "Completed"],
+                )? {
+                    actions.push(json!({
+                        "action": "queued_synthesis_direction",
+                        "direction_id": direction_id,
+                    }));
+                } else {
+                    actions.push(json!({
+                        "action": "skipped_synthesis_job_direction_already_queued",
+                        "direction_id": direction_id,
+                    }));
+                }
             }
 
             if !query_id.is_empty()

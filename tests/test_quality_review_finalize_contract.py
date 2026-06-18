@@ -276,6 +276,31 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("direction_complete_already_completed", source)
         self.assertIn('&["Organizing", "Completed"]', source)
 
+    def test_source_search_fallback_does_not_duplicate_queued_synthesis(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        fallback_start = source.index("fn run_typed_completion_fallback")
+        source_search_start = source.index('"source_search" => {', fallback_start)
+        synthesize_start = source.index('"synthesize" => {', source_search_start)
+        fallback = source[source_search_start:synthesize_start]
+
+        self.assertIn("direction_status", fallback)
+        self.assertIn("skipped_synthesis_job_direction_already_queued", fallback)
+        self.assertIn("queued_synthesis_direction", fallback)
+        self.assertIn('"QueueSynthesis"', fallback)
+        self.assertIn('!= "Discovered"', fallback)
+        self.assertNotIn(
+            "create_configure_submit_job",
+            fallback,
+            "source_search fallback must use the CurationDirection.QueueSynthesis trigger instead of creating duplicate synthesize jobs directly",
+        )
+
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
             self.curation_root

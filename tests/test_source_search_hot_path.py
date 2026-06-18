@@ -66,6 +66,23 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertNotIn("temper.create('DesignLanguages', {'Id': slug})", skill)
         self.assertNotIn('temper.create("DesignLanguages", {"Id": slug})', skill)
 
+    def test_synthesis_skill_splits_long_tool_work(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (
+            root / "agents" / "curator" / "skills" / "synthesize-language" / "SKILL.md"
+        ).read_text()
+
+        self.assertIn("Do not run monolithic synthesis tool calls", skill)
+        self.assertIn("tool execution made no progress", skill)
+        self.assertIn("one call to create/populate the DesignLanguage spec", skill)
+        self.assertIn("one call to write the final HTML", skill)
+        self.assertIn("one call for browser setup", skill)
+        self.assertIn("one call for screenshots", skill)
+        self.assertIn("one call for thumbnail generation", skill)
+        self.assertIn("one call to write and attach artifacts", skill)
+        self.assertIn("one final call to complete the CurationJob", skill)
+        self.assertIn("Keep the provider-facing final response tiny", skill)
+
     def test_synthesis_finalizer_rejects_slug_entity_ids(self):
         root = Path(__file__).resolve().parents[1]
         finalizer = (

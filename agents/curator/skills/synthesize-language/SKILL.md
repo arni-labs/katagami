@@ -50,6 +50,30 @@ anti-slop checklists from prose.
 - Each session creates ONE language.
 - EVERY tool call must create or populate a DesignLanguage. No exploration turns.
 - You MUST create ALL languages listed in the scope before stopping.
+- Do not run monolithic synthesis tool calls. Split the work into bounded calls:
+  one call to create/populate the DesignLanguage spec, one call to write the
+  final HTML, one call for browser setup, one call for screenshots, one call
+  for thumbnail generation, one call to write and attach artifacts, one call for
+  shadcn component artifacts, and one final call to complete the CurationJob.
+  A single tool call must not generate the spec, generate HTML, install
+  browsers, screenshot, write files, attach artifacts, and complete the job all
+  at once.
+- Do not run silent long commands. Any browser install, screenshot, thumbnail,
+  lint, or artifact operation that might take more than 30 seconds must be its
+  own tool call that returns promptly. Printing progress inside a long shell
+  command is not enough if the tool result only returns after the command exits;
+  the platform watchdog will treat that as stalled with `tool execution made no
+  progress`.
+- Keep the provider-facing final response tiny. Do not paste regenerated HTML,
+  preview JSON, screenshots, or long manifests into the final assistant message;
+  attach them as files and finish with the typed CurationJob action.
+
+Timeout contract: one call to create/populate the DesignLanguage spec; one call
+to write the final HTML; one call for browser setup; one call for screenshots;
+one call for thumbnail generation; one call to write and attach artifacts; one
+final call to complete the CurationJob. Do this specifically to avoid
+`tool execution made no progress`.
+Exact step checklist: one call to create/populate the DesignLanguage spec; one call to write the final HTML; one call for browser setup; one call for screenshots; one call for thumbnail generation; one call to write and attach artifacts; one final call to complete the CurationJob.
 
 ## SPEC PHASE
 
