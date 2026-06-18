@@ -15,6 +15,25 @@
   - Result: `build_session_message`, `finalize_spawned_session`, and
     `launch_research` built successfully.
 
+Production deployment:
+
+- Pushed GitHub branch:
+  `codex/curation-artifact-ready-invariant`
+- Pushed Genesis branch:
+  `codex-curation-artifact-ready-invariant`
+- Installed OpenPaw production app ref:
+  `katagami/katagami-curation@fcde1595d0426f10b8a70b9fe45860eac7d1bffa`
+- Install result:
+  - HTTP `200`
+  - `follow_policy`: `pinned`
+  - Updated entity specs: `CurationDirection`, `CurationQuery`
+  - Materialized WASM modules: `build_session_message`,
+    `finalize_spawned_session`, `launch_research`
+- Local `finalize_spawned_session.wasm` SHA-256:
+  `f01d26345befebed03411f80762c1e667d7407a741d2df3276b3f613c851f5d0`
+- Live OpenPaw `finalize_spawned_session` SHA-256:
+  `f01d26345befebed03411f80762c1e667d7407a741d2df3276b3f613c851f5d0`
+
 ## Genesis Publish And Install
 
 Genesis latest was verified for:
