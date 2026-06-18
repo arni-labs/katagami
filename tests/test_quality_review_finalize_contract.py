@@ -168,6 +168,21 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "quality finalization must attach and verify compositions before Draft review transition",
         )
 
+    def test_finalizer_pawfs_writes_use_direct_keys(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn pawfs_directory_id", source)
+        self.assertIn("fn pawfs_file_id", source)
+        self.assertIn('"Directories", &directory_id', source)
+        self.assertIn('"Files", &file_id', source)
+        self.assertNotIn("Path eq '{}' and WorkspaceId eq '{}'", source)
+
     def test_regeneration_typed_fallback_continues_pipeline(self):
         source = (
             self.curation_root

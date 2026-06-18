@@ -99,3 +99,38 @@ The finalizer now deterministically renders landing and dashboard HTML
 composition projections from existing DesignLanguage fields, writes them to
 PawFS, dispatches `AttachCompositions`, verifies both files, then dispatches
 `VerifyCompositions` before any Draft-to-review transition.
+
+## Finalizer PawFS Direct-Key Patch
+
+After installing `katagami/katagami-curation@58e6f7e63cc26ace549e25d9ceedaf2b46277beb`,
+the next live retry proved the composition self-heal code was deployed, but it
+hit the same bounded OData hot-path issue inside the finalizer's own PawFS
+writer:
+
+- Job: `en-019edbb6-6205-7230-b053-12a413f49a81`
+- Session: `ss-019edbec-da9d-73b2-9765-4bf593050e5b`
+- Session result: `{"language_ids":["en-019edb01-bbbc-75a2-be14-b6530caaad41"]}`
+- Failure: `Failed to query Directories with filter 'Path eq
+  '/katagami/compositions/codex-fresh-workspace-repair-proof-1781790784'
+  and WorkspaceId eq 'os-app-docs' and Status ne 'Archived'': HTTP 413`
+
+Local red/green verification for the direct-key finalizer PawFS write patch:
+
+- `python3 -m unittest tests.test_quality_review_finalize_contract.QualityReviewFinalizeContractTests.test_finalizer_pawfs_writes_use_direct_keys`
+  - Red before implementation: failed on missing `fn pawfs_directory_id`.
+  - Green after implementation: passed.
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml pawfs_path_helpers_normalize_and_build_direct_keys`
+  - Result: 1 passed.
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml`
+  - Result: 21 passed.
+- `python3 -m unittest tests.test_quality_review_finalize_contract`
+  - Result: 16 passed.
+- `python3 -m unittest discover -s tests`
+  - Result: 66 passed, 16 skipped.
+- `./wasm/build.sh`
+  - Result: `build_session_message`, `finalize_spawned_session`, and
+    `launch_research` built successfully.
+
+The finalizer's PawFS writer now derives stable directory and file IDs from
+workspace plus normalized path, then reads `Directories` and `Files` directly
+by ID instead of querying broad `Path` + `WorkspaceId` filters.

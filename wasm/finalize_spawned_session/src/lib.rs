@@ -3015,6 +3015,7 @@ fn ensure_pawfs_file(
     }
 
     let body = json!({
+        "Id": pawfs_file_id(workspace_id, file_path),
         "Name": filename,
         "Path": file_path,
         "DirectoryId": directory_id,
@@ -3051,17 +3052,15 @@ fn find_pawfs_directory(
     workspace_id: &str,
     path: &str,
 ) -> Result<Option<String>, String> {
-    find_first_entity_id(
-        ctx,
-        api_url,
-        headers,
-        "Directories",
-        &format!(
-            "Path eq '{}' and WorkspaceId eq '{}' and Status ne 'Archived'",
-            odata_escape(path),
-            odata_escape(workspace_id)
-        ),
-    )
+    let normalized = normalize_pawfs_path(path)?;
+    let directory_id = pawfs_directory_id(workspace_id, &normalized);
+    let Some(directory) = load_entity(ctx, api_url, headers, "Directories", &directory_id)? else {
+        return Ok(None);
+    };
+    if pawfs_entity_is_archived(&directory) {
+        return Ok(None);
+    }
+    Ok(extract_entity_id(&directory))
 }
 
 fn find_pawfs_file(
@@ -3071,42 +3070,15 @@ fn find_pawfs_file(
     workspace_id: &str,
     path: &str,
 ) -> Result<Option<String>, String> {
-    find_first_entity_id(
-        ctx,
-        api_url,
-        headers,
-        "Files",
-        &format!(
-            "Path eq '{}' and WorkspaceId eq '{}' and Status ne 'Archived'",
-            odata_escape(path),
-            odata_escape(workspace_id)
-        ),
-    )
-}
-
-fn find_first_entity_id(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    set_name: &str,
-    filter: &str,
-) -> Result<Option<String>, String> {
-    let url = pawfs_filter_url(api_url, set_name, filter);
-    let resp = ctx.http_call("GET", &url, headers, "")?;
-    if !(200..300).contains(&resp.status) {
-        return Err(format!(
-            "Failed to query {set_name} with filter '{filter}': HTTP {}: {}",
-            resp.status,
-            truncate_body(&resp.body, 300)
-        ));
+    let normalized = normalize_pawfs_path(path)?;
+    let file_id = pawfs_file_id(workspace_id, &normalized);
+    let Some(file) = load_entity(ctx, api_url, headers, "Files", &file_id)? else {
+        return Ok(None);
+    };
+    if pawfs_entity_is_archived(&file) {
+        return Ok(None);
     }
-    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
-        .map_err(|e| format!("Failed to parse {set_name} query response: {e}"))?;
-    Ok(parsed
-        .get("value")
-        .and_then(|value| value.as_array())
-        .and_then(|items| items.first())
-        .and_then(extract_entity_id))
+    Ok(extract_entity_id(&file))
 }
 
 fn create_pawfs_directory(
@@ -3119,6 +3091,7 @@ fn create_pawfs_directory(
     parent_id: Option<&str>,
 ) -> Result<String, String> {
     let body = json!({
+        "Id": pawfs_directory_id(workspace_id, path),
         "Name": name,
         "Path": path,
         "ParentId": parent_id,
@@ -3185,40 +3158,6 @@ fn split_pawfs_file_path(path: &str) -> Result<(String, String), String> {
     Ok((dir_path.to_string(), filename.to_string()))
 }
 
-fn pawfs_filter_url(api_url: &str, set_name: &str, filter: &str) -> String {
-    format!(
-        "{api_url}/tdata/{set_name}?$filter={}",
-        odata_filter_encode(filter)
-    )
-}
-
-fn odata_escape(value: &str) -> String {
-    value.replace('\'', "''")
-}
-
-fn odata_filter_encode(filter: &str) -> String {
-    let mut encoded = String::new();
-    for byte in filter.bytes() {
-        match byte {
-            b'A'..=b'Z'
-            | b'a'..=b'z'
-            | b'0'..=b'9'
-            | b'-'
-            | b'_'
-            | b'.'
-            | b'~'
-            | b'/'
-            | b'('
-            | b')'
-            | b'$' => encoded.push(byte as char),
-            b' ' => encoded.push_str("%20"),
-            b'\'' => encoded.push_str("%27"),
-            _ => encoded.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    encoded
-}
-
 fn extract_entity_id(entity: &serde_json::Value) -> Option<String> {
     entity
         .get("entity_id")
@@ -3226,6 +3165,31 @@ fn extract_entity_id(entity: &serde_json::Value) -> Option<String> {
         .and_then(|value| value.as_str())
         .filter(|value| !value.is_empty())
         .map(|value| value.to_string())
+}
+
+fn pawfs_entity_is_archived(entity: &serde_json::Value) -> bool {
+    entity_status_value(entity) == "Archived"
+}
+
+fn pawfs_stable_hash(parts: &[&str]) -> u64 {
+    let mut hash = 0xcbf29ce484222325_u64;
+    for part in parts {
+        for byte in part.as_bytes() {
+            hash ^= u64::from(*byte);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        hash ^= 0xff;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+fn pawfs_directory_id(workspace_id: &str, path: &str) -> String {
+    format!("dir-{:016x}", pawfs_stable_hash(&[workspace_id, path]))
+}
+
+fn pawfs_file_id(workspace_id: &str, path: &str) -> String {
+    format!("fl-{:016x}", pawfs_stable_hash(&[workspace_id, path]))
 }
 
 fn truncate_body(body: &str, max_len: usize) -> &str {
@@ -6298,10 +6262,11 @@ mod tests {
         incomplete_regeneration_completion_error, is_repairable_language_artifact_error,
         is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
         next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
-        pawfs_filter_url, render_dashboard_composition_projection, render_design_md_projection,
-        render_landing_composition_projection, session_can_be_finalized, session_is_terminal,
-        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
-        typed_completion_output_is_unfinished_tool_call, verify_file_body,
+        pawfs_directory_id, pawfs_file_id, render_dashboard_composition_projection,
+        render_design_md_projection, render_landing_composition_projection,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
+        thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
+        verify_file_body,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -6691,11 +6656,9 @@ mod tests {
     }
 
     #[test]
-    fn pawfs_path_helpers_normalize_and_build_exact_lookup_urls() {
-        assert_eq!(
-            normalize_pawfs_path("katagami//design-md/./slug/DESIGN.md").unwrap(),
-            "/katagami/design-md/slug/DESIGN.md"
-        );
+    fn pawfs_path_helpers_normalize_and_build_direct_keys() {
+        let normalized = normalize_pawfs_path("katagami//design-md/./slug/DESIGN.md").unwrap();
+        assert_eq!(normalized, "/katagami/design-md/slug/DESIGN.md");
         assert!(normalize_pawfs_path("/katagami/../secret").is_err());
         assert_eq!(
             split_pawfs_file_path("/katagami/design-md/slug/DESIGN.md").unwrap(),
@@ -6705,15 +6668,20 @@ mod tests {
             )
         );
 
-        let url = pawfs_filter_url(
-            "https://temper.example",
-            "Files",
-            "Path eq '/katagami/design-md/slug/DESIGN.md' and WorkspaceId eq 'ws-1'",
+        assert_eq!(
+            pawfs_file_id("ws-1", &normalized),
+            pawfs_file_id("ws-1", "/katagami/design-md/slug/DESIGN.md")
         );
-
-        assert!(url.contains("/tdata/Files?$filter="));
-        assert!(url.contains("Path%20eq%20%27/katagami/design-md/slug/DESIGN.md%27"));
-        assert!(url.contains("WorkspaceId%20eq%20%27ws-1%27"));
+        assert_ne!(
+            pawfs_file_id("ws-1", &normalized),
+            pawfs_file_id("ws-2", &normalized)
+        );
+        assert_ne!(
+            pawfs_directory_id("ws-1", &normalized),
+            pawfs_file_id("ws-1", &normalized)
+        );
+        assert!(pawfs_directory_id("ws-1", &normalized).starts_with("dir-"));
+        assert!(pawfs_file_id("ws-1", &normalized).starts_with("fl-"));
     }
 
     #[test]
