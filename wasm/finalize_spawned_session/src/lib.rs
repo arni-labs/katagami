@@ -952,8 +952,7 @@ fn contract_repair_input(
         return Err("contract repair input could not be represented as an object".to_string());
     };
 
-    let existing_design_language_ids =
-        design_language_ids_for_contract_repair(fields, validation);
+    let existing_design_language_ids = design_language_ids_for_contract_repair(fields, validation);
     if !existing_design_language_ids.is_empty() && !input_obj.contains_key("language_ids") {
         input_obj.insert(
             "language_ids".to_string(),
@@ -1388,6 +1387,30 @@ fn verify_synthesized_languages(
                             "DesignLanguage '{language_id}' disappeared after composition verification"
                         )
                     })?;
+                if let Err(e) = verify_synthesis_finalizer_owned_artifacts(
+                    ctx,
+                    api_url,
+                    headers,
+                    workspace_id,
+                    language_id,
+                    &language,
+                ) {
+                    ctx.log(
+                        "warn",
+                        &format!(
+                            "verify_synthesized: finalizer-owned artifact verification failed for DesignLanguage '{language_id}': {e}"
+                        ),
+                    );
+                    incomplete.push(language_id.clone());
+                    defects.push(contract_defect(job_type, Some(language_id), &e));
+                    continue;
+                }
+                let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+                    .ok_or_else(|| {
+                        format!(
+                            "DesignLanguage '{language_id}' disappeared after deterministic artifact verification"
+                        )
+                    })?;
                 let status = entity_status_value(&language);
                 if status == "Draft" {
                     dispatch_action(
@@ -1428,6 +1451,35 @@ fn verify_synthesized_languages(
         "incomplete_language_ids": incomplete,
         "defects": defects,
     }))
+}
+
+fn verify_synthesis_finalizer_owned_artifacts(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), String> {
+    verify_design_md(ctx, api_url, headers, workspace_id, language_id, language)?;
+    let language =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after DESIGN.md verification")
+        })?;
+    verify_shadcn_export(ctx, api_url, headers, workspace_id, language_id, &language)?;
+    let language =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared after shadcn export verification")
+        })?;
+    verify_shadcn_component_spec(ctx, api_url, headers, workspace_id, language_id, &language)?;
+    let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| {
+            format!(
+                "DesignLanguage '{language_id}' disappeared after shadcn component spec verification"
+            )
+        })?;
+    verify_shadcn_preview_shots(ctx, api_url, headers, workspace_id, language_id, &language)?;
+    Ok(())
 }
 
 fn verify_generated_language_identity(
@@ -5160,18 +5212,6 @@ fn partial_design_language_contract_defects(
             "thumbnail_file_id",
             "missing thumbnail_file_id for the gallery thumbnail artifact",
         ),
-        (
-            "design_md_file_id",
-            "missing DESIGN.md design_md_file_id artifact",
-        ),
-        (
-            "shadcn_component_spec_file_id",
-            "missing shadcn component-spec artifact",
-        ),
-        (
-            "shadcn_preview_shots_file_id",
-            "missing shadcn preview-shots artifact",
-        ),
     ] {
         if string_field_any(&fields, field_name, "").trim().is_empty() {
             defects.push(contract_defect(
@@ -5180,34 +5220,6 @@ fn partial_design_language_contract_defects(
                 &format!("DesignLanguage '{language_id}' {message}"),
             ));
         }
-    }
-
-    if !entity_bool_any(language, "has_valid_design_md")
-        && !entity_bool_any(language, "design_md_verified")
-    {
-        defects.push(contract_defect(
-            job_type,
-            Some(language_id),
-            &format!("DesignLanguage '{language_id}' has no verified DESIGN.md artifact"),
-        ));
-    }
-    if !entity_bool_any(language, "shadcn_component_spec_verified") {
-        defects.push(contract_defect(
-            job_type,
-            Some(language_id),
-            &format!(
-                "DesignLanguage '{language_id}' has no verified shadcn component-spec artifact"
-            ),
-        ));
-    }
-    if !entity_bool_any(language, "shadcn_preview_shots_verified") {
-        defects.push(contract_defect(
-            job_type,
-            Some(language_id),
-            &format!(
-                "DesignLanguage '{language_id}' has no verified shadcn preview-shots artifact"
-            ),
-        ));
     }
 
     defects
@@ -7298,7 +7310,7 @@ mod tests {
     }
 
     #[test]
-    fn partial_design_language_contract_defects_are_specific_artifact_defects() {
+    fn partial_design_language_contract_defects_only_blocks_non_derivable_artifacts() {
         let language = json!({
             "status": "Draft",
             "fields": {
@@ -7334,13 +7346,12 @@ mod tests {
 
         assert!(codes.contains(&"missing_or_invalid_thumbnail"));
         assert!(codes.contains(&"missing_or_invalid_embodiment"));
-        assert!(codes.contains(&"missing_or_invalid_design_md"));
-        assert!(codes.contains(&"missing_or_invalid_shadcn_artifacts"));
+        assert!(!codes.contains(&"missing_or_invalid_design_md"));
+        assert!(!codes.contains(&"missing_or_invalid_shadcn_artifacts"));
         assert!(messages.contains("missing thumbnail_file_id"));
         assert!(messages.contains("missing embodiment_file_id"));
-        assert!(messages.contains("missing DESIGN.md design_md_file_id"));
-        assert!(messages.contains("missing shadcn component-spec artifact"));
-        assert!(messages.contains("missing shadcn preview-shots artifact"));
+        assert!(!messages.contains("DESIGN.md"));
+        assert!(!messages.contains("shadcn"));
     }
 
     #[test]

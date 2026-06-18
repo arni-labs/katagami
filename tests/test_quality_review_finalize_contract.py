@@ -352,6 +352,33 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("partial_design_language_contract_defects", source)
         self.assertIn("design_language_ids_for_contract_validation", source)
 
+    def test_synthesis_finalizer_self_heals_deterministic_artifacts(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn verify_synthesis_finalizer_owned_artifacts", source)
+
+        synth_start = source.index("fn verify_synthesized_languages")
+        synth_end = source.index("fn verify_generated_language_identity", synth_start)
+        synth = source[synth_start:synth_end]
+
+        self.assertIn("verify_synthesis_finalizer_owned_artifacts", synth)
+        self.assertLess(
+            synth.index("verify_compositions("),
+            synth.index("verify_synthesis_finalizer_owned_artifacts("),
+            "synthesis must validate core embodiment/compositions before deriving DESIGN.md and shadcn artifacts",
+        )
+        self.assertLess(
+            synth.index("verify_synthesis_finalizer_owned_artifacts("),
+            synth.index('"SubmitForReview"'),
+            "synthesis must self-heal deterministic artifacts before advancing to review",
+        )
+
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
             self.curation_root
