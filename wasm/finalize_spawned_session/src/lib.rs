@@ -3960,29 +3960,42 @@ fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
     let mut ids = Vec::new();
     for field_name in [
         "design_language_ids",
+        "DesignLanguageIds",
         "language_ids",
+        "LanguageIds",
         "reviewed_ids",
+        "ReviewedIds",
         "fixed_ids",
+        "FixedIds",
     ] {
         ids.extend(string_array_flexible(fields.get(field_name)));
     }
     if ids.is_empty() {
-        if let Some(output) = parse_json_field(fields.get("output")) {
+        if let Some(output) =
+            parse_json_field(fields.get("output").or_else(|| fields.get("Output")))
+        {
             for field_name in [
                 "design_language_ids",
+                "DesignLanguageIds",
                 "language_ids",
+                "LanguageIds",
                 "reviewed_ids",
+                "ReviewedIds",
                 "fixed_ids",
+                "FixedIds",
                 "fixed",
+                "Fixed",
             ] {
                 ids.extend(string_array_flexible(output.get(field_name)));
             }
         }
     }
     if ids.is_empty() {
-        if let Some(input) = parse_json_field(fields.get("input")) {
+        if let Some(input) = parse_json_field(fields.get("input").or_else(|| fields.get("Input"))) {
             ids.extend(string_array_flexible(input.get("language_ids")));
             ids.extend(string_array_flexible(input.get("design_language_ids")));
+            ids.extend(string_array_flexible(input.get("LanguageIds")));
+            ids.extend(string_array_flexible(input.get("DesignLanguageIds")));
         }
     }
 
@@ -5709,21 +5722,23 @@ mod tests {
     fn design_language_ids_accept_direct_arrays_and_review_aliases() {
         let fields = json!({
             "design_language_ids": ["en-1", "en-2"],
-            "fixed_ids": ["en-2", "en-3"]
+            "fixed_ids": ["en-2", "en-3"],
+            "DesignLanguageIds": "[\"en-3\", \"en-4\"]",
+            "FixedIds": ["en-4", "en-5"]
         });
 
         assert_eq!(
             design_language_ids_from_job(&fields),
-            vec!["en-1", "en-2", "en-3"]
+            vec!["en-1", "en-2", "en-3", "en-4", "en-5"]
         );
     }
 
     #[test]
     fn design_language_ids_fall_back_to_json_output_aliases() {
         let fields = json!({
-            "output": json!({
-                "reviewed_ids": ["en-reviewed"],
-                "fixed_ids": ["en-fixed"]
+            "Output": json!({
+                "ReviewedIds": ["en-reviewed"],
+                "FixedIds": ["en-fixed"]
             }).to_string()
         });
 
