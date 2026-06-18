@@ -1064,6 +1064,7 @@ fn verify_quality_reviewed_languages(
             return Err(error);
         }
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
+        ensure_language_under_review(ctx, api_url, headers, language_id, &status)?;
         dispatch_action(
             ctx,
             api_url,
@@ -1074,7 +1075,7 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
 
-        ensure_language_published(ctx, api_url, headers, language_id, &status)?;
+        ensure_language_published(ctx, api_url, headers, language_id)?;
         published.push(language_id.clone());
     }
 
@@ -1096,19 +1097,14 @@ fn verify_quality_reviewed_languages(
     }))
 }
 
-fn ensure_language_published(
+fn ensure_language_under_review(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     language_id: &str,
     initial_status: &str,
 ) -> Result<(), String> {
-    let mut status = initial_status.to_string();
-    if status == "Published" {
-        return Ok(());
-    }
-
-    if status == "Draft" {
+    let status = if initial_status == "Draft" {
         dispatch_action(
             ctx,
             api_url,
@@ -1122,7 +1118,30 @@ fn ensure_language_published(
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after SubmitForReview")
             })?;
-        status = entity_status_value(&refreshed);
+        entity_status_value(&refreshed)
+    } else {
+        initial_status.to_string()
+    };
+
+    if !matches!(status.as_str(), "UnderReview" | "Published") {
+        return Err(format!(
+            "DesignLanguage '{language_id}' remained in state '{status}' after quality finalizer SubmitForReview"
+        ));
+    }
+    Ok(())
+}
+
+fn ensure_language_published(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+) -> Result<(), String> {
+    let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        .ok_or_else(|| format!("DesignLanguage '{language_id}' disappeared before Publish"))?;
+    let status = entity_status_value(&language);
+    if status == "Published" {
+        return Ok(());
     }
 
     if status == "UnderReview" {
