@@ -328,6 +328,30 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("direction_id eq", source)
         self.assertIn("synthesis_job_ids_for_direction", source)
 
+    def test_typed_attempt_validates_durable_partials_before_unfinished_tool_text(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        verify_start = source.index("fn verify_typed_completion")
+        verify_end = source.index("fn verify_source_search_completion", verify_start)
+        verify_body = source[verify_start:verify_end]
+
+        match_index = verify_body.index("match job_type")
+        pre_match = verify_body[:match_index]
+        self.assertNotIn(
+            "typed_completion_output_is_unfinished_tool_call",
+            pre_match,
+            "CompleteAttempt validation must inspect durable job/entity state before treating raw unfinished tool-call text as the primary defect",
+        )
+        self.assertIn("verify_synthesized_languages", verify_body)
+        self.assertIn("partial_design_language_contract_defects", source)
+        self.assertIn("design_language_ids_for_contract_validation", source)
+
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
             self.curation_root

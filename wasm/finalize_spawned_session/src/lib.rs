@@ -952,7 +952,8 @@ fn contract_repair_input(
         return Err("contract repair input could not be represented as an object".to_string());
     };
 
-    let existing_design_language_ids = design_language_ids_from_job(fields);
+    let existing_design_language_ids =
+        design_language_ids_for_contract_repair(fields, validation);
     if !existing_design_language_ids.is_empty() && !input_obj.contains_key("language_ids") {
         input_obj.insert(
             "language_ids".to_string(),
@@ -1181,12 +1182,6 @@ fn verify_typed_completion(
     fields: &serde_json::Value,
     workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
-    if typed_completion_output_is_unfinished_tool_call(fields) {
-        return Err(format!(
-            "{job_type} typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
-        ));
-    }
-
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
             verify_synthesized_languages(ctx, api_url, headers, fields, job_type, workspace_id)
@@ -1200,6 +1195,9 @@ fn verify_typed_completion(
             "scope": "taxonomy organization"
         })),
         "source_search" => verify_source_search_completion(fields),
+        _ if typed_completion_output_is_unfinished_tool_call(fields) => Err(format!(
+            "{job_type} typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
+        )),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
 }
@@ -1300,7 +1298,7 @@ fn verify_synthesized_languages(
     job_type: &str,
     workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
-    let language_ids = design_language_ids_from_completion(fields);
+    let language_ids = design_language_ids_for_contract_validation(fields);
     if language_ids.is_empty() {
         return Err(format!(
             "{job_type} typed completion did not report any design_language_ids"
@@ -1345,6 +1343,19 @@ fn verify_synthesized_languages(
         };
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
+        }
+        let durable_defects =
+            partial_design_language_contract_defects(job_type, language_id, &language);
+        if !durable_defects.is_empty() {
+            ctx.log(
+                "warn",
+                &format!(
+                    "{job_type} completion found durable partial DesignLanguage defects for '{language_id}'; returning exact contract defects for same-job repair"
+                ),
+            );
+            incomplete.push(language_id.clone());
+            defects.extend(durable_defects);
+            continue;
         }
         if let Err(e) = verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language) {
             if is_repairable_language_artifact_error(&e) {
@@ -5028,6 +5039,43 @@ fn dedupe_nonempty_strings(ids: Vec<String>) -> Vec<String> {
     deduped
 }
 
+fn design_language_ids_for_contract_validation(fields: &serde_json::Value) -> Vec<String> {
+    let completion_ids = design_language_ids_from_completion(fields);
+    if !completion_ids.is_empty() {
+        return completion_ids;
+    }
+    if let Some(repair_ids) = contract_repair_existing_language_ids(fields) {
+        if !repair_ids.is_empty() {
+            return repair_ids;
+        }
+    }
+    design_language_ids_from_job(fields)
+}
+
+fn design_language_ids_for_contract_repair(
+    fields: &serde_json::Value,
+    validation: &serde_json::Value,
+) -> Vec<String> {
+    let field_ids = design_language_ids_for_contract_validation(fields);
+    if !field_ids.is_empty() {
+        return field_ids;
+    }
+
+    let mut ids = Vec::new();
+    ids.extend(string_array_flexible(
+        validation.get("incomplete_language_ids"),
+    ));
+    ids.extend(string_array_flexible(validation.get("repair_language_ids")));
+    if let Some(defects) = validation.get("defects").and_then(|value| value.as_array()) {
+        for defect in defects {
+            if let Some(language_id) = defect.get("language_id").and_then(|value| value.as_str()) {
+                ids.push(language_id.to_string());
+            }
+        }
+    }
+    dedupe_nonempty_strings(ids)
+}
+
 fn design_language_ids_from_completion(fields: &serde_json::Value) -> Vec<String> {
     let mut ids = Vec::new();
     for field_name in [
@@ -5070,6 +5118,99 @@ fn design_language_ids_from_completion(fields: &serde_json::Value) -> Vec<String
         }
     }
     deduped
+}
+
+fn partial_design_language_contract_defects(
+    job_type: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Vec<serde_json::Value> {
+    let fields = entity_fields(language);
+    let mut defects = Vec::new();
+
+    let mut missing_sections = Vec::new();
+    for (bool_name, data_name) in [
+        ("has_philosophy", "philosophy"),
+        ("has_tokens", "tokens"),
+        ("has_rules", "rules"),
+        ("has_layout", "layout_principles"),
+        ("has_guidance", "guidance"),
+    ] {
+        if !section_present(&fields, bool_name, data_name) {
+            missing_sections.push(bool_name.trim_start_matches("has_").to_string());
+        }
+    }
+    if !missing_sections.is_empty() {
+        defects.push(contract_defect(
+            job_type,
+            Some(language_id),
+            &format!(
+                "DesignLanguage '{language_id}' is missing required spec sections: {}",
+                missing_sections.join(", ")
+            ),
+        ));
+    }
+
+    for (field_name, message) in [
+        (
+            "embodiment_file_id",
+            "missing embodiment_file_id for the generated embodiment artifact",
+        ),
+        (
+            "thumbnail_file_id",
+            "missing thumbnail_file_id for the gallery thumbnail artifact",
+        ),
+        (
+            "design_md_file_id",
+            "missing DESIGN.md design_md_file_id artifact",
+        ),
+        (
+            "shadcn_component_spec_file_id",
+            "missing shadcn component-spec artifact",
+        ),
+        (
+            "shadcn_preview_shots_file_id",
+            "missing shadcn preview-shots artifact",
+        ),
+    ] {
+        if string_field_any(&fields, field_name, "").trim().is_empty() {
+            defects.push(contract_defect(
+                job_type,
+                Some(language_id),
+                &format!("DesignLanguage '{language_id}' {message}"),
+            ));
+        }
+    }
+
+    if !entity_bool_any(language, "has_valid_design_md")
+        && !entity_bool_any(language, "design_md_verified")
+    {
+        defects.push(contract_defect(
+            job_type,
+            Some(language_id),
+            &format!("DesignLanguage '{language_id}' has no verified DESIGN.md artifact"),
+        ));
+    }
+    if !entity_bool_any(language, "shadcn_component_spec_verified") {
+        defects.push(contract_defect(
+            job_type,
+            Some(language_id),
+            &format!(
+                "DesignLanguage '{language_id}' has no verified shadcn component-spec artifact"
+            ),
+        ));
+    }
+    if !entity_bool_any(language, "shadcn_preview_shots_verified") {
+        defects.push(contract_defect(
+            job_type,
+            Some(language_id),
+            &format!(
+                "DesignLanguage '{language_id}' has no verified shadcn preview-shots artifact"
+            ),
+        ));
+    }
+
+    defects
 }
 
 fn verify_forced_agent_shadsync_refresh(
@@ -6752,11 +6893,12 @@ mod tests {
     use super::{
         action_rejected_for_current_state, bool_field, canonicalize_katagami_public_asset_url,
         contract_defect, contract_repair_existing_language_ids, contract_repair_input,
-        curation_job_create_body, curation_job_filter, design_language_ids_from_completion,
-        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
-        is_repairable_contract_error, is_repairable_language_artifact_error,
-        is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
-        next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
+        curation_job_create_body, curation_job_filter, design_language_ids_for_contract_validation,
+        design_language_ids_from_completion, design_language_ids_from_job,
+        design_md_projection_refresh_reason, entity_bool_any, is_repairable_contract_error,
+        is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
+        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
+        parent_session_id_from_fields, partial_design_language_contract_defects,
         pawfs_directory_id, pawfs_file_id, render_dashboard_composition_projection,
         render_design_md_projection, render_landing_composition_projection, same_string_set,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
@@ -7073,6 +7215,38 @@ mod tests {
     }
 
     #[test]
+    fn contract_repair_input_preserves_validator_partial_ids_when_job_fields_are_empty() {
+        let fields = json!({
+            "input": json!({"task": "repair this language"}).to_string()
+        });
+        let validation = json!({
+            "validated": false,
+            "job_type": "synthesize",
+            "incomplete_language_ids": ["en-partial"],
+            "defects": [
+                contract_defect(
+                    "synthesize",
+                    Some("en-partial"),
+                    "DesignLanguage 'en-partial' missing thumbnail_file_id"
+                )
+            ]
+        });
+
+        let input = contract_repair_input("synthesize", &fields, &validation, 2)
+            .expect("repair input should be created from validator partial ids");
+        let repair = input
+            .get("contract_repair")
+            .expect("repair context should be present");
+
+        assert_eq!(input["language_ids"], json!(["en-partial"]));
+        assert_eq!(input["existing_language_id"], "en-partial");
+        assert_eq!(
+            repair["existing_design_language_ids"],
+            json!(["en-partial"])
+        );
+    }
+
+    #[test]
     fn contract_repair_existing_language_ids_are_a_set_invariant() {
         let fields = json!({
             "input": json!({
@@ -7099,6 +7273,74 @@ mod tests {
             )["code"],
             "repair_target_mismatch"
         );
+    }
+
+    #[test]
+    fn contract_validation_ids_fall_back_to_existing_repair_artifacts() {
+        let fields = json!({
+            "output": "Tool call call_123: execute({\"code\":\"still reading\"})",
+            "input": json!({
+                "contract_repair": {
+                    "existing_design_language_ids": ["en-existing"]
+                }
+            }).to_string()
+        });
+
+        assert!(typed_completion_output_is_unfinished_tool_call(&fields));
+        assert_eq!(
+            design_language_ids_from_completion(&fields),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            design_language_ids_for_contract_validation(&fields),
+            vec!["en-existing"]
+        );
+    }
+
+    #[test]
+    fn partial_design_language_contract_defects_are_specific_artifact_defects() {
+        let language = json!({
+            "status": "Draft",
+            "fields": {
+                "name": "AYA Woven Reading Workspace",
+                "philosophy": "{\"summary\":\"ok\"}",
+                "tokens": "{\"colors\":{}}",
+                "rules": "{\"signature_patterns\":[]}",
+                "layout_principles": "{\"grid\":\"ok\"}",
+                "guidance": "{\"do\":[]}",
+                "has_philosophy": true,
+                "has_tokens": true,
+                "has_rules": true,
+                "has_layout": true,
+                "has_guidance": true,
+                "has_design_md": false,
+                "has_valid_design_md": false,
+                "shadcn_component_spec_verified": false,
+                "shadcn_preview_shots_verified": false
+            }
+        });
+
+        let defects =
+            partial_design_language_contract_defects("synthesize", "en-partial", &language);
+        let codes = defects
+            .iter()
+            .filter_map(|defect| defect.get("code").and_then(|value| value.as_str()))
+            .collect::<Vec<_>>();
+        let messages = defects
+            .iter()
+            .filter_map(|defect| defect.get("message").and_then(|value| value.as_str()))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(codes.contains(&"missing_or_invalid_thumbnail"));
+        assert!(codes.contains(&"missing_or_invalid_embodiment"));
+        assert!(codes.contains(&"missing_or_invalid_design_md"));
+        assert!(codes.contains(&"missing_or_invalid_shadcn_artifacts"));
+        assert!(messages.contains("missing thumbnail_file_id"));
+        assert!(messages.contains("missing embodiment_file_id"));
+        assert!(messages.contains("missing DESIGN.md design_md_file_id"));
+        assert!(messages.contains("missing shadcn component-spec artifact"));
+        assert!(messages.contains("missing shadcn preview-shots artifact"));
     }
 
     #[test]
