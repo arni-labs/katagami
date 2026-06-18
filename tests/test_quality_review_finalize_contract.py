@@ -47,11 +47,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn('.unwrap_or("typed-v1")', source)
-        self.assertIn("let finalizing_fields =", source)
+        self.assertIn("let mut finalizing_fields =", source)
         self.assertIn(
             'load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)',
             source,
         )
+        self.assertIn("merge_trigger_params_into_fields(&mut finalizing_fields", source)
         self.assertIn("&finalizing_fields", source)
 
     def test_finalize_reattaches_design_md_after_revise_reset(self):

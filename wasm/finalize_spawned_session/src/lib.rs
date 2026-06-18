@@ -13,7 +13,8 @@ const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 2;
 pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
     let result = (|| -> Result<(), String> {
         let ctx = Context::from_host()?;
-        let fields = ctx.entity_state.get("fields").cloned().unwrap_or(json!({}));
+        let mut fields = ctx.entity_state.get("fields").cloned().unwrap_or(json!({}));
+        merge_trigger_params_into_fields(&mut fields, &ctx.trigger_params);
         let job_type = fields
             .get("job_type")
             .and_then(|v| v.as_str())
@@ -68,10 +69,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
 
         if session_id.is_empty() {
             if job_status == "Finalizing" && completion_contract == "typed-v1" {
-                let finalizing_fields =
+                let mut finalizing_fields =
                     load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)?
                         .map(|job| entity_fields(&job))
                         .unwrap_or_else(|| fields.clone());
+                merge_trigger_params_into_fields(&mut finalizing_fields, &ctx.trigger_params);
                 let validation = match verify_typed_completion(
                     &ctx,
                     &api_url,
@@ -179,10 +181,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             return Ok(());
                         }
                     };
-                    let finalizing_fields =
+                    let mut finalizing_fields =
                         load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)?
                             .map(|job| entity_fields(&job))
                             .unwrap_or_else(|| fields.clone());
+                    merge_trigger_params_into_fields(&mut finalizing_fields, &ctx.trigger_params);
                     let validation = match verify_typed_completion(
                         &ctx,
                         &api_url,
@@ -526,6 +529,23 @@ fn parse_json_field(value: Option<&serde_json::Value>) -> Option<serde_json::Val
         .map(str::trim)
         .filter(|s| !s.is_empty())?;
     serde_json::from_str::<serde_json::Value>(raw).ok()
+}
+
+fn merge_trigger_params_into_fields(
+    fields: &mut serde_json::Value,
+    trigger_params: &serde_json::Value,
+) {
+    let Some(fields) = fields.as_object_mut() else {
+        return;
+    };
+    let Some(params) = trigger_params.as_object() else {
+        return;
+    };
+    for (key, value) in params {
+        if !value.is_null() {
+            fields.insert(key.clone(), value.clone());
+        }
+    }
 }
 
 struct JobProgression {
@@ -5493,10 +5513,10 @@ mod tests {
         bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
         design_md_projection_refresh_reason, entity_bool_any,
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
-        next_artifact_repair_attempt, normalize_pawfs_path, pawfs_filter_url,
-        render_design_md_projection, session_can_be_finalized, session_is_terminal,
-        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
-        verify_file_body,
+        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
+        pawfs_filter_url, render_design_md_projection, session_can_be_finalized,
+        session_is_terminal, split_pawfs_file_path, string_field_any,
+        thumbnail_mime_type_is_acceptable, verify_file_body,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -5731,6 +5751,23 @@ mod tests {
             design_language_ids_from_job(&fields),
             vec!["en-1", "en-2", "en-3", "en-4", "en-5"]
         );
+    }
+
+    #[test]
+    fn trigger_params_override_pre_action_completion_fields() {
+        let mut fields = json!({
+            "job_type": "quality_review",
+            "DesignLanguageIds": "[]"
+        });
+        merge_trigger_params_into_fields(
+            &mut fields,
+            &json!({
+                "DesignLanguageIds": "[\"en-trigger\"]",
+                "OrganizeInput": "{}"
+            }),
+        );
+
+        assert_eq!(design_language_ids_from_job(&fields), vec!["en-trigger"]);
     }
 
     #[test]
