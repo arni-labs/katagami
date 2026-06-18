@@ -879,7 +879,14 @@ fn verify_typed_completion(
 
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
-            verify_synthesized_languages(ctx, api_url, headers, fields, job_type)
+            let validation =
+                verify_synthesized_languages(ctx, api_url, headers, fields, job_type)?;
+            if let Some(error) =
+                incomplete_regeneration_completion_error(job_type, &validation)
+            {
+                return Err(error);
+            }
+            Ok(validation)
         }
         "quality_review" => {
             verify_quality_reviewed_languages(ctx, api_url, headers, fields, workspace_id)
@@ -896,6 +903,35 @@ fn verify_typed_completion(
         })),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
+}
+
+fn incomplete_regeneration_completion_error(
+    job_type: &str,
+    validation: &serde_json::Value,
+) -> Option<String> {
+    if job_type != "regenerate_embodiment" {
+        return None;
+    }
+    if validation
+        .get("validated")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+    {
+        return None;
+    }
+
+    let incomplete_ids = string_array_flexible(validation.get("incomplete_language_ids"));
+    let detail = if incomplete_ids.is_empty() {
+        "no publishable DesignLanguage artifacts were verified".to_string()
+    } else {
+        format!(
+            "incomplete DesignLanguage artifacts for {}",
+            incomplete_ids.join(", ")
+        )
+    };
+    Some(format!(
+        "regenerate_embodiment typed completion ended without publishable artifacts: {detail}"
+    ))
 }
 
 fn typed_completion_output_is_unfinished_tool_call(fields: &serde_json::Value) -> bool {
@@ -5689,10 +5725,11 @@ mod tests {
         bool_field, canonicalize_katagami_public_asset_url, curation_job_create_body,
         design_language_ids_from_completion, design_language_ids_from_job,
         design_md_projection_refresh_reason, entity_bool_any,
-        is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
-        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
-        parent_session_id_from_fields, pawfs_filter_url, render_design_md_projection,
-        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
+        incomplete_regeneration_completion_error, is_repairable_language_artifact_error,
+        is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
+        next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
+        pawfs_filter_url, render_design_md_projection, session_can_be_finalized,
+        session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
         verify_file_body,
     };
@@ -5882,6 +5919,26 @@ mod tests {
         assert!(is_transient_provider_failure(
             "regenerate_embodiment typed completion ended with an unfinished tool call instead of dispatching CompleteRegeneration"
         ));
+    }
+
+    #[test]
+    fn incomplete_regeneration_completion_is_retryable_not_successful() {
+        let validation = json!({
+            "validated": false,
+            "incomplete_language_ids": ["en-incomplete"]
+        });
+
+        let error =
+            incomplete_regeneration_completion_error("regenerate_embodiment", &validation)
+                .expect("incomplete regeneration should be rejected");
+
+        assert!(error.contains("typed completion ended"));
+        assert!(error.contains("en-incomplete"));
+        assert!(is_transient_provider_failure(&error));
+        assert!(
+            incomplete_regeneration_completion_error("synthesize", &validation).is_none(),
+            "initial synthesis may hand incomplete drafts to quality_review repair"
+        );
     }
 
     #[test]

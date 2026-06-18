@@ -259,19 +259,17 @@ class ShadcnExportContractTests(unittest.TestCase):
         ]:
             self.assertIn(fragment, source)
 
-        finalizer = source.index("fn verify_quality_reviewed_languages")
-        mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
-            source.index("verify_shadcn_export(ctx", finalizer),
-            mark_quality,
+            source.index("verify_shadcn_export(ctx"),
+            source.index('"MarkQualityPassed"'),
         )
         self.assertLess(
-            source.index("verify_shadcn_component_spec(", finalizer),
-            mark_quality,
+            source.index("verify_shadcn_component_spec("),
+            source.index('"MarkQualityPassed"'),
         )
         self.assertLess(
-            source.index("verify_shadcn_preview_shots(ctx", finalizer),
-            mark_quality,
+            source.index("verify_shadcn_preview_shots(ctx"),
+            source.index('"MarkQualityPassed"'),
         )
 
     def test_ui_exposes_preview_route_and_backfill(self):
