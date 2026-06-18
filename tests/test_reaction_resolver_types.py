@@ -30,21 +30,17 @@ class ReactionResolverTypeTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            {
-                "direction_queue_synthesis_creates_job": "QueueSynthesis",
-            },
+            {},
             create_triggers,
+            "source-search fan-out must be owned by the validator-gated finalizer so it can return exact synthesize_job_ids in the same contract completion",
         )
 
-        for trigger_name in create_triggers:
-            trigger = next(
-                trigger
-                for spec in [direction_spec, job_spec]
-                for action in spec["action"]
-                for trigger in action.get("triggers", [])
-                if trigger["name"] == trigger_name
-            )
-            self.assertEqual(trigger["params"]["completion_contract"], "typed-v1")
+        direction_actions = {action["name"]: action for action in direction_spec["action"]}
+        self.assertEqual(
+            [],
+            direction_actions["QueueSynthesis"].get("triggers", []),
+            "QueueSynthesis is only a direction state marker; it must not create synthesize jobs behind the finalizer's back",
+        )
 
     def test_typed_completion_actions_do_not_advance_before_validation(self):
         root = Path(__file__).resolve().parents[1]

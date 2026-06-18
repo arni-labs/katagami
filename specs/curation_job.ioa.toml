@@ -275,7 +275,7 @@ kind = "input"
 from = ["Running"]
 to = "Finalizing"
 params = ["direction_ids"]
-hint = "Research completed after creating and queueing CurationDirection records."
+hint = "Research completed after creating CurationDirection records; the validator-gated finalizer creates and records synthesis jobs before publishing research completion."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.

@@ -115,7 +115,7 @@ kind = "input"
 from = ["Researching", "Synthesizing"]
 to = "Synthesizing"
 params = ["source_search_job_id", "synthesize_job_id", "direction_ids", "synthesize_job_ids"]
-hint = "Research phase completed. CurationDirection records have queued synthesis jobs. Duplicate completion dispatches are idempotent after synthesis has already started."
+hint = "Research phase completed after the validated finalizer created and recorded synthesis jobs. Duplicate completion dispatches are idempotent after synthesis has already started."
 
 [[action]]
 name = "SynthesisComplete"

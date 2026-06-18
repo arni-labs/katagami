@@ -1054,6 +1054,8 @@ fn contract_defect(job_type: &str, language_id: Option<&str>, message: &str) -> 
         "missing_design_language_ids"
     } else if lower.contains("direction_ids") || lower.contains("direction ids") {
         "missing_direction_ids"
+    } else if lower.contains("repair target") || lower.contains("duplicate") {
+        "repair_target_mismatch"
     } else if lower.contains("shadcn") {
         "missing_or_invalid_shadcn_artifacts"
     } else if lower.contains("embodiment") {
@@ -1304,6 +1306,22 @@ fn verify_synthesized_languages(
             "{job_type} typed completion did not report any design_language_ids"
         ));
     }
+    if let Some(expected_ids) = contract_repair_existing_language_ids(fields) {
+        if !same_string_set(&language_ids, &expected_ids) {
+            let message = format!(
+                "{job_type} repair target mismatch: contract repair requires existing DesignLanguage IDs [{}], but completion reported [{}]. Repair the existing entities instead of creating duplicates.",
+                expected_ids.join(", "),
+                language_ids.join(", ")
+            );
+            return Ok(json!({
+                "validated": false,
+                "job_type": job_type,
+                "verified_language_ids": [],
+                "incomplete_language_ids": expected_ids,
+                "defects": [contract_defect(job_type, None, &message)],
+            }));
+        }
+    }
 
     let mut verified = Vec::new();
     let mut incomplete = Vec::new();
@@ -1425,6 +1443,23 @@ fn verify_quality_reviewed_languages(
     let language_ids = design_language_ids_from_job(fields);
     if language_ids.is_empty() {
         return Err("quality_review completed without any design_language_ids".to_string());
+    }
+    if let Some(expected_ids) = contract_repair_existing_language_ids(fields) {
+        if !same_string_set(&language_ids, &expected_ids) {
+            let message = format!(
+                "quality_review repair target mismatch: contract repair requires existing DesignLanguage IDs [{}], but completion reported [{}]. Repair the existing entities instead of creating duplicates.",
+                expected_ids.join(", "),
+                language_ids.join(", ")
+            );
+            return Ok(json!({
+                "validated": false,
+                "repair_pending": true,
+                "job_type": "quality_review",
+                "published_language_ids": [],
+                "repair_language_ids": expected_ids,
+                "defects": [contract_defect("quality_review", None, &message)],
+            }));
+        }
     }
 
     let mut published = Vec::new();
@@ -4966,6 +5001,33 @@ fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
     deduped
 }
 
+fn contract_repair_existing_language_ids(fields: &serde_json::Value) -> Option<Vec<String>> {
+    let input = parse_json_field(fields.get("input").or_else(|| fields.get("Input")))?;
+    let repair = input.get("contract_repair")?;
+    let ids = dedupe_nonempty_strings(string_array_flexible(
+        repair.get("existing_design_language_ids"),
+    ));
+    (!ids.is_empty()).then_some(ids)
+}
+
+fn same_string_set(left: &[String], right: &[String]) -> bool {
+    let mut left = dedupe_nonempty_strings(left.to_vec());
+    let mut right = dedupe_nonempty_strings(right.to_vec());
+    left.sort();
+    right.sort();
+    left == right
+}
+
+fn dedupe_nonempty_strings(ids: Vec<String>) -> Vec<String> {
+    let mut deduped = Vec::new();
+    for id in ids {
+        if !id.is_empty() && !deduped.contains(&id) {
+            deduped.push(id);
+        }
+    }
+    deduped
+}
+
 fn design_language_ids_from_completion(fields: &serde_json::Value) -> Vec<String> {
     let mut ids = Vec::new();
     for field_name in [
@@ -5448,6 +5510,7 @@ fn run_typed_completion_fallback(
                         .to_string(),
                 );
             }
+            let mut synthesize_job_ids = Vec::new();
             for direction_id in &direction_ids {
                 let Some(direction) =
                     load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
@@ -5472,6 +5535,21 @@ fn run_typed_completion_fallback(
                     query_id,
                     Some(direction_id),
                 )? {
+                    if dispatch_action_or_already_in_state(
+                        ctx,
+                        api_url,
+                        headers,
+                        "CurationDirections",
+                        direction_id,
+                        "QueueSynthesis",
+                        &json!({}),
+                        &["Synthesizing", "Completed"],
+                    )? {
+                        actions.push(json!({
+                            "action": "marked_existing_synthesis_job_direction_queued",
+                            "direction_id": direction_id,
+                        }));
+                    }
                     actions.push(json!({
                         "action": "skipped_synthesis_job_existing_job",
                         "direction_id": direction_id,
@@ -5479,6 +5557,27 @@ fn run_typed_completion_fallback(
                     continue;
                 }
 
+                let direction_fields = entity_fields(&direction);
+                let synth_input = string_field_any(&direction_fields, "synth_input", "{}");
+                let direction_workspace_id =
+                    string_field_any(&direction_fields, "workspace_id", "");
+                let effective_workspace_id = if workspace_id.is_empty() {
+                    direction_workspace_id.as_str()
+                } else {
+                    workspace_id
+                };
+                let synth_job_id = create_configure_submit_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    "synthesize",
+                    effective_workspace_id,
+                    query_id,
+                    Some(direction_id),
+                    &synth_input,
+                    parent_session_id.as_deref(),
+                )?;
+                synthesize_job_ids.push(synth_job_id.clone());
                 if dispatch_action_or_already_in_state(
                     ctx,
                     api_url,
@@ -5490,8 +5589,9 @@ fn run_typed_completion_fallback(
                     &["Synthesizing", "Completed"],
                 )? {
                     actions.push(json!({
-                        "action": "queued_synthesis_direction",
+                        "action": "created_and_queued_synthesis_job",
                         "direction_id": direction_id,
+                        "job_id": synth_job_id,
                     }));
                 } else {
                     actions.push(json!({
@@ -5506,8 +5606,16 @@ fn run_typed_completion_fallback(
                 "query_id": query_id,
                 "job_id": job_id,
             }));
-            let synthesize_job_ids =
+            let existing_synth_ids =
                 synthesis_job_ids_for_directions(ctx, api_url, headers, query_id, &direction_ids)?;
+            for existing_id in existing_synth_ids {
+                if !synthesize_job_ids
+                    .iter()
+                    .any(|job_id| job_id == &existing_id)
+                {
+                    synthesize_job_ids.push(existing_id);
+                }
+            }
             actions.push(json!({
                 "action": "collected_synthesis_jobs",
                 "job_ids": synthesize_job_ids,
@@ -6562,17 +6670,18 @@ mod tests {
 
     use super::{
         action_rejected_for_current_state, bool_field, canonicalize_katagami_public_asset_url,
-        contract_defect, contract_repair_input, curation_job_create_body,
-        design_language_ids_from_completion, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any, is_repairable_contract_error,
-        is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
-        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
-        parent_session_id_from_fields, pawfs_directory_id, pawfs_file_id,
-        render_dashboard_composition_projection, render_design_md_projection,
-        render_landing_composition_projection, session_can_be_finalized, session_is_terminal,
-        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
-        typed_completion_output_is_unfinished_tool_call, typed_success_terminal_action,
-        validation_needs_repair, verify_file_body, verify_source_search_completion,
+        contract_defect, contract_repair_existing_language_ids, contract_repair_input,
+        curation_job_create_body, design_language_ids_from_completion,
+        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
+        is_repairable_contract_error, is_repairable_language_artifact_error,
+        is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
+        next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
+        pawfs_directory_id, pawfs_file_id, render_dashboard_composition_projection,
+        render_design_md_projection, render_landing_composition_projection, same_string_set,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
+        thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
+        typed_success_terminal_action, validation_needs_repair, verify_file_body,
+        verify_source_search_completion,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -6880,6 +6989,35 @@ mod tests {
             json!(["en-existing"])
         );
         assert_eq!(repair["defects"][0]["code"], "missing_or_invalid_thumbnail");
+    }
+
+    #[test]
+    fn contract_repair_existing_language_ids_are_a_set_invariant() {
+        let fields = json!({
+            "input": json!({
+                "contract_repair": {
+                    "existing_design_language_ids": ["en-existing", "en-second", "en-existing"]
+                }
+            }).to_string()
+        });
+
+        let expected =
+            contract_repair_existing_language_ids(&fields).expect("repair ids should parse");
+
+        assert_eq!(expected, vec!["en-existing", "en-second"]);
+        assert!(same_string_set(
+            &["en-second".to_string(), "en-existing".to_string()],
+            &expected
+        ));
+        assert!(!same_string_set(&["en-new".to_string()], &expected));
+        assert_eq!(
+            contract_defect(
+                "synthesize",
+                None,
+                "synthesize repair target mismatch: duplicate DesignLanguage created"
+            )["code"],
+            "repair_target_mismatch"
+        );
     }
 
     #[test]

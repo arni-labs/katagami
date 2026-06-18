@@ -143,9 +143,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &knowledge_docs,
             inline_job_docs,
         );
-        let typed_completion_guardrails = render_typed_completion_guardrails(
+        let typed_completion_context = render_typed_completion_contract_context(
             &fields,
-            &job_type,
             template.completion_contract.as_str(),
             template.completion_action.as_str(),
         );
@@ -218,7 +217,7 @@ Use these read commands:
 {knowledge_read_commands}
 
 {loaded_reference_block}
-{typed_completion_guardrails}
+{typed_completion_context}
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
@@ -865,9 +864,8 @@ fn render_loaded_reference_block(
     out
 }
 
-fn render_typed_completion_guardrails(
+fn render_typed_completion_contract_context(
     fields: &serde_json::Value,
-    job_type: &str,
     completion_contract: &str,
     completion_action: &str,
 ) -> String {
@@ -875,12 +873,10 @@ fn render_typed_completion_guardrails(
         return String::new();
     }
 
-    let mut out = String::from(
-        "## Typed Completion Guardrails\n\n\
-- The `## Input` JSON above is complete and authoritative. Do not ask for missing job IDs, query IDs, workspace IDs, task, or scope when they are present in this message.\n\
-- Use actual tool calls for tool work. Never write textual pseudo-tool calls such as `Tool call ... execute(...)`; if a tool is needed, call it as a real tool before continuing.\n\
-- Do not call `temper.done(...)` until after `temper.action('CurationJobs', job_id, completion_action, params)` has succeeded with the typed completion action for this job.\n\
-- The final tool call should dispatch the typed completion action and then call `temper.done(...)` in the same script after the action returns.\n",
+    let mut out = format!(
+        "## Typed Completion Contract\n\n\
+This session submits a completion attempt. The system finalizer validates the contract and decides pass, repair, or fail.\n\n\
+- Completion action: `{completion_action}`.\n",
     );
 
     let retry_attempts = field_str(fields, &["retry_attempts", "RetryAttempts"])
@@ -888,101 +884,24 @@ fn render_typed_completion_guardrails(
         .unwrap_or(0);
     let error_message = field_str(fields, &["error_message", "ErrorMessage"]).unwrap_or_default();
     if retry_attempts > 0 || !error_message.is_empty() {
-        out.push_str("\n## Retry Recovery Context\n\n");
-        if retry_attempts > 0 {
-            out.push_str(&format!("- Retry attempt: {retry_attempts}.\n"));
-        }
-        if !error_message.is_empty() {
-            out.push_str(&format!("- Previous failure: {error_message}\n"));
-        }
+        out.push_str("\n## Previous Attempt State\n\n```json\n");
         out.push_str(
-            "- Treat this as a repair/resume run for the same CurationJob, not a fresh unrelated exploration.\n\
-- Re-check existing partial artifacts before creating replacements. If a matching Draft or Ready DesignLanguage for this job input already exists, repair and complete that entity instead of creating a duplicate.\n",
+            &serde_json::to_string_pretty(&json!({
+                "retry_attempts": retry_attempts,
+                "error_message": error_message,
+            }))
+            .unwrap_or_else(|_| "{}".to_string()),
         );
+        out.push_str("\n```\n");
     }
 
     if let Some(contract_repair) = contract_repair_context(fields) {
-        out.push_str("\n## Contract Repair Context\n\n");
-        let attempt = contract_repair
-            .get("attempt")
-            .and_then(|value| value.as_i64())
-            .unwrap_or(0);
-        let max_attempts = contract_repair
-            .get("max_attempts")
-            .and_then(|value| value.as_i64())
-            .unwrap_or(0);
-        if attempt > 0 {
-            out.push_str(&format!(
-                "- Contract repair attempt: {attempt}/{max_attempts}.\n"
-            ));
-        }
-        if let Some(summary) = contract_repair
-            .get("summary")
-            .and_then(|value| value.as_str())
-        {
-            out.push_str(&format!("- Validation summary: {summary}\n"));
-        }
-        if let Some(ids) = contract_repair
-            .get("existing_design_language_ids")
-            .and_then(|value| value.as_array())
-        {
-            let rendered = ids
-                .iter()
-                .filter_map(|value| value.as_str())
-                .collect::<Vec<_>>()
-                .join(", ");
-            if !rendered.is_empty() {
-                out.push_str(&format!(
-                    "- Existing DesignLanguage IDs to repair: {rendered}\n"
-                ));
-            }
-        }
-        if let Some(defects) = contract_repair
-            .get("defects")
-            .and_then(|value| value.as_array())
-        {
-            for defect in defects {
-                let code = defect
-                    .get("code")
-                    .and_then(|value| value.as_str())
-                    .unwrap_or("contract_validation_failed");
-                let language_id = defect
-                    .get("language_id")
-                    .and_then(|value| value.as_str())
-                    .unwrap_or("");
-                let message = defect
-                    .get("message")
-                    .and_then(|value| value.as_str())
-                    .unwrap_or("");
-                if language_id.is_empty() {
-                    out.push_str(&format!("- Defect `{code}`: {message}\n"));
-                } else {
-                    out.push_str(&format!(
-                        "- Defect `{code}` on `{language_id}`: {message}\n"
-                    ));
-                }
-            }
-        }
+        out.push_str("\n## Validator Repair Payload\n\n```json\n");
         out.push_str(
-            "- Repair the existing partial artifacts in place. Do not create a duplicate DesignLanguage unless the listed entity is missing and cannot be recovered.\n",
+            &serde_json::to_string_pretty(&contract_repair).unwrap_or_else(|_| "{}".to_string()),
         );
+        out.push_str("\n```\n");
     }
-
-    if matches!(
-        job_type,
-        "synthesize" | "regenerate_embodiment" | "evolve_language"
-    ) {
-        out.push_str(
-            "\n## DesignLanguage Retry Discipline\n\n\
-- Before creating a new DesignLanguage, list existing DesignLanguages and look for the same target name or slug implied by the job input.\n\
-- If a matching partial DesignLanguage exists, reuse its entity id, fill missing spec/artifacts, attach thumbnail/embodiment/shadcn artifacts, and report that id in `design_language_ids`.\n\
-- Only create a new DesignLanguage when no matching partial entity exists.\n",
-        );
-    }
-
-    out.push_str(&format!(
-        "\nTyped completion action for this job: `{completion_action}`.\n"
-    ));
     out
 }
 
@@ -1108,8 +1027,8 @@ mod tests {
     use super::{
         config_bool, field_bool, file_id_from_workspace_response, instruction_path_candidates,
         knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
-        render_loaded_reference_block, render_typed_completion_guardrails, temper_read_command,
-        LoadedDoc,
+        render_loaded_reference_block, render_typed_completion_contract_context,
+        temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1160,28 +1079,26 @@ mod tests {
     }
 
     #[test]
-    fn typed_completion_guardrails_include_retry_and_duplicate_repair_rules() {
+    fn typed_completion_context_reports_contract_and_previous_attempt_state() {
         let fields = json!({
             "retry_attempts": "1",
             "error_message": "synthesize typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
         });
 
-        let prompt = render_typed_completion_guardrails(
-            &fields,
-            "synthesize",
-            "typed-v1",
-            "CompleteSynthesis",
-        );
+        let prompt =
+            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
 
-        assert!(prompt.contains("Never write textual pseudo-tool calls"));
-        assert!(prompt.contains("Retry attempt: 1"));
-        assert!(prompt.contains("Previous failure: synthesize typed completion ended"));
-        assert!(prompt.contains("repair and complete that entity instead of creating a duplicate"));
-        assert!(prompt.contains("Typed completion action for this job: `CompleteSynthesis`"));
+        assert!(prompt.contains("Typed Completion Contract"));
+        assert!(prompt.contains("system finalizer validates the contract"));
+        assert!(prompt.contains("Completion action: `CompleteSynthesis`"));
+        assert!(prompt.contains("\"retry_attempts\": 1"));
+        assert!(prompt.contains("\"error_message\": \"synthesize typed completion ended"));
+        assert!(!prompt.contains("Never write textual pseudo-tool calls"));
+        assert!(!prompt.contains("creating a duplicate"));
     }
 
     #[test]
-    fn typed_completion_guardrails_include_contract_repair_context() {
+    fn typed_completion_context_includes_raw_validator_repair_payload() {
         let fields = json!({
             "input": json!({
                 "contract_repair": {
@@ -1198,17 +1115,15 @@ mod tests {
             }).to_string()
         });
 
-        let prompt = render_typed_completion_guardrails(
-            &fields,
-            "synthesize",
-            "typed-v1",
-            "CompleteSynthesis",
-        );
+        let prompt =
+            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
 
-        assert!(prompt.contains("Contract repair attempt: 2/3"));
-        assert!(prompt.contains("Existing DesignLanguage IDs to repair: en-existing"));
-        assert!(prompt.contains("Defect `missing_or_invalid_thumbnail` on `en-existing`"));
-        assert!(prompt.contains("Do not create a duplicate DesignLanguage"));
+        assert!(prompt.contains("Validator Repair Payload"));
+        assert!(prompt.contains("\"attempt\": 2"));
+        assert!(prompt.contains("\"existing_design_language_ids\""));
+        assert!(prompt.contains("\"en-existing\""));
+        assert!(prompt.contains("\"missing_or_invalid_thumbnail\""));
+        assert!(!prompt.contains("Do not create a duplicate DesignLanguage"));
     }
 
     #[test]

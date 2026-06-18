@@ -9,8 +9,9 @@ curation workflow triggers.
 ### CurationJob
 
 Trackable unit of work for curator agents. It owns session spawning fields and
-typed completion actions; follow-up jobs and parent-query transitions are
-declared as Temper reactions.
+typed completion actions. Follow-up jobs that require dedupe are created by
+the validator-gated finalizer; parent-query transitions are declared as
+validated Temper reactions.
 
 **States:** `Queued` -> `Ready` -> `Running` -> `Finalizing` -> `Completed` | `Failed`
 
@@ -25,9 +26,9 @@ declared as Temper reactions.
 
 ### CurationDirection
 
-One researched direction created by a `source_search` job. `QueueSynthesis`
-uses a reaction to create and submit the matching `synthesize`
-CurationJob.
+One researched direction created by a `source_search` job. The
+validator-gated source-search finalizer creates and records the matching
+`synthesize` CurationJob, then `QueueSynthesis` marks the direction state.
 
 ### CurationJobTemplate
 
@@ -73,7 +74,7 @@ belongs in a later artifact step.
 
 ## Pipeline
 
-`source_search` -> `CurationDirection` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
+`source_search` -> validated finalizer fan-out -> `CurationDirection` state tracking -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
 
 Each job spawns an agent session through a small WASM runtime bridge.
 `build_session_message` reads `CurationJobTemplate` records, loads the

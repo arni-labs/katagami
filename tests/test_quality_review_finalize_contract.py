@@ -298,13 +298,16 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("direction_status", fallback)
         self.assertIn("skipped_synthesis_job_direction_already_queued", fallback)
-        self.assertIn("queued_synthesis_direction", fallback)
+        self.assertIn("skipped_synthesis_job_existing_job", fallback)
+        self.assertIn("created_and_queued_synthesis_job", fallback)
+        self.assertIn("collected_synthesis_jobs", fallback)
+        self.assertIn("synthesis_job_ids_for_directions", fallback)
         self.assertIn('"QueueSynthesis"', fallback)
         self.assertIn('!= "Discovered"', fallback)
-        self.assertNotIn(
+        self.assertIn(
             "create_configure_submit_job",
             fallback,
-            "source_search fallback must use the CurationDirection.QueueSynthesis trigger instead of creating duplicate synthesize jobs directly",
+            "source_search fallback must create synthesize jobs inside the validated finalizer so ResearchComplete receives exact job IDs",
         )
 
     def test_record_result_terminal_race_is_non_fatal(self):
