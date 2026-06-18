@@ -272,9 +272,15 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("fn dispatch_action_or_already_in_state", source)
         self.assertIn("fn action_rejected_for_current_state", source)
-        self.assertIn("query_synthesis_complete_already_advanced", source)
-        self.assertIn("direction_complete_already_completed", source)
-        self.assertIn('&["Organizing", "Completed"]', source)
+        self.assertIn(
+            "synthesis_direction_and_query_advancement_deferred_to_validated_internal_action",
+            source,
+        )
+        self.assertIn(
+            "research_query_advancement_deferred_to_validated_internal_action",
+            source,
+        )
+        self.assertIn("PublishSynthesisCompletion", source)
 
     def test_source_search_fallback_does_not_duplicate_queued_synthesis(self):
         source = (

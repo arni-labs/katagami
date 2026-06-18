@@ -901,6 +901,73 @@ fn render_typed_completion_guardrails(
         );
     }
 
+    if let Some(contract_repair) = contract_repair_context(fields) {
+        out.push_str("\n## Contract Repair Context\n\n");
+        let attempt = contract_repair
+            .get("attempt")
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0);
+        let max_attempts = contract_repair
+            .get("max_attempts")
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0);
+        if attempt > 0 {
+            out.push_str(&format!(
+                "- Contract repair attempt: {attempt}/{max_attempts}.\n"
+            ));
+        }
+        if let Some(summary) = contract_repair
+            .get("summary")
+            .and_then(|value| value.as_str())
+        {
+            out.push_str(&format!("- Validation summary: {summary}\n"));
+        }
+        if let Some(ids) = contract_repair
+            .get("existing_design_language_ids")
+            .and_then(|value| value.as_array())
+        {
+            let rendered = ids
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            if !rendered.is_empty() {
+                out.push_str(&format!(
+                    "- Existing DesignLanguage IDs to repair: {rendered}\n"
+                ));
+            }
+        }
+        if let Some(defects) = contract_repair
+            .get("defects")
+            .and_then(|value| value.as_array())
+        {
+            for defect in defects {
+                let code = defect
+                    .get("code")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("contract_validation_failed");
+                let language_id = defect
+                    .get("language_id")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("");
+                let message = defect
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("");
+                if language_id.is_empty() {
+                    out.push_str(&format!("- Defect `{code}`: {message}\n"));
+                } else {
+                    out.push_str(&format!(
+                        "- Defect `{code}` on `{language_id}`: {message}\n"
+                    ));
+                }
+            }
+        }
+        out.push_str(
+            "- Repair the existing partial artifacts in place. Do not create a duplicate DesignLanguage unless the listed entity is missing and cannot be recovered.\n",
+        );
+    }
+
     if matches!(
         job_type,
         "synthesize" | "regenerate_embodiment" | "evolve_language"
@@ -917,6 +984,15 @@ fn render_typed_completion_guardrails(
         "\nTyped completion action for this job: `{completion_action}`.\n"
     ));
     out
+}
+
+fn contract_repair_context(fields: &serde_json::Value) -> Option<serde_json::Value> {
+    let input = fields
+        .get("input")
+        .or_else(|| fields.get("Input"))
+        .and_then(|value| value.as_str())
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())?;
+    input.get("contract_repair").cloned()
 }
 
 fn odata_string_literal(value: &str) -> String {
@@ -1102,6 +1178,37 @@ mod tests {
         assert!(prompt.contains("Previous failure: synthesize typed completion ended"));
         assert!(prompt.contains("repair and complete that entity instead of creating a duplicate"));
         assert!(prompt.contains("Typed completion action for this job: `CompleteSynthesis`"));
+    }
+
+    #[test]
+    fn typed_completion_guardrails_include_contract_repair_context() {
+        let fields = json!({
+            "input": json!({
+                "contract_repair": {
+                    "attempt": 2,
+                    "max_attempts": 3,
+                    "summary": "thumbnail missing",
+                    "existing_design_language_ids": ["en-existing"],
+                    "defects": [{
+                        "code": "missing_or_invalid_thumbnail",
+                        "language_id": "en-existing",
+                        "message": "DesignLanguage 'en-existing' has no thumbnail_file_id"
+                    }]
+                }
+            }).to_string()
+        });
+
+        let prompt = render_typed_completion_guardrails(
+            &fields,
+            "synthesize",
+            "typed-v1",
+            "CompleteSynthesis",
+        );
+
+        assert!(prompt.contains("Contract repair attempt: 2/3"));
+        assert!(prompt.contains("Existing DesignLanguage IDs to repair: en-existing"));
+        assert!(prompt.contains("Defect `missing_or_invalid_thumbnail` on `en-existing`"));
+        assert!(prompt.contains("Do not create a duplicate DesignLanguage"));
     }
 
     #[test]

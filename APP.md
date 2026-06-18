@@ -78,8 +78,17 @@ belongs in a later artifact step.
 Each job spawns an agent session through a small WASM runtime bridge.
 `build_session_message` reads `CurationJobTemplate` records, loads the
 referenced skill and knowledge files from TemperFS, and creates temperpaw
-sessions. Follow-up jobs and parent-query transitions are declared as Temper
-reactions. `finalize_spawned_session` records session results for typed jobs,
-keeps a legacy completion path for already-running old sessions, and contains
-an idempotent fallback while the temperpaw OS app installer catches up to app
-reaction loading.
+sessions.
+
+Typed completion actions are completion attempts. They move a job into
+`Finalizing`, where `finalize_spawned_session` validates the explicit contract
+for that job type before any parent-query advancement is allowed. If validation
+finds repairable defects such as missing `thumbnail_file_id`, invalid image
+bytes, missing `design_language_ids`, or missing shadcn artifacts, the finalizer
+emits `RepairRequired` and re-enters the same CurationJob with the existing
+artifact IDs and defect list. The agent then repairs the partial work in place.
+
+Validated internal completion actions advance the parent query only after the
+contract passes. Follow-up creation that needs dedupe remains in the finalizer;
+single-target state transitions are declared as validator-gated Temper
+reactions.

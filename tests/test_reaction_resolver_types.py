@@ -11,15 +11,15 @@ class ReactionResolverTypeTests(unittest.TestCase):
             "katagami-curation must not ship legacy reactions.toml",
         )
 
-    def test_inline_create_triggers_exist_for_followup_jobs(self):
+    def test_source_fanout_job_creation_is_explicit(self):
         root = Path(__file__).resolve().parents[1]
         direction_spec = tomllib.loads(
             (root / "specs" / "curation_direction.ioa.toml").read_text()
         )
         job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
 
-        create_triggers = [
-            trigger
+        create_triggers = {
+            trigger["name"]: action["name"]
             for spec in [direction_spec, job_spec]
             for action in spec["action"]
             for trigger in action.get("triggers", [])
@@ -27,50 +27,112 @@ class ReactionResolverTypeTests(unittest.TestCase):
             and trigger["target_entity"] == "CurationJob"
             and trigger["target_action"] == "ConfigureAndSubmit"
             and trigger["resolve_target"]["type"] == "create"
-        ]
+        }
 
         self.assertEqual(
             {
-                "direction_queue_synthesis_creates_job",
-                "synthesis_creates_quality_review_job",
+                "direction_queue_synthesis_creates_job": "QueueSynthesis",
             },
-            {trigger["name"] for trigger in create_triggers},
+            create_triggers,
         )
 
-        for trigger in create_triggers:
+        for trigger_name in create_triggers:
+            trigger = next(
+                trigger
+                for spec in [direction_spec, job_spec]
+                for action in spec["action"]
+                for trigger in action.get("triggers", [])
+                if trigger["name"] == trigger_name
+            )
             self.assertEqual(trigger["params"]["completion_contract"], "typed-v1")
 
-    def test_inline_query_advancement_triggers_exist(self):
+    def test_typed_completion_actions_do_not_advance_before_validation(self):
         root = Path(__file__).resolve().parents[1]
         job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
-        triggers = {
-            trigger["name"]: trigger
+        typed_completion_actions = {
+            "CompleteResearch",
+            "CompleteSynthesis",
+            "CompleteQualityReview",
+            "CompleteOrganization",
+            "CompleteRegeneration",
+            "CompleteEvolution",
+            "CompleteTasteDistillation",
+        }
+
+        for action in job_spec["action"]:
+            if action["name"] not in typed_completion_actions:
+                continue
+            entity_triggers = [
+                trigger
+                for trigger in action.get("triggers", [])
+                if trigger.get("kind") == "entity"
+            ]
+            self.assertEqual(
+                [],
+                entity_triggers,
+                f"{action['name']} must only submit a completion attempt; follow-up entity side effects must be emitted by validator-gated internal actions",
+            )
+
+    def test_validator_gated_query_advancement_triggers_exist(self):
+        root = Path(__file__).resolve().parents[1]
+        job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
+        trigger_owners = {
+            trigger["name"]: (action["name"], trigger)
             for action in job_spec["action"]
             for trigger in action.get("triggers", [])
             if trigger.get("kind") == "entity"
         }
 
-        for name, target_action in {
-            "research_completion_advances_query": "ResearchComplete",
-            "synthesis_completion_advances_query": "SynthesisComplete",
-            "organization_completion_finishes_query": "OrganizationComplete",
-            "legacy_research_completion_advances_query": "ResearchComplete",
-            "legacy_synthesis_completion_advances_query": "SynthesisComplete",
-            "legacy_organization_completion_finishes_query": "OrganizationComplete",
+        for name, (owner, target_action) in {
+            "validated_research_completion_advances_query": (
+                "PublishResearchCompletion",
+                "ResearchComplete",
+            ),
+            "validated_synthesis_completion_advances_query": (
+                "PublishSynthesisCompletion",
+                "SynthesisComplete",
+            ),
+            "validated_organization_completion_finishes_query": (
+                "PublishOrganizationCompletion",
+                "OrganizationComplete",
+            ),
         }.items():
-            self.assertIn(name, triggers)
-            self.assertEqual(triggers[name]["target_entity"], "CurationQuery")
-            self.assertEqual(triggers[name]["target_action"], target_action)
+            self.assertIn(name, trigger_owners)
+            action_name, trigger = trigger_owners[name]
+            self.assertEqual(action_name, owner)
+            self.assertEqual(trigger["target_entity"], "CurationQuery")
+            self.assertEqual(trigger["target_action"], target_action)
 
         self.assertNotIn(
             "review_creates_organization_job",
-            triggers,
+            trigger_owners,
             "quality review must let finalize_spawned_session prove publishability before organizing",
         )
         self.assertNotIn(
             "job_failure_fails_query",
-            triggers,
+            trigger_owners,
             "failed jobs must be classified by finalize_spawned_session so transient provider streams can retry",
+        )
+
+    def test_repair_required_reenters_same_job(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
+        actions = {action["name"]: action for action in spec["action"]}
+
+        repair = actions["RepairRequired"]
+        self.assertEqual(repair["from"], ["Finalizing"])
+        self.assertEqual(repair["to"], "Ready")
+        self.assertEqual(
+            set(repair["params"]),
+            {"error_message", "retry_attempts", "input"},
+        )
+        self.assertEqual(
+            ["build_session_message"],
+            [
+                trigger["name"]
+                for trigger in repair.get("triggers", [])
+                if trigger.get("kind") == "wasm"
+            ],
         )
 
     def test_completion_state_transitions_are_idempotent_for_concurrent_finalizers(self):

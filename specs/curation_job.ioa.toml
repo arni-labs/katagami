@@ -290,25 +290,6 @@ timeout_secs = "300"
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
 
-[[action.triggers]]
-name = "research_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "ResearchComplete"
-
-[action.triggers.params]
-synthesize_job_id = ""
-synthesize_job_ids = "[]"
-
-[action.triggers.params_from]
-source_search_job_id = "Id"
-direction_ids = "direction_ids"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
-
 [[action]]
 name = "CompleteSynthesis"
 kind = "input"
@@ -329,57 +310,6 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
-
-[[action.triggers]]
-name = "synthesis_creates_quality_review_job"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
-
-[action.triggers.params]
-job_type = "quality_review"
-completion_contract = "typed-v1"
-
-[action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "review_input"
-
-[action.triggers.resolve_target]
-type = "create"
-
-[[action.triggers]]
-name = "synthesis_completes_direction"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationDirection"
-target_action = "Complete"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "direction_id"
-
-[[action.triggers]]
-name = "synthesis_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.params]
-organize_job_id = ""
-quality_review_job_ids = "[]"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
 
 [[action]]
 name = "CompleteQualityReview"
@@ -422,17 +352,6 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
-
-[[action.triggers]]
-name = "organization_completion_finishes_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "OrganizationComplete"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
 
 [[action]]
 name = "CompleteRegeneration"
@@ -505,22 +424,22 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = ["followup_job_id"]
-hint = "Legacy compatibility: record first synthesize follow-up and advance parent query."
+hint = "Validator-gated research completion. Runs only after source-search contract validation."
 
 [[action.triggers]]
-name = "legacy_research_completion_advances_query"
+name = "validated_research_completion_advances_query"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
 
 [action.triggers.params]
-direction_ids = "[]"
 synthesize_job_ids = "[]"
+synthesize_job_id = "followup_job_id"
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
-synthesize_job_id = "followup_job_id"
+direction_ids = "direction_ids"
 
 [action.triggers.resolve_target]
 type = "field"
@@ -532,10 +451,24 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = ["design_language_ids", "followup_job_id"]
-hint = "Legacy compatibility: record review/organize follow-up and advance parent query."
+hint = "Validator-gated synthesis completion. Creates review work and advances the parent query only after the synthesis contract passes."
 
 [[action.triggers]]
-name = "legacy_synthesis_completion_advances_query"
+name = "validated_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Complete"
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "validated_synthesis_completion_advances_query"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
@@ -558,10 +491,10 @@ kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
 params = []
-hint = "Legacy compatibility: advance the parent query once organizing finishes."
+hint = "Validator-gated organization completion. Advances the parent query only after organization validation."
 
 [[action.triggers]]
-name = "legacy_organization_completion_finishes_query"
+name = "validated_organization_completion_finishes_query"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
@@ -578,6 +511,28 @@ from = ["Finalizing"]
 to = "Completed"
 params = ["followup_job_id", "design_language_ids"]
 hint = "Finalize job completion after session recording and trigger-native follow-up dispatch."
+
+[[action]]
+name = "RepairRequired"
+kind = "internal"
+from = ["Finalizing"]
+to = "Ready"
+params = ["error_message", "retry_attempts", "input"]
+hint = "Validator found repairable contract defects. Re-enter the same CurationJob with exact defects and existing artifact IDs instead of advancing or creating duplicates."
+effect = [{ type = "trigger", name = "build_session_message" }]
+
+[[action.triggers]]
+name = "build_session_message"
+kind = "wasm"
+module = "build_session_message"
+timeout_secs = "300"
+on_failure = "Fail"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+sandbox_provider = "{secret:sandbox_provider}"
+llm_model = "{secret:llm_model}"
+llm_provider = "{secret:llm_provider}"
 
 [[action]]
 name = "Fail"

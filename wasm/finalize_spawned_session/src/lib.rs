@@ -1,6 +1,7 @@
 use temper_wasm_sdk::prelude::*;
 
 const MAX_ARTIFACT_REPAIR_ATTEMPTS: i64 = 2;
+const MAX_CONTRACT_REPAIR_ATTEMPTS: i64 = 3;
 const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 4;
 
 /// Finalize a CurationJob's spawned session.
@@ -74,22 +75,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         .map(|job| entity_fields(&job))
                         .unwrap_or_else(|| fields.clone());
                 merge_trigger_params_into_fields(&mut finalizing_fields, &ctx.trigger_params);
-                let validation = match verify_typed_completion(
-                    &ctx,
-                    &api_url,
-                    &headers,
-                    &job_id,
-                    &job_type,
-                    &finalizing_fields,
-                    &workspace_id,
-                ) {
-                    Ok(validation) => validation,
-                    Err(error) => {
-                        set_failed_job_callback(&ctx, &job_id, &error);
-                        return Ok(());
-                    }
-                };
-                let fallback = match run_typed_completion_fallback(
+                let outcome = match finish_typed_completion_or_repair(
                     &ctx,
                     &api_url,
                     &headers,
@@ -98,9 +84,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &finalizing_fields,
                     &workspace_id,
                     &query_id,
-                    &validation,
                 ) {
-                    Ok(fallback) => fallback,
+                    Ok(outcome) => outcome,
                     Err(error) => {
                         set_failed_job_callback(&ctx, &job_id, &error);
                         return Ok(());
@@ -109,20 +94,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                 ctx.log(
                     "info",
                     &format!(
-                        "finalize_spawned_session: typed no-session validation passed for job '{job_id}': {validation}; fallback: {fallback}"
+                        "finalize_spawned_session: typed no-session completion handled for job '{job_id}': {outcome}"
                     ),
-                );
-                set_terminal_job_callback(
-                    &ctx,
-                    &job_id,
-                    "FinalizeCompletion",
-                    json!({
-                        "followup_job_id": "",
-                        "design_language_ids": finalizing_fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                    }),
                 );
             } else {
                 set_success_result("", &json!({"status": "noop", "reason": "no session_id"}));
@@ -186,22 +159,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                             .map(|job| entity_fields(&job))
                             .unwrap_or_else(|| fields.clone());
                     merge_trigger_params_into_fields(&mut finalizing_fields, &ctx.trigger_params);
-                    let validation = match verify_typed_completion(
-                        &ctx,
-                        &api_url,
-                        &headers,
-                        &job_id,
-                        &job_type,
-                        &finalizing_fields,
-                        &workspace_id,
-                    ) {
-                        Ok(validation) => validation,
-                        Err(error) => {
-                            set_failed_job_callback(&ctx, &job_id, &error);
-                            return Ok(());
-                        }
-                    };
-                    let fallback = match run_typed_completion_fallback(
+                    let outcome = match finish_typed_completion_or_repair(
                         &ctx,
                         &api_url,
                         &headers,
@@ -210,9 +168,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &finalizing_fields,
                         &workspace_id,
                         &query_id,
-                        &validation,
                     ) {
-                        Ok(fallback) => fallback,
+                        Ok(outcome) => outcome,
                         Err(error) => {
                             set_failed_job_callback(&ctx, &job_id, &error);
                             return Ok(());
@@ -221,20 +178,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     ctx.log(
                         "info",
                         &format!(
-                            "finalize_spawned_session: typed validation passed for job '{job_id}': {validation}; session: {record_status}; fallback: {fallback}"
+                            "finalize_spawned_session: typed completion handled for job '{job_id}': {outcome}; session: {record_status}"
                         ),
-                    );
-                    set_terminal_job_callback(
-                        &ctx,
-                        &job_id,
-                        "FinalizeCompletion",
-                        json!({
-                            "followup_job_id": "",
-                            "design_language_ids": finalizing_fields
-                                .get("design_language_ids")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("[]"),
-                        }),
                     );
                     return Ok(());
                 }
@@ -862,6 +807,345 @@ fn set_failed_job_callback(ctx: &Context, job_id: &str, error_message: &str) {
     set_success_result("Fail", &json!({"error_message": error_message}));
 }
 
+fn finish_typed_completion_or_repair(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    workspace_id: &str,
+    query_id: &str,
+) -> Result<serde_json::Value, String> {
+    let validation = match verify_typed_completion(
+        ctx,
+        api_url,
+        headers,
+        job_id,
+        job_type,
+        fields,
+        workspace_id,
+    ) {
+        Ok(validation) => validation,
+        Err(error) => {
+            if is_repairable_contract_error(job_type, &error) {
+                let validation = json!({
+                    "validated": false,
+                    "job_type": job_type,
+                    "defects": [contract_defect(job_type, None, &error)],
+                });
+                let repaired = set_repair_required_or_fail(
+                    ctx,
+                    job_id,
+                    job_type,
+                    fields,
+                    &validation,
+                    &error,
+                )?;
+                return Ok(json!({
+                    "status": if repaired { "repair_required" } else { "repair_exhausted" },
+                    "validation": validation,
+                }));
+            }
+            set_failed_job_callback(ctx, job_id, &error);
+            return Ok(json!({
+                "status": "failed_non_repairable_contract_error",
+                "error": error,
+            }));
+        }
+    };
+
+    if validation_needs_repair(&validation) {
+        let summary = validation_defect_summary(job_type, &validation);
+        let repaired =
+            set_repair_required_or_fail(ctx, job_id, job_type, fields, &validation, &summary)?;
+        return Ok(json!({
+            "status": if repaired { "repair_required" } else { "repair_exhausted" },
+            "validation": validation,
+        }));
+    }
+
+    let fallback = run_typed_completion_fallback(
+        ctx,
+        api_url,
+        headers,
+        job_id,
+        job_type,
+        fields,
+        workspace_id,
+        query_id,
+        &validation,
+    )?;
+    let (terminal_action, terminal_params) =
+        typed_success_terminal_action(job_type, fields, &fallback);
+    set_terminal_job_callback(ctx, job_id, terminal_action, terminal_params.clone());
+    Ok(json!({
+        "status": "validated",
+        "terminal_action": terminal_action,
+        "terminal_params": terminal_params,
+        "validation": validation,
+        "fallback": fallback,
+    }))
+}
+
+fn set_repair_required_or_fail(
+    ctx: &Context,
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    validation: &serde_json::Value,
+    summary: &str,
+) -> Result<bool, String> {
+    let attempts = numeric_field_any(fields, &["retry_attempts", "RetryAttempts"]);
+    if attempts >= MAX_CONTRACT_REPAIR_ATTEMPTS {
+        set_failed_job_callback(
+            ctx,
+            job_id,
+            &format!(
+                "{job_type} contract defects remained after {MAX_CONTRACT_REPAIR_ATTEMPTS} repair attempts: {summary}"
+            ),
+        );
+        return Ok(false);
+    }
+
+    let next_attempt = attempts + 1;
+    let repair_input = contract_repair_input(job_type, fields, validation, next_attempt)?;
+    set_repair_required_job_callback(ctx, job_id, summary, next_attempt, &repair_input);
+    Ok(true)
+}
+
+fn set_repair_required_job_callback(
+    ctx: &Context,
+    job_id: &str,
+    summary: &str,
+    retry_attempts: i64,
+    input: &serde_json::Value,
+) {
+    ctx.log(
+        "warn",
+        &format!(
+            "finalize_spawned_session: requesting CurationJob.RepairRequired callback for job '{job_id}' attempt {retry_attempts}/{MAX_CONTRACT_REPAIR_ATTEMPTS}: {summary}"
+        ),
+    );
+    set_success_result(
+        "RepairRequired",
+        &json!({
+            "error_message": summary,
+            "retry_attempts": retry_attempts.to_string(),
+            "input": input.to_string(),
+        }),
+    );
+}
+
+fn contract_repair_input(
+    job_type: &str,
+    fields: &serde_json::Value,
+    validation: &serde_json::Value,
+    next_attempt: i64,
+) -> Result<serde_json::Value, String> {
+    let mut input = parse_json_field(fields.get("input")).unwrap_or_else(|| json!({}));
+    if !input.is_object() {
+        input = json!({ "original_input": input });
+    }
+    let Some(input_obj) = input.as_object_mut() else {
+        return Err("contract repair input could not be represented as an object".to_string());
+    };
+
+    let existing_design_language_ids = design_language_ids_from_job(fields);
+    if !existing_design_language_ids.is_empty() && !input_obj.contains_key("language_ids") {
+        input_obj.insert(
+            "language_ids".to_string(),
+            json!(existing_design_language_ids.clone()),
+        );
+    }
+    if !existing_design_language_ids.is_empty() && !input_obj.contains_key("existing_language_id") {
+        input_obj.insert(
+            "existing_language_id".to_string(),
+            json!(existing_design_language_ids[0].clone()),
+        );
+    }
+
+    input_obj.insert(
+        "contract_repair".to_string(),
+        json!({
+            "job_type": job_type,
+            "attempt": next_attempt,
+            "max_attempts": MAX_CONTRACT_REPAIR_ATTEMPTS,
+            "summary": validation_defect_summary(job_type, validation),
+            "defects": validation_defects(job_type, validation),
+            "existing_design_language_ids": existing_design_language_ids,
+            "repair_existing_artifacts": true,
+            "do_not_create_duplicates": true,
+        }),
+    );
+    Ok(input)
+}
+
+fn validation_needs_repair(validation: &serde_json::Value) -> bool {
+    validation
+        .get("repair_pending")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+        || !validation
+            .get("validated")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(true)
+        || validation
+            .get("defects")
+            .and_then(|value| value.as_array())
+            .is_some_and(|defects| !defects.is_empty())
+}
+
+fn validation_defect_summary(job_type: &str, validation: &serde_json::Value) -> String {
+    let messages = validation_defects(job_type, validation)
+        .into_iter()
+        .filter_map(|defect| {
+            defect
+                .get("message")
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+        })
+        .collect::<Vec<_>>();
+    if messages.is_empty() {
+        format!("{job_type} contract validation did not pass")
+    } else {
+        messages.join("; ")
+    }
+}
+
+fn validation_defects(job_type: &str, validation: &serde_json::Value) -> Vec<serde_json::Value> {
+    if let Some(defects) = validation.get("defects").and_then(|value| value.as_array()) {
+        if !defects.is_empty() {
+            return defects.clone();
+        }
+    }
+
+    let mut defects = Vec::new();
+    for language_id in string_array_flexible(validation.get("incomplete_language_ids")) {
+        defects.push(contract_defect(
+            job_type,
+            Some(&language_id),
+            "DesignLanguage is incomplete and must be repaired before the job can advance",
+        ));
+    }
+    for language_id in string_array_flexible(validation.get("repair_language_ids")) {
+        defects.push(contract_defect(
+            job_type,
+            Some(&language_id),
+            "DesignLanguage has repairable artifact defects before publish",
+        ));
+    }
+    if defects.is_empty() {
+        defects.push(contract_defect(
+            job_type,
+            None,
+            &format!("{job_type} contract validation did not pass"),
+        ));
+    }
+    defects
+}
+
+fn contract_defect(job_type: &str, language_id: Option<&str>, message: &str) -> serde_json::Value {
+    let lower = message.to_ascii_lowercase();
+    let code = if lower.contains("thumbnail") {
+        "missing_or_invalid_thumbnail"
+    } else if lower.contains("design_language_ids") || lower.contains("language ids") {
+        "missing_design_language_ids"
+    } else if lower.contains("direction_ids") || lower.contains("direction ids") {
+        "missing_direction_ids"
+    } else if lower.contains("shadcn") {
+        "missing_or_invalid_shadcn_artifacts"
+    } else if lower.contains("embodiment") {
+        "missing_or_invalid_embodiment"
+    } else if lower.contains("composition") || lower.contains("landing_file_id") {
+        "missing_or_invalid_compositions"
+    } else if lower.contains("design.md") || lower.contains("design_md") {
+        "missing_or_invalid_design_md"
+    } else if lower.contains("spec sections") || lower.contains("tokens") {
+        "missing_or_invalid_spec"
+    } else if lower.contains("unfinished tool call") || lower.contains("tool call") {
+        "unfinished_typed_completion_tool_call"
+    } else {
+        "contract_validation_failed"
+    };
+    json!({
+        "job_type": job_type,
+        "language_id": language_id.unwrap_or(""),
+        "code": code,
+        "message": message,
+        "repairable": true,
+    })
+}
+
+fn is_repairable_contract_error(job_type: &str, error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    is_transient_provider_failure(error)
+        || is_repairable_language_artifact_error(error)
+        || lower.contains("did not report any design_language_ids")
+        || lower.contains("did not report any direction_ids")
+        || lower.contains("completed without any design_language_ids")
+        || lower.contains("unfinished tool call")
+        || (job_type == "quality_review" && lower.contains("without any design_language_ids"))
+}
+
+fn typed_success_terminal_action(
+    job_type: &str,
+    fields: &serde_json::Value,
+    fallback: &serde_json::Value,
+) -> (&'static str, serde_json::Value) {
+    let design_language_ids = fields
+        .get("design_language_ids")
+        .and_then(|v| v.as_str())
+        .unwrap_or("[]");
+    let followup_job_id = followup_job_id_from_fallback(fallback);
+    match job_type {
+        "source_search" => (
+            "PublishResearchCompletion",
+            json!({"followup_job_id": followup_job_id}),
+        ),
+        "synthesize" => (
+            "PublishSynthesisCompletion",
+            json!({
+                "design_language_ids": design_language_ids,
+                "followup_job_id": followup_job_id,
+            }),
+        ),
+        "organize_taxonomy" => ("PublishOrganizationCompletion", json!({})),
+        _ => (
+            "FinalizeCompletion",
+            json!({
+                "followup_job_id": followup_job_id,
+                "design_language_ids": design_language_ids,
+            }),
+        ),
+    }
+}
+
+fn followup_job_id_from_fallback(fallback: &serde_json::Value) -> String {
+    fallback
+        .as_array()
+        .and_then(|actions| {
+            actions.iter().find_map(|action| {
+                let action_name = action.get("action").and_then(|value| value.as_str())?;
+                if matches!(
+                    action_name,
+                    "created_quality_review_job"
+                        | "created_organization_job"
+                        | "created_quality_review_job_after_embodiment_repair"
+                        | "submitted_next_queued_regeneration"
+                ) {
+                    action
+                        .get("job_id")
+                        .and_then(|value| value.as_str())
+                        .map(str::to_string)
+                } else {
+                    None
+                }
+            })
+        })
+        .unwrap_or_default()
+}
+
 fn verify_typed_completion(
     ctx: &Context,
     api_url: &str,
@@ -879,18 +1163,7 @@ fn verify_typed_completion(
 
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
-            let validation = verify_synthesized_languages(
-                ctx,
-                api_url,
-                headers,
-                fields,
-                job_type,
-                workspace_id,
-            )?;
-            if let Some(error) = incomplete_regeneration_completion_error(job_type, &validation) {
-                return Err(error);
-            }
-            Ok(validation)
+            verify_synthesized_languages(ctx, api_url, headers, fields, job_type, workspace_id)
         }
         "quality_review" => {
             verify_quality_reviewed_languages(ctx, api_url, headers, fields, workspace_id)
@@ -905,7 +1178,9 @@ fn verify_typed_completion(
     }
 }
 
-fn verify_source_search_completion(fields: &serde_json::Value) -> Result<serde_json::Value, String> {
+fn verify_source_search_completion(
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
     let direction_ids = parse_json_string_array(fields.get("direction_ids"));
     if direction_ids.is_empty() {
         return Err(
@@ -920,35 +1195,6 @@ fn verify_source_search_completion(fields: &serde_json::Value) -> Result<serde_j
         "scope": "source metadata and direction fan-out",
         "direction_count": direction_ids.len(),
     }))
-}
-
-fn incomplete_regeneration_completion_error(
-    job_type: &str,
-    validation: &serde_json::Value,
-) -> Option<String> {
-    if job_type != "regenerate_embodiment" {
-        return None;
-    }
-    if validation
-        .get("validated")
-        .and_then(|value| value.as_bool())
-        .unwrap_or(false)
-    {
-        return None;
-    }
-
-    let incomplete_ids = string_array_flexible(validation.get("incomplete_language_ids"));
-    let detail = if incomplete_ids.is_empty() {
-        "no publishable DesignLanguage artifacts were verified".to_string()
-    } else {
-        format!(
-            "incomplete DesignLanguage artifacts for {}",
-            incomplete_ids.join(", ")
-        )
-    };
-    Some(format!(
-        "regenerate_embodiment typed completion ended without publishable artifacts: {detail}"
-    ))
 }
 
 fn typed_completion_output_is_unfinished_tool_call(fields: &serde_json::Value) -> bool {
@@ -1037,6 +1283,7 @@ fn verify_synthesized_languages(
 
     let mut verified = Vec::new();
     let mut incomplete = Vec::new();
+    let mut defects = Vec::new();
     for language_id in &language_ids {
         let language = match load_entity(ctx, api_url, headers, "DesignLanguages", language_id)? {
             Some(l) => l,
@@ -1045,6 +1292,12 @@ fn verify_synthesized_languages(
                     "warn",
                     &format!("verify_synthesized: DesignLanguage '{language_id}' does not exist, skipping"),
                 );
+                incomplete.push(language_id.clone());
+                defects.push(contract_defect(
+                    job_type,
+                    Some(language_id),
+                    &format!("DesignLanguage '{language_id}' does not exist"),
+                ));
                 continue;
             }
         };
@@ -1056,10 +1309,11 @@ fn verify_synthesized_languages(
                 ctx.log(
                     "warn",
                     &format!(
-                        "{job_type} completion found repairable thumbnail/artifact issue for DesignLanguage '{language_id}'; passing to quality_review for remediation: {e}"
+                        "{job_type} completion found repairable thumbnail/artifact issue for DesignLanguage '{language_id}'; returning contract defect for same-job repair: {e}"
                     ),
                 );
                 incomplete.push(language_id.clone());
+                defects.push(contract_defect(job_type, Some(language_id), &e));
                 continue;
             }
             return Err(format!(
@@ -1099,9 +1353,12 @@ fn verify_synthesized_languages(
                 // Incomplete languages flow through to quality_review for fixing
                 ctx.log(
                     "warn",
-                    &format!("verify_synthesized: {e} — passing to quality_review for remediation"),
+                    &format!(
+                        "verify_synthesized: {e} — returning contract defect for same-job repair"
+                    ),
                 );
                 incomplete.push(language_id.clone());
+                defects.push(contract_defect(job_type, Some(language_id), &e));
             }
         }
     }
@@ -1116,6 +1373,7 @@ fn verify_synthesized_languages(
         "job_type": job_type,
         "verified_language_ids": verified,
         "incomplete_language_ids": incomplete,
+        "defects": defects,
     }))
 }
 
@@ -1145,10 +1403,9 @@ fn verify_quality_reviewed_languages(
         return Err("quality_review completed without any design_language_ids".to_string());
     }
 
-    let query_id = string_field(fields, "query_id", "");
     let mut published = Vec::new();
     let mut repair_language_ids = Vec::new();
-    let mut repair_job_ids = Vec::new();
+    let mut defects = Vec::new();
     for language_id in &language_ids {
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
@@ -1161,20 +1418,8 @@ fn verify_quality_reviewed_languages(
 
         if let Err(error) = verify_language_core(ctx, api_url, headers, language_id, &language) {
             if is_repairable_language_artifact_error(&error) {
-                let repair_job_id = queue_artifact_repair_job(
-                    ctx,
-                    api_url,
-                    headers,
-                    workspace_id,
-                    &query_id,
-                    fields,
-                    language_id,
-                    &error,
-                )?;
                 repair_language_ids.push(language_id.clone());
-                if let Some(repair_job_id) = repair_job_id {
-                    repair_job_ids.push(repair_job_id);
-                }
+                defects.push(contract_defect("quality_review", Some(language_id), &error));
                 continue;
             }
             return Err(error);
@@ -1249,20 +1494,8 @@ fn verify_quality_reviewed_languages(
         if let Err(error) = verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)
         {
             if is_repairable_language_artifact_error(&error) {
-                let repair_job_id = queue_artifact_repair_job(
-                    ctx,
-                    api_url,
-                    headers,
-                    workspace_id,
-                    &query_id,
-                    fields,
-                    language_id,
-                    &error,
-                )?;
                 repair_language_ids.push(language_id.clone());
-                if let Some(repair_job_id) = repair_job_id {
-                    repair_job_ids.push(repair_job_id);
-                }
+                defects.push(contract_defect("quality_review", Some(language_id), &error));
                 continue;
             }
             return Err(error);
@@ -1290,7 +1523,7 @@ fn verify_quality_reviewed_languages(
             "job_type": "quality_review",
             "published_language_ids": published,
             "repair_language_ids": repair_language_ids,
-            "repair_job_ids": repair_job_ids,
+            "defects": defects,
         }));
     }
 
@@ -5244,68 +5477,13 @@ fn run_typed_completion_fallback(
                 }
             }
 
-            if !query_id.is_empty()
-                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
-                    == Some("Researching".to_string())
-            {
-                if dispatch_action_or_already_in_state(
-                    ctx,
-                    api_url,
-                    headers,
-                    "CurationQueries",
-                    query_id,
-                    "ResearchComplete",
-                    &json!({
-                        "source_search_job_id": job_id,
-                        "synthesize_job_id": "",
-                        "direction_ids": fields
-                            .get("direction_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                        "synthesize_job_ids": "[]",
-                    }),
-                    &["Synthesizing", "Organizing", "Completed"],
-                )? {
-                    actions
-                        .push(json!({"action": "query_research_complete", "query_id": query_id}));
-                } else {
-                    actions.push(
-                        json!({"action": "query_research_complete_already_advanced", "query_id": query_id}),
-                    );
-                }
-            }
+            actions.push(json!({
+                "action": "research_query_advancement_deferred_to_validated_internal_action",
+                "query_id": query_id,
+                "job_id": job_id,
+            }));
         }
         "synthesize" => {
-            let direction_id = string_field(fields, "direction_id", "");
-            if !direction_id.is_empty()
-                && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
-                    == Some("Synthesizing".to_string())
-            {
-                if dispatch_action_or_already_in_state(
-                    ctx,
-                    api_url,
-                    headers,
-                    "CurationDirections",
-                    &direction_id,
-                    "Complete",
-                    &json!({
-                        "design_language_ids": fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                    }),
-                    &["Completed"],
-                )? {
-                    actions.push(
-                        json!({"action": "direction_complete", "direction_id": direction_id}),
-                    );
-                } else {
-                    actions.push(
-                        json!({"action": "direction_complete_already_completed", "direction_id": direction_id}),
-                    );
-                }
-            }
-
             let query_status = if query_id.is_empty() {
                 None
             } else {
@@ -5330,30 +5508,10 @@ fn run_typed_completion_fallback(
                     .push(json!({"action": "created_quality_review_job", "job_id": review_job_id}));
             }
             if query_status.as_deref() == Some("Synthesizing") {
-                if dispatch_action_or_already_in_state(
-                    ctx,
-                    api_url,
-                    headers,
-                    "CurationQueries",
-                    query_id,
-                    "SynthesisComplete",
-                    &json!({
-                        "design_language_ids": fields
-                            .get("design_language_ids")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("[]"),
-                        "organize_job_id": "",
-                        "quality_review_job_ids": "[]",
-                    }),
-                    &["Organizing", "Completed"],
-                )? {
-                    actions
-                        .push(json!({"action": "query_synthesis_complete", "query_id": query_id}));
-                } else {
-                    actions.push(
-                        json!({"action": "query_synthesis_complete_already_advanced", "query_id": query_id}),
-                    );
-                }
+                actions.push(json!({
+                    "action": "synthesis_direction_and_query_advancement_deferred_to_validated_internal_action",
+                    "query_id": query_id,
+                }));
             }
         }
         "quality_review" => {
@@ -5441,29 +5599,10 @@ fn run_typed_completion_fallback(
             }
         }
         "organize_taxonomy" => {
-            if !query_id.is_empty()
-                && entity_status(ctx, api_url, headers, "CurationQueries", query_id)?
-                    == Some("Organizing".to_string())
-            {
-                if dispatch_action_or_already_in_state(
-                    ctx,
-                    api_url,
-                    headers,
-                    "CurationQueries",
-                    query_id,
-                    "OrganizationComplete",
-                    &json!({}),
-                    &["Completed"],
-                )? {
-                    actions.push(
-                        json!({"action": "query_organization_complete", "query_id": query_id}),
-                    );
-                } else {
-                    actions.push(
-                        json!({"action": "query_organization_complete_already_completed", "query_id": query_id}),
-                    );
-                }
-            }
+            actions.push(json!({
+                "action": "organization_query_advancement_deferred_to_validated_internal_action",
+                "query_id": query_id,
+            }));
         }
         _ => {}
     }
@@ -6357,16 +6496,17 @@ mod tests {
 
     use super::{
         action_rejected_for_current_state, bool_field, canonicalize_katagami_public_asset_url,
-        curation_job_create_body, design_language_ids_from_completion,
-        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
-        incomplete_regeneration_completion_error, is_repairable_language_artifact_error,
-        is_transient_provider_failure, json_object_field, merge_trigger_params_into_fields,
-        next_artifact_repair_attempt, normalize_pawfs_path, parent_session_id_from_fields,
-        pawfs_directory_id, pawfs_file_id, render_dashboard_composition_projection,
-        render_design_md_projection, render_landing_composition_projection,
-        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
-        thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
-        verify_file_body, verify_source_search_completion,
+        contract_defect, contract_repair_input, curation_job_create_body,
+        design_language_ids_from_completion, design_language_ids_from_job,
+        design_md_projection_refresh_reason, entity_bool_any, is_repairable_contract_error,
+        is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
+        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
+        parent_session_id_from_fields, pawfs_directory_id, pawfs_file_id,
+        render_dashboard_composition_projection, render_design_md_projection,
+        render_landing_composition_projection, session_can_be_finalized, session_is_terminal,
+        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
+        typed_completion_output_is_unfinished_tool_call, typed_success_terminal_action,
+        validation_needs_repair, verify_file_body, verify_source_search_completion,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -6564,7 +6704,7 @@ mod tests {
         ] {
             assert!(
                 is_repairable_language_artifact_error(error),
-                "{error} should queue a repair job"
+                "{error} should be classified as contract-repairable"
             );
         }
 
@@ -6617,25 +6757,6 @@ mod tests {
     }
 
     #[test]
-    fn incomplete_regeneration_completion_is_retryable_not_successful() {
-        let validation = json!({
-            "validated": false,
-            "incomplete_language_ids": ["en-incomplete"]
-        });
-
-        let error = incomplete_regeneration_completion_error("regenerate_embodiment", &validation)
-            .expect("incomplete regeneration should be rejected");
-
-        assert!(error.contains("typed completion ended"));
-        assert!(error.contains("en-incomplete"));
-        assert!(is_transient_provider_failure(&error));
-        assert!(
-            incomplete_regeneration_completion_error("synthesize", &validation).is_none(),
-            "initial synthesis may hand incomplete drafts to quality_review repair"
-        );
-    }
-
-    #[test]
     fn source_search_completion_without_directions_is_retryable_not_successful() {
         let fields = json!({
             "direction_ids": "[]"
@@ -6659,6 +6780,77 @@ mod tests {
 
         assert_eq!(validation["validated"], true);
         assert_eq!(validation["direction_count"], 1);
+    }
+
+    #[test]
+    fn contract_repair_input_preserves_existing_artifacts_and_defects() {
+        let fields = json!({
+            "input": json!({"task": "repair this language"}).to_string(),
+            "design_language_ids": "[\"en-existing\"]"
+        });
+        let validation = json!({
+            "validated": false,
+            "defects": [
+                contract_defect(
+                    "synthesize",
+                    Some("en-existing"),
+                    "DesignLanguage 'en-existing' has no thumbnail_file_id"
+                )
+            ]
+        });
+
+        let input = contract_repair_input("synthesize", &fields, &validation, 2)
+            .expect("repair input should render");
+        let repair = input
+            .get("contract_repair")
+            .expect("repair context should be present");
+
+        assert_eq!(input["language_ids"], json!(["en-existing"]));
+        assert_eq!(input["existing_language_id"], "en-existing");
+        assert_eq!(repair["attempt"], 2);
+        assert_eq!(repair["do_not_create_duplicates"], true);
+        assert_eq!(
+            repair["existing_design_language_ids"],
+            json!(["en-existing"])
+        );
+        assert_eq!(repair["defects"][0]["code"], "missing_or_invalid_thumbnail");
+    }
+
+    #[test]
+    fn contract_validation_false_requires_repair() {
+        let validation = json!({
+            "validated": false,
+            "defects": [contract_defect("quality_review", Some("dl"), "no shadcn artifacts")]
+        });
+
+        assert!(validation_needs_repair(&validation));
+        assert!(is_repairable_contract_error(
+            "synthesize",
+            "synthesize typed completion did not report any design_language_ids"
+        ));
+    }
+
+    #[test]
+    fn typed_success_routes_through_validator_gated_internal_actions() {
+        let fields = json!({
+            "design_language_ids": "[\"en-1\"]"
+        });
+        let fallback = json!([
+            {"action": "created_quality_review_job", "job_id": "job-review"}
+        ]);
+
+        let (action, params) = typed_success_terminal_action("synthesize", &fields, &fallback);
+
+        assert_eq!(action, "PublishSynthesisCompletion");
+        assert_eq!(params["followup_job_id"], "job-review");
+        assert_eq!(params["design_language_ids"], "[\"en-1\"]");
+
+        let (action, _) = typed_success_terminal_action("source_search", &json!({}), &json!([]));
+        assert_eq!(action, "PublishResearchCompletion");
+
+        let (action, _) =
+            typed_success_terminal_action("organize_taxonomy", &json!({}), &json!([]));
+        assert_eq!(action, "PublishOrganizationCompletion");
     }
 
     #[test]
