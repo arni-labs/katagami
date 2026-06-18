@@ -57,28 +57,6 @@ class CurationLivenessContractTest(unittest.TestCase):
             for trigger in triggers:
                 self.assertEqual(trigger.get("timeout_secs"), "300")
 
-    def test_curation_job_preserves_parent_session_for_approval_routing(self):
-        spec = load_spec("curation_job.ioa.toml")
-        model = (ROOT / "specs" / "model.csdl.xml").read_text()
-        build_session = (
-            ROOT / "wasm" / "build_session_message" / "src" / "lib.rs"
-        ).read_text()
-        finalizer = (
-            ROOT / "wasm" / "finalize_spawned_session" / "src" / "lib.rs"
-        ).read_text()
-
-        state_names = {state["name"] for state in spec.get("state", [])}
-        self.assertIn("parent_session_id", state_names)
-        for action_name in ["Configure", "ConfigureAndSubmit"]:
-            self.assertIn("parent_session_id", action_by_name(spec, action_name)["params"])
-
-        self.assertIn('<Property Name="ParentSessionId" Type="Edm.String"', model)
-        self.assertIn('"ParentSessionId": parent_session_id.clone()', build_session)
-        self.assertIn('"parent_session_id".to_string()', build_session)
-        self.assertIn("parent_session_id_from_fields", finalizer)
-        self.assertIn("curation_job_create_body(parent_session_id)", finalizer)
-        self.assertIn("add_parent_session_id(&mut configure_body, parent_session_id)", finalizer)
-
     def test_curation_direction_synthesizing_times_out_to_failed(self):
         spec = load_spec("curation_direction.ioa.toml")
         timeouts = state_timeout_map(spec)

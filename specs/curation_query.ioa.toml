@@ -1,10 +1,8 @@
 # CurationQuery — I/O Automaton Specification
 #
-# End-to-end pipeline tracker for automated curation output creation.
-# A user submits a text query, and the system automatically runs the matching
-# lane:
-# design_language → research → synthesize (with embodiment) → taxonomy → publish
-# palette/art_style → research → lane synthesis → publish
+# End-to-end pipeline tracker for automated design language creation.
+# A user submits a text query, and the system automatically runs:
+# research → synthesize (with embodiment) → taxonomy → publish.
 #
 # Lifecycle: Submitted -> Researching -> Synthesizing -> Organizing -> Completed | Failed
 #
@@ -25,13 +23,6 @@ allow_indefinite_states = ["Submitted", "Completed", "Failed"]
 name = "query_text"
 type = "string"
 initial = ""
-
-# Explicit output lane. "auto" means launch_research infers the lane from
-# query_text and records the normalized value before source_search starts.
-[[state]]
-name = "output_type"
-type = "string"
-initial = "auto"
 
 # CurationJob IDs for each pipeline stage
 [[state]]
@@ -77,17 +68,6 @@ name = "design_language_ids"
 type = "string"
 initial = "[]"
 
-# JSON arrays of terminal non-language lane entities created by this query
-[[state]]
-name = "palette_system_ids"
-type = "string"
-initial = "[]"
-
-[[state]]
-name = "art_style_ids"
-type = "string"
-initial = "[]"
-
 # Error details if pipeline failed
 [[state]]
 name = "error_message"
@@ -106,15 +86,8 @@ initial = ""
 name = "Configure"
 kind = "input"
 from = ["Submitted"]
-params = ["query_text", "output_type"]
-hint = "Set the query text and optionally force output_type: auto, design_language, palette, or art_style."
-
-[[action]]
-name = "SetOutputType"
-kind = "input"
-from = ["Submitted"]
-params = ["output_type"]
-hint = "Optionally force the query output lane before submission."
+params = ["query_text"]
+hint = "Set the design query text before submission."
 
 [[action]]
 name = "Submit"
@@ -151,22 +124,6 @@ from = ["Synthesizing"]
 to = "Organizing"
 params = ["design_language_ids", "organize_job_id", "quality_review_job_ids"]
 hint = "Synthesis completed. Quality review is now driving the organizing stage."
-
-[[action]]
-name = "PaletteSynthesisComplete"
-kind = "input"
-from = ["Synthesizing"]
-to = "Completed"
-params = ["palette_system_ids"]
-hint = "Palette lane synthesis completed. PaletteSystem records have been verified and published."
-
-[[action]]
-name = "ArtStyleSynthesisComplete"
-kind = "input"
-from = ["Synthesizing"]
-to = "Completed"
-params = ["art_style_ids"]
-hint = "Art-style lane synthesis completed. ArtStyle records have been verified and published."
 
 [[action]]
 name = "OrganizationComplete"

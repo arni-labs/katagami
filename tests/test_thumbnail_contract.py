@@ -167,25 +167,14 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn("upload decoded browser-renderable image bytes", source)
         self.assertIn("not browser-renderable image bytes", source)
 
-        finalizer = source.index("fn verify_quality_reviewed_languages")
-        mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
-            source.index(
-                "verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?",
-                finalizer,
-            ),
-            source.index(
-                "publish_public_assets(ctx, api_url, headers, language_id, &language)?",
-                finalizer,
-            ),
+            source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?"),
+            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
             "public assets must be published after thumbnail verification",
         )
         self.assertLess(
-            source.index(
-                "publish_public_assets(ctx, api_url, headers, language_id, &language)?",
-                finalizer,
-            ),
-            mark_quality,
+            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
+            source.index('"MarkQualityPassed"'),
             "public assets must be attached before quality can pass",
         )
 

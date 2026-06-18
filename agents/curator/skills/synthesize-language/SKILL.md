@@ -1,6 +1,6 @@
 # Synthesize Language
 
-Create a complete DesignLanguage entity with all spec sections, **three** embodiments — the element-showcase embodiment plus a bespoke **Landing** and **Dashboard** composition — a desktop thumbnail, and first-class shadcn/ui component artifacts, visually verified at three viewport sizes. The Landing + Dashboard compositions are required and finalizer-gated (see COMPOSITION EMBODIMENTS PHASE).
+Create a complete DesignLanguage entity with all spec sections, a self-contained HTML embodiment, a desktop thumbnail, and first-class shadcn/ui component artifacts, visually verified at three viewport sizes.
 
 ## When to Use
 
@@ -132,12 +132,6 @@ temper.action('DesignLanguages', eid, 'SetSpec', {
 ```
 
 Tokens must be DESIGN.md-projectable: real hex values, concrete font names, valid CSS dimensions, component semantics that reference `{colors.*}`, `{typography.*}`, `{rounded.*}`, `{spacing.*}`.
-The generated DESIGN.md projection must also include a `## shadcn/ui Usage`
-section that points shadcn-targeted agents to
-`/language/{language_id}/DESIGN.with-shadcn.md`, `/shadcn.json`,
-`/shadcn-components.md`, and `/shadcn-shots.json`, and says to import local
-primitives from `@/components/ui/*` instead of inventing a second component
-system.
 
 ### Spec Validation Gate
 
@@ -309,23 +303,48 @@ for review.
 ### Step 6 — Publish artifacts
 
 ```python
-result = temper.write('/katagami/embodiments/' + slug + '.html', html_code)
+def require_ready_file(write_result, artifact_kind):
+    file_id = write_result['file_id']
+    file = temper.get('Files', file_id)
+    fields = file.get('fields', file)
+    status = file.get('status') or file.get('Status') or fields.get('Status')
+    path = fields.get('Path') or fields.get('path')
+    name = fields.get('Name') or fields.get('name')
+    mime_type = fields.get('MimeType') or fields.get('mime_type')
+    size_bytes = fields.get('SizeBytes') or fields.get('size_bytes')
+    assert status == 'Ready', f'{artifact_kind} file {file_id} is {status}, expected Ready'
+    assert path and name and mime_type and size_bytes, file
+    return file_id
+
+result = temper.write({
+    'path': '/katagami/embodiments/' + slug + '.html',
+    'content': html_code,
+    'mime_type': 'text/html'
+})
+embodiment_file_id = require_ready_file(result, 'embodiment')
 temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
-    'embodiment_file_id': result['file_id'],
+    'embodiment_file_id': embodiment_file_id,
     'element_count': '15',
     'composition_count': '5',
     'embodiment_format': 'html'
 })
-thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes, {
-    'mime_type': 'image/jpeg'
+thumbnail_result = temper.write({
+    'path': '/katagami/thumbnails/' + slug + '/desktop.jpg',
+    'content': thumbnail_bytes,
+    'mime_type': 'image/jpeg',
 })
+thumbnail_file_id = require_ready_file(thumbnail_result, 'thumbnail')
 temper.action('DesignLanguages', eid, 'AttachThumbnail', {
-    'thumbnail_file_id': thumbnail_result['file_id']
+    'thumbnail_file_id': thumbnail_file_id
 })
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })
 ```
+
+Do not attach a file ID until `require_ready_file(...)` passes. If a write
+returns anything other than a Ready File with usable metadata, retry the write or
+fail the job with the file response as evidence.
 
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
 
@@ -342,11 +361,9 @@ Create `/katagami/shadcn/{slug}/components.md` with:
 - `## Required primitives`
 - `## Token cues`
 - `## Visual character to preserve`
-- `## ShadSync visual profile`
 - `## Signature component recipes`
 - `## Preview shots`
 - `## Implementation contract`
-- `## Copy-paste component example`
 
 The recipes must cover `button`, `card`, `input`, `textarea`, `select`,
 `dialog`, `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`,
@@ -383,9 +400,14 @@ content, stable spacing, hierarchy, and one or two distinctive signature
 patterns from the language.
 
 ```python
-component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
+component_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/components.md',
+    'content': shadcn_components_md,
+    'mime_type': 'text/markdown',
+})
+component_spec_file_id = require_ready_file(component_result, 'shadcn_component_spec')
 temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
-    'shadcn_component_spec_file_id': component_result['file_id'],
+    'shadcn_component_spec_file_id': component_spec_file_id,
     'shadcn_component_spec_format_version': 'component-recipes-v1',
     'shadcn_component_spec_manifest': json.dumps({
         'artifact': 'katagami:shadcn-component-recipes',
@@ -398,9 +420,14 @@ temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
     }, ensure_ascii=False)
 })
 
-shots_result = temper.write('/katagami/shadcn/' + slug + '/preview-shots.json', json.dumps(preview_shots, ensure_ascii=False, indent=2))
+shots_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/preview-shots.json',
+    'content': json.dumps(preview_shots, ensure_ascii=False, indent=2),
+    'mime_type': 'application/json',
+})
+preview_shots_file_id = require_ready_file(shots_result, 'shadcn_preview_shots')
 temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
-    'shadcn_preview_shots_file_id': shots_result['file_id'],
+    'shadcn_preview_shots_file_id': preview_shots_file_id,
     'shadcn_preview_shots_format_version': 'preview-shots-v1',
     'shadcn_preview_shots_manifest': json.dumps({
         'artifact': 'katagami:shadcn-preview-shots',
@@ -419,80 +446,7 @@ temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
 The deterministic shadcn/ui registry theme is still finalizer-owned. Do not
 hand-write or attach `AttachShadcnExport` during synthesis; keep the native
 Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
-`/katagami/shadcn/{slug}/registry-theme.json`. The finalizer does not author
-`components.md` or `preview-shots.json`; it only verifies that the agent did.
-
-## COMPOSITION EMBODIMENTS PHASE (Landing + Dashboard) — required & gated
-
-This is a **first-class, required phase**, gated identically to the element
-embodiment. A `synthesize` / `evolve_language` job that does not attach a valid
-Landing **and** Dashboard cannot pass review or publish — see the gate below.
-
-Every design language ships **three** embodiments: the element embodiment (the
-canonical-elements showcase, above) plus TWO bespoke full-screen composition
-embodiments **unique to this language**, following the same `visual_character`,
-`signature_patterns`, taste rules, type, layout, density, and tokens. They give
-each language a real landing and a real dashboard a human can click through, and
-they are what the Remix Studio recolors + fills.
-
-- **Landing** (`/katagami/compositions/{slug}/landing.html`) — a real marketing
-  landing screen. Lead with a **full-bleed hero image** at the top (today's
-  trend): a section whose `background-image: var(--hero-image)` covers the
-  viewport top, with the headline/CTA overlaid on a scrim. This is the priority
-  placement for the single large image.
-- **Dashboard** (`/katagami/compositions/{slug}/dashboard.html`) — a real app
-  dashboard (sidebar nav, stat cards, a chart, a table or empty-state). UI-led;
-  no hero image required.
-
-These are **remixable**, so they MUST be tokenized — bake the language's
-identity (type, layout, density, treatment) into the HTML, but read every COLOR
-from CSS custom properties so the studio can recolor with any palette and inject
-any art image:
-
-```
-:root{ --bg --surface --text --muted --border --accent --on-accent
-       --success --warning --error --info --hero-image }
-```
-
-Define sensible defaults in `:root` (the language's own colors), use only those
-vars (`var(--…)`) for color, and use `var(--hero-image)` for the landing's
-full-bleed hero. Self-contained HTML, same safety rules as the element
-embodiment.
-
-### Visual verification (same rigor as the element embodiment)
-
-Before attaching, write each composition to the sandbox, screenshot it at desktop
-width, and **evaluate** it the same way you evaluated the element embodiment:
-the landing's hero must read full-bleed; type, spacing, and treatment must match
-this language's `visual_character`; the dashboard must look like a real product
-screen, not a wireframe. Iterate until both are polished. A Swiss-grid landing
-and a warm-editorial landing must look like **different products**, not one
-template recolored.
-
-```python
-landing = temper.write('/katagami/compositions/' + slug + '/landing.html', landing_html)
-dashboard = temper.write('/katagami/compositions/' + slug + '/dashboard.html', dashboard_html)
-temper.action('DesignLanguages', eid, 'AttachCompositions', {
-    'landing_file_id': landing['file_id'],
-    'dashboard_file_id': dashboard['file_id'],
-})
-```
-
-### Gate (finalizer-enforced — do not skip)
-
-`AttachCompositions` is an `input` you fire; **`VerifyCompositions` is
-finalizer-owned — do NOT call it.** On job completion the CurationJob finalizer:
-
-1. Reads **both** the `landing_file_id` and `dashboard_file_id` files.
-2. Rejects either that is not self-contained HTML, or that is **not tokenized**
-   (no `var(--…)` color usage), or a Landing **missing the `--hero-image`** slot.
-3. Dispatches `VerifyCompositions`, flipping `compositions_verified` true.
-
-`SubmitForReview` and `Publish` both now guard on `has_compositions` +
-`compositions_verified`, and the `Published` state asserts both invariants
-(`PublishedRequiresCompositions`, `PublishedRequiresVerifiedCompositions`). So a
-language with a missing, untokenized, or hero-less composition is held back for
-remediation exactly like a bad element embodiment — it will not publish.
+`/katagami/shadcn/{slug}/registry-theme.json`.
 
 ### Final Tool Call
 

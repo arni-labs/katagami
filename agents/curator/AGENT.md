@@ -64,10 +64,8 @@ Monty REPL. The `sandbox.*` and `bash` tools are available for `synthesize`,
 ## Entity Sets
 
 - **CurationJobs** — your control plane (job_type, input, output)
-- **CurationDirections** — one researched direction that queues one lane synthesis job (`synthesize`, `synthesize_palette`, or `synthesize_art_style`)
+- **CurationDirections** — one researched direction that queues one synthesize job
 - **DesignLanguages** — complete design languages with specs + embodiments
-- **PaletteSystems** — curated color systems with roles, ramps, proof scenes, token export, and thumbnail evidence
-- **ArtStyles** — portable art/style recipes with prompt templates, reference images, proof shots, and thumbnails
 - **DesignSources** — compact research references indexed from the web
 - **Taxonomies** — design movement classification system
 - **ElementManifests** — canonical element set definition
