@@ -46,6 +46,13 @@ class CurationLivenessContractTest(unittest.TestCase):
         timeouts = state_timeout_map(spec)
 
         self.assertIn("Queued", action_by_name(spec, "Fail")["from"])
+        child_completed = action_by_name(spec, "ChildSessionCompleted")
+        self.assertEqual(child_completed["from"], ["Running"])
+        self.assertEqual(child_completed["to"], "Finalizing")
+        self.assertIn("output", child_completed["params"])
+        self.assertIn("child_session_id", child_completed["params"])
+        self.assertIn("finalize_spawned_session", str(child_completed))
+
         for state in ["Queued", "Ready", "Running", "Finalizing"]:
             self.assertNotIn(state, indefinite_states(spec))
             self.assertEqual(timeouts[state]["on_timeout"], "Fail")

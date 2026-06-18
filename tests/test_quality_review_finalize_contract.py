@@ -55,6 +55,18 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("merge_trigger_params_into_fields(&mut finalizing_fields", source)
         self.assertIn("&finalizing_fields", source)
 
+    def test_session_link_completion_reenters_typed_finalizer(self):
+        builder = (
+            self.curation_root
+            / "wasm"
+            / "build_session_message"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn('"OnCompletedAction": "ChildSessionCompleted"', builder)
+        self.assertIn('"OnFailureAction": "Fail"', builder)
+
     def test_finalize_reattaches_design_md_after_revise_reset(self):
         source = (
             self.curation_root
