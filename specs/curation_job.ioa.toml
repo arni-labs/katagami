@@ -435,11 +435,11 @@ target_action = "ResearchComplete"
 
 [action.triggers.params]
 synthesize_job_ids = "[]"
-synthesize_job_id = "followup_job_id"
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
 direction_ids = "direction_ids"
+synthesize_job_id = "followup_job_id"
 
 [action.triggers.resolve_target]
 type = "field"

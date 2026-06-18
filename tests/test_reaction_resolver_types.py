@@ -103,6 +103,13 @@ class ReactionResolverTypeTests(unittest.TestCase):
             self.assertEqual(trigger["target_entity"], "CurationQuery")
             self.assertEqual(trigger["target_action"], target_action)
 
+        research_trigger = trigger_owners["validated_research_completion_advances_query"][1]
+        self.assertNotIn("synthesize_job_id", research_trigger.get("params", {}))
+        self.assertEqual(
+            research_trigger["params_from"]["synthesize_job_id"],
+            "followup_job_id",
+        )
+
         self.assertNotIn(
             "review_creates_organization_job",
             trigger_owners,
