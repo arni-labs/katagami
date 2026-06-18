@@ -237,6 +237,24 @@ to = "Running"
 params = ["session_id", "workspace_id"]
 hint = "Session has been created, attached to the shared workspace, and is running."
 
+[[action]]
+name = "ChildSessionCompleted"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["output", "child_session_id", "ChildSessionId", "child_status", "ChildStatus"]
+hint = "A linked child Session reached Completed without self-reporting a typed CurationJob completion. The finalizer validates actual artifacts and resumes review/repair instead of leaving the job Running."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+
 # --- Running ---
 
 [[action]]

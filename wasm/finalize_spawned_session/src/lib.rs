@@ -4455,6 +4455,7 @@ fn run_typed_completion_fallback(
     validation: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let mut actions = Vec::new();
+    let parent_session_id = parent_session_id_from_fields(fields);
 
     match job_type {
         "source_search" => {
@@ -4490,6 +4491,7 @@ fn run_typed_completion_fallback(
                     &direction_query,
                     Some(direction_id),
                     &synth_input,
+                    parent_session_id.as_deref(),
                 )?;
                 actions.push(json!({
                     "action": "created_synthesis_job",
@@ -4563,6 +4565,7 @@ fn run_typed_completion_fallback(
                     query_id,
                     None,
                     &review_input,
+                    parent_session_id.as_deref(),
                 )?;
                 actions
                     .push(json!({"action": "created_quality_review_job", "job_id": review_job_id}));
@@ -4615,6 +4618,7 @@ fn run_typed_completion_fallback(
                     query_id,
                     None,
                     &organize_input,
+                    parent_session_id.as_deref(),
                 )?;
                 actions
                     .push(json!({"action": "created_organization_job", "job_id": organize_job_id}));
@@ -4653,6 +4657,7 @@ fn run_typed_completion_fallback(
                     query_id,
                     None,
                     &review_input,
+                    parent_session_id.as_deref(),
                 )?;
                 actions.push(json!({
                     "action": "created_quality_review_job_after_embodiment_repair",
@@ -4895,6 +4900,7 @@ fn queue_artifact_repair_job(
         query_id,
         None,
         &repair_input,
+        parent_session_id_from_fields(fields).as_deref(),
     )?;
     ctx.log(
         "warn",
@@ -4952,12 +4958,14 @@ fn create_configure_submit_job(
     query_id: &str,
     direction_id: Option<&str>,
     input: &str,
+    parent_session_id: Option<&str>,
 ) -> Result<String, String> {
+    let create_body = curation_job_create_body(parent_session_id);
     let create_resp = ctx.http_call(
         "POST",
         &format!("{api_url}/tdata/CurationJobs"),
         headers,
-        "{}",
+        &create_body.to_string(),
     )?;
     if !(200..300).contains(&create_resp.status) {
         return Err(format!(
@@ -4974,7 +4982,7 @@ fn create_configure_submit_job(
         .ok_or("Created CurationJob has no entity_id")?
         .to_string();
 
-    let mut body = json!({
+    let mut configure_body = json!({
         "job_type": job_type,
         "workspace_id": workspace_id,
         "input": input,
@@ -4982,8 +4990,9 @@ fn create_configure_submit_job(
         "completion_contract": "typed-v1",
     });
     if let Some(direction_id) = direction_id.filter(|id| !id.is_empty()) {
-        body["direction_id"] = serde_json::Value::String(direction_id.to_string());
+        configure_body["direction_id"] = serde_json::Value::String(direction_id.to_string());
     }
+    add_parent_session_id(&mut configure_body, parent_session_id);
 
     dispatch_action(
         ctx,
@@ -4992,9 +5001,34 @@ fn create_configure_submit_job(
         "CurationJobs",
         &job_id,
         "ConfigureAndSubmit",
-        &body,
+        &configure_body,
     )?;
     Ok(job_id)
+}
+
+fn parent_session_id_from_fields(fields: &serde_json::Value) -> Option<String> {
+    let direct = string_field_any(fields, "parent_session_id", "");
+    if !direct.is_empty() {
+        return Some(direct);
+    }
+    parse_json_field(fields.get("input").or_else(|| fields.get("Input"))).and_then(|input| {
+        let nested = string_field_any(&input, "parent_session_id", "");
+        (!nested.is_empty()).then_some(nested)
+    })
+}
+
+fn curation_job_create_body(parent_session_id: Option<&str>) -> serde_json::Value {
+    match parent_session_id.filter(|id| !id.is_empty()) {
+        Some(parent_session_id) => json!({"fields": {"ParentSessionId": parent_session_id}}),
+        None => json!({}),
+    }
+}
+
+fn add_parent_session_id(configure_body: &mut serde_json::Value, parent_session_id: Option<&str>) {
+    if let Some(parent_session_id) = parent_session_id.filter(|id| !id.is_empty()) {
+        configure_body["parent_session_id"] =
+            serde_json::Value::String(parent_session_id.to_string());
+    }
 }
 
 fn dispatch_action(
@@ -5510,12 +5544,12 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::{
-        bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any,
+        bool_field, canonicalize_katagami_public_asset_url, curation_job_create_body,
+        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
         merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
-        pawfs_filter_url, render_design_md_projection, session_can_be_finalized,
-        session_is_terminal, split_pawfs_file_path, string_field_any,
+        parent_session_id_from_fields, pawfs_filter_url, render_design_md_projection,
+        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, verify_file_body,
     };
     use serde_json::json;
@@ -5601,6 +5635,20 @@ mod tests {
         );
         assert!(bool_field(&fields, "has_design_md"));
         assert!(entity_bool_any(&json!({"fields": fields}), "has_design_md"));
+    }
+
+    #[test]
+    fn parent_session_id_propagates_to_followup_job_create_body() {
+        let fields = json!({
+            "Input": json!({"ParentSessionId": "ss-parent"}).to_string()
+        });
+        let parent_session_id = parent_session_id_from_fields(&fields);
+
+        assert_eq!(parent_session_id.as_deref(), Some("ss-parent"));
+        assert_eq!(
+            curation_job_create_body(parent_session_id.as_deref()),
+            json!({"fields": {"ParentSessionId": "ss-parent"}})
+        );
     }
 
     #[test]
