@@ -109,6 +109,11 @@ class ReactionResolverTypeTests(unittest.TestCase):
             research_trigger["params_from"]["synthesize_job_id"],
             "followup_job_id",
         )
+        self.assertNotIn("synthesize_job_ids", research_trigger.get("params", {}))
+        self.assertEqual(
+            research_trigger["params_from"]["synthesize_job_ids"],
+            "synthesize_job_ids",
+        )
 
         self.assertNotIn(
             "review_creates_organization_job",

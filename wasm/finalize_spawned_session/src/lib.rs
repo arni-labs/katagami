@@ -205,6 +205,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                                 action: "PublishResearchCompletion",
                                 params: json!({
                                     "followup_job_id": synth_job_id,
+                                    "synthesize_job_ids": json!([synth_job_id]).to_string(),
                                 }),
                                 followup_job_id: synth_id,
                             }
@@ -1099,10 +1100,17 @@ fn typed_success_terminal_action(
         .unwrap_or("[]");
     let followup_job_id = followup_job_id_from_fallback(fallback);
     match job_type {
-        "source_search" => (
-            "PublishResearchCompletion",
-            json!({"followup_job_id": followup_job_id}),
-        ),
+        "source_search" => ("PublishResearchCompletion", {
+            let synthesize_job_ids = synthesis_job_ids_from_fallback(fallback);
+            let effective_followup_job_id = synthesize_job_ids
+                .first()
+                .cloned()
+                .unwrap_or_else(|| followup_job_id.clone());
+            json!({
+                "followup_job_id": effective_followup_job_id,
+                "synthesize_job_ids": json!(synthesize_job_ids).to_string(),
+            })
+        }),
         "synthesize" => (
             "PublishSynthesisCompletion",
             json!({
@@ -1141,6 +1149,22 @@ fn followup_job_id_from_fallback(fallback: &serde_json::Value) -> String {
                 } else {
                     None
                 }
+            })
+        })
+        .unwrap_or_default()
+}
+
+fn synthesis_job_ids_from_fallback(fallback: &serde_json::Value) -> Vec<String> {
+    fallback
+        .as_array()
+        .and_then(|actions| {
+            actions.iter().find_map(|action| {
+                if action.get("action").and_then(|value| value.as_str())
+                    != Some("collected_synthesis_jobs")
+                {
+                    return None;
+                }
+                Some(string_array_flexible(action.get("job_ids")))
             })
         })
         .unwrap_or_default()
@@ -5482,6 +5506,12 @@ fn run_typed_completion_fallback(
                 "query_id": query_id,
                 "job_id": job_id,
             }));
+            let synthesize_job_ids =
+                synthesis_job_ids_for_directions(ctx, api_url, headers, query_id, &direction_ids)?;
+            actions.push(json!({
+                "action": "collected_synthesis_jobs",
+                "job_ids": synthesize_job_ids,
+            }));
         }
         "synthesize" => {
             let query_status = if query_id.is_empty() {
@@ -5725,6 +5755,42 @@ fn job_exists(
             };
             matches_type && matches_query && matches_direction
         }))
+}
+
+fn synthesis_job_ids_for_directions(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+    direction_ids: &[String],
+) -> Result<Vec<String>, String> {
+    let jobs = list_curation_jobs(ctx, api_url, headers)?;
+    let mut ids = Vec::new();
+    for direction_id in direction_ids {
+        for job in &jobs {
+            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
+            let matches_type =
+                fields.get("job_type").and_then(|v| v.as_str()) == Some("synthesize");
+            let matches_query = query_id.is_empty()
+                || fields.get("query_id").and_then(|v| v.as_str()) == Some(query_id);
+            let matches_direction =
+                fields.get("direction_id").and_then(|v| v.as_str()) == Some(direction_id);
+            if !(matches_type && matches_query && matches_direction) {
+                continue;
+            }
+            let Some(job_id) = job
+                .get("entity_id")
+                .or_else(|| job.get("Id"))
+                .and_then(|value| value.as_str())
+            else {
+                continue;
+            };
+            if !ids.iter().any(|existing| existing == job_id) {
+                ids.push(job_id.to_string());
+            }
+        }
+    }
+    Ok(ids)
 }
 
 fn active_quality_review_job_exists_for_languages(
@@ -6847,6 +6913,15 @@ mod tests {
 
         let (action, _) = typed_success_terminal_action("source_search", &json!({}), &json!([]));
         assert_eq!(action, "PublishResearchCompletion");
+
+        let fallback = json!([
+            {"action": "collected_synthesis_jobs", "job_ids": ["job-synth-1"]}
+        ]);
+        let (action, params) =
+            typed_success_terminal_action("source_search", &json!({}), &fallback);
+        assert_eq!(action, "PublishResearchCompletion");
+        assert_eq!(params["followup_job_id"], "job-synth-1");
+        assert_eq!(params["synthesize_job_ids"], "[\"job-synth-1\"]");
 
         let (action, _) =
             typed_success_terminal_action("organize_taxonomy", &json!({}), &json!([]));
