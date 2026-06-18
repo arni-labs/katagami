@@ -822,6 +822,9 @@ fn is_transient_provider_failure(error_message: &str) -> bool {
         "incomplete chunk",
         "connection reset",
         "connection closed",
+        "unfinished tool call",
+        "typed completion ended",
+        "typed completion did not report",
         "temporarily unavailable",
         "timeout",
         "timed out",
@@ -868,6 +871,12 @@ fn verify_typed_completion(
     fields: &serde_json::Value,
     workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
+    if typed_completion_output_is_unfinished_tool_call(fields) {
+        return Err(format!(
+            "{job_type} typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
+        ));
+    }
+
     match job_type {
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
             verify_synthesized_languages(ctx, api_url, headers, fields, job_type)
@@ -887,6 +896,23 @@ fn verify_typed_completion(
         })),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
+}
+
+fn typed_completion_output_is_unfinished_tool_call(fields: &serde_json::Value) -> bool {
+    let output = fields
+        .get("output")
+        .or_else(|| fields.get("Output"))
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .trim();
+    if output.is_empty() {
+        return false;
+    }
+
+    let lower = output.to_ascii_lowercase();
+    lower.starts_with("tool call ")
+        || lower.starts_with("tool_call ")
+        || lower.contains("pending_tool_calls")
 }
 
 fn is_repairable_language_artifact_error(error: &str) -> bool {
@@ -942,9 +968,11 @@ fn verify_synthesized_languages(
     fields: &serde_json::Value,
     job_type: &str,
 ) -> Result<serde_json::Value, String> {
-    let language_ids = design_language_ids_from_job(fields);
+    let language_ids = design_language_ids_from_completion(fields);
     if language_ids.is_empty() {
-        return Err("synthesis completed without any design_language_ids".to_string());
+        return Err(format!(
+            "{job_type} typed completion did not report any design_language_ids"
+        ));
     }
 
     let mut verified = Vec::new();
@@ -4098,6 +4126,50 @@ fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
     deduped
 }
 
+fn design_language_ids_from_completion(fields: &serde_json::Value) -> Vec<String> {
+    let mut ids = Vec::new();
+    for field_name in [
+        "design_language_ids",
+        "DesignLanguageIds",
+        "language_ids",
+        "LanguageIds",
+        "reviewed_ids",
+        "ReviewedIds",
+        "fixed_ids",
+        "FixedIds",
+    ] {
+        ids.extend(string_array_flexible(fields.get(field_name)));
+    }
+    if ids.is_empty() {
+        if let Some(output) =
+            parse_json_field(fields.get("output").or_else(|| fields.get("Output")))
+        {
+            for field_name in [
+                "design_language_ids",
+                "DesignLanguageIds",
+                "language_ids",
+                "LanguageIds",
+                "reviewed_ids",
+                "ReviewedIds",
+                "fixed_ids",
+                "FixedIds",
+                "fixed",
+                "Fixed",
+            ] {
+                ids.extend(string_array_flexible(output.get(field_name)));
+            }
+        }
+    }
+
+    let mut deduped = Vec::new();
+    for id in ids {
+        if !id.is_empty() && !deduped.contains(&id) {
+            deduped.push(id);
+        }
+    }
+    deduped
+}
+
 fn verify_forced_agent_shadsync_refresh(
     language_id: &str,
     job_fields: &serde_json::Value,
@@ -5615,12 +5687,14 @@ mod tests {
 
     use super::{
         bool_field, canonicalize_katagami_public_asset_url, curation_job_create_body,
-        design_language_ids_from_job, design_md_projection_refresh_reason, entity_bool_any,
+        design_language_ids_from_completion, design_language_ids_from_job,
+        design_md_projection_refresh_reason, entity_bool_any,
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
         merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
         parent_session_id_from_fields, pawfs_filter_url, render_design_md_projection,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
-        thumbnail_mime_type_is_acceptable, verify_file_body,
+        thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
+        verify_file_body,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -5799,6 +5873,18 @@ mod tests {
     }
 
     #[test]
+    fn raw_tool_call_completion_is_retryable_not_successful_regeneration() {
+        let fields = json!({
+            "output": "Tool call call_lI7pYVXXeFK8Id7b39Q0NP: execute({\"code\":\"skill = temper.read('/agents/curator/skills/synthesize-language/SKILL.md')\"})"
+        });
+
+        assert!(typed_completion_output_is_unfinished_tool_call(&fields));
+        assert!(is_transient_provider_failure(
+            "regenerate_embodiment typed completion ended with an unfinished tool call instead of dispatching CompleteRegeneration"
+        ));
+    }
+
+    #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
             design_md_projection_refresh_reason(
@@ -5869,6 +5955,30 @@ mod tests {
         assert_eq!(
             design_language_ids_from_job(&fields),
             vec!["en-1", "en-2", "en-3", "en-4", "en-5"]
+        );
+    }
+
+    #[test]
+    fn completion_language_ids_do_not_fall_back_to_repair_input() {
+        let repair_fields = json!({
+            "input": json!({
+                "existing_language_id": "en-existing",
+                "language_ids": ["en-existing"]
+            }).to_string()
+        });
+
+        assert_eq!(
+            design_language_ids_from_job(&repair_fields),
+            vec!["en-existing"]
+        );
+        assert!(design_language_ids_from_completion(&repair_fields).is_empty());
+
+        let completed_fields = json!({
+            "design_language_ids": "[\"en-existing\"]"
+        });
+        assert_eq!(
+            design_language_ids_from_completion(&completed_fields),
+            vec!["en-existing"]
         );
     }
 
