@@ -89,6 +89,11 @@ type = "string"
 initial = ""
 
 [[state]]
+name = "retry_attempts"
+type = "string"
+initial = "0"
+
+[[state]]
 name = "query_id"
 type = "string"
 initial = ""
@@ -364,7 +369,7 @@ kind = "input"
 from = ["Running"]
 to = "Finalizing"
 params = ["design_language_ids", "organize_input"]
-hint = "Quality review completed and taxonomy organization should be created by trigger."
+hint = "Quality review completed; finalize_spawned_session validates publishability before creating taxonomy organization."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -378,33 +383,6 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
-
-[[action.triggers]]
-name = "review_creates_organization_job"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
-
-[action.triggers.guard]
-type = "not"
-
-[action.triggers.guard.guard]
-type = "field_equals"
-field = "query_id"
-value = ""
-
-[action.triggers.params]
-job_type = "organize_taxonomy"
-completion_contract = "typed-v1"
-
-[action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "organize_input"
-
-[action.triggers.resolve_target]
-type = "create"
 
 [[action]]
 name = "CompleteOrganization"
@@ -628,34 +606,6 @@ after_seconds = 900
 on_timeout = "Fail"
 params = { error_message = "CurationJob remained Finalizing for 15m without completing finalization." }
 
-[[action.triggers]]
-name = "job_failure_fails_direction"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationDirection"
-target_action = "Fail"
-
-[action.triggers.params_from]
-error_message = "error_message"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "direction_id"
-
-[[action.triggers]]
-name = "job_failure_fails_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "Fail"
-
-[action.triggers.params_from]
-error_message = "error_message"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
-
 # --- Retry ---
 
 [[action]]
@@ -663,7 +613,7 @@ name = "Retry"
 kind = "input"
 from = ["Failed"]
 to = "Queued"
-params = ["error_message"]
+params = ["error_message", "retry_attempts"]
 hint = "Retry a failed job. Resets to Queued for re-submission."
 
 # --- Invariants ---

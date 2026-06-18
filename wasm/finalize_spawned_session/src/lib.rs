@@ -1,5 +1,8 @@
 use temper_wasm_sdk::prelude::*;
 
+const MAX_ARTIFACT_REPAIR_ATTEMPTS: i64 = 2;
+const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 2;
+
 /// Finalize a CurationJob's spawned session.
 ///
 /// Typed-v1 jobs use entity triggers for follow-up orchestration, so this
@@ -93,6 +96,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     &finalizing_fields,
                     &workspace_id,
                     &query_id,
+                    &validation,
                 ) {
                     Ok(fallback) => fallback,
                     Err(error) => {
@@ -203,6 +207,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                         &finalizing_fields,
                         &workspace_id,
                         &query_id,
+                        &validation,
                     ) {
                         Ok(fallback) => fallback,
                         Err(error) => {
@@ -468,14 +473,31 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
                     .and_then(|v| v.as_str())
                     .filter(|s| !s.is_empty())
                     .unwrap_or("CurationJob failed");
-                let record_status = record_session_failure(
-                    &ctx,
-                    &api_url,
-                    &headers,
-                    &session_id,
-                    session_status,
-                    error_message,
-                )?;
+                let record_status = if session_id.is_empty() {
+                    "no session"
+                } else {
+                    record_session_failure(
+                        &ctx,
+                        &api_url,
+                        &headers,
+                        &session_id,
+                        session_status,
+                        error_message,
+                    )?
+                };
+                if auto_retry_failed_job(&ctx, &api_url, &headers, &job_id, &fields, error_message)?
+                {
+                    set_success_result(
+                        "",
+                        &json!({
+                            "status": "auto_retry_submitted",
+                            "session_id": session_id,
+                            "record_status": record_status,
+                        }),
+                    );
+                    return Ok(());
+                }
+                propagate_failed_job(&ctx, &api_url, &headers, &fields, error_message)?;
                 set_success_result(
                     "",
                     &json!({"status": record_status, "session_id": session_id}),
@@ -602,6 +624,127 @@ fn record_session_failure(
     Ok("session failed")
 }
 
+fn auto_retry_failed_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    fields: &serde_json::Value,
+    error_message: &str,
+) -> Result<bool, String> {
+    if !is_transient_provider_failure(error_message) {
+        return Ok(false);
+    }
+
+    let attempts = numeric_field_any(fields, &["retry_attempts", "RetryAttempts"]);
+    if attempts >= MAX_TRANSIENT_PROVIDER_RETRIES {
+        ctx.log(
+            "warn",
+            &format!(
+                "finalize_spawned_session: transient provider failure on job '{job_id}' exceeded retry budget ({attempts}): {error_message}"
+            ),
+        );
+        return Ok(false);
+    }
+
+    let next_attempt = attempts + 1;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "CurationJobs",
+        job_id,
+        "Retry",
+        &json!({
+            "error_message": format!(
+                "Auto-retrying transient provider failure attempt {next_attempt}/{MAX_TRANSIENT_PROVIDER_RETRIES}: {error_message}"
+            ),
+            "retry_attempts": next_attempt.to_string(),
+        }),
+    )?;
+    dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        "CurationJobs",
+        job_id,
+        "Submit",
+        &json!({}),
+    )?;
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: auto_retry_failed_job submitted retry {next_attempt}/{MAX_TRANSIENT_PROVIDER_RETRIES} for job '{job_id}' after transient provider failure: {error_message}"
+        ),
+    );
+    Ok(true)
+}
+
+fn propagate_failed_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+    error_message: &str,
+) -> Result<(), String> {
+    let direction_id = string_field(fields, "direction_id", "");
+    if !direction_id.is_empty()
+        && entity_status(ctx, api_url, headers, "CurationDirections", &direction_id)?
+            == Some("Synthesizing".to_string())
+    {
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "CurationDirections",
+            &direction_id,
+            "Fail",
+            &json!({"error_message": error_message}),
+        )?;
+    }
+
+    let query_id = string_field(fields, "query_id", "");
+    if !query_id.is_empty()
+        && matches!(
+            entity_status(ctx, api_url, headers, "CurationQueries", &query_id)?.as_deref(),
+            Some("Submitted" | "Researching" | "Synthesizing" | "Organizing")
+        )
+    {
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "CurationQueries",
+            &query_id,
+            "Fail",
+            &json!({"error_message": error_message}),
+        )?;
+    }
+
+    Ok(())
+}
+
+fn is_transient_provider_failure(error_message: &str) -> bool {
+    let lower = error_message.to_ascii_lowercase();
+    [
+        "openai stream ended early",
+        "stream ended early",
+        "provider stream",
+        "stream closed",
+        "closed before final message",
+        "unexpected eof",
+        "incomplete chunk",
+        "connection reset",
+        "connection closed",
+        "temporarily unavailable",
+        "timeout",
+        "timed out",
+        "rate limit",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
+}
+
 fn session_is_terminal(session_status: &str) -> bool {
     matches!(session_status, "Completed" | "Failed" | "Cancelled")
 }
@@ -660,6 +803,48 @@ fn verify_typed_completion(
     }
 }
 
+fn is_repairable_language_artifact_error(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    [
+        "has no thumbnail_file_id",
+        "thumbnail file",
+        "has no embodiment_file_id",
+        "embodiment file",
+        "missing required spec sections",
+        "expected ready",
+        "missing usable metadata",
+        "failed to read files",
+        "not browser-renderable image bytes",
+        "base64 text",
+        "mime_type",
+        "too small",
+        "cannot publish public artifacts without thumbnail_file_id",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
+}
+
+fn artifact_repair_attempt(fields: &serde_json::Value) -> i64 {
+    parse_json_field(fields.get("input"))
+        .as_ref()
+        .and_then(|input| {
+            input
+                .get("artifact_repair_attempt")
+                .or_else(|| input.get("repair_attempt"))
+        })
+        .and_then(|value| {
+            value
+                .as_i64()
+                .or_else(|| value.as_str().and_then(|raw| raw.parse::<i64>().ok()))
+        })
+        .unwrap_or(0)
+}
+
+fn next_artifact_repair_attempt(fields: &serde_json::Value, max_attempts: i64) -> Option<i64> {
+    let next = artifact_repair_attempt(fields) + 1;
+    (next <= max_attempts).then_some(next)
+}
+
 fn verify_synthesized_languages(
     ctx: &Context,
     api_url: &str,
@@ -688,9 +873,21 @@ fn verify_synthesized_languages(
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
         }
-        verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language).map_err(|e| {
-            format!("{job_type} completion requires a valid gallery thumbnail before review: {e}")
-        })?;
+        if let Err(e) = verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language) {
+            if is_repairable_language_artifact_error(&e) {
+                ctx.log(
+                    "warn",
+                    &format!(
+                        "{job_type} completion found repairable thumbnail/artifact issue for DesignLanguage '{language_id}'; passing to quality_review for remediation: {e}"
+                    ),
+                );
+                incomplete.push(language_id.clone());
+                continue;
+            }
+            return Err(format!(
+                "{job_type} completion requires a valid gallery thumbnail before review: {e}"
+            ));
+        }
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
                 let status = entity_status_value(&language);
@@ -757,7 +954,10 @@ fn verify_quality_reviewed_languages(
         return Err("quality_review completed without any design_language_ids".to_string());
     }
 
+    let query_id = string_field(fields, "query_id", "");
     let mut published = Vec::new();
+    let mut repair_language_ids = Vec::new();
+    let mut repair_job_ids = Vec::new();
     for language_id in &language_ids {
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
@@ -768,7 +968,26 @@ fn verify_quality_reviewed_languages(
             ));
         }
 
-        verify_language_core(ctx, api_url, headers, language_id, &language)?;
+        if let Err(error) = verify_language_core(ctx, api_url, headers, language_id, &language) {
+            if is_repairable_language_artifact_error(&error) {
+                let repair_job_id = queue_artifact_repair_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    workspace_id,
+                    &query_id,
+                    fields,
+                    language_id,
+                    &error,
+                )?;
+                repair_language_ids.push(language_id.clone());
+                if let Some(repair_job_id) = repair_job_id {
+                    repair_job_ids.push(repair_job_id);
+                }
+                continue;
+            }
+            return Err(error);
+        }
         if verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?
             && status == "Published"
         {
@@ -823,7 +1042,27 @@ fn verify_quality_reviewed_languages(
             &language,
         )?;
         verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
-        verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?;
+        if let Err(error) = verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)
+        {
+            if is_repairable_language_artifact_error(&error) {
+                let repair_job_id = queue_artifact_repair_job(
+                    ctx,
+                    api_url,
+                    headers,
+                    workspace_id,
+                    &query_id,
+                    fields,
+                    language_id,
+                    &error,
+                )?;
+                repair_language_ids.push(language_id.clone());
+                if let Some(repair_job_id) = repair_job_id {
+                    repair_job_ids.push(repair_job_id);
+                }
+                continue;
+            }
+            return Err(error);
+        }
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         dispatch_action(
             ctx,
@@ -837,6 +1076,17 @@ fn verify_quality_reviewed_languages(
 
         ensure_language_published(ctx, api_url, headers, language_id, &status)?;
         published.push(language_id.clone());
+    }
+
+    if !repair_language_ids.is_empty() {
+        return Ok(json!({
+            "validated": false,
+            "repair_pending": true,
+            "job_type": "quality_review",
+            "published_language_ids": published,
+            "repair_language_ids": repair_language_ids,
+            "repair_job_ids": repair_job_ids,
+        }));
     }
 
     Ok(json!({
@@ -4150,6 +4400,7 @@ fn run_typed_completion_fallback(
     fields: &serde_json::Value,
     workspace_id: &str,
     query_id: &str,
+    validation: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let mut actions = Vec::new();
 
@@ -4285,6 +4536,20 @@ fn run_typed_completion_fallback(
             }
         }
         "quality_review" => {
+            if validation
+                .get("repair_pending")
+                .and_then(|value| value.as_bool())
+                .unwrap_or(false)
+            {
+                actions.push(json!({
+                    "action": "skipped_organization_pending_artifact_repair",
+                    "repair_job_ids": validation
+                        .get("repair_job_ids")
+                        .cloned()
+                        .unwrap_or_else(|| json!([])),
+                }));
+                return Ok(json!(actions));
+            }
             if !query_id.is_empty()
                 && !job_exists(ctx, api_url, headers, "organize_taxonomy", query_id, None)?
             {
@@ -4304,7 +4569,14 @@ fn run_typed_completion_fallback(
             }
         }
         "regenerate_embodiment" | "evolve_language" => {
-            let language_ids = design_language_ids_from_job(fields);
+            let input_json = parse_json_field(fields.get("input"));
+            let repair_set =
+                string_array(input_json.as_ref().and_then(|v| v.get("all_language_ids")));
+            let language_ids = if repair_set.is_empty() {
+                design_language_ids_from_job(fields)
+            } else {
+                repair_set
+            };
             if !language_ids.is_empty()
                 && !active_quality_review_job_exists_for_languages(
                     ctx,
@@ -4316,7 +4588,8 @@ fn run_typed_completion_fallback(
             {
                 let review_input = json!({
                     "language_ids": language_ids,
-                    "query_id": query_id
+                    "query_id": query_id,
+                    "artifact_repair_attempt": artifact_repair_attempt(fields)
                 })
                 .to_string();
                 let review_job_id = create_configure_submit_job(
@@ -4514,6 +4787,107 @@ fn active_quality_review_job_exists_for_languages(
             let mut actual = string_array(input_json.as_ref().and_then(|v| v.get("language_ids")));
             actual.sort();
             actual == expected
+        }))
+}
+
+fn queue_artifact_repair_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    query_id: &str,
+    fields: &serde_json::Value,
+    language_id: &str,
+    repair_reason: &str,
+) -> Result<Option<String>, String> {
+    if active_regeneration_job_exists_for_language(ctx, api_url, headers, query_id, language_id)? {
+        ctx.log(
+            "info",
+            &format!(
+                "queue_artifact_repair_job: active regenerate_embodiment job already exists for DesignLanguage '{language_id}'"
+            ),
+        );
+        return Ok(None);
+    }
+
+    let Some(next_attempt) = next_artifact_repair_attempt(fields, MAX_ARTIFACT_REPAIR_ATTEMPTS)
+    else {
+        return Err(format!(
+            "DesignLanguage '{language_id}' still has repairable artifact defects after {MAX_ARTIFACT_REPAIR_ATTEMPTS} repair attempts: {repair_reason}"
+        ));
+    };
+
+    let repair_input = json!({
+        "existing_language_id": language_id,
+        "language_ids": [language_id],
+        "all_language_ids": design_language_ids_from_job(fields),
+        "query_id": query_id,
+        "artifact_repair_attempt": next_attempt,
+        "repair_kind": "artifact_finalization",
+        "repair_artifacts": [
+            "spec",
+            "embodiment",
+            "thumbnail",
+            "shadcn_component_spec",
+            "shadcn_preview_shots"
+        ],
+        "repair_reason": repair_reason,
+    })
+    .to_string();
+    let job_id = create_configure_submit_job(
+        ctx,
+        api_url,
+        headers,
+        "regenerate_embodiment",
+        workspace_id,
+        query_id,
+        None,
+        &repair_input,
+    )?;
+    ctx.log(
+        "warn",
+        &format!(
+            "queue_artifact_repair_job: queued regenerate_embodiment job '{job_id}' for DesignLanguage '{language_id}' after quality_review finalizer found repairable artifact issue: {repair_reason}"
+        ),
+    );
+    Ok(Some(job_id))
+}
+
+fn active_regeneration_job_exists_for_language(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    query_id: &str,
+    language_id: &str,
+) -> Result<bool, String> {
+    Ok(list_curation_jobs(ctx, api_url, headers)?
+        .iter()
+        .any(|job| {
+            let status = job.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            if matches!(status, "Completed" | "Failed") {
+                return false;
+            }
+            let fields = job.get("fields").unwrap_or(&serde_json::Value::Null);
+            if fields.get("job_type").and_then(|v| v.as_str()) != Some("regenerate_embodiment") {
+                return false;
+            }
+            if !query_id.is_empty()
+                && fields.get("query_id").and_then(|v| v.as_str()) != Some(query_id)
+            {
+                return false;
+            }
+            let input_json = parse_json_field(fields.get("input"));
+            let existing_language_id = input_json
+                .as_ref()
+                .and_then(|v| v.get("existing_language_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if existing_language_id == language_id {
+                return true;
+            }
+            string_array(input_json.as_ref().and_then(|v| v.get("language_ids")))
+                .iter()
+                .any(|id| id == language_id)
         }))
 }
 
@@ -5063,15 +5437,50 @@ fn submit_next_queued_regeneration(
 }
 
 #[cfg(test)]
+#[unsafe(no_mangle)]
+pub extern "C" fn host_http_call(
+    _method_ptr: i32,
+    _method_len: i32,
+    _url_ptr: i32,
+    _url_len: i32,
+    _headers_ptr: i32,
+    _headers_len: i32,
+    _body_ptr: i32,
+    _body_len: i32,
+    _result_buf_ptr: i32,
+    _result_buf_len: i32,
+) -> i32 {
+    -1
+}
+
+#[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::{
         bool_field, canonicalize_katagami_public_asset_url, design_language_ids_from_job,
-        design_md_projection_refresh_reason, entity_bool_any, json_object_field,
-        normalize_pawfs_path, pawfs_filter_url, render_design_md_projection,
-        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
-        thumbnail_mime_type_is_acceptable, verify_file_body,
+        design_md_projection_refresh_reason, entity_bool_any,
+        is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
+        next_artifact_repair_attempt, normalize_pawfs_path, pawfs_filter_url,
+        render_design_md_projection, session_can_be_finalized, session_is_terminal,
+        split_pawfs_file_path, string_field_any, thumbnail_mime_type_is_acceptable,
+        verify_file_body,
     };
     use serde_json::json;
+    use temper_wasm_sdk::prelude::Context;
+
+    fn test_context() -> Context {
+        Context {
+            config: BTreeMap::new(),
+            trigger_params: json!({}),
+            entity_state: json!({}),
+            tenant: "test".to_string(),
+            entity_type: "CurationJob".to_string(),
+            entity_id: "job-test".to_string(),
+            trigger_action: "CompleteQualityReview".to_string(),
+            http_request: None,
+        }
+    }
 
     #[test]
     fn finalizer_projection_contains_design_md_contract_sections() {
@@ -5179,6 +5588,46 @@ mod tests {
     }
 
     #[test]
+    fn missing_and_invalid_artifact_errors_are_repairable() {
+        for error in [
+            "DesignLanguage 'dl' has no thumbnail_file_id",
+            "DesignLanguage 'dl' thumbnail file 'fl' is too small (92 bytes)",
+            "DesignLanguage 'dl' has no embodiment_file_id",
+            "DesignLanguage 'dl' embodiment file 'fl' expected Ready",
+        ] {
+            assert!(
+                is_repairable_language_artifact_error(error),
+                "{error} should queue a repair job"
+            );
+        }
+
+        assert!(!is_repairable_language_artifact_error(
+            "DesignLanguage 'dl' uses its slug as the entity ID"
+        ));
+    }
+
+    #[test]
+    fn artifact_repair_attempts_increment_and_cap() {
+        let fields = json!({
+            "input": json!({"artifact_repair_attempt": 1}).to_string()
+        });
+
+        assert_eq!(next_artifact_repair_attempt(&fields, 2), Some(2));
+        assert_eq!(next_artifact_repair_attempt(&fields, 1), None);
+    }
+
+    #[test]
+    fn provider_stream_failures_are_transient_retry_candidates() {
+        assert!(is_transient_provider_failure("OpenAI stream ended early"));
+        assert!(is_transient_provider_failure(
+            "provider stream closed before final message"
+        ));
+        assert!(!is_transient_provider_failure(
+            "DesignLanguage 'dl' is missing required spec sections"
+        ));
+    }
+
+    #[test]
     fn design_md_projection_refreshes_missing_or_dirty_lint_metadata() {
         assert_eq!(
             design_md_projection_refresh_reason(
@@ -5204,6 +5653,10 @@ mod tests {
         );
         assert_eq!(
             design_md_projection_refresh_reason(
+                &test_context(),
+                "",
+                &[],
+                "dl-test",
                 &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":2}}"}),
                 "fl-design-md"
             ),
@@ -5211,17 +5664,25 @@ mod tests {
         );
         assert_eq!(
             design_md_projection_refresh_reason(
-                &json!({"design_md_lint_result": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
+                &test_context(),
+                "",
+                &[],
+                "dl-test",
+                &json!({"design_md_lint_result": "{\"summary\":{\"errors\":1,\"warnings\":0}}"}),
                 "fl-design-md"
             ),
-            None
+            Some("design_md_lint_errors")
         );
         assert_eq!(
             design_md_projection_refresh_reason(
-                &json!({"DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":0}}"}),
+                &test_context(),
+                "",
+                &[],
+                "dl-test",
+                &json!({"DesignMdLintResult": "{\"summary\":{\"errors\":0,\"warnings\":2}}"}),
                 "fl-design-md"
             ),
-            None
+            Some("design_md_lint_warnings")
         );
     }
 

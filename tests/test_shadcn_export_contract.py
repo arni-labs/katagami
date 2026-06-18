@@ -6,15 +6,33 @@ import xml.etree.ElementTree as ET
 
 class ShadcnExportContractTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[2]
+        app_root = Path(__file__).resolve().parents[1]
+        if (app_root / "app.toml").exists():
+            root = app_root.parent
+            self.curation_root = app_root
+        else:
+            root = Path(__file__).resolve().parents[2]
+            self.curation_root = root / "katagami-curation"
         self.root = root
         self.commons_root = root / "katagami-commons"
-        self.curation_root = root / "katagami-curation"
-        self.spec = tomllib.loads(
-            (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
-        )
-        self.actions = {action["name"]: action for action in self.spec["action"]}
-        self.states = {state["name"]: state for state in self.spec["state"]}
+        if (self.commons_root / "specs" / "design_language.ioa.toml").exists():
+            self.spec = tomllib.loads(
+                (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
+            )
+            self.actions = {action["name"]: action for action in self.spec["action"]}
+            self.states = {state["name"]: state for state in self.spec["state"]}
+        else:
+            self.spec = None
+            self.actions = {}
+            self.states = {}
+
+    def _require_commons(self):
+        if self.spec is None:
+            self.skipTest("katagami-commons is not present in this app-only worktree")
+
+    def _require_full_repo(self):
+        if not (self.root / "ui").exists():
+            self.skipTest("Katagami UI is not present in this app-only worktree")
 
     def _effect_entries(self, action_name):
         effect = self.actions[action_name].get("effect", [])
@@ -36,6 +54,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         return False
 
     def test_design_language_tracks_shadcn_export(self):
+        self._require_commons()
         self.assertIn("has_shadcn_export", self.states)
         self.assertIn("shadcn_export_verified", self.states)
         self.assertIn("has_shadcn_component_spec", self.states)
@@ -118,6 +137,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         )
 
     def test_source_spec_changes_invalidate_shadcn_export(self):
+        self._require_commons()
         for action_name in [
             "SetName",
             "SetSpec",
@@ -157,6 +177,7 @@ class ShadcnExportContractTests(unittest.TestCase):
                 )
 
     def test_shadcn_artifacts_are_publish_gates(self):
+        self._require_commons()
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         for var in [
@@ -170,6 +191,7 @@ class ShadcnExportContractTests(unittest.TestCase):
             self.assertIn({"type": "is_true", "var": var}, guards)
 
     def test_csdl_exposes_shadcn_fields(self):
+        self._require_commons()
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")
         ns = {"edm": "http://docs.oasis-open.org/odata/ns/edm"}
         entity = tree.find(".//edm:EntityType[@Name='DesignLanguage']", ns)
@@ -251,6 +273,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         )
 
     def test_ui_exposes_preview_route_and_backfill(self):
+        self._require_full_repo()
         ui_lib = (self.root / "ui" / "src" / "lib" / "shadcn-export.ts").read_text()
         preview = (
             self.root / "ui" / "src" / "components" / "shadcn-preview.tsx"

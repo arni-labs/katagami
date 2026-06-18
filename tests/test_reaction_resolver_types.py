@@ -33,7 +33,6 @@ class ReactionResolverTypeTests(unittest.TestCase):
             {
                 "direction_queue_synthesis_creates_job",
                 "synthesis_creates_quality_review_job",
-                "review_creates_organization_job",
             },
             {trigger["name"] for trigger in create_triggers},
         )
@@ -58,11 +57,21 @@ class ReactionResolverTypeTests(unittest.TestCase):
             "legacy_research_completion_advances_query": "ResearchComplete",
             "legacy_synthesis_completion_advances_query": "SynthesisComplete",
             "legacy_organization_completion_finishes_query": "OrganizationComplete",
-            "job_failure_fails_query": "Fail",
         }.items():
             self.assertIn(name, triggers)
             self.assertEqual(triggers[name]["target_entity"], "CurationQuery")
             self.assertEqual(triggers[name]["target_action"], target_action)
+
+        self.assertNotIn(
+            "review_creates_organization_job",
+            triggers,
+            "quality review must let finalize_spawned_session prove publishability before organizing",
+        )
+        self.assertNotIn(
+            "job_failure_fails_query",
+            triggers,
+            "failed jobs must be classified by finalize_spawned_session so transient provider streams can retry",
+        )
 
     def test_typed_completion_actions_keep_legacy_complete_compatibility(self):
         root = Path(__file__).resolve().parents[1]

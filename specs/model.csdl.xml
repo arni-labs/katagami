@@ -28,6 +28,7 @@
         <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RetryAttempts" Type="Edm.String" Nullable="false" DefaultValue="0" />
         <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
         <Property Name="InlineJobDocs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Session spawning fields -->
