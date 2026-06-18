@@ -901,6 +901,82 @@ This session submits a completion attempt. The system finalizer validates the co
             &serde_json::to_string_pretty(&contract_repair).unwrap_or_else(|_| "{}".to_string()),
         );
         out.push_str("\n```\n");
+
+        out.push_str("\n## Repair Contract\n\n");
+        out.push_str(
+            "The finalizer rejected the previous completion attempt. Repair the same CurationJob in place.\n\n",
+        );
+        if let Some(query_id) = contract_repair
+            .get("query_id")
+            .and_then(|value| value.as_str())
+            .filter(|value| !value.is_empty())
+        {
+            out.push_str(&format!("- Keep query ID: `{query_id}`.\n"));
+        }
+        if let Some(direction_id) = contract_repair
+            .get("direction_id")
+            .and_then(|value| value.as_str())
+            .filter(|value| !value.is_empty())
+        {
+            out.push_str(&format!("- Keep direction ID: `{direction_id}`.\n"));
+        }
+        if let Some(existing_ids) = contract_repair
+            .get("existing_design_language_ids")
+            .and_then(|value| value.as_array())
+            .filter(|values| !values.is_empty())
+        {
+            out.push_str("- Repair these existing DesignLanguage entity IDs in place; do not create duplicates:\n");
+            for id in existing_ids {
+                if let Some(language_id) = id.as_str() {
+                    out.push_str(&format!("  - `{language_id}`\n"));
+                }
+            }
+        }
+        if let Some(invalid_ids) = contract_repair
+            .get("invalid_reported_ids")
+            .and_then(|value| value.as_array())
+            .filter(|values| !values.is_empty())
+        {
+            out.push_str("- These reported IDs are invalid (likely slugs, not entity IDs). Do not reuse them:\n");
+            for id in invalid_ids {
+                if let Some(language_id) = id.as_str() {
+                    out.push_str(&format!("  - `{language_id}`\n"));
+                }
+            }
+            out.push_str(
+                "- Create a valid DesignLanguage with `temper.create('DesignLanguages', {})`, then pass the returned `entity_id` in `design_language_ids`. Store slugs only in the `slug` field.\n",
+            );
+        }
+        if let Some(instructions) = contract_repair
+            .get("repair_instructions")
+            .and_then(|value| value.as_array())
+            .filter(|values| !values.is_empty())
+        {
+            out.push_str("- Follow these repair instructions exactly:\n");
+            for instruction in instructions {
+                if let Some(text) = instruction.as_str() {
+                    out.push_str(&format!("  - {text}\n"));
+                }
+            }
+        }
+        if let Some(defects) = contract_repair
+            .get("defects")
+            .and_then(|value| value.as_array())
+            .filter(|values| !values.is_empty())
+        {
+            out.push_str("- Resolve every validator defect before resubmitting the typed completion action.\n");
+            for defect in defects {
+                let code = defect
+                    .get("code")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("contract_validation_failed");
+                let message = defect
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("contract validation failed");
+                out.push_str(&format!("  - `{code}`: {message}\n"));
+            }
+        }
     }
     out
 }
@@ -1124,6 +1200,37 @@ mod tests {
         assert!(prompt.contains("\"en-existing\""));
         assert!(prompt.contains("\"missing_or_invalid_thumbnail\""));
         assert!(!prompt.contains("Do not create a duplicate DesignLanguage"));
+    }
+
+    #[test]
+    fn typed_completion_context_renders_repair_contract_guidance() {
+        let fields = json!({
+            "input": json!({
+                "contract_repair": {
+                    "attempt": 2,
+                    "query_id": "en-query-1",
+                    "direction_id": "en-direction-1",
+                    "invalid_reported_ids": ["aya-text-first-quiet-woven-knowledge-workspace"],
+                    "repair_instructions": [
+                        "Create a valid DesignLanguage with temper.create('DesignLanguages', {}), then use the returned entity_id in design_language_ids; store human-readable slugs only in the slug field."
+                    ],
+                    "defects": [{
+                        "code": "missing_design_language_entity",
+                        "message": "DesignLanguage 'aya-text-first-quiet-woven-knowledge-workspace' does not exist"
+                    }]
+                }
+            }).to_string()
+        });
+
+        let prompt =
+            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
+
+        assert!(prompt.contains("## Repair Contract"));
+        assert!(prompt.contains("Keep query ID: `en-query-1`"));
+        assert!(prompt.contains("Keep direction ID: `en-direction-1`"));
+        assert!(prompt.contains("aya-text-first-quiet-woven-knowledge-workspace"));
+        assert!(prompt.contains("temper.create('DesignLanguages', {})"));
+        assert!(prompt.contains("`missing_design_language_entity`"));
     }
 
     #[test]

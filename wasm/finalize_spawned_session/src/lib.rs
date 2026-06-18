@@ -881,7 +881,7 @@ fn finish_typed_completion_or_repair(
         &validation,
     )?;
     let (terminal_action, terminal_params) =
-        typed_success_terminal_action(job_type, fields, &fallback);
+        typed_success_terminal_action(job_type, fields, &validation, &fallback);
     set_terminal_job_callback(ctx, job_id, terminal_action, terminal_params.clone());
     Ok(json!({
         "status": "validated",
@@ -956,6 +956,17 @@ fn contract_repair_input(
     };
 
     let existing_design_language_ids = design_language_ids_for_contract_repair(fields, validation);
+    let invalid_reported_ids = invalid_reported_language_ids(job_type, fields, validation);
+    let defects = validation_defects(job_type, validation);
+    let repair_instructions = build_repair_instructions(
+        job_type,
+        &existing_design_language_ids,
+        &invalid_reported_ids,
+        &defects,
+    );
+    let query_id = string_field(fields, "query_id", "");
+    let direction_id = string_field(fields, "direction_id", "");
+
     if !existing_design_language_ids.is_empty() && !input_obj.contains_key("language_ids") {
         input_obj.insert(
             "language_ids".to_string(),
@@ -968,6 +979,16 @@ fn contract_repair_input(
             json!(existing_design_language_ids[0].clone()),
         );
     }
+    if !query_id.is_empty() {
+        input_obj
+            .entry("query_id".to_string())
+            .or_insert_with(|| json!(query_id));
+    }
+    if !direction_id.is_empty() {
+        input_obj
+            .entry("direction_id".to_string())
+            .or_insert_with(|| json!(direction_id));
+    }
 
     input_obj.insert(
         "contract_repair".to_string(),
@@ -976,8 +997,12 @@ fn contract_repair_input(
             "attempt": next_attempt,
             "max_attempts": MAX_CONTRACT_REPAIR_ATTEMPTS,
             "summary": validation_defect_summary(job_type, validation),
-            "defects": validation_defects(job_type, validation),
+            "defects": defects,
             "existing_design_language_ids": existing_design_language_ids,
+            "invalid_reported_ids": invalid_reported_ids,
+            "repair_instructions": repair_instructions,
+            "query_id": query_id,
+            "direction_id": direction_id,
             "repair_existing_artifacts": true,
             "do_not_create_duplicates": true,
         }),
@@ -1049,10 +1074,99 @@ fn validation_defects(job_type: &str, validation: &serde_json::Value) -> Vec<ser
     defects
 }
 
+fn design_language_ids_from_validation(validation: &serde_json::Value) -> Vec<String> {
+    let mut ids = Vec::new();
+    for field_name in [
+        "verified_language_ids",
+        "design_language_ids",
+        "language_ids",
+        "fixed_ids",
+    ] {
+        ids.extend(string_array_flexible(validation.get(field_name)));
+    }
+    dedupe_nonempty_strings(ids)
+}
+
+fn is_invalid_reported_language_id(language_id: &str) -> bool {
+    let trimmed = language_id.trim();
+    !trimmed.is_empty() && !trimmed.starts_with("en-")
+}
+
+fn invalid_reported_language_ids(
+    job_type: &str,
+    fields: &serde_json::Value,
+    validation: &serde_json::Value,
+) -> Vec<String> {
+    let mut ids = design_language_ids_from_completion(fields);
+    for defect in validation_defects(job_type, validation) {
+        if defect.get("code").and_then(|value| value.as_str())
+            == Some("missing_design_language_entity")
+        {
+            if let Some(language_id) = defect.get("language_id").and_then(|value| value.as_str()) {
+                ids.push(language_id.to_string());
+            }
+        }
+    }
+    dedupe_nonempty_strings(
+        ids.into_iter()
+            .filter(|id| is_invalid_reported_language_id(id))
+            .collect(),
+    )
+}
+
+fn build_repair_instructions(
+    job_type: &str,
+    existing_design_language_ids: &[String],
+    invalid_reported_ids: &[String],
+    defects: &[serde_json::Value],
+) -> Vec<String> {
+    let mut instructions = Vec::new();
+    let has_missing_ids = defects.iter().any(|defect| {
+        defect.get("code").and_then(|value| value.as_str()) == Some("missing_design_language_ids")
+    });
+    let has_missing_entity = defects.iter().any(|defect| {
+        defect.get("code").and_then(|value| value.as_str())
+            == Some("missing_design_language_entity")
+    });
+    let has_invalid_identity = defects.iter().any(|defect| {
+        defect.get("code").and_then(|value| value.as_str()) == Some("invalid_design_language_identity")
+    });
+
+    if !existing_design_language_ids.is_empty() {
+        instructions.push(format!(
+            "Repair the existing DesignLanguage entities {:?}; do not create duplicate entities.",
+            existing_design_language_ids
+        ));
+    }
+    if has_missing_ids || has_missing_entity || !invalid_reported_ids.is_empty() {
+        instructions.push(
+            "Create a valid DesignLanguage with temper.create('DesignLanguages', {}), then use the returned entity_id in design_language_ids; store human-readable slugs only in the slug field.".to_string(),
+        );
+    }
+    if has_invalid_identity || !invalid_reported_ids.is_empty() {
+        instructions.push(format!(
+            "Do not use slug values as DesignLanguage entity IDs. Invalid reported IDs: {:?}.",
+            if invalid_reported_ids.is_empty() {
+                vec!["(see defects)".to_string()]
+            } else {
+                invalid_reported_ids.to_vec()
+            }
+        ));
+    }
+    if instructions.is_empty() {
+        instructions.push(format!(
+            "Resolve every validator defect for this {job_type} attempt, then resubmit the typed completion action with the same query/direction context and corrected design_language_ids."
+        ));
+    }
+    instructions
+}
+
 fn contract_defect(job_type: &str, language_id: Option<&str>, message: &str) -> serde_json::Value {
     let lower = message.to_ascii_lowercase();
     let code = if lower.contains("thumbnail") {
         "missing_or_invalid_thumbnail"
+    } else if lower.contains("does not exist") {
+        "missing_design_language_entity"
     } else if lower.contains("design_language_ids") || lower.contains("language ids") {
         "missing_design_language_ids"
     } else if lower.contains("slug as the entity id") {
@@ -1100,12 +1214,19 @@ fn is_repairable_contract_error(job_type: &str, error: &str) -> bool {
 fn typed_success_terminal_action(
     job_type: &str,
     fields: &serde_json::Value,
+    validation: &serde_json::Value,
     fallback: &serde_json::Value,
 ) -> (&'static str, serde_json::Value) {
-    let design_language_ids = fields
-        .get("design_language_ids")
-        .and_then(|v| v.as_str())
-        .unwrap_or("[]");
+    let validation_design_language_ids = design_language_ids_from_validation(validation);
+    let design_language_ids = if validation_design_language_ids.is_empty() {
+        fields
+            .get("design_language_ids")
+            .and_then(|v| v.as_str())
+            .unwrap_or("[]")
+            .to_string()
+    } else {
+        json!(validation_design_language_ids).to_string()
+    };
     let followup_job_id = followup_job_id_from_fallback(fallback);
     match job_type {
         "source_search" => ("PublishResearchCompletion", {
@@ -1305,9 +1426,16 @@ fn verify_synthesized_languages(
 ) -> Result<serde_json::Value, String> {
     let language_ids = design_language_ids_for_contract_validation(fields);
     if language_ids.is_empty() {
-        return Err(format!(
+        let message = format!(
             "{job_type} typed completion did not report any design_language_ids"
-        ));
+        );
+        return Ok(json!({
+            "validated": false,
+            "job_type": job_type,
+            "verified_language_ids": [],
+            "incomplete_language_ids": [],
+            "defects": [contract_defect(job_type, None, &message)],
+        }));
     }
     if let Some(expected_ids) = contract_repair_existing_language_ids(fields) {
         if !same_string_set(&language_ids, &expected_ids) {
@@ -1348,7 +1476,17 @@ fn verify_synthesized_languages(
             }
         };
         if matches!(job_type, "synthesize" | "evolve_language") {
-            verify_generated_language_identity(language_id, &language)?;
+            if let Err(e) = verify_generated_language_identity(language_id, &language) {
+                ctx.log(
+                    "warn",
+                    &format!(
+                        "{job_type} completion found invalid DesignLanguage identity for '{language_id}'; returning contract defect for same-job repair: {e}"
+                    ),
+                );
+                incomplete.push(language_id.clone());
+                defects.push(contract_defect(job_type, Some(language_id), &e));
+                continue;
+            }
             language = repair_synthesis_partial_language(
                 ctx,
                 api_url,
@@ -1384,9 +1522,15 @@ fn verify_synthesized_languages(
                 defects.push(contract_defect(job_type, Some(language_id), &e));
                 continue;
             }
-            return Err(format!(
-                "{job_type} completion requires a valid gallery thumbnail before review: {e}"
-            ));
+            ctx.log(
+                "warn",
+                &format!(
+                    "{job_type} completion found non-repairable thumbnail issue for DesignLanguage '{language_id}'; returning contract defect for same-job repair: {e}"
+                ),
+            );
+            incomplete.push(language_id.clone());
+            defects.push(contract_defect(job_type, Some(language_id), &e));
+            continue;
         }
         match verify_language_core(ctx, api_url, headers, language_id, &language) {
             Ok(()) => {
@@ -1453,11 +1597,6 @@ fn verify_synthesized_languages(
                 defects.push(contract_defect(job_type, Some(language_id), &e));
             }
         }
-    }
-
-    // Fatal only if zero languages exist at all
-    if verified.is_empty() && incomplete.is_empty() {
-        return Err("synthesis produced language IDs but none of them exist".to_string());
     }
 
     Ok(json!({
@@ -6876,7 +7015,7 @@ fn run_typed_completion_fallback(
             if query_status.as_deref() == Some("Synthesizing")
                 && !job_exists(ctx, api_url, headers, "quality_review", query_id, None)?
             {
-                let review_input = string_field(fields, "review_input", "{}");
+                let review_input = synthesis_review_input(fields, validation, query_id);
                 let review_job_id = create_configure_submit_job(
                     ctx,
                     api_url,
@@ -6992,6 +7131,37 @@ fn run_typed_completion_fallback(
     }
 
     Ok(json!(actions))
+}
+
+fn synthesis_review_input(
+    fields: &serde_json::Value,
+    validation: &serde_json::Value,
+    query_id: &str,
+) -> String {
+    let mut input =
+        parse_json_field(fields.get("review_input").or_else(|| fields.get("ReviewInput")))
+            .or_else(|| parse_json_field(fields.get("input").or_else(|| fields.get("Input"))))
+            .unwrap_or_else(|| json!({}));
+    if !input.is_object() {
+        input = json!({"original_input": input});
+    }
+    let ids = design_language_ids_from_validation(validation);
+    if let Some(input_obj) = input.as_object_mut() {
+        if !ids.is_empty() {
+            input_obj
+                .entry("language_ids".to_string())
+                .or_insert_with(|| json!(ids.clone()));
+            input_obj
+                .entry("design_language_ids".to_string())
+                .or_insert_with(|| json!(ids));
+        }
+        if !query_id.is_empty() {
+            input_obj
+                .entry("query_id".to_string())
+                .or_insert_with(|| json!(query_id));
+        }
+    }
+    input.to_string()
 }
 
 fn string_field(fields: &serde_json::Value, name: &str, default: &str) -> String {
@@ -8446,6 +8616,53 @@ mod tests {
     }
 
     #[test]
+    fn contract_repair_input_surfaces_slug_ids_query_direction_and_instructions() {
+        let fields = json!({
+            "query_id": "en-query-1",
+            "direction_id": "en-direction-1",
+            "input": json!({"task": "synthesize direction"}).to_string(),
+            "design_language_ids": "[\"aya-text-first-quiet-woven-knowledge-workspace\"]"
+        });
+        let validation = json!({
+            "validated": false,
+            "job_type": "synthesize",
+            "defects": [
+                contract_defect(
+                    "synthesize",
+                    Some("aya-text-first-quiet-woven-knowledge-workspace"),
+                    "DesignLanguage 'aya-text-first-quiet-woven-knowledge-workspace' does not exist"
+                )
+            ]
+        });
+
+        let input = contract_repair_input("synthesize", &fields, &validation, 1)
+            .expect("repair input should include slug repair context");
+        let repair = input
+            .get("contract_repair")
+            .expect("repair context should be present");
+
+        assert_eq!(input["query_id"], "en-query-1");
+        assert_eq!(input["direction_id"], "en-direction-1");
+        assert_eq!(repair["query_id"], "en-query-1");
+        assert_eq!(repair["direction_id"], "en-direction-1");
+        assert_eq!(
+            repair["invalid_reported_ids"],
+            json!(["aya-text-first-quiet-woven-knowledge-workspace"])
+        );
+        assert_eq!(repair["defects"][0]["code"], "missing_design_language_entity");
+        let instructions = repair["repair_instructions"]
+            .as_array()
+            .expect("repair instructions should be present");
+        assert!(
+            instructions
+                .iter()
+                .any(|instruction| instruction.as_str().is_some_and(|text| {
+                    text.contains("temper.create('DesignLanguages', {})")
+                }))
+        );
+    }
+
+    #[test]
     fn contract_repair_existing_language_ids_are_a_set_invariant() {
         let fields = json!({
             "input": json!({
@@ -8590,26 +8807,42 @@ mod tests {
             {"action": "created_quality_review_job", "job_id": "job-review"}
         ]);
 
-        let (action, params) = typed_success_terminal_action("synthesize", &fields, &fallback);
+        let validation = json!({"verified_language_ids": ["en-1"]});
+        let (action, params) =
+            typed_success_terminal_action("synthesize", &fields, &validation, &fallback);
 
         assert_eq!(action, "PublishSynthesisCompletion");
         assert_eq!(params["followup_job_id"], "job-review");
         assert_eq!(params["design_language_ids"], "[\"en-1\"]");
 
-        let (action, _) = typed_success_terminal_action("source_search", &json!({}), &json!([]));
+        let empty_validation = json!({});
+        let (action, _) = typed_success_terminal_action(
+            "source_search",
+            &json!({}),
+            &empty_validation,
+            &json!([]),
+        );
         assert_eq!(action, "PublishResearchCompletion");
 
         let fallback = json!([
             {"action": "collected_synthesis_jobs", "job_ids": ["job-synth-1"]}
         ]);
-        let (action, params) =
-            typed_success_terminal_action("source_search", &json!({}), &fallback);
+        let (action, params) = typed_success_terminal_action(
+            "source_search",
+            &json!({}),
+            &empty_validation,
+            &fallback,
+        );
         assert_eq!(action, "PublishResearchCompletion");
         assert_eq!(params["followup_job_id"], "job-synth-1");
         assert_eq!(params["synthesize_job_ids"], "[\"job-synth-1\"]");
 
-        let (action, _) =
-            typed_success_terminal_action("organize_taxonomy", &json!({}), &json!([]));
+        let (action, _) = typed_success_terminal_action(
+            "organize_taxonomy",
+            &json!({}),
+            &empty_validation,
+            &json!([]),
+        );
         assert_eq!(action, "PublishOrganizationCompletion");
     }
 

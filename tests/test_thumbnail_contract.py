@@ -217,9 +217,10 @@ class ThumbnailContractTests(unittest.TestCase):
             synth_fn,
         )
         self.assertIn(
-            "completion requires a valid gallery thumbnail before review",
+            "completion found non-repairable thumbnail issue",
             synth_fn,
         )
+        self.assertIn("defects.push(contract_defect(job_type, Some(language_id), &e))", synth_fn)
 
     def test_synthesize_skill_generates_and_attaches_thumbnail(self):
         skill = (

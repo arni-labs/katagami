@@ -57,6 +57,20 @@ class ArtifactReadyContractTests(unittest.TestCase):
         self.assertIn("streaming PUT $value", self.finalizer)
         self.assertIn("same file id", self.finalizer)
 
+    def test_finalizer_does_not_create_fallback_design_languages(self):
+        self.assertNotIn("create_fallback_synthesis_language", self.finalizer)
+        self.assertNotIn("fallback_synthesis_seed_fields", self.finalizer)
+        self.assertNotIn(
+            "deterministic fallback DesignLanguage",
+            self.finalizer,
+        )
+
+    def test_finalizer_surfaces_structured_slug_entity_defects(self):
+        self.assertIn("missing_design_language_entity", self.finalizer)
+        self.assertIn("invalid_reported_language_ids", self.finalizer)
+        self.assertIn("build_repair_instructions", self.finalizer)
+        self.assertIn("repair_instructions", self.finalizer)
+
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [
             "def require_ready_file",
