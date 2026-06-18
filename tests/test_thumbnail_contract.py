@@ -5,16 +5,31 @@ import tomllib
 
 class ThumbnailContractTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[2]
+        app_root = Path(__file__).resolve().parents[1]
+        if (app_root / "app.toml").exists():
+            self.curation_root = app_root
+            root = app_root.parent
+        else:
+            root = Path(__file__).resolve().parents[2]
+            self.curation_root = root / "katagami-curation"
         self.commons_root = root / "katagami-commons"
-        self.curation_root = root / "katagami-curation"
-        self.spec = tomllib.loads(
-            (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
-        )
-        self.actions = {action["name"]: action for action in self.spec["action"]}
-        self.states = {state["name"]: state for state in self.spec["state"]}
+        if (self.commons_root / "specs" / "design_language.ioa.toml").exists():
+            self.spec = tomllib.loads(
+                (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
+            )
+            self.actions = {action["name"]: action for action in self.spec["action"]}
+            self.states = {state["name"]: state for state in self.spec["state"]}
+        else:
+            self.spec = None
+            self.actions = {}
+            self.states = {}
+
+    def _require_commons(self):
+        if self.spec is None:
+            self.skipTest("katagami-commons is not present in this app-only worktree")
 
     def test_design_language_tracks_thumbnail_attachment(self):
+        self._require_commons()
         self.assertIn("has_thumbnail", self.states)
         self.assertIn("thumbnail_verified", self.states)
         self.assertIn("has_published_assets", self.states)
@@ -80,6 +95,7 @@ class ThumbnailContractTests(unittest.TestCase):
         return False
 
     def test_publish_requires_verified_thumbnail(self):
+        self._require_commons()
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
@@ -103,6 +119,7 @@ class ThumbnailContractTests(unittest.TestCase):
         )
 
     def test_archived_languages_have_governed_restore_path(self):
+        self._require_commons()
         self.assertIn(
             "Archived",
             self.spec["automaton"]["allow_indefinite_states"],
@@ -124,6 +141,7 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertNotIn("ArchivedIsFinal", invariants)
 
     def test_submit_for_review_requires_thumbnail(self):
+        self._require_commons()
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
         self.assertIn({"type": "is_true", "var": "embodiment_verified"}, guards)
@@ -143,8 +161,10 @@ class ThumbnailContractTests(unittest.TestCase):
 
         self.assertIn("fn verify_thumbnail", source)
         self.assertIn("fn verify_and_mark_thumbnail", source)
-        self.assertIn('verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?', source)
+        self.assertIn('verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)', source)
         self.assertIn('verify_thumbnail(ctx, api_url, headers, language_id, language)?', source)
+        self.assertIn("queue_artifact_repair_job", source)
+        self.assertIn("repair_pending", source)
         self.assertIn('"VerifyThumbnail"', source)
         self.assertIn('"AttachVerifiedThumbnail"', source)
         self.assertIn("entity_bool_any(&fresh, \"has_thumbnail\")", source)
@@ -171,7 +191,7 @@ class ThumbnailContractTests(unittest.TestCase):
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
             source.index(
-                "verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)?",
+                "verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)",
                 finalizer,
             ),
             source.index(

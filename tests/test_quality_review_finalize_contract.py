@@ -6,8 +6,12 @@ import xml.etree.ElementTree as ET
 
 class QualityReviewFinalizeContractTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[2]
-        self.curation_root = root / "katagami-curation"
+        app_root = Path(__file__).resolve().parents[1]
+        if (app_root / "app.toml").exists():
+            self.curation_root = app_root
+        else:
+            root = Path(__file__).resolve().parents[2]
+            self.curation_root = root / "katagami-curation"
 
     def test_curation_job_defaults_to_typed_completion_contract(self):
         spec = tomllib.loads(
@@ -135,6 +139,47 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("fn design_md_workspace_id", source)
         self.assertIn("os-app-docs", source)
         self.assertIn("katagami_artifact_workspace_id", source)
+
+    def test_quality_review_repair_blocks_organization_until_validated(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("queue_artifact_repair_job", source)
+        self.assertIn("active_regeneration_job_exists_for_language", source)
+        self.assertIn("repair_pending", source)
+        self.assertIn("skipped_organization_pending_artifact_repair", source)
+        self.assertIn("artifact_repair_attempt", source)
+        self.assertIn("is_repairable_language_artifact_error", source)
+        self.assertLess(
+            source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)"),
+            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
+            "thumbnail validation or repair must happen before public publish",
+        )
+
+    def test_failed_provider_streams_retry_without_failing_query(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("is_transient_provider_failure", source)
+        self.assertIn("auto_retry_failed_job", source)
+        self.assertIn("OpenAI stream ended early", source)
+        self.assertIn('"auto_retry_submitted"', source)
+        self.assertIn("propagate_failed_job", source)
+        self.assertLess(
+            source.index("auto_retry_failed_job"),
+            source.index("propagate_failed_job"),
+            "transient provider failures must retry before non-repairable failure propagation",
+        )
 
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (

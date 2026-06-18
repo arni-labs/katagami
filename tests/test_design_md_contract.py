@@ -6,14 +6,28 @@ import xml.etree.ElementTree as ET
 
 class DesignMdContractTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[2]
+        app_root = Path(__file__).resolve().parents[1]
+        if (app_root / "app.toml").exists():
+            self.curation_root = app_root
+            root = app_root.parent
+        else:
+            root = Path(__file__).resolve().parents[2]
+            self.curation_root = root / "katagami-curation"
         self.commons_root = root / "katagami-commons"
-        self.curation_root = root / "katagami-curation"
-        self.spec = tomllib.loads(
-            (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
-        )
-        self.actions = {action["name"]: action for action in self.spec["action"]}
-        self.states = {state["name"]: state for state in self.spec["state"]}
+        if (self.commons_root / "specs" / "design_language.ioa.toml").exists():
+            self.spec = tomllib.loads(
+                (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
+            )
+            self.actions = {action["name"]: action for action in self.spec["action"]}
+            self.states = {state["name"]: state for state in self.spec["state"]}
+        else:
+            self.spec = None
+            self.actions = {}
+            self.states = {}
+
+    def _require_commons(self):
+        if self.spec is None:
+            self.skipTest("katagami-commons is not present in this app-only worktree")
 
     def _effect_entries(self, action_name):
         effect = self.actions[action_name].get("effect", [])
@@ -35,6 +49,7 @@ class DesignMdContractTests(unittest.TestCase):
         return False
 
     def test_design_language_tracks_design_md_validity(self):
+        self._require_commons()
         self.assertIn("has_design_md", self.states)
         self.assertIn("has_valid_design_md", self.states)
         self.assertIn("has_published_assets", self.states)
@@ -77,6 +92,7 @@ class DesignMdContractTests(unittest.TestCase):
         )
 
     def test_published_languages_revise_before_design_md_reattach(self):
+        self._require_commons()
         attach = self.actions["AttachDesignMd"]
         self.assertNotIn("Published", attach["from"])
         self.assertIn("Revise first", attach["hint"])
@@ -93,6 +109,7 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertIn('status = "UnderReview".to_string();', finalizer)
 
     def test_publish_requires_valid_design_md(self):
+        self._require_commons()
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         for var in [
@@ -121,6 +138,7 @@ class DesignMdContractTests(unittest.TestCase):
         )
 
     def test_source_spec_changes_invalidate_design_md(self):
+        self._require_commons()
         for action_name in [
             "SetName",
             "SetSpec",
@@ -151,6 +169,7 @@ class DesignMdContractTests(unittest.TestCase):
                 )
 
     def test_set_spec_is_complete_hot_path_transition(self):
+        self._require_commons()
         set_spec = self.actions["SetSpec"]
         self.assertEqual(set_spec["from"], ["Draft", "UnderReview"])
         self.assertEqual(
@@ -195,6 +214,7 @@ class DesignMdContractTests(unittest.TestCase):
             self.assertIn(fragment, review_skill)
 
     def test_csdl_exposes_design_md_fields(self):
+        self._require_commons()
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")
         ns = {"edm": "http://docs.oasis-open.org/odata/ns/edm"}
         entity = tree.find(".//edm:EntityType[@Name='DesignLanguage']", ns)
