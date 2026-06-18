@@ -143,6 +143,12 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &knowledge_docs,
             inline_job_docs,
         );
+        let typed_completion_guardrails = render_typed_completion_guardrails(
+            &fields,
+            &job_type,
+            template.completion_contract.as_str(),
+            template.completion_action.as_str(),
+        );
 
         let job_tools = fields
             .get("tools_enabled")
@@ -212,6 +218,7 @@ Use these read commands:
 {knowledge_read_commands}
 
 {loaded_reference_block}
+{typed_completion_guardrails}
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
@@ -858,6 +865,60 @@ fn render_loaded_reference_block(
     out
 }
 
+fn render_typed_completion_guardrails(
+    fields: &serde_json::Value,
+    job_type: &str,
+    completion_contract: &str,
+    completion_action: &str,
+) -> String {
+    if completion_contract != "typed-v1" {
+        return String::new();
+    }
+
+    let mut out = String::from(
+        "## Typed Completion Guardrails\n\n\
+- The `## Input` JSON above is complete and authoritative. Do not ask for missing job IDs, query IDs, workspace IDs, task, or scope when they are present in this message.\n\
+- Use actual tool calls for tool work. Never write textual pseudo-tool calls such as `Tool call ... execute(...)`; if a tool is needed, call it as a real tool before continuing.\n\
+- Do not call `temper.done(...)` until after `temper.action('CurationJobs', job_id, completion_action, params)` has succeeded with the typed completion action for this job.\n\
+- The final tool call should dispatch the typed completion action and then call `temper.done(...)` in the same script after the action returns.\n",
+    );
+
+    let retry_attempts = field_str(fields, &["retry_attempts", "RetryAttempts"])
+        .and_then(|raw| raw.parse::<i64>().ok())
+        .unwrap_or(0);
+    let error_message = field_str(fields, &["error_message", "ErrorMessage"]).unwrap_or_default();
+    if retry_attempts > 0 || !error_message.is_empty() {
+        out.push_str("\n## Retry Recovery Context\n\n");
+        if retry_attempts > 0 {
+            out.push_str(&format!("- Retry attempt: {retry_attempts}.\n"));
+        }
+        if !error_message.is_empty() {
+            out.push_str(&format!("- Previous failure: {error_message}\n"));
+        }
+        out.push_str(
+            "- Treat this as a repair/resume run for the same CurationJob, not a fresh unrelated exploration.\n\
+- Re-check existing partial artifacts before creating replacements. If a matching Draft or Ready DesignLanguage for this job input already exists, repair and complete that entity instead of creating a duplicate.\n",
+        );
+    }
+
+    if matches!(
+        job_type,
+        "synthesize" | "regenerate_embodiment" | "evolve_language"
+    ) {
+        out.push_str(
+            "\n## DesignLanguage Retry Discipline\n\n\
+- Before creating a new DesignLanguage, list existing DesignLanguages and look for the same target name or slug implied by the job input.\n\
+- If a matching partial DesignLanguage exists, reuse its entity id, fill missing spec/artifacts, attach thumbnail/embodiment/shadcn artifacts, and report that id in `design_language_ids`.\n\
+- Only create a new DesignLanguage when no matching partial entity exists.\n",
+        );
+    }
+
+    out.push_str(&format!(
+        "\nTyped completion action for this job: `{completion_action}`.\n"
+    ));
+    out
+}
+
 fn odata_string_literal(value: &str) -> String {
     value.replace('\'', "''")
 }
@@ -971,7 +1032,8 @@ mod tests {
     use super::{
         config_bool, field_bool, file_id_from_workspace_response, instruction_path_candidates,
         knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
-        render_loaded_reference_block, temper_read_command, LoadedDoc,
+        render_loaded_reference_block, render_typed_completion_guardrails, temper_read_command,
+        LoadedDoc,
     };
 
     #[test]
@@ -1019,6 +1081,27 @@ mod tests {
             &fields,
             &["requires_sandbox", "RequiresSandbox"]
         ));
+    }
+
+    #[test]
+    fn typed_completion_guardrails_include_retry_and_duplicate_repair_rules() {
+        let fields = json!({
+            "retry_attempts": "1",
+            "error_message": "synthesize typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
+        });
+
+        let prompt = render_typed_completion_guardrails(
+            &fields,
+            "synthesize",
+            "typed-v1",
+            "CompleteSynthesis",
+        );
+
+        assert!(prompt.contains("Never write textual pseudo-tool calls"));
+        assert!(prompt.contains("Retry attempt: 1"));
+        assert!(prompt.contains("Previous failure: synthesize typed completion ended"));
+        assert!(prompt.contains("repair and complete that entity instead of creating a duplicate"));
+        assert!(prompt.contains("Typed completion action for this job: `CompleteSynthesis`"));
     }
 
     #[test]

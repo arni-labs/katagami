@@ -900,13 +900,26 @@ fn verify_typed_completion(
             "job_type": job_type,
             "scope": "taxonomy organization"
         })),
-        "source_search" => Ok(json!({
-            "validated": true,
-            "job_type": job_type,
-            "scope": "source metadata and direction fan-out"
-        })),
+        "source_search" => verify_source_search_completion(fields),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
+}
+
+fn verify_source_search_completion(fields: &serde_json::Value) -> Result<serde_json::Value, String> {
+    let direction_ids = parse_json_string_array(fields.get("direction_ids"));
+    if direction_ids.is_empty() {
+        return Err(
+            "source_search typed completion did not report any direction_ids; refusing to advance query without synthesis jobs"
+                .to_string(),
+        );
+    }
+
+    Ok(json!({
+        "validated": true,
+        "job_type": "source_search",
+        "scope": "source metadata and direction fan-out",
+        "direction_count": direction_ids.len(),
+    }))
 }
 
 fn incomplete_regeneration_completion_error(
@@ -5172,6 +5185,12 @@ fn run_typed_completion_fallback(
     match job_type {
         "source_search" => {
             let direction_ids = parse_json_string_array(fields.get("direction_ids"));
+            if direction_ids.is_empty() {
+                return Err(
+                    "source_search typed completion did not report any direction_ids; refusing to advance query without synthesis jobs"
+                        .to_string(),
+                );
+            }
             for direction_id in &direction_ids {
                 let Some(direction) =
                     load_entity(ctx, api_url, headers, "CurationDirections", direction_id)?
@@ -6347,7 +6366,7 @@ mod tests {
         render_design_md_projection, render_landing_composition_projection,
         session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
         thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
-        verify_file_body,
+        verify_file_body, verify_source_search_completion,
     };
     use serde_json::json;
     use temper_wasm_sdk::prelude::Context;
@@ -6614,6 +6633,32 @@ mod tests {
             incomplete_regeneration_completion_error("synthesize", &validation).is_none(),
             "initial synthesis may hand incomplete drafts to quality_review repair"
         );
+    }
+
+    #[test]
+    fn source_search_completion_without_directions_is_retryable_not_successful() {
+        let fields = json!({
+            "direction_ids": "[]"
+        });
+
+        let error = verify_source_search_completion(&fields)
+            .expect_err("empty source_search direction_ids should be rejected");
+
+        assert!(error.contains("typed completion did not report any direction_ids"));
+        assert!(is_transient_provider_failure(&error));
+    }
+
+    #[test]
+    fn source_search_completion_with_directions_is_validated() {
+        let fields = json!({
+            "direction_ids": "[\"dir-1\"]"
+        });
+
+        let validation =
+            verify_source_search_completion(&fields).expect("non-empty directions are valid");
+
+        assert_eq!(validation["validated"], true);
+        assert_eq!(validation["direction_count"], 1);
     }
 
     #[test]
