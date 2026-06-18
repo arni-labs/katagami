@@ -379,6 +379,32 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "synthesis must self-heal deterministic artifacts before advancing to review",
         )
 
+    def test_synthesis_finalizer_repairs_partial_language_before_defects(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn repair_synthesis_partial_language", source)
+        self.assertIn("fn render_recovery_embodiment_projection", source)
+        self.assertIn("fn render_recovery_thumbnail_svg", source)
+        self.assertIn('"SetSpec"', source)
+        self.assertIn('"AttachEmbodiment"', source)
+        self.assertIn('"AttachThumbnail"', source)
+
+        synth_start = source.index("fn verify_synthesized_languages")
+        synth_end = source.index("fn verify_generated_language_identity", synth_start)
+        synth = source[synth_start:synth_end]
+
+        self.assertLess(
+            synth.index("repair_synthesis_partial_language("),
+            synth.index("partial_design_language_contract_defects("),
+            "synthesis must repair deterministic partial language fields before returning durable defects",
+        )
+
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
             self.curation_root

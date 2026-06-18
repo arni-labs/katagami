@@ -1327,7 +1327,8 @@ fn verify_synthesized_languages(
     let mut incomplete = Vec::new();
     let mut defects = Vec::new();
     for language_id in &language_ids {
-        let language = match load_entity(ctx, api_url, headers, "DesignLanguages", language_id)? {
+        let mut language = match load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        {
             Some(l) => l,
             None => {
                 ctx.log(
@@ -1345,6 +1346,15 @@ fn verify_synthesized_languages(
         };
         if matches!(job_type, "synthesize" | "evolve_language") {
             verify_generated_language_identity(language_id, &language)?;
+            language = repair_synthesis_partial_language(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                job_type,
+                language_id,
+                &language,
+            )?;
         }
         let durable_defects =
             partial_design_language_contract_defects(job_type, language_id, &language);
@@ -1497,6 +1507,834 @@ fn verify_generated_language_identity(
         ));
     }
     Ok(())
+}
+
+fn repair_synthesis_partial_language(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    job_type: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let mut current = language.clone();
+    let mut fields = entity_fields(&current);
+    let mut repaired_steps = Vec::new();
+
+    if synthesis_spec_repair_needed(&fields) {
+        current = ensure_language_mutable_for_synthesis_repair(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            "Repairing incomplete native spec before synthesis validation",
+        )?;
+        fields = entity_fields(&current);
+        let params = recovery_set_spec_params(language_id, &fields);
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "SetSpec",
+            &params,
+        )?;
+        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
+            || format!("DesignLanguage '{language_id}' disappeared after SetSpec repair"),
+        )?;
+        fields = entity_fields(&current);
+        repaired_steps.push("SetSpec");
+    }
+
+    if string_field_any(&fields, "embodiment_file_id", "")
+        .trim()
+        .is_empty()
+    {
+        if workspace_id.trim().is_empty() {
+            ctx.log(
+                "warn",
+                &format!(
+                    "{job_type} finalizer cannot repair missing embodiment for DesignLanguage '{language_id}' because workspace_id is empty"
+                ),
+            );
+            return Ok(current);
+        }
+        current = ensure_language_mutable_for_synthesis_repair(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            "Attaching deterministic embodiment before synthesis validation",
+        )?;
+        fields = entity_fields(&current);
+        let artifact_workspace_id = design_md_workspace_id(ctx, workspace_id);
+        let slug = design_md_slug(language_id, &fields);
+        let embodiment = render_recovery_embodiment_projection(language_id, &fields);
+        let embodiment_file_id = write_workspace_file(
+            ctx,
+            api_url,
+            &artifact_workspace_id,
+            &format!("/katagami/embodiments/{slug}.html"),
+            "text/html",
+            &embodiment,
+        )?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachEmbodiment",
+            &json!({
+                "embodiment_file_id": embodiment_file_id,
+                "element_count": string_field_any(&fields, "element_count", "15"),
+                "composition_count": string_field_any(&fields, "composition_count", "5"),
+                "embodiment_format": "html"
+            }),
+        )?;
+        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
+            || format!("DesignLanguage '{language_id}' disappeared after AttachEmbodiment repair"),
+        )?;
+        fields = entity_fields(&current);
+        repaired_steps.push("AttachEmbodiment");
+    }
+
+    if string_field_any(&fields, "thumbnail_file_id", "")
+        .trim()
+        .is_empty()
+    {
+        if workspace_id.trim().is_empty() {
+            ctx.log(
+                "warn",
+                &format!(
+                    "{job_type} finalizer cannot repair missing thumbnail for DesignLanguage '{language_id}' because workspace_id is empty"
+                ),
+            );
+            return Ok(current);
+        }
+        current = ensure_language_mutable_for_synthesis_repair(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            "Attaching deterministic thumbnail before synthesis validation",
+        )?;
+        fields = entity_fields(&current);
+        let artifact_workspace_id = design_md_workspace_id(ctx, workspace_id);
+        let slug = design_md_slug(language_id, &fields);
+        let thumbnail = render_recovery_thumbnail_svg(language_id, &fields);
+        let thumbnail_file_id = write_workspace_file(
+            ctx,
+            api_url,
+            &artifact_workspace_id,
+            &format!("/katagami/thumbnails/{slug}/desktop.svg"),
+            "image/svg+xml",
+            &thumbnail,
+        )?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "AttachThumbnail",
+            &json!({
+                "thumbnail_file_id": thumbnail_file_id
+            }),
+        )?;
+        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
+            || format!("DesignLanguage '{language_id}' disappeared after AttachThumbnail repair"),
+        )?;
+        repaired_steps.push("AttachThumbnail");
+    }
+
+    if !repaired_steps.is_empty() {
+        ctx.log(
+            "info",
+            &format!(
+                "{job_type} finalizer repaired partial DesignLanguage '{language_id}' in place before contract defect evaluation: {}",
+                repaired_steps.join(", ")
+            ),
+        );
+    }
+
+    Ok(current)
+}
+
+fn synthesis_spec_repair_needed(fields: &serde_json::Value) -> bool {
+    [
+        ("has_philosophy", "philosophy"),
+        ("has_tokens", "tokens"),
+        ("has_rules", "rules"),
+        ("has_layout", "layout_principles"),
+        ("has_guidance", "guidance"),
+    ]
+    .iter()
+    .any(|(bool_name, data_name)| !section_present(fields, bool_name, data_name))
+}
+
+fn ensure_language_mutable_for_synthesis_repair(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    curator_notes: &str,
+) -> Result<serde_json::Value, String> {
+    let current =
+        load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+            format!("DesignLanguage '{language_id}' disappeared before synthesis repair")
+        })?;
+    match entity_status_value(&current).as_str() {
+        "Draft" | "UnderReview" => Ok(current),
+        "Published" => {
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "DesignLanguages",
+                language_id,
+                "Revise",
+                &json!({
+                    "curator_notes": curator_notes
+                }),
+            )?;
+            load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(|| {
+                format!("DesignLanguage '{language_id}' disappeared after Revise for synthesis repair")
+            })
+        }
+        other => Err(format!(
+            "DesignLanguage '{language_id}' is in state '{other}', expected Draft, UnderReview, or Published before synthesis repair"
+        )),
+    }
+}
+
+fn recovery_set_spec_params(language_id: &str, fields: &serde_json::Value) -> serde_json::Value {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "title", ""),
+        string_field_any(fields, "target_direction", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = recovered_philosophy(fields, &name);
+    let tokens = recovered_tokens(fields);
+    let rules = recovered_rules(fields);
+    let layout = recovered_layout(fields);
+    let guidance = recovered_guidance(fields);
+    let tags = recovered_tags(fields, &slug);
+
+    json!({
+        "name": name,
+        "slug": slug,
+        "philosophy": json_string(&philosophy),
+        "tokens": json_string(&tokens),
+        "rules": json_string(&rules),
+        "layout_principles": json_string(&layout),
+        "guidance": json_string(&guidance),
+        "tags": json_string(&json!(tags))
+    })
+}
+
+fn recovered_philosophy(fields: &serde_json::Value, name: &str) -> serde_json::Value {
+    let mut map = json_object_map(json_object_field(fields, "philosophy"));
+    let summary = first_nonempty(&[
+        string_path(&serde_json::Value::Object(map.clone()), &["summary"]),
+        field_text_any(
+            fields,
+            &["summary", "description", "rationale", "target_direction"],
+        ),
+        format!("A repaired Katagami design language for {name}."),
+    ]);
+    let rationale = first_nonempty(&[
+        field_text_any(fields, &["rationale", "intent", "reasoning"]),
+        summary.clone(),
+    ]);
+    let visual_character = dedupe_nonempty(vecs_concat(vec![
+        field_string_array_any(fields, &["visual_character", "principles"]),
+        field_string_array_any(fields, &["topic_allowlist"]),
+        vec![rationale.clone()],
+    ]));
+    insert_json_string_if_missing(&mut map, "summary", summary);
+    insert_json_string_if_missing(&mut map, "rationale", rationale);
+    insert_json_array_if_missing(
+        &mut map,
+        "values",
+        field_string_array_any(fields, &["values", "principles"]),
+        vec!["Quiet clarity over decorative novelty.".to_string()],
+    );
+    insert_json_array_if_missing(
+        &mut map,
+        "anti_values",
+        field_string_array_any(fields, &["anti_values", "donts", "dont"]),
+        vec!["Do not collapse the language into generic dashboard chrome.".to_string()],
+    );
+    insert_json_array_if_missing(
+        &mut map,
+        "visual_character",
+        visual_character,
+        vec!["Dense, text-first surfaces with visible rhythm and calm contrast.".to_string()],
+    );
+    serde_json::Value::Object(map)
+}
+
+fn recovered_tokens(fields: &serde_json::Value) -> serde_json::Value {
+    let mut map = json_object_map(json_object_field(fields, "tokens"));
+    let colors = map
+        .get("colors")
+        .cloned()
+        .or_else(|| map.get("color").cloned())
+        .or_else(|| map.get("palette").cloned())
+        .filter(|value| value.as_object().is_some_and(|object| !object.is_empty()))
+        .unwrap_or_else(|| {
+            json!({
+                "primary": "#1f2937",
+                "secondary": "#64748b",
+                "accent": "#2563eb",
+                "background": "#fbfaf7",
+                "surface": "#ffffff",
+                "text": "#111827",
+                "muted": "#64748b",
+                "border": "#d4d4d8",
+                "error": "#dc2626",
+                "success": "#16a34a",
+                "warning": "#d97706",
+                "info": "#2563eb"
+            })
+        });
+    map.insert("colors".to_string(), colors);
+    insert_json_object_if_missing(
+        &mut map,
+        "typography",
+        json!({
+            "heading_font": "Inter",
+            "body_font": "Inter",
+            "mono_font": "IBM Plex Mono",
+            "base_size": "16px",
+            "scale_ratio": 1.2,
+            "line_height": 1.55,
+            "letter_spacing": "0"
+        }),
+    );
+    insert_json_object_if_missing(
+        &mut map,
+        "spacing",
+        json!({
+            "base": "8px",
+            "scale": [4, 8, 12, 16, 24, 32, 48, 64]
+        }),
+    );
+    insert_json_object_if_missing(
+        &mut map,
+        "radii",
+        json!({
+            "none": "0",
+            "sm": "2px",
+            "md": "4px",
+            "lg": "8px",
+            "full": "9999px"
+        }),
+    );
+    insert_json_object_if_missing(
+        &mut map,
+        "surfaces",
+        json!({
+            "treatment": "flat paper-like surfaces with subtle contrast",
+            "card_style": "thin bordered panels used sparingly",
+            "bg_pattern": "quiet ruled rhythm"
+        }),
+    );
+    insert_json_object_if_missing(
+        &mut map,
+        "borders",
+        json!({
+            "default_width": "1px",
+            "accent_width": "2px",
+            "style": "solid",
+            "character": "fine rules for structure"
+        }),
+    );
+    insert_json_object_if_missing(
+        &mut map,
+        "motion",
+        json!({
+            "duration": "140ms",
+            "easing": "ease-out",
+            "philosophy": "motion confirms state without drawing attention"
+        }),
+    );
+    serde_json::Value::Object(map)
+}
+
+fn recovered_rules(fields: &serde_json::Value) -> serde_json::Value {
+    let mut map = json_object_map(json_object_field(fields, "rules"));
+    let principles = field_string_array_any(fields, &["principles", "rules"]);
+    let components = field_string_array_any(fields, &["components"]);
+    let signature_patterns = dedupe_nonempty(vecs_concat(vec![
+        principles.clone(),
+        components
+            .iter()
+            .map(|component| format!("Expose {component} as a first-class language surface."))
+            .collect(),
+    ]));
+    insert_json_string_if_missing(
+        &mut map,
+        "composition",
+        field_text_any(fields, &["composition", "target_direction", "summary"]),
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "hierarchy",
+        "Use scale, spacing, and fine rules to make dense information scannable.".to_string(),
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "density",
+        "Prefer compact but readable knowledge-work density.".to_string(),
+    );
+    insert_json_array_if_missing(
+        &mut map,
+        "signature_patterns",
+        signature_patterns,
+        vec!["Use visible structural rhythm instead of generic card decoration.".to_string()],
+    );
+    insert_json_array_if_missing(
+        &mut map,
+        "components",
+        components,
+        vec![
+            "buttons".to_string(),
+            "cards".to_string(),
+            "forms".to_string(),
+            "tables".to_string(),
+            "navigation".to_string(),
+        ],
+    );
+    serde_json::Value::Object(map)
+}
+
+fn recovered_layout(fields: &serde_json::Value) -> serde_json::Value {
+    let mut map = json_object_map(json_object_field(fields, "layout_principles"));
+    insert_json_string_if_missing(
+        &mut map,
+        "grid",
+        field_text_any(fields, &["grid", "layout", "target_direction"]),
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "breakpoints",
+        "Use stable one-column mobile, two-column tablet, and dense desktop work surfaces."
+            .to_string(),
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "whitespace",
+        "Use whitespace as grouping and breathing room, not as decorative emptiness.".to_string(),
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "structure",
+        "Keep navigation, context, and primary reading surfaces visible without dashboard clutter."
+            .to_string(),
+    );
+    serde_json::Value::Object(map)
+}
+
+fn recovered_guidance(fields: &serde_json::Value) -> serde_json::Value {
+    let mut map = json_object_map(json_object_field(fields, "guidance"));
+    insert_json_array_if_missing(
+        &mut map,
+        "do",
+        field_string_array_any(fields, &["dos", "do", "principles"]),
+        vec![
+            "Repair the partial language into concrete, browser-renderable artifacts.".to_string(),
+        ],
+    );
+    insert_json_array_if_missing(
+        &mut map,
+        "dont",
+        field_string_array_any(fields, &["donts", "dont", "anti_values"]),
+        vec!["Do not create a duplicate DesignLanguage for retry repair.".to_string()],
+    );
+    insert_json_string_if_missing(
+        &mut map,
+        "accessibility",
+        field_text_any(fields, &["accessibility_notes", "accessibility"]),
+    );
+    serde_json::Value::Object(map)
+}
+
+fn recovered_tags(fields: &serde_json::Value, slug: &str) -> Vec<String> {
+    let tags = dedupe_nonempty(vecs_concat(vec![
+        json_array_field(fields, "tags"),
+        field_string_array_any(fields, &["topic_allowlist", "source_ids"]),
+        vec![slug.to_string(), "finalizer-repaired".to_string()],
+    ]));
+    if tags.is_empty() {
+        vec![slug.to_string()]
+    } else {
+        tags
+    }
+}
+
+fn render_recovery_embodiment_projection(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let tokens = json_object_field(fields, "tokens");
+    let rules = json_object_field(fields, "rules");
+    let layout = json_object_field(fields, "layout_principles");
+    let guidance = json_object_field(fields, "guidance");
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let background = color_value(&colors, &["background", "bg", "paper"], "#fbfaf7");
+    let foreground = color_value(&colors, &["foreground", "text", "ink"], "#111827");
+    let surface = color_value(&colors, &["surface", "card"], "#ffffff");
+    let primary = color_value(&colors, &["primary", "ink"], "#1f2937");
+    let accent = color_value(&colors, &["accent", "info"], "#2563eb");
+    let border = color_value(&colors, &["border", "line"], "#d4d4d8");
+    let summary = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        field_text_any(fields, &["summary", "description", "rationale"]),
+        format!("Deterministic recovery embodiment for {name}."),
+    ]);
+    let signature_patterns = first_nonempty_list(vec![
+        string_array_path(&rules, &["signature_patterns"]),
+        string_array_path(&philosophy, &["visual_character"]),
+        field_string_array_any(fields, &["principles"]),
+    ]);
+    let do_items = string_array_path(&guidance, &["do"]);
+    let grid_note = first_nonempty(&[
+        string_path(&layout, &["grid"]),
+        "Dense text-first workspace with calm structure.".to_string(),
+    ]);
+
+    format!(
+        r##"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} Recovery Embodiment</title>
+  <style>
+    :root {{
+      --bg: {background};
+      --fg: {foreground};
+      --surface: {surface};
+      --primary: {primary};
+      --accent: {accent};
+      --border: {border};
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); }}
+    main {{ min-height: 100vh; display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); }}
+    aside {{ border-right: 1px solid var(--border); padding: 28px; background: color-mix(in srgb, var(--surface) 88%, var(--bg)); }}
+    .brand {{ font-size: 22px; font-weight: 900; margin-bottom: 28px; }}
+    nav a {{ display: block; padding: 10px 0; color: var(--fg); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }}
+    section {{ padding: clamp(24px, 5vw, 68px); }}
+    .eyebrow {{ margin: 0 0 12px; color: var(--primary); text-transform: uppercase; font-size: 12px; font-weight: 900; letter-spacing: .08em; }}
+    h1 {{ max-width: 880px; margin: 0; font-size: clamp(38px, 5vw, 72px); line-height: 1; letter-spacing: 0; }}
+    .summary {{ max-width: 760px; margin: 20px 0 0; font-size: 18px; line-height: 1.6; }}
+    .grid {{ display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr); gap: 20px; margin-top: 36px; }}
+    .panel {{ background: var(--surface); border: 1px solid var(--border); padding: 22px; }}
+    .panel h2 {{ margin: 0 0 14px; font-size: 20px; }}
+    ul {{ margin: 0; padding-left: 20px; line-height: 1.55; }}
+    .ledger {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); margin-top: 28px; }}
+    .ledger div {{ padding: 18px; border-right: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 92%, var(--bg)); }}
+    .ledger div:last-child {{ border-right: 0; }}
+    .ledger strong {{ display: block; margin-bottom: 6px; color: var(--accent); }}
+    @media (max-width: 820px) {{
+      main {{ grid-template-columns: 1fr; }}
+      aside {{ border-right: 0; border-bottom: 1px solid var(--border); }}
+      .grid, .ledger {{ grid-template-columns: 1fr; }}
+      h1 {{ font-size: 42px; }}
+    }}
+  </style>
+</head>
+<body>
+  <main data-language-id="{language_id}" data-slug="{slug}" data-recovery="synthesis-finalizer">
+    <aside>
+      <div class="brand">{title}</div>
+      <nav aria-label="Recovery embodiment">
+        <a href="#overview">Overview</a>
+        <a href="#rules">Rules</a>
+        <a href="#guidance">Guidance</a>
+      </nav>
+    </aside>
+    <section id="overview">
+      <p class="eyebrow">Katagami recovery embodiment</p>
+      <h1>{title}</h1>
+      <p class="summary">{summary}</p>
+      <div class="ledger" aria-label="Repair proof">
+        <div><strong>Entity</strong><span>Same DesignLanguage ID repaired in place.</span></div>
+        <div><strong>Contract</strong><span>Spec, embodiment, and thumbnail are attached before review.</span></div>
+        <div><strong>Layout</strong><span>{grid_note}</span></div>
+      </div>
+      <div class="grid">
+        <article class="panel" id="rules">
+          <h2>Signature patterns</h2>
+          <ul>{signature_items}</ul>
+        </article>
+        <article class="panel" id="guidance">
+          <h2>Usage guidance</h2>
+          <ul>{do_items}</ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+"##,
+        title = html_escape(&name),
+        language_id = html_escape(language_id),
+        slug = html_escape(&slug),
+        background = background,
+        foreground = foreground,
+        surface = surface,
+        primary = primary,
+        accent = accent,
+        border = border,
+        summary = html_escape(&summary),
+        grid_note = html_escape(&grid_note),
+        signature_items = html_list_items(
+            &signature_patterns,
+            "Use visible rhythm, type hierarchy, and durable product states."
+        ),
+        do_items = html_list_items(
+            &do_items,
+            "Keep the repaired language coherent with the existing partial work."
+        )
+    )
+}
+
+fn render_recovery_thumbnail_svg(language_id: &str, fields: &serde_json::Value) -> String {
+    let name = first_nonempty(&[
+        string_field_any(fields, "name", ""),
+        string_field_any(fields, "Name", ""),
+        language_id.to_string(),
+    ]);
+    let slug = design_md_slug(language_id, fields);
+    let philosophy = json_object_field(fields, "philosophy");
+    let tokens = json_object_field(fields, "tokens");
+    let rules = json_object_field(fields, "rules");
+    let colors = tokens.get("colors").cloned().unwrap_or_else(|| json!({}));
+    let background = color_value(&colors, &["background", "bg", "paper"], "#fbfaf7");
+    let foreground = color_value(&colors, &["foreground", "text", "ink"], "#111827");
+    let primary = color_value(&colors, &["primary", "ink"], "#1f2937");
+    let accent = color_value(&colors, &["accent", "info"], "#2563eb");
+    let border = color_value(&colors, &["border", "line"], "#d4d4d8");
+    let summary = first_nonempty(&[
+        string_path(&philosophy, &["summary"]),
+        field_text_any(fields, &["summary", "description", "target_direction"]),
+        "Deterministic finalizer repair thumbnail.".to_string(),
+    ]);
+    let patterns = first_nonempty_list(vec![
+        string_array_path(&rules, &["signature_patterns"]),
+        field_string_array_any(fields, &["principles", "components"]),
+    ]);
+    let pattern_a = patterns
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "Text-first workspace rhythm".to_string());
+    let pattern_b = patterns
+        .get(1)
+        .cloned()
+        .unwrap_or_else(|| "Quiet system-owned repair".to_string());
+
+    format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-labelledby="title desc">
+  <title id="title">{title}</title>
+  <desc id="desc">{summary}</desc>
+  <rect width="1440" height="960" fill="{background}"/>
+  <path d="M0 120 H1440 M0 240 H1440 M0 360 H1440 M0 480 H1440 M0 600 H1440 M0 720 H1440 M0 840 H1440" stroke="{border}" stroke-width="1"/>
+  <path d="M160 0 V960 M320 0 V960 M480 0 V960 M640 0 V960 M800 0 V960 M960 0 V960 M1120 0 V960 M1280 0 V960" stroke="{border}" stroke-width="1" opacity=".72"/>
+  <rect x="96" y="92" width="1248" height="776" rx="0" fill="none" stroke="{primary}" stroke-width="4"/>
+  <rect x="144" y="152" width="410" height="92" fill="{primary}"/>
+  <text x="176" y="208" fill="{background}" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800">KATAGAMI REPAIRED</text>
+  <text x="144" y="344" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="900">{title}</text>
+  <text x="148" y="398" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="24">{slug}</text>
+  <line x1="144" y1="446" x2="1296" y2="446" stroke="{accent}" stroke-width="5"/>
+  <text x="144" y="520" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="30">{summary}</text>
+  <g transform="translate(144 612)">
+    <rect width="344" height="150" fill="#ffffff" stroke="{border}" stroke-width="2"/>
+    <text x="24" y="48" fill="{primary}" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800">SPEC</text>
+    <text x="24" y="92" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="20">SetSpec repaired in place</text>
+  </g>
+  <g transform="translate(548 612)">
+    <rect width="344" height="150" fill="#ffffff" stroke="{border}" stroke-width="2"/>
+    <text x="24" y="48" fill="{primary}" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800">EMBODIMENT</text>
+    <text x="24" y="92" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="20">Self-contained HTML attached</text>
+  </g>
+  <g transform="translate(952 612)">
+    <rect width="344" height="150" fill="#ffffff" stroke="{border}" stroke-width="2"/>
+    <text x="24" y="48" fill="{primary}" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800">THUMBNAIL</text>
+    <text x="24" y="92" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="20">Browser-renderable SVG</text>
+  </g>
+  <text x="144" y="818" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="22">{pattern_a}</text>
+  <text x="144" y="852" fill="{foreground}" font-family="Inter, Arial, sans-serif" font-size="22">{pattern_b}</text>
+  <text x="1296" y="852" text-anchor="end" fill="{accent}" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800">{language_id}</text>
+</svg>
+"##,
+        title = html_escape(&name),
+        language_id = html_escape(language_id),
+        slug = html_escape(&slug),
+        background = background,
+        foreground = foreground,
+        primary = primary,
+        accent = accent,
+        border = border,
+        summary = html_escape(&summary),
+        pattern_a = html_escape(&pattern_a),
+        pattern_b = html_escape(&pattern_b)
+    )
+}
+
+fn json_object_map(value: serde_json::Value) -> serde_json::Map<String, serde_json::Value> {
+    value.as_object().cloned().unwrap_or_default()
+}
+
+fn insert_json_string_if_missing(
+    map: &mut serde_json::Map<String, serde_json::Value>,
+    key: &str,
+    value: String,
+) {
+    if map.get(key).map(json_value_is_empty).unwrap_or(true) {
+        map.insert(key.to_string(), json!(nonempty_or_default(value, key)));
+    }
+}
+
+fn insert_json_array_if_missing(
+    map: &mut serde_json::Map<String, serde_json::Value>,
+    key: &str,
+    values: Vec<String>,
+    fallback: Vec<String>,
+) {
+    if map.get(key).map(json_value_is_empty).unwrap_or(true) {
+        let values = if values.is_empty() { fallback } else { values };
+        map.insert(key.to_string(), json!(dedupe_nonempty(values)));
+    }
+}
+
+fn insert_json_object_if_missing(
+    map: &mut serde_json::Map<String, serde_json::Value>,
+    key: &str,
+    value: serde_json::Value,
+) {
+    if map.get(key).map(json_value_is_empty).unwrap_or(true) {
+        map.insert(key.to_string(), value);
+    }
+}
+
+fn json_value_is_empty(value: &serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::Null => true,
+        serde_json::Value::String(value) => value.trim().is_empty(),
+        serde_json::Value::Array(value) => value.is_empty(),
+        serde_json::Value::Object(value) => value.is_empty(),
+        _ => false,
+    }
+}
+
+fn nonempty_or_default(value: String, key: &str) -> String {
+    if value.trim().is_empty() {
+        format!("Recovered {key} from partial synthesis state.")
+    } else {
+        value
+    }
+}
+
+fn field_text_any(fields: &serde_json::Value, names: &[&str]) -> String {
+    for name in names {
+        let direct = string_field_any(fields, name, "");
+        if !direct.trim().is_empty() {
+            return direct;
+        }
+    }
+    String::new()
+}
+
+fn field_string_array_any(fields: &serde_json::Value, names: &[&str]) -> Vec<String> {
+    for name in names {
+        if let Some(value) = fields.get(*name).or_else(|| fields.get(&pascal_case(name))) {
+            let values = string_array_from_any(value);
+            if !values.is_empty() {
+                return values;
+            }
+        }
+    }
+    Vec::new()
+}
+
+fn string_array_from_any(value: &serde_json::Value) -> Vec<String> {
+    match value {
+        serde_json::Value::Array(items) => dedupe_nonempty(
+            items
+                .iter()
+                .filter_map(json_value_as_repair_text)
+                .collect::<Vec<_>>(),
+        ),
+        serde_json::Value::String(raw) => {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                return Vec::new();
+            }
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                let parsed_values = string_array_from_any(&parsed);
+                if !parsed_values.is_empty() {
+                    return parsed_values;
+                }
+            }
+            vec![trimmed.to_string()]
+        }
+        other => json_value_as_repair_text(other)
+            .map(|text| vec![text])
+            .unwrap_or_default(),
+    }
+}
+
+fn json_value_as_repair_text(value: &serde_json::Value) -> Option<String> {
+    if let Some(text) = value
+        .as_str()
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
+    {
+        return Some(text.to_string());
+    }
+    for key in ["text", "name", "label", "title", "summary", "description"] {
+        if let Some(text) = value
+            .get(key)
+            .and_then(|nested| nested.as_str())
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+        {
+            return Some(text.to_string());
+        }
+    }
+    None
+}
+
+fn vecs_concat(lists: Vec<Vec<String>>) -> Vec<String> {
+    lists.into_iter().flatten().collect()
+}
+
+fn dedupe_nonempty(values: Vec<String>) -> Vec<String> {
+    let mut out = Vec::new();
+    for value in values {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() && !out.iter().any(|existing| existing == trimmed) {
+            out.push(trimmed.to_string());
+        }
+    }
+    out
+}
+
+fn json_string(value: &serde_json::Value) -> String {
+    serde_json::to_string(value).unwrap_or_else(|_| value.to_string())
 }
 
 fn verify_quality_reviewed_languages(
@@ -3110,6 +3948,9 @@ fn thumbnail_mime_type_is_acceptable(mime_type: &str, body: &str) -> bool {
     if thumbnail_payload_looks_text_encoded_image(body) {
         return false;
     }
+    if normalized == "image/svg+xml" {
+        return thumbnail_payload_looks_svg(body);
+    }
     matches!(
         normalized.as_str(),
         "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "image/gif"
@@ -3127,6 +3968,15 @@ fn thumbnail_payload_looks_image_like(body: &str) -> bool {
         || bytes.starts_with(b"GIF87a")
         || bytes.starts_with(b"GIF89a")
         || (bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP")
+}
+
+fn thumbnail_payload_looks_svg(body: &str) -> bool {
+    let trimmed = body.trim_start();
+    let prefix = trimmed
+        .get(..trimmed.len().min(256))
+        .unwrap_or(trimmed)
+        .to_ascii_lowercase();
+    prefix.starts_with("<svg") || (prefix.starts_with("<?xml") && prefix.contains("<svg"))
 }
 
 fn thumbnail_payload_looks_text_encoded_image(body: &str) -> bool {
@@ -5804,7 +6654,12 @@ fn entity_status_value(entity: &serde_json::Value) -> String {
 }
 
 fn section_present(fields: &serde_json::Value, bool_name: &str, data_name: &str) -> bool {
-    bool_field(fields, bool_name) || !string_field_any(fields, data_name, "").trim().is_empty()
+    bool_field(fields, bool_name)
+        || !string_field_any(fields, data_name, "").trim().is_empty()
+        || fields
+            .get(data_name)
+            .or_else(|| fields.get(&pascal_case(data_name)))
+            .is_some_and(|value| !json_value_is_empty(value))
 }
 
 fn bool_field(fields: &serde_json::Value, name: &str) -> bool {
@@ -7124,9 +7979,11 @@ mod tests {
         merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
         parent_session_id_from_fields, parse_json_string_array,
         partial_design_language_contract_defects, pawfs_directory_id, pawfs_file_id,
-        recoverable_image_bytes_from_text, render_dashboard_composition_projection,
-        render_design_md_projection, render_landing_composition_projection, same_string_set,
-        session_can_be_finalized, session_is_terminal, split_pawfs_file_path, string_field_any,
+        recoverable_image_bytes_from_text, recovery_set_spec_params,
+        render_dashboard_composition_projection, render_design_md_projection,
+        render_landing_composition_projection, render_recovery_embodiment_projection,
+        render_recovery_thumbnail_svg, same_string_set, session_can_be_finalized,
+        session_is_terminal, split_pawfs_file_path, string_field_any, synthesis_spec_repair_needed,
         thumbnail_mime_type_is_acceptable, typed_completion_output_is_unfinished_tool_call,
         typed_success_terminal_action, url_query_component, validation_needs_repair,
         verify_file_body, verify_source_search_completion,
@@ -7298,6 +8155,90 @@ mod tests {
             "text/plain",
             "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD"
         ));
+    }
+
+    #[test]
+    fn thumbnail_mime_accepts_browser_renderable_svg() {
+        let svg = format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1440\" height=\"960\"><rect width=\"1440\" height=\"960\" fill=\"#fbfaf7\"/><text x=\"80\" y=\"120\">{}</text></svg>",
+            "AYA ".repeat(300)
+        );
+
+        assert!(thumbnail_mime_type_is_acceptable("image/svg+xml", &svg));
+        verify_file_body("dl-test", "fl-svg", "thumbnail", None, &svg)
+            .expect("SVG thumbnails are browser-renderable image payloads");
+    }
+
+    #[test]
+    fn recovery_projection_materializes_partial_synthesis_fields() {
+        let partial = json!({
+            "name": "AYA Quiet Margin Grid",
+            "slug": "aya-quiet-margin-grid",
+            "summary": "A text-first workspace language with calm margin rhythm.",
+            "rationale": "Recover the same partial language instead of creating a duplicate.",
+            "principles": [
+                "Use woven margin lines to orient reading.",
+                "Keep data surfaces quiet and text led."
+            ],
+            "components": ["navigation", "table", "editor"],
+            "dos": ["Preserve readable density."],
+            "donts": ["Do not turn it into generic dashboard chrome."],
+            "tokens": json!({
+                "color": {
+                    "background": "#fbfaf7",
+                    "surface": "#ffffff",
+                    "text": "#111827",
+                    "primary": "#1f2937",
+                    "accent": "#2563eb",
+                    "border": "#d4d4d8"
+                }
+            }).to_string(),
+            "target_direction": "AYA text-first knowledge workspace",
+            "topic_allowlist": json!(["aya", "knowledge-workspace"]).to_string()
+        });
+
+        assert!(synthesis_spec_repair_needed(&partial));
+        let params = recovery_set_spec_params("en-partial", &partial);
+        for key in [
+            "philosophy",
+            "tokens",
+            "rules",
+            "layout_principles",
+            "guidance",
+            "tags",
+        ] {
+            serde_json::from_str::<serde_json::Value>(params[key].as_str().unwrap())
+                .unwrap_or_else(|error| panic!("{key} should be JSON: {error}"));
+        }
+
+        let repaired_fields = json!({
+            "name": params["name"].as_str().unwrap(),
+            "slug": params["slug"].as_str().unwrap(),
+            "philosophy": params["philosophy"].as_str().unwrap(),
+            "tokens": params["tokens"].as_str().unwrap(),
+            "rules": params["rules"].as_str().unwrap(),
+            "layout_principles": params["layout_principles"].as_str().unwrap(),
+            "guidance": params["guidance"].as_str().unwrap(),
+            "tags": params["tags"].as_str().unwrap()
+        });
+        let embodiment = render_recovery_embodiment_projection("en-partial", &repaired_fields);
+        verify_file_body(
+            "en-partial",
+            "fl-embodiment",
+            "embodiment",
+            Some("html"),
+            &embodiment,
+        )
+        .expect("recovery embodiment should be self-contained HTML");
+
+        let thumbnail = render_recovery_thumbnail_svg("en-partial", &repaired_fields);
+        assert!(thumbnail.len() > 1024);
+        assert!(thumbnail_mime_type_is_acceptable(
+            "image/svg+xml",
+            &thumbnail
+        ));
+        verify_file_body("en-partial", "fl-thumbnail", "thumbnail", None, &thumbnail)
+            .expect("recovery thumbnail should be browser-renderable SVG");
     }
 
     #[test]

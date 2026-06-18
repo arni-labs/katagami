@@ -15,6 +15,36 @@
   - Result: `build_session_message`, `finalize_spawned_session`, and
     `launch_research` built successfully.
 
+## Deterministic Partial-Synthesis Repair Loop
+
+The clean synthesis loop is now owned by `finalize_spawned_session` instead of
+prompt-only repair instructions:
+
+1. Treat typed completion as a `CompleteAttempt`.
+2. Load the reported existing `DesignLanguage` IDs.
+3. Repair deterministic partial synthesis defects on the same
+   `DesignLanguage` entity before returning durable defects:
+   - derive and dispatch `DesignLanguages.SetSpec` from partial semantic fields;
+   - write a self-contained HTML recovery embodiment at a stable path;
+   - write a browser-renderable SVG thumbnail at a stable path;
+   - dispatch `AttachEmbodiment` and `AttachThumbnail`;
+   - reload the same entity and run the normal validator.
+4. Only return exact contract defects when the finalizer cannot repair from
+   durable state.
+5. Only advance to review/publish after validation passes.
+
+Local verification:
+
+- `cargo test --manifest-path wasm/finalize_spawned_session/Cargo.toml`
+  - Result: 35 passed.
+- `python3 -m unittest tests.test_artifact_ready_contract tests.test_quality_review_finalize_contract tests.test_reaction_resolver_types tests.test_source_search_hot_path tests.test_curation_liveness_contract tests.test_thumbnail_contract`
+  - Result: 55 ran, 5 skipped, OK.
+- `./wasm/build.sh`
+  - Result: `build_session_message`, `finalize_spawned_session`, and
+    `launch_research` built successfully.
+- `git diff --check`
+  - Result: clean.
+
 Production deployment:
 
 - Pushed GitHub branch:
