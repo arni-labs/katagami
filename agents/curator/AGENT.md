@@ -15,6 +15,7 @@ Read knowledge files before starting work:
 | `synthesize` | synthesize-language | Create complete DesignLanguage entities with spec, embodiment, desktop thumbnail, and first-class shadcn/ui component artifacts |
 | `quality_review` | review-quality | Validate DESIGN.md, derive shadcn/ui export, author/verify shadcn/ui component recipes + preview shots, and fix embodiment HTML + desktop thumbnail against the spec |
 | `organize_taxonomy` | organize-taxonomy | Build and maintain the taxonomy classification system |
+| `regenerate_embodiment` | regenerate-embodiment | Repair an existing DesignLanguage in place so missing/invalid artifacts become publishable |
 | `evolve_language` | synthesize-language | Create a child language evolving from a parent |
 | `taste_distillation` | taste-distillation | Propose taste rules from archived negative signals and featured positive signals |
 

@@ -34,6 +34,21 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertNotIn("'WritePhilosophy'", skill)
         self.assertNotIn("'SetTokens'", skill)
 
+    def test_regeneration_skill_is_action_first_and_typed(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (
+            root / "agents" / "curator" / "skills" / "regenerate-embodiment" / "SKILL.md"
+        ).read_text()
+        builder = (
+            root / "wasm" / "build_session_message" / "src" / "lib.rs"
+        ).read_text()
+
+        self.assertIn("Do not spend turns reading the full synthesis skill", skill)
+        self.assertIn("first tool call must load the job and language", skill)
+        self.assertIn("'CompleteRegeneration'", skill)
+        self.assertIn("temper.done(\"regenerate_embodiment complete\")", skill)
+        self.assertIn('"regenerate-embodiment" => &[]', builder)
+
     def test_synthesis_uses_generated_entity_ids_not_slugs(self):
         root = Path(__file__).resolve().parents[1]
         skill = (

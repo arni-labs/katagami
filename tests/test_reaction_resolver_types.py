@@ -114,6 +114,25 @@ class ReactionResolverTypeTests(unittest.TestCase):
             job_types,
         )
 
+    def test_regeneration_uses_compact_repair_skill(self):
+        root = Path(__file__).resolve().parents[1]
+        seed = tomllib.loads((root / "seed-data" / "job_templates.toml").read_text())
+        templates = {
+            action["params"]["job_type"]: action["params"]
+            for instance in seed["instance"]
+            for action in instance.get("actions", [])
+            if action["name"] == "Configure"
+        }
+        regen = templates["regenerate_embodiment"]
+
+        self.assertEqual(regen["skill_id"], "regenerate-embodiment")
+        self.assertEqual(
+            regen["instruction_path"],
+            "/agents/curator/skills/regenerate-embodiment/SKILL.md",
+        )
+        self.assertEqual(regen["completion_action"], "CompleteRegeneration")
+        self.assertEqual(regen["template_version"], "2")
+
 
 if __name__ == "__main__":
     unittest.main()

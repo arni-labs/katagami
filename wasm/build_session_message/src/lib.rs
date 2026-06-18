@@ -807,6 +807,10 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
         "research-direction" => &[],
+        // Regeneration is a narrow repair path. The compact skill is
+        // self-contained so retry sessions do not spend provider turns reading
+        // the full synthesis and knowledge corpus before writing artifacts.
+        "regenerate-embodiment" => &[],
         _ => FULL_CURATION_KNOWLEDGE,
     }
 }

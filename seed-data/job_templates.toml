@@ -115,14 +115,14 @@ name = "Configure"
 
 [instance.actions.params]
 job_type = "regenerate_embodiment"
-skill_id = "synthesize-language"
-instruction_path = "/agents/curator/skills/synthesize-language/SKILL.md"
+skill_id = "regenerate-embodiment"
+instruction_path = "/agents/curator/skills/regenerate-embodiment/SKILL.md"
 tools_profile = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch,bash,read,write,edit"
 requires_sandbox = true
 max_turns_default = "250"
 completion_action = "CompleteRegeneration"
 completion_contract = "typed-v1"
-template_version = "1"
+template_version = "2"
 
 [[instance.actions]]
 name = "Activate"
