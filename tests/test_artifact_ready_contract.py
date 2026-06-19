@@ -72,8 +72,24 @@ class ArtifactReadyContractTests(unittest.TestCase):
             )
         ]
         self.assertIn("repair_missing_core_artifacts_when_spec_ready(", synth)
+        backstop = self.finalizer[
+            self.finalizer.index("fn repair_missing_embodiment_and_thumbnail") : self.finalizer.index(
+                "fn repair_synthesis_partial_language"
+            )
+        ]
+        self.assertIn("refresh_composition_projections(", backstop)
         self.assertNotIn("repair_synthesis_partial_language(", synth)
         self.assertNotIn("SetSpec", synth)
+
+    def test_finalizer_filters_slug_ids_before_synthesis_validation(self):
+        self.assertIn("fn partition_language_entity_ids", self.finalizer)
+        self.assertIn("fn valid_language_entity_id", self.finalizer)
+        synth = self.finalizer[
+            self.finalizer.index("fn verify_synthesized_languages") : self.finalizer.index(
+                "fn verify_generated_language_identity"
+            )
+        ]
+        self.assertIn("partition_language_entity_ids(", synth)
 
     def test_finalizer_does_not_deterministically_generate_creative_artifacts(self):
         synth = self.finalizer[
@@ -150,6 +166,12 @@ class ArtifactReadyContractTests(unittest.TestCase):
         self.assertIn("fn effective_skill_routing", builder)
         self.assertIn("Repair Execution Discipline", builder)
         self.assertIn("regenerate-embodiment", builder)
+        self.assertIn("landing/dashboard compositions", builder)
+        self.assertLess(
+            builder.index("valid entity IDs"),
+            builder.index("embodiment HTML"),
+            "repair prompt must prioritize entity IDs and compositions before embodiment",
+        )
 
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [

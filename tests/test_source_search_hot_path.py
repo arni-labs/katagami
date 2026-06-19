@@ -45,6 +45,13 @@ class SourceSearchHotPathTests(unittest.TestCase):
 
         self.assertIn("Do not spend turns reading the full synthesis skill", skill)
         self.assertIn("first tool call must load the job and language", skill)
+        self.assertIn("Entity ID sanity", skill)
+        self.assertIn("landing_file_id", skill)
+        self.assertLess(
+            skill.index("Entity ID sanity"),
+            skill.index("landing_file_id"),
+            "repair skill must prioritize entity IDs before compositions",
+        )
         self.assertIn("'CompleteRegeneration'", skill)
         self.assertIn("temper.done(\"regenerate_embodiment complete\")", skill)
         self.assertIn('"regenerate-embodiment" => &[]', builder)

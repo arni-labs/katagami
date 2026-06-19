@@ -972,8 +972,22 @@ fn contract_repair_input(
         return Err("contract repair input could not be represented as an object".to_string());
     };
 
-    let existing_design_language_ids = design_language_ids_for_contract_repair(fields, validation);
-    let invalid_reported_ids = invalid_reported_language_ids(job_type, fields, validation);
+    let existing_design_language_ids = filter_valid_language_entity_ids(
+        design_language_ids_for_contract_repair(fields, validation),
+    );
+    let mut invalid_reported_ids =
+        invalid_reported_language_ids(job_type, fields, validation);
+    let (valid_completion_ids, invalid_completion_ids) =
+        partition_language_entity_ids(design_language_ids_from_completion(fields));
+    if !invalid_completion_ids.is_empty() {
+        for slug_id in invalid_completion_ids {
+            if !invalid_reported_ids.contains(&slug_id) {
+                invalid_reported_ids.push(slug_id);
+            }
+        }
+    }
+    let _ = valid_completion_ids;
+    invalid_reported_ids = dedupe_nonempty_strings(invalid_reported_ids);
     let defects = validation_defects(job_type, validation);
     let repair_instructions = build_repair_instructions(
         job_type,
@@ -1105,9 +1119,30 @@ fn design_language_ids_from_validation(validation: &serde_json::Value) -> Vec<St
     dedupe_nonempty_strings(ids)
 }
 
-fn is_invalid_reported_language_id(language_id: &str) -> bool {
+fn valid_language_entity_id(language_id: &str) -> bool {
     let trimmed = language_id.trim();
-    !trimmed.is_empty() && !trimmed.starts_with("en-")
+    !trimmed.is_empty() && trimmed.starts_with("en-")
+}
+
+fn is_invalid_reported_language_id(language_id: &str) -> bool {
+    !valid_language_entity_id(language_id)
+}
+
+fn partition_language_entity_ids(ids: Vec<String>) -> (Vec<String>, Vec<String>) {
+    let mut valid = Vec::new();
+    let mut invalid = Vec::new();
+    for id in dedupe_nonempty_strings(ids) {
+        if valid_language_entity_id(&id) {
+            valid.push(id);
+        } else {
+            invalid.push(id);
+        }
+    }
+    (valid, invalid)
+}
+
+fn filter_valid_language_entity_ids(ids: Vec<String>) -> Vec<String> {
+    partition_language_entity_ids(ids).0
 }
 
 fn invalid_reported_language_ids(
@@ -1187,7 +1222,9 @@ fn contract_defect(job_type: &str, language_id: Option<&str>, message: &str) -> 
         "missing_design_language_entity"
     } else if lower.contains("design_language_ids") || lower.contains("language ids") {
         "missing_design_language_ids"
-    } else if lower.contains("slug as the entity id") {
+    } else if lower.contains("slug as the entity id")
+        || lower.contains("not a valid entity id")
+    {
         "invalid_design_language_identity"
     } else if lower.contains("direction_ids") || lower.contains("direction ids") {
         "missing_direction_ids"
@@ -1481,8 +1518,31 @@ fn verify_synthesized_languages(
     job_type: &str,
     workspace_id: &str,
 ) -> Result<serde_json::Value, String> {
-    let language_ids = design_language_ids_for_contract_validation(fields);
+    let reported_language_ids = design_language_ids_for_contract_validation(fields);
+    let (language_ids, invalid_language_ids) =
+        partition_language_entity_ids(reported_language_ids);
+    let mut defects = Vec::new();
+    let mut incomplete = Vec::new();
+    for invalid_id in &invalid_language_ids {
+        incomplete.push(invalid_id.clone());
+        defects.push(contract_defect(
+            job_type,
+            Some(invalid_id),
+            &format!(
+                "DesignLanguage '{invalid_id}' is not a valid entity ID; synthesize/evolve_language must use temper.create('DesignLanguages', {{}}) and pass the returned en-* entity_id (store human-readable slugs only in the slug field)"
+            ),
+        ));
+    }
     if language_ids.is_empty() {
+        if !invalid_language_ids.is_empty() {
+            return Ok(json!({
+                "validated": false,
+                "job_type": job_type,
+                "verified_language_ids": [],
+                "incomplete_language_ids": incomplete,
+                "defects": defects,
+            }));
+        }
         let message = format!(
             "{job_type} typed completion did not report any design_language_ids"
         );
@@ -1512,8 +1572,6 @@ fn verify_synthesized_languages(
     }
 
     let mut verified = Vec::new();
-    let mut incomplete = Vec::new();
-    let mut defects = Vec::new();
     for language_id in &language_ids {
         let mut language = match load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
         {
@@ -1864,6 +1922,50 @@ fn repair_missing_embodiment_and_thumbnail(
             || format!("DesignLanguage '{language_id}' disappeared after AttachThumbnail repair"),
         )?;
         repaired_steps.push("AttachThumbnail");
+    }
+
+    if string_field_any(&fields, "landing_file_id", "")
+        .trim()
+        .is_empty()
+        || string_field_any(&fields, "dashboard_file_id", "")
+            .trim()
+            .is_empty()
+    {
+        if workspace_id.trim().is_empty() {
+            ctx.log(
+                "warn",
+                &format!(
+                    "{job_type} finalizer cannot repair missing compositions for DesignLanguage '{language_id}' because workspace_id is empty"
+                ),
+            );
+            return Ok(current);
+        }
+        current = ensure_language_mutable_for_synthesis_repair(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            "Attaching deterministic landing and dashboard compositions before synthesis validation",
+        )?;
+        fields = entity_fields(&current);
+        let status = entity_status_value(&current);
+        refresh_composition_projections(
+            ctx,
+            api_url,
+            headers,
+            workspace_id,
+            language_id,
+            &fields,
+            &status,
+        )?;
+        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
+            || {
+                format!(
+                    "DesignLanguage '{language_id}' disappeared after AttachCompositions repair"
+                )
+            },
+        )?;
+        repaired_steps.push("AttachCompositions");
     }
 
     if !repaired_steps.is_empty() {
@@ -6261,8 +6363,8 @@ fn design_language_ids_from_job(fields: &serde_json::Value) -> Vec<String> {
 fn contract_repair_existing_language_ids(fields: &serde_json::Value) -> Option<Vec<String>> {
     let input = parse_json_field(fields.get("input").or_else(|| fields.get("Input")))?;
     let repair = input.get("contract_repair")?;
-    let ids = dedupe_nonempty_strings(string_array_flexible(
-        repair.get("existing_design_language_ids"),
+    let ids = filter_valid_language_entity_ids(dedupe_nonempty_strings(
+        string_array_flexible(repair.get("existing_design_language_ids")),
     ));
     (!ids.is_empty()).then_some(ids)
 }
@@ -6288,14 +6390,14 @@ fn dedupe_nonempty_strings(ids: Vec<String>) -> Vec<String> {
 fn design_language_ids_for_contract_validation(fields: &serde_json::Value) -> Vec<String> {
     let completion_ids = design_language_ids_from_completion(fields);
     if !completion_ids.is_empty() {
-        return completion_ids;
+        return dedupe_nonempty_strings(completion_ids);
     }
     if let Some(repair_ids) = contract_repair_existing_language_ids(fields) {
         if !repair_ids.is_empty() {
             return repair_ids;
         }
     }
-    design_language_ids_from_job(fields)
+    filter_valid_language_entity_ids(design_language_ids_from_job(fields))
 }
 
 fn design_language_ids_for_contract_repair(
@@ -6304,7 +6406,7 @@ fn design_language_ids_for_contract_repair(
 ) -> Vec<String> {
     let field_ids = design_language_ids_for_contract_validation(fields);
     if !field_ids.is_empty() {
-        return field_ids;
+        return filter_valid_language_entity_ids(field_ids);
     }
 
     let mut ids = Vec::new();
@@ -6319,7 +6421,7 @@ fn design_language_ids_for_contract_repair(
             }
         }
     }
-    dedupe_nonempty_strings(ids)
+    filter_valid_language_entity_ids(dedupe_nonempty_strings(ids))
 }
 
 fn design_language_ids_from_completion(fields: &serde_json::Value) -> Vec<String> {
@@ -8136,7 +8238,7 @@ mod tests {
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
         max_contract_repair_attempts, merge_trigger_params_into_fields,
         next_artifact_repair_attempt, normalize_pawfs_path,
-        parent_session_id_from_fields, parse_json_string_array,
+        parent_session_id_from_fields, parse_json_string_array, partition_language_entity_ids,
         partial_design_language_contract_defects, pawfs_directory_id, pawfs_file_id,
         push_repairable_language_defect,
         recoverable_image_bytes_from_text, recovery_set_spec_params,
@@ -8583,6 +8685,69 @@ mod tests {
                     text.contains("temper.create('DesignLanguages', {})")
                 }))
         );
+    }
+
+    #[test]
+    fn partition_language_entity_ids_splits_slug_and_entity_ids() {
+        let (valid, invalid) = partition_language_entity_ids(vec![
+            "en-019edd5a-0eb9-7881-950f-7216bdb335d1".to_string(),
+            "washi-quiet-text-workspace".to_string(),
+            "katagami-rhythm-context-map".to_string(),
+            "en-019edd5a-0eb9-7881-950f-7216bdb335d1".to_string(),
+        ]);
+
+        assert_eq!(
+            valid,
+            vec!["en-019edd5a-0eb9-7881-950f-7216bdb335d1".to_string()]
+        );
+        assert_eq!(
+            invalid,
+            vec![
+                "washi-quiet-text-workspace".to_string(),
+                "katagami-rhythm-context-map".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn contract_repair_input_filters_slug_ids_from_existing_targets() {
+        let fields = json!({
+            "query_id": "en-query-1",
+            "direction_id": "en-direction-1",
+            "input": json!({"task": "synthesize direction"}).to_string(),
+            "design_language_ids": "[\"en-019edd5a-0eb9-7881-950f-7216bdb335d1\",\"washi-quiet-text-workspace\"]"
+        });
+        let validation = json!({
+            "validated": false,
+            "job_type": "synthesize",
+            "incomplete_language_ids": [
+                "en-019edd5a-0eb9-7881-950f-7216bdb335d1",
+                "washi-quiet-text-workspace"
+            ],
+            "defects": [
+                contract_defect(
+                    "synthesize",
+                    Some("en-019edd5a-0eb9-7881-950f-7216bdb335d1"),
+                    "DesignLanguage 'en-019edd5a-0eb9-7881-950f-7216bdb335d1' has no landing_file_id for required compositions"
+                )
+            ]
+        });
+
+        let input = contract_repair_input("synthesize", &fields, &validation, 3)
+            .expect("repair input should filter slug repair targets");
+        let repair = input
+            .get("contract_repair")
+            .expect("repair context should be present");
+
+        assert_eq!(
+            repair["existing_design_language_ids"],
+            json!(["en-019edd5a-0eb9-7881-950f-7216bdb335d1"])
+        );
+        assert_eq!(
+            repair["invalid_reported_ids"],
+            json!(["washi-quiet-text-workspace"])
+        );
+        assert_eq!(input["existing_language_id"], "en-019edd5a-0eb9-7881-950f-7216bdb335d1");
     }
 
     #[test]

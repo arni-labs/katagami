@@ -996,7 +996,10 @@ This session submits a completion attempt. The system finalizer validates the co
                 "- Your first tool call must load this CurationJob and the existing DesignLanguage, then attach the missing artifacts for `{job_type}`.\n",
             ));
             out.push_str(
-                "- Priority order: embodiment HTML → desktop thumbnail → shadcn component artifacts → typed completion.\n",
+                "- Priority order: valid entity IDs (en-…) → landing/dashboard compositions → embodiment HTML → desktop thumbnail → shadcn component artifacts → typed completion.\n",
+            );
+            out.push_str(
+                "- If any reported ID is a slug instead of an en-* entity_id, create a valid DesignLanguage with `temper.create('DesignLanguages', {})` before attaching artifacts.\n",
             );
             if should_use_regenerate_embodiment_repair_skill(job_type, fields) {
                 out.push_str(&format!(
@@ -1378,6 +1381,7 @@ mod tests {
 
         assert!(prompt.contains("## Repair Execution Discipline"));
         assert!(prompt.contains("Do **not** list, read, or inspect unrelated DesignLanguages"));
+        assert!(prompt.contains("valid entity IDs (en-…) → landing/dashboard compositions"));
         assert!(prompt.contains("embodiment HTML → desktop thumbnail"));
         assert!(prompt.contains(REGENERATE_EMBODIMENT_SKILL));
         assert!(prompt.contains("CompleteSynthesis"));

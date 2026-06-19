@@ -401,6 +401,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("verify_synthesis_finalizer_owned_artifacts", synth)
         self.assertIn("repair_missing_core_artifacts_when_spec_ready(", synth)
+        backstop = source[
+            source.index("fn repair_missing_embodiment_and_thumbnail") : source.index(
+                "fn repair_synthesis_partial_language"
+            )
+        ]
+        self.assertIn("refresh_composition_projections(", backstop)
         self.assertNotIn("repair_synthesis_partial_language(", synth)
         self.assertLess(
             synth.index("repair_missing_core_artifacts_when_spec_ready("),

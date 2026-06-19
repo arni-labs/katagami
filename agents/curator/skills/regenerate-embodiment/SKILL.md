@@ -20,8 +20,10 @@ input contains `existing_language_id` or `contract_repair`:
 
 1. Do **not** create a new DesignLanguage.
 2. Do **not** list, read, or inspect unrelated DesignLanguages for inspiration.
-3. Repair the existing entity in place: spec gaps only if required, then
-   embodiment HTML, desktop thumbnail, shadcn component artifacts.
+3. Repair the existing entity in place using this strict priority:
+   valid `en-*` entity IDs → landing/dashboard compositions → native spec gaps
+   only if required → embodiment HTML → desktop thumbnail → shadcn component
+   artifacts.
 4. Finish with the job's original typed completion action:
    - `synthesize` → `CompleteSynthesis`
    - `evolve_language` → `CompleteEvolution`
@@ -74,21 +76,35 @@ Do not spend a turn printing documentation chunks. Do not stop after reading.
 
 ## Repair Contract
 
-1. If the language is `Published`, first call `Revise`.
-2. Rebuild any incomplete native spec sections with `SetSpec`. If the existing
-   spec is empty, infer a complete language from the title, slug, tags, current
-   artifacts, and `repair_reason`; regeneration is allowed to create the missing
-   design language content that review refused to invent.
-3. Write a self-contained HTML embodiment to sandbox, screenshot it, and iterate
+Follow this order on every repair turn. Do not skip ahead to later artifacts
+while earlier blockers remain.
+
+1. **Entity ID sanity.** If `existing_language_id`, `language_ids`, or
+   `contract_repair.existing_design_language_ids` contains a slug (anything
+   that does not start with `en-`), stop repairing that slug entity. Create a
+   valid DesignLanguage with `temper.create('DesignLanguages', {})`, store the
+   human-readable slug only in `slug`, and use the returned `entity_id` in
+   `design_language_ids`.
+2. If the language is `Published`, call `Revise` before mutating artifacts.
+3. **Landing and dashboard compositions.** If `landing_file_id` or
+   `dashboard_file_id` is missing, write both HTML compositions to PawFS,
+   verify the Files are `Ready`, then call `AttachCompositions` before moving
+   on.
+4. Rebuild any incomplete native spec sections with `SetSpec` only when spec
+   sections are still blocking validation. If the existing spec is empty, infer
+   a complete language from the title, slug, tags, current artifacts, and
+   `repair_reason`.
+5. Write a self-contained HTML embodiment to sandbox, screenshot it, and iterate
    until it renders as a polished app screen at desktop, tablet, and mobile.
-4. Generate a deterministic desktop gallery thumbnail from the final HTML:
+6. Generate a deterministic desktop gallery thumbnail from the final HTML:
    `600x400`, JPEG, MIME `image/jpeg`.
-5. Write artifacts through PawFS and verify every returned File with
+7. Write artifacts through PawFS and verify every returned File with
    `temper.get('Files', file_id)` before attaching it.
-6. Attach embodiment, thumbnail, shadcn component recipes, and shadcn preview
+8. Attach embodiment, thumbnail, shadcn component recipes, and shadcn preview
    shots. The finalizer owns deterministic DESIGN.md and shadcn registry-theme
    projection.
-7. Dispatch `CompleteRegeneration`, then call `temper.done(...)`.
+9. Dispatch the typed completion action for the job (`CompleteRegeneration`,
+   `CompleteSynthesis`, or `CompleteEvolution`), then call `temper.done(...)`.
 
 ## Minimal Spec Shape
 
