@@ -44,6 +44,14 @@ Accepted TasteRules are the authoritative reusable design tests. The knowledge
 files provide orientation and hard artifact context; do not recreate parallel
 anti-slop checklists from prose.
 
+## Validator Repair Turn
+
+If the session prompt includes `contract_repair` or `existing_language_id`, this is
+a repair turn — not fresh synthesis. Follow
+`/agents/curator/skills/regenerate-embodiment/SKILL.md` instead of creating a new
+DesignLanguage. Do not explore unrelated languages. Still finish with
+`CompleteSynthesis` (or `CompleteEvolution` for `evolve_language`).
+
 ## Execution Discipline
 
 - NEVER create, modify, or delete Taxonomy entities.

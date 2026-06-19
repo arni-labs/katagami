@@ -6,10 +6,42 @@ embodiments, missing thumbnails, invalid DESIGN.md projections, and missing
 shadcn/ui component artifacts.
 
 Do not spend turns reading the full synthesis skill. This compact skill is the
-authoritative repair contract for `regenerate_embodiment` jobs. The first tool
-call must load the job and language, then perform artifact work.
-The first rule: first tool call must load the job and language before any documentation or
-artifact work.
+authoritative repair contract for `regenerate_embodiment` jobs and for
+`synthesize` / `evolve_language` validator repair turns when
+`existing_language_id` or `contract_repair.existing_design_language_ids` is set.
+
+The first rule: first tool call must load the job and language before any
+documentation or artifact work.
+
+## Synthesize / Evolve Repair Mode
+
+When the CurationJob `job_type` is `synthesize` or `evolve_language` and the
+input contains `existing_language_id` or `contract_repair`:
+
+1. Do **not** create a new DesignLanguage.
+2. Do **not** list, read, or inspect unrelated DesignLanguages for inspiration.
+3. Repair the existing entity in place: spec gaps only if required, then
+   embodiment HTML, desktop thumbnail, shadcn component artifacts.
+4. Finish with the job's original typed completion action:
+   - `synthesize` → `CompleteSynthesis`
+   - `evolve_language` → `CompleteEvolution`
+
+```python
+created_ids = [eid]
+if job_type == 'evolve_language':
+    temper.action('CurationJobs', job_id, 'CompleteEvolution', {
+        'design_language_ids': json.dumps(created_ids),
+        'output': json.dumps({'language_ids': created_ids}, ensure_ascii=False)
+    })
+    temper.done("evolve_language complete")
+else:
+    review_input = json.dumps({'language_ids': created_ids, 'query_id': query_id}, ensure_ascii=False)
+    temper.action('CurationJobs', job_id, 'CompleteSynthesis', {
+        'design_language_ids': json.dumps(created_ids),
+        'review_input': review_input
+    })
+    temper.done("synthesize complete")
+```
 
 ## Inputs
 

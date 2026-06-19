@@ -65,6 +65,16 @@ class ArtifactReadyContractTests(unittest.TestCase):
             self.finalizer,
         )
 
+    def test_finalizer_backstops_missing_core_artifacts_when_spec_is_ready(self):
+        synth = self.finalizer[
+            self.finalizer.index("fn verify_synthesized_languages") : self.finalizer.index(
+                "fn verify_generated_language_identity"
+            )
+        ]
+        self.assertIn("repair_missing_core_artifacts_when_spec_ready(", synth)
+        self.assertNotIn("repair_synthesis_partial_language(", synth)
+        self.assertNotIn("SetSpec", synth)
+
     def test_finalizer_does_not_deterministically_generate_creative_artifacts(self):
         synth = self.finalizer[
             self.finalizer.index("fn verify_synthesized_languages") : self.finalizer.index(
@@ -122,6 +132,24 @@ class ArtifactReadyContractTests(unittest.TestCase):
             submit_for_review,
             "synthesis must collect composition defects before advancing to review",
         )
+
+    def test_synthesis_contract_repair_budget_is_higher_than_default(self):
+        self.assertIn("MAX_SYNTHESIS_CONTRACT_REPAIR_ATTEMPTS", self.finalizer)
+        self.assertIn("fn max_contract_repair_attempts", self.finalizer)
+        self.assertIn('"synthesize" | "evolve_language"', self.finalizer)
+
+    def test_build_session_message_routes_synthesize_repair_to_regenerate_skill(self):
+        builder = (
+            self.curation_root
+            / "wasm"
+            / "build_session_message"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+        self.assertIn("fn should_use_regenerate_embodiment_repair_skill", builder)
+        self.assertIn("fn effective_skill_routing", builder)
+        self.assertIn("Repair Execution Discipline", builder)
+        self.assertIn("regenerate-embodiment", builder)
 
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [

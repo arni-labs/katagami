@@ -400,7 +400,13 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         synth = source[synth_start:synth_end]
 
         self.assertIn("verify_synthesis_finalizer_owned_artifacts", synth)
+        self.assertIn("repair_missing_core_artifacts_when_spec_ready(", synth)
         self.assertNotIn("repair_synthesis_partial_language(", synth)
+        self.assertLess(
+            synth.index("repair_missing_core_artifacts_when_spec_ready("),
+            synth.index("partial_design_language_contract_defects("),
+            "mechanical core-artifact backstop must run before returning agent repair defects",
+        )
         self.assertLess(
             synth.index("partial_design_language_contract_defects("),
             synth.index('"SubmitForReview"'),

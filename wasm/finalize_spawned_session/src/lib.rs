@@ -3,7 +3,15 @@ use temper_wasm_sdk::prelude::*;
 
 const MAX_ARTIFACT_REPAIR_ATTEMPTS: i64 = 2;
 const MAX_CONTRACT_REPAIR_ATTEMPTS: i64 = 3;
+const MAX_SYNTHESIS_CONTRACT_REPAIR_ATTEMPTS: i64 = 6;
 const MAX_TRANSIENT_PROVIDER_RETRIES: i64 = 4;
+
+fn max_contract_repair_attempts(job_type: &str) -> i64 {
+    match job_type {
+        "synthesize" | "evolve_language" => MAX_SYNTHESIS_CONTRACT_REPAIR_ATTEMPTS,
+        _ => MAX_CONTRACT_REPAIR_ATTEMPTS,
+    }
+}
 #[cfg(target_arch = "wasm32")]
 const FILE_UPLOAD_STREAM_CHUNK_BYTES: usize = 64 * 1024;
 
@@ -901,12 +909,13 @@ fn set_repair_required_or_fail(
     summary: &str,
 ) -> Result<bool, String> {
     let attempts = numeric_field_any(fields, &["retry_attempts", "RetryAttempts"]);
-    if attempts >= MAX_CONTRACT_REPAIR_ATTEMPTS {
+    let max_attempts = max_contract_repair_attempts(job_type);
+    if attempts >= max_attempts {
         set_failed_job_callback(
             ctx,
             job_id,
             &format!(
-                "{job_type} contract defects remained after {MAX_CONTRACT_REPAIR_ATTEMPTS} repair attempts: {summary}"
+                "{job_type} contract defects remained after {max_attempts} repair attempts: {summary}"
             ),
         );
         return Ok(false);
@@ -914,7 +923,14 @@ fn set_repair_required_or_fail(
 
     let next_attempt = attempts + 1;
     let repair_input = contract_repair_input(job_type, fields, validation, next_attempt)?;
-    set_repair_required_job_callback(ctx, job_id, summary, next_attempt, &repair_input);
+    set_repair_required_job_callback(
+        ctx,
+        job_id,
+        summary,
+        next_attempt,
+        max_attempts,
+        &repair_input,
+    );
     Ok(true)
 }
 
@@ -923,12 +939,13 @@ fn set_repair_required_job_callback(
     job_id: &str,
     summary: &str,
     retry_attempts: i64,
+    max_attempts: i64,
     input: &serde_json::Value,
 ) {
     ctx.log(
         "warn",
         &format!(
-            "finalize_spawned_session: requesting CurationJob.RepairRequired callback for job '{job_id}' attempt {retry_attempts}/{MAX_CONTRACT_REPAIR_ATTEMPTS}: {summary}"
+            "finalize_spawned_session: requesting CurationJob.RepairRequired callback for job '{job_id}' attempt {retry_attempts}/{max_attempts}: {summary}"
         ),
     );
     set_success_result(
@@ -966,6 +983,7 @@ fn contract_repair_input(
     );
     let query_id = string_field(fields, "query_id", "");
     let direction_id = string_field(fields, "direction_id", "");
+    let max_attempts = max_contract_repair_attempts(job_type);
 
     if !existing_design_language_ids.is_empty() && !input_obj.contains_key("language_ids") {
         input_obj.insert(
@@ -995,7 +1013,7 @@ fn contract_repair_input(
         json!({
             "job_type": job_type,
             "attempt": next_attempt,
-            "max_attempts": MAX_CONTRACT_REPAIR_ATTEMPTS,
+            "max_attempts": max_attempts,
             "summary": validation_defect_summary(job_type, validation),
             "defects": defects,
             "existing_design_language_ids": existing_design_language_ids,
@@ -1527,6 +1545,17 @@ fn verify_synthesized_languages(
                 continue;
             }
         }
+        if matches!(job_type, "synthesize" | "evolve_language" | "regenerate_embodiment") {
+            language = repair_missing_core_artifacts_when_spec_ready(
+                ctx,
+                api_url,
+                headers,
+                workspace_id,
+                job_type,
+                language_id,
+                &language,
+            )?;
+        }
         let durable_defects =
             partial_design_language_contract_defects(job_type, language_id, &language);
         if !durable_defects.is_empty() {
@@ -1698,7 +1727,31 @@ fn verify_generated_language_identity(
     Ok(())
 }
 
-fn repair_synthesis_partial_language(
+fn repair_missing_core_artifacts_when_spec_ready(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    job_type: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let fields = entity_fields(language);
+    if synthesis_spec_repair_needed(&fields) {
+        return Ok(language.clone());
+    }
+    repair_missing_embodiment_and_thumbnail(
+        ctx,
+        api_url,
+        headers,
+        workspace_id,
+        job_type,
+        language_id,
+        language,
+    )
+}
+
+fn repair_missing_embodiment_and_thumbnail(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
@@ -1710,32 +1763,6 @@ fn repair_synthesis_partial_language(
     let mut current = language.clone();
     let mut fields = entity_fields(&current);
     let mut repaired_steps = Vec::new();
-
-    if synthesis_spec_repair_needed(&fields) {
-        current = ensure_language_mutable_for_synthesis_repair(
-            ctx,
-            api_url,
-            headers,
-            language_id,
-            "Repairing incomplete native spec before synthesis validation",
-        )?;
-        fields = entity_fields(&current);
-        let params = recovery_set_spec_params(language_id, &fields);
-        dispatch_action(
-            ctx,
-            api_url,
-            headers,
-            "DesignLanguages",
-            language_id,
-            "SetSpec",
-            &params,
-        )?;
-        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
-            || format!("DesignLanguage '{language_id}' disappeared after SetSpec repair"),
-        )?;
-        fields = entity_fields(&current);
-        repaired_steps.push("SetSpec");
-    }
 
     if string_field_any(&fields, "embodiment_file_id", "")
         .trim()
@@ -1843,11 +1870,74 @@ fn repair_synthesis_partial_language(
         ctx.log(
             "info",
             &format!(
-                "{job_type} finalizer repaired partial DesignLanguage '{language_id}' in place before contract defect evaluation: {}",
+                "{job_type} finalizer mechanically backstopped missing core artifacts for DesignLanguage '{language_id}' before contract defect evaluation: {}",
                 repaired_steps.join(", ")
             ),
         );
     }
+
+    Ok(current)
+}
+
+fn repair_synthesis_partial_language(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    workspace_id: &str,
+    job_type: &str,
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let mut current = language.clone();
+    let mut fields = entity_fields(&current);
+    let mut repaired_steps = Vec::new();
+
+    if synthesis_spec_repair_needed(&fields) {
+        current = ensure_language_mutable_for_synthesis_repair(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            "Repairing incomplete native spec before synthesis validation",
+        )?;
+        fields = entity_fields(&current);
+        let params = recovery_set_spec_params(language_id, &fields);
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            "SetSpec",
+            &params,
+        )?;
+        current = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?.ok_or_else(
+            || format!("DesignLanguage '{language_id}' disappeared after SetSpec repair"),
+        )?;
+        fields = entity_fields(&current);
+        repaired_steps.push("SetSpec");
+    }
+
+    current = repair_missing_embodiment_and_thumbnail(
+        ctx,
+        api_url,
+        headers,
+        workspace_id,
+        job_type,
+        language_id,
+        &current,
+    )?;
+    if repaired_steps.is_empty() {
+        return Ok(current);
+    }
+
+    ctx.log(
+        "info",
+        &format!(
+            "{job_type} finalizer repaired partial DesignLanguage '{language_id}' in place before contract defect evaluation: {}",
+            repaired_steps.join(", ")
+        ),
+    );
 
     Ok(current)
 }
@@ -8044,7 +8134,8 @@ mod tests {
         design_language_ids_from_completion, design_language_ids_from_job,
         design_md_projection_refresh_reason, entity_bool_any, is_repairable_contract_error,
         is_repairable_language_artifact_error, is_transient_provider_failure, json_object_field,
-        merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
+        max_contract_repair_attempts, merge_trigger_params_into_fields,
+        next_artifact_repair_attempt, normalize_pawfs_path,
         parent_session_id_from_fields, parse_json_string_array,
         partial_design_language_contract_defects, pawfs_directory_id, pawfs_file_id,
         push_repairable_language_defect,
@@ -8399,6 +8490,7 @@ mod tests {
         assert_eq!(input["language_ids"], json!(["en-existing"]));
         assert_eq!(input["existing_language_id"], "en-existing");
         assert_eq!(repair["attempt"], 2);
+        assert_eq!(repair["max_attempts"], 6);
         assert_eq!(repair["do_not_create_duplicates"], true);
         assert_eq!(
             repair["existing_design_language_ids"],
@@ -8437,6 +8529,13 @@ mod tests {
             repair["existing_design_language_ids"],
             json!(["en-partial"])
         );
+    }
+
+    #[test]
+    fn synthesis_contract_repair_budget_is_higher_than_default_jobs() {
+        assert_eq!(max_contract_repair_attempts("synthesize"), 6);
+        assert_eq!(max_contract_repair_attempts("evolve_language"), 6);
+        assert_eq!(max_contract_repair_attempts("quality_review"), 3);
     }
 
     #[test]

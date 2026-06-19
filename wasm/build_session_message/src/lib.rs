@@ -2,6 +2,9 @@ use temper_wasm_sdk::prelude::*;
 
 const DEFAULT_TOOLS_ENABLED: &str = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch";
 const DOC_WORKSPACE_ID: &str = "os-app-docs";
+const REGENERATE_EMBODIMENT_SKILL: &str = "regenerate-embodiment";
+const REGENERATE_EMBODIMENT_INSTRUCTION_PATH: &str =
+    "/agents/curator/skills/regenerate-embodiment/SKILL.md";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct JobTemplate {
@@ -116,20 +119,21 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .to_string();
 
         let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
-        let skill = template.skill_id.as_str();
+        let skill_routing = effective_skill_routing(&job_type, &fields, &template);
+        let skill = skill_routing.skill_id.as_str();
         let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
         let instruction_doc = load_instruction_doc(
             &ctx,
             &api_url,
             &headers,
-            &template.instruction_path,
+            &skill_routing.instruction_path,
             &stable_soul_id,
             inline_job_docs,
         );
         let effective_instruction_path = instruction_doc
             .as_ref()
             .map(|doc| doc.path.as_str())
-            .unwrap_or(template.instruction_path.as_str());
+            .unwrap_or(skill_routing.instruction_path.as_str());
         let knowledge_specs = knowledge_read_specs_for_skill(skill);
         let knowledge_docs = knowledge_specs
             .iter()
@@ -147,6 +151,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &fields,
             template.completion_contract.as_str(),
             template.completion_action.as_str(),
+            &job_type,
         );
 
         let job_tools = fields
@@ -864,10 +869,57 @@ fn render_loaded_reference_block(
     out
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct EffectiveSkillRouting {
+    skill_id: String,
+    instruction_path: String,
+}
+
+fn effective_skill_routing(
+    job_type: &str,
+    fields: &serde_json::Value,
+    template: &JobTemplate,
+) -> EffectiveSkillRouting {
+    if should_use_regenerate_embodiment_repair_skill(job_type, fields) {
+        return EffectiveSkillRouting {
+            skill_id: REGENERATE_EMBODIMENT_SKILL.to_string(),
+            instruction_path: REGENERATE_EMBODIMENT_INSTRUCTION_PATH.to_string(),
+        };
+    }
+    EffectiveSkillRouting {
+        skill_id: template.skill_id.clone(),
+        instruction_path: template.instruction_path.clone(),
+    }
+}
+
+fn should_use_regenerate_embodiment_repair_skill(
+    job_type: &str,
+    fields: &serde_json::Value,
+) -> bool {
+    if !matches!(job_type, "synthesize" | "evolve_language") {
+        return false;
+    }
+    let Some(repair) = contract_repair_context(fields) else {
+        return false;
+    };
+    if repair
+        .get("repair_existing_artifacts")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+    {
+        return true;
+    }
+    repair
+        .get("existing_design_language_ids")
+        .and_then(|value| value.as_array())
+        .is_some_and(|values| !values.is_empty())
+}
+
 fn render_typed_completion_contract_context(
     fields: &serde_json::Value,
     completion_contract: &str,
     completion_action: &str,
+    job_type: &str,
 ) -> String {
     if completion_contract != "typed-v1" {
         return String::new();
@@ -930,6 +982,26 @@ This session submits a completion attempt. The system finalizer validates the co
                 if let Some(language_id) = id.as_str() {
                     out.push_str(&format!("  - `{language_id}`\n"));
                 }
+            }
+            out.push_str("\n## Repair Execution Discipline\n\n");
+            out.push_str(
+                "This is a validator repair turn, not a fresh synthesis exploration.\n\n",
+            );
+            out.push_str("- Do **not** list, read, or inspect unrelated DesignLanguages.\n");
+            out.push_str("- Do **not** browse the library for inspiration or examples.\n");
+            out.push_str(
+                "- Do **not** spend turns on documentation, exploration, or debugging unrelated entities.\n",
+            );
+            out.push_str(&format!(
+                "- Your first tool call must load this CurationJob and the existing DesignLanguage, then attach the missing artifacts for `{job_type}`.\n",
+            ));
+            out.push_str(
+                "- Priority order: embodiment HTML → desktop thumbnail → shadcn component artifacts → typed completion.\n",
+            );
+            if should_use_regenerate_embodiment_repair_skill(job_type, fields) {
+                out.push_str(&format!(
+                    "- Use the `{REGENERATE_EMBODIMENT_SKILL}` repair skill, but still dispatch `{completion_action}` when finished.\n",
+                ));
             }
         }
         if let Some(invalid_ids) = contract_repair
@@ -1101,10 +1173,12 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        config_bool, field_bool, file_id_from_workspace_response, instruction_path_candidates,
-        knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
-        render_loaded_reference_block, render_typed_completion_contract_context,
-        temper_read_command, LoadedDoc,
+        config_bool, effective_skill_routing, field_bool, file_id_from_workspace_response,
+        instruction_path_candidates, knowledge_read_specs_for_skill,
+        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
+        render_typed_completion_contract_context, should_use_regenerate_embodiment_repair_skill,
+        temper_read_command, EffectiveSkillRouting, LoadedDoc, REGENERATE_EMBODIMENT_INSTRUCTION_PATH,
+        REGENERATE_EMBODIMENT_SKILL,
     };
 
     #[test]
@@ -1161,8 +1235,12 @@ mod tests {
             "error_message": "synthesize typed completion ended with an unfinished tool call instead of dispatching its typed completion action"
         });
 
-        let prompt =
-            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
+        let prompt = render_typed_completion_contract_context(
+            &fields,
+            "typed-v1",
+            "CompleteSynthesis",
+            "synthesize",
+        );
 
         assert!(prompt.contains("Typed Completion Contract"));
         assert!(prompt.contains("system finalizer validates the contract"));
@@ -1191,8 +1269,12 @@ mod tests {
             }).to_string()
         });
 
-        let prompt =
-            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
+        let prompt = render_typed_completion_contract_context(
+            &fields,
+            "typed-v1",
+            "CompleteSynthesis",
+            "synthesize",
+        );
 
         assert!(prompt.contains("Validator Repair Payload"));
         assert!(prompt.contains("\"attempt\": 2"));
@@ -1222,8 +1304,12 @@ mod tests {
             }).to_string()
         });
 
-        let prompt =
-            render_typed_completion_contract_context(&fields, "typed-v1", "CompleteSynthesis");
+        let prompt = render_typed_completion_contract_context(
+            &fields,
+            "typed-v1",
+            "CompleteSynthesis",
+            "synthesize",
+        );
 
         assert!(prompt.contains("## Repair Contract"));
         assert!(prompt.contains("Keep query ID: `en-query-1`"));
@@ -1231,6 +1317,70 @@ mod tests {
         assert!(prompt.contains("aya-text-first-quiet-woven-knowledge-workspace"));
         assert!(prompt.contains("temper.create('DesignLanguages', {})"));
         assert!(prompt.contains("`missing_design_language_entity`"));
+    }
+
+    #[test]
+    fn synthesize_repair_routes_to_regenerate_embodiment_skill() {
+        let template = parse_template(&json!({
+            "job_type": "synthesize",
+            "skill_id": "synthesize-language",
+            "instruction_path": "/agents/curator/skills/synthesize-language/SKILL.md",
+            "completion_action": "CompleteSynthesis",
+            "completion_contract": "typed-v1",
+            "template_version": "7"
+        }))
+        .expect("template should parse");
+        let fields = json!({
+            "input": json!({
+                "existing_language_id": "en-existing",
+                "contract_repair": {
+                    "repair_existing_artifacts": true,
+                    "existing_design_language_ids": ["en-existing"]
+                }
+            }).to_string()
+        });
+
+        assert!(should_use_regenerate_embodiment_repair_skill("synthesize", &fields));
+        assert_eq!(
+            effective_skill_routing("synthesize", &fields, &template),
+            EffectiveSkillRouting {
+                skill_id: REGENERATE_EMBODIMENT_SKILL.to_string(),
+                instruction_path: REGENERATE_EMBODIMENT_INSTRUCTION_PATH.to_string(),
+            }
+        );
+        assert!(!should_use_regenerate_embodiment_repair_skill(
+            "source_search",
+            &fields
+        ));
+    }
+
+    #[test]
+    fn repair_prompt_forbids_library_exploration_and_prioritizes_artifacts() {
+        let fields = json!({
+            "input": json!({
+                "contract_repair": {
+                    "repair_existing_artifacts": true,
+                    "existing_design_language_ids": ["en-existing"],
+                    "defects": [{
+                        "code": "missing_or_invalid_embodiment",
+                        "message": "DesignLanguage 'en-existing' missing embodiment_file_id"
+                    }]
+                }
+            }).to_string()
+        });
+
+        let prompt = render_typed_completion_contract_context(
+            &fields,
+            "typed-v1",
+            "CompleteSynthesis",
+            "synthesize",
+        );
+
+        assert!(prompt.contains("## Repair Execution Discipline"));
+        assert!(prompt.contains("Do **not** list, read, or inspect unrelated DesignLanguages"));
+        assert!(prompt.contains("embodiment HTML → desktop thumbnail"));
+        assert!(prompt.contains(REGENERATE_EMBODIMENT_SKILL));
+        assert!(prompt.contains("CompleteSynthesis"));
     }
 
     #[test]
