@@ -71,7 +71,7 @@ Each move below states the problem, the native mechanism, the spec change, and h
 - Mechanism: cross-entity guards referencing the `File` entity's status.
 - Change (`design_language.ioa.toml`): persist `thumbnail_file_id` / `embodiment_file_id` / `design_md_file_id` / composition file ids as entity state (set in the `Attach*` effects), then add to the `Publish` (and `AttachThumbnail`/`SubmitForReview`) guards predicates of the form `{ type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }`. Three file references ≤ the budget of 4.
 - Effect: a language cannot publish unless its referenced files genuinely have bytes — independent of whether the finalizer ran. A 404 thumbnail keeps the language in `Draft` (correct), instead of publishing broken output or stalling silently.
-- Verified by: Temper L1 model check on the new guards; an integration test that attaches a never-uploaded file id and asserts `Publish` is denied.
+- Verified by: Temper's cascade confirms the local state machine stays consistent — but note `temper-verify` maps `cross_entity_state` to `Always` (permissive), so it does **not** prove the denial. The file-ready denial is proven at runtime by an integration test that attaches a never-uploaded file id and asserts `Publish` is denied (and a `Ready` file is allowed).
 
 ### 6.2 Single-owner job lifecycle — finish ADR-0004's cutover
 
@@ -99,7 +99,7 @@ Each move below states the problem, the native mechanism, the spec change, and h
 
 Two layers, both local, both fast:
 
-1. **Spec verification (seconds).** Every spec change runs Temper's cascade locally; L1 exhaustively explores reachable states and returns a counterexample on any invariant violation. This is the red-green loop for the state machine and would have caught the `Published`-with-empty-file class immediately. Specs do not merge unless L1 passes.
+1. **Spec verification (seconds–minutes).** Every spec change runs Temper's cascade locally; L1 explores reachable states and returns a counterexample on any invariant violation. This is the red-green loop for the state machine — it already caught a real `Published`-but-internally-invalid lifecycle contradiction (see the case study). It does not, however, prove the cross-entity file-ready property (`cross_entity_state` is permissive in verify); that is the integration harness's job below. Specs do not merge unless the cascade passes.
 2. **Integration harness (minutes).** A `make`-level target seeds a minimal `CurationQuery`, stubs the Codex agent with deterministic output, and drives the pipeline to a terminal state against a local Temper, asserting: one job per phase, the fan-out barrier holds, a 404 file blocks publish, and a clean run reaches `Completed`. This replaces the 45-minute prod poll.
 
 WASM is built in CI and committed; the Docker image is the source of truth for what prod runs; no hand uploads.
