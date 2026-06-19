@@ -154,7 +154,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         finalizer = source.index("fn verify_quality_reviewed_languages")
         verify_call = source.index(
-            "verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?",
+            "match verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)",
             finalizer,
         )
         ensure_under_review = source.index(
@@ -198,6 +198,41 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("fn design_md_workspace_id", source)
         self.assertIn("os-app-docs", source)
         self.assertIn("katagami_artifact_workspace_id", source)
+
+    def test_quality_review_artifact_defects_use_repair_pending_not_fatal_errors(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        quality_start = source.index("fn verify_quality_reviewed_languages")
+        quality_end = source.index("fn ensure_language_under_review", quality_start)
+        quality = source[quality_start:quality_end]
+
+        for step in [
+            "verify_compositions(",
+            "verify_design_md(",
+            "verify_shadcn_export(",
+            "verify_shadcn_component_spec(",
+            "verify_shadcn_preview_shots(",
+            "verify_forced_agent_shadsync_refresh(",
+            "verify_and_mark_thumbnail(",
+        ]:
+            self.assertIn(step, quality)
+            self.assertIn("push_repairable_language_defect(", quality)
+
+        repairable = source.split("fn is_repairable_language_artifact_error", 1)[1].split(
+            "fn push_repairable_language_defect", 1
+        )[0]
+        for needle in [
+            "has no design_md_file_id",
+            "has no shadcn_export_file_id",
+            "forced shadsync refresh",
+        ]:
+            self.assertIn(needle, repairable)
 
     def test_quality_review_repair_blocks_organization_until_validated(self):
         source = (

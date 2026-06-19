@@ -91,6 +91,38 @@ class ArtifactReadyContractTests(unittest.TestCase):
         self.assertIn("build_repair_instructions", self.finalizer)
         self.assertIn("repair_instructions", self.finalizer)
 
+    def test_finalizer_routes_all_artifact_verification_through_repair_contract(self):
+        self.assertIn("fn push_repairable_language_defect", self.finalizer)
+        self.assertIn("fn apply_published_revision_status", self.finalizer)
+
+        quality_start = self.finalizer.index("fn verify_quality_reviewed_languages")
+        quality_end = self.finalizer.index("fn ensure_language_under_review", quality_start)
+        quality = self.finalizer[quality_start:quality_end]
+
+        for fragment in [
+            "verify_design_md(",
+            "verify_shadcn_export(",
+            "verify_shadcn_component_spec(",
+            "verify_shadcn_preview_shots(",
+            "push_repairable_language_defect(",
+            '"repair_pending": true',
+            "quality_review completed without any design_language_ids",
+        ]:
+            self.assertIn(fragment, quality)
+
+        synth_start = self.finalizer.index("fn verify_synthesized_languages")
+        synth_end = self.finalizer.index("fn verify_generated_language_identity", synth_start)
+        synth = self.finalizer[synth_start:synth_end]
+        composition_defect = synth.index(
+            "completion found composition defects for DesignLanguage"
+        )
+        submit_for_review = synth.index('"SubmitForReview"')
+        self.assertLess(
+            composition_defect,
+            submit_for_review,
+            "synthesis must collect composition defects before advancing to review",
+        )
+
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [
             "def require_ready_file",

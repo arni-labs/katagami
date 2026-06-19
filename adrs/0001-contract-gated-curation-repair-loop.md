@@ -35,19 +35,19 @@ they must not directly create follow-up jobs or advance parent queries.
 2. If the contract passes, emit the validated internal completion action
    (`PublishResearchCompletion`, `PublishSynthesisCompletion`,
    `PublishOrganizationCompletion`, or `FinalizeCompletion`).
-3. If a defect is deterministic and recoverable from durable state, repair it
-   inside the finalizer first, then reload and revalidate the same artifact IDs.
-   Example: a thumbnail `File` in `Created` with inline base64 image content is
-   decoded and streamed back through `Files('<id>')/$value` so the same File can
-   reach `Ready` without creating a duplicate.
-4. If a synthesis attempt produced a partial `DesignLanguage`, the finalizer
-   must repair that same entity before reporting durable defects whenever the
-   missing pieces are derivable from the partial state. It dispatches existing
-   `DesignLanguages` actions (`SetSpec`, `AttachEmbodiment`,
-   `AttachThumbnail`) with deterministic projections, reloads the same
-   `DesignLanguage` ID, then runs the normal validator. This may create or
-   update deterministic `File` artifacts at stable paths, but it must not
-   create a replacement `DesignLanguage`.
+3. If a defect is mechanically recoverable from durable state, repair it inside
+   the finalizer first, then reload and revalidate the same artifact IDs.
+   Mechanical repair is limited to byte/stream recovery and reattachment of
+   artifacts the agent already created. Example: a thumbnail `File` in `Created`
+   with inline base64 image content is decoded and streamed back through
+   `Files('<id>')/$value` so the same File can reach `Ready` without creating a
+   duplicate. Another example: when `force_agent_shadcn_artifact_refresh` is set,
+   the finalizer may reattach an existing agent-authored ShadSync file the agent
+   already wrote to PawFS.
+4. Creative artifacts — spec sections, embodiments, compositions, DESIGN.md,
+   shadcn exports, component recipes, and preview shots — are owned by the agent.
+   The finalizer validates and may mechanically reattach existing valid files,
+   but it must not deterministically generate replacement creative content.
 5. If repairable defects remain, emit `RepairRequired` with exact defects,
    existing artifact IDs, and retry metadata.
 6. `RepairRequired` re-enters the same CurationJob through `Ready` and
@@ -67,9 +67,8 @@ happens after deterministic validation of the publish contract.
   repair them deterministically from durable state first.
 - Existing partial DesignLanguage IDs are passed back to the agent, making
   duplicate creation a violation of the repair contract.
-- Partial synthesis outputs with usable identity fields no longer dead-end
-  solely because first-class spec sections, embodiment files, or thumbnail
-  files were omitted by the agent.
+- Partial synthesis outputs return structured defects to the agent instead of
+  dead-ending or being silently repaired by deterministic creative generation.
 - Follow-up creation that needs dedupe remains inside the finalizer; single
   target state transitions remain visible as validator-gated internal actions.
 - The pipeline becomes patient and self-healing: incomplete work loops until

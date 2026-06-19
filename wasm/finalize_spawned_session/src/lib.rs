@@ -1377,6 +1377,20 @@ fn is_repairable_language_artifact_error(error: &str) -> bool {
         "composition_landing file",
         "composition_dashboard file",
         "missing required compositions",
+        "has no design_md_file_id",
+        "design_md file",
+        "design.md",
+        "design_md_lint",
+        "lint result is not clean",
+        "has no shadcn_export_file_id",
+        "has no shadcn_component_spec_file_id",
+        "has no shadcn_preview_shots_file_id",
+        "shadcn_export file",
+        "shadcn_component_spec file",
+        "shadcn_preview_shots file",
+        "forced shadsync refresh",
+        "shadsync refresh",
+        "scene_len",
         "missing required spec sections",
         "missing required native katagami spec sections",
         "deeply empty",
@@ -1390,9 +1404,34 @@ fn is_repairable_language_artifact_error(error: &str) -> bool {
         "mime_type",
         "too small",
         "cannot publish public artifacts without thumbnail_file_id",
+        "does not exist",
     ]
     .iter()
     .any(|needle| lower.contains(needle))
+}
+
+fn push_repairable_language_defect(
+    job_type: &str,
+    language_id: &str,
+    error: String,
+    repair_language_ids: &mut Vec<String>,
+    defects: &mut Vec<serde_json::Value>,
+) -> Result<(), String> {
+    if is_repairable_language_artifact_error(&error) {
+        if !repair_language_ids.iter().any(|id| id == language_id) {
+            repair_language_ids.push(language_id.to_string());
+        }
+        defects.push(contract_defect(job_type, Some(language_id), &error));
+        Ok(())
+    } else {
+        Err(error)
+    }
+}
+
+fn apply_published_revision_status(revised: bool, status: &mut String) {
+    if revised && *status == "Published" {
+        *status = "UnderReview".to_string();
+    }
 }
 
 fn artifact_repair_attempt(fields: &serde_json::Value) -> i64 {
@@ -1531,7 +1570,24 @@ fn verify_synthesized_languages(
                             "DesignLanguage '{language_id}' disappeared after core verification"
                         )
                     })?;
-                verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?;
+                if let Err(e) = verify_compositions(
+                    ctx,
+                    api_url,
+                    headers,
+                    workspace_id,
+                    language_id,
+                    &language,
+                ) {
+                    ctx.log(
+                        "warn",
+                        &format!(
+                            "{job_type} completion found composition defects for DesignLanguage '{language_id}'; returning contract defect for same-job repair: {e}"
+                        ),
+                    );
+                    incomplete.push(language_id.clone());
+                    defects.push(contract_defect(job_type, Some(language_id), &e));
+                    continue;
+                }
                 let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
                     .ok_or_else(|| {
                         format!(
@@ -2479,7 +2535,15 @@ fn verify_quality_reviewed_languages(
 ) -> Result<serde_json::Value, String> {
     let language_ids = design_language_ids_from_job(fields);
     if language_ids.is_empty() {
-        return Err("quality_review completed without any design_language_ids".to_string());
+        let message = "quality_review completed without any design_language_ids";
+        return Ok(json!({
+            "validated": false,
+            "repair_pending": true,
+            "job_type": "quality_review",
+            "published_language_ids": [],
+            "repair_language_ids": [],
+            "defects": [contract_defect("quality_review", None, message)],
+        }));
     }
     if let Some(expected_ids) = contract_repair_existing_language_ids(fields) {
         if !same_string_set(&language_ids, &expected_ids) {
@@ -2503,8 +2567,23 @@ fn verify_quality_reviewed_languages(
     let mut repair_language_ids = Vec::new();
     let mut defects = Vec::new();
     for language_id in &language_ids {
-        let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
-            .ok_or_else(|| format!("DesignLanguage '{language_id}' does not exist"))?;
+        let Some(language) =
+            load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
+        else {
+            let message = format!("DesignLanguage '{language_id}' does not exist");
+            if push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                message,
+                &mut repair_language_ids,
+                &mut defects,
+            )
+            .is_ok()
+            {
+                continue;
+            }
+            return Err(format!("DesignLanguage '{language_id}' does not exist"));
+        };
         let mut status = entity_status_value(&language);
         if !matches!(status.as_str(), "Draft" | "UnderReview" | "Published") {
             return Err(format!(
@@ -2513,39 +2592,67 @@ fn verify_quality_reviewed_languages(
         }
 
         if let Err(error) = verify_language_core(ctx, api_url, headers, language_id, &language) {
-            if is_repairable_language_artifact_error(&error) {
-                repair_language_ids.push(language_id.clone());
-                defects.push(contract_defect("quality_review", Some(language_id), &error));
-                continue;
+            match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
             }
-            return Err(error);
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after core verification")
             })?;
-        if verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language)?
-            && status == "Published"
-        {
-            status = "UnderReview".to_string();
+        match verify_compositions(ctx, api_url, headers, workspace_id, language_id, &language) {
+            Err(error) => match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            },
+            Ok(revised) => apply_published_revision_status(revised, &mut status),
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after composition verification")
             })?;
-        if verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language)?
-            && status == "Published"
-        {
-            status = "UnderReview".to_string();
+        match verify_design_md(ctx, api_url, headers, workspace_id, language_id, &language) {
+            Err(error) => match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            },
+            Ok(revised) => apply_published_revision_status(revised, &mut status),
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after DESIGN.md verification")
             })?;
-        if verify_shadcn_export(ctx, api_url, headers, workspace_id, language_id, &language)?
-            && status == "Published"
-        {
-            status = "UnderReview".to_string();
+        match verify_shadcn_export(ctx, api_url, headers, workspace_id, language_id, &language) {
+            Err(error) => match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            },
+            Ok(revised) => apply_published_revision_status(revised, &mut status),
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
@@ -2553,25 +2660,43 @@ fn verify_quality_reviewed_languages(
                     "DesignLanguage '{language_id}' disappeared after shadcn export verification"
                 )
             })?;
-        if verify_shadcn_component_spec(
+        match verify_shadcn_component_spec(
             ctx,
             api_url,
             headers,
             workspace_id,
             language_id,
             &language,
-        )? && status == "Published"
-        {
-            status = "UnderReview".to_string();
+        ) {
+            Err(error) => match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            },
+            Ok(revised) => apply_published_revision_status(revised, &mut status),
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
                 format!("DesignLanguage '{language_id}' disappeared after shadcn component spec verification")
             })?;
-        if verify_shadcn_preview_shots(ctx, api_url, headers, workspace_id, language_id, &language)?
-            && status == "Published"
+        match verify_shadcn_preview_shots(ctx, api_url, headers, workspace_id, language_id, &language)
         {
-            status = "UnderReview".to_string();
+            Err(error) => match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            },
+            Ok(revised) => apply_published_revision_status(revised, &mut status),
         }
         let language = load_entity(ctx, api_url, headers, "DesignLanguages", language_id)?
             .ok_or_else(|| {
@@ -2586,15 +2711,30 @@ fn verify_quality_reviewed_languages(
             fields,
             &language,
         )?;
-        verify_forced_agent_shadsync_refresh(language_id, fields, &language)?;
+        if let Err(error) = verify_forced_agent_shadsync_refresh(language_id, fields, &language) {
+            match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
+            }
+        }
         if let Err(error) = verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)
         {
-            if is_repairable_language_artifact_error(&error) {
-                repair_language_ids.push(language_id.clone());
-                defects.push(contract_defect("quality_review", Some(language_id), &error));
-                continue;
+            match push_repairable_language_defect(
+                "quality_review",
+                language_id,
+                error,
+                &mut repair_language_ids,
+                &mut defects,
+            ) {
+                Ok(()) => continue,
+                Err(error) => return Err(error),
             }
-            return Err(error);
         }
         publish_public_assets(ctx, api_url, headers, language_id, &language)?;
         ensure_language_under_review(ctx, api_url, headers, language_id, &status)?;
@@ -7907,6 +8047,7 @@ mod tests {
         merge_trigger_params_into_fields, next_artifact_repair_attempt, normalize_pawfs_path,
         parent_session_id_from_fields, parse_json_string_array,
         partial_design_language_contract_defects, pawfs_directory_id, pawfs_file_id,
+        push_repairable_language_defect,
         recoverable_image_bytes_from_text, recovery_set_spec_params,
         render_dashboard_composition_projection, render_design_md_projection,
         render_landing_composition_projection, render_recovery_embodiment_projection,
@@ -8394,6 +8535,48 @@ mod tests {
             design_language_ids_for_contract_validation(&fields),
             vec!["en-existing"]
         );
+    }
+
+    #[test]
+    fn repairable_language_artifact_errors_cover_design_md_and_shadcn_gaps() {
+        assert!(is_repairable_language_artifact_error(
+            "DesignLanguage 'en-1' has no design_md_file_id"
+        ));
+        assert!(is_repairable_language_artifact_error(
+            "DesignLanguage 'en-1' has no shadcn_export_file_id"
+        ));
+        assert!(is_repairable_language_artifact_error(
+            "DesignLanguage 'en-1' forced ShadSync refresh did not attach components.md"
+        ));
+        assert!(!is_repairable_language_artifact_error(
+            "DesignLanguage 'en-1' is in state 'Archived', expected Draft"
+        ));
+    }
+
+    #[test]
+    fn push_repairable_language_defect_dedupes_language_ids() {
+        let mut repair_language_ids = Vec::new();
+        let mut defects = Vec::new();
+
+        push_repairable_language_defect(
+            "quality_review",
+            "en-1",
+            "DesignLanguage 'en-1' has no design_md_file_id".to_string(),
+            &mut repair_language_ids,
+            &mut defects,
+        )
+        .expect("design_md gaps are repairable");
+        push_repairable_language_defect(
+            "quality_review",
+            "en-1",
+            "DesignLanguage 'en-1' has no shadcn_export_file_id".to_string(),
+            &mut repair_language_ids,
+            &mut defects,
+        )
+        .expect("shadcn gaps are repairable");
+
+        assert_eq!(repair_language_ids, vec!["en-1"]);
+        assert_eq!(defects.len(), 2);
     }
 
     #[test]
