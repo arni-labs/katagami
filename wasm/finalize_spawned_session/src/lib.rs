@@ -2,6 +2,7 @@ use base64::Engine;
 use temper_wasm_sdk::prelude::*;
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
+const FILE_RECOVERY_CONFIRM_ATTEMPTS: usize = 3;
 #[cfg(target_arch = "wasm32")]
 const FILE_UPLOAD_STREAM_CHUNK_BYTES: usize = 64 * 1024;
 const SHADCN_COMPONENTS: [&str; 16] = [
@@ -1092,27 +1093,8 @@ fn recover_created_file_artifact(
             .entity("DesignLanguage", owner_id)
             .artifact(artifact_kind, file_id)
     })?;
-    let recovered_file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
-        VerificationError::new(
-            "missing_file",
-            format!(
-                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' disappeared after recovery"
-            ),
-        )
-        .entity("DesignLanguage", owner_id)
-        .artifact(artifact_kind, file_id)
-    })?;
-    let recovered_status = entity_status_value(&recovered_file);
-    if recovered_status != "Ready" {
-        return Err(VerificationError::new(
-            "file_not_ready",
-            format!(
-                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' remained in state '{recovered_status}' after streaming PUT $value recovery"
-            ),
-        )
-        .entity("DesignLanguage", owner_id)
-        .artifact(artifact_kind, file_id));
-    }
+    let recovered_file =
+        confirm_recovered_file_artifact(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
     ctx.log(
         "info",
         &format!(
@@ -1120,6 +1102,94 @@ fn recover_created_file_artifact(
         ),
     );
     Ok(Some(recovered_file))
+}
+
+fn confirm_recovered_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<serde_json::Value, VerificationError> {
+    let mut last_status = "missing".to_string();
+
+    for _ in 0..FILE_RECOVERY_CONFIRM_ATTEMPTS {
+        let recovered_file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+            VerificationError::new(
+                "missing_file",
+                format!(
+                    "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' disappeared after recovery"
+                ),
+            )
+            .entity("DesignLanguage", owner_id)
+            .artifact(artifact_kind, file_id)
+        })?;
+        let recovered_status = entity_status_value(&recovered_file);
+        if recovered_status == "Ready" {
+            return Ok(recovered_file);
+        }
+
+        if recovered_file_value_is_readable(
+            ctx,
+            api_url,
+            headers,
+            owner_id,
+            file_id,
+            artifact_kind,
+        )? {
+            ctx.log(
+                "info",
+                &format!(
+                    "finalize_spawned_session: accepting recovered {artifact_kind} file '{file_id}' for DesignLanguage '{owner_id}' because $value is readable while status projection is '{recovered_status}'"
+                ),
+            );
+            return Ok(recovered_file);
+        }
+        last_status = recovered_status;
+    }
+
+    Err(VerificationError::new(
+        "file_not_ready",
+        format!(
+            "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' remained in state '{last_status}' after streaming PUT $value recovery"
+        ),
+    )
+    .entity("DesignLanguage", owner_id)
+    .artifact(artifact_kind, file_id))
+}
+
+fn recovered_file_value_is_readable(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<bool, VerificationError> {
+    let resp = http_call(
+        ctx,
+        "GET",
+        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+        headers,
+        "",
+    )?;
+    if resp.status == 404 {
+        return Ok(false);
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "file_value_read_failed",
+            format!(
+                "Failed to confirm recovered Files('{file_id}')/$value: HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    Ok(!resp.body.is_empty())
 }
 
 fn read_file_value(
@@ -2103,12 +2173,25 @@ fn entity_fields(entity: &serde_json::Value) -> serde_json::Value {
 }
 
 fn entity_status_value(entity: &serde_json::Value) -> String {
-    entity
+    let aggregate_status = entity
         .get("status")
         .or_else(|| entity.get("Status"))
         .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string()
+        .unwrap_or("");
+    let fields = entity.get("fields").unwrap_or(&serde_json::Value::Null);
+    let field_status = fields
+        .get("status")
+        .or_else(|| fields.get("Status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    if aggregate_status == "Created" && !field_status.is_empty() && field_status != "Created" {
+        field_status.to_string()
+    } else if !aggregate_status.is_empty() {
+        aggregate_status.to_string()
+    } else {
+        field_status.to_string()
+    }
 }
 
 fn entity_bool_any(entity: &serde_json::Value, name: &str) -> bool {
