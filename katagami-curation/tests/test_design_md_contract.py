@@ -76,7 +76,7 @@ class DesignMdContractTests(unittest.TestCase):
             self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
         )
 
-    def test_published_languages_revise_before_design_md_reattach(self):
+    def test_published_languages_do_not_accept_design_md_reattach(self):
         attach = self.actions["AttachDesignMd"]
         self.assertNotIn("Published", attach["from"])
         self.assertIn("Revise first", attach["hint"])
@@ -88,9 +88,10 @@ class DesignMdContractTests(unittest.TestCase):
             / "src"
             / "lib.rs"
         ).read_text()
-        self.assertIn("fn revise_published_for_design_md", finalizer)
-        self.assertIn('"Revise"', finalizer)
-        self.assertIn('status = "UnderReview".to_string();', finalizer)
+        self.assertNotIn("fn revise_published_for_design_md", finalizer)
+        self.assertNotIn('"AttachDesignMd"', finalizer)
+        self.assertIn("verify_design_md_metadata", finalizer)
+        self.assertIn('"VerifyDesignMd"', finalizer)
 
     def test_publish_requires_valid_design_md(self):
         publish = self.actions["Publish"]

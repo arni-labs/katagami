@@ -83,12 +83,12 @@ For each language specified in the job input (or ALL languages if none specified
        return json.loads(value)
    ```
 3. **Read normalized fields**: Philosophy (especially `visual_character`), Tokens (especially surfaces/borders/motion), Rules (especially `signature_patterns`), Guidance, curator_notes, slug, embodiment_file_id, thumbnail_file_id.
-   If the job input contains `force_agent_shadcn_artifact_refresh: true`, do not take any fast path or handoff path that would reuse existing shadcn component artifacts. Preserve the native language identity and existing embodiment/thumbnail when coherent, but author fresh `components.md` and `preview-shots.json` in step 15.
-4. **Fast path for already-reviewed languages**: If `bool_state(lang, 'quality_review_passed')` is true and both `field(lang, 'embodiment_file_id')` and `field(lang, 'thumbnail_file_id')` are present, first validate that the native spec fields are structurally coherent as described in the next step using `json_field(...)`. The fast path is only allowed when `shadcn_component_spec_file_id` and `shadcn_preview_shots_file_id` are also present and their verified booleans are true. If either first-class shadcn component artifact is missing or unverified, do not take the fast path; continue into the shadcn artifact repair path, revise Published languages when needed, and create those artifacts without changing the language identity or embodiment. If the spec is coherent and all first-class artifacts are present, do not regenerate the embodiment or thumbnail just to refresh derived artifacts. Do not call `temper.read` for the embodiment path, do not resolve TemperFS paths, do not run Playwright, and do not regenerate DESIGN.md on this path. Add the language to `fixed_ids` and continue to the next language. The CurationJob finalizer will verify the existing files by file ID, generate/verify deterministic DESIGN.md and shadcn registry theme when needed, attach public assets, and publish through guarded internal actions.
+   If the job input contains `force_agent_shadcn_artifact_refresh: true`, do not take any fast path or handoff path that would reuse existing shadcn artifacts. Preserve the native language identity and existing embodiment/thumbnail when coherent, but author fresh `registry-theme.json`, `components.md`, and `preview-shots.json` in step 15.
+4. **Fast path for already-reviewed languages**: If `bool_state(lang, 'quality_review_passed')` is true and both `field(lang, 'embodiment_file_id')` and `field(lang, 'thumbnail_file_id')` are present, first validate that the native spec fields are structurally coherent as described in the next step using `json_field(...)`. The fast path is only allowed when `shadcn_export_file_id`, `shadcn_component_spec_file_id`, and `shadcn_preview_shots_file_id` are also present and their verified booleans are true. If any first-class shadcn artifact is missing or unverified, do not take the fast path; continue into the shadcn artifact repair path, revise Published languages when needed, and create those artifacts without changing the language identity or embodiment. If the spec is coherent and all first-class artifacts are present, do not regenerate the embodiment or thumbnail just to refresh artifacts. Do not call `temper.read` for the embodiment path, do not resolve TemperFS paths, do not run Playwright, and do not regenerate DESIGN.md on this path. Add the language to `fixed_ids` and continue to the next language. The CurationJob finalizer will verify the existing files by file ID, attach public assets, and publish through guarded internal actions.
 
    If the spec is not coherent, do **not** take the fast path and do **not** fail merely because a nested token subsection is incomplete. Continue into normal repair. Partial drift such as missing `tokens.typography.heading_font`, `body_font`, `mono_font`, `google_fonts_url`, or sparse `tokens.surfaces`/`borders`/`motion` is repairable in this job when the language still has enough identity in `name`, `description`, `philosophy`, `rules`, `layout_principles`, `guidance`, or its existing embodiment. If the language is currently `Published`, first call `temper.action('DesignLanguages', lang_id, 'Revise', {'curator_notes': 'Repairing incomplete native spec before quality finalization'})`, then repair with `SetTokens` or `SetSpec`; the finalizer will publish after validation.
-5. **Published artifact review path**: If `lang['status'] == 'Published'`, treat the job as a review of existing artifacts unless you have found a concrete source-spec, embodiment, or first-class shadcn artifact defect that requires repair. A published language must not call `AttachDesignMd`, `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnComponentSpec`, or `AttachShadcnPreviewShots` directly. Those actions invalidate publish-required verification booleans and are not valid from `Published`. If the only defect is missing or stale `components.md` / `preview-shots.json`, call `Revise` with a curator note that you are adding first-class shadcn component artifacts, generate and attach those two artifacts in Draft/UnderReview using step 15, and let the finalizer verify and republish. If the language has coherent native spec fields plus `embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`, a clean `design_md_lint_result`, and verified shadcn component artifacts, add the language to `fixed_ids` and continue; the finalizer will verify by file ID, mark quality, refresh the deterministic registry theme if needed, attach public assets, and leave it published. Only when an actual native spec or embodiment repair is required should you first call `Revise`, then use the normal Draft/UnderReview repair flow.
-6. **Artifact handoff path for partially completed retries**: If `quality_review_passed` is false but the language is already `Draft` or `UnderReview` and has all three artifact fields (`embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`) plus a `design_md_lint_result` whose summary has `errors == 0` and `warnings == 0`, validate that the native spec is structurally coherent and that the existing embodiment file is a valid browser artifact before taking the handoff. This handoff is only allowed when first-class shadcn artifacts are already present and verified, and it is never allowed when `force_agent_shadcn_artifact_refresh` is true. If `shadcn_component_spec_file_id`, `shadcn_preview_shots_file_id`, `shadcn_component_spec_verified`, or `shadcn_preview_shots_verified` is missing/false, continue to step 15 and author fresh shadcn artifacts instead of adding the language to `fixed_ids`. Resolve `embodiment_file_id` through `temper.get('Files', embodiment_file_id)`, read its `Path` from its `WorkspaceId`, and reject the handoff if `embodiment_format == 'html'` and the file body lacks `<html` or `<!doctype`. SVG recovery placeholders, JSON errors, tiny stubs, or any non-HTML body are not valid embodiments for HTML languages. If the file is invalid, continue into normal repair and regenerate the embodiment and thumbnail. If both the spec and file body are coherent and shadcn artifacts are verified, do not regenerate the embodiment, thumbnail, or DESIGN.md; do not regenerate shadcn artifacts either just to repeat work from an earlier failed retry. Add the language to `fixed_ids` and continue. The finalizer will read the referenced files, verify thumbnails/embodiment/DESIGN.md by file ID, mark quality, attach public assets, and publish through guarded internal actions.
+5. **Published artifact review path**: If `lang['status'] == 'Published'`, treat the job as a review of existing artifacts unless you have found a concrete source-spec, embodiment, or first-class shadcn artifact defect that requires repair. A published language must not call `AttachDesignMd`, `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnExport`, `AttachShadcnComponentSpec`, or `AttachShadcnPreviewShots` directly. Those actions invalidate publish-required verification booleans and are not valid from `Published`. If the only defect is missing or stale `registry-theme.json`, `components.md`, or `preview-shots.json`, call `Revise` with a curator note that you are adding first-class shadcn artifacts, generate and attach those artifacts in Draft/UnderReview using step 15, and let the finalizer verify and republish. If the language has coherent native spec fields plus `embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`, a clean `design_md_lint_result`, and verified shadcn artifacts, add the language to `fixed_ids` and continue; the finalizer will verify by file ID, mark quality, attach public assets, and leave it published. Only when an actual native spec or embodiment repair is required should you first call `Revise`, then use the normal Draft/UnderReview repair flow.
+6. **Artifact handoff path for partially completed retries**: If `quality_review_passed` is false but the language is already `Draft` or `UnderReview` and has all three artifact fields (`embodiment_file_id`, `thumbnail_file_id`, `design_md_file_id`) plus a `design_md_lint_result` whose summary has `errors == 0` and `warnings == 0`, validate that the native spec is structurally coherent and that the existing embodiment file is a valid browser artifact before taking the handoff. This handoff is only allowed when first-class shadcn artifacts are already present and verified, and it is never allowed when `force_agent_shadcn_artifact_refresh` is true. If `shadcn_export_file_id`, `shadcn_component_spec_file_id`, `shadcn_preview_shots_file_id`, `shadcn_export_verified`, `shadcn_component_spec_verified`, or `shadcn_preview_shots_verified` is missing/false, continue to step 15 and author fresh shadcn artifacts instead of adding the language to `fixed_ids`. Resolve `embodiment_file_id` through `temper.get('Files', embodiment_file_id)`, read its `Path` from its `WorkspaceId`, and reject the handoff if `embodiment_format == 'html'` and the file body lacks `<html` or `<!doctype`. SVG recovery placeholders, JSON errors, tiny stubs, or any non-HTML body are not valid embodiments for HTML languages. If the file is invalid, continue into normal repair and regenerate the embodiment and thumbnail. If both the spec and file body are coherent and shadcn artifacts are verified, do not regenerate the embodiment, thumbnail, or DESIGN.md; do not regenerate shadcn artifacts either just to repeat work from an earlier failed retry. Add the language to `fixed_ids` and continue. The finalizer will read the referenced files, verify thumbnails/embodiment/DESIGN.md by file ID, mark quality, attach public assets, and publish through guarded internal actions.
 7. **Read the current embodiment when it exists**: If `embodiment_file_id` is present, resolve the `Files` entity and read its actual `Path` with its `WorkspaceId`; only fall back to `temper.read('/katagami/embodiments/' + slug + '.html')` when file metadata is unavailable. If it is missing, unreadable, or invalid for its `embodiment_format`, do not fail solely for that reason. Treat the embodiment as absent, validate the spec, and regenerate a fresh self-contained HTML embodiment from the Katagami fields.
 8. **MANDATORY: Validate the native Katagami spec before evaluating the embodiment.** Parse each JSON field:
    - `philosophy.visual_character` must have >= 3 items, each >= 30 chars with concrete CSS choices
@@ -238,12 +238,17 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
    })
    ```
 14. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish. This only applies after a language is in `Draft` or `UnderReview`; if the target is still `Published`, go back to the published artifact review path and do not re-attach DESIGN.md.
-15. **Generate first-class shadcn/ui component artifacts.** The registry theme
-    is deterministic and finalizer-owned, but `components.md` and
-    `preview-shots.json` are agent-authored quality artifacts. If the language is
-    `Draft` or `UnderReview`, write:
+15. **Generate first-class shadcn/ui artifacts.** The registry theme,
+    `components.md`, and `preview-shots.json` are agent-authored quality
+    artifacts. The finalizer reads and verifies these attached files; it does
+    not create them. If the language is `Draft` or `UnderReview`, write:
+    - `/katagami/shadcn/{slug}/registry-theme.json`
     - `/katagami/shadcn/{slug}/components.md`
     - `/katagami/shadcn/{slug}/preview-shots.json`
+
+    `registry-theme.json` must be a shadcn `registry:theme` payload derived
+    from the current Katagami tokens. It must include `type: "registry:theme"`,
+    `cssVars`, and `componentManifest`.
 
     `components.md` must include `shadcn/ui Components`, `ShadSync visual
     profile`, `Signature component recipes`, `Preview shots`, and concrete
@@ -282,6 +287,20 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
 	    and one distinctive language-specific signature pattern.
 
     ```python
+    registry_theme_result = temper.write('/katagami/shadcn/' + slug + '/registry-theme.json', json.dumps(registry_theme, ensure_ascii=False, indent=2))
+    temper.action('DesignLanguages', lang_id, 'AttachShadcnExport', {
+        'shadcn_export_file_id': registry_theme_result['file_id'],
+        'shadcn_export_format_version': 'registry-theme-v1',
+        'shadcn_export_manifest': json.dumps({
+            'artifact': 'katagami:shadcn-registry-theme',
+            'version': 'registry-theme-v1',
+            'author': 'katagami-agent',
+            'generatedBy': 'katagami-agent',
+            'type': 'registry:theme',
+            'requiresComponentManifest': True
+        }, ensure_ascii=False)
+    })
+
     component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
     temper.action('DesignLanguages', lang_id, 'AttachShadcnComponentSpec', {
         'shadcn_component_spec_file_id': component_result['file_id'],
@@ -319,6 +338,8 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     `force_agent_shadcn_artifact_refresh: true`, reload the `DesignLanguage`
     after attaching these artifacts and assert all of the following before
     completing the job:
+    - `shadcn_export_file_id` is non-empty and differs from
+      `input.previous_file_ids.shadcn_export_file_id`
     - `shadcn_component_spec_file_id` is non-empty and differs from
       `input.previous_file_ids.shadcn_component_spec_file_id`
     - `shadcn_preview_shots_file_id` is non-empty and differs from
@@ -336,18 +357,15 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
       visibly match the language's actual component recipes
 
     If any postcondition fails, write and attach the missing/stale artifact
-    again. Do not call `CompleteQualityReview` while either artifact still
+    again. Do not call `CompleteQualityReview` while any shadcn artifact still
     points at a previous file ID.
 
-    Do not hand-write or attach `AttachShadcnExport`. The CurationJob finalizer
-    deterministically derives `/katagami/shadcn/{slug}/registry-theme.json`
-    from the verified Katagami tokens, attaches it with `AttachShadcnExport`,
-    and marks `VerifyShadcnExport`. Your job is to keep native tokens concrete
-    enough to project into shadcn semantic variables and make the component
-    recipes good enough for real app UI.
+    Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
+    `VerifyShadcnPreviewShots` directly. The CurationJob finalizer reads the
+    attached files and marks those verifier-owned states.
 16. **Mark reviewed after all artifacts are attached. Do not publish directly and do not archive.**
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
-    files, derives and verifies the shadcn/ui registry theme, verifies
+    files, verifies the attached shadcn/ui registry theme, verifies
     agent-authored shadcn component recipes and preview-shot manifests, rejects
     base64 text thumbnail payloads, marks verified fields through internal
     actions, marks quality as passed, and publishes only if the entity/file

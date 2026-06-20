@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnComponentSpec`, and `AttachShadcnPreviewShots`, finish the job. The CurationJob finalizer verifies the embodiment file, thumbnail, agent-authored shadcn component artifacts, deterministic DESIGN.md, and shadcn/ui registry-theme projection before publish.
+6. After `AttachDesignMd`, `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnExport`, `AttachShadcnComponentSpec`, and `AttachShadcnPreviewShots`, finish the job. The CurationJob finalizer verifies the attached files and marks verifier-owned booleans before review/publish; it does not author missing artifacts.
 
 ## Before Starting
 
@@ -153,6 +153,32 @@ Do NOT proceed to embodiment until every check passes:
 - **Guidance**: `do` >= 3 items, `dont` >= 3 items
 
 If any check fails, rewrite that section immediately.
+
+## DESIGN.md PHASE
+
+Generate the portable DESIGN.md artifact from the same native Katagami fields
+you just wrote. The finalizer verifies the attached file and lint metadata; it
+does not generate or repair DESIGN.md for you.
+
+The DESIGN.md must include valid frontmatter, token references, component
+semantics, and the `## shadcn/ui Usage` section described above. Write it to
+`/tmp/DESIGN.md` in the sandbox, run:
+
+```python
+lint_json = sandbox.bash('npx @google/design.md lint --format=json /tmp/DESIGN.md')
+```
+
+Warnings are blocking. Parse the lint JSON, fix all errors and warnings, then
+attach the exact markdown that passed lint:
+
+```python
+design_md_result = temper.write('/katagami/design-md/' + slug + '/DESIGN.md', design_md)
+temper.action('DesignLanguages', eid, 'AttachDesignMd', {
+    'design_md_file_id': design_md_result['file_id'],
+    'design_md_lint_result': json.dumps(lint_result, ensure_ascii=False),
+    'design_md_format_version': 'design-md-v1'
+})
+```
 
 ## EMBODIMENT PHASE
 
@@ -309,31 +335,63 @@ for review.
 ### Step 6 — Publish artifacts
 
 ```python
-result = temper.write('/katagami/embodiments/' + slug + '.html', html_code)
+def require_ready_file(write_result, artifact_kind):
+    file_id = write_result['file_id']
+    file = temper.get('Files', file_id)
+    fields = file.get('fields', file)
+    status = file.get('status') or file.get('Status') or fields.get('Status')
+    path = fields.get('Path') or fields.get('path')
+    name = fields.get('Name') or fields.get('name')
+    mime_type = fields.get('MimeType') or fields.get('mime_type')
+    size_bytes = fields.get('SizeBytes') or fields.get('size_bytes')
+    assert status == 'Ready', f'{artifact_kind} file {file_id} is {status}, expected Ready'
+    assert path and name and mime_type and size_bytes, file
+    return file_id
+
+result = temper.write({
+    'path': '/katagami/embodiments/' + slug + '.html',
+    'content': html_code,
+    'mime_type': 'text/html'
+})
+embodiment_file_id = require_ready_file(result, 'embodiment')
 temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
-    'embodiment_file_id': result['file_id'],
+    'embodiment_file_id': embodiment_file_id,
     'element_count': '15',
     'composition_count': '5',
     'embodiment_format': 'html'
 })
-thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes, {
+thumbnail_result = temper.write({
+    'path': '/katagami/thumbnails/' + slug + '/desktop.jpg',
+    'content': thumbnail_bytes,
     'mime_type': 'image/jpeg'
 })
+thumbnail_file_id = require_ready_file(thumbnail_result, 'thumbnail')
 temper.action('DesignLanguages', eid, 'AttachThumbnail', {
-    'thumbnail_file_id': thumbnail_result['file_id']
+    'thumbnail_file_id': thumbnail_file_id
 })
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })
 ```
 
+Do not attach a file ID until `require_ready_file(...)` passes. If a write
+returns anything other than a Ready File with usable metadata, retry the write or
+fail the job with the file response as evidence.
+
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
 
 ### Step 7 — Publish shadcn/ui component artifacts
 
-The shadcn registry theme is finalizer-owned, but the component recipes and
-preview shots are first-class, agent-authored language artifacts. They should
-make the shadcn preview feel designed, not merely token-mapped.
+The shadcn registry theme, component recipes, and preview shots are
+first-class, agent-authored language artifacts. They should make the shadcn
+preview feel designed, not merely token-mapped. The finalizer only reads and
+verifies the attached files.
+
+Create `/katagami/shadcn/{slug}/registry-theme.json` with a shadcn
+`registry:theme` payload derived from the native Katagami tokens. The JSON must
+include `type: "registry:theme"`, `cssVars`, and `componentManifest`, and it
+must preserve enough manifest metadata for the UI preview to explain the
+projection.
 
 Create `/katagami/shadcn/{slug}/components.md` with:
 
@@ -383,9 +441,28 @@ content, stable spacing, hierarchy, and one or two distinctive signature
 patterns from the language.
 
 ```python
-component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
+registry_theme_result = temper.write('/katagami/shadcn/' + slug + '/registry-theme.json', json.dumps(registry_theme, ensure_ascii=False, indent=2))
+temper.action('DesignLanguages', eid, 'AttachShadcnExport', {
+    'shadcn_export_file_id': registry_theme_result['file_id'],
+    'shadcn_export_format_version': 'registry-theme-v1',
+    'shadcn_export_manifest': json.dumps({
+        'artifact': 'katagami:shadcn-registry-theme',
+        'version': 'registry-theme-v1',
+        'author': 'katagami-agent',
+        'generatedBy': 'katagami-agent',
+        'type': 'registry:theme',
+        'requiresComponentManifest': True
+    }, ensure_ascii=False)
+})
+
+component_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/components.md',
+    'content': shadcn_components_md,
+    'mime_type': 'text/markdown',
+})
+component_spec_file_id = require_ready_file(component_result, 'shadcn_component_spec')
 temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
-    'shadcn_component_spec_file_id': component_result['file_id'],
+    'shadcn_component_spec_file_id': component_spec_file_id,
     'shadcn_component_spec_format_version': 'component-recipes-v1',
     'shadcn_component_spec_manifest': json.dumps({
         'artifact': 'katagami:shadcn-component-recipes',
@@ -398,9 +475,14 @@ temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
     }, ensure_ascii=False)
 })
 
-shots_result = temper.write('/katagami/shadcn/' + slug + '/preview-shots.json', json.dumps(preview_shots, ensure_ascii=False, indent=2))
+shots_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/preview-shots.json',
+    'content': json.dumps(preview_shots, ensure_ascii=False, indent=2),
+    'mime_type': 'application/json',
+})
+preview_shots_file_id = require_ready_file(shots_result, 'shadcn_preview_shots')
 temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
-    'shadcn_preview_shots_file_id': shots_result['file_id'],
+    'shadcn_preview_shots_file_id': preview_shots_file_id,
     'shadcn_preview_shots_format_version': 'preview-shots-v1',
     'shadcn_preview_shots_manifest': json.dumps({
         'artifact': 'katagami:shadcn-preview-shots',
@@ -416,11 +498,9 @@ temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
 })
 ```
 
-The deterministic shadcn/ui registry theme is still finalizer-owned. Do not
-hand-write or attach `AttachShadcnExport` during synthesis; keep the native
-Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
-`/katagami/shadcn/{slug}/registry-theme.json`. The finalizer does not author
-`components.md` or `preview-shots.json`; it only verifies that the agent did.
+Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
+`VerifyShadcnPreviewShots` directly. The finalizer marks those verifier-owned
+states after it reads the attached files.
 
 ## COMPOSITION EMBODIMENTS PHASE (Landing + Dashboard) — required & gated
 

@@ -195,7 +195,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         ]:
             self.assertIn(prop, props)
 
-    def test_finalizer_derives_and_verifies_shadcn_export(self):
+    def test_finalizer_verifies_agent_attached_shadcn_artifacts(self):
         source = (
             self.curation_root
             / "wasm"
@@ -205,50 +205,44 @@ class ShadcnExportContractTests(unittest.TestCase):
         ).read_text()
 
         for fragment in [
-            "fn render_shadcn_export_projection",
-            '"registry:theme"',
-            '"cssVars"',
-            '"componentManifest"',
-            "fn verify_shadcn_export",
-            "AttachShadcnExport",
+            '"shadcn_export_file_id"',
+            '"shadcn_export"',
+            "registry:theme",
+            "cssVars",
+            "componentManifest",
             "VerifyShadcnExport",
-            "/katagami/shadcn/{}/registry-theme.json",
+            "fn verify_shadcn_component_manifest",
+            "fn verify_preview_shots_body",
+            '"katagami:shadcn-preview-shots"',
+            "scene_len < 3",
+            "VerifyShadcnComponentSpec",
+            "VerifyShadcnPreviewShots",
+            "verify_forced_shadcn_refresh",
+            "force_agent_shadcn_artifact_refresh",
+            "ShadSync visual profile",
+        ]:
+            self.assertIn(fragment, source)
+
+        for fragment in [
+            "fn render_shadcn_export_projection",
             "shadcn_export_projection_refresh_reason",
             "source_invalidated_export",
             "fn render_shadcn_component_spec_projection",
             "fn render_shadcn_preview_shots_projection",
-            "katagami:shadcn-preview-shots/renderable-v1",
-            "scene_len < 3",
-            "fn verify_shadcn_component_spec",
-            "fn verify_shadcn_preview_shots",
-            "AttachShadcnComponentSpec",
-            "AttachShadcnPreviewShots",
-            "VerifyShadcnComponentSpec",
-            "VerifyShadcnPreviewShots",
-            "verify_forced_agent_shadsync_refresh",
-            "force_agent_shadcn_artifact_refresh",
-            "katagami-agent",
-            "ShadSync visual profile",
             "katagami-finalizer-projection",
+            "/katagami/shadcn/{}/registry-theme.json",
             "/katagami/shadcn/{}/components.md",
             "/katagami/shadcn/{}/preview-shots.json",
-            "component-recipes-v1",
-            "preview-shots-v1",
+            "AttachShadcnExport",
+            "AttachShadcnComponentSpec",
+            "AttachShadcnPreviewShots",
         ]:
-            self.assertIn(fragment, source)
+            self.assertNotIn(fragment, source)
 
         finalizer = source.index("fn verify_quality_reviewed_languages")
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
-            source.index("verify_shadcn_export(ctx", finalizer),
-            mark_quality,
-        )
-        self.assertLess(
-            source.index("verify_shadcn_component_spec(", finalizer),
-            mark_quality,
-        )
-        self.assertLess(
-            source.index("verify_shadcn_preview_shots(ctx", finalizer),
+            source.index("verify_complete_language_artifacts(", finalizer),
             mark_quality,
         )
 

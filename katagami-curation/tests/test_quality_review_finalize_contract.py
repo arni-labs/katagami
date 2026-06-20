@@ -45,12 +45,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn('.unwrap_or("typed-v1")', source)
         self.assertIn("let finalizing_fields =", source)
         self.assertIn(
-            'load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)',
+            'load_entity(ctx, &api_url, &headers, "CurationJobs", &job_id)',
             source,
         )
         self.assertIn("&finalizing_fields", source)
 
-    def test_finalize_reattaches_design_md_after_revise_reset(self):
+    def test_finalizer_returns_structured_verification_errors(self):
         source = (
             self.curation_root
             / "wasm"
@@ -59,14 +59,14 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn('entity_bool_any(&fresh, "has_design_md")', source)
-        self.assertIn('"AttachDesignMd"', source)
-        self.assertIn(
-            "Revise resets has_design_md but leaves design_md_file_id intact",
-            source,
-        )
+        self.assertIn('ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1"', source)
+        self.assertIn("struct VerificationError", source)
+        self.assertIn('"contract": ERROR_CONTRACT', source)
+        self.assertIn('"repairable": self.repairable', source)
+        self.assertIn('set_success_result("Fail"', source)
+        self.assertIn('"error_message": payload.to_string()', source)
 
-    def test_finalize_refreshes_unreadable_design_md_reference(self):
+    def test_finalizer_does_not_spawn_or_repair_side_work(self):
         source = (
             self.curation_root
             / "wasm"
@@ -75,14 +75,23 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn refresh_design_md_projection", source)
-        self.assertIn('"unreadable_design_md_file"', source)
-        self.assertIn('"invalid_design_md_file"', source)
-        self.assertLess(
-            source.index('"unreadable_design_md_file"'),
-            source.index("verify_design_md_lint_result(language_id, &fields)?"),
-            "stale DESIGN.md file references must refresh before lint verification",
-        )
+        for removed in [
+            "run_typed_completion_fallback",
+            "spawn_synth_followup",
+            "spawn_quality_review_followup",
+            "spawn_organize_followup",
+            "create_configure_submit_job",
+            "submit_next_queued_regeneration",
+            "refresh_design_md_projection",
+            "render_shadcn_export_projection",
+            "write_workspace_file",
+            "AttachVerifiedThumbnail",
+        ]:
+            self.assertNotIn(removed, source)
+
+        self.assertIn("Follow-up job creation", source)
+        self.assertIn("file projection", source)
+        self.assertIn("repair work belong to IOA triggers", source)
 
     def test_quality_finalizer_verifies_publish_reached_terminal_state(self):
         source = (
@@ -95,23 +104,25 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("fn ensure_language_published", source)
         self.assertIn("fn ensure_language_under_review", source)
-        self.assertIn("publish_rejected_because_already_published", source)
         self.assertIn("remained in state", source)
-        self.assertIn("after quality finalizer Publish", source)
+        self.assertIn("after Publish", source)
         finalizer = source.index("fn verify_quality_reviewed_languages")
-        ensure_under_review = source.index(
-            "ensure_language_under_review(ctx, api_url, headers, language_id, &status)?",
-            finalizer,
-        )
+        verify_artifacts = source.index("verify_complete_language_artifacts(", finalizer)
+        publish_assets = source.index("publish_public_assets(", finalizer)
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         ensure_published = source.index(
             "ensure_language_published(ctx, api_url, headers, language_id)?",
             finalizer,
         )
         self.assertLess(
-            ensure_under_review,
+            verify_artifacts,
+            publish_assets,
+            "quality finalization must verify attached artifacts before publishing public assets",
+        )
+        self.assertLess(
+            publish_assets,
             mark_quality,
-            "quality finalization must submit Draft languages before marking quality passed",
+            "public assets must be attached before quality can pass",
         )
         self.assertLess(
             mark_quality,
@@ -129,12 +140,10 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn('"regenerate_embodiment" | "evolve_language"', source)
-        self.assertIn("created_quality_review_job_after_embodiment_repair", source)
-        self.assertIn("submitted_next_queued_regeneration", source)
-        self.assertIn("active_quality_review_job_exists_for_languages", source)
-        self.assertIn("fn design_md_workspace_id", source)
-        self.assertIn("os-app-docs", source)
-        self.assertIn("katagami_artifact_workspace_id", source)
+        self.assertIn("verify_synthesized_languages(ctx, api_url, headers, fields, job_type)", source)
+        self.assertNotIn("created_quality_review_job_after_embodiment_repair", source)
+        self.assertNotIn("submitted_next_queued_regeneration", source)
+        self.assertNotIn("active_quality_review_job_exists_for_languages", source)
 
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
@@ -150,7 +159,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("state 'failed'", source)
         self.assertLess(
             source.index("record_result_rejected_because_session_terminal(&resp.body)"),
-            source.index("Failed to finalize Session"),
+            source.index("Failed to record Session"),
             "terminal Session state races should not fail typed CurationJob finalization",
         )
 
@@ -220,7 +229,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("do not re-attach DESIGN.md", skill)
         self.assertIn("fields.get(''.join(part.capitalize() for part in name.split('_')))", skill)
 
-    def test_finalizer_design_md_writer_bypasses_workspace_filesystem_actions(self):
+    def test_finalizer_verifies_design_md_without_writing_projection_files(self):
         source = (
             self.curation_root
             / "wasm"
@@ -233,7 +242,10 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertNotIn("Temper.CreateFile", source)
         self.assertNotIn("Temper.ResolvePath", source)
         self.assertNotIn("Temper.IncrementFileCount", source)
-        self.assertIn('/tdata/Directories', source)
+        self.assertNotIn('/tdata/Directories', source)
+        self.assertNotIn("write_workspace_file", source)
+        self.assertIn("verify_design_md_metadata", source)
+        self.assertIn('"VerifyDesignMd"', source)
         self.assertIn('/tdata/Files', source)
         self.assertIn("Files('{file_id}')/$value", source)
 
