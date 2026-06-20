@@ -2,6 +2,25 @@ use temper_wasm_sdk::prelude::*;
 
 const DEFAULT_TOOLS_ENABLED: &str = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch";
 const DOC_WORKSPACE_ID: &str = "os-app-docs";
+const EMBEDDED_RESEARCH_DIRECTION_SKILL: &str =
+    include_str!("../../../agents/curator/skills/research-direction/SKILL.md");
+const EMBEDDED_SYNTHESIZE_LANGUAGE_SKILL: &str =
+    include_str!("../../../agents/curator/skills/synthesize-language/SKILL.md");
+const EMBEDDED_REVIEW_QUALITY_SKILL: &str =
+    include_str!("../../../agents/curator/skills/review-quality/SKILL.md");
+const EMBEDDED_ORGANIZE_TAXONOMY_SKILL: &str =
+    include_str!("../../../agents/curator/skills/organize-taxonomy/SKILL.md");
+const EMBEDDED_SYNTHESIZE_PALETTE_SKILL: &str =
+    include_str!("../../../agents/curator/skills/synthesize-palette/SKILL.md");
+const EMBEDDED_SYNTHESIZE_ART_STYLE_SKILL: &str =
+    include_str!("../../../agents/curator/skills/synthesize-art-style/SKILL.md");
+const EMBEDDED_TASTE_DISTILLATION_SKILL: &str =
+    include_str!("../../../agents/curator/skills/taste-distillation/SKILL.md");
+const EMBEDDED_DESIGN_PRINCIPLES: &str =
+    include_str!("../../../system/knowledge/design-principles.md");
+const EMBEDDED_QUALITY_STANDARDS: &str =
+    include_str!("../../../system/knowledge/quality-standards.md");
+const EMBEDDED_FEEDBACK_LOG: &str = include_str!("../../../system/knowledge/feedback-log.md");
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct JobTemplate {
@@ -146,6 +165,12 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &knowledge_docs,
             inline_job_docs,
         );
+        let reference_instruction_block = render_reference_instruction_block(
+            skill,
+            inline_job_docs,
+            &instruction_read_command,
+            &knowledge_read_commands,
+        );
 
         let job_tools = fields
             .get("tools_enabled")
@@ -192,11 +217,8 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         };
 
         // --- Build user_message ---
-        let completion_params_block = completion_params_block(
-            &template.completion_action,
-            &job_type,
-            &entity_id,
-        );
+        let completion_params_block =
+            completion_params_block(&template.completion_action, &job_type, &entity_id);
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
@@ -211,13 +233,7 @@ Workspace ID: {workspace_id}
 {input}
 ## Instructions
 
-Execute this job using your `{skill}` skill. The current skill and knowledge
-files are available in TemperFS. Read the exact files you need before using
-them, starting with the skill instruction file for this job.
-
-Use these read commands:
-- `{instruction_read_command}` — exact job procedure and output contract
-{knowledge_read_commands}
+{reference_instruction_block}
 
 {loaded_reference_block}
 
@@ -251,6 +267,7 @@ temper.done("{job_type} failed")
             effective_instruction_path = effective_instruction_path,
             completion_action = template.completion_action.as_str(),
             completion_contract = template.completion_contract.as_str(),
+            reference_instruction_block = reference_instruction_block,
             completion_params_block = completion_params_block,
         );
 
@@ -670,9 +687,7 @@ temper.action('CurationJobs', '{entity_id}', '{completion_action}', params)
         ),
     };
 
-    format!(
-        "Required completion params for `{completion_action}` on `{job_type}`:\n{snippet}"
-    )
+    format!("Required completion params for `{completion_action}` on `{job_type}`:\n{snippet}")
 }
 
 fn require_field(fields: &serde_json::Value, keys: &[&str], label: &str) -> Result<String, String> {
@@ -691,32 +706,49 @@ fn field_str(fields: &serde_json::Value, keys: &[&str]) -> Option<String> {
 }
 
 fn field_bool(fields: &serde_json::Value, keys: &[&str]) -> bool {
+    field_bool_option(fields, keys).unwrap_or(false)
+}
+
+fn field_bool_option(fields: &serde_json::Value, keys: &[&str]) -> Option<bool> {
     keys.iter()
         .find_map(|key| fields.get(*key))
         .and_then(|value| {
-            value
-                .as_bool()
-                .or_else(|| value.as_str().map(|s| matches!(s, "true" | "1" | "yes")))
+            value.as_bool().or_else(|| {
+                value
+                    .as_str()
+                    .and_then(|s| parse_bool_config_value(s.trim()))
+            })
         })
-        .unwrap_or(false)
 }
 
 fn inline_job_docs_enabled(ctx: &Context, fields: &serde_json::Value) -> bool {
-    field_bool(fields, &["inline_job_docs", "InlineJobDocs"])
-        .then_some(true)
+    field_bool_option(fields, &["inline_job_docs", "InlineJobDocs"])
         .or_else(|| {
             ctx.config
                 .get("katagami_inline_job_docs")
-                .map(|value| config_bool(value))
+                .and_then(|value| parse_bool_config_value(value))
         })
-        .unwrap_or(false)
+        .unwrap_or(true)
 }
 
+#[cfg(test)]
 fn config_bool(value: &str) -> bool {
+    parse_bool_config_value(value).unwrap_or(false)
+}
+
+fn parse_bool_config_value(value: &str) -> Option<bool> {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
         "true" | "1" | "yes" | "on"
     )
+    .then_some(true)
+    .or_else(|| {
+        matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "false" | "0" | "no" | "off"
+        )
+        .then_some(false)
+    })
 }
 
 fn entity_status(item: &serde_json::Value) -> &str {
@@ -764,7 +796,11 @@ fn load_doc_file(
 ) -> Option<LoadedDoc> {
     if let Some(file_id) = resolve_doc_file_id(ctx, api_url, headers, path) {
         let content = if inline_content {
-            load_file_content(ctx, api_url, headers, &file_id)?
+            Some(
+                load_file_content(ctx, api_url, headers, &file_id)
+                    .and_then(|content| content)
+                    .or_else(|| embedded_doc_content(path).map(str::to_string))?,
+            )
         } else {
             None
         };
@@ -776,14 +812,21 @@ fn load_doc_file(
     }
 
     let filter = format!("path eq '{}'", odata_string_literal(path));
-    let resp = ctx
-        .http_call(
-            "GET",
-            &format!("{api_url}/tdata/Files?$filter={}&$top=5", urlenc(&filter)),
-            headers,
-            "",
-        )
-        .ok()?;
+    let resp = match ctx.http_call(
+        "GET",
+        &format!("{api_url}/tdata/Files?$filter={}&$top=5", urlenc(&filter)),
+        headers,
+        "",
+    ) {
+        Ok(resp) => resp,
+        Err(err) => {
+            ctx.log(
+                "warn",
+                &format!("build_session_message: doc lookup for '{path}' failed: {err}"),
+            );
+            return embedded_loaded_doc(path, inline_content);
+        }
+    };
     if resp.status != 200 {
         ctx.log(
             "warn",
@@ -792,22 +835,42 @@ fn load_doc_file(
                 resp.status
             ),
         );
-        return None;
+        return embedded_loaded_doc(path, inline_content);
     }
 
-    let parsed: serde_json::Value = serde_json::from_str(&resp.body).ok()?;
-    let item = parsed
+    let parsed: serde_json::Value = match serde_json::from_str(&resp.body) {
+        Ok(value) => value,
+        Err(err) => {
+            ctx.log(
+                "warn",
+                &format!(
+                    "build_session_message: doc lookup for '{path}' returned invalid JSON: {err}"
+                ),
+            );
+            return embedded_loaded_doc(path, inline_content);
+        }
+    };
+    let Some(item) = parsed
         .get("value")
         .and_then(|v| v.as_array())
         .and_then(|items| {
             items
                 .iter()
                 .find(|item| json_field_str(item, &["Path", "path"]).as_deref() == Some(path))
-        })?;
-    let file_id = json_field_str(item, &["Id", "entity_id"])?;
+        })
+    else {
+        return embedded_loaded_doc(path, inline_content);
+    };
+    let Some(file_id) = json_field_str(item, &["Id", "entity_id"]) else {
+        return embedded_loaded_doc(path, inline_content);
+    };
     let workspace_id = json_field_str(item, &["WorkspaceId", "workspace_id"]).unwrap_or_default();
     let content = if inline_content {
-        load_file_content(ctx, api_url, headers, &file_id)?
+        Some(
+            load_file_content(ctx, api_url, headers, &file_id)
+                .and_then(|content| content)
+                .or_else(|| embedded_doc_content(path).map(str::to_string))?,
+        )
     } else {
         None
     };
@@ -817,6 +880,49 @@ fn load_doc_file(
         workspace_id,
         content,
     })
+}
+
+fn embedded_loaded_doc(path: &str, inline_content: bool) -> Option<LoadedDoc> {
+    if !inline_content {
+        return None;
+    }
+    embedded_doc_content(path).map(|content| LoadedDoc {
+        path: path.to_string(),
+        workspace_id: DOC_WORKSPACE_ID.to_string(),
+        content: Some(content.to_string()),
+    })
+}
+
+fn embedded_doc_content(path: &str) -> Option<&'static str> {
+    let normalized = path.replace(
+        "/agents/sl-bootstrap-agent-soul-curator/",
+        "/agents/curator/",
+    );
+    match normalized.as_str() {
+        "/agents/curator/skills/research-direction/SKILL.md" => {
+            Some(EMBEDDED_RESEARCH_DIRECTION_SKILL)
+        }
+        "/agents/curator/skills/synthesize-language/SKILL.md" => {
+            Some(EMBEDDED_SYNTHESIZE_LANGUAGE_SKILL)
+        }
+        "/agents/curator/skills/review-quality/SKILL.md" => Some(EMBEDDED_REVIEW_QUALITY_SKILL),
+        "/agents/curator/skills/organize-taxonomy/SKILL.md" => {
+            Some(EMBEDDED_ORGANIZE_TAXONOMY_SKILL)
+        }
+        "/agents/curator/skills/synthesize-palette/SKILL.md" => {
+            Some(EMBEDDED_SYNTHESIZE_PALETTE_SKILL)
+        }
+        "/agents/curator/skills/synthesize-art-style/SKILL.md" => {
+            Some(EMBEDDED_SYNTHESIZE_ART_STYLE_SKILL)
+        }
+        "/agents/curator/skills/taste-distillation/SKILL.md" => {
+            Some(EMBEDDED_TASTE_DISTILLATION_SKILL)
+        }
+        "/system/knowledge/design-principles.md" => Some(EMBEDDED_DESIGN_PRINCIPLES),
+        "/system/knowledge/quality-standards.md" => Some(EMBEDDED_QUALITY_STANDARDS),
+        "/system/knowledge/feedback-log.md" => Some(EMBEDDED_FEEDBACK_LOG),
+        _ => None,
+    }
 }
 
 fn resolve_doc_file_id(
@@ -975,6 +1081,28 @@ fn render_loaded_reference_block(
     out
 }
 
+fn render_reference_instruction_block(
+    skill: &str,
+    inline_content: bool,
+    instruction_read_command: &str,
+    knowledge_read_commands: &str,
+) -> String {
+    if inline_content {
+        let fallback_reads = if knowledge_read_commands.trim().is_empty() {
+            String::new()
+        } else {
+            format!("\n{knowledge_read_commands}")
+        };
+        return format!(
+            "Execute this job using your `{skill}` skill.\n\nThe required skill and reference files are inlined below in `Loaded Reference Files`. Use the inlined contract directly. Do not spend turns rereading those files unless an inline section says a file was unavailable or you need an additional reference not included here.\n\nFallback read commands, only for missing or stale inline references:\n- `{instruction_read_command}` - exact job procedure and output contract{fallback_reads}"
+        );
+    }
+
+    format!(
+        "Execute this job using your `{skill}` skill. The current skill and knowledge files are available in TemperFS. Read the exact files you need before using them, starting with the skill instruction file for this job.\n\nUse these read commands:\n- `{instruction_read_command}` - exact job procedure and output contract\n{knowledge_read_commands}"
+    )
+}
+
 fn odata_string_literal(value: &str) -> String {
     value.replace('\'', "''")
 }
@@ -1086,10 +1214,11 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
-        instruction_path_candidates, knowledge_read_specs_for_skill,
-        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
-        temper_read_command, LoadedDoc,
+        completion_params_block, config_bool, embedded_doc_content, field_bool,
+        file_id_from_workspace_response, instruction_path_candidates,
+        knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
+        render_loaded_reference_block, render_reference_instruction_block, temper_read_command,
+        LoadedDoc,
     };
 
     #[test]
@@ -1132,8 +1261,7 @@ mod tests {
 
     #[test]
     fn complete_synthesis_prompt_inlines_required_params() {
-        let block =
-            completion_params_block("CompleteSynthesis", "synthesize", "job-123");
+        let block = completion_params_block("CompleteSynthesis", "synthesize", "job-123");
 
         assert!(block.contains("Required completion params for `CompleteSynthesis`"));
         assert!(block.contains("'design_language_ids': json.dumps(created_ids)"));
@@ -1194,6 +1322,33 @@ mod tests {
         assert!(config_bool("YES"));
         assert!(config_bool("on"));
         assert!(!config_bool("false"));
+        assert!(!config_bool("0"));
+        assert!(!config_bool("off"));
+    }
+
+    #[test]
+    fn embedded_doc_content_accepts_stable_bootstrap_skill_path() {
+        let content = embedded_doc_content(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md",
+        )
+        .expect("embedded research-direction skill should be available");
+
+        assert!(content.contains("Job type: `source_search`"));
+        assert!(content.contains("temper.web_search(query)"));
+    }
+
+    #[test]
+    fn inline_reference_instructions_do_not_start_with_reread() {
+        let block = render_reference_instruction_block(
+            "research-direction",
+            true,
+            "temper.read(\"/agents/curator/skills/research-direction/SKILL.md\", {\"workspace_id\": \"os-app-docs\"})",
+            "",
+        );
+
+        assert!(block.contains("required skill and reference files are inlined"));
+        assert!(block.contains("Do not spend turns rereading"));
+        assert!(block.contains("Fallback read commands"));
     }
 
     #[test]
