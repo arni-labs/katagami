@@ -192,6 +192,11 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         };
 
         // --- Build user_message ---
+        let completion_params_block = completion_params_block(
+            &template.completion_action,
+            &job_type,
+            &entity_id,
+        );
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
@@ -218,6 +223,10 @@ Use these read commands:
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
+Do not call `{completion_action}` with empty params to inspect the action
+schema; missing required params are a terminal contract failure.
+
+{completion_params_block}
 
 IMPORTANT: If a tool call returns an error (NameError, TypeError, HTTP failure),
 fix the code and retry. Add `import json` if you get a json NameError. Only fail
@@ -242,6 +251,7 @@ temper.done("{job_type} failed")
             effective_instruction_path = effective_instruction_path,
             completion_action = template.completion_action.as_str(),
             completion_contract = template.completion_contract.as_str(),
+            completion_params_block = completion_params_block,
         );
 
         ctx.log(
@@ -568,6 +578,101 @@ fn parse_template(fields: &serde_json::Value) -> Result<JobTemplate, String> {
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "1".to_string()),
     })
+}
+
+fn completion_params_block(completion_action: &str, job_type: &str, entity_id: &str) -> String {
+    let snippet = match completion_action {
+        "CompleteResearch" => format!(
+            r#"```python
+direction_ids = [...]  # CurationDirection entity IDs queued via QueueSynthesis
+temper.action('CurationJobs', '{entity_id}', 'CompleteResearch', {{
+    'direction_ids': json.dumps(direction_ids)
+}})
+```"#
+        ),
+        "CompleteSynthesis" => format!(
+            r#"```python
+review_input = json.dumps({{
+    'language_ids': created_ids,
+    'query_id': query_id
+}}, ensure_ascii=False)
+temper.action('CurationJobs', '{entity_id}', 'CompleteSynthesis', {{
+    'design_language_ids': json.dumps(created_ids),
+    'review_input': review_input
+}})
+```"#
+        ),
+        "CompleteQualityReview" => format!(
+            r#"```python
+organize_input = json.dumps({{
+    'language_ids': design_language_ids,
+    'query_id': query_id
+}}, ensure_ascii=False)
+temper.action('CurationJobs', '{entity_id}', 'CompleteQualityReview', {{
+    'design_language_ids': json.dumps(design_language_ids),
+    'organize_input': organize_input
+}})
+```"#
+        ),
+        "CompleteOrganization" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompleteOrganization', {{
+    'output': json.dumps(output, ensure_ascii=False)
+}})
+```"#
+        ),
+        "CompleteRegeneration" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompleteRegeneration', {{
+    'design_language_ids': json.dumps(created_ids),
+    'output': json.dumps({{'language_ids': created_ids}}, ensure_ascii=False)
+}})
+```"#
+        ),
+        "CompleteEvolution" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompleteEvolution', {{
+    'design_language_ids': json.dumps(created_ids),
+    'output': json.dumps({{'language_ids': created_ids}}, ensure_ascii=False)
+}})
+```"#
+        ),
+        "CompleteTasteDistillation" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompleteTasteDistillation', {{
+    'taste_rule_ids': json.dumps(taste_rule_ids),
+    'report_file_id': report_file_id,
+    'output': json.dumps(output, ensure_ascii=False)
+}})
+```"#
+        ),
+        "CompletePaletteSynthesis" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompletePaletteSynthesis', {{
+    'palette_system_ids': json.dumps(palette_system_ids),
+    'output': json.dumps({{'palette_system_ids': palette_system_ids}}, ensure_ascii=False)
+}})
+```"#
+        ),
+        "CompleteArtStyleSynthesis" => format!(
+            r#"```python
+temper.action('CurationJobs', '{entity_id}', 'CompleteArtStyleSynthesis', {{
+    'art_style_ids': json.dumps(art_style_ids),
+    'output': json.dumps({{'art_style_ids': art_style_ids}}, ensure_ascii=False)
+}})
+```"#
+        ),
+        _ => format!(
+            r#"```python
+params = {{...}}  # required params for {completion_action}; never use {{}}
+temper.action('CurationJobs', '{entity_id}', '{completion_action}', params)
+```"#
+        ),
+    };
+
+    format!(
+        "Required completion params for `{completion_action}` on `{job_type}`:\n{snippet}"
+    )
 }
 
 fn require_field(fields: &serde_json::Value, keys: &[&str], label: &str) -> Result<String, String> {
@@ -981,9 +1086,10 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        config_bool, field_bool, file_id_from_workspace_response, instruction_path_candidates,
-        knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
-        render_loaded_reference_block, temper_read_command, LoadedDoc,
+        completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
+        instruction_path_candidates, knowledge_read_specs_for_skill,
+        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
+        temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1022,6 +1128,17 @@ mod tests {
         assert_eq!(template.max_turns_default, "42");
         assert_eq!(template.completion_action, "CompleteSynthesis");
         assert_eq!(template.template_version, "7");
+    }
+
+    #[test]
+    fn complete_synthesis_prompt_inlines_required_params() {
+        let block =
+            completion_params_block("CompleteSynthesis", "synthesize", "job-123");
+
+        assert!(block.contains("Required completion params for `CompleteSynthesis`"));
+        assert!(block.contains("'design_language_ids': json.dumps(created_ids)"));
+        assert!(block.contains("'review_input': review_input"));
+        assert!(block.contains("temper.action('CurationJobs', 'job-123', 'CompleteSynthesis'"));
     }
 
     #[test]
