@@ -6,12 +6,8 @@ import xml.etree.ElementTree as ET
 
 class QualityReviewFinalizeContractTests(unittest.TestCase):
     def setUp(self):
-        app_root = Path(__file__).resolve().parents[1]
-        if (app_root / "app.toml").exists():
-            self.curation_root = app_root
-        else:
-            root = Path(__file__).resolve().parents[2]
-            self.curation_root = root / "katagami-curation"
+        root = Path(__file__).resolve().parents[2]
+        self.curation_root = root / "katagami-curation"
 
     def test_curation_job_defaults_to_typed_completion_contract(self):
         spec = tomllib.loads(
@@ -47,27 +43,14 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn('.unwrap_or("typed-v1")', source)
-        self.assertIn("let mut finalizing_fields =", source)
+        self.assertIn("let finalizing_fields =", source)
         self.assertIn(
-            'load_entity(&ctx, &api_url, &headers, "CurationJobs", &job_id)',
+            'load_entity(ctx, &api_url, &headers, "CurationJobs", &job_id)',
             source,
         )
-        self.assertIn("merge_trigger_params_into_fields(&mut finalizing_fields", source)
         self.assertIn("&finalizing_fields", source)
 
-    def test_session_link_completion_reenters_typed_finalizer(self):
-        builder = (
-            self.curation_root
-            / "wasm"
-            / "build_session_message"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn('"OnCompletedAction": "ChildSessionCompleted"', builder)
-        self.assertIn('"OnFailureAction": "Fail"', builder)
-
-    def test_finalize_reattaches_design_md_after_revise_reset(self):
+    def test_finalizer_returns_structured_verification_errors(self):
         source = (
             self.curation_root
             / "wasm"
@@ -76,14 +59,14 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn('entity_bool_any(&fresh, "has_design_md")', source)
-        self.assertIn('"AttachDesignMd"', source)
-        self.assertIn(
-            "Revise resets has_design_md but leaves design_md_file_id intact",
-            source,
-        )
+        self.assertIn('ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1"', source)
+        self.assertIn("struct VerificationError", source)
+        self.assertIn('"contract": ERROR_CONTRACT', source)
+        self.assertIn('"repairable": self.repairable', source)
+        self.assertIn('set_success_result("Fail"', source)
+        self.assertIn('"error_message": payload.to_string()', source)
 
-    def test_finalize_refreshes_unreadable_design_md_reference(self):
+    def test_finalizer_does_not_spawn_or_repair_side_work(self):
         source = (
             self.curation_root
             / "wasm"
@@ -92,14 +75,23 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn refresh_design_md_projection", source)
-        self.assertIn('"unreadable_design_md_file"', source)
-        self.assertIn('"invalid_design_md_file"', source)
-        self.assertLess(
-            source.index('"unreadable_design_md_file"'),
-            source.index("verify_design_md_lint_result(language_id, &fields)?"),
-            "stale DESIGN.md file references must refresh before lint verification",
-        )
+        for removed in [
+            "run_typed_completion_fallback",
+            "spawn_synth_followup",
+            "spawn_quality_review_followup",
+            "spawn_organize_followup",
+            "create_configure_submit_job",
+            "submit_next_queued_regeneration",
+            "refresh_design_md_projection",
+            "render_shadcn_export_projection",
+            "write_workspace_file",
+            "AttachVerifiedThumbnail",
+        ]:
+            self.assertNotIn(removed, source)
+
+        self.assertIn("Follow-up job creation", source)
+        self.assertIn("file projection", source)
+        self.assertIn("repair work belong to IOA triggers", source)
 
     def test_quality_finalizer_verifies_publish_reached_terminal_state(self):
         source = (
@@ -112,23 +104,25 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
 
         self.assertIn("fn ensure_language_published", source)
         self.assertIn("fn ensure_language_under_review", source)
-        self.assertIn("publish_rejected_because_already_published", source)
         self.assertIn("remained in state", source)
-        self.assertIn("after quality finalizer Publish", source)
+        self.assertIn("after Publish", source)
         finalizer = source.index("fn verify_quality_reviewed_languages")
-        ensure_under_review = source.index(
-            "ensure_language_under_review(ctx, api_url, headers, language_id, &status)?",
-            finalizer,
-        )
+        verify_artifacts = source.index("verify_complete_language_artifacts(", finalizer)
+        publish_assets = source.index("publish_public_assets(", finalizer)
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         ensure_published = source.index(
             "ensure_language_published(ctx, api_url, headers, language_id)?",
             finalizer,
         )
         self.assertLess(
-            ensure_under_review,
+            verify_artifacts,
+            publish_assets,
+            "quality finalization must verify attached artifacts before publishing public assets",
+        )
+        self.assertLess(
+            publish_assets,
             mark_quality,
-            "quality finalization must submit Draft languages before marking quality passed",
+            "public assets must be attached before quality can pass",
         )
         self.assertLess(
             mark_quality,
@@ -146,72 +140,10 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         ).read_text()
 
         self.assertIn('"regenerate_embodiment" | "evolve_language"', source)
-        self.assertIn("created_quality_review_job_after_embodiment_repair", source)
-        self.assertIn("submitted_next_queued_regeneration", source)
-        self.assertIn("active_quality_review_job_exists_for_languages", source)
-        self.assertIn("fn design_md_workspace_id", source)
-        self.assertIn("os-app-docs", source)
-        self.assertIn("katagami_artifact_workspace_id", source)
-
-    def test_quality_review_repair_blocks_organization_until_validated(self):
-        source = (
-            self.curation_root
-            / "wasm"
-            / "finalize_spawned_session"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn("queue_artifact_repair_job", source)
-        self.assertIn("active_regeneration_job_exists_for_language", source)
-        self.assertIn("repair_pending", source)
-        self.assertIn("skipped_organization_pending_artifact_repair", source)
-        self.assertIn("artifact_repair_attempt", source)
-        self.assertIn("is_repairable_language_artifact_error", source)
-        self.assertLess(
-            source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)"),
-            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
-            "thumbnail validation or repair must happen before public publish",
-        )
-
-    def test_failed_quality_review_can_queue_repair_before_query_failure(self):
-        source = (
-            self.curation_root
-            / "wasm"
-            / "finalize_spawned_session"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn("recover_failed_quality_review_job", source)
-        self.assertIn("repair_submitted_after_failed_quality_review", source)
-        self.assertIn("deeply empty", source)
-        self.assertIn("missing required native katagami spec sections", source)
-        self.assertLess(
-            source.index("recover_failed_quality_review_job"),
-            source.index("propagate_failed_job(&ctx"),
-            "repairable quality_review failures must queue repair before failing the parent query",
-        )
-
-    def test_failed_provider_streams_retry_without_failing_query(self):
-        source = (
-            self.curation_root
-            / "wasm"
-            / "finalize_spawned_session"
-            / "src"
-            / "lib.rs"
-        ).read_text()
-
-        self.assertIn("is_transient_provider_failure", source)
-        self.assertIn("auto_retry_failed_job", source)
-        self.assertIn("OpenAI stream ended early", source)
-        self.assertIn('"auto_retry_submitted"', source)
-        self.assertIn("propagate_failed_job", source)
-        self.assertLess(
-            source.index("auto_retry_failed_job"),
-            source.index("propagate_failed_job"),
-            "transient provider failures must retry before non-repairable failure propagation",
-        )
+        self.assertIn("verify_synthesized_languages(ctx, api_url, headers, fields, job_type)", source)
+        self.assertNotIn("created_quality_review_job_after_embodiment_repair", source)
+        self.assertNotIn("submitted_next_queued_regeneration", source)
+        self.assertNotIn("active_quality_review_job_exists_for_languages", source)
 
     def test_record_result_terminal_race_is_non_fatal(self):
         source = (
@@ -227,7 +159,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("state 'failed'", source)
         self.assertLess(
             source.index("record_result_rejected_because_session_terminal(&resp.body)"),
-            source.index("Failed to finalize Session"),
+            source.index("Failed to record Session"),
             "terminal Session state races should not fail typed CurationJob finalization",
         )
 
@@ -297,7 +229,7 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn("do not re-attach DESIGN.md", skill)
         self.assertIn("fields.get(''.join(part.capitalize() for part in name.split('_')))", skill)
 
-    def test_finalizer_design_md_writer_bypasses_workspace_filesystem_actions(self):
+    def test_finalizer_verifies_design_md_without_writing_projection_files(self):
         source = (
             self.curation_root
             / "wasm"
@@ -310,7 +242,10 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertNotIn("Temper.CreateFile", source)
         self.assertNotIn("Temper.ResolvePath", source)
         self.assertNotIn("Temper.IncrementFileCount", source)
-        self.assertIn('/tdata/Directories', source)
+        self.assertNotIn('/tdata/Directories', source)
+        self.assertNotIn("write_workspace_file", source)
+        self.assertIn("verify_design_md_metadata", source)
+        self.assertIn('"VerifyDesignMd"', source)
         self.assertIn('/tdata/Files', source)
         self.assertIn("Files('{file_id}')/$value", source)
 

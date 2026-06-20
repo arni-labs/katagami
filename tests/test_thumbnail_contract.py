@@ -5,31 +5,16 @@ import tomllib
 
 class ThumbnailContractTests(unittest.TestCase):
     def setUp(self):
-        app_root = Path(__file__).resolve().parents[1]
-        if (app_root / "app.toml").exists():
-            self.curation_root = app_root
-            root = app_root.parent
-        else:
-            root = Path(__file__).resolve().parents[2]
-            self.curation_root = root / "katagami-curation"
+        root = Path(__file__).resolve().parents[2]
         self.commons_root = root / "katagami-commons"
-        if (self.commons_root / "specs" / "design_language.ioa.toml").exists():
-            self.spec = tomllib.loads(
-                (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
-            )
-            self.actions = {action["name"]: action for action in self.spec["action"]}
-            self.states = {state["name"]: state for state in self.spec["state"]}
-        else:
-            self.spec = None
-            self.actions = {}
-            self.states = {}
-
-    def _require_commons(self):
-        if self.spec is None:
-            self.skipTest("katagami-commons is not present in this app-only worktree")
+        self.curation_root = root / "katagami-curation"
+        self.spec = tomllib.loads(
+            (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
+        )
+        self.actions = {action["name"]: action for action in self.spec["action"]}
+        self.states = {state["name"]: state for state in self.spec["state"]}
 
     def test_design_language_tracks_thumbnail_attachment(self):
-        self._require_commons()
         self.assertIn("has_thumbnail", self.states)
         self.assertIn("thumbnail_verified", self.states)
         self.assertIn("has_published_assets", self.states)
@@ -95,7 +80,6 @@ class ThumbnailContractTests(unittest.TestCase):
         return False
 
     def test_publish_requires_verified_thumbnail(self):
-        self._require_commons()
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
@@ -119,7 +103,6 @@ class ThumbnailContractTests(unittest.TestCase):
         )
 
     def test_archived_languages_have_governed_restore_path(self):
-        self._require_commons()
         self.assertIn(
             "Archived",
             self.spec["automaton"]["allow_indefinite_states"],
@@ -141,7 +124,6 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertNotIn("ArchivedIsFinal", invariants)
 
     def test_submit_for_review_requires_thumbnail(self):
-        self._require_commons()
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
         self.assertIn({"type": "is_true", "var": "embodiment_verified"}, guards)
@@ -159,16 +141,10 @@ class ThumbnailContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn verify_thumbnail", source)
-        self.assertIn("fn verify_and_mark_thumbnail", source)
-        self.assertIn('verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)', source)
-        self.assertIn('verify_thumbnail(ctx, api_url, headers, language_id, language)?', source)
-        self.assertIn("queue_artifact_repair_job", source)
-        self.assertIn("repair_pending", source)
+        self.assertIn("fn verify_file_field", source)
+        self.assertIn("thumbnail_mime_type_is_acceptable", source)
+        self.assertIn("thumbnail_payload_looks_text_encoded_image", source)
         self.assertIn('"VerifyThumbnail"', source)
-        self.assertIn('"AttachVerifiedThumbnail"', source)
-        self.assertIn("entity_bool_any(&fresh, \"has_thumbnail\")", source)
-        self.assertIn("fn revise_published_for_thumbnail", source)
         self.assertIn('"thumbnail_file_id"', source)
         self.assertIn('"thumbnail"', source)
         self.assertIn("fn publish_public_assets", source)
@@ -184,17 +160,33 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn('"design_md_asset_id"', source)
         self.assertIn('"design_md_asset_url"', source)
         self.assertIn('"image/jpeg"', source)
-        self.assertIn("upload decoded browser-renderable image bytes", source)
-        self.assertIn("not browser-renderable image bytes", source)
+        self.assertIn("thumbnail file looks like text, markup, or base64", source)
+        self.assertIn("rather than image bytes", source)
 
+        self.assertNotIn("fn verify_thumbnail", source)
+        self.assertNotIn("fn verify_and_mark_thumbnail", source)
+        self.assertNotIn('"AttachVerifiedThumbnail"', source)
+        self.assertNotIn("fn revise_published_for_thumbnail", source)
+
+        finalizer = source.index("fn verify_quality_reviewed_languages")
+        mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
-            source.index("verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)"),
-            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
+            source.index(
+                "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
+                finalizer,
+            ),
+            source.index(
+                "publish_public_assets(ctx, api_url, headers, language_id, &under_review)?",
+                finalizer,
+            ),
             "public assets must be published after thumbnail verification",
         )
         self.assertLess(
-            source.index("publish_public_assets(ctx, api_url, headers, language_id, &language)?"),
-            source.index('"MarkQualityPassed"'),
+            source.index(
+                "publish_public_assets(ctx, api_url, headers, language_id, &under_review)?",
+                finalizer,
+            ),
+            mark_quality,
             "public assets must be attached before quality can pass",
         )
 
@@ -213,13 +205,14 @@ class ThumbnailContractTests(unittest.TestCase):
         ]
 
         self.assertIn(
-            "verify_and_mark_thumbnail(ctx, api_url, headers, language_id, &language)",
+            "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
             synth_fn,
         )
         self.assertIn(
-            "completion requires a valid gallery thumbnail before review",
-            synth_fn,
+            '"thumbnail_file_id"',
+            source,
         )
+        self.assertIn('"VerifyThumbnail"', source)
 
     def test_synthesize_skill_generates_and_attaches_thumbnail(self):
         skill = (

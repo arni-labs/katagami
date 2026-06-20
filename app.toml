@@ -1,10 +1,10 @@
 name = "katagami-curation"
-description = "Agent work layer for katagami — CurationJob queue, curator sessions, CurationDirection fan-out, and template-owned curation pipeline."
+description = "Agent work layer for katagami — CurationJob queue, curator sessions, CurationDirection fan-out, and multi-lane language, palette, and art-style curation."
 version = "0.1.0"
 startup_install = "core"
 dependencies = [
-  "temperpaw/paw-fs@8cc9c1a0c3959ba0555a6eac5446db76de747817",
-  "temperpaw/paw-agent@c2e99e5e5bae0dbfc667fee929100cef32ecebc6",
+  "temperpaw/paw-fs@bff862b415505f5a563998265a2f6ac29472f899",
+  "temperpaw/paw-agent@81d8beb78923dc22aeda850828f510f3c6eab510",
   "temperpaw/paw-research@910d01612b2632362fb5f537c4357a5fb6c7bcdd",
   "katagami/katagami-commons@1cc425ef14205e9d63bdec5f8289bb110e4d4b3f",
 ]

@@ -58,6 +58,17 @@ name = "design_language_ids"
 type = "string"
 initial = "[]"
 
+# Multi-lane remix: ids of palette/art-style entities created by a sourcing job.
+[[state]]
+name = "palette_system_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "art_style_ids"
+type = "string"
+initial = "[]"
+
 [[state]]
 name = "review_input"
 type = "string"
@@ -87,11 +98,6 @@ initial = "[]"
 name = "error_message"
 type = "string"
 initial = ""
-
-[[state]]
-name = "retry_attempts"
-type = "string"
-initial = "0"
 
 [[state]]
 name = "query_id"
@@ -145,13 +151,18 @@ name = "session_id"
 type = "string"
 initial = ""
 
+[[state]]
+name = "parent_session_id"
+type = "string"
+initial = ""
+
 # --- Queued ---
 
 [[action]]
 name = "Configure"
 kind = "input"
 from = ["Queued"]
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
 hint = "Set or update job parameters before execution."
 
 [[action]]
@@ -159,7 +170,7 @@ name = "ConfigureAndSubmit"
 kind = "internal"
 from = ["Queued"]
 to = "Ready"
-params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs"]
+params = ["job_type", "design_language_id", "direction_id", "workspace_id", "input", "model", "provider", "soul_id", "max_turns", "tools_enabled", "query_id", "completion_contract", "inline_job_docs", "parent_session_id"]
 hint = "Configure a trigger-created job and start session spawning in one transition."
 effect = [{ type = "trigger", name = "build_session_message" }]
 
@@ -221,24 +232,6 @@ to = "Running"
 params = ["session_id", "workspace_id"]
 hint = "Session has been created, attached to the shared workspace, and is running."
 
-[[action]]
-name = "ChildSessionCompleted"
-kind = "input"
-from = ["Running"]
-to = "Finalizing"
-params = ["output", "child_session_id", "ChildSessionId", "child_status", "ChildStatus"]
-hint = "A linked child Session reached Completed without self-reporting a typed CurationJob completion. The finalizer validates actual artifacts and resumes review/repair instead of leaving the job Running."
-effect = [{ type = "trigger", name = "finalize_spawned_session" }]
-
-[[action.triggers]]
-name = "finalize_spawned_session"
-kind = "wasm"
-module = "finalize_spawned_session"
-timeout_secs = "300"
-
-[action.triggers.config]
-temper_api_url = "{secret:temper_api_url}"
-
 # --- Running ---
 
 [[action]]
@@ -268,6 +261,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteResearch"
@@ -289,6 +284,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "research_completion_advances_query"
@@ -329,6 +326,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "synthesis_creates_quality_review_job"
@@ -336,6 +335,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
 
 [action.triggers.params]
 job_type = "quality_review"
@@ -370,6 +374,11 @@ principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "SynthesisComplete"
 
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
 [action.triggers.params]
 organize_job_id = ""
 quality_review_job_ids = "[]"
@@ -387,7 +396,7 @@ kind = "input"
 from = ["Running"]
 to = "Finalizing"
 params = ["design_language_ids", "organize_input"]
-hint = "Quality review completed; finalize_spawned_session validates publishability before creating taxonomy organization."
+hint = "Quality review completed and taxonomy organization should be created by trigger."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -401,6 +410,35 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action.triggers]]
+name = "review_creates_organization_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.guard]
+type = "not"
+
+[action.triggers.guard.guard]
+type = "field_equals"
+field = "query_id"
+value = ""
+
+[action.triggers.params]
+job_type = "organize_taxonomy"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+workspace_id = "workspace_id"
+query_id = "query_id"
+input = "organize_input"
+
+[action.triggers.resolve_target]
+type = "create"
 
 [[action]]
 name = "CompleteOrganization"
@@ -422,6 +460,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action.triggers]]
 name = "organization_completion_finishes_query"
@@ -454,6 +494,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteEvolution"
@@ -475,6 +517,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[action]]
 name = "CompleteTasteDistillation"
@@ -496,6 +540,76 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action]]
+name = "CompletePaletteSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["palette_system_ids", "output"]
+hint = "Palette synthesis completed. Finalizer verifies attached artifacts and walks each PaletteSystem to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action.triggers]]
+name = "palette_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompletePalette"
+
+[action.triggers.params_from]
+palette_system_ids = "palette_system_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteArtStyleSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["art_style_ids", "output"]
+hint = "Art-style synthesis completed. Finalizer verifies attached artifacts and walks each ArtStyle to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action.triggers]]
+name = "art_style_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompleteArtStyle"
+
+[action.triggers.params_from]
+art_style_ids = "art_style_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
 
 # --- Finalizing ---
 
@@ -599,6 +713,8 @@ timeout_secs = "300"
 
 [action.triggers.config]
 temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
 
 [[state_timeout]]
 state = "Queued"
@@ -624,6 +740,34 @@ after_seconds = 900
 on_timeout = "Fail"
 params = { error_message = "CurationJob remained Finalizing for 15m without completing finalization." }
 
+[[action.triggers]]
+name = "job_failure_fails_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Fail"
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "job_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 # --- Retry ---
 
 [[action]]
@@ -631,7 +775,7 @@ name = "Retry"
 kind = "input"
 from = ["Failed"]
 to = "Queued"
-params = ["error_message", "retry_attempts"]
+params = ["error_message"]
 hint = "Retry a failed job. Resets to Queued for re-submission."
 
 # --- Invariants ---

@@ -114,6 +114,9 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .and_then(|v| v.as_str())
             .unwrap_or(&ctx.entity_id)
             .to_string();
+        let parent_session_id = field_str(&fields, &["parent_session_id", "ParentSessionId"])
+            .filter(|value| value.starts_with("ss-"))
+            .unwrap_or_default();
 
         let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
         let skill = template.skill_id.as_str();
@@ -253,11 +256,16 @@ temper.done("{job_type} failed")
         );
 
         // --- Create Session entity ---
+        let session_create_body = if parent_session_id.is_empty() {
+            json!({"fields": {}})
+        } else {
+            json!({"fields": {"ParentSessionId": parent_session_id.clone()}})
+        };
         let create_resp = ctx.http_call(
             "POST",
             &format!("{api_url}/tdata/Sessions"),
             &headers,
-            &json!({"fields": {}}).to_string(),
+            &session_create_body.to_string(),
         )?;
         if !(200..300).contains(&create_resp.status) {
             return Err(format!(
@@ -295,6 +303,13 @@ temper.done("{job_type} failed")
             "max_turns": max_turns,
             "workspace_id": workspace_id,
         });
+
+        if !parent_session_id.is_empty() {
+            config_body.as_object_mut().unwrap().insert(
+                "parent_session_id".to_string(),
+                json!(parent_session_id.clone()),
+            );
+        }
 
         if needs_sandbox {
             // Read sandbox provider from server env (set via SANDBOX_PROVIDER)
@@ -377,6 +392,7 @@ temper.done("{job_type} failed")
                 "job_type": job_type,
                 "skill": skill,
                 "template_version": template.template_version,
+                "parent_session_id": parent_session_id,
             }),
         );
         Ok(())
@@ -421,7 +437,7 @@ fn create_session_link(
         "ParentEntityId": parent_job_id,
         "ParentActionNamespace": "Katagami.Curation",
         "ChildSessionId": child_session_id,
-        "OnCompletedAction": "ChildSessionCompleted",
+        "OnCompletedAction": "",
         "OnFailureAction": "Fail",
         "MaxChecks": "80",
     });

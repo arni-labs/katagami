@@ -22,13 +22,14 @@
         <Property Name="FollowupJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ReviewInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="OrganizeInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="TasteRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ReportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="RetryAttempts" Type="Edm.String" Nullable="false" DefaultValue="0" />
         <Property Name="CompletionContract" Type="Edm.String" Nullable="false" DefaultValue="typed-v1" />
         <Property Name="InlineJobDocs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Session spawning fields -->
@@ -39,6 +40,7 @@
         <Property Name="MaxTurns" Type="Edm.String" Nullable="false" DefaultValue="250" />
         <Property Name="UserMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ParentSessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
@@ -58,10 +60,14 @@
         <Property Name="Scope" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TargetDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="PaletteDirection" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="OutputType" Type="Edm.String" Nullable="false" DefaultValue="design_language" />
+        <Property Name="SynthesisJobType" Type="Edm.String" Nullable="false" DefaultValue="synthesize" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="TopicAllowlist" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SynthInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
@@ -95,6 +101,7 @@
         <Property Name="Id" Type="Edm.Guid" Nullable="false" />
         <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Submitted" />
         <Property Name="QueryText" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="OutputType" Type="Edm.String" Nullable="false" DefaultValue="auto" />
         <Property Name="SourceSearchJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SynthesizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
@@ -103,6 +110,8 @@
         <Property Name="OrganizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="OrganizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />

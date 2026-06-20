@@ -62,18 +62,17 @@ class SourceSearchHotPathTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("verify_generated_language_identity", finalizer)
-        self.assertIn('matches!(job_type, "synthesize" | "evolve_language")', synth_fn)
+        self.assertIn("fn verify_language_identity", finalizer)
+        self.assertIn("verify_language_identity(language_id, &language)?", synth_fn)
         self.assertIn("uses its slug as the entity ID", finalizer)
         self.assertIn("generated entity_id", finalizer)
 
     def test_storage_model_documents_pawfs_artifact_boundary(self):
-        app_root = Path(__file__).resolve().parents[1]
-        if (app_root / "app.toml").exists():
-            self.skipTest("katagami-commons is not present in this app-only worktree")
         root = Path(__file__).resolve().parents[2]
         commons_app = (root / "katagami-commons" / "APP.md").read_text()
-        curator_agent = (root / "katagami-curation" / "agents" / "curator" / "AGENT.md").read_text()
+        curator_agent = (
+            root / "katagami-curation" / "agents" / "curator" / "AGENT.md"
+        ).read_text()
 
         self.assertIn("Source-search jobs", commons_app)
         self.assertIn("must not synchronously write", commons_app)

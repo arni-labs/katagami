@@ -6,33 +6,15 @@ import xml.etree.ElementTree as ET
 
 class ShadcnExportContractTests(unittest.TestCase):
     def setUp(self):
-        app_root = Path(__file__).resolve().parents[1]
-        if (app_root / "app.toml").exists():
-            root = app_root.parent
-            self.curation_root = app_root
-        else:
-            root = Path(__file__).resolve().parents[2]
-            self.curation_root = root / "katagami-curation"
+        root = Path(__file__).resolve().parents[2]
         self.root = root
         self.commons_root = root / "katagami-commons"
-        if (self.commons_root / "specs" / "design_language.ioa.toml").exists():
-            self.spec = tomllib.loads(
-                (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
-            )
-            self.actions = {action["name"]: action for action in self.spec["action"]}
-            self.states = {state["name"]: state for state in self.spec["state"]}
-        else:
-            self.spec = None
-            self.actions = {}
-            self.states = {}
-
-    def _require_commons(self):
-        if self.spec is None:
-            self.skipTest("katagami-commons is not present in this app-only worktree")
-
-    def _require_full_repo(self):
-        if not (self.root / "ui").exists():
-            self.skipTest("Katagami UI is not present in this app-only worktree")
+        self.curation_root = root / "katagami-curation"
+        self.spec = tomllib.loads(
+            (self.commons_root / "specs" / "design_language.ioa.toml").read_text()
+        )
+        self.actions = {action["name"]: action for action in self.spec["action"]}
+        self.states = {state["name"]: state for state in self.spec["state"]}
 
     def _effect_entries(self, action_name):
         effect = self.actions[action_name].get("effect", [])
@@ -54,7 +36,6 @@ class ShadcnExportContractTests(unittest.TestCase):
         return False
 
     def test_design_language_tracks_shadcn_export(self):
-        self._require_commons()
         self.assertIn("has_shadcn_export", self.states)
         self.assertIn("shadcn_export_verified", self.states)
         self.assertIn("has_shadcn_component_spec", self.states)
@@ -137,7 +118,6 @@ class ShadcnExportContractTests(unittest.TestCase):
         )
 
     def test_source_spec_changes_invalidate_shadcn_export(self):
-        self._require_commons()
         for action_name in [
             "SetName",
             "SetSpec",
@@ -177,7 +157,6 @@ class ShadcnExportContractTests(unittest.TestCase):
                 )
 
     def test_shadcn_artifacts_are_publish_gates(self):
-        self._require_commons()
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         for var in [
@@ -191,7 +170,6 @@ class ShadcnExportContractTests(unittest.TestCase):
             self.assertIn({"type": "is_true", "var": var}, guards)
 
     def test_csdl_exposes_shadcn_fields(self):
-        self._require_commons()
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")
         ns = {"edm": "http://docs.oasis-open.org/odata/ns/edm"}
         entity = tree.find(".//edm:EntityType[@Name='DesignLanguage']", ns)
@@ -217,7 +195,7 @@ class ShadcnExportContractTests(unittest.TestCase):
         ]:
             self.assertIn(prop, props)
 
-    def test_finalizer_derives_and_verifies_shadcn_export(self):
+    def test_finalizer_verifies_agent_attached_shadcn_artifacts(self):
         source = (
             self.curation_root
             / "wasm"
@@ -227,53 +205,48 @@ class ShadcnExportContractTests(unittest.TestCase):
         ).read_text()
 
         for fragment in [
-            "fn render_shadcn_export_projection",
-            '"registry:theme"',
-            '"cssVars"',
-            '"componentManifest"',
-            "fn verify_shadcn_export",
-            "AttachShadcnExport",
+            '"shadcn_export_file_id"',
+            '"shadcn_export"',
+            "registry:theme",
+            "cssVars",
+            "componentManifest",
             "VerifyShadcnExport",
-            "/katagami/shadcn/{}/registry-theme.json",
+            "fn verify_shadcn_component_manifest",
+            "fn verify_preview_shots_body",
+            '"katagami:shadcn-preview-shots"',
+            "scene_len < 3",
+            "VerifyShadcnComponentSpec",
+            "VerifyShadcnPreviewShots",
+            "verify_forced_shadcn_refresh",
+            "force_agent_shadcn_artifact_refresh",
+            "ShadSync visual profile",
+        ]:
+            self.assertIn(fragment, source)
+
+        for fragment in [
+            "fn render_shadcn_export_projection",
             "shadcn_export_projection_refresh_reason",
             "source_invalidated_export",
             "fn render_shadcn_component_spec_projection",
             "fn render_shadcn_preview_shots_projection",
-            "katagami:shadcn-preview-shots/renderable-v1",
-            "scene_len < 3",
-            "fn verify_shadcn_component_spec",
-            "fn verify_shadcn_preview_shots",
-            "AttachShadcnComponentSpec",
-            "AttachShadcnPreviewShots",
-            "VerifyShadcnComponentSpec",
-            "VerifyShadcnPreviewShots",
-            "verify_forced_agent_shadsync_refresh",
-            "force_agent_shadcn_artifact_refresh",
-            "katagami-agent",
-            "ShadSync visual profile",
             "katagami-finalizer-projection",
+            "/katagami/shadcn/{}/registry-theme.json",
             "/katagami/shadcn/{}/components.md",
             "/katagami/shadcn/{}/preview-shots.json",
-            "component-recipes-v1",
-            "preview-shots-v1",
+            "AttachShadcnExport",
+            "AttachShadcnComponentSpec",
+            "AttachShadcnPreviewShots",
         ]:
-            self.assertIn(fragment, source)
+            self.assertNotIn(fragment, source)
 
+        finalizer = source.index("fn verify_quality_reviewed_languages")
+        mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
-            source.index("verify_shadcn_export(ctx"),
-            source.index('"MarkQualityPassed"'),
-        )
-        self.assertLess(
-            source.index("verify_shadcn_component_spec("),
-            source.index('"MarkQualityPassed"'),
-        )
-        self.assertLess(
-            source.index("verify_shadcn_preview_shots(ctx"),
-            source.index('"MarkQualityPassed"'),
+            source.index("verify_complete_language_artifacts(", finalizer),
+            mark_quality,
         )
 
     def test_ui_exposes_preview_route_and_backfill(self):
-        self._require_full_repo()
         ui_lib = (self.root / "ui" / "src" / "lib" / "shadcn-export.ts").read_text()
         preview = (
             self.root / "ui" / "src" / "components" / "shadcn-preview.tsx"
