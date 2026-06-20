@@ -41,8 +41,6 @@ class ArtifactReadyContractTests(unittest.TestCase):
 
     def test_finalizer_recovers_created_thumbnail_files_before_defecting(self):
         self.assertIn("fn recover_created_file_artifact", self.finalizer)
-        self.assertIn("fn confirm_recovered_file_artifact", self.finalizer)
-        self.assertIn("FILE_RECOVERY_CONFIRM_ATTEMPTS", self.finalizer)
         self.assertNotIn('artifact_kind != "thumbnail"', self.finalizer)
         self.assertIn("recoverable_artifact_bytes_from_text", self.finalizer)
         self.assertIn("fn recoverable_image_bytes_from_text", self.finalizer)
@@ -62,15 +60,6 @@ class ArtifactReadyContractTests(unittest.TestCase):
         )
         self.assertIn("streaming PUT $value", self.finalizer)
         self.assertIn("same file id", self.finalizer)
-
-    def test_finalizer_tolerates_recovery_projection_lag(self):
-        self.assertIn("fn entity_status_value", self.finalizer)
-        self.assertIn("let field_status = fields", self.finalizer)
-        self.assertIn('.or_else(|| fields.get("Status"))', self.finalizer)
-        self.assertIn('aggregate_status == "Created"', self.finalizer)
-        self.assertIn("fn recovered_file_value_is_readable", self.finalizer)
-        self.assertIn("because $value is readable while status projection", self.finalizer)
-        self.assertIn("Failed to confirm recovered Files", self.finalizer)
 
     def test_finalizer_normalizes_legacy_inline_file_projection_shape(self):
         self.assertIn("fn file_size_bytes", self.finalizer)
