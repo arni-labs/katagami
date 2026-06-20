@@ -911,7 +911,7 @@ fn verify_file_artifact(
         string_field_any(&file_fields, "MimeType", ""),
     ])
     .to_ascii_lowercase();
-    let size_bytes = file_size_bytes(&file);
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
     if size_bytes > 0 && size_bytes < 64 {
         return Err(VerificationError::new(
             "file_too_small",
@@ -923,15 +923,7 @@ fn verify_file_artifact(
         .artifact(artifact_kind, file_id));
     }
 
-    let body = read_file_value(
-        ctx,
-        api_url,
-        headers,
-        file_id,
-        owner_id,
-        artifact_kind,
-        &file,
-    )?;
+    let body = read_file_value(ctx, api_url, headers, file_id, owner_id, artifact_kind)?;
     verify_file_body(
         owner_id,
         file_id,
@@ -1002,13 +994,12 @@ fn verify_ready_file_metadata(
     let name = first_nonempty(&[
         string_field_any(&file_fields, "name", ""),
         string_field_any(&file_fields, "Name", ""),
-        file_name_from_path(&path),
     ]);
     let mime_type = first_nonempty(&[
         string_field_any(&file_fields, "mime_type", ""),
         string_field_any(&file_fields, "MimeType", ""),
     ]);
-    let size_bytes = file_size_bytes(file);
+    let size_bytes = numeric_field_any(file, &["size_bytes", "SizeBytes"]);
 
     let mut missing = Vec::new();
     if path.trim().is_empty() {
@@ -1047,6 +1038,9 @@ fn recover_created_file_artifact(
     artifact_kind: &'static str,
     file: &serde_json::Value,
 ) -> Result<Option<serde_json::Value>, VerificationError> {
+    if artifact_kind != "thumbnail" {
+        return Ok(None);
+    }
     let file_fields = entity_fields(file);
     let content = first_nonempty(&[
         string_field_any(&file_fields, "content", ""),
@@ -1059,19 +1053,16 @@ fn recover_created_file_artifact(
         string_field_any(&file_fields, "mime_type", ""),
         string_field_any(&file_fields, "MimeType", ""),
     ]);
-    let recovered =
-        recoverable_artifact_bytes_from_text(&content, &mime_type, artifact_kind).map_err(
-            |error| {
+    let recovered = recoverable_image_bytes_from_text(&content, &mime_type).map_err(|error| {
         VerificationError::new(
             "file_recovery_failed",
             format!(
-                    "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is Created with inline Content but cannot be recovered as durable artifact bytes: {error}"
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is Created with inline Content but cannot be recovered as browser-renderable image bytes: {error}"
             ),
         )
         .entity("DesignLanguage", owner_id)
         .artifact(artifact_kind, file_id)
-            },
-        )?;
+    })?;
     let value_headers = vec![
         ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
         ("Content-Type".to_string(), recovered.mime_type.clone()),
@@ -1129,7 +1120,6 @@ fn read_file_value(
     file_id: &str,
     owner_id: &str,
     artifact_kind: &'static str,
-    file: &serde_json::Value,
 ) -> Result<String, VerificationError> {
     let resp = http_call(
         ctx,
@@ -1139,15 +1129,6 @@ fn read_file_value(
         "",
     )?;
     if resp.status == 404 {
-        if let Some(content) = inline_file_content(file) {
-            ctx.log(
-                "info",
-                &format!(
-                    "finalize_spawned_session: using inline Content fallback for {artifact_kind} file '{file_id}' on DesignLanguage '{owner_id}'"
-                ),
-            );
-            return Ok(content);
-        }
         return Err(VerificationError::new(
             "file_value_missing",
             format!(
@@ -2159,36 +2140,6 @@ fn numeric_field_any(entity: &serde_json::Value, names: &[&str]) -> i64 {
     0
 }
 
-fn file_size_bytes(file: &serde_json::Value) -> i64 {
-    let declared = numeric_field_any(file, &["size_bytes", "SizeBytes"]);
-    if declared > 0 {
-        return declared;
-    }
-    inline_file_content(file)
-        .map(|content| content.len() as i64)
-        .unwrap_or(0)
-}
-
-fn file_name_from_path(path: &str) -> String {
-    path.rsplit('/')
-        .find(|segment| !segment.trim().is_empty())
-        .unwrap_or("")
-        .to_string()
-}
-
-fn inline_file_content(file: &serde_json::Value) -> Option<String> {
-    let fields = entity_fields(file);
-    let content = first_nonempty(&[
-        string_field_any(&fields, "content", ""),
-        string_field_any(&fields, "Content", ""),
-    ]);
-    if content.trim().is_empty() {
-        None
-    } else {
-        Some(content)
-    }
-}
-
 fn first_nonempty(values: &[String]) -> String {
     values
         .iter()
@@ -2271,38 +2222,6 @@ fn base64_data_url_payload(value: &str) -> Option<&str> {
 struct RecoverableImageBytes {
     bytes: Vec<u8>,
     mime_type: String,
-}
-
-fn recoverable_artifact_bytes_from_text(
-    raw_content: &str,
-    declared_mime_type: &str,
-    artifact_kind: &str,
-) -> Result<RecoverableImageBytes, String> {
-    let normalized_mime = declared_mime_type.trim().to_ascii_lowercase();
-    if artifact_kind == "thumbnail" || normalized_mime.starts_with("image/") {
-        return recoverable_image_bytes_from_text(raw_content, declared_mime_type);
-    }
-    let trimmed = raw_content.trim();
-    if trimmed.is_empty() {
-        return Err("inline Content is empty".to_string());
-    }
-    Ok(RecoverableImageBytes {
-        bytes: raw_content.as_bytes().to_vec(),
-        mime_type: if normalized_mime.is_empty() {
-            default_artifact_mime_type(artifact_kind).to_string()
-        } else {
-            declared_mime_type.trim().to_string()
-        },
-    })
-}
-
-fn default_artifact_mime_type(artifact_kind: &str) -> &'static str {
-    match artifact_kind {
-        "design_md" | "shadcn_component_spec" => "text/markdown",
-        "shadcn_export" | "shadcn_preview_shots" => "application/json",
-        "embodiment" | "landing_composition" | "dashboard_composition" => "text/html",
-        _ => "text/plain",
-    }
 }
 
 fn recoverable_image_bytes_from_text(
