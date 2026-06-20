@@ -1,6 +1,9 @@
+use base64::Engine;
 use temper_wasm_sdk::prelude::*;
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
+#[cfg(target_arch = "wasm32")]
+const FILE_UPLOAD_STREAM_CHUNK_BYTES: usize = 64 * 1024;
 const SHADCN_COMPONENTS: [&str; 16] = [
     "button",
     "card",
@@ -900,18 +903,7 @@ fn verify_file_artifact(
     artifact_kind: &'static str,
     embodiment_format: Option<&str>,
 ) -> Result<(), VerificationError> {
-    let file = load_required_entity(ctx, api_url, headers, "Files", file_id, "missing_file")?;
-    let file_status = entity_status_value(&file);
-    if !matches!(file_status.as_str(), "Ready" | "Locked") {
-        return Err(VerificationError::new(
-            "file_not_ready",
-            format!(
-                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is in state '{file_status}', expected Ready or Locked"
-            ),
-        )
-        .entity("DesignLanguage", owner_id)
-        .artifact(artifact_kind, file_id));
-    }
+    let file = verify_ready_file_artifact(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
 
     let file_fields = entity_fields(&file);
     let mime_type = first_nonempty(&[
@@ -940,6 +932,185 @@ fn verify_file_artifact(
         &mime_type,
         &body,
     )
+}
+
+fn verify_ready_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<serde_json::Value, VerificationError> {
+    let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "missing_file",
+            format!("DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' does not exist"),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let file_status = entity_status_value(&file);
+    if file_status != "Ready" {
+        if file_status == "Created" {
+            if let Some(recovered) = recover_created_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                owner_id,
+                file_id,
+                artifact_kind,
+                &file,
+            )? {
+                verify_ready_file_metadata(owner_id, file_id, artifact_kind, &recovered)?;
+                return Ok(recovered);
+            }
+        }
+        return Err(VerificationError::new(
+            "file_not_ready",
+            format!(
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is in state '{file_status}', expected Ready"
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+
+    verify_ready_file_metadata(owner_id, file_id, artifact_kind, &file)?;
+    Ok(file)
+}
+
+fn verify_ready_file_metadata(
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+    file: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let file_fields = entity_fields(file);
+    let path = first_nonempty(&[
+        string_field_any(&file_fields, "path", ""),
+        string_field_any(&file_fields, "Path", ""),
+    ]);
+    let name = first_nonempty(&[
+        string_field_any(&file_fields, "name", ""),
+        string_field_any(&file_fields, "Name", ""),
+    ]);
+    let mime_type = first_nonempty(&[
+        string_field_any(&file_fields, "mime_type", ""),
+        string_field_any(&file_fields, "MimeType", ""),
+    ]);
+    let size_bytes = numeric_field_any(file, &["size_bytes", "SizeBytes"]);
+
+    let mut missing = Vec::new();
+    if path.trim().is_empty() {
+        missing.push("Path");
+    }
+    if name.trim().is_empty() {
+        missing.push("Name");
+    }
+    if mime_type.trim().is_empty() {
+        missing.push("MimeType");
+    }
+    if size_bytes <= 0 {
+        missing.push("SizeBytes");
+    }
+    if !missing.is_empty() {
+        return Err(VerificationError::new(
+            "file_ready_metadata_missing",
+            format!(
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is Ready but missing usable metadata: {}",
+                missing.join(", ")
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+
+    Ok(())
+}
+
+fn recover_created_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+    file: &serde_json::Value,
+) -> Result<Option<serde_json::Value>, VerificationError> {
+    if artifact_kind != "thumbnail" {
+        return Ok(None);
+    }
+    let file_fields = entity_fields(file);
+    let content = first_nonempty(&[
+        string_field_any(&file_fields, "content", ""),
+        string_field_any(&file_fields, "Content", ""),
+    ]);
+    if content.trim().is_empty() {
+        return Ok(None);
+    }
+    let mime_type = first_nonempty(&[
+        string_field_any(&file_fields, "mime_type", ""),
+        string_field_any(&file_fields, "MimeType", ""),
+    ]);
+    let recovered = recoverable_image_bytes_from_text(&content, &mime_type).map_err(|error| {
+        VerificationError::new(
+            "file_recovery_failed",
+            format!(
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is Created with inline Content but cannot be recovered as browser-renderable image bytes: {error}"
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let value_headers = vec![
+        ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
+        ("Content-Type".to_string(), recovered.mime_type.clone()),
+        ("x-temper-principal-kind".to_string(), "agent".to_string()),
+        (
+            "x-temper-principal-id".to_string(),
+            "katagami-finalizer".to_string(),
+        ),
+        ("x-temper-agent-type".to_string(), "system".to_string()),
+    ];
+    put_file_value_stream(
+        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+        &value_headers,
+        &recovered.bytes,
+    )
+    .map_err(|error| {
+        VerificationError::new("file_recovery_failed", error)
+            .entity("DesignLanguage", owner_id)
+            .artifact(artifact_kind, file_id)
+    })?;
+    let recovered_file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "missing_file",
+            format!(
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' disappeared after recovery"
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let recovered_status = entity_status_value(&recovered_file);
+    if recovered_status != "Ready" {
+        return Err(VerificationError::new(
+            "file_not_ready",
+            format!(
+                "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' remained in state '{recovered_status}' after streaming PUT $value recovery"
+            ),
+        )
+        .entity("DesignLanguage", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: recovered Created {artifact_kind} file '{file_id}' for DesignLanguage '{owner_id}' to Ready using same file id"
+        ),
+    );
+    Ok(Some(recovered_file))
 }
 
 fn read_file_value(
@@ -2046,6 +2217,133 @@ fn base64_data_url_payload(value: &str) -> Option<&str> {
         return None;
     }
     value.split_once(',').map(|(_, payload)| payload)
+}
+
+struct RecoverableImageBytes {
+    bytes: Vec<u8>,
+    mime_type: String,
+}
+
+fn recoverable_image_bytes_from_text(
+    raw_content: &str,
+    declared_mime_type: &str,
+) -> Result<RecoverableImageBytes, String> {
+    let compact = recoverable_base64_payload(raw_content)
+        .ok_or_else(|| "no base64 image payload found".to_string())?;
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(compact.as_bytes())
+        .or_else(|_| base64::engine::general_purpose::STANDARD_NO_PAD.decode(compact.as_bytes()))
+        .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(compact.as_bytes()))
+        .or_else(|_| base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(compact.as_bytes()))
+        .map_err(|error| format!("invalid base64 image payload: {error}"))?;
+    let detected_mime = detect_browser_image_mime(&decoded)
+        .ok_or_else(|| "decoded payload is not a supported browser image".to_string())?;
+    if let Some(declared) = normalize_browser_image_mime(declared_mime_type) {
+        if declared != detected_mime {
+            return Err(format!(
+                "declared MIME type '{declared}' does not match decoded image bytes '{detected_mime}'"
+            ));
+        }
+    }
+    Ok(RecoverableImageBytes {
+        bytes: decoded,
+        mime_type: detected_mime.to_string(),
+    })
+}
+
+fn recoverable_base64_payload(raw_content: &str) -> Option<String> {
+    let trimmed = raw_content.trim_start();
+    let payload = base64_data_url_payload(trimmed).unwrap_or(trimmed);
+    let mut compact = String::new();
+    for ch in payload.chars() {
+        if ch.is_ascii_whitespace() {
+            continue;
+        }
+        if ch.is_ascii_alphanumeric() || matches!(ch, '+' | '/' | '=' | '-' | '_') {
+            compact.push(ch);
+            continue;
+        }
+        break;
+    }
+    if compact.len() < 16 {
+        None
+    } else {
+        Some(compact)
+    }
+}
+
+fn detect_browser_image_mime(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
+fn normalize_browser_image_mime(mime_type: &str) -> Option<&'static str> {
+    match mime_type.trim().to_ascii_lowercase().as_str() {
+        "image/jpeg" | "image/jpg" => Some("image/jpeg"),
+        "image/png" => Some("image/png"),
+        "image/gif" => Some("image/gif"),
+        "image/webp" => Some("image/webp"),
+        _ => None,
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn put_file_value_stream(
+    url: &str,
+    headers: &[(String, String)],
+    bytes: &[u8],
+) -> Result<(), String> {
+    let header_refs: Vec<(&str, &str)> = headers
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect::<Vec<_>>();
+    let (mut request_body, response_body, response_head) =
+        temper_wasm_sdk::http_stream::streaming_call("PUT", url, &header_refs)
+            .map_err(|error| format!("streaming PUT $value failed to start: {error}"))?;
+
+    for chunk in bytes.chunks(FILE_UPLOAD_STREAM_CHUNK_BYTES) {
+        request_body
+            .write_all_chunk(chunk)
+            .map_err(|error| format!("streaming PUT $value failed while writing body: {error}"))?;
+    }
+    request_body
+        .finish()
+        .map_err(|error| format!("streaming PUT $value failed while closing body: {error}"))?;
+
+    let head = response_head()
+        .map_err(|error| format!("streaming PUT $value failed before response: {error}"))?;
+    let _ = response_body.close();
+    if head.status >= 400 || head.status == 0 {
+        let stream_error = head
+            .headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case("x-temper-stream-error"))
+            .map(|(_, value)| format!(": {value}"))
+            .unwrap_or_default();
+        return Err(format!(
+            "streaming PUT $value failed: HTTP {}{stream_error}",
+            head.status
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn put_file_value_stream(
+    _url: &str,
+    _headers: &[(String, String)],
+    _bytes: &[u8],
+) -> Result<(), String> {
+    Err("streaming PUT $value requires the Temper WASM host".to_string())
 }
 
 fn truncate(value: &str) -> String {

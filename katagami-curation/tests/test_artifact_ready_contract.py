@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class ArtifactReadyContractTests(unittest.TestCase):
-    """Preserved artifact-ready contracts pending the finalizer/skill wiring PR."""
+    """Artifact-ready contracts enforced by the finalizer and authoring skill."""
 
     def setUp(self):
         self.curation_root = Path(__file__).resolve().parents[1]
@@ -23,42 +23,42 @@ class ArtifactReadyContractTests(unittest.TestCase):
             / "SKILL.md"
         ).read_text()
 
-    @unittest.expectedFailure
     def test_finalizer_requires_ready_file_metadata_before_value_read(self):
         self.assertIn("fn verify_ready_file_artifact", self.finalizer)
         self.assertIn('load_entity(ctx, api_url, headers, "Files", file_id)', self.finalizer)
         self.assertIn("expected Ready", self.finalizer)
-        for field in ["Path", "Name", "MimeType"]:
+        for field in ["Path", "Name", "MimeType", "SizeBytes"]:
             self.assertIn(field, self.finalizer)
 
-        verify_file_value = self.finalizer.split("fn verify_file_value", 1)[1].split(
-            "fn verify_file_body", 1
+        verify_file_artifact = self.finalizer.split("fn verify_file_artifact", 1)[1].split(
+            "fn verify_ready_file_artifact", 1
         )[0]
-        self.assertIn("verify_ready_file_artifact(", verify_file_value)
+        self.assertIn("verify_ready_file_artifact(", verify_file_artifact)
         self.assertLess(
-            verify_file_value.index("verify_ready_file_artifact("),
-            verify_file_value.index("read_file_value("),
+            verify_file_artifact.index("verify_ready_file_artifact("),
+            verify_file_artifact.index("read_file_value("),
         )
 
-    @unittest.expectedFailure
     def test_finalizer_recovers_created_thumbnail_files_before_defecting(self):
         self.assertIn("fn recover_created_file_artifact", self.finalizer)
         self.assertIn("fn recoverable_image_bytes_from_text", self.finalizer)
-        self.assertIn("file_value_is_readable", self.finalizer)
-        self.assertIn("ARTIFACT_READY_POLL_ATTEMPTS", self.finalizer)
+        self.assertIn("FILE_UPLOAD_STREAM_CHUNK_BYTES", self.finalizer)
 
         ready_check = self.finalizer[
             self.finalizer.index("fn verify_ready_file_artifact") : self.finalizer.index(
-                "fn verify_thumbnail"
+                "fn verify_ready_file_metadata"
             )
         ]
-        self.assertIn('last_status == "Created"', ready_check)
+        self.assertIn('file_status == "Created"', ready_check)
         self.assertIn("recover_created_file_artifact(", ready_check)
-        self.assertIn("file_value_is_readable(", ready_check)
+        self.assertLess(
+            ready_check.index("recover_created_file_artifact("),
+            ready_check.index("expected Ready"),
+            "Created file recovery must happen before returning the Ready-state defect",
+        )
         self.assertIn("streaming PUT $value", self.finalizer)
         self.assertIn("same file id", self.finalizer)
 
-    @unittest.expectedFailure
     def test_curator_skill_attaches_only_verified_ready_files(self):
         for token in [
             "def require_ready_file",

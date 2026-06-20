@@ -335,23 +335,48 @@ for review.
 ### Step 6 — Publish artifacts
 
 ```python
-result = temper.write('/katagami/embodiments/' + slug + '.html', html_code)
+def require_ready_file(write_result, artifact_kind):
+    file_id = write_result['file_id']
+    file = temper.get('Files', file_id)
+    fields = file.get('fields', file)
+    status = file.get('status') or file.get('Status') or fields.get('Status')
+    path = fields.get('Path') or fields.get('path')
+    name = fields.get('Name') or fields.get('name')
+    mime_type = fields.get('MimeType') or fields.get('mime_type')
+    size_bytes = fields.get('SizeBytes') or fields.get('size_bytes')
+    assert status == 'Ready', f'{artifact_kind} file {file_id} is {status}, expected Ready'
+    assert path and name and mime_type and size_bytes, file
+    return file_id
+
+result = temper.write({
+    'path': '/katagami/embodiments/' + slug + '.html',
+    'content': html_code,
+    'mime_type': 'text/html'
+})
+embodiment_file_id = require_ready_file(result, 'embodiment')
 temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
-    'embodiment_file_id': result['file_id'],
+    'embodiment_file_id': embodiment_file_id,
     'element_count': '15',
     'composition_count': '5',
     'embodiment_format': 'html'
 })
-thumbnail_result = temper.write('/katagami/thumbnails/' + slug + '/desktop.jpg', thumbnail_bytes, {
+thumbnail_result = temper.write({
+    'path': '/katagami/thumbnails/' + slug + '/desktop.jpg',
+    'content': thumbnail_bytes,
     'mime_type': 'image/jpeg'
 })
+thumbnail_file_id = require_ready_file(thumbnail_result, 'thumbnail')
 temper.action('DesignLanguages', eid, 'AttachThumbnail', {
-    'thumbnail_file_id': thumbnail_result['file_id']
+    'thumbnail_file_id': thumbnail_file_id
 })
 temper.action('DesignLanguages', eid, 'SetLineage', {
     'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
 })
 ```
+
+Do not attach a file ID until `require_ready_file(...)` passes. If a write
+returns anything other than a Ready File with usable metadata, retry the write or
+fail the job with the file response as evidence.
 
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
 
@@ -430,9 +455,14 @@ temper.action('DesignLanguages', eid, 'AttachShadcnExport', {
     }, ensure_ascii=False)
 })
 
-component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
+component_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/components.md',
+    'content': shadcn_components_md,
+    'mime_type': 'text/markdown',
+})
+component_spec_file_id = require_ready_file(component_result, 'shadcn_component_spec')
 temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
-    'shadcn_component_spec_file_id': component_result['file_id'],
+    'shadcn_component_spec_file_id': component_spec_file_id,
     'shadcn_component_spec_format_version': 'component-recipes-v1',
     'shadcn_component_spec_manifest': json.dumps({
         'artifact': 'katagami:shadcn-component-recipes',
@@ -445,9 +475,14 @@ temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
     }, ensure_ascii=False)
 })
 
-shots_result = temper.write('/katagami/shadcn/' + slug + '/preview-shots.json', json.dumps(preview_shots, ensure_ascii=False, indent=2))
+shots_result = temper.write({
+    'path': '/katagami/shadcn/' + slug + '/preview-shots.json',
+    'content': json.dumps(preview_shots, ensure_ascii=False, indent=2),
+    'mime_type': 'application/json',
+})
+preview_shots_file_id = require_ready_file(shots_result, 'shadcn_preview_shots')
 temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
-    'shadcn_preview_shots_file_id': shots_result['file_id'],
+    'shadcn_preview_shots_file_id': preview_shots_file_id,
     'shadcn_preview_shots_format_version': 'preview-shots-v1',
     'shadcn_preview_shots_manifest': json.dumps({
         'artifact': 'katagami:shadcn-preview-shots',
