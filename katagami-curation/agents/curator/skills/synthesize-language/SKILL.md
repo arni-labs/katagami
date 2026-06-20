@@ -18,7 +18,7 @@ When the job type is `regenerate_embodiment` and the input contains `existing_la
    ```
 4. Run the **Spec Validation Gate**. If any section fails, research and rewrite it — the spec is the primary artifact.
 5. Go to the **EMBODIMENT PHASE**
-6. After `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnComponentSpec`, and `AttachShadcnPreviewShots`, finish the job. The CurationJob finalizer verifies the embodiment file, thumbnail, agent-authored shadcn component artifacts, deterministic DESIGN.md, and shadcn/ui registry-theme projection before publish.
+6. After `AttachDesignMd`, `AttachEmbodiment`, `AttachThumbnail`, `AttachShadcnExport`, `AttachShadcnComponentSpec`, and `AttachShadcnPreviewShots`, finish the job. The CurationJob finalizer verifies the attached files and marks verifier-owned booleans before review/publish; it does not author missing artifacts.
 
 ## Before Starting
 
@@ -153,6 +153,32 @@ Do NOT proceed to embodiment until every check passes:
 - **Guidance**: `do` >= 3 items, `dont` >= 3 items
 
 If any check fails, rewrite that section immediately.
+
+## DESIGN.md PHASE
+
+Generate the portable DESIGN.md artifact from the same native Katagami fields
+you just wrote. The finalizer verifies the attached file and lint metadata; it
+does not generate or repair DESIGN.md for you.
+
+The DESIGN.md must include valid frontmatter, token references, component
+semantics, and the `## shadcn/ui Usage` section described above. Write it to
+`/tmp/DESIGN.md` in the sandbox, run:
+
+```python
+lint_json = sandbox.bash('npx @google/design.md lint --format=json /tmp/DESIGN.md')
+```
+
+Warnings are blocking. Parse the lint JSON, fix all errors and warnings, then
+attach the exact markdown that passed lint:
+
+```python
+design_md_result = temper.write('/katagami/design-md/' + slug + '/DESIGN.md', design_md)
+temper.action('DesignLanguages', eid, 'AttachDesignMd', {
+    'design_md_file_id': design_md_result['file_id'],
+    'design_md_lint_result': json.dumps(lint_result, ensure_ascii=False),
+    'design_md_format_version': 'design-md-v1'
+})
+```
 
 ## EMBODIMENT PHASE
 
@@ -331,9 +357,16 @@ For `evolve_language`: read the parent first, inherit base tokens, apply modific
 
 ### Step 7 — Publish shadcn/ui component artifacts
 
-The shadcn registry theme is finalizer-owned, but the component recipes and
-preview shots are first-class, agent-authored language artifacts. They should
-make the shadcn preview feel designed, not merely token-mapped.
+The shadcn registry theme, component recipes, and preview shots are
+first-class, agent-authored language artifacts. They should make the shadcn
+preview feel designed, not merely token-mapped. The finalizer only reads and
+verifies the attached files.
+
+Create `/katagami/shadcn/{slug}/registry-theme.json` with a shadcn
+`registry:theme` payload derived from the native Katagami tokens. The JSON must
+include `type: "registry:theme"`, `cssVars`, and `componentManifest`, and it
+must preserve enough manifest metadata for the UI preview to explain the
+projection.
 
 Create `/katagami/shadcn/{slug}/components.md` with:
 
@@ -383,6 +416,20 @@ content, stable spacing, hierarchy, and one or two distinctive signature
 patterns from the language.
 
 ```python
+registry_theme_result = temper.write('/katagami/shadcn/' + slug + '/registry-theme.json', json.dumps(registry_theme, ensure_ascii=False, indent=2))
+temper.action('DesignLanguages', eid, 'AttachShadcnExport', {
+    'shadcn_export_file_id': registry_theme_result['file_id'],
+    'shadcn_export_format_version': 'registry-theme-v1',
+    'shadcn_export_manifest': json.dumps({
+        'artifact': 'katagami:shadcn-registry-theme',
+        'version': 'registry-theme-v1',
+        'author': 'katagami-agent',
+        'generatedBy': 'katagami-agent',
+        'type': 'registry:theme',
+        'requiresComponentManifest': True
+    }, ensure_ascii=False)
+})
+
 component_result = temper.write('/katagami/shadcn/' + slug + '/components.md', shadcn_components_md)
 temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
     'shadcn_component_spec_file_id': component_result['file_id'],
@@ -416,11 +463,9 @@ temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
 })
 ```
 
-The deterministic shadcn/ui registry theme is still finalizer-owned. Do not
-hand-write or attach `AttachShadcnExport` during synthesis; keep the native
-Katagami spec complete and DESIGN.md-projectable so the finalizer can derive
-`/katagami/shadcn/{slug}/registry-theme.json`. The finalizer does not author
-`components.md` or `preview-shots.json`; it only verifies that the agent did.
+Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
+`VerifyShadcnPreviewShots` directly. The finalizer marks those verifier-owned
+states after it reads the attached files.
 
 ## COMPOSITION EMBODIMENTS PHASE (Landing + Dashboard) — required & gated
 

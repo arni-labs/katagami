@@ -62,8 +62,8 @@ class SourceSearchHotPathTests(unittest.TestCase):
             )
         ]
 
-        self.assertIn("verify_generated_language_identity", finalizer)
-        self.assertIn('matches!(job_type, "synthesize" | "evolve_language")', synth_fn)
+        self.assertIn("fn verify_language_identity", finalizer)
+        self.assertIn("verify_language_identity(language_id, &language)?", synth_fn)
         self.assertIn("uses its slug as the entity ID", finalizer)
         self.assertIn("generated entity_id", finalizer)
 

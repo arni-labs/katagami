@@ -75,9 +75,10 @@ class CurationLivenessContractTest(unittest.TestCase):
         self.assertIn('<Property Name="ParentSessionId" Type="Edm.String"', model)
         self.assertIn('"ParentSessionId": parent_session_id.clone()', build_session)
         self.assertIn('"parent_session_id".to_string()', build_session)
-        self.assertIn("parent_session_id_from_fields", finalizer)
-        self.assertIn("curation_job_create_body(parent_session_id)", finalizer)
-        self.assertIn("add_parent_session_id(&mut configure_body, parent_session_id)", finalizer)
+        self.assertNotIn("curation_job_create_body(parent_session_id)", finalizer)
+        self.assertNotIn("add_parent_session_id(&mut configure_body", finalizer)
+        self.assertNotIn("create_configure_submit_job", finalizer)
+        self.assertIn("Follow-up job creation", finalizer)
 
     def test_curation_direction_synthesizing_times_out_to_failed(self):
         spec = load_spec("curation_direction.ioa.toml")
