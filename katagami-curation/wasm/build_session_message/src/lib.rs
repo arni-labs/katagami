@@ -2,25 +2,6 @@ use temper_wasm_sdk::prelude::*;
 
 const DEFAULT_TOOLS_ENABLED: &str = "temper_get,temper_list,temper_create,temper_action,temper_write,temper_read,temper_web_search,temper_web_fetch";
 const DOC_WORKSPACE_ID: &str = "os-app-docs";
-const EMBEDDED_RESEARCH_DIRECTION_SKILL: &str =
-    include_str!("../../../agents/curator/skills/research-direction/SKILL.md");
-const EMBEDDED_SYNTHESIZE_LANGUAGE_SKILL: &str =
-    include_str!("../../../agents/curator/skills/synthesize-language/SKILL.md");
-const EMBEDDED_REVIEW_QUALITY_SKILL: &str =
-    include_str!("../../../agents/curator/skills/review-quality/SKILL.md");
-const EMBEDDED_ORGANIZE_TAXONOMY_SKILL: &str =
-    include_str!("../../../agents/curator/skills/organize-taxonomy/SKILL.md");
-const EMBEDDED_SYNTHESIZE_PALETTE_SKILL: &str =
-    include_str!("../../../agents/curator/skills/synthesize-palette/SKILL.md");
-const EMBEDDED_SYNTHESIZE_ART_STYLE_SKILL: &str =
-    include_str!("../../../agents/curator/skills/synthesize-art-style/SKILL.md");
-const EMBEDDED_TASTE_DISTILLATION_SKILL: &str =
-    include_str!("../../../agents/curator/skills/taste-distillation/SKILL.md");
-const EMBEDDED_DESIGN_PRINCIPLES: &str =
-    include_str!("../../../system/knowledge/design-principles.md");
-const EMBEDDED_QUALITY_STANDARDS: &str =
-    include_str!("../../../system/knowledge/quality-standards.md");
-const EMBEDDED_FEEDBACK_LOG: &str = include_str!("../../../system/knowledge/feedback-log.md");
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct JobTemplate {
@@ -147,24 +128,18 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             &template.instruction_path,
             &stable_soul_id,
             inline_job_docs,
-        );
-        let effective_instruction_path = instruction_doc
-            .as_ref()
-            .map(|doc| doc.path.as_str())
-            .unwrap_or(template.instruction_path.as_str());
+        )?;
+        let effective_instruction_path = instruction_doc.path.as_str();
         let knowledge_specs = knowledge_read_specs_for_skill(skill);
         let knowledge_docs = knowledge_specs
             .iter()
-            .filter_map(|(path, _)| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
-            .collect::<Vec<_>>();
+            .map(|(path, _)| load_doc_file(&ctx, &api_url, &headers, path, inline_job_docs))
+            .collect::<Result<Vec<_>, _>>()?;
         let instruction_read_command =
-            temper_read_command(effective_instruction_path, instruction_doc.as_ref());
+            temper_read_command(effective_instruction_path, Some(&instruction_doc));
         let knowledge_read_commands = render_read_commands(knowledge_specs, &knowledge_docs);
-        let loaded_reference_block = render_loaded_reference_block(
-            instruction_doc.as_ref(),
-            &knowledge_docs,
-            inline_job_docs,
-        );
+        let loaded_reference_block =
+            render_loaded_reference_block(&instruction_doc, &knowledge_docs, inline_job_docs);
         let reference_instruction_block = render_reference_instruction_block(
             skill,
             inline_job_docs,
@@ -277,7 +252,7 @@ temper.done("{job_type} failed")
                 "build_session_message: skill='{}' prompt_len={} docs_resolved={} inline_docs={}",
                 skill,
                 user_message.len(),
-                usize::from(instruction_doc.is_some()) + knowledge_docs.len(),
+                1 + knowledge_docs.len(),
                 inline_job_docs
             ),
         );
@@ -768,13 +743,20 @@ fn load_instruction_doc(
     configured_path: &str,
     stable_soul_id: &str,
     inline_content: bool,
-) -> Option<LoadedDoc> {
-    for path in instruction_path_candidates(configured_path, stable_soul_id) {
-        if let Some(doc) = load_doc_file(ctx, api_url, headers, &path, inline_content) {
-            return Some(doc);
+) -> Result<LoadedDoc, String> {
+    let candidates = instruction_path_candidates(configured_path, stable_soul_id);
+    let mut errors = Vec::new();
+    for path in &candidates {
+        match load_doc_file(ctx, api_url, headers, path, inline_content) {
+            Ok(doc) => return Ok(doc),
+            Err(error) => errors.push(format!("{path}: {error}")),
         }
     }
-    None
+    Err(format!(
+        "failed to load required instruction doc for '{configured_path}' from TemperFS workspace '{DOC_WORKSPACE_ID}'; candidates=[{}]; errors=[{}]",
+        candidates.join(", "),
+        errors.join(" | ")
+    ))
 }
 
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
@@ -793,140 +775,19 @@ fn load_doc_file(
     headers: &[(String, String)],
     path: &str,
     inline_content: bool,
-) -> Option<LoadedDoc> {
-    if let Some(doc) = embedded_loaded_doc(path, inline_content) {
-        return Some(doc);
-    }
-
-    if let Some(file_id) = resolve_doc_file_id(ctx, api_url, headers, path) {
-        let content = if inline_content {
-            Some(
-                load_file_content(ctx, api_url, headers, &file_id)
-                    .and_then(|content| content)
-                    .or_else(|| embedded_doc_content(path).map(str::to_string))?,
-            )
-        } else {
-            None
-        };
-        return Some(LoadedDoc {
-            path: path.to_string(),
-            workspace_id: DOC_WORKSPACE_ID.to_string(),
-            content,
-        });
-    }
-
-    let filter = format!("path eq '{}'", odata_string_literal(path));
-    let resp = match ctx.http_call(
-        "GET",
-        &format!("{api_url}/tdata/Files?$filter={}&$top=5", urlenc(&filter)),
-        headers,
-        "",
-    ) {
-        Ok(resp) => resp,
-        Err(err) => {
-            ctx.log(
-                "warn",
-                &format!("build_session_message: doc lookup for '{path}' failed: {err}"),
-            );
-            return embedded_loaded_doc(path, inline_content);
-        }
-    };
-    if resp.status != 200 {
-        ctx.log(
-            "warn",
-            &format!(
-                "build_session_message: doc lookup for '{path}' returned HTTP {}",
-                resp.status
-            ),
-        );
-        return embedded_loaded_doc(path, inline_content);
-    }
-
-    let parsed: serde_json::Value = match serde_json::from_str(&resp.body) {
-        Ok(value) => value,
-        Err(err) => {
-            ctx.log(
-                "warn",
-                &format!(
-                    "build_session_message: doc lookup for '{path}' returned invalid JSON: {err}"
-                ),
-            );
-            return embedded_loaded_doc(path, inline_content);
-        }
-    };
-    let Some(item) = parsed
-        .get("value")
-        .and_then(|v| v.as_array())
-        .and_then(|items| {
-            items
-                .iter()
-                .find(|item| json_field_str(item, &["Path", "path"]).as_deref() == Some(path))
-        })
-    else {
-        return embedded_loaded_doc(path, inline_content);
-    };
-    let Some(file_id) = json_field_str(item, &["Id", "entity_id"]) else {
-        return embedded_loaded_doc(path, inline_content);
-    };
-    let workspace_id = json_field_str(item, &["WorkspaceId", "workspace_id"]).unwrap_or_default();
+) -> Result<LoadedDoc, String> {
+    let file_id = resolve_doc_file_id(ctx, api_url, headers, path)?;
     let content = if inline_content {
-        Some(
-            load_file_content(ctx, api_url, headers, &file_id)
-                .and_then(|content| content)
-                .or_else(|| embedded_doc_content(path).map(str::to_string))?,
-        )
+        Some(load_file_content(ctx, api_url, headers, &file_id)?)
     } else {
         None
     };
 
-    Some(LoadedDoc {
-        path: path.to_string(),
-        workspace_id,
-        content,
-    })
-}
-
-fn embedded_loaded_doc(path: &str, inline_content: bool) -> Option<LoadedDoc> {
-    if !inline_content {
-        return None;
-    }
-    embedded_doc_content(path).map(|content| LoadedDoc {
+    Ok(LoadedDoc {
         path: path.to_string(),
         workspace_id: DOC_WORKSPACE_ID.to_string(),
-        content: Some(content.to_string()),
+        content,
     })
-}
-
-fn embedded_doc_content(path: &str) -> Option<&'static str> {
-    let normalized = path.replace(
-        "/agents/sl-bootstrap-agent-soul-curator/",
-        "/agents/curator/",
-    );
-    match normalized.as_str() {
-        "/agents/curator/skills/research-direction/SKILL.md" => {
-            Some(EMBEDDED_RESEARCH_DIRECTION_SKILL)
-        }
-        "/agents/curator/skills/synthesize-language/SKILL.md" => {
-            Some(EMBEDDED_SYNTHESIZE_LANGUAGE_SKILL)
-        }
-        "/agents/curator/skills/review-quality/SKILL.md" => Some(EMBEDDED_REVIEW_QUALITY_SKILL),
-        "/agents/curator/skills/organize-taxonomy/SKILL.md" => {
-            Some(EMBEDDED_ORGANIZE_TAXONOMY_SKILL)
-        }
-        "/agents/curator/skills/synthesize-palette/SKILL.md" => {
-            Some(EMBEDDED_SYNTHESIZE_PALETTE_SKILL)
-        }
-        "/agents/curator/skills/synthesize-art-style/SKILL.md" => {
-            Some(EMBEDDED_SYNTHESIZE_ART_STYLE_SKILL)
-        }
-        "/agents/curator/skills/taste-distillation/SKILL.md" => {
-            Some(EMBEDDED_TASTE_DISTILLATION_SKILL)
-        }
-        "/system/knowledge/design-principles.md" => Some(EMBEDDED_DESIGN_PRINCIPLES),
-        "/system/knowledge/quality-standards.md" => Some(EMBEDDED_QUALITY_STANDARDS),
-        "/system/knowledge/feedback-log.md" => Some(EMBEDDED_FEEDBACK_LOG),
-        _ => None,
-    }
 }
 
 fn resolve_doc_file_id(
@@ -934,7 +795,7 @@ fn resolve_doc_file_id(
     api_url: &str,
     headers: &[(String, String)],
     path: &str,
-) -> Option<String> {
+) -> Result<String, String> {
     let resp = ctx
         .http_call(
             "POST",
@@ -944,12 +805,19 @@ fn resolve_doc_file_id(
             headers,
             &json!({"path": path}).to_string(),
         )
-        .ok()?;
+        .map_err(|err| format!("ResolvePath HTTP call failed for '{path}': {err}"))?;
     if resp.status != 200 {
-        return None;
+        return Err(format!(
+            "ResolvePath returned HTTP {} for '{path}': {}",
+            resp.status,
+            &resp.body[..resp.body.len().min(500)]
+        ));
     }
-    let parsed: serde_json::Value = serde_json::from_str(&resp.body).ok()?;
-    file_id_from_workspace_response(&parsed, path)
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|err| format!("ResolvePath returned invalid JSON for '{path}': {err}"))?;
+    file_id_from_workspace_response(&parsed, path).ok_or_else(|| {
+        format!("ResolvePath did not return a file id for exact path '{path}' in workspace '{DOC_WORKSPACE_ID}'")
+    })
 }
 
 fn file_id_from_workspace_response(value: &serde_json::Value, path: &str) -> Option<String> {
@@ -976,7 +844,7 @@ fn load_file_content(
     api_url: &str,
     headers: &[(String, String)],
     file_id: &str,
-) -> Option<Option<String>> {
+) -> Result<String, String> {
     let content_resp = ctx
         .http_call(
             "GET",
@@ -984,20 +852,18 @@ fn load_file_content(
             headers,
             "",
         )
-        .ok()?;
-    if content_resp.status != 200 || content_resp.body.trim().is_empty() {
-        return None;
+        .map_err(|err| format!("File $value read failed for File('{file_id}'): {err}"))?;
+    if content_resp.status != 200 {
+        return Err(format!(
+            "File('{file_id}') $value returned HTTP {}: {}",
+            content_resp.status,
+            &content_resp.body[..content_resp.body.len().min(500)]
+        ));
     }
-    Some(Some(content_resp.body))
-}
-
-fn json_field_str(item: &serde_json::Value, keys: &[&str]) -> Option<String> {
-    keys.iter().find_map(|key| {
-        item.get(*key)
-            .or_else(|| item.get("fields").and_then(|fields| fields.get(*key)))
-            .and_then(|value| value.as_str())
-            .map(|value| value.to_string())
-    })
+    if content_resp.body.trim().is_empty() {
+        return Err(format!("File('{file_id}') $value returned empty content"));
+    }
+    Ok(content_resp.body)
 }
 
 fn temper_read_command(path: &str, loaded: Option<&LoadedDoc>) -> String {
@@ -1054,7 +920,7 @@ fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> St
 }
 
 fn render_loaded_reference_block(
-    instruction_doc: Option<&LoadedDoc>,
+    instruction_doc: &LoadedDoc,
     knowledge_docs: &[LoadedDoc],
     inline_content: bool,
 ) -> String {
@@ -1064,14 +930,11 @@ fn render_loaded_reference_block(
 
     let mut out = String::new();
     out.push_str("## Loaded Reference Files\n\n");
-    match instruction_doc.and_then(|doc| doc.content.as_ref().map(|content| (doc, content))) {
-        Some((doc, content)) => out.push_str(&format!(
+    if let Some(content) = instruction_doc.content.as_ref() {
+        out.push_str(&format!(
             "### `{}`\n\n````markdown\n{}\n````\n",
-            doc.path, content
-        )),
-        None => out.push_str(
-            "The configured skill instruction file was not available in TemperFS when this session was created.\n",
-        ),
+            instruction_doc.path, content
+        ));
     }
 
     for doc in knowledge_docs {
@@ -1092,23 +955,14 @@ fn render_reference_instruction_block(
     knowledge_read_commands: &str,
 ) -> String {
     if inline_content {
-        let fallback_reads = if knowledge_read_commands.trim().is_empty() {
-            String::new()
-        } else {
-            format!("\n{knowledge_read_commands}")
-        };
         return format!(
-            "Execute this job using your `{skill}` skill.\n\nThe required skill and reference files are inlined below in `Loaded Reference Files`. Use the inlined contract directly. Do not spend turns rereading those files unless an inline section says a file was unavailable or you need an additional reference not included here.\n\nFallback read commands, only for missing or stale inline references:\n- `{instruction_read_command}` - exact job procedure and output contract{fallback_reads}"
+            "Execute this job using your `{skill}` skill.\n\nThe required skill and reference files are inlined below in `Loaded Reference Files`. Use the inlined contract directly. Do not spend turns rereading those files unless you need an additional reference not included here."
         );
     }
 
     format!(
         "Execute this job using your `{skill}` skill. The current skill and knowledge files are available in TemperFS. Read the exact files you need before using them, starting with the skill instruction file for this job.\n\nUse these read commands:\n- `{instruction_read_command}` - exact job procedure and output contract\n{knowledge_read_commands}"
     )
-}
-
-fn odata_string_literal(value: &str) -> String {
-    value.replace('\'', "''")
 }
 
 fn escape_prompt_string(value: &str) -> String {
@@ -1218,11 +1072,10 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        completion_params_block, config_bool, embedded_doc_content, field_bool,
-        file_id_from_workspace_response, instruction_path_candidates,
-        knowledge_read_specs_for_skill, normalize_bootstrapped_soul_id, parse_template,
-        render_loaded_reference_block, render_reference_instruction_block, temper_read_command,
-        LoadedDoc,
+        completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
+        instruction_path_candidates, knowledge_read_specs_for_skill,
+        normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
+        render_reference_instruction_block, temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1312,39 +1165,6 @@ mod tests {
     }
 
     #[test]
-    fn embedded_synthesize_skill_contains_current_artifact_contract() {
-        let content = embedded_doc_content(
-            "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
-        )
-        .expect("embedded synthesize-language skill should be available");
-
-        assert!(content.contains("COMPOSITION EMBODIMENTS PHASE"));
-        assert!(content.contains("DESIGN.md PHASE"));
-        assert!(content.contains("katagami-design-md-contract"));
-        assert!(content.contains("never\nstore the shell transcript"));
-        assert!(content.contains("design_md_format_version': 'alpha'"));
-        assert!(content.contains("post-embodiment DESIGN.md attachment is mandatory"));
-        assert!(content.contains("AttachDesignMd"));
-        assert!(content.contains("AttachShadcnExport"));
-        assert!(!content.contains("npx @google/design.md"));
-        assert!(!content.contains("registry theme is finalizer-owned"));
-    }
-
-    #[test]
-    fn embedded_review_skill_contains_current_design_md_contract() {
-        let content = embedded_doc_content(
-            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
-        )
-        .expect("embedded review-quality skill should be available");
-
-        assert!(content.contains("katagami-design-md-contract"));
-        assert!(content.contains("never store the shell transcript"));
-        assert!(content.contains("ZERO lint errors and ZERO lint warnings"));
-        assert!(content.contains("design_md_format_version': 'alpha'"));
-        assert!(!content.contains("npx @google/design.md"));
-    }
-
-    #[test]
     fn source_search_uses_only_skill_doc_by_default() {
         assert!(knowledge_read_specs_for_skill("research-direction").is_empty());
         assert!(knowledge_read_specs_for_skill("synthesize-language")
@@ -1364,17 +1184,6 @@ mod tests {
     }
 
     #[test]
-    fn embedded_doc_content_accepts_stable_bootstrap_skill_path() {
-        let content = embedded_doc_content(
-            "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md",
-        )
-        .expect("embedded research-direction skill should be available");
-
-        assert!(content.contains("Job type: `source_search`"));
-        assert!(content.contains("temper.web_search(query)"));
-    }
-
-    #[test]
     fn inline_reference_instructions_do_not_start_with_reread() {
         let block = render_reference_instruction_block(
             "research-direction",
@@ -1385,7 +1194,8 @@ mod tests {
 
         assert!(block.contains("required skill and reference files are inlined"));
         assert!(block.contains("Do not spend turns rereading"));
-        assert!(block.contains("Fallback read commands"));
+        assert!(!block.contains("Fallback read commands"));
+        assert!(!block.contains("unavailable"));
     }
 
     #[test]
@@ -1396,7 +1206,7 @@ mod tests {
             content: None,
         };
 
-        assert_eq!(render_loaded_reference_block(Some(&doc), &[], false), "");
+        assert_eq!(render_loaded_reference_block(&doc, &[], false), "");
     }
 
     #[test]
@@ -1407,7 +1217,7 @@ mod tests {
             content: Some("# Synthesize".to_string()),
         };
 
-        assert!(render_loaded_reference_block(Some(&doc), &[], true).contains("# Synthesize"));
+        assert!(render_loaded_reference_block(&doc, &[], true).contains("# Synthesize"));
     }
 
     #[test]
