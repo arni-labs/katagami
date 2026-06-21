@@ -417,7 +417,7 @@ fn verify_complete_language_artifacts(
         "embodiment",
         Some(&embodiment_format),
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -425,6 +425,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyEmbodiment",
         &json!({}),
+        &["embodiment_verified"],
     )?;
 
     verify_file_field(
@@ -447,7 +448,7 @@ fn verify_complete_language_artifacts(
         "composition_dashboard",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -455,6 +456,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyCompositions",
         &json!({}),
+        &["compositions_verified"],
     )?;
 
     verify_file_field(
@@ -467,7 +469,7 @@ fn verify_complete_language_artifacts(
         "thumbnail",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -475,6 +477,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyThumbnail",
         &json!({}),
+        &["thumbnail_verified"],
     )?;
 
     verify_design_md_metadata(language_id, &fields)?;
@@ -488,7 +491,7 @@ fn verify_complete_language_artifacts(
         "design_md",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -496,6 +499,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyDesignMd",
         &json!({}),
+        &["has_design_md", "has_valid_design_md", "design_md_verified"],
     )?;
 
     verify_file_field(
@@ -508,7 +512,7 @@ fn verify_complete_language_artifacts(
         "shadcn_export",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -516,6 +520,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyShadcnExport",
         &json!({}),
+        &["shadcn_export_verified"],
     )?;
 
     verify_shadcn_component_manifest(language_id, &fields)?;
@@ -529,7 +534,7 @@ fn verify_complete_language_artifacts(
         "shadcn_component_spec",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -537,6 +542,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyShadcnComponentSpec",
         &json!({}),
+        &["shadcn_component_spec_verified"],
     )?;
 
     verify_shadcn_preview_manifest(language_id, &fields)?;
@@ -550,7 +556,7 @@ fn verify_complete_language_artifacts(
         "shadcn_preview_shots",
         None,
     )?;
-    dispatch_action(
+    dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -558,6 +564,7 @@ fn verify_complete_language_artifacts(
         language_id,
         "VerifyShadcnPreviewShots",
         &json!({}),
+        &["shadcn_preview_shots_verified"],
     )?;
 
     verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
@@ -1975,6 +1982,61 @@ fn dispatch_action(
         .entity(set_name, entity_id));
     }
     Ok(())
+}
+
+fn dispatch_verifier_action(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &'static str,
+    entity_id: &str,
+    action: &str,
+    params: &serde_json::Value,
+    expected_bools: &[&str],
+) -> Result<(), VerificationError> {
+    dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params)?;
+    if expected_bools.is_empty() {
+        return Ok(());
+    }
+
+    let mut latest = None;
+    for _ in 0..5 {
+        let entity = load_required_entity(
+            ctx,
+            api_url,
+            headers,
+            set_name,
+            entity_id,
+            "verifier_entity_disappeared",
+        )?;
+        if expected_bools
+            .iter()
+            .all(|name| entity_bool_any(&entity, name))
+        {
+            return Ok(());
+        }
+        latest = Some(entity);
+    }
+
+    let missing: Vec<&str> = expected_bools
+        .iter()
+        .copied()
+        .filter(|name| {
+            latest
+                .as_ref()
+                .map(|entity| !entity_bool_any(entity, name))
+                .unwrap_or(true)
+        })
+        .collect();
+    Err(VerificationError::new(
+        "verifier_action_effect_not_visible",
+        format!(
+            "{set_name}('{entity_id}') verifier action '{action}' completed, but expected booleans are not visible: [{}]",
+            missing.join(", ")
+        ),
+    )
+    .entity(set_name, entity_id)
+    .repairable(true))
 }
 
 fn http_call(
