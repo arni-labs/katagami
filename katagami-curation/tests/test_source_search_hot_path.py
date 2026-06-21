@@ -87,6 +87,20 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn('"MaxChecks": "80"', builder)
         self.assertNotIn('"MaxChecks": "180"', builder)
 
+    def test_session_builder_prefers_embedded_docs_before_temperfs_lookup(self):
+        root = Path(__file__).resolve().parents[1]
+        builder = (
+            root / "wasm" / "build_session_message" / "src" / "lib.rs"
+        ).read_text()
+        load_doc_file = builder[
+            builder.index("fn load_doc_file") : builder.index("fn load_file_content")
+        ]
+
+        self.assertLess(
+            load_doc_file.index("embedded_loaded_doc(path, inline_content)"),
+            load_doc_file.index("resolve_doc_file_id"),
+        )
+
     def test_curator_skills_use_preloaded_json_helper_contract(self):
         root = Path(__file__).resolve().parents[1]
         curator_root = root / "agents" / "curator"

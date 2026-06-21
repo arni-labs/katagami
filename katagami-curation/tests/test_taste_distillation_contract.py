@@ -97,7 +97,7 @@ class TasteDistillationContractTests(unittest.TestCase):
         self.assertEqual(template["completion_action"], "CompleteTasteDistillation")
         self.assertEqual(
             template["instruction_path"],
-            "/agents/curator/skills/taste-distillation/SKILL.md",
+            "/agents/sl-bootstrap-agent-soul-curator/skills/taste-distillation/SKILL.md",
         )
 
     def test_distillation_skill_uses_only_archive_and_featured_signals(self):

@@ -76,6 +76,15 @@ class DesignMdContractTests(unittest.TestCase):
             self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
         )
 
+    def test_verify_design_md_restores_attached_design_md_state_after_validation(self):
+        self.assertTrue(self._sets_bool("VerifyDesignMd", "has_design_md", "true"))
+        self.assertTrue(
+            self._sets_bool("VerifyDesignMd", "has_valid_design_md", "true")
+        )
+        self.assertTrue(
+            self._sets_bool("VerifyDesignMd", "design_md_verified", "true")
+        )
+
     def test_published_languages_do_not_accept_design_md_reattach(self):
         attach = self.actions["AttachDesignMd"]
         self.assertNotIn("Published", attach["from"])
@@ -119,6 +128,25 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertEqual(
             invariants["PublishedRequiresPublicAssets"]["assert"],
             "has_published_assets",
+        )
+
+    def test_review_requires_valid_design_md(self):
+        submit = self.actions["SubmitForReview"]
+        guards = submit.get("guard", [])
+        for var in [
+            "has_design_md",
+            "has_valid_design_md",
+            "design_md_verified",
+        ]:
+            self.assertIn({"type": "is_true", "var": var}, guards)
+        self.assertIn(
+            {
+                "type": "cross_entity_state",
+                "entity_type": "File",
+                "entity_id_source": "design_md_file_id",
+                "required_status": ["Ready", "Locked"],
+            },
+            guards,
         )
 
     def test_source_spec_changes_invalidate_design_md(self):
@@ -187,13 +215,47 @@ class DesignMdContractTests(unittest.TestCase):
         ).read_text()
 
         for fragment in [
-            "@google/design.md lint",
+            "katagami-design-md-contract",
             "AttachDesignMd",
             "/katagami/design-md/",
             "ZERO lint errors and ZERO lint warnings",
             "Warnings are blocking",
         ]:
             self.assertIn(fragment, review_skill)
+        self.assertRegex(review_skill, r"never\s+store the shell transcript")
+        self.assertNotIn("npx @google/design.md", review_skill)
+        self.assertIn("'design_md_format_version': 'alpha'", review_skill)
+
+    def test_synthesize_skill_uses_embedded_design_md_gate(self):
+        synth_skill = (
+            self.curation_root
+            / "agents"
+            / "curator"
+            / "skills"
+            / "synthesize-language"
+            / "SKILL.md"
+        ).read_text()
+
+        for fragment in [
+            "katagami-design-md-contract",
+            "AttachDesignMd",
+            "/katagami/design-md/",
+            "Warnings are blocking",
+            "AttachEmbodiment` invalidates DESIGN.md",
+            "post-embodiment DESIGN.md attachment is mandatory",
+        ]:
+            self.assertIn(fragment, synth_skill)
+        self.assertRegex(synth_skill, r"never\s+store the shell transcript")
+        self.assertNotIn("npx @google/design.md", synth_skill)
+        self.assertIn("'design_md_format_version': 'alpha'", synth_skill)
+
+    def test_embedded_quality_knowledge_uses_same_design_md_gate(self):
+        quality_standards = (
+            self.curation_root / "system" / "knowledge" / "quality-standards.md"
+        ).read_text()
+
+        self.assertIn("katagami-design-md-contract", quality_standards)
+        self.assertNotIn("npx @google/design.md", quality_standards)
 
     def test_csdl_exposes_design_md_fields(self):
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")

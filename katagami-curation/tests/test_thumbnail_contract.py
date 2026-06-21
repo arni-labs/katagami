@@ -102,6 +102,20 @@ class ThumbnailContractTests(unittest.TestCase):
             "has_published_assets",
         )
 
+    def test_publish_requires_ready_composition_files(self):
+        publish = self.actions["Publish"]
+        guards = publish.get("guard", [])
+        for field in ["landing_file_id", "dashboard_file_id"]:
+            self.assertIn(
+                {
+                    "type": "cross_entity_state",
+                    "entity_type": "File",
+                    "entity_id_source": field,
+                    "required_status": ["Ready", "Locked"],
+                },
+                guards,
+            )
+
     def test_archived_languages_have_governed_restore_path(self):
         self.assertIn(
             "Archived",
@@ -172,7 +186,7 @@ class ThumbnailContractTests(unittest.TestCase):
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
             source.index(
-                "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
+                "let verified_language = verify_complete_language_artifacts",
                 finalizer,
             ),
             source.index(
@@ -205,7 +219,7 @@ class ThumbnailContractTests(unittest.TestCase):
         ]
 
         self.assertIn(
-            "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
+            "let verified_language = verify_complete_language_artifacts",
             synth_fn,
         )
         self.assertIn(
