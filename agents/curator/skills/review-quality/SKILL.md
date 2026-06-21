@@ -292,7 +292,7 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
        'thumbnail_file_id': thumbnail_result['file_id']
    })
    ```
-14. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish. This only applies after a language is in `Draft` or `UnderReview`; if the target is still `Published`, go back to the published artifact review path and do not re-attach DESIGN.md.
+14. **Regenerate DESIGN.md again if the embodiment or any spec field changed during review.** Re-run the DESIGN.md lint gate and call `AttachDesignMd` with the latest file before publish. `AttachEmbodiment` invalidates DESIGN.md verification booleans, so this step is mandatory whenever step 13 attaches or re-attaches an embodiment. This only applies after a language is in `Draft` or `UnderReview`; if the target is still `Published`, go back to the published artifact review path and do not re-attach DESIGN.md.
 15. **Generate first-class shadcn/ui artifacts.** The registry theme,
     `components.md`, and `preview-shots.json` are agent-authored quality
     artifacts. The finalizer reads and verifies these attached files; it does

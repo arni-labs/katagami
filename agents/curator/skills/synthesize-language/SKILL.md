@@ -438,6 +438,13 @@ Do not attach a file ID until `require_ready_file(...)` passes. If a write
 returns anything other than a Ready File with usable metadata, retry the write or
 fail the job with the file response as evidence.
 
+`AttachEmbodiment` invalidates DESIGN.md verification booleans because the
+portable projection must represent the final language state. After
+`AttachEmbodiment`, `AttachThumbnail`, and `SetLineage` have succeeded, rerun the
+DESIGN.md checker and call `AttachDesignMd` again with the latest markdown and
+lint JSON. This post-embodiment DESIGN.md attachment is mandatory; do not rely on
+the earlier sandbox validation attachment.
+
 For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
 
 ### Step 7 — Publish shadcn/ui component artifacts
