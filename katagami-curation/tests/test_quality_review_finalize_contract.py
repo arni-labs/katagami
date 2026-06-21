@@ -269,6 +269,26 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "finalizer must prove review prerequisites before dispatching SubmitForReview",
         )
 
+    def test_finalizer_confirms_verifier_owned_booleans_before_review_preflight(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn dispatch_verifier_action", source)
+        self.assertIn('"verifier_action_effect_not_visible"', source)
+        self.assertIn('"VerifyDesignMd"', source)
+        self.assertIn('"has_design_md", "has_valid_design_md", "design_md_verified"', source)
+        self.assertIn('"VerifyShadcnPreviewShots"', source)
+        self.assertIn('"shadcn_preview_shots_verified"', source)
+        self.assertLess(
+            source.index("dispatch_verifier_action("),
+            source.index("verify_review_ready_state(language_id, &current)?"),
+        )
+
     def test_design_md_lint_command_failure_is_blocking(self):
         source = (
             self.curation_root
