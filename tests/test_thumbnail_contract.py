@@ -186,7 +186,7 @@ class ThumbnailContractTests(unittest.TestCase):
         mark_quality = source.index('"MarkQualityPassed"', finalizer)
         self.assertLess(
             source.index(
-                "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
+                "let verified_language = verify_complete_language_artifacts",
                 finalizer,
             ),
             source.index(
@@ -219,7 +219,7 @@ class ThumbnailContractTests(unittest.TestCase):
         ]
 
         self.assertIn(
-            "verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?",
+            "let verified_language = verify_complete_language_artifacts",
             synth_fn,
         )
         self.assertIn(

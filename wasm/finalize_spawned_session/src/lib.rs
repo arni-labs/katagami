@@ -333,8 +333,15 @@ fn verify_synthesized_languages(
             "missing_design_language",
         )?;
         verify_language_identity(language_id, &language)?;
-        verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?;
-        ensure_language_under_review(ctx, api_url, headers, language_id, &language)?;
+        let verified_language = verify_complete_language_artifacts(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &language,
+            fields,
+        )?;
+        ensure_language_under_review(ctx, api_url, headers, language_id, &verified_language)?;
         verified.push(language_id.clone());
     }
 
@@ -371,9 +378,16 @@ fn verify_quality_reviewed_languages(
             language_id,
             "missing_design_language",
         )?;
-        verify_complete_language_artifacts(ctx, api_url, headers, language_id, &language, fields)?;
+        let verified_language = verify_complete_language_artifacts(
+            ctx,
+            api_url,
+            headers,
+            language_id,
+            &language,
+            fields,
+        )?;
         let under_review =
-            ensure_language_under_review(ctx, api_url, headers, language_id, &language)?;
+            ensure_language_under_review(ctx, api_url, headers, language_id, &verified_language)?;
         publish_public_assets(ctx, api_url, headers, language_id, &under_review)?;
         dispatch_action(
             ctx,
@@ -402,7 +416,7 @@ fn verify_complete_language_artifacts(
     language_id: &str,
     language: &serde_json::Value,
     job_fields: &serde_json::Value,
-) -> Result<(), VerificationError> {
+) -> Result<serde_json::Value, VerificationError> {
     let fields = entity_fields(language);
     verify_required_sections(language_id, language, &fields)?;
 
@@ -556,7 +570,7 @@ fn verify_complete_language_artifacts(
         "shadcn_preview_shots",
         None,
     )?;
-    dispatch_verifier_action(
+    let verified_language = dispatch_verifier_action(
         ctx,
         api_url,
         headers,
@@ -568,7 +582,7 @@ fn verify_complete_language_artifacts(
     )?;
 
     verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
-    Ok(())
+    Ok(verified_language)
 }
 
 fn verify_required_sections(
@@ -642,31 +656,9 @@ fn ensure_language_under_review(
         .repairable(false));
     }
 
-    let current = load_required_entity(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "language_disappeared",
-    )?;
-    let current_status = entity_status_value(&current);
-    if current_status == "Published" || current_status == "UnderReview" {
-        return Ok(current);
-    }
-    if current_status != "Draft" {
-        return Err(VerificationError::new(
-            "invalid_language_state",
-            format!(
-                "DesignLanguage '{language_id}' is in state '{current_status}', expected Draft, UnderReview, or Published"
-            ),
-        )
-        .entity("DesignLanguage", language_id)
-        .repairable(false));
-    }
-    verify_review_ready_state(language_id, &current)?;
+    verify_review_ready_state(language_id, language)?;
 
-    dispatch_action(
+    let submitted = dispatch_action(
         ctx,
         api_url,
         headers,
@@ -675,25 +667,30 @@ fn ensure_language_under_review(
         "SubmitForReview",
         &json!({}),
     )?;
-    let refreshed = load_required_entity(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "language_disappeared",
-    )?;
-    let refreshed_status = entity_status_value(&refreshed);
-    if refreshed_status != "UnderReview" {
+    let submitted_status = entity_status_value(&submitted);
+    if submitted_status == "UnderReview" {
+        return Ok(submitted);
+    }
+    if submitted_status == "Published" {
+        return Ok(submitted);
+    }
+    if submitted_status != "Draft" {
         return Err(VerificationError::new(
-            "submit_for_review_did_not_transition",
+            "invalid_language_state",
             format!(
-                "DesignLanguage '{language_id}' remained in state '{refreshed_status}' after SubmitForReview"
+                "DesignLanguage '{language_id}' is in state '{submitted_status}', expected Draft, UnderReview, or Published"
             ),
         )
-        .entity("DesignLanguage", language_id));
+        .entity("DesignLanguage", language_id)
+        .repairable(false));
     }
-    Ok(refreshed)
+    Err(VerificationError::new(
+        "submit_for_review_did_not_transition",
+        format!(
+            "DesignLanguage '{language_id}' remained in state '{submitted_status}' after SubmitForReview"
+        ),
+    )
+    .entity("DesignLanguage", language_id))
 }
 
 fn verify_review_ready_state(
@@ -787,7 +784,7 @@ fn ensure_language_published(
         .entity("DesignLanguage", language_id));
     }
 
-    dispatch_action(
+    let published = dispatch_action(
         ctx,
         api_url,
         headers,
@@ -795,14 +792,6 @@ fn ensure_language_published(
         language_id,
         "Publish",
         &json!({}),
-    )?;
-    let published = load_required_entity(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "language_disappeared",
     )?;
     let final_status = entity_status_value(&published);
     if final_status != "Published" {
@@ -873,7 +862,8 @@ fn publish_public_assets(
             "design_md_asset_id": design_md.0,
             "design_md_asset_url": design_md.1,
         }),
-    )
+    )?;
+    Ok(())
 }
 
 fn publish_file_artifact(
@@ -1772,7 +1762,8 @@ fn walk_lane_entity_to_published(
         entity_id,
         publish_action,
         &json!({}),
-    )
+    )?;
+    Ok(())
 }
 
 fn record_session_success(
@@ -1962,7 +1953,7 @@ fn dispatch_action(
     entity_id: &str,
     action: &str,
     params: &serde_json::Value,
-) -> Result<(), VerificationError> {
+) -> Result<serde_json::Value, VerificationError> {
     let resp = http_call(
         ctx,
         "POST",
@@ -1981,7 +1972,17 @@ fn dispatch_action(
         )
         .entity(set_name, entity_id));
     }
-    Ok(())
+    serde_json::from_str::<serde_json::Value>(&resp.body).map_err(|error| {
+        VerificationError::new(
+            "action_response_parse_failed",
+            format!(
+                "Failed to parse {set_name}('{entity_id}').{action} response: {error}: {}",
+                truncate(&resp.body)
+            ),
+        )
+        .entity(set_name, entity_id)
+        .repairable(false)
+    })
 }
 
 fn dispatch_verifier_action(
@@ -1993,10 +1994,17 @@ fn dispatch_verifier_action(
     action: &str,
     params: &serde_json::Value,
     expected_bools: &[&str],
-) -> Result<(), VerificationError> {
-    dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params)?;
+) -> Result<serde_json::Value, VerificationError> {
+    let action_entity =
+        dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params)?;
     if expected_bools.is_empty() {
-        return Ok(());
+        return Ok(action_entity);
+    }
+    if expected_bools
+        .iter()
+        .all(|name| entity_bool_any(&action_entity, name))
+    {
+        return Ok(action_entity);
     }
 
     let mut latest = None;
@@ -2013,7 +2021,7 @@ fn dispatch_verifier_action(
             .iter()
             .all(|name| entity_bool_any(&entity, name))
         {
-            return Ok(());
+            return Ok(entity);
         }
         latest = Some(entity);
     }
