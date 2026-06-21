@@ -1,0 +1,254 @@
+{
+  "generatedAt": "2026-06-21T03:48:55.258Z",
+  "brief": "Lumen — stargazing & astronomy app",
+  "gates": [
+    {
+      "id": "light",
+      "name": "Light mode default",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "borders",
+      "name": "Borderless",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "radius",
+      "name": "Radius ∈ {0,16,24,9999}",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "accents",
+      "name": "≤3 accent colors",
+      "scope": "both",
+      "heuristic": true
+    },
+    {
+      "id": "body",
+      "name": "Body text ≥17px",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "rows",
+      "name": "Table rows ≥14.5px",
+      "scope": "dashboard",
+      "heuristic": false
+    },
+    {
+      "id": "tracking",
+      "name": "Display tracking ~-0.02em",
+      "scope": "both",
+      "heuristic": true
+    },
+    {
+      "id": "motion",
+      "name": "Reduced-motion respected",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "emoji",
+      "name": "No emoji in UI",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "chromegrad",
+      "name": "No gradients on controls",
+      "scope": "both",
+      "heuristic": false
+    },
+    {
+      "id": "hero",
+      "name": "Single hero on landing",
+      "scope": "landing",
+      "heuristic": false
+    }
+  ],
+  "blindOrder": [
+    "opus-4-8",
+    "grok",
+    "glm-5-2"
+  ],
+  "models": {
+    "glm-5-2": {
+      "slug": "glm-5-2",
+      "present": false,
+      "meta": {},
+      "gates": {},
+      "score": {
+        "passed": 0,
+        "applicable": 0,
+        "pct": null
+      }
+    },
+    "grok": {
+      "slug": "grok",
+      "present": false,
+      "meta": {},
+      "gates": {},
+      "score": {
+        "passed": 0,
+        "applicable": 0,
+        "pct": null
+      }
+    },
+    "opus-4-8": {
+      "slug": "opus-4-8",
+      "present": true,
+      "meta": {
+        "model": "claude-opus-4-8",
+        "harness": "Claude Code, single authoring pass from run-packet.md",
+        "temperature": "default",
+        "date": "2026-06-20",
+        "notes": "Authored by Opus 4.8 in one pass; no post-hoc gate-fixing. Concept: 'the engraved celestial atlas, in daylight' — light-mode astronomy resolving the dark-mode pull."
+      },
+      "gates": {
+        "light": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "page bg luminance 0.98 (light), color-scheme:light yes"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "page bg luminance 0.98 (light), color-scheme:light yes"
+            }
+          }
+        },
+        "borders": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "no visible borders (≥2px, or ≥1px at ≥25% opacity)"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "no visible borders (≥2px, or ≥1px at ≥25% opacity)"
+            }
+          }
+        },
+        "radius": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "all radii in {0,16,24,9999,50%}"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "all radii in {0,16,24,9999,50%}"
+            }
+          }
+        },
+        "accents": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "3 accent hue-families (43°, 232°, 13°)"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "3 accent hue-families (43°, 232°, 13°)"
+            }
+          }
+        },
+        "body": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "body font-size 17px"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "body font-size 17px"
+            }
+          }
+        },
+        "rows": {
+          "pass": true,
+          "perFile": {
+            "dashboard": {
+              "pass": true,
+              "detail": "smallest data-cell text 14.5px (tbody td)"
+            }
+          }
+        },
+        "tracking": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "display tracking present (-0.005em)"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "display tracking present (-0.005em)"
+            }
+          }
+        },
+        "motion": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "prefers-reduced-motion handled"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "prefers-reduced-motion handled"
+            }
+          }
+        },
+        "emoji": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "no emoji in UI"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "no emoji in UI"
+            }
+          }
+        },
+        "chromegrad": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "no gradients on buttons/inputs"
+            },
+            "dashboard": {
+              "pass": true,
+              "detail": "no gradients on buttons/inputs"
+            }
+          }
+        },
+        "hero": {
+          "pass": true,
+          "perFile": {
+            "landing": {
+              "pass": true,
+              "detail": "hero section present"
+            }
+          }
+        }
+      },
+      "score": {
+        "passed": 11,
+        "applicable": 11,
+        "pct": 100
+      }
+    }
+  }
+}

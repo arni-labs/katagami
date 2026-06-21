@@ -1,0 +1,7 @@
+{
+  "model": "claude-opus-4-8",
+  "harness": "Claude Code, single authoring pass from run-packet.md",
+  "temperature": "default",
+  "date": "2026-06-20",
+  "notes": "Authored by Opus 4.8 in one pass; no post-hoc gate-fixing. Concept: 'the engraved celestial atlas, in daylight' — light-mode astronomy resolving the dark-mode pull."
+}
