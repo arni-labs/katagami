@@ -778,11 +778,11 @@ fn load_instruction_doc(
 }
 
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
-    let mut candidates = vec![configured_path.to_string()];
+    let mut candidates = Vec::new();
     if let Some(rest) = configured_path.strip_prefix("/agents/curator/") {
         candidates.push(format!("/agents/{stable_soul_id}/{rest}"));
     }
-    candidates.sort();
+    candidates.push(configured_path.to_string());
     candidates.dedup();
     candidates
 }
@@ -794,6 +794,10 @@ fn load_doc_file(
     path: &str,
     inline_content: bool,
 ) -> Option<LoadedDoc> {
+    if let Some(doc) = embedded_loaded_doc(path, inline_content) {
+        return Some(doc);
+    }
+
     if let Some(file_id) = resolve_doc_file_id(ctx, api_url, headers, path) {
         let content = if inline_content {
             Some(
@@ -1300,11 +1304,25 @@ mod tests {
                 "sl-bootstrap-agent-soul-curator"
             ),
             vec![
-                "/agents/curator/skills/research-direction/SKILL.md".to_string(),
                 "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md"
                     .to_string(),
+                "/agents/curator/skills/research-direction/SKILL.md".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn embedded_synthesize_skill_contains_current_artifact_contract() {
+        let content = embedded_doc_content(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+        )
+        .expect("embedded synthesize-language skill should be available");
+
+        assert!(content.contains("COMPOSITION EMBODIMENTS PHASE"));
+        assert!(content.contains("DESIGN.md PHASE"));
+        assert!(content.contains("AttachDesignMd"));
+        assert!(content.contains("AttachShadcnExport"));
+        assert!(!content.contains("registry theme is finalizer-owned"));
     }
 
     #[test]
