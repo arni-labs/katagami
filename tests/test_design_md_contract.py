@@ -206,13 +206,45 @@ class DesignMdContractTests(unittest.TestCase):
         ).read_text()
 
         for fragment in [
-            "@google/design.md lint",
+            "katagami-design-md-contract",
             "AttachDesignMd",
             "/katagami/design-md/",
             "ZERO lint errors and ZERO lint warnings",
             "Warnings are blocking",
         ]:
             self.assertIn(fragment, review_skill)
+        self.assertRegex(review_skill, r"never\s+store the shell transcript")
+        self.assertNotIn("npx @google/design.md", review_skill)
+        self.assertIn("'design_md_format_version': 'alpha'", review_skill)
+
+    def test_synthesize_skill_uses_embedded_design_md_gate(self):
+        synth_skill = (
+            self.curation_root
+            / "agents"
+            / "curator"
+            / "skills"
+            / "synthesize-language"
+            / "SKILL.md"
+        ).read_text()
+
+        for fragment in [
+            "katagami-design-md-contract",
+            "AttachDesignMd",
+            "/katagami/design-md/",
+            "Warnings are blocking",
+        ]:
+            self.assertIn(fragment, synth_skill)
+        self.assertRegex(synth_skill, r"never\s+store the shell transcript")
+        self.assertNotIn("npx @google/design.md", synth_skill)
+        self.assertIn("'design_md_format_version': 'alpha'", synth_skill)
+
+    def test_embedded_quality_knowledge_uses_same_design_md_gate(self):
+        quality_standards = (
+            self.curation_root / "system" / "knowledge" / "quality-standards.md"
+        ).read_text()
+
+        self.assertIn("katagami-design-md-contract", quality_standards)
+        self.assertNotIn("npx @google/design.md", quality_standards)
 
     def test_csdl_exposes_design_md_fields(self):
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")

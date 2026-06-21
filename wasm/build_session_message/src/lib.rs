@@ -1320,9 +1320,27 @@ mod tests {
 
         assert!(content.contains("COMPOSITION EMBODIMENTS PHASE"));
         assert!(content.contains("DESIGN.md PHASE"));
+        assert!(content.contains("katagami-design-md-contract"));
+        assert!(content.contains("never\nstore the shell transcript"));
+        assert!(content.contains("design_md_format_version': 'alpha'"));
         assert!(content.contains("AttachDesignMd"));
         assert!(content.contains("AttachShadcnExport"));
+        assert!(!content.contains("npx @google/design.md"));
         assert!(!content.contains("registry theme is finalizer-owned"));
+    }
+
+    #[test]
+    fn embedded_review_skill_contains_current_design_md_contract() {
+        let content = embedded_doc_content(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+        )
+        .expect("embedded review-quality skill should be available");
+
+        assert!(content.contains("katagami-design-md-contract"));
+        assert!(content.contains("never store the shell transcript"));
+        assert!(content.contains("ZERO lint errors and ZERO lint warnings"));
+        assert!(content.contains("design_md_format_version': 'alpha'"));
+        assert!(!content.contains("npx @google/design.md"));
     }
 
     #[test]
