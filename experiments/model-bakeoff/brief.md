@@ -21,12 +21,19 @@ sessions and keep an observation log. Core jobs:
 
 ## What to produce
 
-1. **`DESIGN.md`** — the full Lumen design language.
-2. **`landing.html`** — the marketing landing page for Lumen.
-3. **`dashboard.html`** — the in-app dashboard: "tonight's sky" as the home view,
+Research the concept first (the celestial-atlas tradition, the magnitude system,
+the actual conventions of astronomy UIs), then design:
+
+1. **`DESIGN.md`** — the full design language, including the required **Sources &
+   lineage** section (the real precedents you drew on and how you transformed them).
+2. **`embodiment.html`** — the canonical specimen of the language fully realized.
+3. **`landing.html`** — the marketing landing page.
+4. **`dashboard.html`** — the in-app dashboard: "tonight's sky" as the home view,
    with the visible-objects list, the observing-window timeline, conditions, and a
    slice of the observation log. Real data density — coordinates, magnitudes,
    times, a table — not swatches.
+
+Name the product yourself (don't reuse another model's name).
 
 ## Notes
 

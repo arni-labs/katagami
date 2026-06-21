@@ -92,6 +92,40 @@ placed. That ruling is Lumen's organizing apparatus, at every layer:
 Survives a palette swap: strip every color and the ruled grid, the registered
 plates, and the magnitude contrast-ramp still read as a star atlas.
 
+# Sources & lineage
+
+Real precedents this language stands on, and what it took from each:
+
+- **Flamsteed, *Atlas Coelestis* (1729)** — the first star atlas to plot the sky on
+  an **equatorial (right-ascension / declination) grid** rather than the older
+  ecliptic frame. This is the literal source of the **coordinate ruling** motif:
+  the RA/Dec grid is not decoration, it is how the historical reference *organized*
+  the sky. Lumen demotes it to a faint backdrop and registers content to it.
+- **Bayer, *Uranometria* (1603)** — the first modern celestial atlas: 51 copper-plate
+  **engravings** (by Alexander Mair) of the sky on paper, and the **Bayer
+  designation**, which labels a constellation's stars by *brightness* (α = brightest,
+  then β, γ…). Two takings: the sky drawn as **ink on cream paper, not a glowing
+  screen**, and **hierarchy = magnitude** — importance rendered as brightness, the
+  way Bayer ranked stars.
+- **Bode, *Uranographia* (1801)** — the largest atlas ever published (~17,000 stars
+  to magnitude 6–8), the close of the engraved "Golden Age." Its handling of dense
+  fields informs Lumen's **contrast ramp**: bright objects crisp and high-contrast,
+  faint ones receding to ink-soft / ink-faint, so density never becomes noise.
+- **The red-light night-vision convention** (Stellarium and SkySafari "night mode";
+  bright light costs ~40 minutes of dark adaptation, so astronomy UIs go red-on-black
+  at the eyepiece). Lumen **knows and answers** this rather than copying it: planning
+  happens in *daylight*, so the planning app stays on paper; darkness is confined to
+  the single `night-pane`, the one surface used at the telescope.
+- **Engraver's registration / crop marks** (intaglio printing) — the corner ticks
+  that frame a `plate`. They register content to the grid the way a plate was
+  registered to the press — framing **without borders**.
+- **The didone letterform** (Bodoni) — the high-contrast type of the late-18th /
+  early-19th-century plate, used for display so the titling carries the engraved
+  register, not a contemporary UI voice.
+
+No reference is decorative: each maps to a specific mechanic (the grid, the
+magnitude ramp, the paper register, the border-free framing, the display voice).
+
 # Product world
 
 A working observer's atlas. The home view is **tonight**: what's visible from your

@@ -1,67 +1,61 @@
 # Katagami model bake-off — GLM 5.2 vs Opus 4.8 vs Grok
 
-A clean, controlled comparison of three models at the one job Katagami exists for:
-turning a brief into a **design language** (a `DESIGN.md` spec + a landing page + a
-dashboard) that honors the Katagami design contract.
+Which model is best at the job Katagami exists for: take a **concept** and
+**synthesize, source, and create a design language** — then embody it the Katagami
+way (a `DESIGN.md` spec → an embodiment specimen → a landing page → a dashboard).
 
-**The point:** hold *everything* constant except the model. Same prompt, same
-contract, same brief, same baseline, one shot each. Then judge two ways — an
-objective contract scorecard you can re-run, and a blind taste vote. The result is
-a side-by-side you can screenshot straight into a thread.
+This is **not** a contract-compliance checklist. It judges design intelligence:
+how well each model researches real precedent, forms an original point of view, and
+executes it across four artifacts.
+
+## The setup
+
+- **Concept:** stargazing (a domain whose obvious move — a black/red night-mode UI —
+  makes "did you have a real, sourced point of view?" easy to see).
+- **Each model**, in its own agent with **web/tools on**, produces from that concept:
+  `DESIGN.md` (with a **Sources & lineage** section) + `embodiment.html` +
+  `landing.html` + `dashboard.html`.
+- **Score:** a five-dimension rubric, judged by a **blind cross-model panel** — each
+  model blind-scores the entries (A/B/C), and no model's score counts toward its own
+  entry. See [`rubric.md`](rubric.md).
+- **Final call:** you, plus a "which would you ship" poll on `compare.html`.
+
+## The rubric (the score)
+
+1. **Sourcing & grounding** — real, specific, relevant precedent (not invented).
+2. **Synthesis & POV** — one coherent motif with a thesis; original, not pastiche.
+3. **Coherence** — the motif holds across all four artifacts.
+4. **Craft** — embodiment-grade, believable, beautiful.
+5. **Distinctiveness** — library-unique vs generic-AI.
 
 ## What's here
 
 | file | what it is |
 |------|------------|
-| `system-prompt.md` | The Katagami contract, as the system prompt. **Identical for all models — the law.** |
-| `brief.md` | The brief: **Lumen**, a fictional stargazing app (landing + dashboard). Identical for all. |
-| `harness/baseline.css` | The one frozen styling block every model starts from. |
-| `run-packet.md` | Copy-paste packet for running a challenger (GLM 5.2, Grok). |
-| `runs/<model>/` | Each model's three files (`DESIGN.md`, `landing.html`, `dashboard.html`) + `meta.json`. |
-| `gates.mjs` | Zero-dependency scorecard. `node gates.mjs` → writes `results.json`. |
-| `compare.html` | The shareable artifact: blind A/B/C triptych + the scorecard + reveal + a taste vote. |
+| `system-prompt.md` | The contestant brief: research, then produce the four-artifact set in the Katagami house style. |
+| `brief.md` | The concept — stargazing — and the deliverables. |
+| `harness/baseline.css` | The one frozen reset every entry starts from. |
+| `run-packet.md` | How to produce each model's entry (web/tools on). |
+| `rubric.md` | The five dimensions + 1–5 anchors. |
+| `judge-packet.md` | The blind judging prompt + JSON output schema. |
+| `runs/<model>/` | Each model's four artifacts + `meta.json`. |
+| `judges/<judge>.json` | Each judge's blind scores. |
+| `aggregate.mjs` | Maps A/B/C → models, drops self-scores → `results.json`. |
+| `compare.html` | Blind A/B/C showcase of all four artifacts + rubric scorecard + reveal + poll. |
 
-## Reproduce it
+## Reproduce
 
 ```bash
-# 1. produce each challenger's output (see run-packet.md), drop into runs/<slug>/
-# 2. score every model in runs/
-node gates.mjs
-# 3. view + screenshot (serve over http so the iframes load)
-python3 -m http.server 8080   # then open http://localhost:8080/compare.html
+# 1. produce each entry (see run-packet.md), files into runs/<slug>/
+# 2. run the blind cross-model panel (see judge-packet.md), files into judges/<slug>.json
+node aggregate.mjs
+python3 -m http.server 8742    # open http://localhost:8742/compare.html
 ```
-
-## The gates (objective, all models judged identically)
-
-Each is a static check from the documented contract. Heuristic ones are marked `~`.
-
-1. **Light mode default** — `color-scheme:light` + light page background.
-2. **Borderless** — no border ≥2px, and no ≥1px border at ≥25% opacity.
-3. **Radius ∈ {0,16,24,9999}** — no other border-radius values.
-4. **≤3 accent colors** `~` — ≤3 chromatic hue-families in `:root`.
-5. **Body text ≥17px**.
-6. **Table rows ≥14.5px** (dashboard).
-7. **Display tracking ~-0.02em** `~`.
-8. **Reduced-motion respected** — a `prefers-reduced-motion` block.
-9. **No emoji in UI**.
-10. **No gradients on controls** — buttons/inputs.
-11. **Single hero on landing**.
-
-## Fairness, stated plainly (so it survives scrutiny)
-
-- One identical system prompt + baseline + brief. One shot. First response only.
-  No retries, no human edits to any model's output.
-- The **documented contract is the law** and is scored identically for everyone —
-  even though the existing Katagami pipeline output diverges from it (the known
-  contract/impl mismatch). Every model is told the same rules and judged by them.
-- **Opus 4.8's entry was authored by Claude (Opus 4.8) in a single pass from this
-  same packet, with no post-hoc gate-fixing.** Disclosed, not hidden. It is an
-  interactive-agent generation, not a single raw API call — note that when you
-  publish.
-- Gates are objective and re-runnable; the taste vote is subjective and yours.
 
 ## The headline tension
 
-Lumen is a **stargazing** app — every instinct says dark mode. The contract says
-**light mode**. Who held the line, and who shipped a beautiful light astronomy
-product anyway? That's the gate worth watching, and the best part of the thread.
+Stargazing UIs reach for black + glowing dots, or red night-mode (to protect dark
+adaptation — Stellarium, SkySafari). The interesting question is whether a model
+*knows* that history and convention and forms a real position on it, or just
+defaults to the cliché. That's what the rubric — especially Sourcing and Synthesis —
+is built to expose.
