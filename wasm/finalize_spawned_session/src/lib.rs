@@ -1,10 +1,6 @@
-use base64::Engine;
 use temper_wasm_sdk::prelude::*;
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
-const FILE_RECOVERY_CONFIRM_ATTEMPTS: usize = 3;
-#[cfg(target_arch = "wasm32")]
-const FILE_UPLOAD_STREAM_CHUNK_BYTES: usize = 64 * 1024;
 const SHADCN_COMPONENTS: [&str; 16] = [
     "button",
     "card",
@@ -639,6 +635,30 @@ fn ensure_language_under_review(
         .repairable(false));
     }
 
+    let current = load_required_entity(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "language_disappeared",
+    )?;
+    let current_status = entity_status_value(&current);
+    if current_status == "Published" || current_status == "UnderReview" {
+        return Ok(current);
+    }
+    if current_status != "Draft" {
+        return Err(VerificationError::new(
+            "invalid_language_state",
+            format!(
+                "DesignLanguage '{language_id}' is in state '{current_status}', expected Draft, UnderReview, or Published"
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(false));
+    }
+    verify_review_ready_state(language_id, &current)?;
+
     dispatch_action(
         ctx,
         api_url,
@@ -667,6 +687,69 @@ fn ensure_language_under_review(
         .entity("DesignLanguage", language_id));
     }
     Ok(refreshed)
+}
+
+fn verify_review_ready_state(
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let missing_bools: Vec<&str> = [
+        "has_philosophy",
+        "has_tokens",
+        "has_rules",
+        "has_layout",
+        "has_guidance",
+        "has_embodiment",
+        "embodiment_verified",
+        "has_compositions",
+        "compositions_verified",
+        "has_thumbnail",
+        "thumbnail_verified",
+        "has_design_md",
+        "has_valid_design_md",
+        "design_md_verified",
+        "has_shadcn_export",
+        "shadcn_export_verified",
+        "has_shadcn_component_spec",
+        "shadcn_component_spec_verified",
+        "has_shadcn_preview_shots",
+        "shadcn_preview_shots_verified",
+    ]
+    .iter()
+    .copied()
+    .filter(|name| !entity_bool_any(language, name))
+    .collect();
+
+    let fields = entity_fields(language);
+    let missing_fields: Vec<&str> = [
+        "embodiment_file_id",
+        "landing_file_id",
+        "dashboard_file_id",
+        "thumbnail_file_id",
+        "design_md_file_id",
+        "shadcn_export_file_id",
+        "shadcn_component_spec_file_id",
+        "shadcn_preview_shots_file_id",
+    ]
+    .iter()
+    .copied()
+    .filter(|name| string_field_any(&fields, name, "").trim().is_empty())
+    .collect();
+
+    if !missing_bools.is_empty() || !missing_fields.is_empty() {
+        return Err(VerificationError::new(
+            "review_prerequisites_missing",
+            format!(
+                "DesignLanguage '{language_id}' is not ready for SubmitForReview; missing booleans: [{}]; missing fields: [{}]",
+                missing_bools.join(", "),
+                missing_fields.join(", ")
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(true));
+    }
+
+    Ok(())
 }
 
 fn ensure_language_published(
@@ -912,7 +995,7 @@ fn verify_file_artifact(
         string_field_any(&file_fields, "MimeType", ""),
     ])
     .to_ascii_lowercase();
-    let size_bytes = file_size_bytes(&file);
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
     if size_bytes > 0 && size_bytes < 64 {
         return Err(VerificationError::new(
             "file_too_small",
@@ -924,15 +1007,7 @@ fn verify_file_artifact(
         .artifact(artifact_kind, file_id));
     }
 
-    let body = read_file_value(
-        ctx,
-        api_url,
-        headers,
-        file_id,
-        owner_id,
-        artifact_kind,
-        &file,
-    )?;
+    let body = read_file_value(ctx, api_url, headers, file_id, owner_id, artifact_kind)?;
     verify_file_body(
         owner_id,
         file_id,
@@ -961,20 +1036,6 @@ fn verify_ready_file_artifact(
     })?;
     let file_status = entity_status_value(&file);
     if file_status != "Ready" {
-        if file_status == "Created" {
-            if let Some(recovered) = recover_created_file_artifact(
-                ctx,
-                api_url,
-                headers,
-                owner_id,
-                file_id,
-                artifact_kind,
-                &file,
-            )? {
-                verify_ready_file_metadata(owner_id, file_id, artifact_kind, &recovered)?;
-                return Ok(recovered);
-            }
-        }
         return Err(VerificationError::new(
             "file_not_ready",
             format!(
@@ -1003,13 +1064,12 @@ fn verify_ready_file_metadata(
     let name = first_nonempty(&[
         string_field_any(&file_fields, "name", ""),
         string_field_any(&file_fields, "Name", ""),
-        file_name_from_path(&path),
     ]);
     let mime_type = first_nonempty(&[
         string_field_any(&file_fields, "mime_type", ""),
         string_field_any(&file_fields, "MimeType", ""),
     ]);
-    let size_bytes = file_size_bytes(file);
+    let size_bytes = numeric_field_any(file, &["size_bytes", "SizeBytes"]);
 
     let mut missing = Vec::new();
     if path.trim().is_empty() {
@@ -1039,159 +1099,6 @@ fn verify_ready_file_metadata(
     Ok(())
 }
 
-fn recover_created_file_artifact(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    owner_id: &str,
-    file_id: &str,
-    artifact_kind: &'static str,
-    file: &serde_json::Value,
-) -> Result<Option<serde_json::Value>, VerificationError> {
-    let file_fields = entity_fields(file);
-    let content = first_nonempty(&[
-        string_field_any(&file_fields, "content", ""),
-        string_field_any(&file_fields, "Content", ""),
-    ]);
-    if content.trim().is_empty() {
-        return Ok(None);
-    }
-    let mime_type = first_nonempty(&[
-        string_field_any(&file_fields, "mime_type", ""),
-        string_field_any(&file_fields, "MimeType", ""),
-    ]);
-    let recovered =
-        recoverable_artifact_bytes_from_text(&content, &mime_type, artifact_kind).map_err(
-            |error| {
-        VerificationError::new(
-            "file_recovery_failed",
-            format!(
-                    "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' is Created with inline Content but cannot be recovered as durable artifact bytes: {error}"
-            ),
-        )
-        .entity("DesignLanguage", owner_id)
-        .artifact(artifact_kind, file_id)
-            },
-        )?;
-    let value_headers = vec![
-        ("X-Tenant-Id".to_string(), ctx.tenant.clone()),
-        ("Content-Type".to_string(), recovered.mime_type.clone()),
-        ("x-temper-principal-kind".to_string(), "agent".to_string()),
-        (
-            "x-temper-principal-id".to_string(),
-            "katagami-finalizer".to_string(),
-        ),
-        ("x-temper-agent-type".to_string(), "system".to_string()),
-    ];
-    put_file_value_stream(
-        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
-        &value_headers,
-        &recovered.bytes,
-    )
-    .map_err(|error| {
-        VerificationError::new("file_recovery_failed", error)
-            .entity("DesignLanguage", owner_id)
-            .artifact(artifact_kind, file_id)
-    })?;
-    let recovered_file =
-        confirm_recovered_file_artifact(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
-    ctx.log(
-        "info",
-        &format!(
-            "finalize_spawned_session: recovered Created {artifact_kind} file '{file_id}' for DesignLanguage '{owner_id}' to Ready using same file id"
-        ),
-    );
-    Ok(Some(recovered_file))
-}
-
-fn confirm_recovered_file_artifact(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    owner_id: &str,
-    file_id: &str,
-    artifact_kind: &'static str,
-) -> Result<serde_json::Value, VerificationError> {
-    let mut last_status = "missing".to_string();
-
-    for _ in 0..FILE_RECOVERY_CONFIRM_ATTEMPTS {
-        let recovered_file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
-            VerificationError::new(
-                "missing_file",
-                format!(
-                    "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' disappeared after recovery"
-                ),
-            )
-            .entity("DesignLanguage", owner_id)
-            .artifact(artifact_kind, file_id)
-        })?;
-        let recovered_status = entity_status_value(&recovered_file);
-        if recovered_status == "Ready" {
-            return Ok(recovered_file);
-        }
-
-        if recovered_file_value_is_readable(
-            ctx,
-            api_url,
-            headers,
-            owner_id,
-            file_id,
-            artifact_kind,
-        )? {
-            ctx.log(
-                "info",
-                &format!(
-                    "finalize_spawned_session: accepting recovered {artifact_kind} file '{file_id}' for DesignLanguage '{owner_id}' because $value is readable while status projection is '{recovered_status}'"
-                ),
-            );
-            return Ok(recovered_file);
-        }
-        last_status = recovered_status;
-    }
-
-    Err(VerificationError::new(
-        "file_not_ready",
-        format!(
-            "DesignLanguage '{owner_id}' {artifact_kind} file '{file_id}' remained in state '{last_status}' after streaming PUT $value recovery"
-        ),
-    )
-    .entity("DesignLanguage", owner_id)
-    .artifact(artifact_kind, file_id))
-}
-
-fn recovered_file_value_is_readable(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    owner_id: &str,
-    file_id: &str,
-    artifact_kind: &'static str,
-) -> Result<bool, VerificationError> {
-    let resp = http_call(
-        ctx,
-        "GET",
-        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
-        headers,
-        "",
-    )?;
-    if resp.status == 404 {
-        return Ok(false);
-    }
-    if !(200..300).contains(&resp.status) {
-        return Err(VerificationError::new(
-            "file_value_read_failed",
-            format!(
-                "Failed to confirm recovered Files('{file_id}')/$value: HTTP {}: {}",
-                resp.status,
-                truncate(&resp.body)
-            ),
-        )
-        .entity("DesignLanguage", owner_id)
-        .artifact(artifact_kind, file_id));
-    }
-    Ok(!resp.body.is_empty())
-}
-
 fn read_file_value(
     ctx: &Context,
     api_url: &str,
@@ -1199,7 +1106,6 @@ fn read_file_value(
     file_id: &str,
     owner_id: &str,
     artifact_kind: &'static str,
-    file: &serde_json::Value,
 ) -> Result<String, VerificationError> {
     let resp = http_call(
         ctx,
@@ -1209,15 +1115,6 @@ fn read_file_value(
         "",
     )?;
     if resp.status == 404 {
-        if let Some(content) = inline_file_content(file) {
-            ctx.log(
-                "info",
-                &format!(
-                    "finalize_spawned_session: using inline Content fallback for {artifact_kind} file '{file_id}' on DesignLanguage '{owner_id}'"
-                ),
-            );
-            return Ok(content);
-        }
         return Err(VerificationError::new(
             "file_value_missing",
             format!(
@@ -1527,6 +1424,22 @@ fn verify_design_md_metadata(
         .entity("DesignLanguage", language_id)
         .field("design_md_lint_result")
     })?;
+    if let Some(raw) = lint.get("raw").and_then(|value| value.as_str()) {
+        let normalized = raw.to_ascii_lowercase();
+        if normalized.contains("exit code")
+            || normalized.contains("command not found")
+            || normalized.contains("stderr:")
+        {
+            return Err(VerificationError::new(
+                "design_md_lint_command_failed",
+                format!(
+                    "DesignLanguage '{language_id}' DESIGN.md lint result captured a failed command instead of a clean lint report"
+                ),
+            )
+            .entity("DesignLanguage", language_id)
+            .field("design_md_lint_result"));
+        }
+    }
     let summary = lint.get("summary").unwrap_or(&serde_json::Value::Null);
     let errors = summary.get("errors").and_then(|v| v.as_i64()).unwrap_or(0);
     let warnings = summary
@@ -2173,25 +2086,12 @@ fn entity_fields(entity: &serde_json::Value) -> serde_json::Value {
 }
 
 fn entity_status_value(entity: &serde_json::Value) -> String {
-    let aggregate_status = entity
+    entity
         .get("status")
         .or_else(|| entity.get("Status"))
         .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let fields = entity.get("fields").unwrap_or(&serde_json::Value::Null);
-    let field_status = fields
-        .get("status")
-        .or_else(|| fields.get("Status"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-
-    if aggregate_status == "Created" && !field_status.is_empty() && field_status != "Created" {
-        field_status.to_string()
-    } else if !aggregate_status.is_empty() {
-        aggregate_status.to_string()
-    } else {
-        field_status.to_string()
-    }
+        .unwrap_or("")
+        .to_string()
 }
 
 fn entity_bool_any(entity: &serde_json::Value, name: &str) -> bool {
@@ -2240,36 +2140,6 @@ fn numeric_field_any(entity: &serde_json::Value, names: &[&str]) -> i64 {
         }
     }
     0
-}
-
-fn file_size_bytes(file: &serde_json::Value) -> i64 {
-    let declared = numeric_field_any(file, &["size_bytes", "SizeBytes"]);
-    if declared > 0 {
-        return declared;
-    }
-    inline_file_content(file)
-        .map(|content| content.len() as i64)
-        .unwrap_or(0)
-}
-
-fn file_name_from_path(path: &str) -> String {
-    path.rsplit('/')
-        .find(|segment| !segment.trim().is_empty())
-        .unwrap_or("")
-        .to_string()
-}
-
-fn inline_file_content(file: &serde_json::Value) -> Option<String> {
-    let fields = entity_fields(file);
-    let content = first_nonempty(&[
-        string_field_any(&fields, "content", ""),
-        string_field_any(&fields, "Content", ""),
-    ]);
-    if content.trim().is_empty() {
-        None
-    } else {
-        Some(content)
-    }
 }
 
 fn first_nonempty(values: &[String]) -> String {
@@ -2349,165 +2219,6 @@ fn base64_data_url_payload(value: &str) -> Option<&str> {
         return None;
     }
     value.split_once(',').map(|(_, payload)| payload)
-}
-
-struct RecoverableImageBytes {
-    bytes: Vec<u8>,
-    mime_type: String,
-}
-
-fn recoverable_artifact_bytes_from_text(
-    raw_content: &str,
-    declared_mime_type: &str,
-    artifact_kind: &str,
-) -> Result<RecoverableImageBytes, String> {
-    let normalized_mime = declared_mime_type.trim().to_ascii_lowercase();
-    if artifact_kind == "thumbnail" || normalized_mime.starts_with("image/") {
-        return recoverable_image_bytes_from_text(raw_content, declared_mime_type);
-    }
-    let trimmed = raw_content.trim();
-    if trimmed.is_empty() {
-        return Err("inline Content is empty".to_string());
-    }
-    Ok(RecoverableImageBytes {
-        bytes: raw_content.as_bytes().to_vec(),
-        mime_type: if normalized_mime.is_empty() {
-            default_artifact_mime_type(artifact_kind).to_string()
-        } else {
-            declared_mime_type.trim().to_string()
-        },
-    })
-}
-
-fn default_artifact_mime_type(artifact_kind: &str) -> &'static str {
-    match artifact_kind {
-        "design_md" | "shadcn_component_spec" => "text/markdown",
-        "shadcn_export" | "shadcn_preview_shots" => "application/json",
-        "embodiment" | "landing_composition" | "dashboard_composition" => "text/html",
-        _ => "text/plain",
-    }
-}
-
-fn recoverable_image_bytes_from_text(
-    raw_content: &str,
-    declared_mime_type: &str,
-) -> Result<RecoverableImageBytes, String> {
-    let compact = recoverable_base64_payload(raw_content)
-        .ok_or_else(|| "no base64 image payload found".to_string())?;
-    let decoded = base64::engine::general_purpose::STANDARD
-        .decode(compact.as_bytes())
-        .or_else(|_| base64::engine::general_purpose::STANDARD_NO_PAD.decode(compact.as_bytes()))
-        .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(compact.as_bytes()))
-        .or_else(|_| base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(compact.as_bytes()))
-        .map_err(|error| format!("invalid base64 image payload: {error}"))?;
-    let detected_mime = detect_browser_image_mime(&decoded)
-        .ok_or_else(|| "decoded payload is not a supported browser image".to_string())?;
-    if let Some(declared) = normalize_browser_image_mime(declared_mime_type) {
-        if declared != detected_mime {
-            return Err(format!(
-                "declared MIME type '{declared}' does not match decoded image bytes '{detected_mime}'"
-            ));
-        }
-    }
-    Ok(RecoverableImageBytes {
-        bytes: decoded,
-        mime_type: detected_mime.to_string(),
-    })
-}
-
-fn recoverable_base64_payload(raw_content: &str) -> Option<String> {
-    let trimmed = raw_content.trim_start();
-    let payload = base64_data_url_payload(trimmed).unwrap_or(trimmed);
-    let mut compact = String::new();
-    for ch in payload.chars() {
-        if ch.is_ascii_whitespace() {
-            continue;
-        }
-        if ch.is_ascii_alphanumeric() || matches!(ch, '+' | '/' | '=' | '-' | '_') {
-            compact.push(ch);
-            continue;
-        }
-        break;
-    }
-    if compact.len() < 16 {
-        None
-    } else {
-        Some(compact)
-    }
-}
-
-fn detect_browser_image_mime(bytes: &[u8]) -> Option<&'static str> {
-    if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
-        Some("image/jpeg")
-    } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some("image/png")
-    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
-        Some("image/gif")
-    } else if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
-        Some("image/webp")
-    } else {
-        None
-    }
-}
-
-fn normalize_browser_image_mime(mime_type: &str) -> Option<&'static str> {
-    match mime_type.trim().to_ascii_lowercase().as_str() {
-        "image/jpeg" | "image/jpg" => Some("image/jpeg"),
-        "image/png" => Some("image/png"),
-        "image/gif" => Some("image/gif"),
-        "image/webp" => Some("image/webp"),
-        _ => None,
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-fn put_file_value_stream(
-    url: &str,
-    headers: &[(String, String)],
-    bytes: &[u8],
-) -> Result<(), String> {
-    let header_refs: Vec<(&str, &str)> = headers
-        .iter()
-        .map(|(key, value)| (key.as_str(), value.as_str()))
-        .collect::<Vec<_>>();
-    let (mut request_body, response_body, response_head) =
-        temper_wasm_sdk::http_stream::streaming_call("PUT", url, &header_refs)
-            .map_err(|error| format!("streaming PUT $value failed to start: {error}"))?;
-
-    for chunk in bytes.chunks(FILE_UPLOAD_STREAM_CHUNK_BYTES) {
-        request_body
-            .write_all_chunk(chunk)
-            .map_err(|error| format!("streaming PUT $value failed while writing body: {error}"))?;
-    }
-    request_body
-        .finish()
-        .map_err(|error| format!("streaming PUT $value failed while closing body: {error}"))?;
-
-    let head = response_head()
-        .map_err(|error| format!("streaming PUT $value failed before response: {error}"))?;
-    let _ = response_body.close();
-    if head.status >= 400 || head.status == 0 {
-        let stream_error = head
-            .headers
-            .iter()
-            .find(|(key, _)| key.eq_ignore_ascii_case("x-temper-stream-error"))
-            .map(|(_, value)| format!(": {value}"))
-            .unwrap_or_default();
-        return Err(format!(
-            "streaming PUT $value failed: HTTP {}{stream_error}",
-            head.status
-        ));
-    }
-    Ok(())
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn put_file_value_stream(
-    _url: &str,
-    _headers: &[(String, String)],
-    _bytes: &[u8],
-) -> Result<(), String> {
-    Err("streaming PUT $value requires the Temper WASM host".to_string())
 }
 
 fn truncate(value: &str) -> String {

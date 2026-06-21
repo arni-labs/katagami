@@ -169,6 +169,33 @@ class ShadcnExportContractTests(unittest.TestCase):
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
 
+    def test_shadcn_artifacts_are_review_gates(self):
+        submit = self.actions["SubmitForReview"]
+        guards = submit.get("guard", [])
+        for var in [
+            "has_shadcn_export",
+            "shadcn_export_verified",
+            "has_shadcn_component_spec",
+            "shadcn_component_spec_verified",
+            "has_shadcn_preview_shots",
+            "shadcn_preview_shots_verified",
+        ]:
+            self.assertIn({"type": "is_true", "var": var}, guards)
+        for field in [
+            "shadcn_export_file_id",
+            "shadcn_component_spec_file_id",
+            "shadcn_preview_shots_file_id",
+        ]:
+            self.assertIn(
+                {
+                    "type": "cross_entity_state",
+                    "entity_type": "File",
+                    "entity_id_source": field,
+                    "required_status": ["Ready", "Locked"],
+                },
+                guards,
+            )
+
     def test_csdl_exposes_shadcn_fields(self):
         tree = ET.parse(self.commons_root / "specs" / "model.csdl.xml")
         ns = {"edm": "http://docs.oasis-open.org/odata/ns/edm"}

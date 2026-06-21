@@ -121,6 +121,25 @@ class DesignMdContractTests(unittest.TestCase):
             "has_published_assets",
         )
 
+    def test_review_requires_valid_design_md(self):
+        submit = self.actions["SubmitForReview"]
+        guards = submit.get("guard", [])
+        for var in [
+            "has_design_md",
+            "has_valid_design_md",
+            "design_md_verified",
+        ]:
+            self.assertIn({"type": "is_true", "var": var}, guards)
+        self.assertIn(
+            {
+                "type": "cross_entity_state",
+                "entity_type": "File",
+                "entity_id_source": "design_md_file_id",
+                "required_status": ["Ready", "Locked"],
+            },
+            guards,
+        )
+
     def test_source_spec_changes_invalidate_design_md(self):
         for action_name in [
             "SetName",

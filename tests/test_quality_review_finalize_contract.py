@@ -249,6 +249,40 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertIn('/tdata/Files', source)
         self.assertIn("Files('{file_id}')/$value", source)
 
+    def test_finalizer_preflights_review_ready_state_before_submit_for_review(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn("fn verify_review_ready_state", source)
+        self.assertIn('"review_prerequisites_missing"', source)
+        self.assertIn('"has_design_md"', source)
+        self.assertIn('"has_shadcn_export"', source)
+        self.assertIn('"shadcn_preview_shots_file_id"', source)
+        self.assertLess(
+            source.index("verify_review_ready_state(language_id, &current)?"),
+            source.index('"SubmitForReview"'),
+            "finalizer must prove review prerequisites before dispatching SubmitForReview",
+        )
+
+    def test_design_md_lint_command_failure_is_blocking(self):
+        source = (
+            self.curation_root
+            / "wasm"
+            / "finalize_spawned_session"
+            / "src"
+            / "lib.rs"
+        ).read_text()
+
+        self.assertIn('"design_md_lint_command_failed"', source)
+        self.assertIn('normalized.contains("exit code")', source)
+        self.assertIn('normalized.contains("command not found")', source)
+        self.assertIn('normalized.contains("stderr:")', source)
+
 
 if __name__ == "__main__":
     unittest.main()
