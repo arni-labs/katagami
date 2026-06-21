@@ -76,6 +76,15 @@ class DesignMdContractTests(unittest.TestCase):
             self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
         )
 
+    def test_verify_design_md_restores_attached_design_md_state_after_validation(self):
+        self.assertTrue(self._sets_bool("VerifyDesignMd", "has_design_md", "true"))
+        self.assertTrue(
+            self._sets_bool("VerifyDesignMd", "has_valid_design_md", "true")
+        )
+        self.assertTrue(
+            self._sets_bool("VerifyDesignMd", "design_md_verified", "true")
+        )
+
     def test_published_languages_do_not_accept_design_md_reattach(self):
         attach = self.actions["AttachDesignMd"]
         self.assertNotIn("Published", attach["from"])
@@ -232,6 +241,8 @@ class DesignMdContractTests(unittest.TestCase):
             "AttachDesignMd",
             "/katagami/design-md/",
             "Warnings are blocking",
+            "AttachEmbodiment` invalidates DESIGN.md",
+            "post-embodiment DESIGN.md attachment is mandatory",
         ]:
             self.assertIn(fragment, synth_skill)
         self.assertRegex(synth_skill, r"never\s+store the shell transcript")

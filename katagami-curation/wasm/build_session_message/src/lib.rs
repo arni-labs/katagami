@@ -1323,6 +1323,7 @@ mod tests {
         assert!(content.contains("katagami-design-md-contract"));
         assert!(content.contains("never\nstore the shell transcript"));
         assert!(content.contains("design_md_format_version': 'alpha'"));
+        assert!(content.contains("post-embodiment DESIGN.md attachment is mandatory"));
         assert!(content.contains("AttachDesignMd"));
         assert!(content.contains("AttachShadcnExport"));
         assert!(!content.contains("npx @google/design.md"));

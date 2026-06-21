@@ -303,7 +303,7 @@ hint = "Attach a generated DESIGN.md artifact candidate. Published languages mus
 name = "VerifyDesignMd"
 kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
-effect = [{ type = "set_bool", var = "has_valid_design_md", value = "true" }, { type = "set_bool", var = "design_md_verified", value = "true" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }, { type = "set_bool", var = "design_md_verified", value = "true" }]
 params = []
 hint = "Mark the attached DESIGN.md as verified after the finalizer has read the referenced file and confirmed the lint metadata."
 
