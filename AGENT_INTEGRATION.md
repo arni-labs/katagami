@@ -44,7 +44,8 @@ Key fields (all JSON strings, parse before use):
 - `fields.guidance` — do's and don'ts
 - `fields.philosophy` — values, anti-values, aesthetic lineage
 - `fields.design_md_file_id` — stored validated DESIGN.md artifact when review has passed
-- `fields.design_md_lint_result` — JSON linter output from `@google/design.md`
+- `fields.design_md_lint_result` — JSON linter output from the
+  `katagami-design-md-contract` checker
 
 The Katagami gallery exposes two agent handoff formats for each language:
 
@@ -57,7 +58,8 @@ The generated `DESIGN.md` contains:
 - Canonical `DESIGN.md` sections: Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts
 - Katagami extensions preserved as markdown sections, such as imagery direction and generative canvas guidance
 
-Published languages are expected to have a stored `DESIGN.md` artifact that passed `@google/design.md lint` with zero errors and zero warnings.
+Published languages are expected to have a stored `DESIGN.md` artifact that
+passed `katagami-design-md-contract` with zero errors and zero warnings.
 
 Raw DESIGN.md route:
 

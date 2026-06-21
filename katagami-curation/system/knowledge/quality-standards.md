@@ -32,8 +32,8 @@ deeply empty specs should fail with a concrete error.
 ## Artifact Gates
 
 - Every publishable language needs a generated `DESIGN.md` artifact.
-- `DESIGN.md` must pass `npx @google/design.md lint` with zero errors and zero
-  warnings.
+- `DESIGN.md` must pass the no-network `katagami-design-md-contract` checker
+  with zero errors and zero warnings.
 - Katagami source fields remain the source of truth; repair source fields, then
   regenerate projections.
 - Embodiments must be self-contained HTML and render cleanly at desktop,
