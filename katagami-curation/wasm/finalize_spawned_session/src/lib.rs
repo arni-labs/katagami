@@ -635,6 +635,30 @@ fn ensure_language_under_review(
         .repairable(false));
     }
 
+    let current = load_required_entity(
+        ctx,
+        api_url,
+        headers,
+        "DesignLanguages",
+        language_id,
+        "language_disappeared",
+    )?;
+    let current_status = entity_status_value(&current);
+    if current_status == "Published" || current_status == "UnderReview" {
+        return Ok(current);
+    }
+    if current_status != "Draft" {
+        return Err(VerificationError::new(
+            "invalid_language_state",
+            format!(
+                "DesignLanguage '{language_id}' is in state '{current_status}', expected Draft, UnderReview, or Published"
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(false));
+    }
+    verify_review_ready_state(language_id, &current)?;
+
     dispatch_action(
         ctx,
         api_url,
@@ -663,6 +687,69 @@ fn ensure_language_under_review(
         .entity("DesignLanguage", language_id));
     }
     Ok(refreshed)
+}
+
+fn verify_review_ready_state(
+    language_id: &str,
+    language: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let missing_bools: Vec<&str> = [
+        "has_philosophy",
+        "has_tokens",
+        "has_rules",
+        "has_layout",
+        "has_guidance",
+        "has_embodiment",
+        "embodiment_verified",
+        "has_compositions",
+        "compositions_verified",
+        "has_thumbnail",
+        "thumbnail_verified",
+        "has_design_md",
+        "has_valid_design_md",
+        "design_md_verified",
+        "has_shadcn_export",
+        "shadcn_export_verified",
+        "has_shadcn_component_spec",
+        "shadcn_component_spec_verified",
+        "has_shadcn_preview_shots",
+        "shadcn_preview_shots_verified",
+    ]
+    .iter()
+    .copied()
+    .filter(|name| !entity_bool_any(language, name))
+    .collect();
+
+    let fields = entity_fields(language);
+    let missing_fields: Vec<&str> = [
+        "embodiment_file_id",
+        "landing_file_id",
+        "dashboard_file_id",
+        "thumbnail_file_id",
+        "design_md_file_id",
+        "shadcn_export_file_id",
+        "shadcn_component_spec_file_id",
+        "shadcn_preview_shots_file_id",
+    ]
+    .iter()
+    .copied()
+    .filter(|name| string_field_any(&fields, name, "").trim().is_empty())
+    .collect();
+
+    if !missing_bools.is_empty() || !missing_fields.is_empty() {
+        return Err(VerificationError::new(
+            "review_prerequisites_missing",
+            format!(
+                "DesignLanguage '{language_id}' is not ready for SubmitForReview; missing booleans: [{}]; missing fields: [{}]",
+                missing_bools.join(", "),
+                missing_fields.join(", ")
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(true));
+    }
+
+    Ok(())
 }
 
 fn ensure_language_published(
@@ -1337,6 +1424,22 @@ fn verify_design_md_metadata(
         .entity("DesignLanguage", language_id)
         .field("design_md_lint_result")
     })?;
+    if let Some(raw) = lint.get("raw").and_then(|value| value.as_str()) {
+        let normalized = raw.to_ascii_lowercase();
+        if normalized.contains("exit code")
+            || normalized.contains("command not found")
+            || normalized.contains("stderr:")
+        {
+            return Err(VerificationError::new(
+                "design_md_lint_command_failed",
+                format!(
+                    "DesignLanguage '{language_id}' DESIGN.md lint result captured a failed command instead of a clean lint report"
+                ),
+            )
+            .entity("DesignLanguage", language_id)
+            .field("design_md_lint_result"));
+        }
+    }
     let summary = lint.get("summary").unwrap_or(&serde_json::Value::Null);
     let errors = summary.get("errors").and_then(|v| v.as_i64()).unwrap_or(0);
     let warnings = summary
