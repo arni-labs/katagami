@@ -270,7 +270,7 @@ fn verify_typed_completion(
     workspace_id: &str,
 ) -> Result<serde_json::Value, VerificationError> {
     match job_type {
-        "source_search" => verify_source_search(fields),
+        "source_search" => verify_source_search(ctx, api_url, headers, fields),
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
             verify_synthesized_languages(ctx, api_url, headers, fields, job_type)
         }
@@ -289,13 +289,26 @@ fn verify_typed_completion(
 }
 
 fn verify_source_search(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
     fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
-    let direction_ids = string_array_field(fields, "direction_ids");
+    // The agent reports direction_ids via CompleteResearch, but the Monty REPL
+    // resets its Python heap between provider turns: an agent that creates the
+    // CurationDirection records in one turn and completes in a later turn can
+    // report an empty list even though the directions exist and have already
+    // queued synthesis. The CurationDirection entities are the source of truth,
+    // so when the reported list is empty, derive the directions actually queued
+    // for this source_search job instead of failing a job that did its work.
+    let mut direction_ids = string_array_field(fields, "direction_ids");
+    if direction_ids.is_empty() {
+        direction_ids = queued_direction_ids(ctx, api_url, headers, &ctx.entity_id)?;
+    }
     if direction_ids.is_empty() {
         return Err(VerificationError::new(
             "missing_direction_ids",
-            "source_search completed without direction_ids; inline triggers cannot fan out synthesis without explicit directions",
+            "source_search completed without creating any CurationDirection records; nothing to fan out synthesis from",
         )
         .field("direction_ids"));
     }
@@ -304,6 +317,59 @@ fn verify_source_search(
         "job_type": "source_search",
         "direction_ids": direction_ids,
     }))
+}
+
+/// List the CurationDirection entity ids queued for a given source_search job.
+/// Reads the entities directly (the source of truth) so source_search
+/// verification does not depend on the agent re-threading direction_ids across
+/// Monty REPL turns. Equality filter on source_search_job_id pushes down at the
+/// query plane (bounded with $top), so this stays a cheap point lookup.
+fn queued_direction_ids(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    source_search_job_id: &str,
+) -> Result<Vec<String>, VerificationError> {
+    if source_search_job_id.is_empty() {
+        return Ok(Vec::new());
+    }
+    let url = format!(
+        "{api_url}/tdata/CurationDirections?$filter=source_search_job_id%20eq%20%27{source_search_job_id}%27&$top=200"
+    );
+    let resp = http_call(ctx, "GET", &url, headers, "")?;
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "direction_lookup_failed",
+            format!(
+                "failed to list CurationDirections for source_search job '{source_search_job_id}': HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .repairable(false));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).map_err(|error| {
+        VerificationError::new(
+            "direction_lookup_failed",
+            format!("failed to parse CurationDirections response: {error}"),
+        )
+        .repairable(false)
+    })?;
+    let mut ids = Vec::new();
+    if let Some(items) = parsed.get("value").and_then(|v| v.as_array()) {
+        for item in items {
+            let id = item
+                .get("fields")
+                .and_then(|f| f.get("Id"))
+                .and_then(|v| v.as_str())
+                .or_else(|| item.get("entity_id").and_then(|v| v.as_str()))
+                .unwrap_or("");
+            if !id.is_empty() {
+                ids.push(id.to_string());
+            }
+        }
+    }
+    Ok(ids)
 }
 
 fn verify_synthesized_languages(
