@@ -82,6 +82,8 @@ Job type: `source_search`
            'palette': 'synthesize_palette',
            'art_style': 'synthesize_art_style',
        }[movement_output_type]
+       direction = temper.create('CurationDirections', {})
+       direction_id = direction['entity_id']
        synth_input = json.dumps({
            'task': task_description,
            'scope': scope_description,
@@ -91,10 +93,11 @@ Job type: `source_search`
            'topic_allowlist': topics,
            'source_ids': source_ids,
            'priority': 'high',
-           'query_id': query_id
+           'query_id': query_id,
+           # Carried so the synthesize agent can Quarantine THIS direction in its
+           # DRIVE-TO-REVIEW loop if a language proves unfixable.
+           'direction_id': direction_id
        }, ensure_ascii=False)
-       direction = temper.create('CurationDirections', {})
-       direction_id = direction['entity_id']
        temper.action('CurationDirections', direction_id, 'Configure', {
            'query_id': query_id,
            'source_search_job_id': job_id,
@@ -116,10 +119,15 @@ Job type: `source_search`
    DesignSource metadata, CurationDirection fields, and the CurationJob
    completion output. Do not update `/katagami/log.md`, `/katagami/index.md`,
    or `/katagami/sources/*.md` during `source_search`.
-9. **Complete the job**:
+9. **Complete the job**: Pass the concrete `output_type` you inferred in step 7 so
+   the parent query records it (the inline `submit_creates_source_search_job` trigger
+   no longer normalizes the lane — that inference now lives here, and the query's
+   barrier-scope guard needs the concrete lane). `output_type` must be exactly one of
+   `design_language`, `palette`, or `art_style` — never `auto`.
    ```python
    temper.action('CurationJobs', job_id, 'CompleteResearch', {
-       'direction_ids': json.dumps(direction_ids)
+       'direction_ids': json.dumps(direction_ids),
+       'output_type': output_type
    })
    temper.done("source_search complete")
    ```

@@ -26,11 +26,17 @@ anti-slop checklists from prose.
 
 ## Process
 
-For each language in the job input list — the authoritative, query-scoped list of
-design_language_ids to review. The input MUST be non-empty: do NOT enumerate all
-DesignLanguages. If the input list is empty, fail the job with error_message
-"quality_review received empty design_language_ids; upstream RecordSynthesizeJob did
-not populate the query scope" rather than reviewing unrelated languages.
+For each language in the job input list — the authoritative, **per-direction** list
+of design_language_ids to review. A quality_review job is now created per
+CurationDirection (by the `direction_synthesized_creates_review_job` trigger on
+`CurationDirection.Synthesized`) and is scoped to that one direction's own
+`design_language_ids` — a per-direction second opinion, NOT a salvage pass over the
+whole query. The input MUST be non-empty: do NOT enumerate all DesignLanguages and
+do NOT review sibling directions' languages. If the input list is empty, fail the
+job with error_message "quality_review received empty design_language_ids; the
+CurationDirection.Synthesized trigger did not carry this direction's language id"
+rather than reviewing unrelated languages. A failure here drains only THIS direction
+(job_failure_fails_direction -> FailReview/Fail); sibling directions continue.
 
 0. **Forced ShadSync refresh override**: If the job input contains
    `force_agent_shadcn_artifact_refresh: true`, the first-class shadcn artifacts
@@ -436,7 +442,9 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
    ```python
    temper.action('DesignLanguages', lang_id, 'UpdateQuality', {'review_status': 'reviewed'})
    ```
-17. **After ALL languages are reviewed and ready for finalizer publish:**
+17. **After this direction's language is reviewed and ready for finalizer publish:**
+   `fixed_ids` is this direction's single-element list. The shape of
+   `CompleteQualityReview` is unchanged.
    ```python
    organize_input = json.dumps({
        'language_ids': fixed_ids,

@@ -12,21 +12,26 @@ class ReactionResolverTypeTests(unittest.TestCase):
         )
 
     def test_inline_create_triggers_exist_for_followup_jobs(self):
-        # ARN-88 fan-out barrier: the quality_review job is no longer created by a
-        # per-direction synthesis trigger on CurationJob. It is created exactly once
-        # by barrier_open_creates_quality_review_job on CurationQuery.SynthesisComplete
-        # (asserted in test_barrier_opens_quality_review_on_synthesis_complete). The
-        # remaining create-on-CurationJob triggers are the synthesize fan-out and the
-        # organize follow-up.
+        # C4/C5: job-create triggers are now distributed across the three entities.
+        # On CurationDirection: the synthesize fan-out (QueueSynthesis) and the
+        # per-direction quality_review (Synthesized). On CurationQuery: the inline
+        # source_search bootstrap (Submit) and the single organize_taxonomy job
+        # (SynthesisComplete barrier-open). The old query-level
+        # barrier_open_creates_quality_review_job and the per-CompleteQualityReview
+        # review_creates_organization_job are gone (review is per-direction; organize
+        # is created once on the query).
         root = Path(__file__).resolve().parents[1]
         direction_spec = tomllib.loads(
             (root / "specs" / "curation_direction.ioa.toml").read_text()
         )
         job_spec = tomllib.loads((root / "specs" / "curation_job.ioa.toml").read_text())
+        query_spec = tomllib.loads(
+            (root / "specs" / "curation_query.ioa.toml").read_text()
+        )
 
         create_triggers = [
             trigger
-            for spec in [direction_spec, job_spec]
+            for spec in [direction_spec, job_spec, query_spec]
             for action in spec["action"]
             for trigger in action.get("triggers", [])
             if trigger["kind"] == "entity"
@@ -38,7 +43,9 @@ class ReactionResolverTypeTests(unittest.TestCase):
         self.assertEqual(
             {
                 "direction_queue_synthesis_creates_job",
-                "review_creates_organization_job",
+                "direction_synthesized_creates_review_job",
+                "submit_creates_source_search_job",
+                "barrier_open_creates_organize_job",
             },
             {trigger["name"] for trigger in create_triggers},
         )
@@ -150,30 +157,35 @@ class ReactionResolverTypeTests(unittest.TestCase):
             {"type": "field_equals", "field": "output_type", "value": "design_language"},
         )
 
-        # SynthesisComplete is gated by the barrier guard.
+        # C3: SynthesisComplete is gated by the barrier guard plus the survivor floor
+        # (directions_completed>=1) so an all-quarantined fan-out fast-fails instead.
         synth = query_actions["SynthesisComplete"]
         self.assertEqual(
             synth["guard"],
             [
                 {"type": "max_count", "var": "directions_pending", "max": 1},
                 {"type": "min_count", "var": "directions_total", "min": 1},
+                {"type": "min_count", "var": "directions_completed", "min": 1},
             ],
         )
 
-        # The single quality_review job is created on barrier-open, not per-direction,
-        # and is scoped to the languages the fan-out produced via the job `input`
-        # (a declared ConfigureAndSubmit param).
-        barrier_trigger = next(
-            t for t in synth["triggers"] if t["name"] == "barrier_open_creates_quality_review_job"
-        )
-        self.assertEqual(barrier_trigger["target_entity"], "CurationJob")
-        self.assertEqual(barrier_trigger["target_action"], "ConfigureAndSubmit")
-        self.assertEqual(barrier_trigger["params"]["job_type"], "quality_review")
-        self.assertEqual(barrier_trigger["params_from"]["input"], "design_language_ids")
-        self.assertEqual(barrier_trigger["resolve_target"], {"type": "create"})
+        # C3: the survivor counter exists and increments on RecordSynthesizeJob only.
+        self.assertIn("directions_completed", counters)
+        self.assertEqual(counters["directions_completed"]["initial"], "0")
 
-        # RecordSynthesizeJob appends the vars it is fed (param name == var name for
-        # both the synthesize job id list and the accumulated language id list).
+        # C4: the single organize_taxonomy job is created on barrier-open. The old
+        # per-query quality_review job is gone (review is now per-direction).
+        synth_triggers = {t["name"]: t for t in synth["triggers"]}
+        self.assertNotIn("barrier_open_creates_quality_review_job", synth_triggers)
+        organize_trigger = synth_triggers["barrier_open_creates_organize_job"]
+        self.assertEqual(organize_trigger["target_entity"], "CurationJob")
+        self.assertEqual(organize_trigger["target_action"], "ConfigureAndSubmit")
+        self.assertEqual(organize_trigger["params"]["job_type"], "organize_taxonomy")
+        self.assertEqual(organize_trigger["params_from"]["input"], "design_language_ids")
+        self.assertEqual(organize_trigger["resolve_target"], {"type": "create"})
+
+        # C3: RecordSynthesizeJob appends the vars it is fed AND increments the
+        # survivor counter (it fires only when a language was actually produced).
         record = query_actions["RecordSynthesizeJob"]
         self.assertEqual(record["params"], ["synthesize_job_ids", "design_language_ids"])
         self.assertEqual(
@@ -181,10 +193,14 @@ class ReactionResolverTypeTests(unittest.TestCase):
             [
                 {"type": "list_append", "var": "synthesize_job_ids"},
                 {"type": "list_append", "var": "design_language_ids"},
+                {"type": "increment", "var": "directions_completed"},
             ],
         )
 
         # QueueSynthesis widens the barrier; every terminal direction edge drains it.
+        # C4: the design_language lane drains on ReviewPassed/FailReview (after review)
+        # and on Fail/Quarantine; the terminal palette/art_style lanes still drain on
+        # CompletePalette/CompleteArtStyle.
         direction_actions = {a["name"]: a for a in direction_spec["action"]}
         queue_triggers = {
             t["name"]: t for t in direction_actions["QueueSynthesis"]["triggers"]
@@ -193,7 +209,23 @@ class ReactionResolverTypeTests(unittest.TestCase):
         self.assertEqual(widen["target_action"], "IncrementDirectionsPending")
         self.assertEqual(widen["resolve_target"], {"type": "field", "field": "query_id"})
 
-        for action_name in ["Complete", "CompletePalette", "CompleteArtStyle", "Fail"]:
+        # Synthesized must NOT drain the barrier (it advances to Reviewing).
+        synthesized_narrows = [
+            t
+            for t in direction_actions["Synthesized"].get("triggers", [])
+            if t["target_entity"] == "CurationQuery"
+            and t["target_action"] == "DecrementDirectionsPending"
+        ]
+        self.assertEqual(len(synthesized_narrows), 0, "Synthesized must not drain the barrier")
+
+        for action_name in [
+            "ReviewPassed",
+            "FailReview",
+            "CompletePalette",
+            "CompleteArtStyle",
+            "Fail",
+            "Quarantine",
+        ]:
             narrows = [
                 t
                 for t in direction_actions[action_name].get("triggers", [])

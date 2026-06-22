@@ -8,9 +8,10 @@
 #
 # Lifecycle: Submitted -> Researching -> Synthesizing -> Organizing -> Completed | Failed
 #
-# Submit triggers launch_research WASM which creates the first CurationJob.
-# Subsequent state transitions are driven by reactions on typed CurationJob
-# completion actions.
+# Submit fires an inline entity trigger that creates+submits the first
+# (source_search) CurationJob. Subsequent state transitions are driven by reactions
+# on typed CurationJob completion actions. Lane inference lives in the source_search
+# agent skill, which records the concrete output_type on the query at ResearchComplete.
 
 [automaton]
 name = "CurationQuery"
@@ -26,8 +27,9 @@ name = "query_text"
 type = "string"
 initial = ""
 
-# Explicit output lane. "auto" means launch_research infers the lane from
-# query_text and records the normalized value before source_search starts.
+# Explicit output lane. "auto" means the source_search agent infers the lane from
+# query_text and records the normalized concrete value at ResearchComplete (before
+# any direction reaches the barrier-scope guard).
 [[state]]
 name = "output_type"
 type = "string"
@@ -68,6 +70,17 @@ initial = "0"
 
 [[state]]
 name = "directions_total"
+type = "counter"
+initial = "0"
+
+# Survivor counter (correction #2 sibling). Incremented only when a direction
+# actually produced a design language (on RecordSynthesizeJob, which fires from the
+# per-direction CompleteSynthesis, never on Fail/Quarantine). Lets the query tell a
+# fully-quarantined/failed fan-out (directions_completed == 0) apart from a real one,
+# so the all-quarantined case fast-fails instead of opening the barrier into an empty
+# quality-review/organize stage.
+[[state]]
+name = "directions_completed"
 type = "counter"
 initial = "0"
 
@@ -138,28 +151,38 @@ name = "Submit"
 kind = "input"
 from = ["Submitted"]
 to = "Researching"
-hint = "Launch the automated pipeline. Triggers launch_research WASM."
-effect = [{ type = "trigger", name = "launch_research" }]
+hint = "Launch the automated pipeline. An inline entity trigger creates+submits the source_search CurationJob (mirrors direction_queue_synthesis_creates_job). Lane inference now lives in the source_search agent skill, not WASM: the research-direction skill infers the concrete output_type from query_text and records it on the query at CompleteResearch (ResearchComplete carries output_type). The shared katagami-library workspace is ensured by build_session_message when the source_search job spawns."
 
-# ADR-0046: inline trigger — migrated from [[integration]] below.
-# Post-parse expansion re-synthesizes the equivalent Integration so
-# the existing WASM runtime handles execution unchanged.
+# C5: replaces the launch_research WASM. Create and submit the source_search job
+# in one inline trigger. workspace_id is intentionally NOT set here —
+# build_session_message ensures the shared katagami-library workspace when the job
+# spawns, and the agent propagates that workspace id to the CurationDirections it
+# creates (same pattern as every other job).
 [[action.triggers]]
-name = "launch_research"
-kind = "wasm"
-module = "launch_research"
-on_failure = "Fail"
+name = "submit_creates_source_search_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
 
-[action.triggers.config]
-temper_api_url = "{secret:temper_api_url}"
+[action.triggers.params]
+job_type = "source_search"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+query_id = "Id"
+input = "query_text"
+
+[action.triggers.resolve_target]
+type = "create"
 
 [[action]]
 name = "ResearchComplete"
 kind = "input"
 from = ["Researching"]
 to = "Synthesizing"
-params = ["source_search_job_id", "direction_ids"]
-hint = "Research phase completed. CurationDirection records have queued synthesis jobs."
+params = ["source_search_job_id", "direction_ids", "output_type"]
+hint = "Research phase completed. CurationDirection records have queued synthesis jobs. Records the concrete output_type the source_search agent inferred (auto -> design_language/palette/art_style), so the barrier-open scoping guard (output_type == 'design_language') resolves correctly. This replaces the launch_research WASM's query-level output_type normalization (C5)."
 
 [[action]]
 name = "IncrementDirectionsPending"
@@ -174,7 +197,7 @@ name = "DecrementDirectionsPending"
 kind = "input"
 from = ["Synthesizing"]
 params = ["direction_id"]
-hint = "One CurationDirection reached a terminal outcome (Complete* or Fail); narrow the barrier by one. Re-evaluates the barrier-open advance via a same-id self reaction."
+hint = "One CurationDirection reached a barrier-draining outcome (ReviewPassed/FailReview after per-direction review, CompletePalette/CompleteArtStyle for the terminal lanes, or Fail/Quarantine); narrow the barrier by one. Re-evaluates the barrier-open advance via a same-id self reaction, and fast-fails the query if every direction drained without producing a language."
 effect = [{ type = "decrement", var = "directions_pending" }]
 
 [[action.triggers]]
@@ -198,15 +221,51 @@ value = "design_language"
 [action.triggers.resolve_target]
 type = "same_id"
 
+# All-quarantined fast-fail (correction #2 sibling): the barrier fully drained
+# (directions_pending==0) but no direction produced a language
+# (directions_completed==0) — every direction was Quarantined or Failed. There is
+# nothing to review or organize; SynthesisComplete is blocked by its
+# min_count(directions_completed>=1) floor, so without this the query would hang
+# until the Synthesizing timeout. Fail it now instead. Scoped to the design_language
+# lane (mirrors empty_fanout_fails_query on CurationJob).
+[[action.triggers]]
+name = "all_directions_drained_empty_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[[action.triggers.guard]]
+type = "max_count"
+field = "directions_pending"
+max = 0
+
+[[action.triggers.guard]]
+type = "max_count"
+field = "directions_completed"
+max = 0
+
+[[action.triggers.guard]]
+type = "field_equals"
+field = "output_type"
+value = "design_language"
+
+[action.triggers.params]
+error_message = "Every curation direction was quarantined or failed; no design language was produced to review."
+
+[action.triggers.resolve_target]
+type = "same_id"
+
 [[action]]
 name = "RecordSynthesizeJob"
 kind = "input"
 from = ["Researching", "Synthesizing"]
 params = ["synthesize_job_ids", "design_language_ids"]
-hint = "Record a completed per-direction synthesize job id and its created design-language ids on the parent query, so the barrier-open quality_review job can be scoped to every language the fan-out produced. Does not gate the barrier; the counter does. Each param is named after the list var it appends so kernel ListAppend (which reads params.get(var)) writes it."
+hint = "Record a completed per-direction synthesize job id and its created design-language ids on the parent query, so the Organizing stage's organize_taxonomy job has the full language set the fan-out produced. Per-direction quality_review is now scoped from each CurationDirection's own design_language_ids (not this accumulation). Fires only when a direction actually produced a language, so it also increments directions_completed (the survivor counter). Does not gate the barrier; the counters do. Each list param is named after the list var it appends so kernel ListAppend (which reads params.get(var)) writes it."
 effect = [
   { type = "list_append", var = "synthesize_job_ids" },
-  { type = "list_append", var = "design_language_ids" }
+  { type = "list_append", var = "design_language_ids" },
+  { type = "increment", var = "directions_completed" }
 ]
 
 [[action]]
@@ -217,28 +276,31 @@ to = "Organizing"
 params = []
 guard = [
   { type = "max_count", var = "directions_pending", max = 1 },
-  { type = "min_count", var = "directions_total", min = 1 }
+  { type = "min_count", var = "directions_total", min = 1 },
+  { type = "min_count", var = "directions_completed", min = 1 }
 ]
-hint = "Barrier open: every queued direction reached a terminal outcome (directions_pending==0) and at least one direction ever existed (directions_total>=1). Fired parameterless by the decrement self-reaction; reads accumulated design_language_ids/workspace_id from query state to create the single quality_review job. No params are supplied by the self-reaction, so accumulated state is preserved."
+hint = "Barrier open: every queued direction reached a terminal outcome (directions_pending==0), at least one direction ever existed (directions_total>=1), and at least one direction actually produced a reviewed language (directions_completed>=1). Per-direction quality_review is created and completed before this edge fires (each direction passes through Synthesizing->Reviewing->Completed). This advance creates the SINGLE organize_taxonomy job scoped to the full accumulated design_language_ids, then enters Organizing. Fired parameterless by the decrement self-reaction, so accumulated query state is preserved."
 
+# Create the single organize_taxonomy job once, at barrier-open, scoped to the full
+# set of languages the fan-out produced (accumulated on the query by
+# RecordSynthesizeJob). Replaces the old per-query barrier review job and the
+# per-CompleteQualityReview organize creation; with per-direction review, N reviews
+# must not create N organize jobs. The organize skill re-lists all DesignLanguages
+# itself, so `input` is informational scope.
 [[action.triggers]]
-name = "barrier_open_creates_quality_review_job"
+name = "barrier_open_creates_organize_job"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
 
 [action.triggers.params]
-job_type = "quality_review"
+job_type = "organize_taxonomy"
 completion_contract = "typed-v1"
 
 [action.triggers.params_from]
 workspace_id = "workspace_id"
 query_id = "Id"
-# Scope the review to every language the fan-out produced (accumulated on the
-# query by RecordSynthesizeJob). build_session_message embeds the job's `input`;
-# the review-quality skill reviews these languages (or ALL for the query if the
-# list is empty). `input` is a declared ConfigureAndSubmit param.
 input = "design_language_ids"
 
 [action.triggers.resolve_target]

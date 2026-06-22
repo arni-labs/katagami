@@ -274,12 +274,20 @@ class ThumbnailContractTests(unittest.TestCase):
             "__temperpaw_image",
             "'mime_type': 'image/jpeg'",
             "VerifyThumbnail",
-            "Do not call `VerifyThumbnail` or `SubmitForReview`",
+            # C1 keystone: VerifyThumbnail stays finalizer-owned, but the agent now
+            # owns SubmitForReview and drives each language to UnderReview itself in
+            # the DRIVE-TO-REVIEW PHASE before completing the synthesize job.
+            "Do not call `VerifyThumbnail` directly",
+            "You DO own `SubmitForReview`",
+            "DRIVE-TO-REVIEW PHASE",
         ]:
             self.assertIn(fragment, skill)
 
+        # VerifyThumbnail is still never called by the agent; SubmitForReview is now
+        # called WITH an entity id arg (per language), not the bare no-arg call.
         self.assertNotIn("'VerifyThumbnail', {})", skill)
-        self.assertNotIn("'SubmitForReview', {})", skill)
+        self.assertIn("'SubmitForReview', {})", skill)
+        self.assertNotIn("Do not call `VerifyThumbnail` or `SubmitForReview`", skill)
         self.assertNotIn("lstrip().startswith('/9j/')", skill)
         self.assertNotIn("thumbnail read returned base64 text", skill)
 

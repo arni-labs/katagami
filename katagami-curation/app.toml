@@ -13,9 +13,11 @@ dependencies = [
 # artifacts listed here. Without them, even if the compiled `.wasm`
 # files are shipped in the image, `wasm_modules: []` comes back empty
 # at tenant install and every WASM trigger (build_session_message,
-# finalize_spawned_session, launch_research) fails with
+# finalize_spawned_session) fails with
 # "WASM module not found". Same trap that hit paw-research on
 # 2026-04-18.
+# (launch_research was deleted in C5 — CurationQuery.Submit now creates the
+# source_search job via an inline entity trigger, not WASM.)
 
 [[wasm_modules]]
 name = "build_session_message"
@@ -24,10 +26,5 @@ startup_loading = "lazy"
 
 [[wasm_modules]]
 name = "finalize_spawned_session"
-criticality = "app-required"
-startup_loading = "lazy"
-
-[[wasm_modules]]
-name = "launch_research"
 criticality = "app-required"
 startup_loading = "lazy"

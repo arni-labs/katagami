@@ -53,6 +53,14 @@ name = "direction_ids"
 type = "string"
 initial = "[]"
 
+# C5: the concrete output lane the source_search agent inferred. Carried on the
+# source_search job so research_completion_advances_query can forward it to the
+# parent query's ResearchComplete (replaces launch_research's WASM normalization).
+[[state]]
+name = "output_type"
+type = "string"
+initial = ""
+
 [[state]]
 name = "design_language_ids"
 type = "string"
@@ -269,8 +277,8 @@ name = "CompleteResearch"
 kind = "input"
 from = ["Running"]
 to = "Finalizing"
-params = ["direction_ids"]
-hint = "Research completed after creating and queueing CurationDirection records."
+params = ["direction_ids", "output_type"]
+hint = "Research completed after creating and queueing CurationDirection records. output_type is the concrete lane the source_search agent inferred (auto -> design_language/palette/art_style); it is forwarded to the parent query so the barrier-scope guard resolves (C5, replaces launch_research's WASM normalization)."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -297,6 +305,7 @@ target_action = "ResearchComplete"
 [action.triggers.params_from]
 source_search_job_id = "Id"
 direction_ids = "direction_ids"
+output_type = "output_type"
 
 [action.triggers.resolve_target]
 type = "field"
@@ -329,8 +338,19 @@ name = "CompleteSynthesis"
 kind = "input"
 from = ["Running"]
 to = "Finalizing"
-params = ["design_language_ids", "review_input"]
-hint = "Synthesis completed and a quality review job should be created by trigger."
+params = ["design_language_ids", "design_language_id", "review_input"]
+# KEYSTONE (correction #1): the synthesize agent drives its OWN completion. Every
+# produced language must already be UnderReview (its in-session SubmitForReview
+# succeeded) before the job may complete. A premature call (any language still
+# Draft) is rejected here, so the self-heal loop in the synthesize-language skill
+# has a real enforced caller and the finalizer no longer needs to own the
+# SubmitForReview walk. entity_id_source is a JSON-list param; the cross_entity_state
+# resolver holds the required_status per id across the list (same list-ref resolution
+# the art_style/palette File guards rely on). design_language_id is the scalar single
+# language id this direction produced, carried through to CurationDirection.Synthesized.
+guard = [
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_ids", required_status = ["UnderReview", "Published"] }
+]
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -373,22 +393,25 @@ design_language_ids = "design_language_ids"
 type = "field"
 field = "query_id"
 
-# ARN-88: per-direction synthesis no longer creates the quality_review job nor
-# advances the query directly (the old direction_id=="" guarded triggers never
-# fired for per-direction jobs, stalling the pipeline). Synthesis now completes
-# its CurationDirection, which drains the fan-out barrier; the barrier-open
-# advance and the single quality_review creation live on CurationQuery. Declared
-# after synthesis_records_synthesize_job so the record lands before this edge's
-# decrement -> SynthesisComplete cascade opens the barrier.
+# Per-direction synthesis advances its CurationDirection from Synthesizing to
+# Reviewing (Synthesized), which creates THIS direction's per-direction
+# quality_review job and does NOT yet narrow the barrier — the barrier narrows when
+# review terminates (ReviewPassed/FailReview/Fail/Quarantine). The synthesize agent
+# has already driven its language to UnderReview in-session (gated by the
+# CompleteSynthesis cross_entity_state guard above), so design_language_id is the
+# scalar single language id this direction produced; it is recorded on the direction
+# for the Quarantine -> Archive cascade. Declared after synthesis_records_synthesize_job
+# so the query-side record (for organize scope) lands first.
 [[action.triggers]]
 name = "synthesis_completes_direction"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
-target_action = "Complete"
+target_action = "Synthesized"
 
 [action.triggers.params_from]
 design_language_ids = "design_language_ids"
+design_language_id = "design_language_id"
 
 [action.triggers.resolve_target]
 type = "field"
@@ -417,32 +440,34 @@ temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 
+# Per-direction review (correction #5): a quality_review job now reviews ONE
+# direction's language and carries that direction_id. Passing review advances the
+# direction Reviewing -> Completed (ReviewPassed), which narrows the fan-out barrier
+# by one. The single organize_taxonomy job is created once on the query side when the
+# barrier opens (SynthesisComplete), NOT per-direction here — N per-direction reviews
+# must not create N organize jobs. Guard direction_id != "" so a genuinely query-level
+# review (none today) would not mis-route.
 [[action.triggers]]
-name = "review_creates_organization_job"
+name = "review_passes_direction"
 kind = "entity"
 principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
+target_entity = "CurationDirection"
+target_action = "ReviewPassed"
 
 [action.triggers.guard]
 type = "not"
 
 [action.triggers.guard.guard]
 type = "field_equals"
-field = "query_id"
+field = "direction_id"
 value = ""
 
-[action.triggers.params]
-job_type = "organize_taxonomy"
-completion_contract = "typed-v1"
-
 [action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "organize_input"
+design_language_ids = "design_language_ids"
 
 [action.triggers.resolve_target]
-type = "create"
+type = "field"
+field = "direction_id"
 
 [[action]]
 name = "CompleteOrganization"
