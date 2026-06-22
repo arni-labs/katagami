@@ -144,6 +144,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "IncrementDirectionsPending"
+# drop_ok: the widen only applies while the query is in its fan-out window
+# (Researching/Synthesizing). A direction that queues synthesis after the query
+# already advanced (Organizing/Completed/Failed) must NOT re-open a resolved
+# barrier — the increment harmlessly drops.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -201,6 +206,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: DecrementDirectionsPending is from=[Synthesizing] on the query. Once the
+# query has already left Synthesizing (barrier opened to Organizing, or timed out to
+# Failed) this narrow is a no-op — the count no longer gates anything and must not
+# underflow. Intentionally conditional on the query still being in the fan-out.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -224,6 +234,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: same as direction_review_passed_narrows_query_barrier — the narrow only
+# applies while the query is still Synthesizing; on an already-advanced/terminated
+# query it harmlessly drops.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -246,6 +260,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: the palette lane shares the fan-out counters but the query advances to
+# Completed via PaletteSynthesisComplete, not through the design-lane barrier. Once
+# the query has left Synthesizing the narrow is a no-op — intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -268,6 +286,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: same as the palette lane — art_style is terminal via
+# ArtStyleSynthesisComplete; the shared-counter narrow is a no-op once the query
+# has advanced. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -294,6 +316,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: a Fail from Discovered (before any increment landed) or after the query
+# already left Synthesizing must NOT underflow/re-touch the barrier — the narrow
+# harmlessly drops. This is the from-state guard the spec comment above relies on.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -326,6 +352,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
+# drop_ok: same from-state guard as direction_fail_narrows_query_barrier — a
+# Quarantine from Discovered (no increment yet) or after the query advanced drops
+# harmlessly rather than underflowing the barrier. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 direction_id = "Id"
@@ -348,6 +378,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "DesignLanguage"
 target_action = "Archive"
+# drop_ok: the half-built language may be absent (design_language_id == "" when the
+# timeout backstop fired before any language was produced) or already Archived. The
+# spec comment above states this cascade is a harmless no-op in that case — the
+# barrier still drains. Intentionally conditional, exactly as documented.
+drop_ok = true
 
 [action.triggers.params_from]
 curator_notes = "error_message"

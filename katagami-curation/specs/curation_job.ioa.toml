@@ -301,6 +301,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
+# drop_ok: ResearchComplete is from=[Researching] on the query. If the query already
+# left Researching (e.g. timed out to Failed), the advance harmlessly drops rather
+# than re-driving a terminated query. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
@@ -320,6 +324,12 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing] — not from terminal states. If the query already reached Completed or
+# Failed, this empty-fan-out fast-fail harmlessly drops (a terminal query cannot and
+# must not be re-failed). Intentionally conditional, in addition to the
+# direction_ids == "[]" guard.
+drop_ok = true
 
 [action.triggers.guard]
 type = "field_equals"
@@ -384,6 +394,13 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "RecordSynthesizeJob"
+# drop_ok: RecordSynthesizeJob is from=[Researching, Synthesizing]. In the real flow
+# it lands while the query is still Synthesizing (it is declared before the
+# direction's Synthesized advance and the barrier narrows only later on review). It
+# drops only for a straggler synthesize job that completes after the query already
+# left Synthesizing — a language that could never have been counted in the still-open
+# barrier — so the organize scope loses nothing. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 synthesize_job_ids = "Id"
@@ -408,6 +425,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "Synthesized"
+# drop_ok: Synthesized is from=[Synthesizing] on the direction. If a Synthesizing
+# state_timeout already fired Quarantine (or the direction otherwise terminated)
+# before the synthesize job committed, this advance must NOT resurrect the direction
+# to Reviewing — it harmlessly drops. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 design_language_ids = "design_language_ids"
@@ -453,6 +475,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "ReviewPassed"
+# drop_ok: ReviewPassed is from=[Reviewing] on the direction. If the Reviewing
+# state_timeout already fired FailReview (or the direction terminated) before the
+# review job committed, the pass harmlessly drops instead of un-failing the
+# direction. Intentionally conditional (in addition to the direction_id != "" guard).
+drop_ok = true
 
 [action.triggers.guard]
 type = "not"
@@ -498,6 +525,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "OrganizationComplete"
+# drop_ok: OrganizationComplete is from=[Organizing] on the query. If the query
+# already left Organizing (e.g. timed out to Failed), the finish harmlessly drops.
+# Intentionally conditional.
+drop_ok = true
 
 [action.triggers.resolve_target]
 type = "field"
@@ -598,6 +629,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "CompletePalette"
+# drop_ok: CompletePalette is from=[Synthesizing] on the direction. If the direction
+# already terminated (Quarantine/Fail via timeout) before the palette job committed,
+# the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 palette_system_ids = "palette_system_ids"
@@ -632,6 +667,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "CompleteArtStyle"
+# drop_ok: CompleteArtStyle is from=[Synthesizing] on the direction. Same as the
+# palette lane — if the direction already terminated before the art-style job
+# committed, the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 art_style_ids = "art_style_ids"
@@ -656,6 +695,13 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishResearchCompletion finalize action) duplicating research_completion_advances_query.
+# ResearchComplete is from=[Researching]; in the common typed-v1 flow the query has
+# already advanced past Researching by the time this legacy path runs, so it
+# harmlessly drops. Intentionally conditional. (Test test_inline_query_advancement_triggers_exist
+# pins this trigger to exist; it is compatibility, not dead code.)
+drop_ok = true
 
 # ARN-88: ResearchComplete no longer carries synthesize_job_id/synthesize_job_ids
 # (the barrier counters, not an id list, gate synthesis), so this legacy
@@ -684,6 +730,12 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "OrganizationComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishOrganizationCompletion finalize action) duplicating
+# organization_completion_finishes_query. OrganizationComplete is from=[Organizing];
+# when the query has already finished the legacy path harmlessly drops. Intentionally
+# conditional. (Test test_inline_query_advancement_triggers_exist pins this to exist.)
+drop_ok = true
 
 [action.triggers.resolve_target]
 type = "field"
@@ -750,6 +802,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "Fail"
+# drop_ok: CurationDirection.Fail is from=[Discovered, Synthesizing, Reviewing]. If
+# the direction already reached a terminal state (Completed/Failed/Quarantined) — e.g.
+# it was Quarantined by its own timeout — the job-failure propagation harmlessly drops
+# instead of re-failing a terminal direction. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 error_message = "error_message"
@@ -764,6 +821,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing]. If the query already reached Completed or Failed, propagating a
+# non-direction job failure harmlessly drops — a terminal query must not be re-failed.
+# Intentionally conditional, in addition to the direction_id == "" guard below.
+drop_ok = true
 
 # ARN-88: only non-direction jobs (source_search/quality_review/organize, which
 # carry direction_id=="") fail the query directly. A per-direction synthesize

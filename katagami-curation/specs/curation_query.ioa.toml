@@ -206,6 +206,13 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "SynthesisComplete"
+# drop_ok: the canonical barrier-open self-reaction. It fires on EVERY decrement but
+# SynthesisComplete's guard (directions_pending==0 AND directions_total>=1 AND
+# directions_completed>=1) only holds on the LAST decrement of a producing design-lane
+# fan-out. On every earlier decrement, on the all-quarantined case (completed==0), and
+# on the palette/art_style lanes, the advance is correctly not enabled and drops. This
+# is the textbook intentionally-conditional barrier reaction.
+drop_ok = true
 
 # Scope the barrier-open advance to the design_language lane only. The
 # palette/art_style lanes share the CurationDirection fan-out (so they widen
@@ -226,26 +233,30 @@ type = "same_id"
 # (directions_completed==0) — every direction was Quarantined or Failed. There is
 # nothing to review or organize; SynthesisComplete is blocked by its
 # min_count(directions_completed>=1) floor, so without this the query would hang
-# until the Synthesizing timeout. Fail it now instead. Scoped to the design_language
-# lane (mirrors empty_fanout_fails_query on CurationJob).
+# until the Synthesizing timeout. Fail it now instead, via the FailEmptyFanout
+# action. The AND-conditions are split across the two places guards are allowed: the
+# two COUNT conditions (directions_pending==0, directions_completed==0) live as an
+# ACTION-level guard array on FailEmptyFanout (a TRIGGER guard is a single
+# TriggerGuard, never an array, so a count conjunction cannot live on the trigger),
+# while the design_language-lane scoping stays a SINGLE trigger guard below (string
+# equality is a trigger-guard primitive, not an action guard). Mirrors
+# empty_fanout_fails_query on CurationJob. drop_ok: this reaction fires on EVERY
+# decrement but is a no-op unless the barrier drained empty in the design_language
+# lane; on the common path (a direction produced a language, or a terminal
+# palette/art_style lane, or directions still pending) FailEmptyFanout is not enabled
+# and the reaction harmlessly drops — that is its intended design.
 [[action.triggers]]
 name = "all_directions_drained_empty_fails_query"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
-target_action = "Fail"
+target_action = "FailEmptyFanout"
+drop_ok = true
 
-[[action.triggers.guard]]
-type = "max_count"
-field = "directions_pending"
-max = 0
-
-[[action.triggers.guard]]
-type = "max_count"
-field = "directions_completed"
-max = 0
-
-[[action.triggers.guard]]
+# Single trigger guard (NOT an array): scope the empty-fan-out fast-fail to the
+# design_language lane. Lane scoping needs string equality, a trigger-guard
+# primitive; the two count conditions ride the FailEmptyFanout action guard.
+[action.triggers.guard]
 type = "field_equals"
 field = "output_type"
 value = "design_language"
@@ -336,6 +347,33 @@ from = ["Submitted", "Researching", "Synthesizing", "Organizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "Pipeline failed at any stage."
+
+# All-quarantined fast-fail target (ARN-88, correction #2 sibling). Fired by the
+# DecrementDirectionsPending self-reaction (all_directions_drained_empty_fails_query)
+# on every barrier-narrowing decrement. The two count conditions a TRIGGER guard
+# cannot express as an array live here as an ACTION-level guard array: the fan-out
+# has fully drained (directions_pending == 0) and produced zero languages
+# (directions_completed == 0). When both hold the barrier opened into nothing —
+# every direction was Quarantined or Failed — so fail the query rather than hang
+# until the Synthesizing timeout. The design_language-lane scoping stays a SINGLE
+# trigger guard (field_equals output_type) on the firing reaction, because lane
+# scoping needs string equality, which is a trigger-guard primitive, not an action
+# guard. From Synthesizing only, so once the query has advanced (palette/art_style
+# Completed, or design-lane Organizing) the reaction is from-state-rejected — a
+# harmless drop, declared drop_ok on the trigger.
+[[action]]
+name = "FailEmptyFanout"
+kind = "input"
+from = ["Synthesizing"]
+to = "Failed"
+params = ["error_message"]
+# max_count is strict (val < max), so max=1 encodes "counter == 0" — matching
+# SynthesisComplete's directions_pending<1 barrier-open guard above.
+guard = [
+  { type = "max_count", var = "directions_pending", max = 1 },
+  { type = "max_count", var = "directions_completed", max = 1 },
+]
+hint = "Barrier drained empty (directions_pending==0, directions_completed==0): every direction was quarantined or failed and no language was produced to review or organize. Fails the query now rather than waiting for the Synthesizing timeout. Fired by the DecrementDirectionsPending self-reaction, which supplies error_message; the empty-fan-out counts are the action guard and the design_language-lane scoping is the firing reaction's single trigger guard."
 
 [[state_timeout]]
 state = "Researching"
