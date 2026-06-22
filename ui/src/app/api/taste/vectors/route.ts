@@ -72,11 +72,9 @@ export async function GET() {
   let anyLaneLoaded = false;
 
   try {
-    const languages = await listDesignLanguages(
-      "Status eq 'Published'",
-      undefined,
-      ["Id", "Status", "name", "slug", "tags", "tokens", "philosophy", "taste_vector", "taste_vector_model"],
-    );
+    // Full canonical read (no $select). The projected $select read omits some
+    // published languages, which would drop them from the taste/embedding space.
+    const languages = await listDesignLanguages("Status eq 'Published'");
     anyLaneLoaded = true;
     for (const lang of languages) {
       if (!lang.fields.name) continue;

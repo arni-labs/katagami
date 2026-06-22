@@ -18,14 +18,9 @@ export async function RelatedLanguages({
 
   let candidates: Awaited<ReturnType<typeof listDesignLanguages>>;
   try {
-    candidates = await listDesignLanguages("Status eq 'Published'", undefined, [
-      "Id",
-      "Status",
-      "name",
-      "slug",
-      "tags",
-      "tokens",
-    ]);
+    // Full canonical read (no $select) — the projected $select read omits some
+    // published languages, which would silently drop them from "related".
+    candidates = await listDesignLanguages("Status eq 'Published'");
   } catch {
     return null;
   }
