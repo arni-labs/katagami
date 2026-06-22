@@ -106,6 +106,8 @@
         <Property Name="SynthesizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DirectionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SynthesizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="DirectionsPending" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="DirectionsTotal" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="QualityReviewJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="OrganizeJobIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="OrganizeJobId" Type="Edm.String" Nullable="false" DefaultValue="" />

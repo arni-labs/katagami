@@ -124,6 +124,23 @@ input = "synth_input"
 [action.triggers.resolve_target]
 type = "create"
 
+# Fan-out barrier (ARN-88): queuing this direction's synthesize job widens the
+# parent query's barrier by one. Source-side one-shot — QueueSynthesis is the
+# lone Discovered->Synthesizing edge, so this increment fires exactly once.
+[[action.triggers]]
+name = "queue_synthesis_widens_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "IncrementDirectionsPending"
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "Complete"
 kind = "input"
@@ -131,6 +148,22 @@ from = ["Synthesizing"]
 to = "Completed"
 params = ["design_language_ids"]
 hint = "The design-language synthesize job for this direction completed."
+
+# Fan-out barrier (ARN-88): a terminal direction narrows the parent query's
+# barrier by one. CompletedIsFinal makes this one-shot per direction.
+[[action.triggers]]
+name = "direction_complete_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[action]]
 name = "CompletePalette"
@@ -140,6 +173,20 @@ to = "Completed"
 params = ["palette_system_ids"]
 hint = "The palette synthesize job for this direction completed."
 
+[[action.triggers]]
+name = "direction_complete_palette_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "CompleteArtStyle"
 kind = "input"
@@ -148,6 +195,20 @@ to = "Completed"
 params = ["art_style_ids"]
 hint = "The art-style synthesize job for this direction completed."
 
+[[action.triggers]]
+name = "direction_complete_art_style_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "Fail"
 kind = "input"
@@ -155,6 +216,24 @@ from = ["Discovered", "Synthesizing"]
 to = "Failed"
 params = ["error_message"]
 hint = "The direction could not be synthesized."
+
+# Fan-out barrier (ARN-88): a failed direction must also narrow the barrier so
+# one failure cannot stall the query forever. DecrementDirectionsPending is
+# from=[Synthesizing] on the query, so a Fail from the Discovered state (before
+# any increment landed) is from-state-rejected and cannot underflow the barrier.
+[[action.triggers]]
+name = "direction_fail_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[state_timeout]]
 state = "Synthesizing"

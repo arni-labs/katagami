@@ -294,13 +294,31 @@ principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
 
-[action.triggers.params]
-synthesize_job_id = ""
-synthesize_job_ids = "[]"
-
 [action.triggers.params_from]
 source_search_job_id = "Id"
 direction_ids = "direction_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Empty fan-out fast-fail (ARN-88): if source_search produced zero directions,
+# the barrier's directions_total stays 0 and SynthesisComplete can never open;
+# fail the query immediately instead of hanging until the Synthesizing timeout.
+[[action.triggers]]
+name = "empty_fanout_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_ids"
+value = "[]"
+
+[action.triggers.params]
+error_message = "source_search produced zero curation directions; nothing to synthesize."
 
 [action.triggers.resolve_target]
 type = "field"
@@ -329,30 +347,11 @@ temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 
-[[action.triggers]]
-name = "synthesis_creates_quality_review_job"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
-
-[action.triggers.guard]
-type = "field_equals"
-field = "direction_id"
-value = ""
-
-[action.triggers.params]
-job_type = "quality_review"
-completion_contract = "typed-v1"
-
-[action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "review_input"
-
-[action.triggers.resolve_target]
-type = "create"
-
+# ARN-88: per-direction synthesis no longer creates the quality_review job nor
+# advances the query directly (the old direction_id=="" guarded triggers never
+# fired for per-direction jobs, stalling the pipeline). Synthesis now completes
+# its CurationDirection, which drains the fan-out barrier; the barrier-open
+# advance and the single quality_review creation live on CurationQuery.
 [[action.triggers]]
 name = "synthesis_completes_direction"
 kind = "entity"
@@ -367,23 +366,20 @@ design_language_ids = "design_language_ids"
 type = "field"
 field = "direction_id"
 
+# ARN-88: record the per-direction synthesize job id AND its created language ids
+# on the parent query, so the barrier-open quality_review job can review every
+# language the fan-out produced. Each param is named after the list var
+# RecordSynthesizeJob appends (kernel ListAppend has no value_from; it reads
+# params.get(var)).
 [[action.triggers]]
-name = "synthesis_completion_advances_query"
+name = "synthesis_records_synthesize_job"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.guard]
-type = "field_equals"
-field = "direction_id"
-value = ""
-
-[action.triggers.params]
-organize_job_id = ""
-quality_review_job_ids = "[]"
+target_action = "RecordSynthesizeJob"
 
 [action.triggers.params_from]
+synthesize_job_ids = "Id"
 design_language_ids = "design_language_ids"
 
 [action.triggers.resolve_target]
@@ -628,39 +624,14 @@ principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
 
+# ARN-88: ResearchComplete no longer carries synthesize_job_id/synthesize_job_ids
+# (the barrier counters, not an id list, gate synthesis), so this legacy
+# compatibility trigger only forwards the params ResearchComplete still declares.
 [action.triggers.params]
 direction_ids = "[]"
-synthesize_job_ids = "[]"
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
-synthesize_job_id = "followup_job_id"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
-
-[[action]]
-name = "PublishSynthesisCompletion"
-kind = "internal"
-from = ["Finalizing"]
-to = "Completed"
-params = ["design_language_ids", "followup_job_id"]
-hint = "Legacy compatibility: record review/organize follow-up and advance parent query."
-
-[[action.triggers]]
-name = "legacy_synthesis_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.params]
-quality_review_job_ids = "[]"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-organize_job_id = "followup_job_id"
 
 [action.triggers.resolve_target]
 type = "field"
@@ -760,6 +731,16 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "Fail"
+
+# ARN-88: only non-direction jobs (source_search/quality_review/organize, which
+# carry direction_id=="") fail the query directly. A per-direction synthesize
+# job failure routes through job_failure_fails_direction -> CurationDirection.Fail
+# -> DecrementDirectionsPending, draining the barrier instead of racing the query
+# into Failed while sibling directions are still synthesizing.
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
 
 [action.triggers.params_from]
 error_message = "error_message"

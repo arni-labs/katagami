@@ -54,6 +54,23 @@ name = "synthesize_job_ids"
 type = "string"
 initial = "[]"
 
+# Fan-out barrier counters (ARN-88). directions_pending is the live count of
+# CurationDirections that have queued a synthesize job but not yet reached a
+# terminal outcome; it is widened (+1) at QueueSynthesis and narrowed (-1) on
+# every terminal direction edge (Complete* or Fail). directions_total is a
+# monotonic floor (only ever incremented) recording that at least one direction
+# existed, so a 0-direction query cannot satisfy the barrier. The barrier opens
+# exactly when directions_pending == 0 AND directions_total >= 1.
+[[state]]
+name = "directions_pending"
+type = "counter"
+initial = "0"
+
+[[state]]
+name = "directions_total"
+type = "counter"
+initial = "0"
+
 [[state]]
 name = "quality_review_job_ids"
 type = "string"
@@ -141,16 +158,91 @@ name = "ResearchComplete"
 kind = "input"
 from = ["Researching"]
 to = "Synthesizing"
-params = ["source_search_job_id", "synthesize_job_id", "direction_ids", "synthesize_job_ids"]
+params = ["source_search_job_id", "direction_ids"]
 hint = "Research phase completed. CurationDirection records have queued synthesis jobs."
+
+[[action]]
+name = "IncrementDirectionsPending"
+kind = "input"
+from = ["Researching", "Synthesizing"]
+params = ["direction_id"]
+hint = "One CurationDirection queued its synthesize job; widen the fan-out barrier by one. direction_id is carried only to scope the source-side exactly-once key; it is not stored."
+effect = [{ type = "increment", var = "directions_pending" }, { type = "increment", var = "directions_total" }]
+
+[[action]]
+name = "DecrementDirectionsPending"
+kind = "input"
+from = ["Synthesizing"]
+params = ["direction_id"]
+hint = "One CurationDirection reached a terminal outcome (Complete* or Fail); narrow the barrier by one. Re-evaluates the barrier-open advance via a same-id self reaction."
+effect = [{ type = "decrement", var = "directions_pending" }]
+
+[[action.triggers]]
+name = "decrement_reevaluates_barrier_open"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "SynthesisComplete"
+
+# Scope the barrier-open advance to the design_language lane only. The
+# palette/art_style lanes share the CurationDirection fan-out (so they widen
+# and drain the same counters), but they are terminal lanes that must NOT
+# advance to Organizing nor spawn a quality_review job. This guard keeps
+# ARN-88's fix precise to the design-language fan-out it targets and leaves the
+# other lanes' query-side behavior unchanged.
+[action.triggers.guard]
+type = "field_equals"
+field = "output_type"
+value = "design_language"
+
+[action.triggers.resolve_target]
+type = "same_id"
+
+[[action]]
+name = "RecordSynthesizeJob"
+kind = "input"
+from = ["Researching", "Synthesizing"]
+params = ["synthesize_job_ids", "design_language_ids"]
+hint = "Record a completed per-direction synthesize job id and its created design-language ids on the parent query, so the barrier-open quality_review job can be scoped to every language the fan-out produced. Does not gate the barrier; the counter does. Each param is named after the list var it appends so kernel ListAppend (which reads params.get(var)) writes it."
+effect = [
+  { type = "list_append", var = "synthesize_job_ids" },
+  { type = "list_append", var = "design_language_ids" }
+]
 
 [[action]]
 name = "SynthesisComplete"
 kind = "input"
 from = ["Synthesizing"]
 to = "Organizing"
-params = ["design_language_ids", "organize_job_id", "quality_review_job_ids"]
-hint = "Synthesis completed. Quality review is now driving the organizing stage."
+params = []
+guard = [
+  { type = "max_count", var = "directions_pending", max = 1 },
+  { type = "min_count", var = "directions_total", min = 1 }
+]
+hint = "Barrier open: every queued direction reached a terminal outcome (directions_pending==0) and at least one direction ever existed (directions_total>=1). Fired parameterless by the decrement self-reaction; reads accumulated design_language_ids/workspace_id from query state to create the single quality_review job. No params are supplied by the self-reaction, so accumulated state is preserved."
+
+[[action.triggers]]
+name = "barrier_open_creates_quality_review_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.params]
+job_type = "quality_review"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+workspace_id = "workspace_id"
+query_id = "Id"
+# Scope the review to every language the fan-out produced (accumulated on the
+# query by RecordSynthesizeJob). build_session_message embeds the job's `input`;
+# the review-quality skill reviews these languages (or ALL for the query if the
+# list is empty). `input` is a declared ConfigureAndSubmit param.
+input = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "create"
 
 [[action]]
 name = "PaletteSynthesisComplete"
