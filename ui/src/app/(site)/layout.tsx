@@ -33,14 +33,9 @@ async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
   try {
     // Search only surfaces the public catalog — Published only (palettes and
     // art styles are already Published-only via their default filter).
-    const languages = await listDesignLanguages("Status eq 'Published'", undefined, [
-      "Id",
-      "Status",
-      "name",
-      "slug",
-      "tags",
-      "tokens",
-    ]);
+    // Full canonical read (no $select): Temper's projected $select read path
+    // silently omits some published languages, which would hide them from search.
+    const languages = await listDesignLanguages("Status eq 'Published'");
     for (const lang of languages) {
       if (!lang.fields.name) continue;
       const colors = parseJson<TokensLite>(lang.fields.tokens)?.colors ?? {};
