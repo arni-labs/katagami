@@ -16,30 +16,30 @@ class ThumbnailContractTests(unittest.TestCase):
 
     def test_design_language_tracks_thumbnail_attachment(self):
         self.assertIn("has_thumbnail", self.states)
-        self.assertIn("thumbnail_verified", self.states)
         self.assertIn("has_published_assets", self.states)
+        # The WASM-trusted thumbnail_verified copy-boolean was deleted in PR-5;
+        # thumbnail readiness is now engine-enforced via the cross_entity_state
+        # File guard on SubmitForReview/Publish.
+        self.assertNotIn("thumbnail_verified", self.states)
+        self.assertNotIn("VerifyThumbnail", self.actions)
 
         attach = self.actions["AttachThumbnail"]
         self.assertEqual(attach["from"], ["Draft", "UnderReview"])
         self.assertEqual(attach["params"], ["thumbnail_file_id"])
         self.assertTrue(self._sets_bool("AttachThumbnail", "has_thumbnail", "true"))
-        self.assertTrue(
+        self.assertFalse(
             self._sets_bool("AttachThumbnail", "thumbnail_verified", "false")
         )
         self.assertTrue(
             self._sets_bool("AttachThumbnail", "has_published_assets", "false")
         )
 
-        verify = self.actions["VerifyThumbnail"]
-        self.assertEqual(verify["from"], ["Draft", "UnderReview", "Published"])
-        self.assertIn({"type": "is_true", "var": "has_thumbnail"}, verify["guard"])
-        self.assertTrue(
-            self._sets_bool("VerifyThumbnail", "thumbnail_verified", "true")
-        )
-
         attach_verified = self.actions["AttachVerifiedThumbnail"]
         self.assertEqual(attach_verified["from"], ["Draft", "UnderReview"])
         self.assertIn("Revise first", attach_verified["hint"])
+        self.assertFalse(
+            self._sets_bool("AttachVerifiedThumbnail", "thumbnail_verified", "true")
+        )
 
         assets = self.actions["AttachPublishedAssets"]
         self.assertEqual(assets["from"], ["Draft", "UnderReview", "Published"])
@@ -57,8 +57,6 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn('Property Name="DesignMdAssetUrl"', csdl)
         self.assertIn('Property Name="HasPublishedAssets"', csdl)
         self.assertIn('Property Name="HasThumbnail"', csdl)
-        self.assertIn('Property Name="ThumbnailVerified"', csdl)
-        self.assertIn('Property Name="HasPublishedAssets"', csdl)
 
     def _effect_entries(self, action_name):
         effect = self.actions[action_name].get("effect", [])
@@ -79,12 +77,23 @@ class ThumbnailContractTests(unittest.TestCase):
                 return True
         return False
 
-    def test_publish_requires_verified_thumbnail(self):
+    def test_publish_requires_ready_thumbnail(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
-        self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
         self.assertIn({"type": "is_true", "var": "has_published_assets"}, guards)
+        # Engine-enforced thumbnail readiness replaces the deleted
+        # is_true thumbnail_verified copy-boolean guard.
+        self.assertNotIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+        self.assertIn(
+            {
+                "type": "cross_entity_state",
+                "entity_type": "File",
+                "entity_id_source": "thumbnail_file_id",
+                "required_status": ["Ready", "Locked"],
+            },
+            guards,
+        )
 
         invariants = {
             invariant["name"]: invariant for invariant in self.spec["invariant"]
@@ -93,10 +102,7 @@ class ThumbnailContractTests(unittest.TestCase):
             invariants["PublishedRequiresThumbnail"]["assert"],
             "has_thumbnail",
         )
-        self.assertEqual(
-            invariants["PublishedRequiresVerifiedThumbnail"]["assert"],
-            "thumbnail_verified",
-        )
+        self.assertNotIn("PublishedRequiresVerifiedThumbnail", invariants)
         self.assertEqual(
             invariants["PublishedRequiresPublicAssets"]["assert"],
             "has_published_assets",
@@ -140,11 +146,22 @@ class ThumbnailContractTests(unittest.TestCase):
     def test_submit_for_review_requires_thumbnail(self):
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
-        self.assertIn({"type": "is_true", "var": "embodiment_verified"}, guards)
+        self.assertIn({"type": "is_true", "var": "has_embodiment"}, guards)
         self.assertIn({"type": "is_true", "var": "has_thumbnail"}, guards)
-        self.assertIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
-        self.assertIn("finalizer-verified embodiment file", submit["hint"])
-        self.assertIn("verified gallery thumbnail", submit["hint"])
+        # The deleted *_verified copy-booleans are replaced by cross_entity_state
+        # File Ready/Locked guards on the embodiment and thumbnail Files.
+        self.assertNotIn({"type": "is_true", "var": "embodiment_verified"}, guards)
+        self.assertNotIn({"type": "is_true", "var": "thumbnail_verified"}, guards)
+        for field in ["embodiment_file_id", "thumbnail_file_id"]:
+            self.assertIn(
+                {
+                    "type": "cross_entity_state",
+                    "entity_type": "File",
+                    "entity_id_source": field,
+                    "required_status": ["Ready", "Locked"],
+                },
+                guards,
+            )
 
     def test_quality_finalizer_gates_on_thumbnail(self):
         source = (
@@ -158,7 +175,10 @@ class ThumbnailContractTests(unittest.TestCase):
         self.assertIn("fn verify_file_field", source)
         self.assertIn("thumbnail_mime_type_is_acceptable", source)
         self.assertIn("thumbnail_payload_looks_text_encoded_image", source)
-        self.assertIn('"VerifyThumbnail"', source)
+        # The finalizer no longer dispatches the WASM-trusted VerifyThumbnail
+        # verifier action; thumbnail readiness is engine-enforced via the spec
+        # cross_entity_state File guard. The byte-level content check stays.
+        self.assertNotIn('"VerifyThumbnail"', source)
         self.assertIn('"thumbnail_file_id"', source)
         self.assertIn('"thumbnail"', source)
         self.assertIn("fn publish_public_assets", source)
@@ -226,7 +246,8 @@ class ThumbnailContractTests(unittest.TestCase):
             '"thumbnail_file_id"',
             source,
         )
-        self.assertIn('"VerifyThumbnail"', source)
+        # VerifyThumbnail dispatch removed in PR-5; readiness is engine-enforced.
+        self.assertNotIn('"VerifyThumbnail"', source)
 
     def test_synthesize_skill_generates_and_attaches_thumbnail(self):
         skill = (

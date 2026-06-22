@@ -37,11 +37,23 @@ class ShadcnExportContractTests(unittest.TestCase):
 
     def test_design_language_tracks_shadcn_export(self):
         self.assertIn("has_shadcn_export", self.states)
-        self.assertIn("shadcn_export_verified", self.states)
         self.assertIn("has_shadcn_component_spec", self.states)
-        self.assertIn("shadcn_component_spec_verified", self.states)
         self.assertIn("has_shadcn_preview_shots", self.states)
-        self.assertIn("shadcn_preview_shots_verified", self.states)
+        # PR-5 deleted the WASM-trusted shadcn *_verified copy-booleans and
+        # their Verify* actions; readiness is engine-enforced via the File
+        # cross_entity_state guards on SubmitForReview/Publish.
+        for var in [
+            "shadcn_export_verified",
+            "shadcn_component_spec_verified",
+            "shadcn_preview_shots_verified",
+        ]:
+            self.assertNotIn(var, self.states)
+        for action in [
+            "VerifyShadcnExport",
+            "VerifyShadcnComponentSpec",
+            "VerifyShadcnPreviewShots",
+        ]:
+            self.assertNotIn(action, self.actions)
 
         attach = self.actions["AttachShadcnExport"]
         self.assertEqual(attach["from"], ["Draft", "UnderReview"])
@@ -56,17 +68,10 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertTrue(
             self._sets_bool("AttachShadcnExport", "has_shadcn_export", "true")
         )
-        self.assertTrue(
+        self.assertFalse(
             self._sets_bool(
                 "AttachShadcnExport", "shadcn_export_verified", "false"
             )
-        )
-
-        verify = self.actions["VerifyShadcnExport"]
-        self.assertEqual(verify["from"], ["Draft", "UnderReview", "Published"])
-        self.assertIn({"type": "is_true", "var": "has_shadcn_export"}, verify["guard"])
-        self.assertTrue(
-            self._sets_bool("VerifyShadcnExport", "shadcn_export_verified", "true")
         )
 
         component = self.actions["AttachShadcnComponentSpec"]
@@ -86,13 +91,6 @@ class ShadcnExportContractTests(unittest.TestCase):
                 "true",
             )
         )
-        self.assertTrue(
-            self._sets_bool(
-                "AttachShadcnComponentSpec",
-                "shadcn_component_spec_verified",
-                "false",
-            )
-        )
 
         shots = self.actions["AttachShadcnPreviewShots"]
         self.assertEqual(shots["from"], ["Draft", "UnderReview"])
@@ -107,13 +105,6 @@ class ShadcnExportContractTests(unittest.TestCase):
         self.assertTrue(
             self._sets_bool(
                 "AttachShadcnPreviewShots", "has_shadcn_preview_shots", "true"
-            )
-        )
-        self.assertTrue(
-            self._sets_bool(
-                "AttachShadcnPreviewShots",
-                "shadcn_preview_shots_verified",
-                "false",
             )
         )
 
@@ -135,52 +126,70 @@ class ShadcnExportContractTests(unittest.TestCase):
                     self._sets_bool(action_name, "has_shadcn_export", "false")
                 )
                 self.assertTrue(
-                    self._sets_bool(action_name, "shadcn_export_verified", "false")
-                )
-                self.assertTrue(
                     self._sets_bool(
                         action_name, "has_shadcn_component_spec", "false"
                     )
                 )
                 self.assertTrue(
-                    self._sets_bool(
-                        action_name, "shadcn_component_spec_verified", "false"
-                    )
-                )
-                self.assertTrue(
                     self._sets_bool(action_name, "has_shadcn_preview_shots", "false")
                 )
-                self.assertTrue(
-                    self._sets_bool(
-                        action_name, "shadcn_preview_shots_verified", "false"
+                # The shadcn *_verified copy-booleans were deleted in PR-5.
+                for verified in [
+                    "shadcn_export_verified",
+                    "shadcn_component_spec_verified",
+                    "shadcn_preview_shots_verified",
+                ]:
+                    self.assertFalse(
+                        self._sets_bool(action_name, verified, "false")
                     )
-                )
 
     def test_shadcn_artifacts_are_publish_gates(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         for var in [
             "has_shadcn_export",
-            "shadcn_export_verified",
             "has_shadcn_component_spec",
-            "shadcn_component_spec_verified",
             "has_shadcn_preview_shots",
-            "shadcn_preview_shots_verified",
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
+        # The shadcn *_verified copy-boolean guards are replaced by File
+        # Ready/Locked cross_entity_state guards on every shadcn artifact File.
+        for var in [
+            "shadcn_export_verified",
+            "shadcn_component_spec_verified",
+            "shadcn_preview_shots_verified",
+        ]:
+            self.assertNotIn({"type": "is_true", "var": var}, guards)
+        for field in [
+            "shadcn_export_file_id",
+            "shadcn_component_spec_file_id",
+            "shadcn_preview_shots_file_id",
+        ]:
+            self.assertIn(
+                {
+                    "type": "cross_entity_state",
+                    "entity_type": "File",
+                    "entity_id_source": field,
+                    "required_status": ["Ready", "Locked"],
+                },
+                guards,
+            )
 
     def test_shadcn_artifacts_are_review_gates(self):
         submit = self.actions["SubmitForReview"]
         guards = submit.get("guard", [])
         for var in [
             "has_shadcn_export",
-            "shadcn_export_verified",
             "has_shadcn_component_spec",
-            "shadcn_component_spec_verified",
             "has_shadcn_preview_shots",
-            "shadcn_preview_shots_verified",
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
+        for var in [
+            "shadcn_export_verified",
+            "shadcn_component_spec_verified",
+            "shadcn_preview_shots_verified",
+        ]:
+            self.assertNotIn({"type": "is_true", "var": var}, guards)
         for field in [
             "shadcn_export_file_id",
             "shadcn_component_spec_file_id",
@@ -208,19 +217,23 @@ class ShadcnExportContractTests(unittest.TestCase):
             "ShadcnExportFormatVersion",
             "ShadcnExportManifest",
             "HasShadcnExport",
-            "ShadcnExportVerified",
             "ShadcnComponentSpecFileId",
             "ShadcnComponentSpecFormatVersion",
             "ShadcnComponentSpecManifest",
             "HasShadcnComponentSpec",
-            "ShadcnComponentSpecVerified",
             "ShadcnPreviewShotsFileId",
             "ShadcnPreviewShotsFormatVersion",
             "ShadcnPreviewShotsManifest",
             "HasShadcnPreviewShots",
-            "ShadcnPreviewShotsVerified",
         ]:
             self.assertIn(prop, props)
+        # PR-5 removed the WASM-trusted shadcn *Verified copy-boolean projections.
+        for prop in [
+            "ShadcnExportVerified",
+            "ShadcnComponentSpecVerified",
+            "ShadcnPreviewShotsVerified",
+        ]:
+            self.assertNotIn(prop, props)
 
     def test_finalizer_verifies_agent_attached_shadcn_artifacts(self):
         source = (
@@ -237,13 +250,10 @@ class ShadcnExportContractTests(unittest.TestCase):
             "registry:theme",
             "cssVars",
             "componentManifest",
-            "VerifyShadcnExport",
             "fn verify_shadcn_component_manifest",
             "fn verify_preview_shots_body",
             '"katagami:shadcn-preview-shots"',
             "scene_len < 3",
-            "VerifyShadcnComponentSpec",
-            "VerifyShadcnPreviewShots",
             "verify_forced_shadcn_refresh",
             "force_agent_shadcn_artifact_refresh",
             "ShadSync visual profile",
@@ -263,6 +273,11 @@ class ShadcnExportContractTests(unittest.TestCase):
             "AttachShadcnExport",
             "AttachShadcnComponentSpec",
             "AttachShadcnPreviewShots",
+            # PR-5 removed the WASM-trusted Verify* shadcn dispatches; the
+            # byte-level content checks above stay, readiness is engine-enforced.
+            "VerifyShadcnExport",
+            "VerifyShadcnComponentSpec",
+            "VerifyShadcnPreviewShots",
         ]:
             self.assertNotIn(fragment, source)
 

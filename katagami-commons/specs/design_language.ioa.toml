@@ -54,21 +54,11 @@ name = "has_embodiment"
 type = "bool"
 initial = "false"
 
-[[state]]
-name = "embodiment_verified"
-type = "bool"
-initial = "false"
-
 # Compositions = the bespoke Landing + Dashboard screens. Gated identically to
-# the element embodiment: attached, then finalizer-verified (files read, checked
-# self-contained + tokenized, landing carries the hero slot) before publish.
+# the element embodiment: attached, then engine-checked via cross_entity_state
+# File Ready/Locked guards (files durably stored) before publish.
 [[state]]
 name = "has_compositions"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "compositions_verified"
 type = "bool"
 initial = "false"
 
@@ -83,17 +73,7 @@ type = "bool"
 initial = "false"
 
 [[state]]
-name = "design_md_verified"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "has_shadcn_export"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "shadcn_export_verified"
 type = "bool"
 initial = "false"
 
@@ -103,27 +83,12 @@ type = "bool"
 initial = "false"
 
 [[state]]
-name = "shadcn_component_spec_verified"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "has_shadcn_preview_shots"
 type = "bool"
 initial = "false"
 
 [[state]]
-name = "shadcn_preview_shots_verified"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "has_thumbnail"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "thumbnail_verified"
 type = "bool"
 initial = "false"
 
@@ -188,7 +153,7 @@ initial = 0
 name = "SetName"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["name", "slug"]
 hint = "Set the design language name and URL-safe slug."
 
@@ -204,13 +169,9 @@ effect = [
   { type = "set_bool", var = "has_guidance", value = "true" },
   { type = "set_bool", var = "has_design_md", value = "false" },
   { type = "set_bool", var = "has_valid_design_md", value = "false" },
-  { type = "set_bool", var = "design_md_verified", value = "false" },
   { type = "set_bool", var = "has_shadcn_export", value = "false" },
-  { type = "set_bool", var = "shadcn_export_verified", value = "false" },
   { type = "set_bool", var = "has_shadcn_component_spec", value = "false" },
-  { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" },
   { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" },
-  { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" },
   { type = "set_bool", var = "has_published_assets", value = "false" },
   { type = "set_bool", var = "quality_review_passed", value = "false" }
 ]
@@ -221,7 +182,7 @@ hint = "Set the complete core spec for a newly synthesized or substantially revi
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_philosophy", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_philosophy", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["philosophy"]
 hint = "Write or update the Philosophy section (values, anti-values, aesthetic lineage)."
 
@@ -229,7 +190,7 @@ hint = "Write or update the Philosophy section (values, anti-values, aesthetic l
 name = "SetTokens"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_tokens", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_tokens", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["tokens"]
 hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevation, motion, opacity)."
 
@@ -237,7 +198,7 @@ hint = "Set design tokens (colors, typography, spacing, radii, shadows, elevatio
 name = "SetRules"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_rules", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_rules", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["rules"]
 hint = "Set compositional rules (how tokens combine to form elements)."
 
@@ -245,7 +206,7 @@ hint = "Set compositional rules (how tokens combine to form elements)."
 name = "SetLayout"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_layout", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_layout", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["layout_principles"]
 hint = "Set layout principles (density, grid, whitespace, responsive)."
 
@@ -253,7 +214,7 @@ hint = "Set layout principles (density, grid, whitespace, responsive)."
 name = "SetGuidance"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_guidance", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_guidance", value = "true" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["guidance"]
 hint = "Set guidance section (do's, don'ts, usage context)."
 
@@ -261,7 +222,7 @@ hint = "Set guidance section (do's, don'ts, usage context)."
 name = "SetImageryDirection"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["imagery_direction"]
 hint = "Set imagery & illustration direction (illustration_style, hero_image_direction, icon_style, image_gen_prompts)."
 
@@ -269,7 +230,7 @@ hint = "Set imagery & illustration direction (illustration_style, hero_image_dir
 name = "SetGenerativeCanvas"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["generative_canvas"]
 hint = "Set generative/interactive canvas direction (WebGL techniques, canvas effects, shader palette, animation philosophy)."
 
@@ -279,109 +240,57 @@ hint = "Set generative/interactive canvas direction (WebGL techniques, canvas ef
 name = "AttachEmbodiment"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "embodiment_verified", value = "false" }, { type = "set_bool", var = "has_thumbnail", value = "false" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_embodiment", value = "true" }, { type = "set_bool", var = "has_thumbnail", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_design_md", value = "false" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "has_shadcn_export", value = "false" }, { type = "set_bool", var = "has_shadcn_component_spec", value = "false" }, { type = "set_bool", var = "has_shadcn_preview_shots", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["embodiment_file_id", "element_count", "composition_count", "embodiment_format"]
-hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML. Re-attaching an embodiment invalidates the derived gallery thumbnail until regenerated and verified."
-
-[[action]]
-name = "VerifyEmbodiment"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-effect = [{ type = "set_bool", var = "embodiment_verified", value = "true" }]
-params = []
-hint = "Mark the attached embodiment as verified after the finalizer has read the referenced file and checked that it is non-empty."
+hint = "Attach embodiment file. Set embodiment_format to 'tsx' for Radix TSX or 'html' for legacy HTML. Re-attaching an embodiment invalidates the derived gallery thumbnail until regenerated."
 
 [[action]]
 name = "AttachDesignMd"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "false" }, { type = "set_bool", var = "design_md_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["design_md_file_id", "design_md_lint_result", "design_md_format_version"]
-hint = "Attach a generated DESIGN.md artifact candidate. Published languages must Revise first because this invalidates publish-required verification booleans until the finalizer verifies the referenced file."
-
-[[action]]
-name = "VerifyDesignMd"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-effect = [{ type = "set_bool", var = "has_design_md", value = "true" }, { type = "set_bool", var = "has_valid_design_md", value = "true" }, { type = "set_bool", var = "design_md_verified", value = "true" }]
-params = []
-hint = "Mark the attached DESIGN.md as verified after the finalizer has read the referenced file and confirmed the lint metadata."
+hint = "Attach a generated DESIGN.md artifact candidate together with its clean lint result (errors=0, warnings=0). has_valid_design_md reflects that lint metadata; the finalizer rejects the job before SubmitForReview if the attached lint result is not clean. Published languages must Revise first because this invalidates publish-required state until re-attached."
 
 [[action]]
 name = "AttachShadcnExport"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_shadcn_export", value = "true" }, { type = "set_bool", var = "shadcn_export_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_shadcn_export", value = "true" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["shadcn_export_file_id", "shadcn_export_format_version", "shadcn_export_manifest"]
 hint = "Attach a generated shadcn/ui registry:theme JSON projection. Katagami remains the source of truth; Published languages must Revise first before re-attaching this derived artifact."
-
-[[action]]
-name = "VerifyShadcnExport"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_shadcn_export" }]
-effect = [{ type = "set_bool", var = "shadcn_export_verified", value = "true" }]
-params = []
-hint = "Mark the attached shadcn/ui registry theme as verified after the finalizer has read the referenced JSON file."
 
 [[action]]
 name = "AttachShadcnComponentSpec"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_shadcn_component_spec", value = "true" }, { type = "set_bool", var = "shadcn_component_spec_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_shadcn_component_spec", value = "true" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["shadcn_component_spec_file_id", "shadcn_component_spec_format_version", "shadcn_component_spec_manifest"]
 hint = "Attach the language-specific shadcn/ui component recipe artifact. This is agent-authored guidance for making shadcn primitives carry the Katagami language, not a generic token projection."
-
-[[action]]
-name = "VerifyShadcnComponentSpec"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_shadcn_component_spec" }]
-effect = [{ type = "set_bool", var = "shadcn_component_spec_verified", value = "true" }]
-params = []
-hint = "Mark the attached shadcn/ui component recipe artifact as verified after the finalizer confirms it covers primitives, recipes, and usage rules."
 
 [[action]]
 name = "AttachShadcnPreviewShots"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_shadcn_preview_shots", value = "true" }, { type = "set_bool", var = "shadcn_preview_shots_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_shadcn_preview_shots", value = "true" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["shadcn_preview_shots_file_id", "shadcn_preview_shots_format_version", "shadcn_preview_shots_manifest"]
 hint = "Attach the language-specific shadcn/ui preview-shot manifest describing the canonical app scenes agents should render for this language."
-
-[[action]]
-name = "VerifyShadcnPreviewShots"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_shadcn_preview_shots" }]
-effect = [{ type = "set_bool", var = "shadcn_preview_shots_verified", value = "true" }]
-params = []
-hint = "Mark the shadcn/ui preview-shot manifest as verified after the finalizer confirms it names concrete shots, components, and visual intent."
 
 [[action]]
 name = "AttachThumbnail"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach or update the static desktop gallery thumbnail image. The finalizer must VerifyThumbnail after it confirms the referenced file is an image payload."
-
-[[action]]
-name = "VerifyThumbnail"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_thumbnail" }]
-effect = [{ type = "set_bool", var = "thumbnail_verified", value = "true" }]
-params = []
-hint = "Mark the attached thumbnail as verified after the finalizer has read the referenced file and confirmed it is an image payload."
+hint = "Attach or update the static desktop gallery thumbnail image. The Publish/SubmitForReview cross_entity_state guards require the referenced thumbnail File to be Ready/Locked."
 
 [[action]]
 name = "AttachVerifiedThumbnail"
 kind = "internal"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach a thumbnail that the finalizer or backfill job has already validated. Published languages must Revise first because changing source media invalidates public artifacts."
+hint = "Attach a thumbnail that a backfill job has already validated. Published languages must Revise first because changing source media invalidates public artifacts."
 
 [[action]]
 name = "AttachPublishedAssets"
@@ -439,17 +348,9 @@ hint = "Link DesignSource entities that informed this language."
 name = "AttachCompositions"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_compositions", value = "true" }, { type = "set_bool", var = "compositions_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_compositions", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["landing_file_id", "dashboard_file_id"]
-hint = "Attach the language's bespoke composition embodiments: a Landing and a Dashboard screen (self-contained HTML, tokenized with color CSS vars + a full-bleed {--hero-image} slot on the landing). Authored uniquely per language alongside the element embodiment, following the same taste rules. These are what the Remix Studio recolors + fills. Re-attaching invalidates quality review + published assets until re-verified. To replace compositions on a Published language, Revise first."
-
-[[action]]
-name = "VerifyCompositions"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-effect = [{ type = "set_bool", var = "compositions_verified", value = "true" }]
-params = []
-hint = "Mark the Landing + Dashboard compositions verified after the finalizer has read both files and checked each is self-contained, tokenized HTML (color vars + the landing's hero slot)."
+hint = "Attach the language's bespoke composition embodiments: a Landing and a Dashboard screen (self-contained HTML, tokenized with color CSS vars + a full-bleed {--hero-image} slot on the landing). Authored uniquely per language alongside the element embodiment, following the same taste rules. These are what the Remix Studio recolors + fills. Re-attaching invalidates quality review + published assets. The Publish/SubmitForReview cross_entity_state guards require both Landing and Dashboard Files to be Ready/Locked. To replace compositions on a Published language, Revise first."
 
 # --- Actions: Lineage ---
 
@@ -467,15 +368,15 @@ name = "SubmitForReview"
 kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "compositions_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "shadcn_export_verified" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "shadcn_component_spec_verified" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "is_true", var = "shadcn_preview_shots_verified" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "embodiment_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "landing_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "dashboard_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "design_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_export_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_component_spec_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_preview_shots_file_id", required_status = ["Ready", "Locked"] }]
-hint = "Submit for curator review. Requires all five spec sections, a finalizer-verified embodiment file, finalizer-verified Landing + Dashboard compositions, and a verified gallery thumbnail. Cross-entity guards require the embodiment, Landing, Dashboard, and thumbnail Files to be Ready (bytes durably stored) so an unready/404 file cannot leave Draft."
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "embodiment_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "landing_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "dashboard_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "design_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_export_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_component_spec_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_preview_shots_file_id", required_status = ["Ready", "Locked"] }]
+hint = "Submit for curator review. Requires all five spec sections plus the embodiment, Landing + Dashboard compositions, thumbnail, DESIGN.md, and shadcn artifacts present. Cross-entity guards require each referenced File (embodiment, Landing, Dashboard, thumbnail, DESIGN.md, shadcn export/component spec/preview shots) to be Ready/Locked (bytes durably stored) so an unready/404 file cannot leave Draft."
 
 [[action]]
 name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "embodiment_verified" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "compositions_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "design_md_verified" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "shadcn_export_verified" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "shadcn_component_spec_verified" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "is_true", var = "shadcn_preview_shots_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "embodiment_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "landing_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "dashboard_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "design_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_export_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_component_spec_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_preview_shots_file_id", required_status = ["Ready", "Locked"] }]
+guard = [{ type = "is_true", var = "has_philosophy" }, { type = "is_true", var = "has_tokens" }, { type = "is_true", var = "has_rules" }, { type = "is_true", var = "has_layout" }, { type = "is_true", var = "has_guidance" }, { type = "is_true", var = "has_embodiment" }, { type = "is_true", var = "has_compositions" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_design_md" }, { type = "is_true", var = "has_valid_design_md" }, { type = "is_true", var = "has_shadcn_export" }, { type = "is_true", var = "has_shadcn_component_spec" }, { type = "is_true", var = "has_shadcn_preview_shots" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "embodiment_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "landing_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "dashboard_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "design_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_export_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_component_spec_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "shadcn_preview_shots_file_id", required_status = ["Ready", "Locked"] }]
 effect = [{ type = "increment", field = "version" }]
 hint = "Curator approves and publishes. Requires verified spec sections, embodiment, Landing + Dashboard compositions, thumbnail, DESIGN.md, shadcn/ui export, shadcn component recipes, preview shots, public assets, and quality review."
 
@@ -554,29 +455,14 @@ when = ["Published"]
 assert = "has_embodiment"
 
 [[invariant]]
-name = "PublishedRequiresVerifiedEmbodiment"
-when = ["Published"]
-assert = "embodiment_verified"
-
-[[invariant]]
 name = "PublishedRequiresCompositions"
 when = ["Published"]
 assert = "has_compositions"
 
 [[invariant]]
-name = "PublishedRequiresVerifiedCompositions"
-when = ["Published"]
-assert = "compositions_verified"
-
-[[invariant]]
 name = "PublishedRequiresThumbnail"
 when = ["Published"]
 assert = "has_thumbnail"
-
-[[invariant]]
-name = "PublishedRequiresVerifiedThumbnail"
-when = ["Published"]
-assert = "thumbnail_verified"
 
 [[invariant]]
 name = "PublishedRequiresAllSections"
@@ -587,11 +473,6 @@ assert = "has_philosophy && has_tokens && has_rules && has_layout && has_guidanc
 name = "PublishedRequiresValidDesignMd"
 when = ["Published"]
 assert = "has_valid_design_md"
-
-[[invariant]]
-name = "PublishedRequiresVerifiedDesignMd"
-when = ["Published"]
-assert = "design_md_verified"
 
 [[invariant]]
 name = "PublishedRequiresPublicAssets"

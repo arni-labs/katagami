@@ -48,27 +48,12 @@ type = "bool"
 initial = "false"
 
 [[state]]
-name = "reference_images_verified"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "has_proof_shots"
 type = "bool"
 initial = "false"
 
 [[state]]
-name = "proof_shots_verified"
-type = "bool"
-initial = "false"
-
-[[state]]
 name = "has_thumbnail"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "thumbnail_verified"
 type = "bool"
 initial = "false"
 
@@ -160,18 +145,9 @@ hint = "Set usage guidance (do's, don'ts, what subjects suit this style, when to
 name = "AttachReferenceImages"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "reference_images_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role). Published styles must Revise first."
-
-[[action]]
-name = "VerifyReferenceImages"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_reference_images" }]
-effect = [{ type = "set_bool", var = "reference_images_verified", value = "true" }]
-params = []
-hint = "Mark reference images verified after the finalizer confirms each referenced file is a non-empty image payload."
+hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role). The Publish/SubmitForReview cross_entity_state guards require every referenced image File to be Ready/Locked. Published styles must Revise first."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
@@ -179,18 +155,9 @@ hint = "Mark reference images verified after the finalizer confirms each referen
 name = "AttachProofShots"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "proof_shots_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects."
-
-[[action]]
-name = "VerifyProofShots"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_proof_shots" }]
-effect = [{ type = "set_bool", var = "proof_shots_verified", value = "true" }]
-params = []
-hint = "Mark proof shots verified after the finalizer confirms each referenced file is a non-empty image payload."
+hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects. The Publish cross_entity_state guard requires every referenced proof-shot File to be Ready/Locked."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -198,26 +165,17 @@ hint = "Mark proof shots verified after the finalizer confirms each referenced f
 name = "AttachThumbnail"
 kind = "input"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "false" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach or update the static gallery thumbnail (representative reference shot). The finalizer must VerifyThumbnail after confirming it is an image payload."
-
-[[action]]
-name = "VerifyThumbnail"
-kind = "internal"
-from = ["Draft", "UnderReview", "Published"]
-guard = [{ type = "is_true", var = "has_thumbnail" }]
-effect = [{ type = "set_bool", var = "thumbnail_verified", value = "true" }]
-params = []
-hint = "Mark the attached thumbnail as verified after the finalizer has read the referenced file and confirmed it is an image payload."
+hint = "Attach or update the static gallery thumbnail (representative reference shot). The Publish/SubmitForReview cross_entity_state guards require the referenced thumbnail File to be Ready/Locked."
 
 [[action]]
 name = "AttachVerifiedThumbnail"
 kind = "internal"
 from = ["Draft", "UnderReview"]
-effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "thumbnail_verified", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
 params = ["thumbnail_file_id"]
-hint = "Attach a thumbnail already validated by the finalizer or a backfill job. Published styles must Revise first."
+hint = "Attach a thumbnail already validated by a backfill job. Published styles must Revise first."
 
 [[action]]
 name = "AttachPublishedAssets"
@@ -287,17 +245,17 @@ name = "SubmitForReview"
 kind = "internal"
 from = ["Draft"]
 to = "UnderReview"
-guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "reference_images_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }]
-hint = "Submit for curator review. Requires medium, prompt template, finalizer-verified reference images, and a verified thumbnail."
+guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "has_thumbnail" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "reference_image_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
+hint = "Submit for curator review. Requires medium, prompt template, reference images, and a thumbnail. Cross-entity guards require every referenced reference-image File and the thumbnail File to be Ready/Locked (bytes durably stored) so an unready/404 file cannot leave Draft."
 
 [[action]]
 name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_slot_recipes" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "reference_images_verified" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "proof_shots_verified" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "thumbnail_verified" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }]
+guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_slot_recipes" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "reference_image_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "proof_shots_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Requires medium, prompt template, slot recipes, verified reference images, verified proof shots, verified thumbnail, quality review, and public assets."
+hint = "Curator approves and publishes. Requires medium, prompt template, slot recipes, reference images, proof shots, thumbnail, quality review, and public assets. Cross-entity guards require every referenced reference-image and proof-shot File and the thumbnail File to be Ready/Locked so an unready/404 artifact cannot publish."
 
 [[action]]
 name = "Revise"
@@ -389,29 +347,14 @@ when = ["Published"]
 assert = "has_reference_images"
 
 [[invariant]]
-name = "PublishedRequiresVerifiedReferenceImages"
-when = ["Published"]
-assert = "reference_images_verified"
-
-[[invariant]]
 name = "PublishedRequiresProofShots"
 when = ["Published"]
 assert = "has_proof_shots"
 
 [[invariant]]
-name = "PublishedRequiresVerifiedProofShots"
-when = ["Published"]
-assert = "proof_shots_verified"
-
-[[invariant]]
 name = "PublishedRequiresThumbnail"
 when = ["Published"]
 assert = "has_thumbnail"
-
-[[invariant]]
-name = "PublishedRequiresVerifiedThumbnail"
-when = ["Published"]
-assert = "thumbnail_verified"
 
 [[invariant]]
 name = "PublishedRequiresPublicAssets"
