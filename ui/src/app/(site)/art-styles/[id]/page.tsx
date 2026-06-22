@@ -24,6 +24,15 @@ function refUrls(raw?: string): string[] {
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
+/** Render a parsed-JSON value as text. These maps are typed as string values,
+ *  but contributor-submitted data can carry nested objects/arrays — handing a
+ *  raw object to JSX throws "Objects are not valid as a React child" and 500s
+ *  the page. Coerce so malformed data degrades to readable text instead. */
+function cellText(v: unknown): string {
+  if (v == null) return "";
+  return typeof v === "string" ? v : JSON.stringify(v);
+}
+
 export default async function ArtStyleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let art;
@@ -37,8 +46,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const medium = f.medium ?? "mixed";
   const promptTemplate = f.prompt_template ?? "";
   const negativePrompt = f.negative_prompt ?? "";
-  const engineHints = parseJson<Record<string, string>>(f.engine_hints) ?? {};
-  const slotRecipes = parseJson<Record<string, string>>(f.slot_recipes) ?? {};
+  const engineHints = parseJson<Record<string, unknown>>(f.engine_hints) ?? {};
+  const slotRecipes = parseJson<Record<string, unknown>>(f.slot_recipes) ?? {};
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
 
@@ -131,7 +140,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             <div className="grid gap-1.5 sm:grid-cols-2">
               {Object.entries(slotRecipes).map(([k, v]) => (
                 <div key={k} className={`rounded-[3px] px-2.5 py-1.5 text-[12px] text-foreground ${CHIP}`}>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{k}</span> — {v}
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{k}</span> — {cellText(v)}
                 </div>
               ))}
             </div>
@@ -143,7 +152,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(engineHints).map(([k, v]) => (
                 <span key={k} className="rounded-[2px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
-                  <span className="text-foreground">{k}</span> · {v}
+                  <span className="text-foreground">{k}</span> · {cellText(v)}
                 </span>
               ))}
             </div>
