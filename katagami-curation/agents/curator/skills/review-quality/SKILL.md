@@ -26,7 +26,11 @@ anti-slop checklists from prose.
 
 ## Process
 
-For each language specified in the job input (or ALL languages if none specified):
+For each language in the job input list — the authoritative, query-scoped list of
+design_language_ids to review. The input MUST be non-empty: do NOT enumerate all
+DesignLanguages. If the input list is empty, fail the job with error_message
+"quality_review received empty design_language_ids; upstream RecordSynthesizeJob did
+not populate the query scope" rather than reviewing unrelated languages.
 
 0. **Forced ShadSync refresh override**: If the job input contains
    `force_agent_shadcn_artifact_refresh: true`, the first-class shadcn artifacts

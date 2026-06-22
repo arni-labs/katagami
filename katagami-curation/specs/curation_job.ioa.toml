@@ -347,29 +347,16 @@ temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 
-# ARN-88: per-direction synthesis no longer creates the quality_review job nor
-# advances the query directly (the old direction_id=="" guarded triggers never
-# fired for per-direction jobs, stalling the pipeline). Synthesis now completes
-# its CurationDirection, which drains the fan-out barrier; the barrier-open
-# advance and the single quality_review creation live on CurationQuery.
-[[action.triggers]]
-name = "synthesis_completes_direction"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationDirection"
-target_action = "Complete"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "direction_id"
-
 # ARN-88: record the per-direction synthesize job id AND its created language ids
-# on the parent query, so the barrier-open quality_review job can review every
-# language the fan-out produced. Each param is named after the list var
-# RecordSynthesizeJob appends (kernel ListAppend has no value_from; it reads
+# on the parent query FIRST — before the barrier-narrowing decrement advances the
+# query out of Synthesizing. Reactions on an edge run in declaration order, each
+# cascading fully before the next; this block is declared ahead of
+# synthesis_completes_direction so RecordSynthesizeJob's append lands while the
+# query is still Synthesizing. (RecordSynthesizeJob is from=[Researching,
+# Synthesizing] with no `to`; if it arrived after the barrier opened it would be
+# from-state-rejected and silently dropped, leaving design_language_ids empty and
+# the barrier-open quality_review unscoped.) Each param is named after the list
+# var RecordSynthesizeJob appends (kernel ListAppend has no value_from; it reads
 # params.get(var)).
 [[action.triggers]]
 name = "synthesis_records_synthesize_job"
@@ -385,6 +372,27 @@ design_language_ids = "design_language_ids"
 [action.triggers.resolve_target]
 type = "field"
 field = "query_id"
+
+# ARN-88: per-direction synthesis no longer creates the quality_review job nor
+# advances the query directly (the old direction_id=="" guarded triggers never
+# fired for per-direction jobs, stalling the pipeline). Synthesis now completes
+# its CurationDirection, which drains the fan-out barrier; the barrier-open
+# advance and the single quality_review creation live on CurationQuery. Declared
+# after synthesis_records_synthesize_job so the record lands before this edge's
+# decrement -> SynthesisComplete cascade opens the barrier.
+[[action.triggers]]
+name = "synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Complete"
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
 
 [[action]]
 name = "CompleteQualityReview"
