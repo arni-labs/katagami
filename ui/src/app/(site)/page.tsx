@@ -10,7 +10,6 @@ import {
   taxonomyFamilyIndex,
 } from "@/lib/odata";
 import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
-import { TaxonomyClusterView } from "@/components/taxonomy-cluster-view";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
 import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
@@ -399,22 +398,6 @@ function TodaysPull({
   );
 }
 
-/** Streams the taxonomy families (6 parents × their categories) so the main
- *  page shows how the library is organized — no separate /taxonomy page needed.
- *  Reads full language fields (not the $select projection) so taxonomy_ids are present. */
-async function CategoryBrowse() {
-  const [taxonomies, languages] = await Promise.all([
-    listTaxonomies("Status eq 'Published'").catch(
-      () => [] as Awaited<ReturnType<typeof listTaxonomies>>,
-    ),
-    listDesignLanguages("Status eq 'Published'").catch(
-      () => [] as Awaited<ReturnType<typeof listDesignLanguages>>,
-    ),
-  ]);
-  if (taxonomies.length === 0) return null;
-  return <TaxonomyClusterView taxonomies={taxonomies} languages={languages} />;
-}
-
 export default async function GalleryPage({
   searchParams,
 }: {
@@ -545,24 +528,6 @@ export default async function GalleryPage({
 
       {/* ── Everything below the hero stays in the content column ── */}
       <div className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 pt-8 sm:space-y-16">
-      {/* ── Browse by category (taxonomy families) ───────────────── */}
-      <section id="categories" className="scroll-mt-20 space-y-4">
-        <div data-reveal className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex items-baseline gap-3">
-            <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.02em]">
-              Browse by category
-            </h2>
-            <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
-              six families
-            </span>
-          </div>
-          <span className="stamp text-[var(--sumire)]">taxonomy</span>
-        </div>
-        <Suspense fallback={<div className="h-48 animate-pulse bg-muted/50" />}>
-          <CategoryBrowse />
-        </Suspense>
-      </section>
-
       {/* ── Gallery ──────────────────────────────────────────────── */}
       <section id="gallery" className="scroll-mt-20 space-y-4">
         <div data-reveal className="flex flex-wrap items-end justify-between gap-3">
