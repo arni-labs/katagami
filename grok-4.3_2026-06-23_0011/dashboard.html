@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Atlas - Operations Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { min-width: 0; overflow-x: hidden; }
+    button, input, textarea, select { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; background: transparent; border: none; outline: 0; }
+    button { cursor: pointer; }
+    button:disabled, input:disabled, textarea:disabled, select:disabled { cursor: not-allowed; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    svg { display: block; }
+
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F4FAFE;
+      --text: #000000;
+      --muted: #546376;
+      --border: transparent;
+      --accent: #00C8F0;
+      --on-accent: #000000;
+      --success: #00D070;
+      --warning: #FF2A62;
+      --error: #FF2A62;
+      --info: #00C8F0;
+      --hero-image: url('./media/kit-still-life.jpg');
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --radius-none: 0;
+      --radius-field: 16px;
+      --radius-card: 24px;
+      --radius-pill: 9999px;
+      --control-height: 48px;
+      --control-pad-x: 20px;
+      --control-gap: 8px;
+      --control-min: 120px;
+      --font-display: "Anton", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --type-sm: 15px;
+      --type-md: 17px;
+      --type-lg: 21px;
+      --type-xl: 28px;
+      --type-2xl: clamp(34px, 4vw, 56px);
+      --type-3xl: clamp(48px, 7vw, 92px);
+      --shadow-sky: 0 24px 70px color-mix(in srgb, var(--accent) 18%, transparent);
+      --shadow-leaf: 0 24px 70px color-mix(in srgb, var(--success) 16%, transparent);
+      --shadow-hot: 0 24px 70px color-mix(in srgb, var(--error) 18%, transparent);
+      --shadow-soft: 0 18px 48px color-mix(in srgb, var(--info) 12%, transparent);
+      --focus-ring: 0 0 0 2px var(--bg), 0 0 0 6px var(--accent);
+      --motion-fast: 140ms;
+      --motion-med: 380ms;
+      --ease: cubic-bezier(0.2, 0.82, 0.2, 1);
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: var(--type-md);
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      background: var(--bg);
+    }
+
+    .sidebar {
+      min-width: 0;
+      background: var(--surface);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .brand {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-size: var(--type-lg);
+    }
+
+    .brand-mark {
+      width: var(--control-height);
+      height: var(--control-height);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-sky);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark svg { width: 28px; height: 28px; }
+
+    .side-nav { display: grid; gap: var(--space-2); }
+    .side-nav a {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      color: var(--muted);
+      font-weight: 900;
+      transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+    }
+    .side-nav a:hover, .side-nav a:focus-visible { background: var(--bg); color: var(--text); transform: translateY(-2px); }
+    .side-nav a:focus-visible { box-shadow: var(--focus-ring); }
+    .side-nav a[aria-current="page"] { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sky); }
+    .side-nav svg { width: var(--space-5); height: var(--space-5); flex: 0 0 auto; }
+
+    .launch-card {
+      margin-top: auto;
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .launch-card strong { font-family: var(--font-display); font-size: var(--type-xl); line-height: 1; letter-spacing: -0.02em; }
+    .launch-card p { color: var(--muted); font-size: var(--type-sm); }
+
+    .main {
+      min-width: 0;
+      padding: var(--space-5) var(--space-6) var(--space-8);
+      display: grid;
+      gap: var(--space-6);
+      align-content: start;
+    }
+
+    .topbar {
+      min-height: calc(var(--control-height) + var(--space-4));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+    }
+
+    .topbar h1, .panel-title h2, .press h2 {
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+      line-height: 0.92;
+      text-transform: uppercase;
+    }
+    .topbar h1 { font-size: var(--type-3xl); }
+    .topbar p { color: var(--muted); margin-top: var(--space-3); }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+
+    .btn {
+      min-height: var(--control-height);
+      min-width: var(--control-min);
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--control-gap);
+      font-weight: 900;
+      white-space: nowrap;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    .btn:focus-visible { box-shadow: var(--focus-ring); }
+    .btn:disabled { opacity: 0.42; pointer-events: none; transform: none; box-shadow: none; }
+    .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sky); }
+    .btn-hot { background: var(--error); color: var(--on-accent); box-shadow: var(--shadow-hot); }
+    .btn-secondary { background: var(--bg); color: var(--text); box-shadow: var(--shadow-soft); }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+    .dashboard-grid > * { min-width: 0; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .stat-card, .panel, .card {
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-soft);
+      min-width: 0;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+    }
+    .stat-card:hover, .panel:hover, .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sky); }
+    .stat-card:focus-within, .panel:focus-within, .card:focus-within { box-shadow: var(--focus-ring); }
+
+    .stat-card strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: var(--type-2xl);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat-card span { color: var(--muted); font-size: var(--type-sm); }
+
+    .panel { display: grid; gap: var(--space-5); }
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: var(--space-4);
+    }
+    .panel-title h2 { font-size: var(--type-xl); }
+    .panel-title p { color: var(--muted); margin-top: var(--space-2); }
+
+    .chip {
+      min-height: calc(var(--control-height) - var(--space-2));
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .chip-blue { background: var(--accent); color: var(--on-accent); }
+    .chip-green { background: var(--success); color: var(--on-accent); }
+    .chip-hot { background: var(--error); color: var(--on-accent); }
+
+    .bars { display: grid; gap: var(--space-4); }
+    .bar-item { display: grid; gap: var(--space-2); }
+    .bar-label { display: flex; justify-content: space-between; gap: var(--space-4); font-weight: 900; font-size: var(--type-sm); }
+    .bar-track { height: var(--space-5); border-radius: var(--radius-pill); background: var(--surface); overflow: hidden; }
+    .bar-fill { height: 100%; width: var(--level); border-radius: var(--radius-pill); background: var(--accent); }
+    .bar-fill.green { background: var(--success); }
+    .bar-fill.hot { background: var(--error); }
+
+    .release-table { display: grid; gap: var(--space-2); }
+    .row {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.7fr) auto;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      min-width: 0;
+    }
+    .row.header {
+      min-height: var(--control-height);
+      background: transparent;
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .row strong { display: block; }
+    .row span { color: var(--muted); font-size: var(--type-sm); }
+
+    .side-stack { display: grid; gap: var(--space-6); }
+    .image-panel {
+      min-height: 360px;
+      border-radius: var(--radius-card);
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--shadow-leaf);
+      position: relative;
+      overflow: hidden;
+    }
+    .image-panel .caption {
+      position: absolute;
+      left: var(--space-5);
+      right: var(--space-5);
+      bottom: var(--space-5);
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      font-weight: 900;
+    }
+
+    .control-group { display: grid; gap: var(--space-2); min-width: 0; }
+    label { font-size: var(--type-sm); font-weight: 900; }
+    .field {
+      min-height: var(--control-height);
+      border-radius: var(--radius-field);
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      align-items: center;
+      position: relative;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+    .field:hover { transform: translateY(-2px); background: var(--surface); }
+    .field:focus-within { box-shadow: var(--focus-ring); transform: none; background: var(--bg); }
+    .field:has(:disabled) { opacity: 0.5; pointer-events: none; }
+    .field input, .field select, .field textarea { width: 100%; min-height: var(--control-height); padding: 0 var(--control-pad-x); font-size: var(--type-md); }
+    .field textarea { min-height: calc(var(--control-height) * 2); padding-top: var(--space-3); resize: vertical; }
+    .select-field svg { position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%); width: var(--space-5); height: var(--space-5); pointer-events: none; }
+    .select-field select { padding-right: var(--space-8); }
+
+    .form-panel {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .switch-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-3) var(--space-4);
+      box-shadow: var(--shadow-soft);
+    }
+    .switch-row span { color: var(--muted); font-size: var(--type-sm); }
+
+    .switch {
+      width: calc(var(--control-height) + var(--space-6));
+      height: var(--control-height);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      position: relative;
+      flex: 0 0 auto;
+      transition: background var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+    .switch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .switch span {
+      position: absolute;
+      top: var(--space-2);
+      left: var(--space-2);
+      width: calc(var(--control-height) - var(--space-4));
+      height: calc(var(--control-height) - var(--space-4));
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+      transition: transform var(--motion-fast) var(--ease);
+    }
+    .switch:has(input:checked) { background: var(--success); }
+    .switch:has(input:checked) span { transform: translateX(var(--space-6)); }
+    .switch:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+    .switch:has(input:disabled) { opacity: 0.5; pointer-events: none; }
+
+    .press {
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-none);
+      padding: var(--space-7);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      gap: var(--space-5);
+    }
+    .press::after {
+      content: "";
+      position: absolute;
+      width: min(360px, 38vw);
+      height: var(--space-8);
+      right: var(--space-7);
+      bottom: var(--space-7);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+    .press h2 { position: relative; z-index: 1; font-size: var(--type-2xl); }
+    .press p { position: relative; z-index: 1; color: var(--bg); max-width: 720px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; display: grid; grid-template-columns: minmax(0, 1fr); }
+      .side-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .launch-card { margin-top: 0; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      .main { padding: var(--space-4); }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .toolbar { justify-content: flex-start; width: 100%; }
+      .toolbar .btn { width: 100%; }
+      .side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats { grid-template-columns: minmax(0, 1fr); }
+      .row { grid-template-columns: minmax(0, 1fr) auto; }
+      .row.header { display: none; }
+      .row .hide-mobile { display: none; }
+      .panel-title { flex-direction: column; align-items: flex-start; }
+      .press { padding: var(--space-6); }
+    }
+
+    @media (max-width: 480px) {
+      .sidebar { padding: var(--space-4); }
+      .side-nav { grid-template-columns: minmax(0, 1fr); }
+      .brand { font-size: var(--type-md); }
+      .topbar h1 { font-size: clamp(42px, 14vw, 70px); }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Nobori Atlas navigation">
+      <a class="brand" href="#overview">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" focusable="false"><path d="M9 27 C17 12, 31 11, 40 22 C32 36, 17 36, 9 27 Z" fill="currentColor"></path><circle cx="32" cy="23" r="4" fill="var(--bg)"></circle><path d="M13 27 L4 18 L4 36 Z" fill="currentColor"></path></svg>
+        </span>
+        Nobori Atlas
+      </a>
+      <nav class="side-nav">
+        <a href="#overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 C8 5, 16 5, 20 12 C16 19, 8 19, 4 12 Z" fill="currentColor"></path></svg>Overview</a>
+        <a href="#proofs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5 H19 V10 H5 Z M5 14 H15 V19 H5 Z" fill="currentColor"></path></svg>Proofs</a>
+        <a href="#sites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L19 8 V20 H5 V8 Z" fill="currentColor"></path></svg>Sites</a>
+        <a href="#settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6 H17 V10 H7 Z M4 14 H20 V18 H4 Z" fill="currentColor"></path></svg>Settings</a>
+      </nav>
+      <div class="launch-card">
+        <span class="chip chip-hot">May 5 readiness</span>
+        <strong>61 percent</strong>
+        <p>Two textile proofs and one wind review remain before public release.</p>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topbar">
+        <div>
+          <h1>Hikari Riverside</h1>
+          <p>Live operating desk for the Kodomo no Hi public lift.</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-secondary" type="button">Export venue brief</button>
+          <button class="btn btn-primary" type="button">Send update</button>
+        </div>
+      </header>
+
+      <section class="stats" aria-label="Release metrics">
+        <article class="stat-card"><strong>42</strong><span>koinobori family sets</span></article>
+        <article class="stat-card"><strong>18</strong><span>venue zones mapped</span></article>
+        <article class="stat-card"><strong>9</strong><span>crew calls scheduled</span></article>
+        <article class="stat-card"><strong>05.05</strong><span>public lift date</span></article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel" id="proofs">
+          <div class="panel-title">
+            <div>
+              <h2>Launch progress</h2>
+              <p>Each lane maps to a real release dependency, not a decorative chart.</p>
+            </div>
+            <span class="chip chip-blue">Wind-lift lane</span>
+          </div>
+          <div class="bars" aria-label="Readiness bars">
+            <div class="bar-item"><div class="bar-label"><span>Textile proofs</span><span>92 percent</span></div><div class="bar-track"><div class="bar-fill" style="--level: 92%"></div></div></div>
+            <div class="bar-item"><div class="bar-label"><span>Venue approvals</span><span>78 percent</span></div><div class="bar-track"><div class="bar-fill green" style="--level: 78%"></div></div></div>
+            <div class="bar-item"><div class="bar-label"><span>Sponsor captions</span><span>64 percent</span></div><div class="bar-track"><div class="bar-fill hot" style="--level: 64%"></div></div></div>
+            <div class="bar-item"><div class="bar-label"><span>Install crew calls</span><span>86 percent</span></div><div class="bar-track"><div class="bar-fill green" style="--level: 86%"></div></div></div>
+          </div>
+        </div>
+
+        <aside class="side-stack">
+          <figure class="image-panel" role="img" aria-label="Nobori installation kit still life">
+            <figcaption class="caption">Kit still life for partner review, generated in the Nobori image style.</figcaption>
+          </figure>
+        </aside>
+      </section>
+
+      <section class="dashboard-grid" id="sites">
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <h2>Site queue</h2>
+              <p>Rows use tone and spacing for separation. No grid borders, no browser default controls.</p>
+            </div>
+            <button class="btn btn-hot" type="button">Resolve wind hold</button>
+          </div>
+          <div class="release-table" role="table" aria-label="Koinobori venue queue">
+            <div class="row header" role="row"><span>Site</span><span>Lead</span><span>Status</span><span>Action</span></div>
+            <div class="row" role="row"><div><strong>Aoba River Walk</strong><span>South bridge to oak grove</span></div><span class="hide-mobile">Mika Tanabe</span><span class="chip chip-green">Clear</span><button class="btn btn-secondary" type="button">Open</button></div>
+            <div class="row" role="row"><div><strong>North Grove</strong><span>Family textile lane</span></div><span class="hide-mobile">Jun Sato</span><span class="chip chip-hot">Due</span><button class="btn btn-secondary" type="button">Open</button></div>
+            <div class="row" role="row"><div><strong>Station Lawn</strong><span>Partner welcome field</span></div><span class="hide-mobile">Aya Mori</span><span class="chip chip-blue">Ready</span><button class="btn btn-secondary" type="button">Open</button></div>
+            <div class="row" role="row"><div><strong>Museum Steps</strong><span>Opening press photo</span></div><span class="hide-mobile">Riku Abe</span><span class="chip chip-green">Clear</span><button class="btn btn-secondary" type="button" disabled>Locked</button></div>
+          </div>
+        </div>
+
+        <aside class="form-panel" id="settings" aria-label="Release settings">
+          <div class="panel-title">
+            <div>
+              <h2>Release settings</h2>
+              <p>Controls share the one 48px height token.</p>
+            </div>
+          </div>
+          <div class="control-group">
+            <label for="release-name">Release name</label>
+            <div class="field"><input id="release-name" type="text" value="Hikari Riverside"></div>
+          </div>
+          <div class="control-group">
+            <label for="weather-window">Weather decision</label>
+            <div class="field select-field">
+              <select id="weather-window">
+                <option>Morning wind review</option>
+                <option>Midday hold</option>
+                <option>Evening reset</option>
+              </select>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9 L12 15 L18 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+          </div>
+          <div class="control-group">
+            <label for="venue-note">Venue note</label>
+            <div class="field"><textarea id="venue-note">Confirm bridge rail clearance before lifting the parent carp.</textarea></div>
+          </div>
+          <div class="switch-row">
+            <div><strong>Publish partner page</strong><br><span>Visible to approved venues</span></div>
+            <label class="switch" aria-label="Publish partner page"><input type="checkbox" checked><span></span></label>
+          </div>
+          <div class="switch-row">
+            <div><strong>Emergency hold</strong><br><span>Disabled after safety review</span></div>
+            <label class="switch" aria-label="Emergency hold disabled"><input type="checkbox" disabled><span></span></label>
+          </div>
+          <div class="toolbar"><button class="btn btn-primary" type="button">Save settings</button></div>
+        </aside>
+      </section>
+
+      <section class="press">
+        <h2>Keep the page as clear as the sky.</h2>
+        <p>White air, black press type, and three highlighter accents make the dashboard feel like a serious cultural launch instead of a seasonal toy shelf.</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
