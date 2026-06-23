@@ -16,7 +16,8 @@ export default async function LineagePage({
 
   let languages;
   try {
-    languages = await listDesignLanguages();
+    // Published-only: draft/archived languages never appear in lineage.
+    languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     return (
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10">
@@ -33,13 +34,46 @@ export default async function LineagePage({
     );
   }
 
-  const nodes = languages.map((l) => ({
+  // Lineage kind and generation are DERIVED from the parent graph — the single
+  // source of truth — not from the stored `lineage_type` / `generation_number`
+  // fields, which are noisy (blank, "curated_from_query", …) and disagree with
+  // `parent_ids`. Deriving guarantees the legend always sums to the total and
+  // that "originals" means exactly one thing: a language with no parents.
+  const parsed = languages.map((l) => ({
     id: l.entity_id,
     name: l.fields.name ?? l.entity_id.slice(0, 12),
     status: l.status,
-    lineageType: l.fields.lineage_type ?? "original",
-    generation: parseInt(l.fields.generation_number ?? "0", 10),
-    parentIds: parseJson<string[]>(l.fields.parent_ids) ?? [],
+    parentIds: (parseJson<string[]>(l.fields.parent_ids) ?? []).filter(Boolean),
+  }));
+  const byId = new Map(parsed.map((n) => [n.id, n]));
+
+  const genCache = new Map<string, number>();
+  const generationOf = (id: string, depth = 0): number => {
+    const cached = genCache.get(id);
+    if (cached !== undefined) return cached;
+    const node = byId.get(id);
+    let gen: number;
+    if (!node || node.parentIds.length === 0) {
+      gen = 0; // a root within the published set → an original
+    } else if (depth > 64) {
+      gen = 1; // cycle guard
+    } else {
+      const inSet = node.parentIds.filter((p) => byId.has(p));
+      gen =
+        inSet.length === 0
+          ? 1 // derived from an ancestor outside the published set
+          : 1 + Math.max(...inSet.map((p) => generationOf(p, depth + 1)));
+    }
+    genCache.set(id, gen);
+    return gen;
+  };
+  const kindOf = (count: number) =>
+    count === 0 ? "original" : count === 1 ? "evolution" : "remix";
+
+  const nodes = parsed.map((n) => ({
+    ...n,
+    lineageType: kindOf(n.parentIds.length),
+    generation: generationOf(n.id),
   }));
 
   return (

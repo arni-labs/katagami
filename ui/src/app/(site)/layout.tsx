@@ -116,14 +116,6 @@ export default async function SiteLayout({
 
   return (
     <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-      {/* Registration bar — the printer's color check, run across the top
-          of every sheet. Doubles as the site's signature. */}
-      <div aria-hidden className="flex h-[5px] w-full">
-        {REGISTRATION_INKS.map((ink) => (
-          <span key={ink} className="h-full flex-1" style={{ background: ink }} />
-        ))}
-      </div>
-
       <header className="relative max-w-full overflow-x-clip bg-background/80 backdrop-blur-sm">
         <nav className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:h-16 sm:gap-6 md:gap-8">
           <Link

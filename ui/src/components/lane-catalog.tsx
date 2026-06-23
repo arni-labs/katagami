@@ -34,8 +34,7 @@ const ARCHIVED_SHELF: ShelfDef = {
 const PALETTE_SHELVES: ShelfDef[] = [...COLOR_MOOD_SHELVES, ARCHIVED_SHELF];
 
 const MEDIUM_INKS = [
-  "var(--sakura)", "var(--yuzu)", "var(--salad)",
-  "var(--teal)", "var(--ramune)", "var(--sumire)",
+  "var(--sakura)", "var(--yuzu)", "var(--ramune)", "var(--sumire)",
 ];
 
 function paletteShelfKey(p: PaletteItem): string {
@@ -100,7 +99,7 @@ function SearchBar({
         aria-hidden
         className="pointer-events-none absolute -left-3 -top-2 h-[14px] w-16 rounded-[1px] opacity-75"
         style={{
-          background: "var(--salad)",
+          background: "var(--yuzu)",
           mixBlendMode: "var(--ink-blend)" as never,
           transform: "rotate(-6deg)",
         }}

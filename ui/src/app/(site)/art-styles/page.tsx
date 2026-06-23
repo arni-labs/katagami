@@ -4,7 +4,7 @@ import {
   listArtStyles,
   parseJson,
 } from "@/lib/odata";
-import { PageHero, Marker } from "@/components/page-hero";
+import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { ArtStyleCatalog } from "@/components/lane-catalog";
 import type { ArtStyleItem } from "@/components/art-style-card";
 import { isOwner } from "@/lib/owner";
@@ -21,13 +21,10 @@ function refUrls(raw?: string): string[] {
 }
 
 export default async function ArtStylesPage() {
-  // Owners also see archived art styles (so they can spot what's hidden); the
-  // public catalog stays Published-only.
+  // Published-only everywhere — draft/archived art styles never appear in the
+  // catalog or counts. Owners can still archive published art styles.
   const owner = await isOwner();
-  const filter = owner
-    ? "Status eq 'Published' or Status eq 'Archived'"
-    : "Status eq 'Published'";
-  const rows = await listArtStyles(filter).catch(() => []);
+  const rows = await listArtStyles("Status eq 'Published'").catch(() => []);
   const items: ArtStyleItem[] = rows
     .map((r) => ({
       id: r.entity_id,
@@ -51,6 +48,7 @@ export default async function ArtStylesPage() {
         eyebrowAccent="sakura"
         title={<>The <Marker color="sakura">art style</Marker> catalog</>}
         description="Engine-agnostic style recipes — reference images plus a portable subject/palette prompt. Remix them onto any UI language and palette in the Studio."
+        rightSlot={<HeroStat value={items.length} label="art styles" accent="sakura" />}
       />
       <div className="mt-10">
         <ArtStyleCatalog items={items} canArchive={owner} />

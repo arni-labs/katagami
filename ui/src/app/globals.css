@@ -1216,20 +1216,22 @@
     mask-image: linear-gradient(90deg, black calc(100% - 56px), transparent);
   }
   .shelf-row > [data-gallery-card] {
-    flex: 0 0 220px;
+    flex: 0 0 236px;
     min-width: 0;
     scroll-snap-align: start;
   }
   @media (min-width: 640px) {
     .shelf-row > [data-gallery-card] {
-      flex-basis: 240px;
+      flex-basis: 268px;
     }
   }
   [data-spread="true"] .shelf-row {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    /* one fewer, larger column than the old 210px so the wall reads calmer;
+       the content column is capped at max-w-7xl, so ultrawide stays ~5 wide. */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     align-items: start;
-    gap: 1rem 0.9rem;
+    gap: 1.5rem 1.1rem;
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;

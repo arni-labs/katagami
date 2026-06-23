@@ -267,7 +267,8 @@ export default async function ComparePage({
 
   let languages: { entity_id: string; fields: { name?: string } }[] = [];
   try {
-    languages = await listDesignLanguages();
+    // Published-only: draft/archived languages are never offered for compare.
+    languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     // keep empty
   }

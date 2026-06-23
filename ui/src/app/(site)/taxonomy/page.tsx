@@ -25,7 +25,8 @@ export default async function TaxonomyPage() {
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>> = [];
   try {
-    languages = await listDesignLanguages();
+    // Published-only: draft/archived languages never count toward taxonomy.
+    languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     // keep empty
   }
