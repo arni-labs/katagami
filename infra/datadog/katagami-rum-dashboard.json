@@ -1,6 +1,6 @@
 {
   "title": "Katagami — Visitors & Usage (RUM)",
-  "description": "What's getting traction on katagami.ai: unique visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nNote on custom-action facets: copy/download/search/language_click/nav events are RUM custom actions. Their name is faceted as @action.target.name and their attributes as @context.<key> (e.g. @context.artifact, @context.file, @context.source). If your org surfaces them under a slightly different facet, adjust the affected widgets once real data lands — the views/sessions widgets are facet-independent and work immediately.",
+  "description": "What's getting traction on katagami.ai: unique visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nFacets confirmed against live data: custom-action name = @action.target.name (language_click, copy, download, nav_click, search); attributes = @context.<key> (@context.artifact, @context.file, @context.source, @context.query). No calibration needed.",
   "layout_type": "ordered",
   "reflow_type": "fixed",
   "template_variables": [],

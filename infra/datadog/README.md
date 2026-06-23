@@ -53,15 +53,25 @@ No PII: `defaultPrivacyLevel: mask-user-input`, no session replay.
 3. **Import the dashboard**: Datadog → Dashboards → New Dashboard → **Import
    dashboard JSON** → paste `katagami-rum-dashboard.json`.
 
-## Facet calibration (custom-action widgets only)
+## Facets (confirmed against live data)
 
-The dashboard's session/view widgets (unique visits, page views, top languages,
-top pages) are facet-independent and work immediately. The copy/download/search
-widgets read custom-action facets `@action.target.name` and `@context.<key>`
-(e.g. `@context.artifact`, `@context.file`, `@context.source`). If your org
-surfaces `addAction` context under a different prefix, adjust those few widgets
-once real data lands — confirm in RUM Explorer by inspecting one custom action
-event.
+Verified end-to-end against the real RUM app on 2026-06-23 by emitting events
+and querying them back:
+
+- Custom action name → `@action.target.name` (e.g. `language_click`, `copy`,
+  `download`, `nav_click`, `search`), with `@action.type:custom`.
+- Custom attributes → `@context.<key>`: `@context.source`, `@context.artifact`,
+  `@context.file`, `@context.query`, `@context.language_name`, `@context.language_id`.
+- Sessions/views are standard RUM facets (`@type`, `@view.url_path`, `@geo.country`,
+  `@device.type`, `@session.referrer`).
+- Each event also carries `@usr.anonymous_id`, so unique *visitors* (not just
+  sessions) can be counted with `CARDINALITY(@usr.anonymous_id)` if wanted.
+
+The dashboard JSON already uses these exact facets — no calibration needed.
+
+> Note: a handful of `env:local-verify` test events were emitted during
+> verification. Filter them out (or scope the dashboard to `env:production`)
+> once real traffic flows.
 
 ## Known gap: server-route downloads
 

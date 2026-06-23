@@ -31,6 +31,10 @@ function readEnv() {
     env: process.env.NEXT_PUBLIC_DD_RUM_ENV || "production",
     version: process.env.NEXT_PUBLIC_DD_RUM_VERSION || undefined,
     sampleRate: Number(process.env.NEXT_PUBLIC_DD_RUM_SAMPLE_RATE ?? "100"),
+    // Session replay records the actual screen (DOM) of a % of sessions. Off by
+    // default — this setup is for usage counts, not screen recordings. Flip via
+    // env (e.g. 20) to enable, no code change needed.
+    replaySampleRate: Number(process.env.NEXT_PUBLIC_DD_RUM_REPLAY_SAMPLE_RATE ?? "0"),
   };
 }
 
@@ -57,7 +61,9 @@ export async function initRum(): Promise<void> {
       env: e.env,
       version: e.version,
       sessionSampleRate: Number.isFinite(e.sampleRate) ? e.sampleRate : 100,
-      sessionReplaySampleRate: 0, // no session replay — analytics only
+      sessionReplaySampleRate: Number.isFinite(e.replaySampleRate)
+        ? e.replaySampleRate
+        : 0,
       trackUserInteractions: true, // automatic click map in addition to our actions
       trackResources: true,
       trackLongTasks: true,
