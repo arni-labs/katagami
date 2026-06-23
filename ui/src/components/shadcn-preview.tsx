@@ -305,19 +305,46 @@ function visualProfileFromArtifact(
   const isEditorial = profileKeyword(profileText, ["editorial", "magazine", "serif", "folio"]);
   const contourText = String(explicit.contour ?? explicit.shape ?? "").toLowerCase();
   const familyText = String(explicit.family ?? "").toLowerCase();
-  const family: ShadSyncVisualProfile["family"] = familyText.includes("paper") || isPaper
+  const materialText = String(explicit.material ?? "").toLowerCase();
+  // An explicit visualProfile wins over keyword-sniffing the prose. A language that
+  // declares its family/material must not be re-tagged "paper-collage" just because
+  // its imagery copy mentions "grain" — only infer from keywords when unspecified.
+  const hasExplicitFamily = familyText.trim().length > 0;
+  const family: ShadSyncVisualProfile["family"] = familyText.includes("paper") || familyText.includes("collage")
     ? "paper-collage"
-    : familyText.includes("brut") || isBrutalist
+    : familyText.includes("brut") || familyText.includes("industrial")
       ? "brutalist"
-      : familyText.includes("editor") || isEditorial
+      : familyText.includes("editor") || familyText.includes("magazine") || familyText.includes("folio")
         ? "editorial"
-        : profileKeyword(profileText, ["minimal", "quiet", "plain"])
+        : familyText.includes("minimal") || familyText.includes("quiet") || familyText.includes("plain")
           ? "minimal"
-          : "system";
+          : hasExplicitFamily
+            ? "system"
+            : isPaper
+              ? "paper-collage"
+              : isBrutalist
+                ? "brutalist"
+                : isEditorial
+                  ? "editorial"
+                  : profileKeyword(profileText, ["minimal", "quiet", "plain"])
+                    ? "minimal"
+                    : "system";
 
   return {
     family,
-    material: isPaper ? "paper" : isBrutalist ? "ink" : "flat",
+    material: materialText.includes("paper")
+      ? "paper"
+      : materialText.includes("glass")
+        ? "glass"
+        : materialText.includes("ink")
+          ? "ink"
+          : materialText.includes("flat")
+            ? "flat"
+            : isPaper
+              ? "paper"
+              : isBrutalist
+                ? "ink"
+                : "flat",
     contour:
       contourText.includes("blob") || profileKeyword(profileText, ["blob", "scallop", "irregular"])
         ? "blob"
@@ -326,13 +353,19 @@ function visualProfileFromArtifact(
           : contourText.includes("rect")
             ? "rectangular"
             : "default",
+    // An explicit border declaration wins over prose-sniffing: a language that says
+    // border:"none" must render borderless, not fall through to "solid".
     border:
-      String(explicit.border ?? "").toLowerCase().includes("dash") ||
-      profileKeyword(profileText, ["dashed", "hand-drawn", "pencil", "stitched"])
-        ? "dashed"
-        : profileKeyword(profileText, ["borderless", "none"])
-          ? "none"
-          : "solid",
+      String(explicit.border ?? "").toLowerCase() === "none"
+        ? "none"
+        : String(explicit.border ?? "").toLowerCase().includes("dash") ||
+            profileKeyword(profileText, ["dashed", "hand-drawn", "pencil", "stitched"])
+          ? "dashed"
+          : String(explicit.border ?? "").toLowerCase() === "solid"
+            ? "solid"
+            : profileKeyword(profileText, ["borderless", "no border", "no borders", "none"])
+              ? "none"
+              : "solid",
     underlay:
       typeof explicit.underlay === "boolean"
         ? explicit.underlay
@@ -371,6 +404,8 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
   const secondary = tokenString(colors, ["secondary", "warning"], "var(--secondary)");
   const border = tokenString(colors, ["border", "outline"], "var(--border)");
   const radius = tokenString(radii, ["lg", "md", "default", "base"], "var(--sample-radius)");
+  // controls honor the language's own control radius (sm first) — a language that declares
+  // sharp 0 corners gets sharp controls; we don't impose rounding it didn't ask for.
   const controlRadius = tokenString(radii, ["sm", "md", "default", "base"], radius);
   const chipRadius = tokenString(radii, ["full", "pill"], "999px");
   return {
@@ -394,6 +429,11 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
       ["lg", "md"],
       "0 16px 36px rgb(48 64 59 / 0.14), 0 2px 0 rgb(48 64 59 / 0.08)",
     ),
+    // A no-border language must not inherit a hard --border (e.g. #000000) onto the raw
+    // shadcn primitives (Input, Tabs, Separator) — keep them borderless like the language.
+    ...(profile.border === "none"
+      ? { "--border": "transparent", "--input": "transparent", "--shadsync-outline": "transparent" }
+      : {}),
   } as CSSProperties;
 }
 

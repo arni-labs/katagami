@@ -373,6 +373,11 @@
     z-index: 1;
   }
 
+  /* the washi "tape" corners are a paper-collage flourish — never on flat/system languages */
+  .shadsync-preview:not([data-shadsync-family="paper-collage"]) .shadsync-tape {
+    display: none;
+  }
+
   .shadsync-tape {
     position: absolute;
     z-index: 2;
@@ -545,9 +550,13 @@
   }
 
   .shadsync-icon-chip {
-    border-radius: 42% 58% 52% 48%;
+    border-radius: var(--shadsync-control-radius);
     background: var(--shadsync-primary);
     color: var(--primary-foreground);
+  }
+  /* the organic blob + offset "sticker" shadow belong to the paper-collage family only */
+  .shadsync-preview[data-shadsync-family="paper-collage"] .shadsync-icon-chip {
+    border-radius: 42% 58% 52% 48%;
     box-shadow: 4px 4px 0 color-mix(in srgb, var(--shadsync-accent) 46%, transparent);
   }
 
@@ -560,6 +569,8 @@
     border-color: color-mix(in srgb, var(--shadsync-outline) 60%, transparent);
     background: var(--shadsync-primary);
     color: var(--primary-foreground);
+  }
+  .shadsync-preview[data-shadsync-family="paper-collage"] .shadsync-nav-item.is-active {
     box-shadow: 5px 5px 0 color-mix(in srgb, var(--shadsync-secondary) 54%, transparent);
   }
 
@@ -574,6 +585,44 @@
   .shadsync-mini-panel,
   .shadsync-field-card {
     background: color-mix(in srgb, var(--shadsync-bg) 72%, var(--shadsync-surface));
+  }
+
+  /* Honor a flat / no-border language profile (constructivist, swiss, system):
+     strip the paper-collage chassis — no borders, no decorative gradients, no
+     offset shadows — so the generated theme shows on clean, flat ink-tinted surfaces. */
+  .shadsync-preview[data-shadsync-border="none"] {
+    border-color: transparent;
+    background: var(--shadsync-bg);
+    box-shadow: none;
+  }
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-preview-header,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-shot,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-card,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-mini-panel,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-field-card,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-note {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--shadsync-ink) 4%, var(--shadsync-bg));
+    box-shadow: none;
+  }
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-button,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-field,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-chip,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-status {
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-field {
+    background: color-mix(in srgb, var(--shadsync-ink) 5%, var(--shadsync-bg));
+  }
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-icon-chip,
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-nav-item.is-active {
+    box-shadow: none;
+  }
+  /* the rotated offset "patch" under metric panels is a paper-collage flourish —
+     never on a no-border language, even if its prose opts into an underlay */
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-panel-shell::before {
+    display: none;
   }
 
   .shadsync-table [data-slot="table-header"] [data-slot="table-row"] {
@@ -601,6 +650,13 @@
     border-radius: var(--shadsync-control-radius);
     background: color-mix(in srgb, var(--shadsync-surface) 82%, transparent);
     padding: 3px;
+    align-items: center;
+  }
+  /* keep the tab triggers vertically centred in the bar (no bottom bias) */
+  .shadsync-preview .shadsync-tabs [data-slot="tabs-trigger"] {
+    align-self: center;
+    height: auto;
+    min-height: 1.6rem;
   }
 
   .shadsync-notes {
