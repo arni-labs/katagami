@@ -325,7 +325,7 @@ export default async function OwnerPage({
           </>
         }
         eyebrowAccent="sumire"
-        title={<Marker color={owner ? "salad" : "sumire"}>Owner mode</Marker>}
+        title={<Marker color={owner ? "sakura" : "sumire"}>Owner mode</Marker>}
         description={
           <>
             Unlock this browser to reveal curator controls in the gallery and
@@ -336,7 +336,7 @@ export default async function OwnerPage({
         rightSlot={
           <span
             className={`stamp ${
-              owner ? "text-[var(--salad)]" : "text-[var(--sumire)]"
+              owner ? "text-[var(--sakura)]" : "text-[var(--sumire)]"
             }`}
           >
             {owner ? "unlocked" : "locked"}
@@ -346,7 +346,7 @@ export default async function OwnerPage({
 
       <section className="relative">
         <WashiTape
-          color={owner ? "salad" : "sumire"}
+          color={owner ? "sakura" : "sumire"}
           rotate={-4}
           className="-left-3 -top-3"
           width={86}
@@ -354,9 +354,9 @@ export default async function OwnerPage({
         <StickyNote className="p-5 sm:p-6">
           <SectionHeading
             eyebrow={owner ? "session active" : "unlock"}
-            eyebrowColor={owner ? "salad" : "sumire"}
+            eyebrowColor={owner ? "sakura" : "sumire"}
           >
-            <Marker color={owner ? "salad" : "sumire"}>
+            <Marker color={owner ? "sakura" : "sumire"}>
               {owner ? "archive controls are visible" : "enter passphrase"}
             </Marker>
           </SectionHeading>
@@ -827,7 +827,7 @@ function TasteRuleSourceTag({ rule }: { rule: TasteRule }) {
 function TasteRulePolarityTag({ polarity }: { polarity: string }) {
   const polarityClass =
     polarity === "positive"
-      ? "bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))]"
+      ? "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]"
       : "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]";
 
   return (
@@ -842,7 +842,7 @@ function TasteRulePolarityTag({ polarity }: { polarity: string }) {
 function TasteRuleStatusTag({ status }: { status: string }) {
   const statusClass =
     status === "Accepted"
-      ? "bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))]"
+      ? "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]"
       : status === "Rejected"
         ? "bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))]"
         : "bg-[color-mix(in_srgb,var(--ramune)_14%,var(--paper-stamp-mix))] text-[color-mix(in_oklch,var(--ramune)_72%,var(--foreground))]";
@@ -879,7 +879,7 @@ function TasteRuleRejectButton({
 function TasteRuleAcceptButton({ id }: { id: string }) {
   return (
     <form action={acceptTasteRule.bind(null, id)}>
-      <button className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--salad)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--salad)_72%,var(--foreground))] transition-all hover:-translate-y-[1px]">
+      <button className="inline-flex h-8 items-center gap-1.5 bg-[color-mix(in_srgb,var(--sakura)_14%,var(--paper-stamp-mix))] px-2.5 font-mono text-[10px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--sakura)_72%,var(--foreground))] transition-all hover:-translate-y-[1px]">
         <Check className="h-3.5 w-3.5" />
         accept
       </button>

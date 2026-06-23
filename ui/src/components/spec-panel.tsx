@@ -43,7 +43,7 @@ export interface SpecPanelProps {
 type AccentColor =
   | "sakura"
   | "yuzu"
-  | "salad"
+  | "ramune"
   | "matcha"
   | "teal"
   | "ramune"
@@ -52,8 +52,6 @@ type AccentColor =
 const accentCycle: AccentColor[] = [
   "sakura",
   "yuzu",
-  "salad",
-  "teal",
   "ramune",
   "sumire",
 ];
@@ -172,10 +170,10 @@ function PhilosophyView({ raw }: { raw?: string }) {
       )}
       {values.length > 0 && (
         <section>
-          <SectionRule label="values" color="salad" />
+          <SectionRule label="values" color="ramune" />
           <div className="flex flex-wrap gap-1.5">
             {values.map((v, i) => (
-              <PeeledLabel key={toLabel(v)} index={i} color="salad">
+              <PeeledLabel key={toLabel(v)} index={i} color="ramune">
                 {toLabel(v)}
               </PeeledLabel>
             ))}
@@ -226,8 +224,8 @@ function TokensView({ raw }: { raw?: string }) {
     colors: "sakura",
     typography: "sumire",
     spacing: "teal",
-    radii: "salad",
-    borders: "matcha",
+    radii: "ramune",
+    borders: "ramune",
     shadows: "yuzu",
     elevation: "ramune",
     motion: "teal",
@@ -377,14 +375,14 @@ function RulesView({ raw }: { raw?: string }) {
     return (
       <div className="grid gap-5 md:grid-cols-2">
         {dos.length > 0 && (
-          <RuleNote label="do" color="salad">
+          <RuleNote label="do" color="ramune">
             <ul className="space-y-1.5">
               {dos.map((d) => (
                 <li
                   key={d}
                   className="flex gap-2 text-[13px] leading-relaxed text-foreground/86"
                 >
-                  <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--salad)]" />
+                  <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ramune)]" />
                   <span>{d}</span>
                 </li>
               ))}
@@ -419,7 +417,7 @@ function RuleNote({
   children,
 }: {
   label: string;
-  color: "salad" | "sakura";
+  color: "ramune" | "sakura";
   children: React.ReactNode;
 }) {
   return (
@@ -434,8 +432,8 @@ function RuleNote({
         className="absolute left-4 top-3 inline-flex h-[18px] items-center rounded-[2px] px-2 font-sans text-[9px] font-bold uppercase leading-none tracking-[0.14em]"
         style={{
           color:
-            color === "salad"
-              ? "color-mix(in oklch, var(--salad), black 30%)"
+            color === "ramune"
+              ? "color-mix(in oklch, var(--ramune), black 30%)"
               : "var(--beni)",
           background: `color-mix(in oklch, var(--${color}) 8%, var(--paper-stamp-mix))`,
         }}
@@ -1257,7 +1255,7 @@ export function SpecPanel(props: SpecPanelProps) {
         <Section label="tokens" color="sakura">
           <TokensView raw={tokens} />
         </Section>
-        <Section label="rules" color="salad" defaultOpen>
+        <Section label="rules" color="ramune" defaultOpen>
           <RulesView raw={rules} />
         </Section>
         <Section label="layout" color="sumire">
@@ -1272,7 +1270,7 @@ export function SpecPanel(props: SpecPanelProps) {
           </Section>
         )}
         {generativeCanvas && (
-          <Section label="generative" color="matcha">
+          <Section label="generative" color="ramune">
             <RichKeyValueView raw={generativeCanvas} />
           </Section>
         )}
@@ -1282,7 +1280,7 @@ export function SpecPanel(props: SpecPanelProps) {
         <Section label="DESIGN.md" color="sumire">
           <SpecMarkdownView markdown={designMd} />
         </Section>
-        <Section label="shadcn/ui theme" color="salad">
+        <Section label="shadcn/ui theme" color="ramune">
           <SpecMarkdownView markdown={`\`\`\`json\n${shadcnJson}\`\`\``} />
         </Section>
       </div>
