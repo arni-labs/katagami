@@ -22,7 +22,14 @@ function refUrls(raw?: string): string[] {
 }
 
 export function toLanguageOpts(rows: Row[]): LanguageOpt[] {
-  return rows.map((l) => {
+  // Studio panels swap palette + hero image onto a language's Landing and
+  // Dashboard compositions; a language missing either can't be swapped, so it
+  // never appears as an option. Filtered here so every panel that sources
+  // through this builder — the studio and the art-style / language / palette
+  // detail remixes — is covered at once.
+  return rows
+    .filter((l) => Boolean(l.fields.landing_file_id) && Boolean(l.fields.dashboard_file_id))
+    .map((l) => {
     const philosophy = parseJson<{ summary?: string }>(l.fields.philosophy);
     const thumb =
       l.fields.thumbnail_asset_url ||
