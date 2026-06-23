@@ -345,14 +345,19 @@ function visualProfileFromArtifact(
               : isBrutalist
                 ? "ink"
                 : "flat",
+    // An explicit contour wins over prose-sniffing. A language that declares contour:"default"
+    // must not become "pebble" just because the word "pill" appears in its copy (which would
+    // stamp a 42% blob on icon chips). Only infer from prose when contour is unspecified.
     contour:
-      contourText.includes("blob") || profileKeyword(profileText, ["blob", "scallop", "irregular"])
-        ? "blob"
-        : contourText.includes("pebble") || profileKeyword(profileText, ["pebble", "pill"])
-          ? "pebble"
-          : contourText.includes("rect")
-            ? "rectangular"
-            : "default",
+      contourText === "default"
+        ? "default"
+        : contourText.includes("blob") || (!contourText && profileKeyword(profileText, ["blob", "scallop", "irregular"]))
+          ? "blob"
+          : contourText.includes("pebble") || (!contourText && profileKeyword(profileText, ["pebble", "pill"]))
+            ? "pebble"
+            : contourText.includes("rect")
+              ? "rectangular"
+              : "default",
     // An explicit border declaration wins over prose-sniffing: a language that says
     // border:"none" must render borderless, not fall through to "solid".
     border:
@@ -422,6 +427,15 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
     "--shadsync-card-radius": radius,
     "--shadsync-control-radius": controlRadius,
     "--shadsync-chip-radius": chipRadius,
+    // Drive shadcn's own radius scale from the language so the REAL primitives rendered in
+    // the deck (Card, Checkbox, Badge, Slider…) honor it — a sharp language gets sharp
+    // primitives, not the app default 6px. The derived --radius-* are resolved at :root, so
+    // overriding only --radius is not enough; pin the whole scale to the language radius.
+    "--radius": controlRadius,
+    "--radius-sm": controlRadius,
+    "--radius-md": controlRadius,
+    "--radius-lg": controlRadius,
+    "--radius-xl": controlRadius,
     "--shadsync-underlay-a": accent,
     "--shadsync-underlay-b": secondary,
     "--shadsync-shadow": tokenString(
