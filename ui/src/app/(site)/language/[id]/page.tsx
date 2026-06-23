@@ -124,11 +124,19 @@ export default async function LanguageDetailPage({
   // showcase + the bespoke Landing + the bespoke Dashboard. Published languages
   // serve the embodiment from its public asset URL; pre-publish ones from the
   // governed file id. Both resolve to a fetchable URL via getFileUrl.
-  const embodimentUrl = isPublished
-    ? (f.embodiment_asset_url || "").trim()
-    : f.embodiment_file_id
-      ? getFileUrl(f.embodiment_file_id)
-      : "";
+  const embodimentAssetUrl = (f.embodiment_asset_url || "").trim();
+  // Published languages serve the embodiment from a public CDN asset URL in prod.
+  // Locally that URL points at the auth-gated /_internal/blobs route (401 to a
+  // client-side iframe), so fall back to the governed same-origin file proxy —
+  // server-authenticated, exactly like the landing/dashboard below.
+  const embodimentUrl =
+    isPublished &&
+    embodimentAssetUrl &&
+    !embodimentAssetUrl.includes("/_internal/blobs")
+      ? embodimentAssetUrl
+      : f.embodiment_file_id
+        ? getFileUrl(f.embodiment_file_id)
+        : embodimentAssetUrl;
   const embodimentRenderable =
     Boolean(embodimentUrl) && (f.embodiment_format ?? "html") !== "tsx";
   const landingUrl = f.landing_file_id ? getFileUrl(f.landing_file_id) : "";
