@@ -250,16 +250,19 @@ const FAMILY_INKS = [
   "var(--sumire)",
 ];
 
-/** A family needs this many languages to earn its own shelf; the long tail of
- *  smaller families plus untagged languages collects in a trailing shelf. */
-const FAMILY_SHELF_MIN = 5;
+/** Category (leaf) names are already clean — just match the calm stamp casing. */
+function categoryLabel(name: string): string {
+  return name.toLowerCase();
+}
 
 /**
- * Group the wall by the ROOT taxonomy family each language belongs to —
- * "Japanese & East Asian", "Editorial & Publication", etc. — instead of by
- * color. Featured languages float to a leading curator's-picks shelf; the long
- * tail of tiny families collects in "mixed & more". Returns null when no
- * language carries usable taxonomy data, so the caller can fall back.
+ * Group the wall by the specific taxonomy CATEGORY (leaf) each language sits on
+ * — "Swiss Typographic", "Glass & Soft-Depth", "Manga Panel" — not the broad
+ * parent family. Categories cluster by family (shared tint, family shown as the
+ * blurb) and order family-then-size. Featured languages lead in a curator's-
+ * picks shelf; languages with no taxonomy collect in "mixed & more". Returns
+ * null when no language carries usable taxonomy data, so the caller can fall
+ * back to color-mood.
  */
 function buildFamilyShelves(
   languages: DesignLanguage[],
@@ -268,53 +271,55 @@ function buildFamilyShelves(
 ): Shelf[] | null {
   const taxesOf = (lang: DesignLanguage) =>
     taxonomyByLang.get(lang.entity_id) ?? [];
-
-  // Popularity of each root family across the catalog — a language tagged with
-  // several families lands on its biggest one, so shelves consolidate.
-  const pop = new Map<string, number>();
-  for (const lang of languages) {
-    const roots = new Set(
-      taxesOf(lang)
-        .map((t) => rootFamilyOf(t, parents))
-        .filter((r) => parents.has(r)),
-    );
-    for (const r of roots) pop.set(r, (pop.get(r) ?? 0) + 1);
-  }
-  if (pop.size === 0) return null;
-
-  const primaryFamily = (lang: DesignLanguage): string | null => {
-    const roots = taxesOf(lang)
-      .map((t) => rootFamilyOf(t, parents))
-      .filter((r) => parents.has(r));
-    if (roots.length === 0) return null;
-    return roots.reduce((a, b) => ((pop.get(b) ?? 0) > (pop.get(a) ?? 0) ? b : a));
+  // A leaf category is a node whose parent is itself a known parent.
+  const isLeaf = (id: string): boolean => {
+    const info = parents.get(id);
+    return Boolean(info && info.parentId && parents.has(info.parentId));
+  };
+  // A language's primary category is its first taxonomy that resolves to a leaf.
+  const primaryLeaf = (lang: DesignLanguage): string | null => {
+    for (const t of taxesOf(lang)) if (isLeaf(t)) return t;
+    return null;
   };
 
   const featured: DesignLanguage[] = [];
-  const byFamily = new Map<string, DesignLanguage[]>();
+  const byCategory = new Map<string, DesignLanguage[]>();
   const orphans: DesignLanguage[] = [];
   for (const lang of languages) {
     if (isFeaturedLanguage(lang)) {
       featured.push(lang);
       continue;
     }
-    const fam = primaryFamily(lang);
-    if (!fam) {
+    const leaf = primaryLeaf(lang);
+    if (!leaf) {
       orphans.push(lang);
       continue;
     }
-    const bucket = byFamily.get(fam) ?? [];
+    const bucket = byCategory.get(leaf) ?? [];
     bucket.push(lang);
-    byFamily.set(fam, bucket);
+    byCategory.set(leaf, bucket);
   }
+  if (byCategory.size === 0) return null;
 
-  const big = [...byFamily.entries()]
-    .filter(([, v]) => v.length >= FAMILY_SHELF_MIN)
-    .sort((a, b) => b[1].length - a[1].length);
-  const mixed = [...orphans];
-  for (const [, v] of byFamily) {
-    if (v.length < FAMILY_SHELF_MIN) mixed.push(...v);
+  // Family totals so categories cluster under their family (biggest family first).
+  const famSize = new Map<string, number>();
+  for (const [leaf, v] of byCategory) {
+    const fam = rootFamilyOf(leaf, parents);
+    famSize.set(fam, (famSize.get(fam) ?? 0) + v.length);
   }
+  const famRank = [...famSize.entries()].sort((a, b) => b[1] - a[1]);
+  const rankOf = new Map<string, number>(famRank.map(([fam], i) => [fam, i]));
+  const famInk = new Map<string, string>(
+    famRank.map(([fam], i) => [fam, FAMILY_INKS[i % FAMILY_INKS.length]]),
+  );
+
+  const ordered = [...byCategory.entries()].sort((a, b) => {
+    const fa = rootFamilyOf(a[0], parents);
+    const fb = rootFamilyOf(b[0], parents);
+    if (fa !== fb) return (rankOf.get(fa) ?? 99) - (rankOf.get(fb) ?? 99);
+    if (a[1].length !== b[1].length) return b[1].length - a[1].length;
+    return (parents.get(a[0])?.name ?? "").localeCompare(parents.get(b[0])?.name ?? "");
+  });
 
   const shelves: Shelf[] = [];
   if (featured.length > 0) {
@@ -326,22 +331,23 @@ function buildFamilyShelves(
       languages: featured,
     });
   }
-  big.forEach(([fam, v], i) => {
+  for (const [leaf, v] of ordered) {
+    const fam = rootFamilyOf(leaf, parents);
     shelves.push({
-      key: fam,
-      label: familyLabel(parents.get(fam)?.name ?? fam),
-      blurb: "",
-      ink: FAMILY_INKS[i % FAMILY_INKS.length],
+      key: leaf,
+      label: categoryLabel(parents.get(leaf)?.name ?? leaf),
+      blurb: familyLabel(parents.get(fam)?.name ?? ""),
+      ink: famInk.get(fam) ?? "var(--ramune)",
       languages: v,
     });
-  });
-  if (mixed.length > 0) {
+  }
+  if (orphans.length > 0) {
     shelves.push({
       key: "mixed",
       label: "mixed & more",
-      blurb: "every other family",
+      blurb: "uncategorized",
       ink: "var(--graphite)",
-      languages: mixed,
+      languages: orphans,
     });
   }
   return shelves;
