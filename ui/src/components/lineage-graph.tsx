@@ -15,13 +15,13 @@ interface GraphNode {
 type AccentColor = "teal" | "salad" | "sumire" | "sakura" | "yuzu" | "ramune";
 
 const lineageTint: Record<string, AccentColor> = {
-  original: "teal",
-  evolution: "salad",
+  original: "ramune",
+  evolution: "yuzu",
   remix: "sumire",
 };
 
 const statusTint: Record<string, AccentColor> = {
-  Published: "salad",
+  Published: "sumire",
   UnderReview: "yuzu",
   Draft: "ramune",
   Archived: "sakura",
@@ -64,8 +64,8 @@ export function LineageGraph({
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           key
         </span>
-        <LegendChip label={`${counts.original} original`} color="teal" />
-        <LegendChip label={`${counts.evolution} evolution`} color="salad" />
+        <LegendChip label={`${counts.original} original`} color="ramune" />
+        <LegendChip label={`${counts.evolution} evolution`} color="yuzu" />
         <LegendChip label={`${counts.remix} remix`} color="sumire" />
         <span className="ml-1 font-mono text-[10px] text-muted-foreground/60">
           · {nodes.length} total

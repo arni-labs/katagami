@@ -279,7 +279,7 @@ export function InlineRemix({
       {/* preview */}
       <div className="relative">
         <WashiTape color="sakura" rotate={-4} className="-left-4 -top-3" width={104} />
-        <WashiTape color="salad" rotate={5} className="-right-4 -top-3" width={84} />
+        <WashiTape color="yuzu" rotate={5} className="-right-4 -top-3" width={84} />
         <div className="sticker-card relative overflow-hidden p-3 pb-9">
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{comp?.name ?? "Preview"}</span>

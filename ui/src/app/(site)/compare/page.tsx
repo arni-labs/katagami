@@ -47,7 +47,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
               <Stamp color="sumire" rotate={-1}>
                 {lang.fields.lineage_type ?? "original"}
               </Stamp>
-              <Stamp color="salad" rotate={2}>
+              <Stamp color="sumire" rotate={2}>
                 v{lang.counters.version ?? 0}
               </Stamp>
             </div>
@@ -112,7 +112,7 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
       {/* Embodiment comparison */}
       <section>
         <SectionHeading eyebrow="in the wild" eyebrowColor="sakura">
-          <Marker color="salad">embodiments</Marker>
+          <Marker color="sumire">embodiments</Marker>
         </SectionHeading>
         <div className="grid gap-6 md:grid-cols-2">
           {sides.map(({ lang, tape }, i) => (
