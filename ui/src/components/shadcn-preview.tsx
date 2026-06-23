@@ -363,7 +363,7 @@ function visualProfileFromArtifact(
           ? "dashed"
           : String(explicit.border ?? "").toLowerCase() === "solid"
             ? "solid"
-            : profileKeyword(profileText, ["borderless", "no border", "no borders"])
+            : profileKeyword(profileText, ["borderless", "no border", "no borders", "none"])
               ? "none"
               : "solid",
     underlay:

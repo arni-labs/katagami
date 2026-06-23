@@ -619,6 +619,11 @@
   .shadsync-preview[data-shadsync-border="none"] .shadsync-nav-item.is-active {
     box-shadow: none;
   }
+  /* the rotated offset "patch" under metric panels is a paper-collage flourish —
+     never on a no-border language, even if its prose opts into an underlay */
+  .shadsync-preview[data-shadsync-border="none"] .shadsync-panel-shell::before {
+    display: none;
+  }
 
   .shadsync-table [data-slot="table-header"] [data-slot="table-row"] {
     border-color: color-mix(in srgb, var(--shadsync-outline) 72%, transparent);
