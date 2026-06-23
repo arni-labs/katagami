@@ -80,13 +80,21 @@ class CurationLivenessContractTest(unittest.TestCase):
         self.assertNotIn("create_configure_submit_job", finalizer)
         self.assertIn("Follow-up job creation", finalizer)
 
-    def test_curation_direction_synthesizing_times_out_to_failed(self):
+    def test_curation_direction_synthesizing_times_out_to_quarantine(self):
+        # C2: the Synthesizing backstop now Quarantines (archives the half-built
+        # language with the reason + drains the barrier) instead of plain Fail, so a
+        # session that dies before its self-heal loop converges does not orphan a
+        # Draft language. The new Reviewing state has its own FailReview backstop.
         spec = load_spec("curation_direction.ioa.toml")
         timeouts = state_timeout_map(spec)
 
         self.assertNotIn("Synthesizing", indefinite_states(spec))
-        self.assertEqual(timeouts["Synthesizing"]["on_timeout"], "Fail")
+        self.assertEqual(timeouts["Synthesizing"]["on_timeout"], "Quarantine")
         self.assertIn("error_message", timeouts["Synthesizing"]["params"])
+
+        self.assertNotIn("Reviewing", indefinite_states(spec))
+        self.assertEqual(timeouts["Reviewing"]["on_timeout"], "FailReview")
+        self.assertIn("error_message", timeouts["Reviewing"]["params"])
 
 
 if __name__ == "__main__":

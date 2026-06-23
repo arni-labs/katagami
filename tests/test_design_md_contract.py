@@ -50,12 +50,15 @@ class DesignMdContractTests(unittest.TestCase):
             ],
         )
         self.assertTrue(self._sets_bool("AttachDesignMd", "has_design_md", "true"))
+        # PR-5: VerifyDesignMd was deleted; has_valid_design_md is now set from
+        # the design_md_lint_result param at attach time. The finalizer's
+        # verify_design_md_metadata still rejects a non-clean lint result before
+        # SubmitForReview, so this stays sound.
         self.assertTrue(
-            self._sets_bool("AttachDesignMd", "has_valid_design_md", "false")
+            self._sets_bool("AttachDesignMd", "has_valid_design_md", "true")
         )
-        self.assertTrue(
-            self._sets_bool("AttachDesignMd", "design_md_verified", "false")
-        )
+        self.assertNotIn("design_md_verified", self.states)
+        self.assertNotIn("VerifyDesignMd", self.actions)
         self.assertTrue(
             self._sets_bool("AttachDesignMd", "has_published_assets", "false")
         )
@@ -76,14 +79,16 @@ class DesignMdContractTests(unittest.TestCase):
             self._sets_bool("AttachPublishedAssets", "has_published_assets", "true")
         )
 
-    def test_verify_design_md_restores_attached_design_md_state_after_validation(self):
-        self.assertTrue(self._sets_bool("VerifyDesignMd", "has_design_md", "true"))
+    def test_attach_design_md_sets_validity_from_lint_at_attach_time(self):
+        # PR-5 relocated has_design_md / has_valid_design_md from the deleted
+        # VerifyDesignMd verifier action into AttachDesignMd, driven by the
+        # design_md_lint_result param. The finalizer still gates on the lint.
+        self.assertNotIn("VerifyDesignMd", self.actions)
+        self.assertTrue(self._sets_bool("AttachDesignMd", "has_design_md", "true"))
         self.assertTrue(
-            self._sets_bool("VerifyDesignMd", "has_valid_design_md", "true")
+            self._sets_bool("AttachDesignMd", "has_valid_design_md", "true")
         )
-        self.assertTrue(
-            self._sets_bool("VerifyDesignMd", "design_md_verified", "true")
-        )
+        self.assertIn("design_md_lint_result", self.actions["AttachDesignMd"]["params"])
 
     def test_published_languages_do_not_accept_design_md_reattach(self):
         attach = self.actions["AttachDesignMd"]
@@ -100,19 +105,32 @@ class DesignMdContractTests(unittest.TestCase):
         self.assertNotIn("fn revise_published_for_design_md", finalizer)
         self.assertNotIn('"AttachDesignMd"', finalizer)
         self.assertIn("verify_design_md_metadata", finalizer)
-        self.assertIn('"VerifyDesignMd"', finalizer)
+        # The WASM-trusted VerifyDesignMd dispatch was removed in PR-5; the
+        # finalizer's lint-metadata byte check stays the runtime gate.
+        self.assertNotIn('"VerifyDesignMd"', finalizer)
 
     def test_publish_requires_valid_design_md(self):
         publish = self.actions["Publish"]
         guards = publish.get("guard", [])
         for var in [
             "has_valid_design_md",
-            "design_md_verified",
-            "embodiment_verified",
             "has_published_assets",
             "quality_review_passed",
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
+        # The deleted *_verified copy-boolean guards are replaced by the
+        # design_md File Ready/Locked cross_entity_state guard.
+        self.assertNotIn({"type": "is_true", "var": "design_md_verified"}, guards)
+        self.assertNotIn({"type": "is_true", "var": "embodiment_verified"}, guards)
+        self.assertIn(
+            {
+                "type": "cross_entity_state",
+                "entity_type": "File",
+                "entity_id_source": "design_md_file_id",
+                "required_status": ["Ready", "Locked"],
+            },
+            guards,
+        )
 
         invariants = {
             invariant["name"]: invariant for invariant in self.spec["invariant"]
@@ -121,10 +139,7 @@ class DesignMdContractTests(unittest.TestCase):
             invariants["PublishedRequiresValidDesignMd"]["assert"],
             "has_valid_design_md",
         )
-        self.assertEqual(
-            invariants["PublishedRequiresVerifiedDesignMd"]["assert"],
-            "design_md_verified",
-        )
+        self.assertNotIn("PublishedRequiresVerifiedDesignMd", invariants)
         self.assertEqual(
             invariants["PublishedRequiresPublicAssets"]["assert"],
             "has_published_assets",
@@ -136,9 +151,9 @@ class DesignMdContractTests(unittest.TestCase):
         for var in [
             "has_design_md",
             "has_valid_design_md",
-            "design_md_verified",
         ]:
             self.assertIn({"type": "is_true", "var": var}, guards)
+        self.assertNotIn({"type": "is_true", "var": "design_md_verified"}, guards)
         self.assertIn(
             {
                 "type": "cross_entity_state",
@@ -169,7 +184,8 @@ class DesignMdContractTests(unittest.TestCase):
                 self.assertTrue(
                     self._sets_bool(action_name, "has_valid_design_md", "false")
                 )
-                self.assertTrue(
+                # design_md_verified copy-boolean was deleted in PR-5.
+                self.assertFalse(
                     self._sets_bool(action_name, "design_md_verified", "false")
                 )
                 self.assertTrue(
@@ -273,12 +289,13 @@ class DesignMdContractTests(unittest.TestCase):
             "DesignMdAssetUrl",
             "DesignMdLintResult",
             "DesignMdFormatVersion",
-            "DesignMdVerified",
-            "EmbodimentVerified",
             "HasPublishedAssets",
             "QualityReviewPassed",
         ]:
             self.assertIn(prop, props)
+        # PR-5 removed the WASM-trusted *Verified copy-boolean projections.
+        for prop in ["DesignMdVerified", "EmbodimentVerified"]:
+            self.assertNotIn(prop, props)
 
 
 if __name__ == "__main__":

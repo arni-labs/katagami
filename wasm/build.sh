@@ -5,7 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-for module in build_session_message finalize_spawned_session launch_research; do
+for module in build_session_message finalize_spawned_session; do
     echo "Building $module..."
     if (cd "$SCRIPT_DIR/$module" && cargo build --target wasm32-unknown-unknown --release 2>&1); then
         cp "$SCRIPT_DIR/$module/target/wasm32-unknown-unknown/release/$module.wasm" \
@@ -18,7 +18,7 @@ done
 
 echo ""
 echo "WASM modules built:"
-for module in build_session_message finalize_spawned_session launch_research; do
+for module in build_session_message finalize_spawned_session; do
     wasm_file="$SCRIPT_DIR/$module/$module.wasm"
     if [ -f "$wasm_file" ]; then
         size=$(wc -c < "$wasm_file" | tr -d ' ')

@@ -14,7 +14,7 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn("'file_id': ''", skill)
         self.assertIn("Do not use `temper.write(...)` during `source_search`", skill)
         self.assertIn("Do not call `temper.list('DesignSources', '')`", skill)
-        self.assertIn("For targeted requests, create 1-2 directions", skill)
+        self.assertIn("spawn 1-2 directions", skill)
         self.assertIn("Treat each `execute` call as self-contained", skill)
         self.assertIn("fetch at most the top 3", skill)
         self.assertIn("isinstance(fetched, str)", skill)
@@ -87,19 +87,18 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn('"MaxChecks": "80"', builder)
         self.assertNotIn('"MaxChecks": "180"', builder)
 
-    def test_session_builder_prefers_embedded_docs_before_temperfs_lookup(self):
+    def test_session_builder_has_no_embedded_doc_fallback(self):
         root = Path(__file__).resolve().parents[1]
         builder = (
             root / "wasm" / "build_session_message" / "src" / "lib.rs"
         ).read_text()
-        load_doc_file = builder[
-            builder.index("fn load_doc_file") : builder.index("fn load_file_content")
-        ]
+        production_builder = builder.split("#[cfg(test)]", 1)[0]
 
-        self.assertLess(
-            load_doc_file.index("embedded_loaded_doc(path, inline_content)"),
-            load_doc_file.index("resolve_doc_file_id"),
-        )
+        self.assertNotIn("include_str!", production_builder)
+        self.assertNotIn("embedded_loaded_doc", production_builder)
+        self.assertNotIn("embedded_doc_content", production_builder)
+        self.assertNotIn("Fallback read commands", production_builder)
+        self.assertNotIn("file was not available", production_builder)
 
     def test_curator_skills_use_preloaded_json_helper_contract(self):
         root = Path(__file__).resolve().parents[1]
