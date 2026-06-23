@@ -197,13 +197,13 @@ class ReactionResolverTypeTests(unittest.TestCase):
             ],
         )
 
-        # QueueSynthesis widens the barrier; every terminal direction edge drains it.
-        # C4: the design_language lane drains on ReviewPassed/FailReview (after review)
-        # and on Fail/Quarantine; the terminal palette/art_style lanes still drain on
-        # CompletePalette/CompleteArtStyle.
+        # ConfigureAndQueue (the collapsed Configure+QueueSynthesis) widens the barrier;
+        # every terminal direction edge drains it. C4: the design_language lane drains on
+        # ReviewPassed/FailReview (after review) and on Fail/Quarantine; the terminal
+        # palette/art_style lanes still drain on CompletePalette/CompleteArtStyle.
         direction_actions = {a["name"]: a for a in direction_spec["action"]}
         queue_triggers = {
-            t["name"]: t for t in direction_actions["QueueSynthesis"]["triggers"]
+            t["name"]: t for t in direction_actions["ConfigureAndQueue"]["triggers"]
         }
         widen = queue_triggers["queue_synthesis_widens_query_barrier"]
         self.assertEqual(widen["target_action"], "IncrementDirectionsPending")

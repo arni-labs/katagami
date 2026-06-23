@@ -249,6 +249,51 @@ from = ["Running"]
 params = ["progress_log"]
 hint = "Append incremental progress entries during execution."
 
+# SpawnDirection: the source_search agent's ONLY direction-creation call. Callable N
+# times from Running (no `to`, mirroring RecordProgress) — once per discovered movement.
+# Params are ONLY the direction CONTENT the agent decides; the agent never supplies
+# identity. The spawn_direction_creates_direction trigger mints one CurationDirection
+# via ConfigureAndQueue, passing the content through [params]/[params_from] and stamping
+# IDENTITY from this source_search JOB's OWN engine-set fields (query_id, Id,
+# workspace_id) — so the new direction always carries the correct CurationQuery id and
+# the fan-out barrier resolves on a real query instead of a non-existent one.
+[[action]]
+name = "SpawnDirection"
+kind = "input"
+from = ["Running"]
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Mint one CurationDirection for a discovered movement and queue its synthesis. The agent supplies direction content only; the engine stamps query_id/source_search_job_id/workspace_id from this job's own fields. Callable once per movement."
+
+# Mirrors curation_query.ioa.toml's submit_creates_source_search_job and
+# curation_direction.ioa.toml's direction_queue_synthesis_creates_job: resolve_target
+# type="create" mints the entity, [params] passes literals/content through, and
+# [params_from] copies fields from THIS source_search job onto the new direction's
+# ConfigureAndQueue. Identity is stamped from the job's engine-set fields here — query_id
+# and workspace_id are the job's own, source_search_job_id is this job's Id.
+[[action.triggers]]
+name = "spawn_direction_creates_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "ConfigureAndQueue"
+
+[action.triggers.params_from]
+task = "task"
+scope = "scope"
+target_direction = "target_direction"
+palette_direction = "palette_direction"
+output_type = "output_type"
+synthesis_job_type = "synthesis_job_type"
+source_ids = "source_ids"
+topic_allowlist = "topic_allowlist"
+synth_input = "synth_input"
+query_id = "query_id"
+source_search_job_id = "Id"
+workspace_id = "workspace_id"
+
+[action.triggers.resolve_target]
+type = "create"
+
 [[action]]
 name = "Complete"
 kind = "input"

@@ -33,10 +33,20 @@ class LaneRoutingContractTest(unittest.TestCase):
         self.assertEqual(actions["ArtStyleSynthesisComplete"]["to"], "Completed")
         self.assertEqual(actions["ArtStyleSynthesisComplete"]["params"], ["art_style_ids"])
 
-    def test_direction_queue_synthesis_uses_routed_job_type(self):
+    def test_direction_configure_and_queue_uses_routed_job_type(self):
+        # Engine-owned identity: Configure + QueueSynthesis collapsed into the single
+        # ConfigureAndQueue action (mirrors CurationJob.ConfigureAndSubmit). It still
+        # fires direction_queue_synthesis_creates_job, which routes the lane job by the
+        # direction's synthesis_job_type. The caller never sets identity (query_id/
+        # source_search_job_id/workspace_id) — those are stamped by the SpawnDirection
+        # create trigger — so they are no longer ConfigureAndQueue params.
         spec = load_spec("curation_direction.ioa.toml")
         states = {state["name"] for state in spec.get("state", [])}
-        queue = action_by_name(spec, "QueueSynthesis")
+        queue = action_by_name(spec, "ConfigureAndQueue")
+        self.assertEqual(queue["from"], ["Discovered"])
+        self.assertEqual(queue["to"], "Synthesizing")
+        for identity in ["query_id", "source_search_job_id", "workspace_id"]:
+            self.assertNotIn(identity, queue["params"])
         trigger = next(
             trigger
             for trigger in queue["triggers"]
@@ -53,6 +63,77 @@ class LaneRoutingContractTest(unittest.TestCase):
 
         self.assertNotEqual(trigger.get("params", {}).get("job_type"), "synthesize")
         self.assertEqual(trigger["params_from"]["job_type"], "synthesis_job_type")
+
+    def test_spawn_direction_stamps_engine_owned_identity(self):
+        # Root-cause fix: the source_search agent calls CurationJob.SpawnDirection with
+        # CONTENT only; the engine mints the CurationDirection and stamps its identity
+        # from the JOB's own engine-set fields (query_id, Id, workspace_id), so the
+        # fan-out barrier (queue_synthesis_widens_query_barrier resolving on the
+        # direction's query_id) always lands on the real CurationQuery. The agent never
+        # supplies query_id/source_search_job_id/workspace_id.
+        job = load_spec("curation_job.ioa.toml")
+        spawn = action_by_name(job, "SpawnDirection")
+
+        # Callable N times from Running (no `to`), mirroring RecordProgress.
+        self.assertEqual(spawn["from"], ["Running"])
+        self.assertNotIn("to", spawn)
+
+        # Params are direction CONTENT only — no identity fields.
+        for identity in ["query_id", "source_search_job_id", "workspace_id"]:
+            self.assertNotIn(identity, spawn["params"])
+        self.assertEqual(
+            spawn["params"],
+            [
+                "task",
+                "scope",
+                "target_direction",
+                "palette_direction",
+                "output_type",
+                "synthesis_job_type",
+                "source_ids",
+                "topic_allowlist",
+                "synth_input",
+            ],
+        )
+
+        trigger = next(
+            t for t in spawn["triggers"]
+            if t["name"] == "spawn_direction_creates_direction"
+        )
+        self.assertEqual(trigger["target_entity"], "CurationDirection")
+        self.assertEqual(trigger["target_action"], "ConfigureAndQueue")
+        self.assertEqual(trigger["resolve_target"], {"type": "create"})
+        # Identity is stamped from the source_search JOB's own fields:
+        # query_id and workspace_id are the job's persisted state, Id is this job's id.
+        self.assertEqual(trigger["params_from"]["query_id"], "query_id")
+        self.assertEqual(trigger["params_from"]["source_search_job_id"], "Id")
+        self.assertEqual(trigger["params_from"]["workspace_id"], "workspace_id")
+        # Content is forwarded through too (action params project into the job's
+        # fields, which params_from reads).
+        for content in [
+            "task",
+            "scope",
+            "target_direction",
+            "palette_direction",
+            "output_type",
+            "synthesis_job_type",
+            "source_ids",
+            "topic_allowlist",
+            "synth_input",
+        ]:
+            self.assertEqual(trigger["params_from"][content], content)
+
+    def test_research_skill_only_id_is_its_own_job(self):
+        # The skill makes ZERO calls that set a direction's identity. It calls
+        # CurationJob.SpawnDirection on its OWN job_id with content-only params, and no
+        # longer creates CurationDirections or sets query_id/workspace_id on them.
+        skill = (ROOT / "agents" / "curator" / "skills" / "research-direction" / "SKILL.md").read_text()
+        self.assertIn("temper.action('CurationJobs', job_id, 'SpawnDirection'", skill)
+        self.assertNotIn("temper.create('CurationDirections'", skill)
+        self.assertNotIn("'QueueSynthesis'", skill)
+        # synth_input must no longer carry the unbound query_id/direction_id identity.
+        self.assertNotIn("'query_id': query_id", skill)
+        self.assertNotIn("'direction_id': direction_id", skill)
 
     def test_language_synthesis_advances_direction_to_reviewing(self):
         # C1/C4: the agent drives its own SubmitForReview, gated by CompleteSynthesis's

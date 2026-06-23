@@ -58,10 +58,12 @@ Job type: `source_search`
    Use `metadata.archive_status = "deferred"` when the full page text was not
    archived. `file_id` is optional for hot-path research and should remain
    empty unless an existing file artifact already exists.
-7. **Create CurationDirection entities for fan-out**: For each discovered movement, create one direction and queue it. For targeted requests, create 1-2 directions; create more only for explicit broad-survey jobs. Do not create `CurationJob` entities yourself; `QueueSynthesis` triggers the correct lane job:
+7. **Spawn one CurationDirection per movement (engine-owned identity)**: For each discovered movement, make ONE `SpawnDirection` call on YOUR OWN source_search job (`job_id`). The engine mints the CurationDirection, stamps its identity (`query_id`, `source_search_job_id`, `workspace_id`) from this job's own fields, and queues the correct lane job — you never set those ids and never touch the direction or `CurationJob` directly. For targeted requests, spawn 1-2 directions; spawn more only for explicit broad-survey jobs. `SpawnDirection` routes the lane job for you:
    - `design_language` → `synthesize`
    - `palette` → `synthesize_palette`
    - `art_style` → `synthesize_art_style`
+
+   `job_id` is your only id here — it labels your own job in the session prompt. Do not reference any `query_id`, `workspace_id`, or `direction_id` variable; the engine owns all direction identity.
    ```python
    output_type = input_data.get('output_type', '')
    if output_type not in ['design_language', 'palette', 'art_style']:
@@ -72,7 +74,7 @@ Job type: `source_search`
            output_type = 'art_style'
        else:
            output_type = 'design_language'
-   direction_ids = []
+   spawned_directions = []  # records the movements you spawned, NOT engine ids
    for movement in discovered_movements:
        name = movement if isinstance(movement, str) else movement.get('name', '')
        palette = '' if isinstance(movement, str) else movement.get('palette_direction', '')
@@ -82,8 +84,6 @@ Job type: `source_search`
            'palette': 'synthesize_palette',
            'art_style': 'synthesize_art_style',
        }[movement_output_type]
-       direction = temper.create('CurationDirections', {})
-       direction_id = direction['entity_id']
        synth_input = json.dumps({
            'task': task_description,
            'scope': scope_description,
@@ -92,16 +92,12 @@ Job type: `source_search`
            'output_type': movement_output_type,
            'topic_allowlist': topics,
            'source_ids': source_ids,
-           'priority': 'high',
-           'query_id': query_id,
-           # Carried so the synthesize agent can Quarantine THIS direction in its
-           # DRIVE-TO-REVIEW loop if a language proves unfixable.
-           'direction_id': direction_id
+           'priority': 'high'
+           # No query_id/direction_id here: the engine stamps the new direction's
+           # identity from this job's own fields, and the synthesize agent reads
+           # its direction_id from its own job context, not from synth_input.
        }, ensure_ascii=False)
-       temper.action('CurationDirections', direction_id, 'Configure', {
-           'query_id': query_id,
-           'source_search_job_id': job_id,
-           'workspace_id': workspace_id,
+       temper.action('CurationJobs', job_id, 'SpawnDirection', {
            'task': task_description,
            'scope': scope_description,
            'target_direction': name,
@@ -112,9 +108,12 @@ Job type: `source_search`
            'topic_allowlist': json.dumps(topics),
            'synth_input': synth_input
        })
-       temper.action('CurationDirections', direction_id, 'QueueSynthesis', {})
-       direction_ids.append(direction_id)
+       spawned_directions.append(name)
    ```
+   `spawned_directions` records which movements you spawned (their names), not engine
+   ids — you never mint or read a direction id. It only signals the parent whether the
+   fan-out was empty (so `empty_fanout_fails_query` can fast-fail a zero-direction run);
+   the live fan-out count is the engine's own `directions_total` barrier counter.
 8. **Do not update workspace files in the hot path**: Put findings in
    DesignSource metadata, CurationDirection fields, and the CurationJob
    completion output. Do not update `/katagami/log.md`, `/katagami/index.md`,
@@ -124,15 +123,19 @@ Job type: `source_search`
    no longer normalizes the lane — that inference now lives here, and the query's
    barrier-scope guard needs the concrete lane). `output_type` must be exactly one of
    `design_language`, `palette`, or `art_style` — never `auto`.
+   `direction_ids` carries only the empty/non-empty signal (the movement names you
+   spawned), so the engine can fast-fail a zero-direction fan-out. It is NOT a set of
+   direction entity ids — the engine minted those itself and tracks the live fan-out via
+   the query's `directions_total` barrier counter.
    ```python
    temper.action('CurationJobs', job_id, 'CompleteResearch', {
-       'direction_ids': json.dumps(direction_ids),
+       'direction_ids': json.dumps(spawned_directions),
        'output_type': output_type
    })
    temper.done("source_search complete")
    ```
 
-Do NOT create synthesize jobs yourself. CurationDirection.QueueSynthesis handles that through a Temper entity trigger.
+Do NOT create synthesize jobs yourself. CurationDirection.ConfigureAndQueue (fired by the engine-owned SpawnDirection trigger) handles that through a Temper entity trigger.
 
 ## Source Quality Standards
 
@@ -172,6 +175,6 @@ Job output JSON must include:
 - `source_ids` — array of DesignSource entity IDs
 - `discovered_movements` — array of movement names or objects found; objects must preserve `output_type` when a broad query intentionally mixes lanes
 - `topic_allowlist` — topics ready for synthesis
-- `direction_ids` — array of CurationDirection entity IDs queued for synthesis
+- `direction_ids` — empty/non-empty fan-out signal (the movement names you spawned via SpawnDirection), NOT CurationDirection entity IDs; the engine mints and owns those ids
 - `archive_status` — `"deferred"` unless the operator explicitly requested
   PawFS archival during this run

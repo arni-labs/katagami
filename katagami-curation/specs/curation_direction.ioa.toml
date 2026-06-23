@@ -100,20 +100,22 @@ name = "error_message"
 type = "string"
 initial = ""
 
+# ConfigureAndQueue (mirrors CurationJob.ConfigureAndSubmit): set this direction's
+# fields from caller params AND fire the QueueSynthesis fan-out (create the synthesize
+# CurationJob + widen the parent query's barrier) in ONE Discovered->Synthesizing
+# transition. The agent never makes a direction-side call; the engine-owned
+# spawn_direction_creates_direction trigger (curation_job.ioa.toml) is the sole caller,
+# and it stamps the IDENTITY fields (query_id, source_search_job_id, workspace_id) from
+# the source_search JOB's own engine-set fields via params_from — so these three are NOT
+# caller-supplied params here (they stay [[state]] fields, set by the create trigger).
+# Only direction CONTENT params are caller-supplied.
 [[action]]
-name = "Configure"
-kind = "input"
-from = ["Discovered"]
-params = ["query_id", "source_search_job_id", "workspace_id", "task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
-hint = "Record the researched direction, explicit output lane, routed job type, and exact synthesize input payload."
-
-[[action]]
-name = "QueueSynthesis"
+name = "ConfigureAndQueue"
 kind = "input"
 from = ["Discovered"]
 to = "Synthesizing"
-params = []
-hint = "Create and start the synthesize CurationJob for this direction."
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Record the researched direction (content only; identity is stamped by the SpawnDirection create trigger from the source_search job's own fields), then create+start the synthesize CurationJob for this direction and widen the parent query's fan-out barrier."
 
 [[action.triggers]]
 name = "direction_queue_synthesis_creates_job"

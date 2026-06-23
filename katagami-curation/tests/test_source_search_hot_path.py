@@ -14,7 +14,7 @@ class SourceSearchHotPathTests(unittest.TestCase):
         self.assertIn("'file_id': ''", skill)
         self.assertIn("Do not use `temper.write(...)` during `source_search`", skill)
         self.assertIn("Do not call `temper.list('DesignSources', '')`", skill)
-        self.assertIn("For targeted requests, create 1-2 directions", skill)
+        self.assertIn("spawn 1-2 directions", skill)
         self.assertIn("Treat each `execute` call as self-contained", skill)
         self.assertIn("fetch at most the top 3", skill)
         self.assertIn("isinstance(fetched, str)", skill)
