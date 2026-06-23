@@ -332,6 +332,14 @@ params = ["credits"]
 hint = "Credit the artists, movements, studios, or traditions this language is attributable to. JSON list of {name, kind (artist|movement|studio|tradition), note}. Credit ALL influences — never pass a recognizable style off as original. Editable on Published without re-publishing."
 
 [[action]]
+name = "SetModelProvenance"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
+params = ["model_provenance"]
+hint = "Record which AI models produced this design language. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the spec, the model that sourced/researched it, and the model that generated its imagery. Editable on Published without re-publishing."
+
+[[action]]
 name = "SetFeatured"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]

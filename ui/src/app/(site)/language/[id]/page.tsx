@@ -25,6 +25,7 @@ import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
 import { Credits } from "@/components/credits";
+import { ModelProvenance } from "@/components/model-provenance";
 import { PageHero } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
@@ -381,6 +382,8 @@ export default async function LanguageDetailPage({
       </div>
 
       <Credits raw={f.credits} />
+
+      <ModelProvenance raw={f.model_provenance} />
 
       {canRemix ? (
         <section>

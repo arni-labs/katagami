@@ -217,6 +217,14 @@ params = ["credits"]
 hint = "Credit the artists, movements, studios, or traditions this style is attributable to. JSON list of {name, kind (artist|movement|studio|tradition), note}. Credit ALL influences — an LLM-produced style is an aggregate of many hands; never pass a recognizable style off as original. Editable on Published without re-publishing."
 
 [[action]]
+name = "SetModelProvenance"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
+params = ["model_provenance"]
+hint = "Record which AI models produced this art style. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the recipe, the model that sourced/identified the tradition, and the model that generated the sample images. Editable on Published without re-publishing."
+
+[[action]]
 name = "SetFeatured"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]
