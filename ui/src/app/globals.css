@@ -645,6 +645,13 @@
     border-radius: var(--shadsync-control-radius);
     background: color-mix(in srgb, var(--shadsync-surface) 82%, transparent);
     padding: 3px;
+    align-items: center;
+  }
+  /* keep the tab triggers vertically centred in the bar (no bottom bias) */
+  .shadsync-preview .shadsync-tabs [data-slot="tabs-trigger"] {
+    align-self: center;
+    height: auto;
+    min-height: 1.6rem;
   }
 
   .shadsync-notes {

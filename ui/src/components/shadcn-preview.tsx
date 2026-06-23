@@ -398,7 +398,8 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
   const secondary = tokenString(colors, ["secondary", "warning"], "var(--secondary)");
   const border = tokenString(colors, ["border", "outline"], "var(--border)");
   const radius = tokenString(radii, ["lg", "md", "default", "base"], "var(--sample-radius)");
-  const controlRadius = tokenString(radii, ["sm", "md", "default", "base"], radius);
+  // controls share the card radius (md), not the structural "sm" (often 0) — no square inputs/buttons
+  const controlRadius = tokenString(radii, ["md", "default", "base", "lg"], radius);
   const chipRadius = tokenString(radii, ["full", "pill"], "999px");
   return {
     "--shadsync-bg": background,
@@ -421,6 +422,11 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
       ["lg", "md"],
       "0 16px 36px rgb(48 64 59 / 0.14), 0 2px 0 rgb(48 64 59 / 0.08)",
     ),
+    // A no-border language must not inherit a hard --border (e.g. #000000) onto the raw
+    // shadcn primitives (Input, Tabs, Separator) — keep them borderless like the language.
+    ...(profile.border === "none"
+      ? { "--border": "transparent", "--input": "transparent", "--shadsync-outline": "transparent" }
+      : {}),
   } as CSSProperties;
 }
 
