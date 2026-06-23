@@ -324,6 +324,14 @@ params = ["tags"]
 hint = "Set freeform tags for discovery and search."
 
 [[action]]
+name = "SetCredits"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_credits", value = "true" }]
+params = ["credits"]
+hint = "Credit the artists, movements, studios, or traditions this language is attributable to. JSON list of {name, kind (artist|movement|studio|tradition), note}. Credit ALL influences — never pass a recognizable style off as original. Editable on Published without re-publishing."
+
+[[action]]
 name = "SetFeatured"
 kind = "input"
 from = ["Draft", "UnderReview", "Published"]

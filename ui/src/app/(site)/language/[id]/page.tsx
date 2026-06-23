@@ -24,6 +24,7 @@ import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
+import { Credits } from "@/components/credits";
 import { PageHero } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
@@ -378,6 +379,8 @@ export default async function LanguageDetailPage({
           </section>
         </div>
       </div>
+
+      <Credits raw={f.credits} />
 
       {canRemix ? (
         <section>

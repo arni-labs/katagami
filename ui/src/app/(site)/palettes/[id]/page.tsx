@@ -14,6 +14,7 @@ import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { readableTextColor } from "@/lib/shadcn-export";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
+import { Credits } from "@/components/credits";
 import { CopyButton } from "@/components/copy-button";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { KX_BTN_PAPER } from "@/lib/katagami-ui";
@@ -187,6 +188,8 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
           ) : null}
         </div>
       </StickyNote>
+
+      <Credits raw={f.credits} />
 
       {guidance && (guidance.do?.length || guidance.dont?.length) ? (
         <div className="grid gap-4 sm:grid-cols-2">
