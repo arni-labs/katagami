@@ -965,7 +965,7 @@ function SceneBadge({ status }: { status: string }) {
   return (
     <Badge
       variant={variant}
-      className="shadsync-status h-5 rounded-md"
+      className="shadsync-status h-5 rounded-md leading-none"
       data-shadsync-status-tone={tone}
     >
       {status}
@@ -1392,7 +1392,7 @@ function SceneHeader({
     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge className="shadsync-status h-5 rounded-md">{scene.eyebrow || shot.viewport}</Badge>
+          <Badge className="shadsync-status h-5 rounded-md leading-none">{scene.eyebrow || shot.viewport}</Badge>
           <Badge variant="outline" className="shadsync-chip h-5 rounded-md">
             {shot.id}
           </Badge>
