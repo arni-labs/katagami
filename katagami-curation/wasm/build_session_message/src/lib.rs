@@ -118,6 +118,14 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .filter(|value| value.starts_with("ss-"))
             .unwrap_or_default();
 
+        // Engine-stamped identity fields. direction_id / query_id are stamped onto
+        // the synthesize CurationJob by the spawn/queue triggers (curation_direction
+        // .ioa.toml: direction_queue_synthesis_creates_job stamps direction_id="Id",
+        // query_id="query_id"); they are NOT in synth_input. Surface them as a labeled
+        // line so the synthesize agent reads its direction_id/query_id from its own
+        // job context, not from the Input block.
+        let job_identity_block = render_job_identity_block(&fields);
+
         let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
         let skill = template.skill_id.as_str();
         let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
@@ -203,7 +211,7 @@ Completion action: {completion_action}
 Completion contract: {completion_contract}
 Workspace ID: {workspace_id}
 
-## Input
+{job_identity_block}## Input
 
 {input}
 ## Instructions
@@ -572,26 +580,65 @@ fn parse_template(fields: &serde_json::Value) -> Result<JobTemplate, String> {
     })
 }
 
+/// Surface a job's engine-stamped identity (direction_id, query_id) as a labeled
+/// prompt block. These are stamped onto the synthesize/review job by the spawn/queue
+/// triggers (curation_direction.ioa.toml direction_queue_synthesis_creates_job:
+/// direction_id="Id", query_id="query_id") and are NOT in synth_input — the agent must
+/// read them here, never parse ids out of the Input block. Empty for jobs that carry
+/// neither (e.g. source_search, whose identity is engine-owned via SpawnDirection).
+fn render_job_identity_block(fields: &serde_json::Value) -> String {
+    let direction_id = field_str(fields, &["direction_id", "DirectionId"]).unwrap_or_default();
+    let query_id = field_str(fields, &["query_id", "QueryId"]).unwrap_or_default();
+    let mut lines = Vec::new();
+    if !direction_id.is_empty() {
+        lines.push(format!("direction_id = \"{direction_id}\""));
+    }
+    if !query_id.is_empty() {
+        lines.push(format!("query_id = \"{query_id}\""));
+    }
+    if lines.is_empty() {
+        return String::new();
+    }
+    format!(
+        "## Your job identity (engine-stamped — use these directly; do NOT parse ids out of the Input block)\n{}\n\n",
+        lines.join("\n")
+    )
+}
+
 fn completion_params_block(completion_action: &str, job_type: &str, entity_id: &str) -> String {
     let snippet = match completion_action {
         "CompleteResearch" => format!(
             r#"```python
-direction_ids = [...]  # CurationDirection entity IDs queued via QueueSynthesis
+direction_ids = [...]  # the movement names you spawned via SpawnDirection — a non-empty
+# fan-out signal only, NOT CurationDirection entity IDs (the engine mints and owns those).
+# output_type is the concrete lane you inferred (design_language/palette/art_style),
+# never 'auto' — it is recorded on the parent query for barrier-scope routing.
 temper.action('CurationJobs', '{entity_id}', 'CompleteResearch', {{
-    'direction_ids': json.dumps(direction_ids)
+    'direction_ids': json.dumps(direction_ids),
+    'output_type': output_type
 }})
 ```"#
         ),
         "CompleteSynthesis" => format!(
             r#"```python
-review_input = json.dumps({{
-    'language_ids': created_ids,
-    'query_id': query_id
-}}, ensure_ascii=False)
-temper.action('CurationJobs', '{entity_id}', 'CompleteSynthesis', {{
-    'design_language_ids': json.dumps(created_ids),
-    'review_input': review_input
-}})
+# First run the DRIVE-TO-REVIEW loop in the synthesize-language skill: drive each
+# created language to UnderReview via SubmitForReview, repairing whatever its guard
+# names; Quarantine an unfixable one. `survivors` are the languages that reached
+# UnderReview. CompleteSynthesis is GUARDED to reject any language still in Draft.
+if not survivors:
+    temper.action('CurationJobs', '{entity_id}', 'Fail', {{
+        'error_message': 'synthesize produced no language that reached UnderReview.'
+    }})
+else:
+    review_input = json.dumps({{
+        'language_ids': survivors,
+        'query_id': query_id
+    }}, ensure_ascii=False)
+    temper.action('CurationJobs', '{entity_id}', 'CompleteSynthesis', {{
+        'design_language_ids': json.dumps(survivors),
+        'design_language_id': survivors[0],
+        'review_input': review_input
+    }})
 ```"#
         ),
         "CompleteQualityReview" => format!(
@@ -1121,9 +1168,23 @@ mod tests {
         let block = completion_params_block("CompleteSynthesis", "synthesize", "job-123");
 
         assert!(block.contains("Required completion params for `CompleteSynthesis`"));
-        assert!(block.contains("'design_language_ids': json.dumps(created_ids)"));
+        // C1: the agent drives its own SubmitForReview first; CompleteSynthesis is
+        // passed only the `survivors` that reached UnderReview, plus the scalar
+        // design_language_id, and Fails the job when no language survived.
+        assert!(block.contains("'design_language_ids': json.dumps(survivors)"));
+        assert!(block.contains("'design_language_id': survivors[0]"));
         assert!(block.contains("'review_input': review_input"));
+        assert!(block.contains("if not survivors:"));
         assert!(block.contains("temper.action('CurationJobs', 'job-123', 'CompleteSynthesis'"));
+    }
+
+    #[test]
+    fn complete_research_prompt_carries_output_type() {
+        // C5: launch_research is gone; the source_search agent records the concrete
+        // lane on the query via CompleteResearch's output_type param.
+        let block = completion_params_block("CompleteResearch", "source_search", "job-9");
+        assert!(block.contains("'output_type': output_type"));
+        assert!(block.contains("temper.action('CurationJobs', 'job-9', 'CompleteResearch'"));
     }
 
     #[test]

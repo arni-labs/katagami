@@ -31,39 +31,32 @@
         <Property Name="DesignMdAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="DesignMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="alpha" />
-        <Property Name="DesignMdVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- shadcn/ui: generated registry theme projection for component-first apps -->
         <Property Name="ShadcnExportFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ShadcnExportFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="registry-theme-v1" />
         <Property Name="ShadcnExportManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasShadcnExport" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ShadcnExportVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- shadcn/ui: first-class agent-authored component recipes and preview-shot manifests -->
         <Property Name="ShadcnComponentSpecFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ShadcnComponentSpecFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="component-recipes-v1" />
         <Property Name="ShadcnComponentSpecManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasShadcnComponentSpec" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ShadcnComponentSpecVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ShadcnPreviewShotsFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ShadcnPreviewShotsFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="preview-shots-v1" />
         <Property Name="ShadcnPreviewShotsManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasShadcnPreviewShots" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ShadcnPreviewShotsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Embodiment: self-contained HTML file in paw-fs -->
         <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EmbodimentAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="EmbodimentVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Composition embodiments: bespoke Landing + Dashboard screens (HTML), tokenized for remix. Gated like the embodiment. -->
         <Property Name="LandingFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DashboardFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasCompositions" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="CompositionsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ElementCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="CompositionCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
@@ -189,13 +182,11 @@
         <Property Name="TokensExportFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="tokens-v1" />
         <Property Name="TokensExportManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasTokensExport" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="TokensExportVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Gallery thumbnail (swatch grid) -->
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Lineage -->
         <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
@@ -247,18 +238,15 @@
         <Property Name="ReferenceManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="ReferenceAssets" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasReferenceImages" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ReferenceImagesVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Proof shots: canonical subjects rendered in-style -->
         <Property Name="ProofShotsFileIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ProofShotsManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasProofShots" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ProofShotsVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Gallery thumbnail -->
         <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ThumbnailVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Lineage -->
         <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />

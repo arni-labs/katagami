@@ -53,6 +53,14 @@ name = "direction_ids"
 type = "string"
 initial = "[]"
 
+# C5: the concrete output lane the source_search agent inferred. Carried on the
+# source_search job so research_completion_advances_query can forward it to the
+# parent query's ResearchComplete (replaces launch_research's WASM normalization).
+[[state]]
+name = "output_type"
+type = "string"
+initial = ""
+
 [[state]]
 name = "design_language_ids"
 type = "string"
@@ -241,6 +249,51 @@ from = ["Running"]
 params = ["progress_log"]
 hint = "Append incremental progress entries during execution."
 
+# SpawnDirection: the source_search agent's ONLY direction-creation call. Callable N
+# times from Running (no `to`, mirroring RecordProgress) — once per discovered movement.
+# Params are ONLY the direction CONTENT the agent decides; the agent never supplies
+# identity. The spawn_direction_creates_direction trigger mints one CurationDirection
+# via ConfigureAndQueue, passing the content through [params]/[params_from] and stamping
+# IDENTITY from this source_search JOB's OWN engine-set fields (query_id, Id,
+# workspace_id) — so the new direction always carries the correct CurationQuery id and
+# the fan-out barrier resolves on a real query instead of a non-existent one.
+[[action]]
+name = "SpawnDirection"
+kind = "input"
+from = ["Running"]
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Mint one CurationDirection for a discovered movement and queue its synthesis. The agent supplies direction content only; the engine stamps query_id/source_search_job_id/workspace_id from this job's own fields. Callable once per movement."
+
+# Mirrors curation_query.ioa.toml's submit_creates_source_search_job and
+# curation_direction.ioa.toml's direction_queue_synthesis_creates_job: resolve_target
+# type="create" mints the entity, [params] passes literals/content through, and
+# [params_from] copies fields from THIS source_search job onto the new direction's
+# ConfigureAndQueue. Identity is stamped from the job's engine-set fields here — query_id
+# and workspace_id are the job's own, source_search_job_id is this job's Id.
+[[action.triggers]]
+name = "spawn_direction_creates_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "ConfigureAndQueue"
+
+[action.triggers.params_from]
+task = "task"
+scope = "scope"
+target_direction = "target_direction"
+palette_direction = "palette_direction"
+output_type = "output_type"
+synthesis_job_type = "synthesis_job_type"
+source_ids = "source_ids"
+topic_allowlist = "topic_allowlist"
+synth_input = "synth_input"
+query_id = "query_id"
+source_search_job_id = "Id"
+workspace_id = "workspace_id"
+
+[action.triggers.resolve_target]
+type = "create"
+
 [[action]]
 name = "Complete"
 kind = "input"
@@ -269,8 +322,8 @@ name = "CompleteResearch"
 kind = "input"
 from = ["Running"]
 to = "Finalizing"
-params = ["direction_ids"]
-hint = "Research completed after creating and queueing CurationDirection records."
+params = ["direction_ids", "output_type"]
+hint = "Research completed after creating and queueing CurationDirection records. output_type is the concrete lane the source_search agent inferred (auto -> design_language/palette/art_style); it is forwarded to the parent query so the barrier-scope guard resolves (C5, replaces launch_research's WASM normalization)."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -293,14 +346,43 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
-
-[action.triggers.params]
-synthesize_job_id = ""
-synthesize_job_ids = "[]"
+# drop_ok: ResearchComplete is from=[Researching] on the query. If the query already
+# left Researching (e.g. timed out to Failed), the advance harmlessly drops rather
+# than re-driving a terminated query. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
 direction_ids = "direction_ids"
+output_type = "output_type"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Empty fan-out fast-fail (ARN-88): if source_search produced zero directions,
+# the barrier's directions_total stays 0 and SynthesisComplete can never open;
+# fail the query immediately instead of hanging until the Synthesizing timeout.
+[[action.triggers]]
+name = "empty_fanout_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing] — not from terminal states. If the query already reached Completed or
+# Failed, this empty-fan-out fast-fail harmlessly drops (a terminal query cannot and
+# must not be re-failed). Intentionally conditional, in addition to the
+# direction_ids == "[]" guard.
+drop_ok = true
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_ids"
+value = "[]"
+
+[action.triggers.params]
+error_message = "source_search produced zero curation directions; nothing to synthesize."
 
 [action.triggers.resolve_target]
 type = "field"
@@ -311,8 +393,19 @@ name = "CompleteSynthesis"
 kind = "input"
 from = ["Running"]
 to = "Finalizing"
-params = ["design_language_ids", "review_input"]
-hint = "Synthesis completed and a quality review job should be created by trigger."
+params = ["design_language_ids", "design_language_id", "review_input"]
+# KEYSTONE (correction #1): the synthesize agent drives its OWN completion. Every
+# produced language must already be UnderReview (its in-session SubmitForReview
+# succeeded) before the job may complete. A premature call (any language still
+# Draft) is rejected here, so the self-heal loop in the synthesize-language skill
+# has a real enforced caller and the finalizer no longer needs to own the
+# SubmitForReview walk. entity_id_source is a JSON-list param; the cross_entity_state
+# resolver holds the required_status per id across the list (same list-ref resolution
+# the art_style/palette File guards rely on). design_language_id is the scalar single
+# language id this direction produced, carried through to CurationDirection.Synthesized.
+guard = [
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_ids", required_status = ["UnderReview", "Published"] }
+]
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -329,66 +422,67 @@ temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 
+# ARN-88: record the per-direction synthesize job id AND its created language ids
+# on the parent query FIRST — before the barrier-narrowing decrement advances the
+# query out of Synthesizing. Reactions on an edge run in declaration order, each
+# cascading fully before the next; this block is declared ahead of
+# synthesis_completes_direction so RecordSynthesizeJob's append lands while the
+# query is still Synthesizing. (RecordSynthesizeJob is from=[Researching,
+# Synthesizing] with no `to`; if it arrived after the barrier opened it would be
+# from-state-rejected and silently dropped, leaving design_language_ids empty and
+# the barrier-open quality_review unscoped.) Each param is named after the list
+# var RecordSynthesizeJob appends (kernel ListAppend has no value_from; it reads
+# params.get(var)).
 [[action.triggers]]
-name = "synthesis_creates_quality_review_job"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
-
-[action.triggers.guard]
-type = "field_equals"
-field = "direction_id"
-value = ""
-
-[action.triggers.params]
-job_type = "quality_review"
-completion_contract = "typed-v1"
-
-[action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "review_input"
-
-[action.triggers.resolve_target]
-type = "create"
-
-[[action.triggers]]
-name = "synthesis_completes_direction"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationDirection"
-target_action = "Complete"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "direction_id"
-
-[[action.triggers]]
-name = "synthesis_completion_advances_query"
+name = "synthesis_records_synthesize_job"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.guard]
-type = "field_equals"
-field = "direction_id"
-value = ""
-
-[action.triggers.params]
-organize_job_id = ""
-quality_review_job_ids = "[]"
+target_action = "RecordSynthesizeJob"
+# drop_ok: RecordSynthesizeJob is from=[Researching, Synthesizing]. In the real flow
+# it lands while the query is still Synthesizing (it is declared before the
+# direction's Synthesized advance and the barrier narrows only later on review). It
+# drops only for a straggler synthesize job that completes after the query already
+# left Synthesizing — a language that could never have been counted in the still-open
+# barrier — so the organize scope loses nothing. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
+synthesize_job_ids = "Id"
 design_language_ids = "design_language_ids"
 
 [action.triggers.resolve_target]
 type = "field"
 field = "query_id"
+
+# Per-direction synthesis advances its CurationDirection from Synthesizing to
+# Reviewing (Synthesized), which creates THIS direction's per-direction
+# quality_review job and does NOT yet narrow the barrier — the barrier narrows when
+# review terminates (ReviewPassed/FailReview/Fail/Quarantine). The synthesize agent
+# has already driven its language to UnderReview in-session (gated by the
+# CompleteSynthesis cross_entity_state guard above), so design_language_id is the
+# scalar single language id this direction produced; it is recorded on the direction
+# for the Quarantine -> Archive cascade. Declared after synthesis_records_synthesize_job
+# so the query-side record (for organize scope) lands first.
+[[action.triggers]]
+name = "synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Synthesized"
+# drop_ok: Synthesized is from=[Synthesizing] on the direction. If a Synthesizing
+# state_timeout already fired Quarantine (or the direction otherwise terminated)
+# before the synthesize job committed, this advance must NOT resurrect the direction
+# to Reviewing — it harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+design_language_ids = "design_language_ids"
+design_language_id = "design_language_id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
 
 [[action]]
 name = "CompleteQualityReview"
@@ -413,32 +507,39 @@ temper_api_url = "{secret:temper_api_url}"
 katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 
+# Per-direction review (correction #5): a quality_review job now reviews ONE
+# direction's language and carries that direction_id. Passing review advances the
+# direction Reviewing -> Completed (ReviewPassed), which narrows the fan-out barrier
+# by one. The single organize_taxonomy job is created once on the query side when the
+# barrier opens (SynthesisComplete), NOT per-direction here — N per-direction reviews
+# must not create N organize jobs. Guard direction_id != "" so a genuinely query-level
+# review (none today) would not mis-route.
 [[action.triggers]]
-name = "review_creates_organization_job"
+name = "review_passes_direction"
 kind = "entity"
 principal = "curation-service"
-target_entity = "CurationJob"
-target_action = "ConfigureAndSubmit"
+target_entity = "CurationDirection"
+target_action = "ReviewPassed"
+# drop_ok: ReviewPassed is from=[Reviewing] on the direction. If the Reviewing
+# state_timeout already fired FailReview (or the direction terminated) before the
+# review job committed, the pass harmlessly drops instead of un-failing the
+# direction. Intentionally conditional (in addition to the direction_id != "" guard).
+drop_ok = true
 
 [action.triggers.guard]
 type = "not"
 
 [action.triggers.guard.guard]
 type = "field_equals"
-field = "query_id"
+field = "direction_id"
 value = ""
 
-[action.triggers.params]
-job_type = "organize_taxonomy"
-completion_contract = "typed-v1"
-
 [action.triggers.params_from]
-workspace_id = "workspace_id"
-query_id = "query_id"
-input = "organize_input"
+design_language_ids = "design_language_ids"
 
 [action.triggers.resolve_target]
-type = "create"
+type = "field"
+field = "direction_id"
 
 [[action]]
 name = "CompleteOrganization"
@@ -469,6 +570,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "OrganizationComplete"
+# drop_ok: OrganizationComplete is from=[Organizing] on the query. If the query
+# already left Organizing (e.g. timed out to Failed), the finish harmlessly drops.
+# Intentionally conditional.
+drop_ok = true
 
 [action.triggers.resolve_target]
 type = "field"
@@ -569,6 +674,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "CompletePalette"
+# drop_ok: CompletePalette is from=[Synthesizing] on the direction. If the direction
+# already terminated (Quarantine/Fail via timeout) before the palette job committed,
+# the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 palette_system_ids = "palette_system_ids"
@@ -603,6 +712,10 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "CompleteArtStyle"
+# drop_ok: CompleteArtStyle is from=[Synthesizing] on the direction. Same as the
+# palette lane — if the direction already terminated before the art-style job
+# committed, the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 art_style_ids = "art_style_ids"
@@ -627,40 +740,22 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "ResearchComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishResearchCompletion finalize action) duplicating research_completion_advances_query.
+# ResearchComplete is from=[Researching]; in the common typed-v1 flow the query has
+# already advanced past Researching by the time this legacy path runs, so it
+# harmlessly drops. Intentionally conditional. (Test test_inline_query_advancement_triggers_exist
+# pins this trigger to exist; it is compatibility, not dead code.)
+drop_ok = true
 
+# ARN-88: ResearchComplete no longer carries synthesize_job_id/synthesize_job_ids
+# (the barrier counters, not an id list, gate synthesis), so this legacy
+# compatibility trigger only forwards the params ResearchComplete still declares.
 [action.triggers.params]
 direction_ids = "[]"
-synthesize_job_ids = "[]"
 
 [action.triggers.params_from]
 source_search_job_id = "Id"
-synthesize_job_id = "followup_job_id"
-
-[action.triggers.resolve_target]
-type = "field"
-field = "query_id"
-
-[[action]]
-name = "PublishSynthesisCompletion"
-kind = "internal"
-from = ["Finalizing"]
-to = "Completed"
-params = ["design_language_ids", "followup_job_id"]
-hint = "Legacy compatibility: record review/organize follow-up and advance parent query."
-
-[[action.triggers]]
-name = "legacy_synthesis_completion_advances_query"
-kind = "entity"
-principal = "curation-service"
-target_entity = "CurationQuery"
-target_action = "SynthesisComplete"
-
-[action.triggers.params]
-quality_review_job_ids = "[]"
-
-[action.triggers.params_from]
-design_language_ids = "design_language_ids"
-organize_job_id = "followup_job_id"
 
 [action.triggers.resolve_target]
 type = "field"
@@ -680,6 +775,12 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "OrganizationComplete"
+# drop_ok: legacy-format compatibility path (fires from the internal
+# PublishOrganizationCompletion finalize action) duplicating
+# organization_completion_finishes_query. OrganizationComplete is from=[Organizing];
+# when the query has already finished the legacy path harmlessly drops. Intentionally
+# conditional. (Test test_inline_query_advancement_triggers_exist pins this to exist.)
+drop_ok = true
 
 [action.triggers.resolve_target]
 type = "field"
@@ -746,6 +847,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationDirection"
 target_action = "Fail"
+# drop_ok: CurationDirection.Fail is from=[Discovered, Synthesizing, Reviewing]. If
+# the direction already reached a terminal state (Completed/Failed/Quarantined) — e.g.
+# it was Quarantined by its own timeout — the job-failure propagation harmlessly drops
+# instead of re-failing a terminal direction. Intentionally conditional.
+drop_ok = true
 
 [action.triggers.params_from]
 error_message = "error_message"
@@ -760,6 +866,21 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationQuery"
 target_action = "Fail"
+# drop_ok: CurationQuery.Fail is from=[Submitted, Researching, Synthesizing,
+# Organizing]. If the query already reached Completed or Failed, propagating a
+# non-direction job failure harmlessly drops — a terminal query must not be re-failed.
+# Intentionally conditional, in addition to the direction_id == "" guard below.
+drop_ok = true
+
+# ARN-88: only non-direction jobs (source_search/quality_review/organize, which
+# carry direction_id=="") fail the query directly. A per-direction synthesize
+# job failure routes through job_failure_fails_direction -> CurationDirection.Fail
+# -> DecrementDirectionsPending, draining the barrier instead of racing the query
+# into Failed while sibling directions are still synthesizing.
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
 
 [action.triggers.params_from]
 error_message = "error_message"

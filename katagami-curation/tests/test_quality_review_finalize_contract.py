@@ -245,7 +245,9 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
         self.assertNotIn('/tdata/Directories', source)
         self.assertNotIn("write_workspace_file", source)
         self.assertIn("verify_design_md_metadata", source)
-        self.assertIn('"VerifyDesignMd"', source)
+        # PR-5 removed the WASM-trusted VerifyDesignMd dispatch; the byte-level
+        # lint-metadata + $value checks stay the finalizer's runtime gate.
+        self.assertNotIn('"VerifyDesignMd"', source)
         self.assertIn('/tdata/Files', source)
         self.assertIn("Files('{file_id}')/$value", source)
 
@@ -271,7 +273,12 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             "finalizer must prove review prerequisites before dispatching SubmitForReview",
         )
 
-    def test_finalizer_confirms_verifier_owned_booleans_before_review_preflight(self):
+    def test_finalizer_byte_checks_artifacts_before_review_preflight(self):
+        # PR-5 deleted the WASM-trusted Verify* dispatches and the
+        # dispatch_verifier_action helper; artifact readiness is now
+        # engine-enforced by the spec's cross_entity_state File guards. The
+        # finalizer keeps the byte-level content verification before driving
+        # SubmitForReview, and no longer references the deleted glue.
         source = (
             self.curation_root
             / "wasm"
@@ -280,15 +287,15 @@ class QualityReviewFinalizeContractTests(unittest.TestCase):
             / "lib.rs"
         ).read_text()
 
-        self.assertIn("fn dispatch_verifier_action", source)
-        self.assertIn('"verifier_action_effect_not_visible"', source)
+        self.assertNotIn("fn dispatch_verifier_action", source)
+        self.assertNotIn('"verifier_action_effect_not_visible"', source)
         self.assertIn('"action_response_parse_failed"', source)
-        self.assertIn('"VerifyDesignMd"', source)
-        self.assertIn('"has_design_md", "has_valid_design_md", "design_md_verified"', source)
-        self.assertIn('"VerifyShadcnPreviewShots"', source)
-        self.assertIn('"shadcn_preview_shots_verified"', source)
+        self.assertNotIn('"VerifyDesignMd"', source)
+        self.assertNotIn("design_md_verified", source)
+        self.assertNotIn('"VerifyShadcnPreviewShots"', source)
+        self.assertNotIn("shadcn_preview_shots_verified", source)
         self.assertLess(
-            source.index("dispatch_verifier_action("),
+            source.index("let verified_language = verify_complete_language_artifacts"),
             source.index("verify_review_ready_state(language_id, language)?"),
         )
 

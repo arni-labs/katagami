@@ -387,10 +387,12 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
 
 If thumbnail generation, resizing, or verification fails, fix the embodiment or
 the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
-non-JPEG thumbnail. Do not call `VerifyThumbnail` or `SubmitForReview`
-directly; the CurationJob finalizer reads the attached `thumbnail_file_id`,
-rejects base64 text payloads, marks `VerifyThumbnail`, then submits the language
-for review.
+non-JPEG thumbnail. Do not call `VerifyThumbnail` directly; the CurationJob
+finalizer reads the attached `thumbnail_file_id`, rejects base64 text payloads,
+and marks `VerifyThumbnail`. You DO own `SubmitForReview` — see the
+**DRIVE-TO-REVIEW PHASE** below: after every artifact is attached you drive each
+language to `UnderReview` yourself, repairing whatever its guard names as
+missing, before completing the job.
 
 ### Step 6 — Publish artifacts
 
@@ -641,6 +643,79 @@ finalizer-owned — do NOT call it.** On job completion the CurationJob finalize
 language with a missing, untokenized, or hero-less composition is held back for
 remediation exactly like a bad element embodiment — it will not publish.
 
+## DRIVE-TO-REVIEW PHASE (self-heal loop)
+
+You own `SubmitForReview`. Before completing a `synthesize` job you MUST drive
+every language you created to `UnderReview` yourself. The CurationJob's
+`CompleteSynthesis` guard rejects the completion while any language is still
+`Draft`, so completing without submitting just bounces back to you. Skipping this
+is not an option — there is no finalizer fallback that submits for you.
+
+`direction_id` and `query_id` are provided in the **Your job identity** block at the
+top of this prompt — engine-stamped onto this synthesize job, NOT in `synth_input`.
+Read them from that block (do not parse them out of the Input/`synth_input` payload),
+and set them before the loop so the Quarantine call can target THIS direction and
+`CompleteSynthesis` carries the correct `query_id`.
+
+For each `eid` in `created_ids`, run this loop:
+
+```python
+def language_status(eid):
+    lang = temper.get('DesignLanguages', eid)
+    return lang.get('status') or (lang.get('fields') or {}).get('Status') or 'Draft'
+
+# Map a SubmitForReview guard field to the repair you re-run for it. The kernel
+# rejection names the failing guard/field; read it and re-run only that phase,
+# re-Attach asserting require_ready_file, then retry SubmitForReview.
+#   has_embodiment / embodiment_file_id          -> EMBODIMENT PHASE, re-AttachEmbodiment
+#   has_compositions / landing_file_id /
+#     dashboard_file_id                           -> COMPOSITION EMBODIMENTS PHASE, re-AttachCompositions
+#   has_thumbnail / thumbnail_file_id             -> thumbnail step (Step 5), re-AttachThumbnail
+#   has_design_md / has_valid_design_md /
+#     design_md_file_id                           -> DESIGN.md PHASE, re-AttachDesignMd (clean lint)
+#   has_shadcn_export / shadcn_export_file_id     -> registry-theme step, re-AttachShadcnExport
+#   has_shadcn_component_spec /
+#     shadcn_component_spec_file_id               -> components.md step, re-AttachShadcnComponentSpec
+#   has_shadcn_preview_shots /
+#     shadcn_preview_shots_file_id                -> preview-shots step, re-AttachShadcnPreviewShots
+# Any "cross_entity_state File ... <field>" rejection means that file is not
+# Ready/Locked: re-write it and re-Attach (require_ready_file must pass first).
+
+survivors = []
+for eid in list(created_ids):
+    while True:
+        result = temper.action('DesignLanguages', eid, 'SubmitForReview', {})
+        if language_status(eid) in ('UnderReview', 'Published'):
+            survivors.append(eid)
+            break
+        # Rejected. The result/error names the unsatisfied guard or file field.
+        # Re-run the mapped phase, re-Attach the artifact, then retry. Do NOT
+        # count turns or reserve a budget — there is no turn-introspection API;
+        # keep repairing until the guard is satisfied.
+        missing = describe_rejection(result)   # parse the named guard/field
+        repaired = repair_for_guard(eid, missing)   # re-run the mapped phase + re-Attach
+        if not repaired:
+            # DELIBERATE give-up: you have concluded this language cannot be made
+            # review-ready (e.g. an artifact step keeps failing for a real reason).
+            # Quarantine it visibly so the half-built language is archived with the
+            # reason instead of stranded in Draft, and the fan-out barrier narrows.
+            temper.action('CurationDirections', direction_id, 'Quarantine', {
+                'error_message': 'synthesize could not drive language to UnderReview: ' + str(missing),
+                'design_language_id': eid,
+                'design_language_ids': json.dumps([eid])
+            })
+            break   # eid is dropped from survivors
+```
+
+`describe_rejection`/`repair_for_guard` are not library calls — they are the
+agentic loop: read what the kernel said failed, re-run that phase, re-Attach, retry.
+There is NO `temper.turns_remaining()` and no turn budget to read; the only bound
+on a runaway loop is the engine's `Synthesizing` `state_timeout`, which fires
+`Quarantine` automatically if the session dies before converging. Quarantine is a
+deliberate decision you make, not a turn-count trigger.
+
+After the loop, `survivors` holds the languages that reached `UnderReview`.
+
 ### Final Tool Call
 
 ```python
@@ -657,16 +732,34 @@ elif job_type == 'evolve_language':
     })
     temper.done("evolve_language complete")
 else:
-    review_input = json.dumps({
-        'language_ids': created_ids,
-        'query_id': query_id
-    }, ensure_ascii=False)
-    temper.action('CurationJobs', job_id, 'CompleteSynthesis', {
-        'design_language_ids': json.dumps(created_ids),
-        'review_input': review_input
-    })
-    temper.done("synthesize complete")
+    # Only languages the DRIVE-TO-REVIEW loop drove to UnderReview may complete.
+    # The CompleteSynthesis guard re-asserts UnderReview per id, so passing a Draft
+    # survivor would bounce; pass `survivors`, never the raw `created_ids`.
+    if not survivors:
+        # Every language was quarantined as unfixable. Fail the synthesize job; the
+        # per-direction routing (job_failure_fails_direction) drains this direction's
+        # barrier slot, and the query completes with its other directions (or
+        # fast-fails via all_directions_drained_empty_fails_query if none survived).
+        temper.action('CurationJobs', job_id, 'Fail', {
+            'error_message': 'synthesize produced no language that reached UnderReview; all were quarantined.'
+        })
+        temper.done("synthesize failed: no survivors")
+    else:
+        review_input = json.dumps({
+            'language_ids': survivors,
+            'query_id': query_id
+        }, ensure_ascii=False)
+        temper.action('CurationJobs', job_id, 'CompleteSynthesis', {
+            'design_language_ids': json.dumps(survivors),
+            'design_language_id': survivors[0],
+            'review_input': review_input
+        })
+        temper.done("synthesize complete")
 ```
+
+A `synthesize` direction produces exactly one language, so `survivors[0]` is that
+language's id; it is carried as the scalar `design_language_id` so the
+CurationDirection can record it for the Quarantine -> Archive cascade resolver.
 
 ## Tooling Rules
 
@@ -679,6 +772,9 @@ else:
 ## Output
 
 - `language_ids` — array of created DesignLanguage entity IDs, never slugs
-- `synthesize` → `CompleteSynthesis` with `design_language_ids` and `review_input`
+- `synthesize` → drive each language to `UnderReview` yourself (DRIVE-TO-REVIEW
+  PHASE), then `CompleteSynthesis` with the `survivors` as `design_language_ids`,
+  the single survivor as the scalar `design_language_id`, and `review_input`. If no
+  language survived, `Fail` the job instead.
 - `regenerate_embodiment` → `CompleteRegeneration`
 - `evolve_language` → `CompleteEvolution`

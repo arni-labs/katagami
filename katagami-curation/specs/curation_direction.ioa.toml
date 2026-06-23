@@ -5,9 +5,9 @@
 
 [automaton]
 name = "CurationDirection"
-states = ["Discovered", "Synthesizing", "Completed", "Failed"]
+states = ["Discovered", "Synthesizing", "Reviewing", "Completed", "Failed", "Quarantined"]
 initial = "Discovered"
-allow_indefinite_states = ["Discovered", "Completed", "Failed"]
+allow_indefinite_states = ["Discovered", "Completed", "Failed", "Quarantined"]
 
 [[state]]
 name = "query_id"
@@ -74,6 +74,17 @@ name = "design_language_ids"
 type = "string"
 initial = "[]"
 
+# Correction #2: a synthesize direction produces exactly ONE design language. This
+# scalar holds that single id so the Quarantine -> DesignLanguage.Archive cascade
+# (an entity trigger) can resolve its single-entity target via
+# resolve_target type="field" field="design_language_id". A trigger field resolver
+# resolves a SCALAR id; design_language_ids (a JSON list) cannot be resolved that
+# way. Set by Synthesized (carried from the synthesize job) and by Quarantine.
+[[state]]
+name = "design_language_id"
+type = "string"
+initial = ""
+
 [[state]]
 name = "palette_system_ids"
 type = "string"
@@ -89,20 +100,22 @@ name = "error_message"
 type = "string"
 initial = ""
 
+# ConfigureAndQueue (mirrors CurationJob.ConfigureAndSubmit): set this direction's
+# fields from caller params AND fire the QueueSynthesis fan-out (create the synthesize
+# CurationJob + widen the parent query's barrier) in ONE Discovered->Synthesizing
+# transition. The agent never makes a direction-side call; the engine-owned
+# spawn_direction_creates_direction trigger (curation_job.ioa.toml) is the sole caller,
+# and it stamps the IDENTITY fields (query_id, source_search_job_id, workspace_id) from
+# the source_search JOB's own engine-set fields via params_from — so these three are NOT
+# caller-supplied params here (they stay [[state]] fields, set by the create trigger).
+# Only direction CONTENT params are caller-supplied.
 [[action]]
-name = "Configure"
-kind = "input"
-from = ["Discovered"]
-params = ["query_id", "source_search_job_id", "workspace_id", "task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
-hint = "Record the researched direction, explicit output lane, routed job type, and exact synthesize input payload."
-
-[[action]]
-name = "QueueSynthesis"
+name = "ConfigureAndQueue"
 kind = "input"
 from = ["Discovered"]
 to = "Synthesizing"
-params = []
-hint = "Create and start the synthesize CurationJob for this direction."
+params = ["task", "scope", "target_direction", "palette_direction", "output_type", "synthesis_job_type", "source_ids", "topic_allowlist", "synth_input"]
+hint = "Record the researched direction (content only; identity is stamped by the SpawnDirection create trigger from the source_search job's own fields), then create+start the synthesize CurationJob for this direction and widen the parent query's fan-out barrier."
 
 [[action.triggers]]
 name = "direction_queue_synthesis_creates_job"
@@ -124,13 +137,116 @@ input = "synth_input"
 [action.triggers.resolve_target]
 type = "create"
 
+# Fan-out barrier (ARN-88): queuing this direction's synthesize job widens the
+# parent query's barrier by one. Source-side one-shot — QueueSynthesis is the
+# lone Discovered->Synthesizing edge, so this increment fires exactly once.
+[[action.triggers]]
+name = "queue_synthesis_widens_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "IncrementDirectionsPending"
+# drop_ok: the widen only applies while the query is in its fan-out window
+# (Researching/Synthesizing). A direction that queues synthesis after the query
+# already advanced (Organizing/Completed/Failed) must NOT re-open a resolved
+# barrier — the increment harmlessly drops.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
-name = "Complete"
+name = "Synthesized"
 kind = "input"
 from = ["Synthesizing"]
+to = "Reviewing"
+params = ["design_language_ids", "design_language_id"]
+hint = "The design-language synthesize job completed in-session (the agent already drove its language to UnderReview). Record the single produced language id and create THIS direction's per-direction quality_review job. The fan-out barrier is NOT narrowed yet — it narrows when review terminates (ReviewPassed/FailReview)."
+
+# Per-direction review (correction #5, replaces the per-query
+# barrier_open_creates_quality_review_job). Carries direction_id so a review-job
+# failure routes via job_failure_fails_direction (curation_job) -> FailReview/Fail
+# -> barrier-narrow for THIS direction only, never failing the whole query. input
+# carries only THIS direction's languages, not the query-wide accumulation.
+[[action.triggers]]
+name = "direction_synthesized_creates_review_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+[action.triggers.params]
+job_type = "quality_review"
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+direction_id = "Id"
+workspace_id = "workspace_id"
+query_id = "query_id"
+input = "design_language_ids"
+
+[action.triggers.resolve_target]
+type = "create"
+
+[[action]]
+name = "ReviewPassed"
+kind = "input"
+from = ["Reviewing"]
 to = "Completed"
 params = ["design_language_ids"]
-hint = "The design-language synthesize job for this direction completed."
+hint = "This direction's per-direction quality_review passed. Narrow the fan-out barrier by one."
+
+# Fan-out barrier: a reviewed-and-passed direction narrows the parent query's
+# barrier by one. CompletedIsFinal makes this one-shot per direction.
+[[action.triggers]]
+name = "direction_review_passed_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: DecrementDirectionsPending is from=[Synthesizing] on the query. Once the
+# query has already left Synthesizing (barrier opened to Organizing, or timed out to
+# Failed) this narrow is a no-op — the count no longer gates anything and must not
+# underflow. Intentionally conditional on the query still being in the fan-out.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
+name = "FailReview"
+kind = "input"
+from = ["Reviewing"]
+to = "Failed"
+params = ["error_message"]
+hint = "This direction's per-direction quality_review failed (or its review session timed out). Narrow the fan-out barrier by one so one review failure cannot stall the query."
+
+# Fan-out barrier: a failed-in-review direction must also narrow the barrier.
+[[action.triggers]]
+name = "direction_fail_review_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: same as direction_review_passed_narrows_query_barrier — the narrow only
+# applies while the query is still Synthesizing; on an already-advanced/terminated
+# query it harmlessly drops.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
 
 [[action]]
 name = "CompletePalette"
@@ -140,6 +256,24 @@ to = "Completed"
 params = ["palette_system_ids"]
 hint = "The palette synthesize job for this direction completed."
 
+[[action.triggers]]
+name = "direction_complete_palette_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: the palette lane shares the fan-out counters but the query advances to
+# Completed via PaletteSynthesisComplete, not through the design-lane barrier. Once
+# the query has left Synthesizing the narrow is a no-op — intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "CompleteArtStyle"
 kind = "input"
@@ -148,19 +282,130 @@ to = "Completed"
 params = ["art_style_ids"]
 hint = "The art-style synthesize job for this direction completed."
 
+[[action.triggers]]
+name = "direction_complete_art_style_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: same as the palette lane — art_style is terminal via
+# ArtStyleSynthesisComplete; the shared-counter narrow is a no-op once the query
+# has advanced. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
 [[action]]
 name = "Fail"
 kind = "input"
-from = ["Discovered", "Synthesizing"]
+from = ["Discovered", "Synthesizing", "Reviewing"]
 to = "Failed"
 params = ["error_message"]
-hint = "The direction could not be synthesized."
+hint = "The direction could not be synthesized or reviewed. Reachable from Reviewing so a review-job failure routed via job_failure_fails_direction still narrows the barrier."
+
+# Fan-out barrier (ARN-88): a failed direction must also narrow the barrier so
+# one failure cannot stall the query forever. DecrementDirectionsPending is
+# from=[Synthesizing] on the query, so a Fail from the Discovered state (before
+# any increment landed) is from-state-rejected and cannot underflow the barrier.
+[[action.triggers]]
+name = "direction_fail_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: a Fail from Discovered (before any increment landed) or after the query
+# already left Synthesizing must NOT underflow/re-touch the barrier — the narrow
+# harmlessly drops. This is the from-state guard the spec comment above relies on.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Correction #4/#6: bounded exhaustion path. The synthesize agent calls Quarantine
+# when it deliberately concludes a language cannot be driven to UnderReview, OR the
+# Synthesizing/Reviewing state_timeout fires it automatically if the session dies
+# before converging. Quarantine parks the direction VISIBLY: it narrows the fan-out
+# barrier like a terminal Complete/Fail AND archives the half-built language with
+# the reason (Fail alone narrows but orphans the language in Draft).
+[[action]]
+name = "Quarantine"
+kind = "input"
+from = ["Discovered", "Synthesizing", "Reviewing"]
+to = "Quarantined"
+params = ["error_message", "design_language_id", "design_language_ids"]
+hint = "Park an unfixable direction. The synthesize agent's self-heal loop exhausted its repair attempts (a deliberate give-up), or a state_timeout fired. Narrow the barrier so survivors complete, and Archive the half-built language with the reason so it is not orphaned in Draft like Fail leaves it."
+
+# Barrier-narrow: a quarantined direction drains the barrier like a terminal
+# Complete*/Fail/ReviewPassed/FailReview. DecrementDirectionsPending is
+# from=[Synthesizing] on the query, so a Quarantine from Discovered (before any
+# increment landed) is from-state-rejected and cannot underflow the barrier.
+[[action.triggers]]
+name = "direction_quarantine_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: same from-state guard as direction_fail_narrows_query_barrier — a
+# Quarantine from Discovered (no increment yet) or after the query advanced drops
+# harmlessly rather than underflowing the barrier. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# Cascade (correction #2/#6): archive the half-built language with the reason.
+# resolve_target resolves the SCALAR design_language_id field (set by Synthesized or
+# by this Quarantine call's own param) — a trigger field resolver resolves a single
+# entity id, never the design_language_ids JSON list. Archive
+# (design_language: from=[Draft, UnderReview, Published]) accepts a Draft/UnderReview
+# survivor; error_message -> curator_notes. If design_language_id is empty (e.g. the
+# timeout backstop fired before any language was produced) the resolver finds no
+# target and the cascade is a harmless no-op; the barrier still drains.
+[[action.triggers]]
+name = "direction_quarantine_archives_language"
+kind = "entity"
+principal = "curation-service"
+target_entity = "DesignLanguage"
+target_action = "Archive"
+# drop_ok: the half-built language may be absent (design_language_id == "" when the
+# timeout backstop fired before any language was produced) or already Archived. The
+# spec comment above states this cascade is a harmless no-op in that case — the
+# barrier still drains. Intentionally conditional, exactly as documented.
+drop_ok = true
+
+[action.triggers.params_from]
+curator_notes = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "design_language_id"
 
 [[state_timeout]]
 state = "Synthesizing"
 after_seconds = 7200
-on_timeout = "Fail"
-params = { error_message = "CurationDirection remained Synthesizing for 2h without synthesis completion." }
+on_timeout = "Quarantine"
+params = { error_message = "CurationDirection remained Synthesizing for 2h without reaching UnderReview; the in-session self-heal loop did not converge." }
+
+# Reviewing has its own backstop: a review session that dies without terminating
+# fails the direction's review (narrowing the barrier) rather than hanging.
+[[state_timeout]]
+state = "Reviewing"
+after_seconds = 7200
+on_timeout = "FailReview"
+params = { error_message = "CurationDirection remained Reviewing for 2h without quality-review completion." }
 
 [[invariant]]
 name = "CompletedIsFinal"
@@ -170,4 +415,9 @@ assert = "no_further_transitions"
 [[invariant]]
 name = "FailedIsFinal"
 when = ["Failed"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "QuarantinedIsFinal"
+when = ["Quarantined"]
 assert = "no_further_transitions"

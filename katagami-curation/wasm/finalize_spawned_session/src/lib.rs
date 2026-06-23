@@ -270,7 +270,7 @@ fn verify_typed_completion(
     workspace_id: &str,
 ) -> Result<serde_json::Value, VerificationError> {
     match job_type {
-        "source_search" => verify_source_search(fields),
+        "source_search" => verify_source_search(ctx, api_url, headers, fields),
         "synthesize" | "regenerate_embodiment" | "evolve_language" => {
             verify_synthesized_languages(ctx, api_url, headers, fields, job_type)
         }
@@ -289,13 +289,26 @@ fn verify_typed_completion(
 }
 
 fn verify_source_search(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
     fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
-    let direction_ids = string_array_field(fields, "direction_ids");
+    // The agent reports direction_ids via CompleteResearch, but the Monty REPL
+    // resets its Python heap between provider turns: an agent that creates the
+    // CurationDirection records in one turn and completes in a later turn can
+    // report an empty list even though the directions exist and have already
+    // queued synthesis. The CurationDirection entities are the source of truth,
+    // so when the reported list is empty, derive the directions actually queued
+    // for this source_search job instead of failing a job that did its work.
+    let mut direction_ids = string_array_field(fields, "direction_ids");
+    if direction_ids.is_empty() {
+        direction_ids = queued_direction_ids(ctx, api_url, headers, &ctx.entity_id)?;
+    }
     if direction_ids.is_empty() {
         return Err(VerificationError::new(
             "missing_direction_ids",
-            "source_search completed without direction_ids; inline triggers cannot fan out synthesis without explicit directions",
+            "source_search completed without creating any CurationDirection records; nothing to fan out synthesis from",
         )
         .field("direction_ids"));
     }
@@ -304,6 +317,59 @@ fn verify_source_search(
         "job_type": "source_search",
         "direction_ids": direction_ids,
     }))
+}
+
+/// List the CurationDirection entity ids queued for a given source_search job.
+/// Reads the entities directly (the source of truth) so source_search
+/// verification does not depend on the agent re-threading direction_ids across
+/// Monty REPL turns. Equality filter on source_search_job_id pushes down at the
+/// query plane (bounded with $top), so this stays a cheap point lookup.
+fn queued_direction_ids(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    source_search_job_id: &str,
+) -> Result<Vec<String>, VerificationError> {
+    if source_search_job_id.is_empty() {
+        return Ok(Vec::new());
+    }
+    let url = format!(
+        "{api_url}/tdata/CurationDirections?$filter=source_search_job_id%20eq%20%27{source_search_job_id}%27&$top=200"
+    );
+    let resp = http_call(ctx, "GET", &url, headers, "")?;
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "direction_lookup_failed",
+            format!(
+                "failed to list CurationDirections for source_search job '{source_search_job_id}': HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .repairable(false));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).map_err(|error| {
+        VerificationError::new(
+            "direction_lookup_failed",
+            format!("failed to parse CurationDirections response: {error}"),
+        )
+        .repairable(false)
+    })?;
+    let mut ids = Vec::new();
+    if let Some(items) = parsed.get("value").and_then(|v| v.as_array()) {
+        for item in items {
+            let id = item
+                .get("fields")
+                .and_then(|f| f.get("Id"))
+                .and_then(|v| v.as_str())
+                .or_else(|| item.get("entity_id").and_then(|v| v.as_str()))
+                .unwrap_or("");
+            if !id.is_empty() {
+                ids.push(id.to_string());
+            }
+        }
+    }
+    Ok(ids)
 }
 
 fn verify_synthesized_languages(
@@ -431,16 +497,6 @@ fn verify_complete_language_artifacts(
         "embodiment",
         Some(&embodiment_format),
     )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyEmbodiment",
-        &json!({}),
-        &["embodiment_verified"],
-    )?;
 
     verify_file_field(
         ctx,
@@ -462,16 +518,6 @@ fn verify_complete_language_artifacts(
         "composition_dashboard",
         None,
     )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyCompositions",
-        &json!({}),
-        &["compositions_verified"],
-    )?;
 
     verify_file_field(
         ctx,
@@ -482,16 +528,6 @@ fn verify_complete_language_artifacts(
         "thumbnail_file_id",
         "thumbnail",
         None,
-    )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyThumbnail",
-        &json!({}),
-        &["thumbnail_verified"],
     )?;
 
     verify_design_md_metadata(language_id, &fields)?;
@@ -505,16 +541,6 @@ fn verify_complete_language_artifacts(
         "design_md",
         None,
     )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyDesignMd",
-        &json!({}),
-        &["has_design_md", "has_valid_design_md", "design_md_verified"],
-    )?;
 
     verify_file_field(
         ctx,
@@ -525,16 +551,6 @@ fn verify_complete_language_artifacts(
         "shadcn_export_file_id",
         "shadcn_export",
         None,
-    )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyShadcnExport",
-        &json!({}),
-        &["shadcn_export_verified"],
     )?;
 
     verify_shadcn_component_manifest(language_id, &fields)?;
@@ -548,16 +564,6 @@ fn verify_complete_language_artifacts(
         "shadcn_component_spec",
         None,
     )?;
-    dispatch_verifier_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "VerifyShadcnComponentSpec",
-        &json!({}),
-        &["shadcn_component_spec_verified"],
-    )?;
 
     verify_shadcn_preview_manifest(language_id, &fields)?;
     verify_file_field(
@@ -570,18 +576,19 @@ fn verify_complete_language_artifacts(
         "shadcn_preview_shots",
         None,
     )?;
-    let verified_language = dispatch_verifier_action(
+
+    verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
+    // Re-load so the caller keeps a current snapshot after the byte-level
+    // verification above; readiness is now enforced by the spec's
+    // cross_entity_state File guards, not by WASM-set *_verified booleans.
+    let verified_language = load_required_entity(
         ctx,
         api_url,
         headers,
         "DesignLanguages",
         language_id,
-        "VerifyShadcnPreviewShots",
-        &json!({}),
-        &["shadcn_preview_shots_verified"],
+        "language_disappeared",
     )?;
-
-    verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
     Ok(verified_language)
 }
 
@@ -704,20 +711,13 @@ fn verify_review_ready_state(
         "has_layout",
         "has_guidance",
         "has_embodiment",
-        "embodiment_verified",
         "has_compositions",
-        "compositions_verified",
         "has_thumbnail",
-        "thumbnail_verified",
         "has_design_md",
         "has_valid_design_md",
-        "design_md_verified",
         "has_shadcn_export",
-        "shadcn_export_verified",
         "has_shadcn_component_spec",
-        "shadcn_component_spec_verified",
         "has_shadcn_preview_shots",
-        "shadcn_preview_shots_verified",
     ]
     .iter()
     .copied()
@@ -1633,7 +1633,6 @@ fn verify_synthesized_palettes(
             headers,
             "PaletteSystems",
             id,
-            &["VerifyTokensExport", "VerifyThumbnail"],
             "Publish",
         )?;
     }
@@ -1678,11 +1677,6 @@ fn verify_synthesized_art_styles(
             headers,
             "ArtStyles",
             id,
-            &[
-                "VerifyReferenceImages",
-                "VerifyProofShots",
-                "VerifyThumbnail",
-            ],
             "Publish",
         )?;
     }
@@ -1699,10 +1693,9 @@ fn walk_lane_entity_to_published(
     headers: &[(String, String)],
     set_name: &'static str,
     entity_id: &str,
-    verify_actions: &[&str],
     publish_action: &str,
 ) -> Result<(), VerificationError> {
-    let mut entity = load_required_entity(
+    let entity = load_required_entity(
         ctx,
         api_url,
         headers,
@@ -1714,26 +1707,9 @@ fn walk_lane_entity_to_published(
     if status == "Published" {
         return Ok(());
     }
-    for action in verify_actions {
-        dispatch_action(
-            ctx,
-            api_url,
-            headers,
-            set_name,
-            entity_id,
-            action,
-            &json!({}),
-        )?;
-    }
-    entity = load_required_entity(
-        ctx,
-        api_url,
-        headers,
-        set_name,
-        entity_id,
-        "missing_lane_entity",
-    )?;
-    let status = entity_status_value(&entity);
+    // Readiness of the lane's artifact Files is now enforced by the spec's
+    // cross_entity_state guards on SubmitForReview/Publish (Files must be
+    // Ready/Locked), not by WASM-dispatched Verify* actions.
     if status == "Draft" {
         dispatch_action(
             ctx,
@@ -1983,68 +1959,6 @@ fn dispatch_action(
         .entity(set_name, entity_id)
         .repairable(false)
     })
-}
-
-fn dispatch_verifier_action(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    set_name: &'static str,
-    entity_id: &str,
-    action: &str,
-    params: &serde_json::Value,
-    expected_bools: &[&str],
-) -> Result<serde_json::Value, VerificationError> {
-    let action_entity =
-        dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params)?;
-    if expected_bools.is_empty() {
-        return Ok(action_entity);
-    }
-    if expected_bools
-        .iter()
-        .all(|name| entity_bool_any(&action_entity, name))
-    {
-        return Ok(action_entity);
-    }
-
-    let mut latest = None;
-    for _ in 0..5 {
-        let entity = load_required_entity(
-            ctx,
-            api_url,
-            headers,
-            set_name,
-            entity_id,
-            "verifier_entity_disappeared",
-        )?;
-        if expected_bools
-            .iter()
-            .all(|name| entity_bool_any(&entity, name))
-        {
-            return Ok(entity);
-        }
-        latest = Some(entity);
-    }
-
-    let missing: Vec<&str> = expected_bools
-        .iter()
-        .copied()
-        .filter(|name| {
-            latest
-                .as_ref()
-                .map(|entity| !entity_bool_any(entity, name))
-                .unwrap_or(true)
-        })
-        .collect();
-    Err(VerificationError::new(
-        "verifier_action_effect_not_visible",
-        format!(
-            "{set_name}('{entity_id}') verifier action '{action}' completed, but expected booleans are not visible: [{}]",
-            missing.join(", ")
-        ),
-    )
-    .entity(set_name, entity_id)
-    .repairable(true))
 }
 
 fn http_call(

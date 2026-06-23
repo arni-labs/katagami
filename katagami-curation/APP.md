@@ -75,13 +75,23 @@ belongs in a later artifact step.
 
 ## Pipeline
 
-`CurationQuery.output_type` is explicit. `launch_research` infers it from the
-query text when it is `auto`, records the normalized value, and passes it to
-`source_search`. `source_search` persists that lane on every
+`CurationQuery.output_type` is explicit. When it is `auto`, the `source_search`
+agent infers the concrete lane from the query text and records it on the query at
+`CompleteResearch` (`ResearchComplete` carries `output_type`). `CurationQuery.Submit`
+creates the `source_search` job via an inline entity trigger — there is no
+`launch_research` WASM. `source_search` persists the inferred lane on every
 `CurationDirection`, so palette and art-style requests never enter the
 DesignLanguage worker by accident.
 
-`source_search` -> `CurationDirection(output_type=design_language, synthesis_job_type=synthesize)` fan-out -> `synthesize` -> `quality_review` -> `organize_taxonomy` -> Completed
+In the design_language lane each direction now runs its own per-direction
+`quality_review` (a second opinion scoped to that one language), reached via
+`Synthesizing -> Reviewing -> Completed`; the fan-out barrier opens only after every
+direction has cleared review, and the single `organize_taxonomy` job is created once
+at barrier-open. The synthesize agent drives its own `SubmitForReview` in-session
+(the finalizer no longer owns that walk); an unfixable direction is `Quarantine`d,
+which archives the half-built language and drains the barrier.
+
+`source_search` -> `CurationDirection(output_type=design_language, synthesis_job_type=synthesize)` fan-out -> `synthesize` (agent self-heals to UnderReview) -> per-direction `quality_review` -> barrier-open -> `organize_taxonomy` -> Completed
 
 Multi-lane remix work can also fan out into terminal palette and art-style
 lanes:
