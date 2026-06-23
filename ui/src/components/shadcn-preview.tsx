@@ -404,9 +404,9 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
   const secondary = tokenString(colors, ["secondary", "warning"], "var(--secondary)");
   const border = tokenString(colors, ["border", "outline"], "var(--border)");
   const radius = tokenString(radii, ["lg", "md", "default", "base"], "var(--sample-radius)");
-  // controls honor the language's own control radius (sm first) — a language that declares
-  // sharp 0 corners gets sharp controls; we don't impose rounding it didn't ask for.
-  const controlRadius = tokenString(radii, ["sm", "md", "default", "base"], radius);
+  // controls follow the language's card radius (md), never forced square at sm:0 — a
+  // genuinely sharp language expresses that in its tokens (md/lg = 0), not via the renderer.
+  const controlRadius = tokenString(radii, ["md", "default", "base", "lg"], radius);
   const chipRadius = tokenString(radii, ["full", "pill"], "999px");
   return {
     "--shadsync-bg": background,
