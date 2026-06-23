@@ -13,6 +13,7 @@ import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
+import { Credits } from "@/components/credits";
 import { InlineRemix } from "@/components/remix/inline-remix";
 
 export const dynamic = "force-dynamic";
@@ -171,6 +172,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
           ) : null}
         </div>
       </StickyNote>
+
+      <Credits raw={f.credits} />
 
       {guidance && (guidance.do?.length || guidance.dont?.length) ? (
         <div className="grid gap-4 sm:grid-cols-2">

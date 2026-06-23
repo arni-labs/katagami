@@ -68,6 +68,8 @@
         <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Credits" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Taste embedding: semantic vector for discovery (taste deck,
              related languages). JSON float array + the model that made it. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
@@ -196,6 +198,8 @@
         <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Credits" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
@@ -256,6 +260,8 @@
         <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Credits" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
