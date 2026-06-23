@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { track, trackLanguageClick, trackSearch } from "@/lib/analytics";
 
 export interface PaletteIndexItem {
   id: string;
@@ -116,6 +117,20 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
 
   const go = useCallback(
     (item: PaletteIndexItem) => {
+      if (item.kind === "language") {
+        trackLanguageClick({
+          languageId: item.id,
+          languageName: item.name,
+          source: "search",
+        });
+      } else {
+        track("search_result_click", {
+          entity_id: item.id,
+          entity_kind: item.kind,
+          entity_name: item.name,
+          source: "search",
+        });
+      }
       closePalette();
       router.push(item.href);
     },
@@ -128,6 +143,17 @@ export function CommandPalette({ items }: { items: PaletteIndexItem[] }) {
     const pick = pool[Math.floor(Math.random() * pool.length)];
     go(pick);
   }, [items, go]);
+
+  // Record search terms (debounced) — what people look for, and whether it
+  // returns anything. Query text is truncated inside trackSearch.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
+    const timer = setTimeout(() => {
+      trackSearch({ query: q, resultsCount: results.length });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [query, results.length]);
 
   const onInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {

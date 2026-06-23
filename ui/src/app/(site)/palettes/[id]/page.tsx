@@ -170,7 +170,7 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
 
         <Perforation className="my-4" />
         <div className="flex flex-wrap items-center gap-2">
-          <CopyButton text={tokensCss} label="Copy tokens.css" variant="ink" />
+          <CopyButton text={tokensCss} label="Copy tokens.css" variant="ink" artifact="tokens_css" />
           <a
             href={`data:text/css;charset=utf-8,${encodeURIComponent(tokensCss)}`}
             download={`${slug}.tokens.css`}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Palette, Brush, Wand2 } from "lucide-react";
+import { trackNav } from "@/lib/analytics";
 
 const tabs = [
   {
@@ -70,6 +71,7 @@ export function MobileNav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
+                onClick={() => trackNav({ target: href, source: "mobile" })}
                 className="group/tab relative flex flex-col items-center gap-0.5 px-1 py-1.5 text-foreground/70 transition-colors duration-150 active:text-foreground"
               >
                 {/* active yuzu wash behind the cell */}

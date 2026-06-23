@@ -1,0 +1,540 @@
+{
+  "title": "Katagami — Visitors & Usage (RUM)",
+  "description": "What's getting traction on katagami.ai: unique visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nNote on custom-action facets: copy/download/search/language_click/nav events are RUM custom actions. Their name is faceted as @action.target.name and their attributes as @context.<key> (e.g. @context.artifact, @context.file, @context.source). If your org surfaces them under a slightly different facet, adjust the affected widgets once real data lands — the views/sessions widgets are facet-independent and work immediately.",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "## Katagami — Visitors & Usage\nUnique visits, page views, language traction, copies & downloads. Data starts the day RUM credentials go live; there is no historical backfill.",
+        "background_color": "white",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "center",
+        "show_tick": false,
+        "tick_pos": "50%",
+        "tick_edge": "left",
+        "has_padding": true
+      },
+      "layout": { "x": 0, "y": 0, "width": 12, "height": 1 }
+    },
+    {
+      "definition": {
+        "title": "Audience",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Visits (sessions)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "visits",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "visits" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Page views",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "views",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:view" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "views" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Engagement actions (copy / download / clicks)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "actions",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.type:custom" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "actions" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 6, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Avg pages / session",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "views",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:view" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    },
+                    {
+                      "data_source": "rum",
+                      "name": "sessions",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "views / sessions" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 1
+            },
+            "layout": { "x": 9, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Visits over time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "visits",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "visits" }],
+                  "display_type": "bars"
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 2, "width": 8, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Visits by country",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "byCountry",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@geo.country",
+                          "limit": 10,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "byCountry" }]
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 2, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Visits by device",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "byDevice",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@device.type",
+                          "limit": 10,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "byDevice" }]
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 5, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Top referrers",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "byReferrer",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:session @session.type:user" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@session.referrer",
+                          "limit": 10,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "byReferrer" }]
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 5, "width": 6, "height": 3 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 1, "width": 12, "height": 9 }
+    },
+    {
+      "definition": {
+        "title": "Languages & pages",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Top languages by page views (which languages get traction)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "langViews",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:view @view.url_path:\"/language/*\"" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@view.url_path",
+                          "limit": 25,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "langViews" }]
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Top pages (all routes)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "pageViews",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:view" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@view.url_path_group",
+                          "limit": 20,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "pageViews" }]
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Language clicks by source (which surface drives clicks)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "clickSource",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:language_click" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@context.source",
+                          "limit": 15,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "clickSource" }]
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 4, "width": 6, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Most-clicked languages (by name)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "clickName",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:language_click" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@context.language_name",
+                          "limit": 25,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "clickName" }]
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 4, "width": 6, "height": 4 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 10, "width": 12, "height": 9 }
+    },
+    {
+      "definition": {
+        "title": "Copies, downloads & search",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Engagement by event type",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "byEvent",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.type:custom" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@action.target.name",
+                          "limit": 15,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "byEvent" }]
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 0, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Top copied artifacts",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "copies",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@context.artifact",
+                          "limit": 15,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "copies" }]
+                }
+              ]
+            },
+            "layout": { "x": 4, "y": 0, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Top downloads",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "downloads",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:download" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@context.file",
+                          "limit": 15,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "downloads" }]
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 0, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Copies & downloads over time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "copy",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    },
+                    {
+                      "data_source": "rum",
+                      "name": "download",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:download" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "copy", "alias": "copies" },
+                    { "formula": "download", "alias": "downloads" }
+                  ],
+                  "display_type": "line"
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 4, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Top search terms (what people look for)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "searches",
+                      "indexes": ["*"],
+                      "search": { "query": "@type:action @action.target.name:search" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@context.query",
+                          "limit": 25,
+                          "sort": { "aggregation": "count", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "searches" }]
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 4, "width": 6, "height": 3 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 19, "width": 12, "height": 8 }
+    }
+  ]
+}

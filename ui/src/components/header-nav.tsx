@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { trackNav } from "@/lib/analytics";
 
 const links = [
   { href: "/", label: "Gallery" },
@@ -24,6 +25,7 @@ export function HeaderNav() {
             key={l.href}
             href={l.href}
             data-active={active}
+            onClick={() => trackNav({ target: l.href, source: "header" })}
             className="ink-underline relative inline-block shrink-0 text-foreground/75 transition-colors hover:text-foreground data-[active=true]:text-foreground"
           >
             {l.label}

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
+import { trackCompare } from "@/lib/analytics";
 
 interface LangRef {
   id: string;
@@ -25,6 +26,7 @@ export function CompareSelector({
   const searchParams = useSearchParams();
 
   function update(key: string, value: string) {
+    if (value) trackCompare({ action: "add", languageId: value });
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);

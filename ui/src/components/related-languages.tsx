@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import { listDesignLanguages, parseJson } from "@/lib/odata";
 
 interface TokensLite {
@@ -66,7 +66,7 @@ export async function RelatedLanguages({
           );
           const ink = swatch[0] ?? "var(--teal)";
           return (
-            <Link
+            <TrackedLink
               key={lang.entity_id}
               href={`/language/${lang.entity_id}`}
               prefetch={false}
@@ -74,6 +74,8 @@ export async function RelatedLanguages({
               style={{
                 boxShadow: "var(--shadow-card)",
               }}
+              event="language_click"
+              data={{ language_id: lang.entity_id, language_name: lang.fields.name, source: "related" }}
             >
               <span aria-hidden className="flex shrink-0 flex-col gap-[2px]">
                 {(swatch.length > 0 ? swatch : [ink]).slice(0, 3).map((c, i) => (
@@ -94,7 +96,7 @@ export async function RelatedLanguages({
               >
                 →
               </span>
-            </Link>
+            </TrackedLink>
           );
         })}
       </div>
