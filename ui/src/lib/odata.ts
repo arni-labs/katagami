@@ -458,6 +458,12 @@ export async function listTaxonomies(
   // the canonical page and apply the small public filters locally.
   const params = new URLSearchParams();
   params.set("$top", "500");
+  // Newly-created published nodes can sit past the first 500 rows (the library
+  // accumulates hundreds of archived/draft taxonomies). Push an `eq` Status
+  // filter to the server so those are returned; the client filter below stays
+  // as a guard against stale projection rows.
+  const serverMatch = filter?.match(/^Status\s+eq\s+'([^']+)'$/i);
+  if (serverMatch) params.set("$filter", `Status eq '${serverMatch[1]}'`);
   const q = params.toString();
   let rows = await collectODataPages<Taxonomy>(
     `Taxonomies${q ? `?${q}` : ""}`,

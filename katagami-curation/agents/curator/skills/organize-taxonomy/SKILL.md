@@ -1,24 +1,43 @@
 # Organize Taxonomy
 
-Build and maintain the taxonomy — a browsable classification system that helps humans discover design languages by aesthetic movement, structural approach, and cultural lineage.
+Build and maintain THE taxonomy — a single, browsable classification of the design-language
+library, so a human can find a usable style fast. The main gallery page renders this tree
+("Browse by category"), so it must stay clean at all times.
 
 ## When to Use
 
 Job type: `organize_taxonomy`
 
+## The cardinal rule — ONE canonical tree, restructured in place
+
+There is exactly **one** published taxonomy tree. Every run **restructures the existing
+published tree** — renames, re-parents, merges, archives. **Never append a second parallel
+tree.** The single worst failure mode (which has happened) is each run creating a fresh set of
+near-duplicate parents ("Editorial Publishing Systems" / "Editorial & Publishing Systems" /
+"Editorial and Publication Systems" …) until the gallery has 50 parents instead of 6. If you
+ever find yourself about to `create` a parent whose normalized name already exists published,
+**stop and update the existing one instead.**
+
+Normalize a name before comparing: lowercase, treat `&` == `and`, drop `/`, collapse spaces.
+Two taxonomies with the same normalized name are the same node — keep one, archive the other.
+
 ## What Good Taxonomy Looks Like
 
-The taxonomy is a gallery navigation system. A human browsing 40+ design languages needs to find what they're looking for quickly. Good taxonomy has these properties:
+The taxonomy is the gallery's navigation. Properties of a good one:
 
-1. **Hierarchical**: Broad parent categories (3-6) with specific child subcategories. A parent like "Japanese Design Systems" contains children like "Graphic Minimalism", "Tokyo Pop Commercial", "Ukiyo-e Digital". Nobody browses by "Postmodern Expressive" — that's an art history term, not a discovery path.
-
-2. **Specific children**: Each leaf taxonomy should describe a recognizable, distinct design movement. If you can't picture what it looks like from the name alone, it's too abstract. "Glassmorphic Frost Interfaces" is good. "Digital Futurism" is too broad.
-
-3. **Balanced distribution**: No taxonomy should contain more than ~30% of all languages. If one bucket keeps growing, it needs subcategories. A taxonomy with 14 of 37 languages is a junk drawer, not a category.
-
-4. **One primary, one optional secondary**: Each language gets 1 primary taxonomy (the most specific match) and optionally 1 secondary. Languages assigned to 3+ taxonomies signal that the categories are too broad. The primary taxonomy should be a leaf (child), not a parent.
-
-5. **Useful tags**: Tags are for search and filtering, not a restatement of the taxonomy name. Good tags: `serif-led`, `high-density`, `dark-mode-first`, `editorial-grid`, `handmade-texture`. Bad tags: `modern`, `design`, `interface`, `clean`.
+1. **Hierarchical, capped**: exactly **3–6 parent** browsing families, each with **3–5 child**
+   leaves. More than 6 parents is a smell — merge. A parent like "Japanese & East Asian"
+   contains children like "Graphic Minimalism", "Manga Panel", "Stencil & Craft".
+2. **Specific children**: each leaf names a recognizable, distinct movement you can picture
+   from the name. "Glass & Soft-Depth" is good. "Digital Futurism" is too broad.
+3. **Balanced**: no leaf holds more than ~30% of all languages. If a bucket keeps growing, split it.
+4. **One primary, one optional secondary**: each language gets 1 primary leaf (the most
+   specific match) and optionally 1 secondary. The primary must be a leaf, never a parent.
+5. **Consistent naming**: Title Case; use `&` (never "and" or "/"); clear browsing labels a
+   non-designer understands; **no art-history jargon** ("Postmodern Expressive"), **no test /
+   build-id / date / "Draft" names**, no `… Systems`/`… Interfaces` padding on every node.
+6. **Useful tags**: 5–10 specific search tags per language (`serif-led`, `dark-mode-first`,
+   `editorial-grid`). Not `modern`, `clean`, `design`, `interface`.
 
 ## Before Starting
 
@@ -28,120 +47,106 @@ Read the knowledge files in your workspace:
 
 ## Process
 
+### Phase 0 — Clean slate FIRST (do this before anything else)
+
+The library accumulates junk; clear it before building so you restructure, not append.
+
+0a. List ALL Taxonomies (every state). Build the set of **published** ones.
+0b. **Archive every published taxonomy that is junk**: empty Name, `Test*`, `*probe*`,
+    `Archived * Draft *`, build-id/date names, abstract facets ("… Posture", "Interaction
+    Density"), and any node off the canonical scheme.
+0c. **Dedupe**: group published taxonomies by normalized name. For each group, keep ONE
+    (prefer the one with languages / a real parent), archive the rest. Do the same for
+    duplicate children across different parents.
+0d. After Phase 0 the only published taxonomies left are the real canonical nodes you intend
+    to keep and refine. Everything else is Archived. (Drafts are invisible — ignore them.)
+
 ### Phase 1 — Inventory and Understand
 
-0. **Clean up orphaned drafts**: List Draft Taxonomies. Delete any with empty Name fields.
-1. **Read every language**: List all DesignLanguages (any state). For each, read Philosophy (`visual_character`, `summary`), Tokens (color palette, typography), and Rules (`signature_patterns`). You need to understand what each language actually IS before classifying it.
-2. **Read existing taxonomies**: List all Taxonomies. Note their hierarchy, descriptions, and current language assignments.
+1. **Read every language**: List all DesignLanguages (Published). For each, read Philosophy
+   (`visual_character`, `summary`), Tokens (palette, typography), Rules (`signature_patterns`).
+2. **Read the surviving taxonomies** from Phase 0: their hierarchy, descriptions, assignments.
 
-### Phase 2 — Design the Taxonomy Tree
+### Phase 2 — Design the canonical tree
 
-3. **Analyze what you have**: Look at the actual languages — what natural clusters emerge? Think about it from a user browsing a gallery:
-   - What cultural/geographic traditions are represented? (Japanese, Swiss, American retro, etc.)
-   - What structural approaches? (editorial/publication, illustration-led, data-dense, etc.)
-   - What aesthetic eras? (brutalist, minimal, maximalist, retro, futurist, etc.)
+3. **Cluster the actual languages**: what natural groups emerge (cultural tradition, structural
+   approach, aesthetic era)? Aim for the smallest set of parents that covers everything.
+4. **Design a 2-level tree**: 3–6 parents, 3–5 leaves each. A language that fits no leaf cleanly
+   signals a missing leaf — add it rather than forcing a bad fit.
+5. **Self-critique before touching anything**: ≤6 parents? Every leaf picturable from its name?
+   No bucket > ~30%? Names follow the convention (Title Case, `&`, no jargon/test names)? No two
+   nodes share a normalized name? Revise until all pass.
 
-4. **Design the tree**: Create a 2-level hierarchy.
-   - **Parents** (3-6): Broad, intuitive browsing categories a non-designer would understand. These are navigation entry points, not classifications.
-   - **Children** (2-5 per parent): Specific, visually distinct movements. Each child should evoke a clear aesthetic in someone familiar with design.
-   - A language that doesn't fit any child cleanly may signal a missing subcategory — create it rather than forcing the language into a bad fit.
+### Phase 3 — Reconcile existing → canonical (idempotent)
 
-5. **Self-critique the tree before creating anything**:
-   - Would a designer browsing a gallery find these categories intuitive?
-   - Can you picture what each child category looks like from its name?
-   - Is any single bucket holding more than ~30% of languages?
-   - Are parent categories balanced (roughly similar number of children)?
-   - Are there any "catch-all" categories that mean everything and nothing?
-   - Revise until the tree passes all checks.
-
-### Phase 3 — Restructure Existing Taxonomies
-
-6. **Restructure, don't just append**: Compare your designed tree to existing taxonomies.
-   - If an existing taxonomy maps cleanly to a node in your tree, update it (rename, set parent, update description).
-   - If an existing taxonomy is too broad (e.g., "Postmodern Expressive" with 12 languages), break it into specific children. Archive the parent if it's now replaced by a better parent + children structure, or keep it as a parent and create new children under it.
-   - If an existing taxonomy is orphaned (no languages fit), Archive it.
-   - Create new taxonomies only for nodes in your tree that don't have existing matches.
-
-7. **Set hierarchy**: Every child taxonomy MUST have a `parent_id` pointing to its parent. Parents have empty `parent_id`.
+6. **Match, don't multiply**: for each node in your designed tree, find the existing published
+   taxonomy with the same normalized name. If it exists, **Define it again to update** (name,
+   parent_id, description) — do NOT create a duplicate. Only `create` for genuinely new nodes.
+   Re-running this skill must converge to the same tree, not grow it.
+7. **Set hierarchy**: every child has a `parent_id`; parents have empty `parent_id`.
    ```python
-   # Create parent
    parent = temper.create('Taxonomies', {})
    temper.action('Taxonomies', parent['entity_id'], 'Define', {
-       'name': 'Japanese Design Systems',
-       'parent_id': '',
-       'description': 'Design languages rooted in Japanese aesthetic traditions...',
-       'characteristics': json.dumps({'key_traits': [...], 'era': '...'}),
-       'historical_context': '...',
-       'related_taxonomy_ids': json.dumps([])
-   })
+       'name': 'Editorial & Print', 'parent_id': '',
+       'description': '...', 'characteristics': json.dumps({'key_traits': [...]}),
+       'historical_context': '...', 'related_taxonomy_ids': json.dumps([])})
    temper.action('Taxonomies', parent['entity_id'], 'Publish', {})
-
-   # Create child under parent
    child = temper.create('Taxonomies', {})
    temper.action('Taxonomies', child['entity_id'], 'Define', {
-       'name': 'Tokyo Pop Commercial',
-       'parent_id': parent['entity_id'],
-       'description': 'High-energy visual languages inspired by Tokyo signage...',
-       'characteristics': json.dumps({'key_traits': [...], 'era': '...'}),
-       'historical_context': '...',
-       'related_taxonomy_ids': json.dumps([])
-   })
+       'name': 'Civic & Institutional', 'parent_id': parent['entity_id'],
+       'description': '...', 'characteristics': json.dumps({}),
+       'historical_context': '', 'related_taxonomy_ids': json.dumps([])})
    temper.action('Taxonomies', child['entity_id'], 'Publish', {})
    ```
-
-8. **Set relationships** (`related_taxonomy_ids`): Connect children that share aesthetic DNA across different parents. Relationships must be bidirectional.
+8. **Set relationships** (`related_taxonomy_ids`): connect leaves that share aesthetic DNA across
+   parents. Bidirectional.
 
 ### Phase 4 — Classify Languages
 
-9. **Assign every language**: Each language gets 1 primary taxonomy (a leaf/child, not a parent) and optionally 1 secondary.
+9. **Assign every language**: 1 primary leaf (never a parent) + optional secondary.
    ```python
-   temper.action('DesignLanguages', lang_id, 'SetTaxonomy', {
-       'taxonomy_ids': json.dumps([primary_child_id])
-   })
+   temper.action('DesignLanguages', lang_id, 'SetTaxonomy', {'taxonomy_ids': json.dumps([primary_leaf_id])})
    ```
-
-10. **Tag every language**: 5-10 specific, searchable tags per language. Tags describe visual/structural properties, not abstract art history concepts.
+   `SetTaxonomy` REPLACES the list — pass the full intended set, not an append.
+10. **Tag every language**: 5–10 specific searchable tags (visual/structural, not art history).
     ```python
-    temper.action('DesignLanguages', lang_id, 'SetTags', {
-        'tags': json.dumps(['serif-editorial', 'high-contrast', 'dark-mode', 'long-form-reading', 'column-grid'])
-    })
+    temper.action('DesignLanguages', lang_id, 'SetTags', {'tags': json.dumps(['serif-editorial','dark-mode','column-grid'])})
     ```
+11. **Counts**: `IncrementLanguageCount` once per language linked to each leaf, so
+    `language_count` matches the real assignment total.
 
-11. **Update counts**: For each taxonomy with newly linked languages, call `IncrementLanguageCount`.
+### Phase 5 — Validate before completing (hard gate)
+
+12. Assert ALL of these — if any fails, fix and re-check:
+    - Published parents: between 3 and 6.
+    - **No two published taxonomies share a normalized name.**
+    - Every published leaf has a `parent_id` that resolves to a published parent.
+    - Every published language has ≥1 taxonomy_id (a leaf) and ≥5 tags.
+    - No leaf holds > ~30% of languages.
+    - No published taxonomy is a test/junk/empty name.
+    - All canonical nodes are Published (not Draft); all non-canonical are Archived.
+
+13. **Complete**:
     ```python
-    temper.action('Taxonomies', tax_id, 'IncrementLanguageCount', {})
-    ```
-
-### Phase 5 — Validate and Complete
-
-12. **Self-check before completing**:
-    - Every language has taxonomy_ids (at least 1)?
-    - Every language has tags (at least 5)?
-    - No taxonomy has > 30% of all languages?
-    - All children have parent_ids set?
-    - All taxonomies are Published (not Draft)?
-    - Related taxonomy links are bidirectional?
-
-13. **Complete the job**:
-    ```python
-    temper.action('CurationJobs', job_id, 'CompleteOrganization', {
-        'output': json.dumps(summary, ensure_ascii=False)
-    })
+    temper.action('CurationJobs', job_id, 'CompleteOrganization', {'output': json.dumps(summary, ensure_ascii=False)})
     temper.done("organize_taxonomy complete")
     ```
 
 ## Tooling Rules
 
-- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
-  without importing it. Other imports are not available in the Monty REPL.
-- Available tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`, `temper.write(path, content)`, `temper.read(path)`
-- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
+- The `json` helper is preloaded — `json.dumps(...)`/`json.loads(...)` without importing.
+- Tools: `temper.list(...)`, `temper.get(...)`, `temper.create(...)`, `temper.action(...)`,
+  `temper.write(path, content)`, `temper.read(path)`.
+- **ALL array/object params MUST use `json.dumps(...)`** — never `str()` or repr.
+- `Archive` is terminal and only valid from `Published`. Drafts can't be archived (and aren't
+  shown) — leave them. When cleaning, archive Published junk; when listing, paginate fully
+  (`$top`/`$skip`) — the newest canonical nodes can sit past the first page.
 
 ## Output
 
 Job output JSON must include:
-- `parent_taxonomies` — list of parent taxonomy names and IDs
-- `child_taxonomies` — list of child taxonomy names, IDs, and parent
-- `archived` — list of archived taxonomy IDs
-- `languages_classified` — count of languages that received taxonomy assignments
-- `languages_tagged` — count of languages that received tags
+- `parent_taxonomies` — names + IDs
+- `child_taxonomies` — names, IDs, parent
+- `archived` — count + IDs archived this run
+- `deduped` — duplicate normalized-name groups collapsed
+- `languages_classified` / `languages_tagged` — counts

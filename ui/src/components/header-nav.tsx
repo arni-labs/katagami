@@ -8,7 +8,6 @@ const links = [
   { href: "/palettes", label: "Palettes" },
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },
-  { href: "/taxonomy", label: "Taxonomy" },
   { href: "/lineage", label: "Lineage" },
   { href: "/compare", label: "Compare" },
 ];
