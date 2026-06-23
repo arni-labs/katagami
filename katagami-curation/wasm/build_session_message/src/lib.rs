@@ -118,6 +118,14 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             .filter(|value| value.starts_with("ss-"))
             .unwrap_or_default();
 
+        // Engine-stamped identity fields. direction_id / query_id are stamped onto
+        // the synthesize CurationJob by the spawn/queue triggers (curation_direction
+        // .ioa.toml: direction_queue_synthesis_creates_job stamps direction_id="Id",
+        // query_id="query_id"); they are NOT in synth_input. Surface them as a labeled
+        // line so the synthesize agent reads its direction_id/query_id from its own
+        // job context, not from the Input block.
+        let job_identity_block = render_job_identity_block(&fields);
+
         let template = lookup_active_template(&ctx, &api_url, &headers, &job_type)?;
         let skill = template.skill_id.as_str();
         let inline_job_docs = inline_job_docs_enabled(&ctx, &fields);
@@ -203,7 +211,7 @@ Completion action: {completion_action}
 Completion contract: {completion_contract}
 Workspace ID: {workspace_id}
 
-## Input
+{job_identity_block}## Input
 
 {input}
 ## Instructions
@@ -572,11 +580,37 @@ fn parse_template(fields: &serde_json::Value) -> Result<JobTemplate, String> {
     })
 }
 
+/// Surface a job's engine-stamped identity (direction_id, query_id) as a labeled
+/// prompt block. These are stamped onto the synthesize/review job by the spawn/queue
+/// triggers (curation_direction.ioa.toml direction_queue_synthesis_creates_job:
+/// direction_id="Id", query_id="query_id") and are NOT in synth_input — the agent must
+/// read them here, never parse ids out of the Input block. Empty for jobs that carry
+/// neither (e.g. source_search, whose identity is engine-owned via SpawnDirection).
+fn render_job_identity_block(fields: &serde_json::Value) -> String {
+    let direction_id = field_str(fields, &["direction_id", "DirectionId"]).unwrap_or_default();
+    let query_id = field_str(fields, &["query_id", "QueryId"]).unwrap_or_default();
+    let mut lines = Vec::new();
+    if !direction_id.is_empty() {
+        lines.push(format!("direction_id = \"{direction_id}\""));
+    }
+    if !query_id.is_empty() {
+        lines.push(format!("query_id = \"{query_id}\""));
+    }
+    if lines.is_empty() {
+        return String::new();
+    }
+    format!(
+        "## Your job identity (engine-stamped — use these directly; do NOT parse ids out of the Input block)\n{}\n\n",
+        lines.join("\n")
+    )
+}
+
 fn completion_params_block(completion_action: &str, job_type: &str, entity_id: &str) -> String {
     let snippet = match completion_action {
         "CompleteResearch" => format!(
             r#"```python
-direction_ids = [...]  # CurationDirection entity IDs queued via QueueSynthesis
+direction_ids = [...]  # the movement names you spawned via SpawnDirection — a non-empty
+# fan-out signal only, NOT CurationDirection entity IDs (the engine mints and owns those).
 # output_type is the concrete lane you inferred (design_language/palette/art_style),
 # never 'auto' — it is recorded on the parent query for barrier-scope routing.
 temper.action('CurationJobs', '{entity_id}', 'CompleteResearch', {{

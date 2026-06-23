@@ -651,9 +651,11 @@ every language you created to `UnderReview` yourself. The CurationJob's
 `Draft`, so completing without submitting just bounces back to you. Skipping this
 is not an option — there is no finalizer fallback that submits for you.
 
-`direction_id` and `query_id` come from this synthesize job's input (the
-`synth_input` the source_search agent built); parse them from the job input before
-the loop so the Quarantine call can target THIS direction.
+`direction_id` and `query_id` are provided in the **Your job identity** block at the
+top of this prompt — engine-stamped onto this synthesize job, NOT in `synth_input`.
+Read them from that block (do not parse them out of the Input/`synth_input` payload),
+and set them before the loop so the Quarantine call can target THIS direction and
+`CompleteSynthesis` carries the correct `query_id`.
 
 For each `eid` in `created_ids`, run this loop:
 
