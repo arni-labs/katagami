@@ -123,20 +123,30 @@ class DeterministicCurationHarness:
         self._maybe_open_barrier(query)
 
     def _maybe_open_barrier(self, query: CurationQuery) -> None:
-        # SynthesisComplete guard: max_count(directions_pending, max=1) i.e. == 0,
-        # AND min_count(directions_total, min=1). One-shot: from=[Synthesizing].
-        # The decrement self-reaction (decrement_reevaluates_barrier_open) is
-        # trigger-guarded to the design_language lane, so palette/art_style queries
-        # never advance to Organizing nor spawn a quality_review job.
+        # SynthesisComplete guard (three conditions): max_count(directions_pending,
+        # max=1) i.e. == 0, AND min_count(directions_total, min=1), AND
+        # min_count(directions_completed, min=1) — the survivor floor. One-shot:
+        # from=[Synthesizing]. The decrement self-reaction
+        # (decrement_reevaluates_barrier_open) is trigger-guarded to the
+        # design_language lane, so palette/art_style queries never advance to
+        # Organizing nor spawn a quality_review job.
         if query.status != "Synthesizing":
             return
         if query.output_type != "design_language":
             return
-        if query.directions_pending == 0 and query.directions_total >= 1:
-            query.status = "Organizing"
-            query.barrier_opened += 1
-            quality_job = self._spawn_job(query_id=query.query_id, phase="quality_review")
-            query.quality_review_job_id = quality_job.job_id
+        if query.directions_pending != 0 or query.directions_total < 1:
+            return
+        # All directions drained but none produced a language (every direction
+        # Failed/Quarantined): SynthesisComplete is blocked by its
+        # min_count(directions_completed >= 1) floor, and FailEmptyFanout fails the
+        # query instead of opening an empty barrier.
+        if len(query.completed_direction_ids) == 0:
+            query.status = "Failed"
+            return
+        query.status = "Organizing"
+        query.barrier_opened += 1
+        quality_job = self._spawn_job(query_id=query.query_id, phase="quality_review")
+        query.quality_review_job_id = quality_job.job_id
 
     def complete_synthesis(self, query_id: str, direction_id: str, artifacts: dict[str, str]) -> str:
         query = self.queries[query_id]
@@ -459,6 +469,29 @@ class LocalIntegrationHarnessTests(unittest.TestCase):
 
         with self.assertRaisesRegex(PublishBlocked, "missing mime_type"):
             harness._assert_complete_ready_artifacts(missing_metadata_language)
+
+    def test_all_directions_fail_empty_fanout_fast_fails_query(self):
+        # ARN-88 survivor floor: N=2 directions both FAIL (none produced a
+        # language). SynthesisComplete is blocked by min_count(directions_completed
+        # >= 1); FailEmptyFanout fails the query on the last drain instead of
+        # opening an empty barrier or hanging to the Synthesizing timeout.
+        harness = DeterministicCurationHarness()
+        query_id = harness.seed_query()
+        harness.submit(query_id, ["quiet-grid", "ritual-paper"])
+        query = harness.queries[query_id]
+        self.assertEqual(query.directions_pending, 2)
+
+        harness.fail_synthesis(query_id, "direction-1")
+        self.assertEqual(query.status, "Synthesizing")  # one still outstanding
+
+        harness.fail_synthesis(query_id, "direction-2")  # last drain, zero completed
+        self.assertEqual(query.status, "Failed")
+        self.assertEqual(query.directions_pending, 0)
+        self.assertEqual(query.barrier_opened, 0)
+        self.assertEqual(len(query.completed_direction_ids), 0)
+        self.assertNotIn(
+            (query_id, "quality_review", ""), harness.job_contract_keys()
+        )
 
 
 if __name__ == "__main__":
