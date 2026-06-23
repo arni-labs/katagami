@@ -60,7 +60,39 @@ export function PageHero({
           </div>
         )}
       </div>
+      {/* close the hero with the same gentle dashes that open it under the header */}
+      <span aria-hidden className="sticker-perforation mt-7 block sm:mt-8" />
     </section>
+  );
+}
+
+/** A clean published-count figure — the big number is the point, anchored by
+ *  one small accent tick (matching the eyebrow). Sits in a PageHero rightSlot. */
+export function HeroStat({
+  value,
+  label,
+  accent = "graphite",
+}: {
+  value: number | string;
+  label: string;
+  accent?: AccentColor;
+}) {
+  return (
+    <div className="text-right">
+      <div className="font-display text-[44px] font-bold leading-none tracking-[-0.04em] tabular-nums text-foreground sm:text-[56px]">
+        {value}
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <span
+          aria-hidden
+          className="inline-block h-[3px] w-6 rounded-[2px]"
+          style={{ background: `var(--${accent})` }}
+        />
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          {label}
+        </span>
+      </div>
+    </div>
   );
 }
 

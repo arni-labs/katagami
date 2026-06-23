@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Shuffle } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 
 const fieldBase =
-  "rounded-none border-0 border-b-2 border-foreground/15 bg-transparent px-1 font-mono text-sm text-foreground shadow-none transition-colors focus-visible:border-[var(--ramune)] focus-visible:ring-0 focus-visible:ring-offset-0";
+  "rounded-none border-0 border-b border-dashed border-foreground/30 bg-transparent px-1 font-mono text-sm text-foreground shadow-none transition-colors focus-visible:border-[var(--ramune)] focus-visible:ring-0 focus-visible:ring-offset-0";
 
 /** Hue buckets for the ink explorer — order matters for display. */
 export const HUE_BUCKETS = [
@@ -60,7 +60,9 @@ export function GalleryFilters({
   initialHue?: string;
   initialSource?: string;
 }) {
-  const [status, setStatus] = useState(initialStatus);
+  // Catalog is Published-only, so status never varies — kept for the
+  // shared filter shape, but there's no status control any more.
+  const [status] = useState(initialStatus);
   const [taxonomy, setTaxonomy] = useState(initialTaxonomy);
   const [search, setSearch] = useState(initialSearch);
   const [tag, setTag] = useState(initialTag);
@@ -122,8 +124,12 @@ export function GalleryFilters({
 
     const empty = document.querySelector<HTMLElement>("[data-gallery-empty]");
     if (empty) empty.hidden = count > 0;
-    if (countRef.current) countRef.current.textContent = String(count);
-  }, [status, taxonomy, search, tag, hue, source]);
+    if (countRef.current)
+      countRef.current.textContent =
+        count === totalCount
+          ? `${count} languages`
+          : `${count} of ${totalCount} languages`;
+  }, [status, taxonomy, search, tag, hue, source, totalCount]);
 
   useEffect(() => {
     applyFilters();
@@ -205,25 +211,11 @@ export function GalleryFilters({
         </div>
 
         <span
-          className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
+          className="ml-auto font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
           aria-live="polite"
         >
-          <span ref={countRef}>{totalCount}</span> / {totalCount} languages
+          <span ref={countRef}>{totalCount} languages</span>
         </span>
-
-        <button
-          type="button"
-          onClick={shuffle}
-          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-foreground transition-all hover:-translate-y-[1px] hover:rotate-[-1.5deg]"
-          style={{
-            background:
-              "color-mix(in srgb, var(--sakura) 18%, var(--paper-stamp-mix))",
-          }}
-          title="Deal a random sheet"
-        >
-          <Shuffle className="h-3 w-3" />
-          surprise me
-        </button>
       </div>
 
       {/* Row 2 — ink explorer + vibe chips */}
@@ -301,22 +293,8 @@ export function GalleryFilters({
         )}
       </div>
 
-      {/* Row 3 — status / taxonomy / source */}
+      {/* Row 3 — taxonomy / source */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <FieldLabel>status</FieldLabel>
-        <Select value={status} onValueChange={(v) => setStatus(v ?? "all")}>
-          <SelectTrigger className={`${fieldBase} h-8 w-32 gap-2 sm:w-36`}>
-            <SelectValue placeholder="any" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">all</SelectItem>
-            <SelectItem value="Draft">Draft</SelectItem>
-            <SelectItem value="UnderReview">Under Review</SelectItem>
-            <SelectItem value="Published">Published</SelectItem>
-            <SelectItem value="Archived">Archived</SelectItem>
-          </SelectContent>
-        </Select>
-
         {taxonomies.length > 0 && (
           <>
             <FieldLabel>taxonomy</FieldLabel>

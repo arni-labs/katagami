@@ -384,6 +384,29 @@ export async function listDesignLanguages(
   return demo.length > 0 ? [...rows, ...demo] : rows;
 }
 
+/** Cheap published count via OData `$count` — fetches no rows, so it can run
+ *  at the page level without blocking on the full gallery payload. Matches the
+ *  gallery's own count in production (the demo catalog is off there). */
+export async function countDesignLanguages(
+  filter = "Status eq 'Published'",
+): Promise<number> {
+  try {
+    const params = new URLSearchParams();
+    params.set("$filter", filter);
+    params.set("$count", "true");
+    params.set("$top", "0");
+    const resp = await odata<ODataResponse<unknown>>(
+      `DesignLanguages?${params.toString()}`,
+    );
+    const demoCount = demoDesignLanguages().filter(
+      (d) => d.status === "Published",
+    ).length;
+    return (resp["@odata.count"] ?? 0) + demoCount;
+  } catch {
+    return 0;
+  }
+}
+
 async function collectDesignLanguageRows(
   filter: string,
   orderby?: string,
@@ -452,6 +475,77 @@ export async function listTaxonomies(
     }
   }
   return rows.filter((row) => row.fields.name?.trim());
+}
+
+export interface TaxonomyParent {
+  name: string;
+  parentId: string;
+}
+
+let taxonomyIndexCache: { at: number; map: Map<string, TaxonomyParent> } | null =
+  null;
+
+/**
+ * Taxonomy id → { name, parentId } for the WHOLE tree, so a leaf taxonomy can
+ * be walked up to its root "family". The home gallery groups languages by root
+ * family, which needs the full hierarchy (including unpublished interior nodes),
+ * so this fetches every taxonomy once and memoizes for a few minutes — the tree
+ * is effectively static between curation runs.
+ */
+export async function taxonomyFamilyIndex(): Promise<Map<string, TaxonomyParent>> {
+  if (taxonomyIndexCache && Date.now() - taxonomyIndexCache.at < 5 * 60 * 1000) {
+    return taxonomyIndexCache.map;
+  }
+  // The backend caps a page at 500 rows WITHOUT emitting an @odata.nextLink and
+  // doesn't honor $skip (ARN-97), so a small $top silently truncates the tree
+  // and breaks parent chains. A generous single-page $top pulls the whole tree.
+  const rows = await collectODataPages<Record<string, unknown>>(
+    "Taxonomies?$top=5000",
+  );
+  const map = new Map<string, TaxonomyParent>();
+  for (const row of rows) {
+    const id = typeof row.entity_id === "string" ? row.entity_id : "";
+    if (!id) continue;
+    let fields = (row.fields ?? {}) as Record<string, unknown>;
+    // a handful of rows nest a second `fields` object
+    if (fields.fields && typeof fields.fields === "object") {
+      fields = fields.fields as Record<string, unknown>;
+    }
+    const name = String(
+      fields.name ?? fields.Name ?? fields.display_name ?? "",
+    ).trim();
+    const parentId = String(fields.parent_id ?? fields.ParentId ?? "").trim();
+    map.set(id, { name, parentId });
+  }
+  taxonomyIndexCache = { at: Date.now(), map };
+  return map;
+}
+
+let languageTaxonomyCache: { at: number; map: Map<string, string[]> } | null =
+  null;
+
+/**
+ * Published language id → its taxonomy leaf ids, read CANONICALLY. The gallery's
+ * `$select` projection (DESIGN_LANGUAGE_GALLERY_FIELDS) silently drops list
+ * fields like `taxonomy_ids` in the current kernel (ARN-97), so family grouping
+ * can't rely on it — this reads the canonical rows and is memoized for a few
+ * minutes so the lean card fetch stays the home's hot path.
+ */
+export async function languageTaxonomyMap(): Promise<Map<string, string[]>> {
+  if (languageTaxonomyCache && Date.now() - languageTaxonomyCache.at < 5 * 60 * 1000) {
+    return languageTaxonomyCache.map;
+  }
+  const rows = await collectDesignLanguageRows("Status eq 'Published'");
+  const map = new Map<string, string[]>();
+  for (const row of rows) {
+    const id = typeof row.entity_id === "string" ? row.entity_id : "";
+    if (!id) continue;
+    const fields = (row.fields ?? {}) as Record<string, unknown>;
+    const ids = parseJson<string[]>(fields.taxonomy_ids as string) ?? [];
+    map.set(id, Array.isArray(ids) ? ids.filter(Boolean) : []);
+  }
+  languageTaxonomyCache = { at: Date.now(), map };
+  return map;
 }
 
 // ── Taste Rules ──
