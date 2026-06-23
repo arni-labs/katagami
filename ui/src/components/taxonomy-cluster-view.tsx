@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import type { Taxonomy, DesignLanguage } from "@/lib/odata";
 import { parseJson } from "@/lib/odata";
@@ -166,13 +167,15 @@ function TraitPills({
 
 function LanguageChip({ lang }: { lang: DesignLanguage }) {
   return (
-    <Link
+    <TrackedLink
       href={`/language/${lang.entity_id}`}
       className="inline-flex max-w-full items-center gap-1 bg-[color-mix(in_srgb,var(--teal)_14%,var(--paper-stamp-mix))] px-2 py-1 text-[11px] font-medium text-[color:color-mix(in_oklch,var(--teal)_72%,var(--foreground))] transition-colors hover:bg-[color-mix(in_srgb,var(--teal)_22%,var(--paper-stamp-mix))] hover:text-foreground"
+      event="language_click"
+      data={{ language_id: lang.entity_id, language_name: languageName(lang), source: "taxonomy" }}
     >
       <span className="truncate">{languageName(lang)}</span>
       <ArrowUpRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-    </Link>
+    </TrackedLink>
   );
 }
 

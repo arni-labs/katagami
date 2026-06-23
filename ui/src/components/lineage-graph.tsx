@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import { CornerDownRight } from "lucide-react";
 
 interface GraphNode {
@@ -150,10 +150,12 @@ function LineageCard({
   const rot = (((node.id.charCodeAt(0) + node.id.length) % 7) - 3) * 0.2;
 
   return (
-    <Link
+    <TrackedLink
       href={`/language/${node.id}`}
       className="group relative block transition-transform duration-200 hover:-translate-y-[2px] hover:rotate-0"
       style={{ transform: `rotate(${rot}deg)` }}
+      event="language_click"
+      data={{ language_id: node.id, language_name: node.name, source: "lineage", lineage_type: node.lineageType }}
     >
       <article
         className="relative p-3.5"
@@ -239,7 +241,7 @@ function LineageCard({
           open ↗
         </span>
       </article>
-    </Link>
+    </TrackedLink>
   );
 }
 

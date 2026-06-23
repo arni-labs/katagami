@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { trackSearch } from "@/lib/analytics";
 import {
   Select,
   SelectContent,
@@ -65,6 +66,14 @@ export function GalleryFilters({
   const [status] = useState(initialStatus);
   const [taxonomy, setTaxonomy] = useState(initialTaxonomy);
   const [search, setSearch] = useState(initialSearch);
+
+  // Record gallery search terms (debounced).
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) return;
+    const timer = setTimeout(() => trackSearch({ query: q }), 600);
+    return () => clearTimeout(timer);
+  }, [search]);
   const [tag, setTag] = useState(initialTag);
   const [hue, setHue] = useState(initialHue);
   const [source, setSource] = useState(initialSource);

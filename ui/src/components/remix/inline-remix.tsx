@@ -10,6 +10,7 @@ import { COMPOSITIONS } from "@/lib/remix-compositions";
 import { saveRemix } from "@/app/remix-actions";
 import type { Roles } from "@/lib/remix-theme";
 import { KX_BTN_INK, KX_BTN_PAPER, KX_LABEL } from "@/lib/katagami-ui";
+import { trackCopy } from "@/lib/analytics";
 
 const MEDIA = "shrink-0 overflow-hidden rounded-[2px] shadow-[0_1px_3px_rgba(30,35,45,0.14)]";
 
@@ -271,7 +272,15 @@ export function InlineRemix({
             {saved ? "Saved" : pending ? "Saving" : "Save mix"}
           </button>
         ) : null}
-        <button type="button" onClick={copyBrief} disabled={!haveAll} className={KX_BTN_INK}>
+        <button
+          type="button"
+          onClick={() => {
+            trackCopy({ artifact: "remix_brief", page: "remix" });
+            copyBrief();
+          }}
+          disabled={!haveAll}
+          className={KX_BTN_INK}
+        >
           {copied ? "Copied" : "Copy brief"}
         </button>
       </div>

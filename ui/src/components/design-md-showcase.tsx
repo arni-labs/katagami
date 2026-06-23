@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { trackCopy } from "@/lib/analytics";
 import { parseJson } from "@/lib/odata";
 import {
   buildDesignMdFrontMatter,
@@ -179,6 +180,7 @@ function ColorChip({ name, value }: { name: string; value: string }) {
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
+      trackCopy({ artifact: "color", label: name });
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

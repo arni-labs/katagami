@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
   countDesignLanguages,
@@ -358,7 +358,7 @@ function TodaysPull({
     .trim();
 
   return (
-    <Link
+    <TrackedLink
       href={`/language/${lang.entity_id}`}
       prefetch={false}
       data-reveal
@@ -366,6 +366,8 @@ function TodaysPull({
       style={{
         boxShadow: "var(--shadow-card)",
       }}
+      event="language_click"
+      data={{ language_id: lang.entity_id, language_name: lang.fields.name, source: "today_pull" }}
     >
       <span
         aria-hidden
@@ -393,7 +395,7 @@ function TodaysPull({
       <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-foreground transition-transform group-hover:translate-x-1">
         open →
       </span>
-    </Link>
+    </TrackedLink>
   );
 }
 

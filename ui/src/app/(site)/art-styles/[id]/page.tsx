@@ -160,8 +160,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         ) : null}
         <Perforation className="my-4" />
         <div className="flex flex-wrap items-center gap-2">
-          <CopyButton text={recipe} label="Copy recipe" variant="ink" />
-          <CopyButton text={promptTemplate} label="Copy prompt only" />
+          <CopyButton text={recipe} label="Copy recipe" variant="ink" artifact="recipe" />
+          <CopyButton text={promptTemplate} label="Copy prompt only" artifact="prompt" />
           {tags.length > 0 ? (
             <span className="ml-auto flex flex-wrap gap-x-3 gap-y-1">
               {tags.slice(0, 5).map((t) => (
