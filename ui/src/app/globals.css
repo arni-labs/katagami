@@ -472,6 +472,8 @@
   .shadsync-status {
     border: 1.5px solid color-mix(in srgb, var(--shadsync-outline) 78%, transparent);
     box-shadow: 0 1px 0 rgb(255 255 255 / 0.42) inset, 0 2px 7px rgb(48 64 59 / 0.07);
+    /* optically centre the (usually uppercase) label so it never drifts top/bottom */
+    line-height: 1 !important;
   }
 
   .shadsync-preview .shadsync-button,
@@ -652,11 +654,13 @@
     padding: 3px;
     align-items: center;
   }
-  /* keep the tab triggers vertically centred in the bar (no bottom bias) */
+  /* triggers fill the bar height and optically centre their (often uppercase) label */
   .shadsync-preview .shadsync-tabs [data-slot="tabs-trigger"] {
-    align-self: center;
-    height: auto;
-    min-height: 1.6rem;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1 !important;
   }
 
   .shadsync-notes {
