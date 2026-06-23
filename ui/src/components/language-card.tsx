@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { DesignLanguage } from "@/lib/odata";
+import { TrackedLink } from "@/components/tracked-link";
 import { parseJson } from "@/lib/odata";
 import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
@@ -110,9 +110,15 @@ export function LanguageCard({
       className="group relative min-w-0 max-w-full"
       style={cardVisibilityStyle}
     >
-      <Link href={`/language/${id}`} prefetch={false} className="block h-full">
+      <TrackedLink
+        href={`/language/${id}`}
+        prefetch={false}
+        className="block h-full"
+        event="language_click"
+        data={{ language_id: id, language_name: name, source: "card" }}
+      >
         <FullCard lang={lang} stickyTint={stickyTint} eagerThumbnail={index < 6} />
-      </Link>
+      </TrackedLink>
       {canDelete ? (
         <LanguageCardOwnerControls
           id={id}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Download, Copy, Link2, Check } from "lucide-react";
+import { trackCopy, trackDownload } from "@/lib/analytics";
 
 interface SpecActionsProps {
   languageId?: string;
@@ -104,6 +105,7 @@ export function SpecActions({
     const url = urlFor(format);
     const refLine = url ? `\n\nSource: ${url}` : "";
     await writeClipboard(`${PREAMBLE[format]}${refLine}\n\n${md}`);
+    trackCopy({ artifact: format, languageId, label: "spec" });
     flash("copy");
   };
 
@@ -111,6 +113,7 @@ export function SpecActions({
     const url = urlFor(format);
     if (!url) return;
     await writeClipboard(url);
+    trackCopy({ artifact: `${format}-url`, languageId, label: "link" });
     flash("link");
   };
 
@@ -128,6 +131,7 @@ export function SpecActions({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    trackDownload({ file: a.download, format, languageId });
   };
 
   const accent = ACCENT[format];

@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { REVEAL_INIT_SCRIPT } from "@/components/scroll-reveal";
+import { RumInit } from "@/components/rum-init";
 
 const nunito = Nunito({
   variable: "--font-sans",
@@ -105,7 +106,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: REVEAL_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <RumInit />
+        {children}
+      </body>
     </html>
   );
 }
