@@ -353,13 +353,19 @@ function visualProfileFromArtifact(
           : contourText.includes("rect")
             ? "rectangular"
             : "default",
+    // An explicit border declaration wins over prose-sniffing: a language that says
+    // border:"none" must render borderless, not fall through to "solid".
     border:
-      String(explicit.border ?? "").toLowerCase().includes("dash") ||
-      profileKeyword(profileText, ["dashed", "hand-drawn", "pencil", "stitched"])
-        ? "dashed"
-        : profileKeyword(profileText, ["borderless", "none"])
-          ? "none"
-          : "solid",
+      String(explicit.border ?? "").toLowerCase() === "none"
+        ? "none"
+        : String(explicit.border ?? "").toLowerCase().includes("dash") ||
+            profileKeyword(profileText, ["dashed", "hand-drawn", "pencil", "stitched"])
+          ? "dashed"
+          : String(explicit.border ?? "").toLowerCase() === "solid"
+            ? "solid"
+            : profileKeyword(profileText, ["borderless", "no border", "no borders"])
+              ? "none"
+              : "solid",
     underlay:
       typeof explicit.underlay === "boolean"
         ? explicit.underlay
@@ -398,8 +404,9 @@ function shadSyncVars(profile: ShadSyncVisualProfile, tokens: TokenRecord): CSSP
   const secondary = tokenString(colors, ["secondary", "warning"], "var(--secondary)");
   const border = tokenString(colors, ["border", "outline"], "var(--border)");
   const radius = tokenString(radii, ["lg", "md", "default", "base"], "var(--sample-radius)");
-  // controls share the card radius (md), not the structural "sm" (often 0) — no square inputs/buttons
-  const controlRadius = tokenString(radii, ["md", "default", "base", "lg"], radius);
+  // controls honor the language's own control radius (sm first) — a language that declares
+  // sharp 0 corners gets sharp controls; we don't impose rounding it didn't ask for.
+  const controlRadius = tokenString(radii, ["sm", "md", "default", "base"], radius);
   const chipRadius = tokenString(radii, ["full", "pill"], "999px");
   return {
     "--shadsync-bg": background,
