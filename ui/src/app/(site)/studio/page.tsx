@@ -44,8 +44,8 @@ export default async function StudioPage() {
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
       <PageHero
         eyebrow="Remix lane"
-        eyebrowAccent="salad"
-        title={<>The <Marker color="salad">remix</Marker> studio</>}
+        eyebrowAccent="sumire"
+        title={<>The <Marker color="sumire">remix</Marker> studio</>}
         description="Pick a UI language, a palette, and an art style. The preview is that language's own landing & dashboard — recolored by the palette, given the art style's hero. Live, no generation."
       />
 

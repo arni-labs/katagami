@@ -11,11 +11,19 @@ export function LanguageGallery({
   languages,
   canDelete,
   taxonomies = [],
+  taxonomyParents,
+  taxonomyByLang,
   initialFilters,
 }: {
   languages: DesignLanguage[];
   canDelete: boolean;
   taxonomies?: { entity_id: string; fields: { name?: string } }[];
+  /** Full taxonomy tree (id → name + parentId) for grouping shelves by the
+   *  root design family. Absent → the gallery falls back to color-mood. */
+  taxonomyParents?: Map<string, { name: string; parentId: string }>;
+  /** languageId → its leaf taxonomy ids (read canonically; the projected
+   *  field is unreliable). Pairs with taxonomyParents to place each shelf. */
+  taxonomyByLang?: Map<string, string[]>;
   initialFilters?: {
     status?: string;
     taxonomy?: string;
@@ -35,7 +43,10 @@ export function LanguageGallery({
   };
 
   const attrsById = new Map(
-    languages.map((lang) => [lang.entity_id, galleryCardAttributes(lang)]),
+    languages.map((lang) => [
+      lang.entity_id,
+      galleryCardAttributes(lang, taxonomyByLang),
+    ]),
   );
   const topTags = collectTopTags(attrsById.values());
   const hasSpecimens = Array.from(attrsById.values()).some((a) => a.specimen);
@@ -45,7 +56,7 @@ export function LanguageGallery({
   // inks, quiet paper, warm/cold press) — a browser who doesn't know what
   // they want slides along shelves instead of scanning one huge grid.
   // Below the threshold everything lives on a single unlabeled wall.
-  const shelves = buildShelves(languages);
+  const shelves = buildShelves(languages, taxonomyParents, taxonomyByLang);
   // Global card position across shelves — drives eager thumbnail loading.
   const indexById = assignGlobalIndices(shelves);
 
@@ -64,7 +75,7 @@ export function LanguageGallery({
         initialSource={filters.source}
       />
 
-      <div className="space-y-5">
+      <div className="mt-10 space-y-12 sm:space-y-16">
         {shelves.map((shelf) => {
           const { key, label, blurb, ink, languages } = shelf;
           const anyVisible = languages.some((lang) =>
@@ -78,7 +89,7 @@ export function LanguageGallery({
               className="min-w-0"
             >
               {label !== null && (
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="mb-4 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span
                     className="ink-stamp shrink-0"
                     style={{ ["--ink" as string]: ink }}
@@ -86,7 +97,8 @@ export function LanguageGallery({
                     {label}
                   </span>
                   <span className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {blurb} · {languages.length}
+                    {blurb ? `${blurb} · ` : ""}
+                    {languages.length}
                   </span>
                   <span className="sticker-perforation hidden min-w-0 flex-1 sm:block" />
                   <ShelfSpread />
@@ -176,11 +188,21 @@ function shelfKeyFor(lang: DesignLanguage): string {
   });
 }
 
-function buildShelves(languages: DesignLanguage[]): Shelf[] {
+function buildShelves(
+  languages: DesignLanguage[],
+  taxonomyParents?: Map<string, { name: string; parentId: string }>,
+  taxonomyByLang?: Map<string, string[]>,
+): Shelf[] {
   if (languages.length <= SHELF_THRESHOLD) {
     return [
       { key: "all", label: null, blurb: "", ink: "var(--ramune)", languages },
     ];
+  }
+  // Group by the root design family (meaningful) when the taxonomy tree is
+  // available; otherwise fall back to the self-organizing color-mood cabinet.
+  if (taxonomyParents && taxonomyParents.size > 0 && taxonomyByLang) {
+    const families = buildFamilyShelves(languages, taxonomyParents, taxonomyByLang);
+    if (families && families.length > 0) return families;
   }
   const buckets = new Map<string, DesignLanguage[]>();
   for (const lang of languages) {
@@ -192,6 +214,137 @@ function buildShelves(languages: DesignLanguage[]): Shelf[] {
   return COLOR_MOOD_SHELVES.filter(
     (def) => (buckets.get(def.key)?.length ?? 0) > 0,
   ).map((def) => ({ ...def, languages: buckets.get(def.key)! }));
+}
+
+/** Walk a leaf taxonomy up to its root family id (cycle-guarded). */
+function rootFamilyOf(
+  leafId: string,
+  parents: Map<string, { name: string; parentId: string }>,
+): string {
+  let cur = leafId;
+  const seen = new Set<string>();
+  while (!seen.has(cur)) {
+    const info = parents.get(cur);
+    if (!info || !info.parentId || !parents.has(info.parentId)) break;
+    seen.add(cur);
+    cur = info.parentId;
+  }
+  return cur;
+}
+
+/** Trim a long family name down to a calm shelf stamp. */
+function familyLabel(name: string): string {
+  const trimmed = name
+    .replace(/\b(systems?|interfaces?|design|lineages?)\b/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return (trimmed || name).toLowerCase();
+}
+
+// Spot-ink trio (sakura / yuzu / ramune) plus violet as a tasteful fourth —
+// no muddy greens in the chrome.
+const FAMILY_INKS = [
+  "var(--sakura)",
+  "var(--ramune)",
+  "var(--yuzu)",
+  "var(--sumire)",
+];
+
+/** A family needs this many languages to earn its own shelf; the long tail of
+ *  smaller families plus untagged languages collects in a trailing shelf. */
+const FAMILY_SHELF_MIN = 5;
+
+/**
+ * Group the wall by the ROOT taxonomy family each language belongs to —
+ * "Japanese & East Asian", "Editorial & Publication", etc. — instead of by
+ * color. Featured languages float to a leading curator's-picks shelf; the long
+ * tail of tiny families collects in "mixed & more". Returns null when no
+ * language carries usable taxonomy data, so the caller can fall back.
+ */
+function buildFamilyShelves(
+  languages: DesignLanguage[],
+  parents: Map<string, { name: string; parentId: string }>,
+  taxonomyByLang: Map<string, string[]>,
+): Shelf[] | null {
+  const taxesOf = (lang: DesignLanguage) =>
+    taxonomyByLang.get(lang.entity_id) ?? [];
+
+  // Popularity of each root family across the catalog — a language tagged with
+  // several families lands on its biggest one, so shelves consolidate.
+  const pop = new Map<string, number>();
+  for (const lang of languages) {
+    const roots = new Set(
+      taxesOf(lang)
+        .map((t) => rootFamilyOf(t, parents))
+        .filter((r) => parents.has(r)),
+    );
+    for (const r of roots) pop.set(r, (pop.get(r) ?? 0) + 1);
+  }
+  if (pop.size === 0) return null;
+
+  const primaryFamily = (lang: DesignLanguage): string | null => {
+    const roots = taxesOf(lang)
+      .map((t) => rootFamilyOf(t, parents))
+      .filter((r) => parents.has(r));
+    if (roots.length === 0) return null;
+    return roots.reduce((a, b) => ((pop.get(b) ?? 0) > (pop.get(a) ?? 0) ? b : a));
+  };
+
+  const featured: DesignLanguage[] = [];
+  const byFamily = new Map<string, DesignLanguage[]>();
+  const orphans: DesignLanguage[] = [];
+  for (const lang of languages) {
+    if (isFeaturedLanguage(lang)) {
+      featured.push(lang);
+      continue;
+    }
+    const fam = primaryFamily(lang);
+    if (!fam) {
+      orphans.push(lang);
+      continue;
+    }
+    const bucket = byFamily.get(fam) ?? [];
+    bucket.push(lang);
+    byFamily.set(fam, bucket);
+  }
+
+  const big = [...byFamily.entries()]
+    .filter(([, v]) => v.length >= FAMILY_SHELF_MIN)
+    .sort((a, b) => b[1].length - a[1].length);
+  const mixed = [...orphans];
+  for (const [, v] of byFamily) {
+    if (v.length < FAMILY_SHELF_MIN) mixed.push(...v);
+  }
+
+  const shelves: Shelf[] = [];
+  if (featured.length > 0) {
+    shelves.push({
+      key: "picks",
+      label: "curator's picks",
+      blurb: "pinned to the corkboard",
+      ink: "var(--sakura)",
+      languages: featured,
+    });
+  }
+  big.forEach(([fam, v], i) => {
+    shelves.push({
+      key: fam,
+      label: familyLabel(parents.get(fam)?.name ?? fam),
+      blurb: "",
+      ink: FAMILY_INKS[i % FAMILY_INKS.length],
+      languages: v,
+    });
+  });
+  if (mixed.length > 0) {
+    shelves.push({
+      key: "mixed",
+      label: "mixed & more",
+      blurb: "every other family",
+      ink: "var(--graphite)",
+      languages: mixed,
+    });
+  }
+  return shelves;
 }
 
 function assignGlobalIndices(shelves: Shelf[]): Map<string, number> {
@@ -206,9 +359,16 @@ function assignGlobalIndices(shelves: Shelf[]): Map<string, number> {
   return indexById;
 }
 
-function galleryCardAttributes(lang: DesignLanguage) {
+function galleryCardAttributes(
+  lang: DesignLanguage,
+  taxonomyByLang?: Map<string, string[]>,
+) {
   const fields = lang.fields as Record<string, unknown>;
-  const taxonomyIds = listFieldValues(fields.taxonomy_ids).join("\t");
+  // Prefer the canonical leaf ids (the projected field is unreliable — ARN-97),
+  // so the taxonomy filter actually matches.
+  const taxonomyIds = (
+    taxonomyByLang?.get(lang.entity_id) ?? listFieldValues(fields.taxonomy_ids)
+  ).join("\t");
   const tags = listFieldValues(fields.tags).map((t) => t.toLowerCase());
   const searchText = [fields.name, fields.tags]
     .map(searchTextFromValue)

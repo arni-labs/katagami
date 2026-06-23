@@ -47,7 +47,7 @@ const DISPLAY_FILENAME: Record<Format, string> = {
 
 const ACCENT: Record<Format, string> = {
   katagami: "sumire",
-  "design-md": "salad",
+  "design-md": "sakura",
   "shadcn-md": "ramune",
 };
 
@@ -154,7 +154,7 @@ export function SpecActions({
                   <FormatTab
                     active={format === "design-md"}
                     onClick={() => setFormat("design-md")}
-                    accent="salad"
+                    accent="sakura"
                   >
                     DESIGN.md
                   </FormatTab>
@@ -203,7 +203,7 @@ export function SpecActions({
                 rotate={0.5}
                 icon={
                   justCopied === "copy" ? (
-                    <Check className="h-3 w-3 text-[var(--salad)]" />
+                    <Check className="h-3 w-3 text-[var(--foreground)]" />
                   ) : (
                     <Copy className="h-3 w-3" />
                   )
@@ -217,7 +217,7 @@ export function SpecActions({
                 rotate={-0.5}
                 icon={
                   justCopied === "link" ? (
-                    <Check className="h-3 w-3 text-[var(--salad)]" />
+                    <Check className="h-3 w-3 text-[var(--foreground)]" />
                   ) : (
                     <Link2 className="h-3 w-3" />
                   )
@@ -240,7 +240,7 @@ export function SpecActions({
           <FormatTab
             active={format === "design-md"}
             onClick={() => setFormat("design-md")}
-            accent="salad"
+            accent="sakura"
           >
             DESIGN.md
           </FormatTab>
@@ -276,7 +276,7 @@ export function SpecActions({
               rotate={-1.5}
               icon={
                 justCopied === "copy" ? (
-                  <Check className="h-3 w-3 text-[var(--salad)]" />
+                  <Check className="h-3 w-3 text-[var(--foreground)]" />
                 ) : (
                   <Copy className="h-3 w-3" />
                 )
@@ -290,7 +290,7 @@ export function SpecActions({
               rotate={0.5}
               icon={
                 justCopied === "link" ? (
-                  <Check className="h-3 w-3 text-[var(--salad)]" />
+                  <Check className="h-3 w-3 text-[var(--foreground)]" />
                 ) : (
                   <Link2 className="h-3 w-3" />
                 )

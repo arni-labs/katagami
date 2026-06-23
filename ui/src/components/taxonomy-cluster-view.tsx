@@ -26,9 +26,6 @@ interface TaxonomyFamily {
 const accentCycle: AccentColor[] = [
   "sakura",
   "yuzu",
-  "salad",
-  "matcha",
-  "teal",
   "ramune",
   "sumire",
 ];

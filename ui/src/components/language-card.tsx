@@ -21,8 +21,6 @@ const statusLabel: Record<string, string> = {
 const accentColors = [
   "var(--sakura)",
   "var(--yuzu)",
-  "var(--salad)",
-  "var(--teal)",
   "var(--ramune)",
   "var(--sumire)",
 ];

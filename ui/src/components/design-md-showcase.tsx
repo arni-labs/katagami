@@ -70,12 +70,12 @@ export function DesignMdShowcase(
           </ShowcaseCard>
         )}
         {hasSpacing && (
-          <ShowcaseCard tape="teal" title="Spacing">
+          <ShowcaseCard tape="ramune" title="Spacing">
             <SpacingScale spacing={spacing} />
           </ShowcaseCard>
         )}
         {hasRounded && (
-          <ShowcaseCard tape="salad" title="Shape">
+          <ShowcaseCard tape="sakura" title="Shape">
             <RoundedSamples rounded={rounded} />
           </ShowcaseCard>
         )}
@@ -203,7 +203,7 @@ function ColorChip({ name, value }: { name: string; value: string }) {
           {name}
         </span>
         {copied ? (
-          <Check className="h-3 w-3 shrink-0 text-[var(--salad)]" />
+          <Check className="h-3 w-3 shrink-0 text-[var(--foreground)]" />
         ) : (
           <Copy className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-foreground" />
         )}

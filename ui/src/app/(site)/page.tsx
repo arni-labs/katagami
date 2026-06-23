@@ -2,16 +2,111 @@ import { Suspense } from "react";
 import Link from "next/link";
 import {
   DESIGN_LANGUAGE_GALLERY_FIELDS,
+  countDesignLanguages,
+  languageTaxonomyMap,
   listDesignLanguages,
   listTaxonomies,
   parseJson,
+  taxonomyFamilyIndex,
 } from "@/lib/odata";
 import { LanguageGallery, dominantHueBucket } from "@/components/language-gallery";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
-import { SurpriseChip } from "@/components/hero-actions";
 import { TasteDeck, type DeckEntry } from "@/components/taste-deck";
 import { isOwner } from "@/lib/owner";
+
+const HOW_STEPS = [
+  {
+    n: "01",
+    ink: "sakura",
+    title: "Browse",
+    body: "Filter by ink, vibe, or movement — or let the shuffle pick a language you didn't know you wanted.",
+  },
+  {
+    n: "02",
+    ink: "ramune",
+    title: "Open a language",
+    body: "Every language ships its philosophy, tokens, rules, and working landing + dashboard embodiments.",
+  },
+  {
+    n: "03",
+    ink: "yuzu",
+    title: "Hand it to your agent",
+    body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style, session after session.",
+  },
+] as const;
+
+/** The three-step explainer, folded into one quiet index tab that unfolds
+ *  to the full passes. Native <details> — works without JS, calm by default. */
+function HowItWorksFold() {
+  return (
+    <details className="group/how">
+      {/* gentle katagami dashes — the hero's underline */}
+      <span aria-hidden className="sticker-perforation block" />
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1.5 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground">
+          how it works
+        </span>
+        <span className="hidden min-w-0 flex-wrap items-center gap-x-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
+          {HOW_STEPS.map((s, i) => (
+            <span key={s.n} className="inline-flex items-center gap-1.5">
+              <span
+                className="font-bold"
+                style={{
+                  color: `color-mix(in oklch, var(--${s.ink}) 72%, var(--foreground))`,
+                }}
+              >
+                {s.n}
+              </span>
+              {s.title}
+              {i < HOW_STEPS.length - 1 ? (
+                <span aria-hidden className="text-muted-foreground/35">
+                  ·
+                </span>
+              ) : null}
+            </span>
+          ))}
+        </span>
+        <span
+          aria-hidden
+          className="ml-auto text-muted-foreground transition-transform duration-200 group-open/how:rotate-180"
+        >
+          <svg
+            viewBox="0 0 10 6"
+            className="h-[6px] w-2.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          >
+            <path d="M1 1l4 4 4-4" />
+          </svg>
+        </span>
+      </summary>
+      <div className="mt-2 grid gap-6 pb-5 sm:grid-cols-3">
+        {HOW_STEPS.map((step) => (
+          <div key={step.n} className="relative pl-12">
+            <span
+              aria-hidden
+              className="absolute left-0 top-0 font-display text-[34px] font-bold leading-none"
+              style={{
+                color: `color-mix(in oklch, var(--${step.ink}) 70%, var(--foreground))`,
+              }}
+            >
+              {step.n}
+            </span>
+            <h3 className="font-display text-[17px] font-bold leading-tight tracking-[-0.015em]">
+              {step.title}
+            </h3>
+            <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
+              {step.body}
+            </p>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 async function GalleryGrid({
   status,
@@ -35,12 +130,26 @@ async function GalleryGrid({
   const canDelete = demo ? false : await isOwner();
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>>;
+  // The taxonomy hierarchy + each language's leaf taxonomies drive the gallery's
+  // family shelves; both load in parallel and are non-fatal — empty maps just
+  // fall back to color-mood grouping.
+  let taxonomyParents: Map<string, { name: string; parentId: string }> =
+    new Map();
+  let taxonomyByLang: Map<string, string[]> = new Map();
   try {
-    languages = await listDesignLanguages(
-      undefined,
-      undefined,
-      DESIGN_LANGUAGE_GALLERY_FIELDS,
-    );
+    // Published-only — draft/archived languages never appear in the gallery,
+    // counts, lineage, taxonomy, or anywhere public.
+    [languages, taxonomyParents, taxonomyByLang] = await Promise.all([
+      listDesignLanguages(
+        "Status eq 'Published'",
+        undefined,
+        DESIGN_LANGUAGE_GALLERY_FIELDS,
+      ),
+      taxonomyFamilyIndex().catch(
+        () => new Map<string, { name: string; parentId: string }>(),
+      ),
+      languageTaxonomyMap().catch(() => new Map<string, string[]>()),
+    ]);
   } catch {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
@@ -194,12 +303,20 @@ async function GalleryGrid({
 
   return (
     <>
-      {pull ? <TodaysPull lang={pull} /> : null}
-      {deckEntries.length > 2 ? <TasteDeck entries={deckEntries} /> : null}
+      {/* Today's pull + Taste finder are hidden for now — the functionality is
+          unfinished. Re-enable by setting NEXT_PUBLIC_SHOW_TASTE=1. */}
+      {process.env.NEXT_PUBLIC_SHOW_TASTE === "1" && pull ? (
+        <TodaysPull lang={pull} />
+      ) : null}
+      {process.env.NEXT_PUBLIC_SHOW_TASTE === "1" && deckEntries.length > 2 ? (
+        <TasteDeck entries={deckEntries} />
+      ) : null}
       <LanguageGallery
         languages={languages}
         canDelete={canDelete}
         taxonomies={taxonomies}
+        taxonomyParents={taxonomyParents}
+        taxonomyByLang={taxonomyByLang}
         initialFilters={{
           status: status ?? "Published",
           taxonomy: taxonomy ?? "all",
@@ -294,12 +411,15 @@ export default async function GalleryPage({
 }) {
   const sp = await searchParams;
   const demo = sp.demo !== undefined && sp.demo !== "0" && sp.demo !== "false";
-  let taxonomies: { entity_id: string; fields: { name?: string } }[] = [];
-  try {
-    taxonomies = await listTaxonomies("Status eq 'Published'");
-  } catch {
-    // Taxonomy listing may fail if no data yet
-  }
+  // Taxonomies + the published-language count run in parallel; the count uses
+  // OData $count (no rows), so the Gallery header's figure renders immediately
+  // without waiting on the streamed gallery payload.
+  const [taxonomies, languageCount] = await Promise.all([
+    listTaxonomies("Status eq 'Published'").catch(
+      () => [] as { entity_id: string; fields: { name?: string } }[],
+    ),
+    countDesignLanguages("Status eq 'Published'"),
+  ]);
 
   return (
     <div className="w-full overflow-x-hidden">
@@ -394,76 +514,31 @@ export default async function GalleryPage({
               Browse gallery
               <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
             </a>
-            <SurpriseChip />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              or press <kbd className="font-bold text-foreground">⌘K</kbd> to search
-            </span>
           </div>
           </div>
         </div>
       </section>
 
-      {/* ── Everything below the hero stays in the content column ── */}
-      <div className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 pt-10 sm:space-y-16">
-      {/* ── How it works — one quiet strip, three passes ─────────── */}
-      <section
-        aria-label="How katagami works"
-        data-reveal-children
-        className="relative grid gap-6 sm:grid-cols-3"
-      >
-        {(
-          [
-            {
-              n: "01",
-              ink: "sakura",
-              title: "Browse",
-              body: "Filter by ink, vibe, or movement — or let the shuffle pick a language you didn't know you wanted.",
-            },
-            {
-              n: "02",
-              ink: "ramune",
-              title: "Open a language",
-              body: "Every language ships its philosophy, tokens, rules, and working landing + dashboard embodiments.",
-            },
-            {
-              n: "03",
-              ink: "yuzu",
-              title: "Hand it to your agent",
-              body: "Copy DESIGN.md (or the shadcn/ui kit) and your agent stays on-style, session after session.",
-            },
-          ] as const
-        ).map((step) => (
-          <div key={step.n} className="relative pl-12">
-            <span
-              aria-hidden
-              className="absolute left-0 top-0 font-display text-[34px] font-bold leading-none"
-              style={{
-                color: `color-mix(in oklch, var(--${step.ink}) 70%, var(--foreground))`,
-              }}
-            >
-              {step.n}
-            </span>
-            <h3 className="font-display text-[17px] font-bold leading-tight tracking-[-0.015em]">
-              {step.title}
-            </h3>
-            <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
-              {step.body}
-            </p>
-          </div>
-        ))}
-      </section>
+      {/* ── How it works — folded as a clever dashed underline beneath the hero ── */}
+      <div className="mx-auto w-full max-w-7xl px-4">
+        <HowItWorksFold />
+      </div>
 
+      {/* ── Everything below the hero stays in the content column ── */}
+      <div className="mx-auto w-full max-w-7xl space-y-12 px-4 pb-16 pt-8 sm:space-y-16">
       {/* ── Gallery ──────────────────────────────────────────────── */}
       <section id="gallery" className="scroll-mt-20 space-y-4">
         <div data-reveal className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="inline-block h-[3px] w-9 rounded-[2px] bg-[var(--ramune)]" />
-              choose a language
-            </div>
+          <div className="flex items-baseline gap-3">
             <h2 className="font-display text-[26px] font-bold leading-none tracking-[-0.02em]">
               Gallery
             </h2>
+            <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="font-bold tabular-nums text-foreground">
+                {languageCount}
+              </span>{" "}
+              languages
+            </span>
           </div>
           <span className="stamp text-[var(--ramune)]">details inside</span>
         </div>

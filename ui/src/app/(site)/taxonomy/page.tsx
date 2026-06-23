@@ -11,9 +11,9 @@ export default async function TaxonomyPage() {
     return (
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-10">
         <PageHero
-          eyebrowAccent="salad"
+          eyebrowAccent="sumire"
           eyebrow="categorization"
-          title={<Marker color="salad">taxonomy</Marker>}
+          title={<Marker color="sumire">taxonomy</Marker>}
           description="Could not reach the server."
         />
         <StickyNote className="p-6 text-center font-mono text-sm text-muted-foreground">
@@ -25,7 +25,8 @@ export default async function TaxonomyPage() {
 
   let languages: Awaited<ReturnType<typeof listDesignLanguages>> = [];
   try {
-    languages = await listDesignLanguages();
+    // Published-only: draft/archived languages never count toward taxonomy.
+    languages = await listDesignLanguages("Status eq 'Published'");
   } catch {
     // keep empty
   }
@@ -33,17 +34,17 @@ export default async function TaxonomyPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
       <PageHero
-        eyebrowAccent="salad"
+        eyebrowAccent="sumire"
         eyebrow="categorization"
         title={
           <>
-            <Marker color="salad">taxonomy</Marker> browser
+            <Marker color="sumire">taxonomy</Marker> browser
           </>
         }
         description="A cleaner map of the design-language library, grouped by browsing family and tuned for finding usable styles quickly."
         rightSlot={
           <>
-            <Stamp color="salad">{taxonomies.length} categories</Stamp>
+            <Stamp color="sumire">{taxonomies.length} categories</Stamp>
             <Stamp color="teal" rotate={3}>
               curated
             </Stamp>

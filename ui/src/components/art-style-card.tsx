@@ -17,8 +17,7 @@ export interface ArtStyleItem {
 }
 
 const accentColors = [
-  "var(--sakura)", "var(--yuzu)", "var(--salad)",
-  "var(--teal)", "var(--ramune)", "var(--sumire)",
+  "var(--sakura)", "var(--yuzu)", "var(--ramune)", "var(--sumire)",
 ];
 
 const STRIP_MAX = 4;
