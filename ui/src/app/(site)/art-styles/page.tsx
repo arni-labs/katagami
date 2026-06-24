@@ -20,6 +20,21 @@ function refUrls(raw?: string): string[] {
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
+// The backend SubmitForReview guard forced reference_image_file_ids to a single
+// id on some styles, so that field shows only one image. The full set lives in
+// reference_assets (the public serving plane). Prefer it; fall back to the ids.
+function refImageUrls(fields: Record<string, string | undefined>): string[] {
+  const assets = parseJson<Record<string, unknown> | unknown[]>(fields.reference_assets);
+  const urls: string[] = [];
+  const push = (u: unknown) => {
+    if (typeof u === "string" && u.startsWith("http")) urls.push(u);
+    else if (u && typeof u === "object" && typeof (u as { url?: string }).url === "string") urls.push((u as { url: string }).url);
+  };
+  if (Array.isArray(assets)) assets.forEach(push);
+  else if (assets && typeof assets === "object") Object.values(assets).forEach(push);
+  return urls.length ? urls : refUrls(fields.reference_image_file_ids);
+}
+
 export default async function ArtStylesPage() {
   // Published-only everywhere — draft/archived art styles never appear in the
   // catalog or counts. Owners can still archive published art styles.
@@ -33,7 +48,7 @@ export default async function ArtStylesPage() {
       status: r.status,
       medium: r.fields.medium ?? "",
       promptTemplate: r.fields.prompt_template ?? "",
-      refs: refUrls(r.fields.reference_image_file_ids),
+      refs: refImageUrls(r.fields),
       proofs: refUrls(r.fields.proof_shots_file_ids),
       thumb: r.fields.thumbnail_file_id ? getFileUrl(r.fields.thumbnail_file_id) : "",
       tags: parseJson<string[]>(r.fields.tags) ?? [],

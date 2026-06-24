@@ -26,6 +26,20 @@ function refUrls(raw?: string): string[] {
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
+// Prefer reference_assets (full serving set) over the guard-limited
+// reference_image_file_ids, which the SubmitForReview guard forced to one id.
+function refImageUrls(fields: Record<string, string | undefined>): string[] {
+  const assets = parseJson<Record<string, unknown> | unknown[]>(fields.reference_assets);
+  const urls: string[] = [];
+  const push = (u: unknown) => {
+    if (typeof u === "string" && u.startsWith("http")) urls.push(u);
+    else if (u && typeof u === "object" && typeof (u as { url?: string }).url === "string") urls.push((u as { url: string }).url);
+  };
+  if (Array.isArray(assets)) assets.forEach(push);
+  else if (assets && typeof assets === "object") Object.values(assets).forEach(push);
+  return urls.length ? urls : refUrls(fields.reference_image_file_ids);
+}
+
 /** Render a parsed-JSON value as text. These maps are typed as string values,
  *  but contributor-submitted data can carry nested objects/arrays — handing a
  *  raw object to JSX throws "Objects are not valid as a React child" and 500s
@@ -53,7 +67,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
 
-  const refs = refUrls(f.reference_image_file_ids);
+  const refs = refImageUrls(f);
   const proofs = refUrls(f.proof_shots_file_ids);
   const thumb = f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "";
   const hero = refs[0] || thumb || "";
