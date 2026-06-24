@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
-  getDesignLanguage,
+  getPublishedDesignLanguage,
   getFileUrl,
   listPaletteSystems,
   listArtStyles,
@@ -63,7 +63,7 @@ export async function generateMetadata({
   const { id } = await params;
 
   try {
-    const lang = await getDesignLanguage(id);
+    const lang = await getPublishedDesignLanguage(id);
     const name = lang.fields.name || "Untitled";
     return {
       title: pageTitle(name),
@@ -92,7 +92,7 @@ export default async function LanguageDetailPage({
 
   let lang;
   try {
-    lang = await getDesignLanguage(id);
+    lang = await getPublishedDesignLanguage(id);
   } catch {
     notFound();
   }
