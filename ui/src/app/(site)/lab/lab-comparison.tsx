@@ -239,7 +239,7 @@ function StatChip({
       className="text-center"
       style={{ animation: `lab-pop 520ms cubic-bezier(.2,.9,.3,1) ${delay}ms both` }}
     >
-      <div className="font-display text-2xl font-black tabular-nums tracking-[-0.02em] sm:text-3xl">
+      <div className="font-display text-xl font-black tabular-nums tracking-[-0.02em] sm:text-3xl">
         {children}
       </div>
       <div className="mt-1 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -253,7 +253,7 @@ function StatRow({ m }: { m: LabModel }) {
   const cost = parseCost(m.cost);
   if (cost == null && !m.tokens && !m.wall) return null;
   return (
-    <div className="mt-4 flex items-center justify-center gap-6 sm:gap-9">
+    <div className="mt-4 flex items-center justify-center gap-5 sm:gap-9">
       {cost != null && (
         <StatChip label="money" delay={80}>
           <CountUp to={cost} prefix="$" />
@@ -313,6 +313,42 @@ function Segmented({
   );
 }
 
+// an on/off toggle switch (katagami pill)
+function Switch({
+  on,
+  onToggle,
+  label,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  label: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className="inline-flex items-center gap-2.5"
+    >
+      <span className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-foreground">
+        {label}
+      </span>
+      <span
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+          on ? "bg-foreground" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`inline-block h-[18px] w-[18px] rounded-full bg-background shadow-[0_1px_2px_#0000003d] transition-transform ${
+            on ? "translate-x-[23px]" : "translate-x-[3px]"
+          }`}
+        />
+      </span>
+    </button>
+  );
+}
+
 // ---- the quiz: one design at a time ----
 function QuizQuestion({
   active,
@@ -361,7 +397,7 @@ function QuizQuestion({
       style={{ animation: "quiz-in 420ms cubic-bezier(.2,.9,.3,1) both" }}
     >
       {/* progress + skip */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <span className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
           Question {index + 1} / {total}
           {answeredSoFar > 0 && (
@@ -444,7 +480,7 @@ function QuizQuestion({
               disabled={answered}
               onClick={(e) => onPick(opt, e)}
               style={{ animation: anim }}
-              className={`flex items-center justify-center px-6 py-7 text-center font-display text-xl font-black tracking-[-0.02em] shadow-[0_3px_0_#1e232d29] transition-all sm:text-2xl ${cls}`}
+              className={`flex items-center justify-center px-5 py-6 text-center font-display text-lg font-black tracking-[-0.02em] shadow-[0_3px_0_#1e232d29] transition-all sm:px-6 sm:py-7 sm:text-2xl ${cls}`}
             >
               {opt}
             </button>
@@ -570,6 +606,15 @@ function DetailsGrid({
   const atStart = clamped <= 0;
   const atEnd = clamped + perPage >= n;
 
+  // responsive: 2 designs side-by-side on desktop, 1 on mobile (no manual toggle)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const apply = () => setPerPage(mq.matches ? 2 : 1);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") setStart((s) => Math.max(0, Math.min(s, maxStart) - perPage));
@@ -628,14 +673,6 @@ function DetailsGrid({
           onChange={(v) => setView(v as LabView)}
         />
         <div className="ml-auto flex items-center gap-3">
-          <Segmented
-            options={[
-              { key: "1", label: "1 up" },
-              { key: "2", label: "2 up" },
-            ]}
-            value={String(perPage)}
-            onChange={(k) => setPerPage(Number(k))}
-          />
           <span className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             You got {correct}/{n}
           </span>
@@ -645,7 +682,7 @@ function DetailsGrid({
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {nav}
         <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.16em] tabular-nums text-muted-foreground">
           {pos}
@@ -877,19 +914,13 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         </div>
       )}
 
-      {/* with-rules / no-rules variant toggle */}
+      {/* "anti-slop" rules on/off (on = round 11 with rules, off = round 12 no rules) */}
       {variantSet && (
-        <div className="mt-5 flex items-center gap-3">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Variation
-          </span>
-          <Segmented
-            options={[
-              { key: "primary", label: primarySet.label },
-              { key: "variant", label: variantSet.label },
-            ]}
-            value={variantMode}
-            onChange={(k) => switchVariant(k as "primary" | "variant")}
+        <div className="mt-5">
+          <Switch
+            on={variantMode === "primary"}
+            onToggle={() => switchVariant(variantMode === "primary" ? "variant" : "primary")}
+            label={<>&ldquo;anti-slop&rdquo; rules</>}
           />
         </div>
       )}
