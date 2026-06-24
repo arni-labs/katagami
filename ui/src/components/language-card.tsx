@@ -174,7 +174,12 @@ function FullCard({
   const thumbnailAssetUrl = f.thumbnail_asset_url;
   const isPublished = lang.status === "Published";
   const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
-  const hasThumbnailPreview = Boolean(thumbnailAssetUrl || thumbnailProxyFileId);
+  // Prefer a static screenshot of the bespoke landing when present; else the
+  // embodiment thumbnail. Both are plain images — no live rendering on the card.
+  const landingThumbUrl = (f.landing_thumbnail_asset_url || "").trim();
+  const previewSrc = landingThumbUrl || thumbnailAssetUrl;
+  const previewFileId = landingThumbUrl ? undefined : thumbnailProxyFileId;
+  const hasThumbnailPreview = Boolean(previewSrc || previewFileId);
 
 
   return (
@@ -196,8 +201,8 @@ function FullCard({
         </div>
         {hasThumbnailPreview ? (
           <ThumbnailPreview
-            fileId={thumbnailProxyFileId}
-            src={thumbnailAssetUrl}
+            fileId={previewFileId}
+            src={previewSrc}
             alt={`${f.name || "Design language"} preview`}
             eager={eagerThumbnail}
             placeholderTint={stickyTint}
