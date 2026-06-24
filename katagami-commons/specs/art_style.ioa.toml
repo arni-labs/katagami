@@ -97,6 +97,16 @@ name = "usage_count"
 type = "counter"
 initial = 0
 
+[[state]]
+name = "has_credits"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_model_provenance"
+type = "bool"
+initial = "false"
+
 # --- Actions: Recipe Authoring (Draft & UnderReview) ---
 
 [[action]]
@@ -121,6 +131,7 @@ effect = [
 ]
 params = ["name", "slug", "medium", "prompt_template", "negative_prompt", "engine_hints", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
 hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/prompt_template (with {subject}+{palette})/slot_recipes/guidance + all image file ids (reference images + manifest, proof shots + manifest, thumbnail) + lineage + model_provenance + credits + direction_id (the bake-off round this belongs to). Sets every SubmitForReview guard var so the next call is SubmitForReview. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Files must already be uploaded and Ready (the SubmitForReview cross-entity guards still verify them). Mirrors SetSpec/SubmitDesignLanguage; collapses the author ladder into one."
+
 
 [[action]]
 name = "SetMedium"

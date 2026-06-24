@@ -90,6 +90,16 @@ name = "usage_count"
 type = "counter"
 initial = 0
 
+[[state]]
+name = "has_credits"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_model_provenance"
+type = "bool"
+initial = "false"
+
 # --- Actions: Spec Authoring (Draft & UnderReview) ---
 
 [[action]]
@@ -113,6 +123,7 @@ effect = [
 ]
 params = ["name", "slug", "signature", "neutrals", "semantic", "mood", "ramps", "proof_scenes", "usage_guidance", "tokens_export_file_id", "tokens_export_format_version", "tokens_export_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
 hint = "Contributor hot-path: author a COMPLETE palette system in ONE call — core (signature/neutrals/semantic/mood) + ramps + proof_scenes + usage_guidance + tokens_export file + thumbnail + lineage + model_provenance + credits + direction_id (the bake-off round). Sets every SubmitForReview guard var so the next call is SubmitForReview. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Files must already be uploaded and Ready (the guards still verify them). Mirrors SubmitDesignLanguage; collapses the author ladder into one."
+
 
 [[action]]
 name = "SetCore"
