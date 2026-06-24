@@ -108,6 +108,21 @@ params = ["name", "slug"]
 hint = "Set the art style name and URL-safe slug."
 
 [[action]]
+name = "SubmitArtStyle"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_medium", value = "true" },
+  { type = "set_bool", var = "has_prompt_template", value = "true" },
+  { type = "set_bool", var = "has_slot_recipes", value = "true" },
+  { type = "set_bool", var = "has_reference_images", value = "true" },
+  { type = "set_bool", var = "has_proof_shots", value = "true" },
+  { type = "set_bool", var = "has_thumbnail", value = "true" }
+]
+params = ["name", "slug", "medium", "prompt_template", "negative_prompt", "engine_hints", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/prompt_template (with {subject}+{palette})/slot_recipes/guidance + all image file ids (reference images + manifest, proof shots + manifest, thumbnail) + lineage + model_provenance + credits + direction_id (the bake-off round this belongs to). Sets every SubmitForReview guard var so the next call is SubmitForReview. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Files must already be uploaded and Ready (the SubmitForReview cross-entity guards still verify them). Mirrors SetSpec/SubmitDesignLanguage; collapses the author ladder into one."
+
+[[action]]
 name = "SetMedium"
 kind = "input"
 from = ["Draft", "UnderReview"]

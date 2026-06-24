@@ -101,6 +101,20 @@ params = ["name", "slug"]
 hint = "Set the palette system name and URL-safe slug."
 
 [[action]]
+name = "SubmitPaletteSystem"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_core", value = "true" },
+  { type = "set_bool", var = "has_ramps", value = "true" },
+  { type = "set_bool", var = "has_proof_scenes", value = "true" },
+  { type = "set_bool", var = "has_tokens_export", value = "true" },
+  { type = "set_bool", var = "has_thumbnail", value = "true" }
+]
+params = ["name", "slug", "signature", "neutrals", "semantic", "mood", "ramps", "proof_scenes", "usage_guidance", "tokens_export_file_id", "tokens_export_format_version", "tokens_export_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE palette system in ONE call — core (signature/neutrals/semantic/mood) + ramps + proof_scenes + usage_guidance + tokens_export file + thumbnail + lineage + model_provenance + credits + direction_id (the bake-off round). Sets every SubmitForReview guard var so the next call is SubmitForReview. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Files must already be uploaded and Ready (the guards still verify them). Mirrors SubmitDesignLanguage; collapses the author ladder into one."
+
+[[action]]
 name = "SetCore"
 kind = "input"
 from = ["Draft", "UnderReview"]
