@@ -986,8 +986,12 @@ export function getFileUrl(fileId: string): string {
 
 // ── Helpers ──
 
-export function parseJson<T = unknown>(raw?: string): T | null {
-  if (!raw) return null;
+export function parseJson<T = unknown>(raw?: unknown): T | null {
+  if (raw == null) return null;
+  // The OData backend returns some JSON fields as native arrays/objects rather
+  // than strings. JSON.parse on a non-string throws, so guard: if it's already
+  // parsed (array/object), return it as-is; only JSON.parse actual strings.
+  if (typeof raw !== "string") return raw as T;
   try {
     return JSON.parse(raw) as T;
   } catch {
