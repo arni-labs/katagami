@@ -21,7 +21,11 @@ node_modules/
 # Local agent config
 .claude/
 
-# model-bakeoff: keep tooling + the published round artifacts, exclude heavy logs/raw/venv
-experiments/model-bakeoff/runs/
-experiments/model-bakeoff/datadog-proxy/.venv/
-experiments/model-bakeoff/rounds/
+# Model bakeoff artifacts and local review corpora live outside this repo.
+experiments/model-bakeoff/
+ui/public/lab/
+.local/
+generated_imgs/
+*_20??-??-??_????
+immersive-*.jpg
+landing-*.jpg

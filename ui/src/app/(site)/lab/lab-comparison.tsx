@@ -174,6 +174,10 @@ type SurfaceSet = {
   label: string;
 };
 
+const MODEL_BAKEOFF_ASSET_BASE_URL =
+  process.env.NEXT_PUBLIC_MODEL_BAKEOFF_ASSET_BASE_URL?.replace(/\/+$/, "") ||
+  "/model-bake-off-assets";
+
 // resolve a model's iframe src in a surface set + view; null if it has no design here
 function resolvePreview(set: SurfaceSet | null, key: string, view: LabView) {
   if (!set || !set.models[key]) return null;
@@ -181,7 +185,7 @@ function resolvePreview(set: SurfaceSet | null, key: string, view: LabView) {
   const avail = m.views ?? set.views;
   if (!avail.length) return null;
   const vw = avail.includes(view) ? view : avail[0];
-  return { set, m, view: vw, base: `/lab/${set.slug}/${m.dir}` };
+  return { set, m, view: vw, base: `${MODEL_BAKEOFF_ASSET_BASE_URL}/${set.slug}/${m.dir}` };
 }
 
 function PreviewFrame({
@@ -382,7 +386,6 @@ function QuizQuestion({
     usedSet = other;
   }
   const m = usedSet.models[q.key];
-  const cost = parseCost(m.cost);
   const picked = answers[q.key];
   const answered = picked !== undefined;
   const isCorrect = picked === q.name;
@@ -894,7 +897,7 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
                     <div key={i}>
                       {head && (
                         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
-                          <span className="text-foreground/30">// </span>
+                          <span className="text-foreground/30">{"// "}</span>
                           {head}
                         </p>
                       )}

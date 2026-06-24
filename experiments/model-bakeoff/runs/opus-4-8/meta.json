@@ -1,7 +1,0 @@
-{
-  "model": "claude-opus-4-8",
-  "harness": "Claude Code, research-enabled (web) interactive session",
-  "tools": "web on",
-  "date": "2026-06-21",
-  "notes": "Concept 'the engraved celestial atlas, in daylight'. Sourced via a real web research pass: Flamsteed Atlas Coelestis (1729, equatorial grid), Bayer Uranometria (1603, engraving + magnitude designation), Bode Uranographia (1801, dense-field contrast), and the red-light night-vision convention it deliberately answers. Evolved from the v1 closed-book draft; Sources & lineage formalized, embodiment specimen added."
-}
