@@ -194,6 +194,29 @@ params = ["name", "slug", "philosophy", "tokens", "rules", "layout_principles", 
 hint = "Set the complete core spec for a newly synthesized or substantially revised language in one coherent hot-path transition."
 
 [[action]]
+name = "SubmitDesignLanguage"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_philosophy", value = "true" },
+  { type = "set_bool", var = "has_tokens", value = "true" },
+  { type = "set_bool", var = "has_rules", value = "true" },
+  { type = "set_bool", var = "has_layout", value = "true" },
+  { type = "set_bool", var = "has_guidance", value = "true" },
+  { type = "set_bool", var = "has_embodiment", value = "true" },
+  { type = "set_bool", var = "has_compositions", value = "true" },
+  { type = "set_bool", var = "has_design_md", value = "true" },
+  { type = "set_bool", var = "has_valid_design_md", value = "true" },
+  { type = "set_bool", var = "has_shadcn_export", value = "true" },
+  { type = "set_bool", var = "has_shadcn_component_spec", value = "true" },
+  { type = "set_bool", var = "has_shadcn_preview_shots", value = "true" },
+  { type = "set_bool", var = "has_thumbnail", value = "true" },
+  { type = "set_bool", var = "has_model_provenance", value = "true" }
+]
+params = ["name", "slug", "philosophy", "tokens", "rules", "layout_principles", "guidance", "tags", "imagery_direction", "embodiment_file_id", "element_count", "composition_count", "embodiment_format", "landing_file_id", "dashboard_file_id", "design_md_file_id", "design_md_lint_result", "design_md_format_version", "shadcn_export_file_id", "shadcn_export_format_version", "shadcn_export_manifest", "shadcn_component_spec_file_id", "shadcn_component_spec_format_version", "shadcn_component_spec_manifest", "shadcn_preview_shots_file_id", "shadcn_preview_shots_format_version", "shadcn_preview_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE design language in ONE call — full spec + imagery_direction + every artifact file id (embodiment, landing + dashboard compositions, DESIGN.md + clean lint result, shadcn export/component-spec/preview-shots, thumbnail) + lineage (parent_ids/lineage_type/generation_number) + model_provenance + curator_notes (record the reimagine direction here for provenance). Sets every SubmitForReview guard var, so the very next call is SubmitForReview. It does NOT transition state — the entity stays in Draft and a curator reviews then Publishes; contributors never self-publish. Files must already be uploaded and Ready (the SubmitForReview cross-entity guards still verify them, and the finalizer still rejects a non-clean DESIGN.md lint). Mirrors SetSpec's one-coherent-transition pattern; collapses the ~12-call author ladder into one."
+
+[[action]]
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]
