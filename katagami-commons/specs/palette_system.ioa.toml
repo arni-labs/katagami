@@ -323,6 +323,13 @@ from = ["Published"]
 effect = "increment fork_count"
 hint = "Record that a child palette was forked from this one."
 
+[[action]]
+name = "SetCredits"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["credits"]
+hint = "Set the credits list — named artists / movements / studios / traditions this palette traces to. Each entry: { name, kind, note }. Settable while Published for backfill."
+
 # --- Output Actions ---
 
 [[action]]
