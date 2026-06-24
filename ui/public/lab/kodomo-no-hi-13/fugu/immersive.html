@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori River Ascent</title>
+  <script>document.documentElement.className = 'js';</script>
+  <style>
+    :root {
+      --bg: #fffef8;
+      --surface: #f2fbf4;
+      --text: #07130f;
+      --muted: #53645d;
+      --border: #d9eadf;
+      --accent: #00a7ff;
+      --on-accent: #ffffff;
+      --success: #3dff6f;
+      --warning: #ff4f7b;
+      --error: #d91445;
+      --info: #00a7ff;
+      --sky: #00a7ff;
+      --leaf: #3dff6f;
+      --coral: #ff4f7b;
+      --ink: #07130f;
+      --paper: #fffef8;
+      --mist: #eaffef;
+      --font-display: "Arial Black", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+      --font-kanji: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+      --control-height: 52px;
+      --radius-card: 16px;
+      --radius-panel: 24px;
+      --radius-control: 9999px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-width: 320px; min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 17px; line-height: 1.5; overflow-x: hidden; }
+    body { background: var(--bg); }
+    a { color: inherit; text-decoration: none; }
+    button, .button, input, select, textarea {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-control);
+      font: 900 15px/1 var(--font-body);
+      color: var(--text);
+      background: var(--paper);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent);
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+    }
+    button, .button { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 26px; background: var(--accent); color: var(--on-accent); box-shadow: none; cursor: pointer; }
+    button:hover, .button:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--sky) 84%, white); }
+    button:active, .button:active { transform: translateY(1px); }
+    button:focus-visible, .button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 0; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+    button:disabled, .button[aria-disabled="true"], input:disabled, select:disabled, textarea:disabled { opacity: .44; pointer-events: none; transform: none; }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: #d9f6ff;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+    .fallback {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: none;
+      overflow: hidden;
+      background: #d8f8ff;
+    }
+    .fallback .sun { position: absolute; width: 180px; height: 180px; left: 12vw; top: 12vh; border-radius: 9999px; background: #fffef8; box-shadow: 0 0 70px rgba(255,255,255,.9); }
+    .fallback .mountain { position: absolute; bottom: 36vh; width: 44vw; height: 30vh; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: #88d8a2; }
+    .fallback .mountain.one { left: -8vw; }
+    .fallback .mountain.two { right: -5vw; bottom: 34vh; background: #62c985; }
+    .fallback .river { position: absolute; left: 36vw; top: 34vh; width: 28vw; height: 80vh; background: #00a7ff; clip-path: polygon(42% 0, 58% 0, 88% 100%, 6% 100%); opacity: .86; }
+    .fallback .ground { position: absolute; inset: 48vh 0 0; background: #eaffef; clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%); }
+    .fallback .fish { position: absolute; width: 120px; height: 38px; border-radius: 9999px; background: #00a7ff; box-shadow: 0 18px 0 #3dff6f, 0 36px 0 #ff4f7b; transform: rotate(-12deg); }
+    .fallback .fish.one { left: 16vw; top: 36vh; }
+    .fallback .fish.two { right: 18vw; top: 28vh; transform: rotate(10deg); }
+    .fallback .falls { position: absolute; right: 23vw; top: 30vh; width: 10vw; height: 28vh; background: #fffef8; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); opacity: .88; }
+
+    .scene-ui { position: relative; z-index: 2; pointer-events: none; }
+    .topbar {
+      position: fixed;
+      z-index: 4;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      width: min(1180px, calc(100vw - 32px));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 10px 10px 10px 22px;
+      border-radius: var(--radius-control);
+      background: color-mix(in srgb, var(--paper) 86%, transparent);
+      backdrop-filter: blur(22px) saturate(1.3);
+      box-shadow: 0 24px 70px rgba(7, 19, 15, .1);
+      pointer-events: auto;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 950; letter-spacing: -.03em; }
+    .brand-mark { width: 38px; height: 38px; border-radius: 9999px; background: var(--accent); position: relative; overflow: hidden; }
+    .brand-mark::before { content: ""; position: absolute; width: 24px; height: 24px; right: -3px; top: 7px; border-radius: 9999px; background: var(--leaf); }
+    .brand-mark::after { content: ""; position: absolute; width: 10px; height: 38px; left: 8px; top: 0; background: var(--coral); transform: skewX(-14deg); }
+    .topbar small { color: var(--muted); font-weight: 900; }
+    .topbar .button { height: 42px; min-height: 42px; padding: 0 18px; font-size: 14px; }
+
+    .chapters { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+    .chapter {
+      position: absolute;
+      width: min(520px, calc(100vw - 34px));
+      padding: 28px;
+      border-radius: var(--radius-panel);
+      background: color-mix(in srgb, var(--paper) 88%, transparent);
+      color: var(--text);
+      backdrop-filter: blur(22px) saturate(1.3);
+      box-shadow: 0 32px 90px rgba(7, 19, 15, .16);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .chapter.left { left: max(22px, calc((100vw - 1180px) / 2)); bottom: 12svh; }
+    .chapter.right { right: max(22px, calc((100vw - 1180px) / 2)); top: 20svh; }
+    .chapter.center { left: 50%; bottom: 10svh; transform: translate(-50%, 20px); }
+    .chapter h1, .chapter h2 {
+      margin: 0;
+      padding-top: 8px;
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6vw, 86px);
+      line-height: .84;
+      letter-spacing: -.065em;
+      text-transform: uppercase;
+    }
+    .chapter.center h2 { text-align: center; }
+    .chapter p { margin: 18px 0 0; color: var(--text); font-weight: 760; font-size: clamp(17px, 1.7vw, 20px); }
+    .kanji { font-family: var(--font-kanji); font-size: clamp(32px, 5.4vw, 74px); line-height: .9; letter-spacing: -.08em; font-weight: 950; margin-bottom: 10px; }
+    .highlight { display: inline; background: var(--leaf); color: var(--text); box-decoration-break: clone; padding: .02em .16em .08em; border-radius: 16px; }
+    .coral { color: var(--coral); }
+    .sky { color: var(--sky); }
+    .readable-scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: color-mix(in srgb, var(--paper) 24%, transparent);
+      clip-path: polygon(0 0, 34% 0, 22% 100%, 0 100%);
+    }
+    .route-map {
+      position: fixed;
+      z-index: 4;
+      right: 24px;
+      bottom: 22px;
+      width: min(360px, calc(100vw - 48px));
+      padding: 18px;
+      border-radius: var(--radius-panel);
+      background: color-mix(in srgb, var(--text) 86%, transparent);
+      color: var(--paper);
+      backdrop-filter: blur(16px);
+      display: grid;
+      gap: 10px;
+    }
+    .route-line { height: 8px; border-radius: 9999px; background: color-mix(in srgb, var(--paper) 16%, transparent); overflow: hidden; }
+    .route-fill { width: 0%; height: 100%; border-radius: 9999px; background: var(--accent); box-shadow: 120px 0 0 var(--leaf), 240px 0 0 var(--coral); }
+    .route-map span { display: flex; justify-content: space-between; gap: 16px; font-size: 13.5px; font-weight: 900; color: color-mix(in srgb, var(--paper) 78%, transparent); }
+
+    .scroll-space { position: relative; z-index: 1; height: 720svh; pointer-events: none; }
+    .reduced-copy { display: none; position: relative; z-index: 3; min-height: 100svh; padding: 120px 20px 60px; }
+    .reduced-copy .chapter { position: static; opacity: 1; transform: none; margin: 0 auto 22px; }
+
+    .no-webgl .fallback,
+    .reduced .fallback { display: block; }
+    .no-webgl #stage,
+    .reduced #stage { display: none; }
+    .no-webgl .scroll-space,
+    .reduced .scroll-space { display: none; }
+    .no-webgl .chapters,
+    .reduced .chapters { display: none; }
+    .no-webgl .reduced-copy,
+    .reduced .reduced-copy { display: block; }
+
+    @media (max-width: 720px) {
+      .topbar { top: 10px; width: calc(100vw - 20px); padding-left: 14px; }
+      .topbar small, .topbar .button { display: none; }
+      .chapter { padding: 22px; }
+      .chapter.left, .chapter.right, .chapter.center { left: 16px; right: auto; bottom: 92px; top: auto; transform: translateY(20px); }
+      .route-map { right: 12px; bottom: 12px; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
+        "gsap/ScrollTrigger": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js",
+        "gsap/CustomEase": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/CustomEase.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="stage" aria-label="A continuous low-poly Nobori river world"></div>
+  <div class="fallback" aria-hidden="true"><div class="sun"></div><div class="mountain one"></div><div class="mountain two"></div><div class="ground"></div><div class="river"></div><div class="falls"></div><div class="fish one"></div><div class="fish two"></div></div>
+  <div class="readable-scrim" aria-hidden="true"></div>
+
+  <div class="scene-ui">
+    <nav class="topbar" aria-label="Immersive Nobori navigation">
+      <a class="brand" href="#"><span class="brand-mark" aria-hidden="true"></span><span>Nobori</span></a>
+      <small>River ascent for Kodomo no Hi</small>
+      <a class="button" href="landing.html">Open Launchroom</a>
+    </nav>
+    <div class="chapters" aria-live="polite">
+      <section class="chapter left" id="chapter-0"><div class="kanji">こどもの日</div><h1>The river begins in clear morning.</h1><p>Nobori follows the carp-streamer route from village green to waterfall, turning a festival day into a product journey about courage and lift.</p></section>
+      <section class="chapter right" id="chapter-1"><div class="kanji">鯉のぼり</div><h2>An avenue of carp catches the wind.</h2><p>Each cloth body is a live shader, rippling with shared wind direction and strength as the camera threads between poles.</p></section>
+      <section class="chapter left" id="chapter-2"><h2>The bend reveals the work.</h2><p><span class="highlight">Dates, ages, and free access</span> stay readable on bright sky through Nobori glass panels and ink-first type.</p></section>
+      <section class="chapter right" id="chapter-3"><h2>Water climbs into dusk.</h2><p>The falls pull the camera upward: terrain, petals, mist, and warm fills compress into a single launch moment.</p></section>
+      <section class="chapter center" id="chapter-4"><div class="kanji">登り</div><h2>Carp becomes dragon<span class="coral">.</span></h2><p>The final reveal is a low-poly promise: growth is not decoration; it is a route with light, effort, and a sky to enter.</p></section>
+    </div>
+    <div class="route-map" aria-hidden="true"><div class="route-line"><div class="route-fill" id="routeFill"></div></div><span><b>Morning river</b><b>Dragon dusk</b></span></div>
+    <div class="reduced-copy">
+      <section class="chapter"><div class="kanji">こどもの日</div><h1>The river begins in clear morning.</h1><p>Nobori follows the carp-streamer route from village green to waterfall, turning a festival day into a product journey about courage and lift.</p></section>
+      <section class="chapter"><div class="kanji">鯉のぼり</div><h2>An avenue of carp catches the wind.</h2><p>Reduced motion mode presents the same world as a static low-poly scene with the full story in accessible panels.</p></section>
+      <section class="chapter"><h2>Carp becomes dragon<span class="coral">.</span></h2><p>The Nobori language keeps bright sky readable with ink panels, highlighter accents, and calm white space.</p></section>
+    </div>
+  </div>
+  <div class="scroll-space" aria-hidden="true"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    import { CustomEase } from 'gsap/CustomEase';
+
+    gsap.registerPlugin(ScrollTrigger, CustomEase);
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvasProbe = document.createElement('canvas');
+    const webgl = !!(window.WebGLRenderingContext && (canvasProbe.getContext('webgl') || canvasProbe.getContext('experimental-webgl')));
+    if (reduce) document.documentElement.classList.add('reduced');
+    if (!webgl) document.documentElement.classList.add('no-webgl');
+
+    if (!reduce && webgl) {
+      const stage = document.getElementById('stage');
+      const scene = new THREE.Scene();
+      const morningFog = new THREE.Color('#c9f6ff');
+      const duskFog = new THREE.Color('#ffd4c8');
+      scene.background = morningFog.clone();
+      scene.fog = new THREE.Fog(morningFog.clone(), 32, 138);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.04;
+      stage.appendChild(renderer.domElement);
+
+      const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, .1, 260);
+      const cameraRig = { position: new THREE.Vector3(-24, 10, 46), lookAt: new THREE.Vector3(0, 4, 0) };
+      const cameraTarget = { x: -24, y: 10, z: 46, lx: 0, ly: 4, lz: 0, time: 0, dusk: 0, wind: 0.45 };
+      camera.position.copy(cameraRig.position);
+      camera.lookAt(cameraRig.lookAt);
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), .28, .72, .82);
+      composer.addPass(bloom);
+
+      const ambient = new THREE.AmbientLight('#e9fff4', 1.2);
+      const key = new THREE.DirectionalLight('#fff7d8', 3.2);
+      key.position.set(-34, 42, 24);
+      const fill = new THREE.PointLight('#00a7ff', 1.2, 96);
+      fill.position.set(28, 16, 6);
+      const coralFill = new THREE.PointLight('#ff4f7b', .85, 72);
+      coralFill.position.set(8, 20, -54);
+      scene.add(ambient, key, fill, coralFill);
+
+      const colors = {
+        paper: new THREE.Color('#fffef8'),
+        ink: new THREE.Color('#07130f'),
+        sky: new THREE.Color('#00a7ff'),
+        leaf: new THREE.Color('#3dff6f'),
+        coral: new THREE.Color('#ff4f7b'),
+        grass: new THREE.Color('#83ef99'),
+        deepGrass: new THREE.Color('#28bd67'),
+        river: new THREE.Color('#00a7ff'),
+        waterLight: new THREE.Color('#dffcff'),
+        mountain: new THREE.Color('#67d38a'),
+        dusk: new THREE.Color('#ffd4c8')
+      };
+
+      const flat = (color, roughness = .82) => new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, flatShading: true });
+      const terrainMat = flat('#b9f6a9');
+      const grassMat = flat('#6eee8c');
+      const darkGrassMat = flat('#30c56a');
+      const riverMat = new THREE.MeshStandardMaterial({ color: '#00a7ff', roughness: .48, metalness: 0, flatShading: true, emissive: '#003e62', emissiveIntensity: .08 });
+      const foamMat = flat('#fffef8');
+      const rockMat = flat('#9ee1a8');
+      const trunkMat = flat('#f3d28a');
+      const petalMat = flat('#ff4f7b');
+      const poleMat = flat('#fffef8');
+      const dragonMat = flat('#ff4f7b');
+      const dragonSkyMat = flat('#00a7ff');
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      function makeTerrain() {
+        const geometry = new THREE.PlaneGeometry(190, 210, 22, 28);
+        geometry.rotateX(-Math.PI / 2);
+        const pos = geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const z = pos.getZ(i);
+          const riverCut = Math.max(0, 1 - Math.abs(x - Math.sin(z * .06) * 10) / 20);
+          const height = Math.sin(x * .12) * 1.2 + Math.cos(z * .09) * 1.5 + (z < -32 ? (Math.abs(z + 32) * .055) : 0) - riverCut * 2.3;
+          pos.setY(i, height);
+        }
+        geometry.computeVertexNormals();
+        const mesh = new THREE.Mesh(geometry, terrainMat);
+        mesh.receiveShadow = false;
+        world.add(mesh);
+      }
+      makeTerrain();
+
+      function addRiver() {
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-9, .2, 72), new THREE.Vector3(-2, .3, 42), new THREE.Vector3(8, .35, 12), new THREE.Vector3(-7, .35, -18), new THREE.Vector3(12, 3.8, -52), new THREE.Vector3(18, 18, -82)
+        ]);
+        const points = curve.getPoints(120);
+        const shape = new THREE.Shape();
+        points.forEach((p, i) => {
+          const width = THREE.MathUtils.lerp(8, 4.2, i / points.length);
+          const left = new THREE.Vector2(p.x - width, p.z);
+          if (i === 0) shape.moveTo(left.x, left.y); else shape.lineTo(left.x, left.y);
+        });
+        for (let i = points.length - 1; i >= 0; i--) {
+          const p = points[i];
+          const width = THREE.MathUtils.lerp(8, 4.2, i / points.length);
+          shape.lineTo(p.x + width, p.z);
+        }
+        const geom = new THREE.ShapeGeometry(shape);
+        geom.rotateX(-Math.PI / 2);
+        const mesh = new THREE.Mesh(geom, riverMat);
+        mesh.position.y = .42;
+        world.add(mesh);
+
+        for (let i = 0; i < 34; i++) {
+          const p = curve.getPoint(i / 33);
+          const foam = new THREE.Mesh(new THREE.IcosahedronGeometry(THREE.MathUtils.randFloat(.18, .55), 0), foamMat);
+          foam.position.set(p.x + THREE.MathUtils.randFloatSpread(7), p.y + .28, p.z + THREE.MathUtils.randFloatSpread(2));
+          foam.scale.set(1.8, .08, .45);
+          world.add(foam);
+        }
+
+        const falls = new THREE.Group();
+        falls.position.set(18, 8, -82);
+        for (let i = 0; i < 9; i++) {
+          const strip = new THREE.Mesh(new THREE.BoxGeometry(1.3, 24, .4), foamMat);
+          strip.position.set((i - 4) * .9, THREE.MathUtils.randFloat(-1.5, 1.5), THREE.MathUtils.randFloatSpread(1.1));
+          strip.rotation.z = THREE.MathUtils.randFloat(-.12, .12);
+          falls.add(strip);
+        }
+        const basin = new THREE.Mesh(new THREE.CylinderGeometry(12, 17, 1.4, 9), riverMat);
+        basin.position.set(0, -13, 4);
+        basin.scale.y = .35;
+        falls.add(basin);
+        world.add(falls);
+      }
+      addRiver();
+
+      function addMountains() {
+        const geo = new THREE.ConeGeometry(1, 1, 5);
+        for (let i = 0; i < 34; i++) {
+          const mat = flat(i % 3 === 0 ? '#73d98c' : i % 3 === 1 ? '#8fe3a1' : '#55c87c');
+          const m = new THREE.Mesh(geo, mat);
+          const side = i % 2 === 0 ? -1 : 1;
+          m.position.set(side * THREE.MathUtils.randFloat(44, 82), THREE.MathUtils.randFloat(10, 20), THREE.MathUtils.randFloat(-104, 42));
+          const s = THREE.MathUtils.randFloat(20, 38);
+          m.scale.set(s * THREE.MathUtils.randFloat(.75, 1.3), s * THREE.MathUtils.randFloat(.9, 1.8), s);
+          m.rotation.y = THREE.MathUtils.randFloat(0, Math.PI);
+          world.add(m);
+        }
+      }
+      addMountains();
+
+      function addTreesAndRocks() {
+        const trunkGeo = new THREE.CylinderGeometry(.22, .34, 3.2, 5);
+        const topGeo = new THREE.ConeGeometry(1.6, 4.4, 6);
+        const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+        for (let i = 0; i < 140; i++) {
+          const z = THREE.MathUtils.randFloat(-70, 74);
+          const riverX = Math.sin(z * .06) * 10;
+          const side = Math.random() > .5 ? 1 : -1;
+          const x = riverX + side * THREE.MathUtils.randFloat(14, 64);
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+          const top = new THREE.Mesh(topGeo, i % 2 ? grassMat : darkGrassMat);
+          trunk.position.y = 1.6;
+          top.position.y = 5.2;
+          tree.add(trunk, top);
+          tree.position.set(x, .3, z);
+          const scale = THREE.MathUtils.randFloat(.55, 1.4);
+          tree.scale.setScalar(scale);
+          tree.rotation.y = THREE.MathUtils.randFloat(0, Math.PI);
+          world.add(tree);
+        }
+        for (let i = 0; i < 90; i++) {
+          const rock = new THREE.Mesh(rockGeo, rockMat);
+          rock.position.set(THREE.MathUtils.randFloatSpread(110), .6, THREE.MathUtils.randFloat(-88, 70));
+          rock.scale.set(THREE.MathUtils.randFloat(.7, 2.8), THREE.MathUtils.randFloat(.25, 1.1), THREE.MathUtils.randFloat(.6, 2.2));
+          rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+          world.add(rock);
+        }
+      }
+      addTreesAndRocks();
+
+      const flagUniforms = {
+        uTime: { value: 0 },
+        uWind: { value: new THREE.Vector2(1.0, .36) },
+        uStrength: { value: .55 }
+      };
+      const flagVertex = `
+        uniform float uTime;
+        uniform vec2 uWind;
+        uniform float uStrength;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec3 p = position;
+          float travel = p.x * 3.2 + uTime * 3.0;
+          float wave = sin(travel) * 0.42 + sin(travel * 1.7 + p.y * 2.1) * 0.16;
+          float tail = smoothstep(-2.2, 2.2, p.x);
+          p.z += wave * uStrength * tail;
+          p.y += sin(travel * .8) * .12 * uStrength * tail;
+          vec4 mvPosition = instanceMatrix * vec4(p, 1.0);
+          mvPosition = modelViewMatrix * mvPosition;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `;
+      const flagFragment = `
+        varying vec2 vUv;
+        uniform vec3 uA;
+        uniform vec3 uB;
+        uniform vec3 uC;
+        void main() {
+          float stripe = step(.5, fract(vUv.x * 4.0));
+          vec3 col = mix(uA, uB, stripe);
+          float eye = smoothstep(.18, .21, distance(vUv, vec2(.18, .55))) - smoothstep(.07, .09, distance(vUv, vec2(.18, .55)));
+          col = mix(col, vec3(1.0, .996, .972), eye);
+          float fin = smoothstep(.68, .72, vUv.x) * (1.0 - smoothstep(.86, .9, vUv.x));
+          col = mix(col, uC, fin * .42);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `;
+      const makeFlagMat = (a, b, c) => new THREE.ShaderMaterial({
+        uniforms: { ...flagUniforms, uA: { value: new THREE.Color(a) }, uB: { value: new THREE.Color(b) }, uC: { value: new THREE.Color(c) } },
+        vertexShader: flagVertex,
+        fragmentShader: flagFragment,
+        side: THREE.DoubleSide
+      });
+
+      const fishGeo = new THREE.PlaneGeometry(5.8, 1.65, 16, 4);
+      const sockGeo = new THREE.PlaneGeometry(3.2, 1.2, 12, 3);
+      const poleGeo = new THREE.CylinderGeometry(.08, .12, 12, 6);
+      const poleMesh = new THREE.InstancedMesh(poleGeo, poleMat, 42);
+      const fishMeshA = new THREE.InstancedMesh(fishGeo, makeFlagMat('#00a7ff', '#fffef8', '#3dff6f'), 42);
+      const fishMeshB = new THREE.InstancedMesh(fishGeo, makeFlagMat('#3dff6f', '#07130f', '#00a7ff'), 42);
+      const fishMeshC = new THREE.InstancedMesh(fishGeo, makeFlagMat('#ff4f7b', '#fffef8', '#00a7ff'), 42);
+      const sockMesh = new THREE.InstancedMesh(sockGeo, makeFlagMat('#fffef8', '#00a7ff', '#ff4f7b'), 42);
+      const dummy = new THREE.Object3D();
+      for (let i = 0; i < 42; i++) {
+        const z = THREE.MathUtils.lerp(52, -54, i / 41) + Math.sin(i * .8) * 4;
+        const riverX = Math.sin(z * .06) * 10;
+        const side = i % 2 === 0 ? -1 : 1;
+        const x = riverX + side * THREE.MathUtils.randFloat(13, 22);
+        const y = .3;
+        dummy.position.set(x, y + 6, z);
+        dummy.rotation.set(0, side > 0 ? Math.PI * .07 : -Math.PI * .07, side * .04);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        poleMesh.setMatrixAt(i, dummy.matrix);
+        const rot = side > 0 ? Math.PI : 0;
+        dummy.rotation.set(0, rot, 0);
+        dummy.position.set(x + side * 2.6, y + 11.2, z);
+        dummy.scale.set(1.05, 1, 1);
+        dummy.updateMatrix();
+        sockMesh.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(x + side * 4.5, y + 9.8, z);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        fishMeshA.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(x + side * 4.1, y + 8.05, z + .3);
+        dummy.scale.set(.82, .82, .82);
+        dummy.updateMatrix();
+        fishMeshB.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(x + side * 3.7, y + 6.7, z + .6);
+        dummy.scale.set(.68, .68, .68);
+        dummy.updateMatrix();
+        fishMeshC.setMatrixAt(i, dummy.matrix);
+      }
+      world.add(poleMesh, fishMeshA, fishMeshB, fishMeshC, sockMesh);
+
+      function makeInstancedParticles() {
+        const petalGeo = new THREE.TetrahedronGeometry(.28, 0);
+        const petalMesh = new THREE.InstancedMesh(petalGeo, petalMat, 420);
+        const sparkleGeo = new THREE.IcosahedronGeometry(.12, 0);
+        const sparkleMesh = new THREE.InstancedMesh(sparkleGeo, foamMat, 260);
+        const seeds = [];
+        for (let i = 0; i < 420; i++) {
+          const seed = { x: THREE.MathUtils.randFloatSpread(90), y: THREE.MathUtils.randFloat(4, 34), z: THREE.MathUtils.randFloat(-94, 70), r: Math.random() * Math.PI, s: THREE.MathUtils.randFloat(.55, 1.55) };
+          seeds.push(seed);
+          dummy.position.set(seed.x, seed.y, seed.z);
+          dummy.rotation.set(seed.r, seed.r * .7, seed.r * 1.2);
+          dummy.scale.setScalar(seed.s);
+          dummy.updateMatrix();
+          petalMesh.setMatrixAt(i, dummy.matrix);
+        }
+        for (let i = 0; i < 260; i++) {
+          dummy.position.set(THREE.MathUtils.randFloat(-4, 31), THREE.MathUtils.randFloat(3, 34), THREE.MathUtils.randFloat(-92, -40));
+          dummy.scale.setScalar(THREE.MathUtils.randFloat(.6, 2.2));
+          dummy.updateMatrix();
+          sparkleMesh.setMatrixAt(i, dummy.matrix);
+        }
+        world.add(petalMesh, sparkleMesh);
+        return { petalMesh, sparkleMesh, seeds };
+      }
+      const particles = makeInstancedParticles();
+
+      function addDragon() {
+        const dragon = new THREE.Group();
+        dragon.position.set(24, 29, -96);
+        dragon.rotation.set(.2, -.42, -.2);
+        for (let i = 0; i < 18; i++) {
+          const segment = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 0), i % 3 === 0 ? dragonMat : i % 3 === 1 ? dragonSkyMat : grassMat);
+          segment.position.set(Math.sin(i * .7) * 2.8, i * .9, Math.cos(i * .5) * 1.3);
+          segment.scale.set(1.4 - i * .018, .8, 1.1);
+          dragon.add(segment);
+        }
+        const head = new THREE.Mesh(new THREE.ConeGeometry(3.1, 5.4, 5), dragonMat);
+        head.position.set(Math.sin(18 * .7) * 2.8, 17.4, Math.cos(18 * .5) * 1.3);
+        head.rotation.x = Math.PI * .5;
+        dragon.add(head);
+        const whiskerGeo = new THREE.BoxGeometry(5, .08, .08);
+        const w1 = new THREE.Mesh(whiskerGeo, foamMat); w1.position.set(-2.6, 17.7, 1.2); w1.rotation.z = .4;
+        const w2 = new THREE.Mesh(whiskerGeo, foamMat); w2.position.set(2.6, 17.7, 1.2); w2.rotation.z = -.4;
+        dragon.add(w1, w2);
+        scene.add(dragon);
+        return dragon;
+      }
+      const dragon = addDragon();
+
+      const segments = [
+        { start: 0, end: .17, duration: 1.2, ease: 'noboriMorning', cam: [-24, 10, 46], look: [0, 4, 12], dusk: 0, wind: .38 },
+        { start: .17, end: .34, duration: 1.9, ease: 'noboriAvenue', cam: [-10, 9, 20], look: [6, 8, -2], dusk: .12, wind: .62 },
+        { start: .34, end: .55, duration: 1.35, ease: 'noboriBend', cam: [22, 13, -12], look: [-4, 5, -30], dusk: .34, wind: .74 },
+        { start: .55, end: .77, duration: 2.1, ease: 'noboriFalls', cam: [7, 24, -46], look: [19, 15, -82], dusk: .64, wind: .9 },
+        { start: .77, end: 1, duration: 1.55, ease: 'noboriDragon', cam: [37, 36, -78], look: [23, 42, -100], dusk: 1, wind: 1.05 }
+      ];
+      CustomEase.create('noboriMorning', 'M0,0 C0.18,0.02 0.34,0.98 1,1');
+      CustomEase.create('noboriAvenue', 'M0,0 C0.12,0.72 0.32,1 1,1');
+      CustomEase.create('noboriBend', 'M0,0 C0.28,0.04 0.4,0.88 1,1');
+      CustomEase.create('noboriFalls', 'M0,0 C0.06,0.18 0.18,0.96 1,1');
+      CustomEase.create('noboriDragon', 'M0,0 C0.2,0 0.02,1 1,1');
+
+      const timeline = gsap.timeline({
+        scrollTrigger: { trigger: '.scroll-space', start: 'top top', end: 'bottom bottom', scrub: true }
+      });
+      for (let i = 1; i < segments.length; i++) {
+        const s = segments[i];
+        timeline.to(cameraTarget, {
+          x: s.cam[0], y: s.cam[1], z: s.cam[2], lx: s.look[0], ly: s.look[1], lz: s.look[2], dusk: s.dusk, wind: s.wind,
+          duration: s.duration,
+          ease: s.ease
+        }, segments[i - 1].end * 10);
+      }
+      const chapters = ['#chapter-0', '#chapter-1', '#chapter-2', '#chapter-3', '#chapter-4'];
+      chapters.forEach((id, i) => {
+        const position = i * 2.05;
+        timeline.to(id, { opacity: 1, y: 0, duration: .42, ease: 'power2.out' }, position + .15);
+        timeline.to(id, { opacity: 0, y: -20, duration: .34, ease: 'power2.in', pointerEvents: 'none' }, position + 1.12);
+      });
+      timeline.to('#routeFill', { width: '100%', duration: 10, ease: 'none' }, 0);
+
+      const clock = new THREE.Clock();
+      const targetPos = new THREE.Vector3();
+      const targetLook = new THREE.Vector3();
+      let running = true;
+
+      function animateParticles(t) {
+        for (let i = 0; i < particles.seeds.length; i++) {
+          const seed = particles.seeds[i];
+          const x = seed.x + Math.sin(t * .45 + i) * 2.4 + cameraTarget.wind * t * .08;
+          const y = ((seed.y + t * .55 + i * .019) % 36) + 2;
+          const z = seed.z + Math.cos(t * .32 + i * .2) * 1.8;
+          dummy.position.set(x > 56 ? x - 112 : x, y, z);
+          dummy.rotation.set(seed.r + t, seed.r * .7 + t * .4, seed.r * 1.2);
+          dummy.scale.setScalar(seed.s);
+          dummy.updateMatrix();
+          particles.petalMesh.setMatrixAt(i, dummy.matrix);
+        }
+        particles.petalMesh.instanceMatrix.needsUpdate = true;
+      }
+
+      function render() {
+        if (!running) return;
+        const t = clock.getElapsedTime();
+        flagUniforms.uTime.value = t;
+        flagUniforms.uStrength.value = cameraTarget.wind;
+        for (const mesh of [fishMeshA, fishMeshB, fishMeshC, sockMesh]) {
+          mesh.material.uniforms.uTime.value = t;
+          mesh.material.uniforms.uStrength.value = cameraTarget.wind;
+        }
+        targetPos.set(cameraTarget.x, cameraTarget.y, cameraTarget.z);
+        targetLook.set(cameraTarget.lx, cameraTarget.ly, cameraTarget.lz);
+        cameraRig.position.lerp(targetPos, .075);
+        cameraRig.lookAt.lerp(targetLook, .082);
+        camera.position.copy(cameraRig.position);
+        camera.lookAt(cameraRig.lookAt);
+
+        const fogColor = morningFog.clone().lerp(duskFog, cameraTarget.dusk);
+        scene.background.copy(fogColor);
+        scene.fog.color.copy(fogColor);
+        scene.fog.near = THREE.MathUtils.lerp(32, 20, cameraTarget.dusk);
+        scene.fog.far = THREE.MathUtils.lerp(138, 92, cameraTarget.dusk);
+        ambient.intensity = THREE.MathUtils.lerp(1.2, .72, cameraTarget.dusk);
+        key.intensity = THREE.MathUtils.lerp(3.2, 1.75, cameraTarget.dusk);
+        fill.intensity = THREE.MathUtils.lerp(1.2, .88, cameraTarget.dusk);
+        coralFill.intensity = THREE.MathUtils.lerp(.85, 2.4, cameraTarget.dusk);
+        key.position.x = THREE.MathUtils.lerp(-34, 16, cameraTarget.dusk);
+        key.position.y = THREE.MathUtils.lerp(42, 22, cameraTarget.dusk);
+        bloom.strength = THREE.MathUtils.lerp(.28, .48, cameraTarget.dusk);
+        riverMat.emissiveIntensity = THREE.MathUtils.lerp(.08, .2, cameraTarget.dusk);
+
+        world.position.y = Math.sin(t * .18) * .06;
+        dragon.rotation.y = -.42 + Math.sin(t * .9) * .08;
+        dragon.position.y = 29 + Math.sin(t * 1.1) * .8;
+        animateParticles(t);
+        composer.render();
+      }
+      renderer.setAnimationLoop(render);
+
+      function resize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener('resize', resize);
+      document.addEventListener('visibilitychange', () => {
+        running = !document.hidden;
+        renderer.setAnimationLoop(running ? render : null);
+      });
+    }
+  </script>
+</body>
+</html>

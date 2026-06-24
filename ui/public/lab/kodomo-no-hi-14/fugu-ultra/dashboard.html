@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Field Dashboard — Aonobori Signal</title>
+  <meta name="description" content="A Nobori Field operations dashboard for Kodomo no Hi festival launch readiness.">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-cool: #F7FFF9;
+      --ink: #061015;
+      --ink-soft: #20343D;
+      --sky: #00A8FF;
+      --leaf: #21F26A;
+      --hot: #FF2D75;
+      --sun: #D9FF32;
+      --mist: #EAF8FF;
+      --shadow-ink: rgba(6, 16, 21, 0.14);
+      --sky-soft: rgba(0, 168, 255, 0.16);
+      --hot-soft: rgba(255, 45, 117, 0.18);
+      --leaf-soft: rgba(33, 242, 106, 0.2);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-display: "Arial Black", Inter, ui-sans-serif, system-ui, sans-serif;
+      --tracking-display: -0.055em;
+      --tracking-ui: 0.02em;
+      --text-xs: 0.76rem;
+      --text-sm: 0.88rem;
+      --text-md: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.45rem;
+      --text-2xl: 2rem;
+      --text-hero: clamp(3.4rem, 9vw, 9.2rem);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 72px;
+      --space-9: 104px;
+      --radius-none: 0;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --shadow-card: 0 24px 80px rgba(6, 16, 21, 0.12);
+      --shadow-lift: 0 18px 46px rgba(0, 168, 255, 0.2);
+      --control-height: 52px;
+      --fast: 160ms cubic-bezier(.2,.8,.2,1);
+      --slow: 420ms cubic-bezier(.16,1,.3,1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; }
+
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        radial-gradient(circle at 78% 4%, rgba(33,242,106,.18), transparent 26%),
+        radial-gradient(circle at 8% 18%, rgba(0,168,255,.14), transparent 24%),
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.45;
+      text-rendering: geometricPrecision;
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    h1, h2, h3, p { margin: 0; }
+    ::selection { background: var(--sun); color: var(--ink); }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: var(--space-5);
+      background: var(--ink);
+      color: var(--paper);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: var(--control-height);
+      font-weight: 950;
+      letter-spacing: var(--tracking-ui);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, var(--sky) 0 42%, transparent 42% 50%, var(--leaf) 50% 76%, var(--hot) 76%);
+      box-shadow: 0 0 0 7px rgba(255,255,255,.08);
+      flex: 0 0 auto;
+    }
+
+    .nav-group { display: grid; gap: var(--space-2); }
+
+    .nav-label {
+      margin: var(--space-3) var(--space-4) var(--space-1);
+      color: rgba(255,255,255,.56);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-weight: 950;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      min-height: var(--control-height);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      color: rgba(255,255,255,.76);
+      font-weight: 850;
+      letter-spacing: var(--tracking-ui);
+      transition: transform var(--fast), background var(--fast), color var(--fast);
+    }
+
+    .nav-link:hover { background: rgba(255,255,255,.1); color: var(--paper); transform: translateX(2px); }
+    .nav-link:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft); }
+    .nav-link.active { background: var(--leaf); color: var(--ink); }
+
+    .sidebar-card {
+      margin-top: auto;
+      padding: var(--space-5);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.08);
+      box-shadow: inset 0 -10px 0 rgba(0,168,255,.18);
+    }
+
+    .sidebar-card .small { color: rgba(255,255,255,.62); font-size: var(--text-xs); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .sidebar-card strong { display: block; margin-top: var(--space-3); font-family: var(--font-display); font-size: 2.65rem; line-height: .85; letter-spacing: var(--tracking-display); text-transform: uppercase; }
+    .sidebar-card p { margin-top: var(--space-4); color: rgba(255,255,255,.72); font-size: var(--text-sm); font-weight: 650; }
+
+    .workspace {
+      min-width: 0;
+      padding: var(--space-5) clamp(var(--space-4), 3vw, var(--space-7)) var(--space-7);
+    }
+
+    .topbar {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      margin-bottom: var(--space-5);
+    }
+
+    .searchbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 190px 190px;
+      gap: var(--space-3);
+      align-items: center;
+    }
+
+    .button, button, input[type="button"], input[type="submit"], input[type="reset"] {
+      appearance: none;
+      border: 0;
+      height: var(--control-height);
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-pill);
+      background: var(--ink);
+      color: var(--paper);
+      box-shadow: 0 16px 34px rgba(6,16,21,.16), 0 0 0 8px var(--hot-soft);
+      font: 900 var(--text-md)/1 var(--font-sans);
+      letter-spacing: var(--tracking-ui);
+      cursor: pointer;
+      transition: transform var(--fast), box-shadow var(--fast), background var(--fast), opacity var(--fast);
+      white-space: nowrap;
+    }
+
+    .button:hover, button:hover, input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift), 0 0 0 8px var(--hot-soft);
+    }
+
+    .button:focus-visible, button:focus-visible, input[type="button"]:focus-visible, input[type="submit"]:focus-visible, input[type="reset"]:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), 0 16px 34px rgba(6,16,21,.18);
+    }
+
+    .button:active, button:active, input[type="button"]:active, input[type="submit"]:active, input[type="reset"]:active { transform: translateY(1px) scale(.99); }
+
+    .button.secondary {
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 2px var(--ink), 0 12px 34px rgba(6,16,21,.06);
+    }
+
+    .button.secondary:hover { background: var(--sun); box-shadow: inset 0 0 0 2px var(--ink), 0 16px 40px rgba(217,255,50,.24); }
+
+    .button.leaf { background: var(--leaf); color: var(--ink); box-shadow: 0 16px 34px rgba(33,242,106,.28); }
+    .button.hot { background: var(--hot); color: var(--paper); box-shadow: 0 16px 34px rgba(255,45,117,.24); }
+
+    button:disabled, .button[aria-disabled="true"], input:disabled, select:disabled, textarea:disabled {
+      opacity: .42;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    label {
+      display: grid;
+      gap: var(--space-2);
+      color: var(--ink-soft);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-weight: 950;
+    }
+
+    input[type="text"], input[type="email"], input[type="search"], input[type="date"], input[type="number"], input[type="tel"], input[type="url"], input[type="password"], select, textarea {
+      appearance: none;
+      width: 100%;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 2px rgba(6,16,21,.16);
+      padding: 0 var(--space-4);
+      font: 800 var(--text-md)/1.2 var(--font-sans);
+      transition: box-shadow var(--fast), background var(--fast), opacity var(--fast);
+      caret-color: var(--hot);
+    }
+
+    textarea {
+      min-height: calc(var(--control-height) * 2.45);
+      height: auto;
+      resize: vertical;
+      border-radius: var(--radius-lg);
+      padding-block: var(--space-4);
+      line-height: 1.45;
+    }
+
+    select {
+      padding-right: calc(var(--space-6) + var(--space-4));
+      background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position: calc(100% - 24px) 22px, calc(100% - 17px) 22px;
+      background-size: 8px 8px, 8px 8px;
+      background-repeat: no-repeat;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(32,52,61,.58); }
+    input:hover, select:hover, textarea:hover { box-shadow: inset 0 0 0 2px rgba(6,16,21,.26), 0 0 0 6px var(--sky-soft); }
+    input:focus, select:focus, textarea:focus { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), inset 0 0 0 2px var(--ink); }
+
+    .control-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 850;
+      color: var(--ink);
+    }
+
+    input[type="checkbox"], input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border: 0;
+      border-radius: 7px;
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px var(--ink);
+      display: grid;
+      place-items: center;
+      transition: box-shadow var(--fast), background var(--fast), transform var(--fast);
+    }
+
+    input[type="radio"] { border-radius: 50%; }
+    input[type="checkbox"]::after, input[type="radio"]::after { content: ""; width: 10px; height: 10px; border-radius: 3px; transform: scale(0); background: var(--leaf); transition: transform var(--fast); }
+    input[type="radio"]::after { border-radius: 50%; }
+    input[type="checkbox"]:checked, input[type="radio"]:checked { background: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 6px var(--leaf-soft); }
+    input[type="checkbox"]:checked::after, input[type="radio"]:checked::after { transform: scale(1); }
+    input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), inset 0 0 0 2px var(--ink); }
+
+    .switch-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      color: var(--ink);
+      font-size: var(--text-sm);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 850;
+    }
+
+    .switch {
+      position: relative;
+      width: 82px;
+      height: var(--control-height);
+      min-width: 82px;
+    }
+
+    .switch input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-pill);
+      background: var(--mist);
+      box-shadow: inset 0 0 0 2px rgba(6,16,21,.16);
+      transition: background var(--fast), box-shadow var(--fast);
+    }
+
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      top: 8px;
+      left: 8px;
+      border-radius: 50%;
+      background: var(--paper);
+      box-shadow: 0 8px 20px rgba(6,16,21,.16);
+      transition: transform var(--fast), background var(--fast);
+    }
+
+    .switch input:checked + .switch-track { background: linear-gradient(90deg, var(--sky), var(--leaf)); box-shadow: 0 0 0 6px var(--leaf-soft); }
+    .switch input:checked + .switch-track::after { transform: translateX(30px); background: var(--ink); }
+    .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft); }
+
+    input[type="range"] {
+      appearance: none;
+      width: 100%;
+      height: var(--control-height);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    input[type="range"]::-moz-range-track { height: 6px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 0 7px var(--hot-soft); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--hot); box-shadow: 0 0 0 7px var(--hot-soft); }
+    input[type="range"]:focus-visible { outline: 0; filter: drop-shadow(0 0 8px rgba(0,168,255,.65)); }
+
+    .hero-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+      gap: var(--space-5);
+      align-items: stretch;
+    }
+
+    .command-panel {
+      min-height: 360px;
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .command-panel::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 42px;
+      right: -54px;
+      top: 54px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf), var(--hot));
+      transform: rotate(-12deg);
+      opacity: .92;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: 38px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--sun);
+      color: var(--ink);
+      font-size: var(--text-xs);
+      font-weight: 950;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--hot);
+      box-shadow: 14px 0 0 var(--sky), 28px 0 0 var(--leaf);
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 11ch;
+      margin-top: var(--space-5);
+      font-family: var(--font-display);
+      font-size: clamp(3.1rem, 7.2vw, 7.8rem);
+      line-height: .84;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .command-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 690px;
+      margin-top: var(--space-5);
+      color: var(--ink-soft);
+      font-size: var(--text-lg);
+      font-weight: 650;
+    }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); position: relative; z-index: 1; }
+
+    .image-panel {
+      border-radius: var(--radius-lg);
+      background: var(--mist);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      min-height: 360px;
+      position: relative;
+    }
+
+    .image-panel img { width: 100%; height: 100%; object-fit: cover; }
+
+    .image-badge {
+      position: absolute;
+      left: var(--space-5);
+      bottom: var(--space-5);
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--control-height);
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      box-shadow: 0 14px 46px rgba(6,16,21,.12);
+      font-weight: 950;
+      letter-spacing: var(--tracking-ui);
+      backdrop-filter: blur(12px);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+    }
+
+    .stat {
+      min-height: 174px;
+      padding: var(--space-5);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: 0 18px 60px rgba(6,16,21,.07);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      right: var(--space-5);
+      top: var(--space-5);
+      width: 58px;
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      transform: rotate(-15deg);
+    }
+
+    .stat:nth-child(2)::after { background: var(--leaf); }
+    .stat:nth-child(3)::after { background: var(--hot); }
+    .stat:nth-child(4)::after { background: var(--sun); }
+
+    .stat span { color: var(--ink-soft); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .14em; font-weight: 950; }
+    .stat strong { display: block; margin-top: var(--space-5); font-family: var(--font-display); font-size: clamp(2.4rem, 4vw, 4.8rem); line-height: .84; letter-spacing: var(--tracking-display); }
+    .stat p { margin-top: var(--space-3); color: var(--ink-soft); font-size: var(--text-sm); font-weight: 700; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(340px, .82fr);
+      gap: var(--space-5);
+      margin-top: var(--space-5);
+      align-items: start;
+    }
+
+    .panel {
+      padding: var(--space-5);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: 0 18px 60px rgba(6,16,21,.07);
+    }
+
+    .panel.cool { background: var(--paper-cool); }
+    .panel.sky { background: var(--mist); }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-5);
+    }
+
+    .panel-title {
+      font-size: var(--text-xl);
+      line-height: 1.02;
+      letter-spacing: -.035em;
+    }
+
+    .panel-note { margin-top: var(--space-2); color: var(--ink-soft); font-size: var(--text-sm); font-weight: 700; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--leaf);
+      color: var(--ink);
+      font-size: var(--text-xs);
+      font-weight: 950;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-pill.sky { background: var(--sky); }
+    .status-pill.hot { background: var(--hot); color: var(--paper); }
+    .status-pill.sun { background: var(--sun); }
+    .status-pill.ink { background: var(--ink); color: var(--paper); }
+
+    .timeline {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      min-height: 86px;
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--paper-cool);
+      box-shadow: inset 10px 0 0 var(--sky);
+    }
+
+    .time-row:nth-child(2) { box-shadow: inset 10px 0 0 var(--leaf); background: var(--paper); }
+    .time-row:nth-child(3) { box-shadow: inset 10px 0 0 var(--hot); background: #fff; }
+    .time-row:nth-child(4) { box-shadow: inset 10px 0 0 var(--sun); background: var(--mist); }
+
+    .time { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: var(--tracking-display); line-height: .9; }
+    .time-row h3 { font-size: var(--text-md); letter-spacing: -.02em; }
+    .time-row p { color: var(--ink-soft); font-size: var(--text-sm); font-weight: 700; }
+
+    .bar-stack { display: grid; gap: var(--space-4); }
+
+    .bar-item { display: grid; gap: var(--space-2); }
+
+    .bar-label { display: flex; justify-content: space-between; gap: var(--space-3); color: var(--ink-soft); font-size: var(--text-sm); font-weight: 850; }
+
+    .bar-track { height: 18px; border-radius: var(--radius-pill); background: rgba(6,16,21,.08); overflow: hidden; }
+
+    .bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    .bar-fill.hot { background: linear-gradient(90deg, var(--hot), var(--sun)); }
+    .bar-fill.ink { background: var(--ink); }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 var(--space-2);
+      font-size: .92rem;
+    }
+
+    th {
+      padding: 0 var(--space-3) var(--space-2);
+      color: var(--ink-soft);
+      font-size: var(--text-xs);
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 950;
+    }
+
+    td {
+      padding: var(--space-4) var(--space-3);
+      background: var(--paper-cool);
+      color: var(--ink);
+      font-weight: 750;
+    }
+
+    tr td:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); box-shadow: inset 8px 0 0 var(--sky); }
+    tr td:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+    tr:nth-child(2) td:first-child { box-shadow: inset 8px 0 0 var(--leaf); }
+    tr:nth-child(3) td:first-child { box-shadow: inset 8px 0 0 var(--hot); }
+    tr:nth-child(4) td:first-child { box-shadow: inset 8px 0 0 var(--sun); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    .form-grid .wide { grid-column: 1 / -1; }
+
+    .radio-set { display: grid; gap: var(--space-2); }
+
+    .mini-feed { display: grid; gap: var(--space-3); }
+
+    .feed-item {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: 0 12px 40px rgba(6,16,21,.06);
+    }
+
+    .feed-dot {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      box-shadow: 0 0 0 8px var(--sky-soft);
+    }
+
+    .feed-item:nth-child(2) .feed-dot { background: var(--leaf); box-shadow: 0 0 0 8px var(--leaf-soft); }
+    .feed-item:nth-child(3) .feed-dot { background: var(--hot); box-shadow: 0 0 0 8px var(--hot-soft); }
+
+    .feed-item strong { display: block; letter-spacing: -.02em; }
+    .feed-item p { margin-top: var(--space-1); color: var(--ink-soft); font-size: var(--text-sm); font-weight: 700; }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; flex-direction: row; align-items: center; overflow-x: auto; }
+      .nav-group { grid-auto-flow: column; grid-auto-columns: max-content; }
+      .nav-label, .sidebar-card { display: none; }
+      .hero-row, .dashboard-grid { grid-template-columns: 1fr; }
+      .searchbar { grid-template-columns: minmax(0, 1fr) 180px; }
+    }
+
+    @media (max-width: 780px) {
+      .workspace { padding-inline: var(--space-4); }
+      .topbar, .searchbar { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .time-row { grid-template-columns: 1fr; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .button { width: 100%; }
+    }
+
+    @media (max-width: 520px) {
+      .sidebar { padding: var(--space-4); }
+      .stat-grid { grid-template-columns: 1fr; }
+      .command-panel, .panel { padding: var(--space-4); }
+      .image-panel { min-height: 280px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .button:hover, .nav-link:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Dashboard navigation">
+      <a class="brand" href="landing.html" aria-label="Nobori Field landing page">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Nobori Field</span>
+      </a>
+      <div class="nav-group" aria-label="Workspace sections">
+        <div class="nav-label">Aonobori Signal</div>
+        <a class="nav-link active" href="#readiness">Readiness <span>96%</span></a>
+        <a class="nav-link" href="#timeline">Day run <span>42</span></a>
+        <a class="nav-link" href="#partners">Partners <span>18</span></a>
+        <a class="nav-link" href="#adjust">Adjust <span>Live</span></a>
+      </div>
+      <div class="sidebar-card" aria-label="Current launch state">
+        <span class="small">Koinobori lift</span>
+        <strong>North bank first</strong>
+        <p>Morning air is cleanest by the river. Keep the school route staged until 10:40.</p>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar" aria-label="Dashboard header">
+        <div class="searchbar" role="search">
+          <label aria-label="Search all operations">
+            Search operations
+            <input type="search" placeholder="Find site, crew, sponsor, permit">
+          </label>
+          <label>
+            Zone
+            <select>
+              <option>All zones</option>
+              <option>North bank</option>
+              <option>School route</option>
+              <option>Market lawn</option>
+            </select>
+          </label>
+          <label>
+            Festival date
+            <input type="date" value="2026-05-05">
+          </label>
+        </div>
+        <a class="button hot" href="landing.html">Public page</a>
+      </header>
+
+      <section class="hero-row" aria-labelledby="dashboard-title">
+        <div class="command-panel">
+          <span class="kicker">Aonobori Signal</span>
+          <h1 id="dashboard-title">Launch command is green.</h1>
+          <p class="command-copy">Nobori Field is tracking wind, crews, rigging, sponsors, and public timing for the Kodomo no Hi riverfront launch. The operating view stays crisp: white space first, vivid signal where action is needed.</p>
+          <div class="hero-actions">
+            <button type="button">Confirm 09:20 hoist</button>
+            <button class="secondary" type="button">Send crew brief</button>
+          </div>
+        </div>
+        <aside class="image-panel" aria-label="Dashboard visual signal">
+          <img src="./media/dashboard-signal.png" alt="Abstract koinobori signal streamers rising through clean blue-white space with leaf-green and hot accents.">
+          <div class="image-badge">Wind corridor A / clear</div>
+        </aside>
+      </section>
+
+      <section class="stat-grid" id="readiness" aria-label="Launch readiness metrics">
+        <article class="stat">
+          <span>Overall readiness</span>
+          <strong>96%</strong>
+          <p>3 checks left before public lock.</p>
+        </article>
+        <article class="stat">
+          <span>Wind confidence</span>
+          <strong>8.4</strong>
+          <p>North bank has the cleanest lift.</p>
+        </article>
+        <article class="stat">
+          <span>Open blockers</span>
+          <strong>03</strong>
+          <p>Two sponsor signs, one vendor gate.</p>
+        </article>
+        <article class="stat">
+          <span>Crews checked in</span>
+          <strong>142</strong>
+          <p>Volunteer desk is ahead of schedule.</p>
+        </article>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="panel" id="timeline" aria-labelledby="timeline-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="timeline-title">Day run</h2>
+              <p class="panel-note">Live schedule for public moments and field operations.</p>
+            </div>
+            <span class="status-pill sky">Sky pass</span>
+          </div>
+          <div class="timeline">
+            <article class="time-row">
+              <div class="time">08:10</div>
+              <div>
+                <h3>Rigging walk opens north bank</h3>
+                <p>Lead: Mori. Confirm mast sleeves and tie-off depth before sponsor arrival.</p>
+              </div>
+              <span class="status-pill">Ready</span>
+            </article>
+            <article class="time-row">
+              <div class="time">09:20</div>
+              <div>
+                <h3>First koinobori hoist</h3>
+                <p>Best wind window, school choir staged, camera crew at river stairs.</p>
+              </div>
+              <span class="status-pill hot">Live</span>
+            </article>
+            <article class="time-row">
+              <div class="time">10:40</div>
+              <div>
+                <h3>School route opens</h3>
+                <p>Crossing team waits for lane closure confirmation from city desk.</p>
+              </div>
+              <span class="status-pill sun">Watch</span>
+            </article>
+            <article class="time-row">
+              <div class="time">17:30</div>
+              <div>
+                <h3>Evening close and fabric count</h3>
+                <p>Inventory scan, sponsor thank-you send, weather archive captured.</p>
+              </div>
+              <span class="status-pill ink">Queued</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel cool" aria-labelledby="bar-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="bar-title">Signal health</h2>
+              <p class="panel-note">The live operating pulse across teams.</p>
+            </div>
+            <span class="status-pill">Leaf ready</span>
+          </div>
+          <div class="bar-stack">
+            <div class="bar-item">
+              <div class="bar-label"><span>Permits</span><strong>100%</strong></div>
+              <div class="bar-track"><div class="bar-fill" style="width: 100%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label"><span>Rigging kits</span><strong>91%</strong></div>
+              <div class="bar-track"><div class="bar-fill" style="width: 91%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label"><span>Sponsor approvals</span><strong>84%</strong></div>
+              <div class="bar-track"><div class="bar-fill hot" style="width: 84%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label"><span>Volunteer briefing</span><strong>77%</strong></div>
+              <div class="bar-track"><div class="bar-fill ink" style="width: 77%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="partners" aria-labelledby="partner-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="partner-title">Partner board</h2>
+              <p class="panel-note">No spreadsheet haze; each organization has one current state.</p>
+            </div>
+            <button class="secondary" type="button">Export brief</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Partner</th>
+                  <th>Owner</th>
+                  <th>Need</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Minato Parks</td>
+                  <td>City desk</td>
+                  <td>Gate access final</td>
+                  <td><span class="status-pill">Ready</span></td>
+                </tr>
+                <tr>
+                  <td>Kashiwa School</td>
+                  <td>Education team</td>
+                  <td>Route cards printed</td>
+                  <td><span class="status-pill sky">On track</span></td>
+                </tr>
+                <tr>
+                  <td>River Market Guild</td>
+                  <td>Vendor lead</td>
+                  <td>Truck entry time</td>
+                  <td><span class="status-pill hot">Needs call</span></td>
+                </tr>
+                <tr>
+                  <td>Hinoki Bank</td>
+                  <td>Sponsor desk</td>
+                  <td>Banner proof</td>
+                  <td><span class="status-pill sun">Reviewing</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel sky" aria-labelledby="feed-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="feed-title">Field updates</h2>
+              <p class="panel-note">Latest signals from crews and sites.</p>
+            </div>
+          </div>
+          <div class="mini-feed">
+            <article class="feed-item">
+              <div class="feed-dot" aria-hidden="true"></div>
+              <div>
+                <strong>North bank confirms mast line.</strong>
+                <p>All sleeves dry, wind flag steady, two spare ropes staged.</p>
+              </div>
+            </article>
+            <article class="feed-item">
+              <div class="feed-dot" aria-hidden="true"></div>
+              <div>
+                <strong>Volunteer desk added six floaters.</strong>
+                <p>Assign to river stairs and school route before 09:00.</p>
+              </div>
+            </article>
+            <article class="feed-item">
+              <div class="feed-dot" aria-hidden="true"></div>
+              <div>
+                <strong>Sponsor banner proof is late.</strong>
+                <p>Hot pop because public-facing signage blocks the final map.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel cool" id="adjust" aria-labelledby="adjust-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="adjust-title">Adjust launch window</h2>
+              <p class="panel-note">Every control shares the Aonobori Signal interaction system.</p>
+            </div>
+            <span class="status-pill hot">Operator</span>
+          </div>
+          <form class="form-grid">
+            <label>
+              Site
+              <select>
+                <option>North bank main line</option>
+                <option>School route</option>
+                <option>Market lawn</option>
+              </select>
+            </label>
+            <label>
+              Window time
+              <input type="text" value="09:20–09:45">
+            </label>
+            <label>
+              Crew count
+              <input type="number" min="1" max="80" value="24">
+            </label>
+            <label>
+              Contact email
+              <input type="email" value="ops@noborifield.example">
+            </label>
+            <div class="wide radio-set" role="radiogroup" aria-label="Launch priority">
+              <label class="control-row"><input type="radio" name="priority" checked> Prioritize clean wind corridor</label>
+              <label class="control-row"><input type="radio" name="priority"> Prioritize school arrival timing</label>
+            </div>
+            <label class="wide">
+              Wind caution threshold
+              <input type="range" min="0" max="100" value="68">
+            </label>
+            <label class="wide switch-row">
+              Broadcast schedule change to public page
+              <span class="switch"><input type="checkbox" checked aria-label="Broadcast schedule change"><span class="switch-track" aria-hidden="true"></span></span>
+            </label>
+            <label class="wide control-row"><input type="checkbox" checked> Include sponsor desk in the alert</label>
+            <label class="wide">
+              Operator note
+              <textarea placeholder="Add context for field leads.">Hold school route until the river stairs clear after the first hoist.</textarea>
+            </label>
+            <button class="wide" type="submit">Apply signal update</button>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="disabled-title">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="disabled-title">Locked after publish</h2>
+              <p class="panel-note">Disabled controls keep the same form language without pretending to be available.</p>
+            </div>
+          </div>
+          <form class="form-grid">
+            <label>
+              Published route
+              <input type="text" value="River stairs to market lawn" disabled>
+            </label>
+            <label>
+              Archive send
+              <button type="button" disabled>Locked</button>
+            </label>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

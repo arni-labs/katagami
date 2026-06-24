@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default function ModelBakeOffPage() {
-  const comparison = getComparison("kodomo-no-hi-15");
+  const comparison = getComparison("kodomo-no-hi-13");
   if (!comparison) notFound();
   return <LabComparison comparison={comparison} />;
 }

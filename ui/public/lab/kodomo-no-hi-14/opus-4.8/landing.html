@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hatameki — Goals that catch the wind</title>
+<meta name="description" content="Hatameki is the momentum platform for teams. Every goal is a streamer that rises as it catches the wind. Set it, watch it climb." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   HATAMEKI — はためき · design language tokens
+   ============================================================ */
+:root{
+  /* neutrals — sky & ink */
+  --paper:#FFFFFF;
+  --ink:#0B1020;
+  --ink-2:#3A4256;
+  --ink-3:#697184;
+  --mist:#F4F7FB;
+  --mist-2:#EAF0F8;
+  --hairline:#E6ECF4;
+
+  /* accents — the three carp */
+  --azure:#1466FF;
+  --azure-strong:#0B4ED6;
+  --azure-soft:#E7F0FF;
+  --green:#16C66A;
+  --green-ink:#0A7A41;
+  --green-soft:#E4FAEF;
+  --rose:#FF2E63;
+  --rose-ink:#D80F45;
+  --rose-soft:#FFE7EE;
+  --amber:#F4A024;
+  --amber-ink:#8A5200;
+  --amber-soft:#FFF1DC;
+
+  /* type */
+  --display:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;
+  --ui:"Inter",-apple-system,system-ui,sans-serif;
+  --jp:"Zen Kaku Gothic New",-apple-system,system-ui,sans-serif;
+
+  /* radius */
+  --r-md:16px;
+  --r-lg:24px;
+  --r-pill:9999px;
+
+  /* one control height */
+  --control-h:44px;
+
+  /* elevation */
+  --shadow-sm:0 1px 2px rgba(11,16,32,.06), 0 1px 3px rgba(11,16,32,.05);
+  --shadow-md:0 12px 32px -14px rgba(11,16,32,.20);
+  --shadow-pop:0 20px 54px -18px rgba(20,102,255,.30);
+
+  --wrap:1200px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--ui);
+  color:var(--ink);
+  background:var(--paper);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--azure);color:#fff}
+
+/* ---- type helpers ---- */
+.eyebrow{
+  font-family:var(--ui);
+  font-weight:600;
+  font-size:13px;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:var(--azure);
+}
+h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.jp{font-family:var(--jp)}
+
+/* the highlighter "marker" */
+.mark{
+  background-image:linear-gradient(transparent 56%, var(--azure) 56%);
+  padding:0 .06em;
+}
+.mark--green{background-image:linear-gradient(transparent 56%, var(--green) 56%)}
+.mark--rose{background-image:linear-gradient(transparent 56%, var(--rose) 56%)}
+
+/* the wind ribbon */
+.ribbon{height:4px;border:0;background:linear-gradient(90deg,var(--azure),var(--green) 55%,var(--rose));}
+
+.wrap{max-width:var(--wrap);margin-inline:auto;padding-inline:24px}
+
+/* ============================================================
+   BUTTONS — 44px, pill, full states
+   ============================================================ */
+.btn{
+  --bg:var(--mist); --fg:var(--ink); --bgh:var(--mist-2);
+  display:inline-flex;align-items:center;justify-content:center;gap:.5em;
+  height:var(--control-h);padding:0 22px;
+  font-family:var(--ui);font-size:16px;font-weight:600;
+  color:var(--fg);background:var(--bg);
+  border:0;border-radius:var(--r-pill);
+  cursor:pointer;white-space:nowrap;
+  transition:background .16s ease, transform .12s ease, box-shadow .16s ease;
+}
+.btn:hover{background:var(--bgh)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:3px solid color-mix(in srgb,var(--azure) 55%,#fff);outline-offset:2px;box-shadow:0 0 0 4px rgba(20,102,255,.22)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn--primary{--bg:var(--azure);--fg:#fff;--bgh:var(--azure-strong)}
+.btn--primary:hover{box-shadow:var(--shadow-pop);transform:translateY(-1px)}
+.btn--primary:active{transform:translateY(0);background:var(--azure-strong)}
+.btn--pop{--bg:var(--rose-ink);--fg:#fff;--bgh:#B00C39}
+.btn--pop:hover{transform:translateY(-1px);box-shadow:0 20px 54px -18px rgba(255,46,99,.40)}
+.btn--secondary{--bg:var(--mist);--fg:var(--ink);--bgh:var(--mist-2)}
+.btn--ghost{--bg:transparent;--fg:var(--ink);--bgh:var(--mist)}
+.btn--lg{padding:0 30px;font-size:17px}
+.btn--block{width:100%}
+.btn svg{width:18px;height:18px}
+
+/* ============================================================
+   FORM CONTROLS — filled, no border, 44px, full states
+   ============================================================ */
+.field, .select, .textarea{
+  width:100%;height:var(--control-h);
+  padding:0 16px;
+  font-family:var(--ui);font-size:16px;color:var(--ink);
+  background:var(--mist);
+  border:0;border-radius:var(--r-md);
+  transition:background .15s ease, box-shadow .15s ease;
+  appearance:none;
+}
+.textarea{height:auto;min-height:120px;padding:13px 16px;line-height:1.55;resize:vertical}
+.field::placeholder,.textarea::placeholder{color:var(--ink-3)}
+.field:hover,.select:hover,.textarea:hover{background:var(--mist-2)}
+.field:focus-visible,.select:focus-visible,.textarea:focus-visible,
+.field:focus,.select:focus,.textarea:focus{
+  outline:3px solid color-mix(in srgb,var(--azure) 55%,#fff);outline-offset:2px;
+  background:var(--paper);box-shadow:0 0 0 4px rgba(20,102,255,.18);
+}
+.field:disabled,.select:disabled,.textarea:disabled{opacity:.5;cursor:not-allowed}
+.select-wrap{position:relative;display:block}
+.select{padding-right:44px;cursor:pointer}
+.select-wrap::after{
+  content:"";position:absolute;right:16px;top:50%;width:11px;height:11px;
+  transform:translateY(-65%) rotate(45deg);
+  border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);
+  pointer-events:none;
+}
+.label{display:block;font-size:14px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+
+/* checkbox + agreement */
+.check{display:inline-flex;align-items:flex-start;gap:11px;cursor:pointer;font-size:15px;color:var(--ink-2);line-height:1.45}
+.check input{position:absolute;opacity:0;width:1px;height:1px}
+.check .box{
+  flex:0 0 auto;width:22px;height:22px;border-radius:0;background:var(--mist-2);
+  display:grid;place-items:center;transition:background .14s ease, box-shadow .14s ease;margin-top:1px;
+}
+.check .box svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:opacity .12s}
+.check input:checked + .box{background:var(--azure)}
+.check input:checked + .box svg{opacity:1}
+.check input:focus-visible + .box{outline:3px solid color-mix(in srgb,var(--azure) 55%,#fff);outline-offset:2px}
+
+/* ============================================================
+   CHIPS / BADGES
+   ============================================================ */
+.chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 13px;border-radius:var(--r-pill);
+  font-size:13.5px;font-weight:600;background:var(--mist);color:var(--ink-2)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3)}
+.chip--azure{background:var(--azure-soft);color:var(--azure-strong)} .chip--azure .dot{background:var(--azure)}
+.chip--green{background:var(--green-soft);color:var(--green-ink)} .chip--green .dot{background:var(--green)}
+.chip--rose{background:var(--rose-soft);color:var(--rose-ink)} .chip--rose .dot{background:var(--rose)}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.head{position:sticky;top:0;z-index:60;transition:background .25s ease, box-shadow .25s ease}
+.head__in{display:flex;align-items:center;gap:28px;height:74px}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em}
+.brand .koi{width:34px;height:34px;flex:0 0 auto}
+.nav{display:flex;align-items:center;gap:6px;margin-left:8px}
+.nav a{padding:9px 14px;border-radius:var(--r-pill);font-size:15.5px;font-weight:500;color:var(--ink-2);transition:background .15s,color .15s}
+.nav a:hover{color:var(--ink);background:var(--mist)}
+.nav a:focus-visible{outline:3px solid color-mix(in srgb,var(--azure) 55%,#fff);outline-offset:2px}
+.head__cta{margin-left:auto;display:flex;align-items:center;gap:10px}
+.head.scrolled{background:rgba(255,255,255,.86);backdrop-filter:saturate(160%) blur(14px);box-shadow:0 1px 0 var(--hairline)}
+.burger{display:none}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{position:relative;isolation:isolate;overflow:hidden;margin-top:-74px;padding-top:74px}
+.hero__img{position:absolute;inset:0;z-index:-2;background:url('media/hero.jpg') center right/cover no-repeat;}
+.hero__scrim{position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.92) 34%, rgba(255,255,255,.55) 56%, rgba(255,255,255,.06) 78%, rgba(255,255,255,0) 100%);}
+.hero__in{max-width:var(--wrap);margin-inline:auto;padding:88px 24px 104px;min-height:min(86vh,820px);display:flex;flex-direction:column;justify-content:center}
+.hero__eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px}
+.hero__eyebrow .jp{color:var(--rose-ink);font-weight:700}
+.hero h1{font-size:clamp(2.75rem,6.2vw,5rem);line-height:.98;letter-spacing:-.03em;max-width:14ch}
+.hero p.lead{font-size:clamp(1.0625rem,1.6vw,1.28rem);color:var(--ink-2);max-width:46ch;margin-top:26px}
+.hero__actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+.hero__trust{margin-top:22px;font-size:14.5px;color:var(--ink-3);display:flex;align-items:center;gap:8px}
+.hero__trust b{color:var(--ink-2);font-weight:600}
+
+/* floating momentum card */
+.float-card{
+  position:absolute;right:max(24px,calc(50% - var(--wrap)/2 + 8px));bottom:64px;z-index:2;
+  width:268px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px) saturate(150%);
+  border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:20px 22px;
+}
+.float-card .ttl{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.float-card .big{font-family:var(--display);font-weight:800;font-size:40px;letter-spacing:-.03em;margin-top:6px;line-height:1;display:flex;align-items:baseline;gap:8px}
+.float-card .big .up{font-size:15px;font-weight:700;color:var(--green-ink);font-family:var(--ui)}
+.float-card .spark{margin-top:14px}
+.float-card .cap{font-size:13px;color:var(--ink-3);margin-top:10px}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section{position:relative}
+.sec{padding:clamp(64px,9vw,124px) 0}
+.sec--mist{background:var(--mist)}
+.sec-head{max-width:640px}
+.sec-head .eyebrow{margin-bottom:14px}
+.sec-head h2{font-size:clamp(2rem,4.2vw,3.25rem);line-height:1.02;letter-spacing:-.025em}
+.sec-head p{color:var(--ink-2);font-size:1.1875rem;margin-top:18px}
+
+/* logo strip */
+.proof{padding:30px 0 6px}
+.proof__row{display:flex;flex-wrap:wrap;align-items:center;gap:14px 40px;opacity:.85}
+.proof__row span{font-family:var(--display);font-weight:700;font-size:19px;color:var(--ink-3);letter-spacing:-.01em}
+.proof__lead{font-size:13.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:18px}
+
+/* editorial feature row */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,80px);align-items:center}
+.feat--rev .feat__media{order:-1}
+.feat__media{border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-md);position:relative;aspect-ratio:4/3;background:var(--mist)}
+.feat__media img{width:100%;height:100%;object-fit:cover}
+.feat__media .tagchip{position:absolute;left:18px;bottom:18px;background:rgba(255,255,255,.9);backdrop-filter:blur(6px)}
+.feat h2{font-size:clamp(1.8rem,3.4vw,2.65rem);line-height:1.05;letter-spacing:-.025em}
+.feat p{color:var(--ink-2);font-size:1.0625rem;margin-top:18px}
+.tick{list-style:none;margin-top:24px;display:grid;gap:14px}
+.tick li{display:flex;gap:13px;align-items:flex-start;font-size:1.0625rem;color:var(--ink)}
+.tick .ic{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center;margin-top:1px}
+.tick .ic svg{width:14px;height:14px;stroke:var(--green-ink);stroke-width:3;fill:none}
+.feat__cta{margin-top:30px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* 3-up cards */
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:54px}
+.card{background:var(--paper);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);padding:30px;transition:box-shadow .2s ease, transform .2s ease}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-3px)}
+.card .badge-ic{width:46px;height:46px;border-radius:var(--r-md);display:grid;place-items:center;margin-bottom:20px}
+.card h3{font-size:1.3rem;letter-spacing:-.02em}
+.card p{color:var(--ink-2);font-size:1rem;margin-top:11px}
+
+/* how it works */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:54px;counter-reset:s}
+.step{position:relative;padding-top:8px}
+.step .n{counter-increment:s;font-family:var(--display);font-weight:800;font-size:15px;width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center}
+.step .n::before{content:"0" counter(s)}
+.step h3{font-size:1.35rem;margin-top:20px;letter-spacing:-.02em}
+.step p{color:var(--ink-2);font-size:1.0625rem;margin-top:10px}
+
+/* full-bleed editorial band */
+.band{position:relative;min-height:440px;display:flex;align-items:center;overflow:hidden;isolation:isolate}
+.band__img{position:absolute;inset:0;z-index:-2;background:url('media/feature-leaves.jpg') center/cover no-repeat}
+.band__scrim{position:absolute;inset:0;z-index:-1;background:linear-gradient(100deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.88) 30%, rgba(255,255,255,.42) 58%, rgba(255,255,255,0) 92%)}
+.band__in{max-width:var(--wrap);margin-inline:auto;padding:72px 24px;width:100%}
+.band .eyebrow{color:var(--green-ink);margin-bottom:14px;display:block}
+.band h2{font-size:clamp(1.9rem,4.2vw,3.1rem);max-width:18ch;letter-spacing:-.025em;line-height:1.04}
+.band p{color:var(--ink-2);font-size:1.1875rem;margin-top:18px;max-width:42ch}
+
+/* poster stats band */
+.statband{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:clamp(40px,6vw,72px) clamp(28px,5vw,64px);overflow:hidden;position:relative}
+.statband .ribbon{position:absolute;left:0;right:0;top:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:36px 28px}
+.stat .num{font-family:var(--display);font-weight:800;font-size:clamp(2.6rem,5vw,4rem);line-height:1;letter-spacing:-.03em}
+.stat .num.a{color:#7FB0FF} .stat .num.g{color:#5FE6A0} .stat .num.r{color:#FF6E92}
+.stat .lab{margin-top:12px;color:#C7CEDC;font-size:1rem;max-width:24ch}
+
+/* product peek (mini dashboard) */
+.peek{margin-top:54px;background:var(--paper);border-radius:var(--r-lg);box-shadow:var(--shadow-md);overflow:hidden}
+.peek__bar{display:flex;align-items:center;gap:8px;padding:15px 20px;background:var(--mist)}
+.peek__bar .d{width:11px;height:11px;border-radius:50%;background:var(--mist-2)}
+.peek__bar .ttl{margin-left:12px;font-weight:600;font-size:14px;color:var(--ink-2)}
+.peek__bar .tag{margin-left:auto}
+.peek__body{display:grid;grid-template-columns:1.3fr 1fr;gap:1px;background:var(--hairline)}
+.peek__panel{background:var(--paper);padding:26px}
+.peek__kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--mist);border-radius:var(--r-md);padding:15px}
+.kpi .k{font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.kpi .v{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin-top:6px}
+.streamrow{display:flex;align-items:center;gap:14px;padding:13px 0}
+.streamrow + .streamrow{border-top:1px solid var(--hairline)}
+.streamrow .av{width:34px;height:34px;border-radius:50%;flex:0 0 auto}
+.streamrow .nm{font-weight:600;font-size:14.5px}
+.streamrow .ph{font-size:12.5px;color:var(--ink-3)}
+.rise{position:relative;height:9px;border-radius:var(--r-pill);background:var(--mist-2);overflow:hidden;flex:1}
+.rise > i{position:absolute;left:0;top:0;bottom:0;border-radius:var(--r-pill);background:var(--azure)}
+.rise.g > i{background:var(--green)} .rise.r > i{background:var(--rose)} .rise.am > i{background:var(--amber)}
+
+/* testimonial */
+.quote{max-width:880px;margin-inline:auto;text-align:center}
+.quote blockquote{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,3.4vw,2.4rem);line-height:1.2;letter-spacing:-.02em}
+.quote .by{margin-top:26px;display:flex;align-items:center;justify-content:center;gap:13px}
+.quote .by .av{width:48px;height:48px;border-radius:50%}
+.quote .by .who{text-align:left}
+.quote .by .who b{display:block;font-weight:600}
+.quote .by .who span{font-size:14.5px;color:var(--ink-3)}
+
+/* pricing quick */
+.price{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:54px}
+.tier{background:var(--paper);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);padding:30px;display:flex;flex-direction:column}
+.tier.feature{box-shadow:var(--shadow-pop);outline:2px solid var(--azure);position:relative}
+.tier .nm{font-weight:600;color:var(--ink-2);font-size:15px;letter-spacing:.02em}
+.tier .amt{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:-.03em;margin-top:12px;display:flex;align-items:baseline;gap:6px}
+.tier .amt small{font-family:var(--ui);font-size:15px;font-weight:500;color:var(--ink-3)}
+.tier ul{list-style:none;margin:22px 0 26px;display:grid;gap:12px}
+.tier ul li{display:flex;gap:10px;font-size:15px;color:var(--ink-2)}
+.tier ul li svg{width:18px;height:18px;stroke:var(--azure);stroke-width:2.6;fill:none;flex:0 0 auto;margin-top:2px}
+.tier .btn{margin-top:auto}
+.tier .pin{position:absolute;top:-13px;left:30px}
+
+/* CTA band with form */
+.cta{background:linear-gradient(120deg,var(--azure-strong) 0%,var(--azure) 58%,#2f76ff 100%);border-radius:var(--r-lg);padding:clamp(40px,6vw,68px);color:#fff;position:relative;overflow:hidden}
+.cta .blob{position:absolute;border-radius:50%;filter:blur(8px);opacity:.55}
+.cta h2{color:#fff;font-size:clamp(1.9rem,3.6vw,2.8rem);max-width:16ch;letter-spacing:-.02em;position:relative}
+.cta p{color:rgba(255,255,255,.9);font-size:1.0625rem;margin-top:14px;max-width:42ch;position:relative}
+.cta__form{position:relative;margin-top:30px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;max-width:680px}
+.cta__form .grp{flex:1 1 200px}
+.cta__form .label{color:rgba(255,255,255,.92)}
+.cta__form .field,.cta__form .select{background:rgba(255,255,255,.92)}
+.cta__form .field:focus,.cta__form .select:focus{background:#fff}
+.cta .fine{position:relative;margin-top:16px;font-size:13.5px;color:rgba(255,255,255,.85)}
+
+/* footer */
+.foot{padding:72px 0 40px}
+.foot__grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px}
+.foot__brand .brand{margin-bottom:16px}
+.foot__brand p{color:var(--ink-2);font-size:15px;max-width:34ch}
+.foot__news{margin-top:22px;display:flex;gap:10px;max-width:360px}
+.foot__news .field{flex:1}
+.foot h4{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:16px}
+.foot__col a{display:block;color:var(--ink-2);font-size:15px;padding:6px 0;transition:color .15s}
+.foot__col a:hover{color:var(--azure)}
+.foot__bottom{margin-top:54px;padding-top:26px;border-top:1px solid var(--hairline);display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+.foot__bottom .sm{font-size:14px;color:var(--ink-3)}
+.foot__bottom .lang{max-width:190px}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:960px){
+  .feat,.peek__body{grid-template-columns:1fr}
+  .feat--rev .feat__media{order:0}
+  .cards3,.steps,.price{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .foot__grid{grid-template-columns:1fr 1fr}
+  .float-card{display:none}
+  .hero__scrim{background:linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.86) 46%, rgba(255,255,255,.5) 72%, rgba(255,255,255,.2) 100%)}
+  .band__scrim{background:linear-gradient(180deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.9) 50%, rgba(255,255,255,.55) 100%)}
+}
+@media(max-width:720px){
+  .nav{display:none}
+  .head__cta .btn--ghost{display:none}
+  .burger{display:inline-flex}
+  .foot__grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .hero h1{font-size:clamp(2.4rem,10vw,3.4rem)}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important;scroll-behavior:auto!important}
+}
+
+/* mobile menu */
+.msheet{display:none;position:fixed;inset:74px 0 0;z-index:55;background:var(--paper);padding:24px;flex-direction:column;gap:6px}
+.msheet.open{display:flex}
+.msheet a{padding:14px 16px;border-radius:var(--r-md);font-size:18px;font-weight:600;color:var(--ink)}
+.msheet a:hover{background:var(--mist)}
+.msheet .btn{margin-top:14px}
+</style>
+</head>
+<body>
+
+<hr class="ribbon" />
+
+<!-- ===================== HEADER ===================== -->
+<header class="head" id="head">
+  <div class="wrap head__in">
+    <a class="brand" href="#top" aria-label="Hatameki home">
+      <svg class="koi" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <path d="M4 20c6-9 17-13 27-9 3 1.2 5 3.4 5 5.2 0 .6-.4 1.1-1 1.1-1.3 0-2-1.3-3.4-1.3-1.3 0-2.2 1-2.2 2.3 0 1.5 1.2 2.4 1.2 3.6 0 1.7-2 3-5.6 3.8C16 31 9 27 4 20Z" fill="#1466FF"/>
+        <path d="M4 20c5 7 12 11 21 6.7-2.6 1-6.1 1.1-9.6 0C10.4 25 6.7 22.6 4 20Z" fill="#0B4ED6"/>
+        <circle cx="11.6" cy="18.4" r="2.1" fill="#fff"/><circle cx="11.6" cy="18.4" r="1" fill="#0B1020"/>
+        <path d="M22 16.5c1.4.9 1.4 6.1 0 7" stroke="#fff" stroke-width="1.4" opacity=".7"/>
+        <path d="M27 15.8c1.4.9 1.4 7.5 0 8.4" stroke="#fff" stroke-width="1.4" opacity=".5"/>
+      </svg>
+      Hatameki
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#product">Product</a>
+      <a href="#streams">Streams</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <div class="head__cta">
+      <a class="btn btn--ghost" href="#">Sign in</a>
+      <a class="btn btn--primary" href="#cta">Start free</a>
+      <button class="btn btn--ghost burger" id="burger" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="msheet" id="msheet">
+  <a href="#product">Product</a>
+  <a href="#streams">Streams</a>
+  <a href="#how">How it works</a>
+  <a href="#pricing">Pricing</a>
+  <a class="btn btn--primary btn--block" href="#cta">Start free</a>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<main id="top">
+<section class="hero">
+  <div class="hero__img" role="img" aria-label="Koinobori carp streamers rising into a vast, bright early-summer sky"></div>
+  <div class="hero__scrim"></div>
+  <div class="hero__in">
+    <span class="hero__eyebrow eyebrow">Team momentum <span class="jp" aria-hidden="true">· はためき</span></span>
+    <h1>Goals that catch the <span class="mark">wind</span>.</h1>
+    <p class="lead">Hatameki turns every goal into a streamer — set it on the pole, and watch it climb as your team builds momentum. Clear, calm, and impossible to ignore.</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary btn--lg" href="#cta">Start free — no card</a>
+      <a class="btn btn--ghost btn--lg" href="#product">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+        Watch the 2-min tour
+      </a>
+    </div>
+    <p class="hero__trust"><b>4,200+</b> teams are already flying · loved by founders, PMs &amp; ops leads</p>
+  </div>
+
+  <aside class="float-card" aria-label="Momentum index summary">
+    <div class="ttl">Momentum index</div>
+    <div class="big">+18%<span class="up">▲ this sprint</span></div>
+    <svg class="spark" viewBox="0 0 224 56" width="100%" height="56" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1466FF" stop-opacity=".28"/><stop offset="1" stop-color="#1466FF" stop-opacity="0"/></linearGradient></defs>
+      <path d="M0 44 L32 40 L64 42 L96 30 L128 33 L160 20 L192 16 L224 6 L224 56 L0 56 Z" fill="url(#sg)"/>
+      <path d="M0 44 L32 40 L64 42 L96 30 L128 33 L160 20 L192 16 L224 6" fill="none" stroke="#1466FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="224" cy="6" r="4" fill="#1466FF"/>
+    </svg>
+    <div class="cap">14 streams rising · 2 stalled</div>
+  </aside>
+</section>
+
+<!-- ===================== PROOF ===================== -->
+<section class="wrap proof">
+  <p class="proof__lead">Momentum is moving at</p>
+  <div class="proof__row">
+    <span>Harborlight</span><span>Kojima&nbsp;Foods</span><span>Northwind</span><span>Aoi&nbsp;Labs</span><span>Penny&nbsp;&amp;&nbsp;Co</span><span>Tsubasa</span>
+  </div>
+</section>
+
+<!-- ===================== FEATURE A ===================== -->
+<section class="sec" id="product">
+  <div class="wrap feat">
+    <div class="feat__copy">
+      <span class="eyebrow">Every goal is a streamer</span>
+      <h2 style="margin-top:14px">Set it on the pole.<br>Watch it rise.</h2>
+      <p>A goal in Hatameki isn't a checkbox in a list — it's a <em>stream</em> on a pole, with an owner, a height to reach, and a wind reading that tells you, at a glance, whether it's climbing or limp.</p>
+      <ul class="tick">
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>Owners, key results, and a live progress climb on one card.</li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>Stalled streams surface themselves — no status meetings.</li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>Group streams into poles by team, quarter, or bet.</li>
+      </ul>
+      <div class="feat__cta">
+        <a class="btn btn--primary" href="#cta">Raise your first stream</a>
+        <a class="btn btn--ghost" href="#streams">See a live board →</a>
+      </div>
+    </div>
+    <figure class="feat__media">
+      <img src="media/feature-carp.jpg" alt="A single sleek koinobori carp streamer catching a fresh breeze against a clean blue sky" />
+      <span class="chip chip--azure tagchip"><span class="dot"></span>Rising · 68%</span>
+    </figure>
+  </div>
+</section>
+
+<!-- ===================== FEATURE B ===================== -->
+<section class="sec sec--mist" id="streams">
+  <div class="wrap feat feat--rev">
+    <figure class="feat__media">
+      <img src="media/feature-ribbon.jpg" alt="Flowing ribbons of azure, green and rose rippling in a clear sky — momentum visualised" />
+      <span class="chip chip--green tagchip"><span class="dot"></span>Wind +18%</span>
+    </figure>
+    <div class="feat__copy">
+      <span class="eyebrow" style="color:var(--green-ink)">Momentum, made visible</span>
+      <h2 style="margin-top:14px">Read the <span class="mark mark--green">wind</span> before the week does.</h2>
+      <p>The momentum index reads pace across owners, comments, and completed key results — then turns it into a single number you can feel. Green means it's flying. Flat means it needs a gust.</p>
+      <ul class="tick">
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>Sprint-over-sprint momentum, per stream and per team.</li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>Early-warning when a stream goes limp two days running.</li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>One Friday digest — no dashboards to babysit.</li>
+      </ul>
+      <div class="feat__cta">
+        <a class="btn btn--primary" href="#cta">Get the Friday digest</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 3-UP ===================== -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Built for grown-up teams</span>
+      <h2>Calm software for ambitious work.</h2>
+      <p>No confetti, no streak-shaming. Just a clear, bright read on what's rising and what needs you.</p>
+    </div>
+    <div class="cards3">
+      <article class="card">
+        <div class="badge-ic" style="background:var(--azure-soft)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1466FF" stroke-width="2.2"><path d="M4 19V5m6 14V9m6 10V3m4 16H2"/></svg>
+        </div>
+        <h3>Streams &amp; poles</h3>
+        <p>Organise goals into poles by team or quarter. Every stream carries its owner, target, and live climb.</p>
+      </article>
+      <article class="card">
+        <div class="badge-ic" style="background:var(--green-soft)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0A7A41" stroke-width="2.2"><path d="M3 17c4-1 6-9 9-9s3 6 9-2"/><path d="M3 21h18"/></svg>
+        </div>
+        <h3>Momentum index</h3>
+        <p>One honest number for pace. Watch the wind pick up, or catch a stall before it costs you the sprint.</p>
+      </article>
+      <article class="card">
+        <div class="badge-ic" style="background:var(--rose-soft)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#D80F45" stroke-width="2.2"><path d="M12 3v18M12 3c3 2 7 2 9 0v9c-2 2-6 2-9 0"/></svg>
+        </div>
+        <h3>Climb together</h3>
+        <p>Comments, nudges, and shared poles keep the whole team flying in the same direction — without the meeting.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== EDITORIAL BAND ===================== -->
+<section class="band" aria-label="Early-summer, the season of growth">
+  <div class="band__img" role="img" aria-label="Fresh young green leaves backlit by clear early-summer sun"></div>
+  <div class="band__scrim"></div>
+  <div class="band__in">
+    <span class="eyebrow">Early summer · the season of growth</span>
+    <h2>The fifth of May, all year round.</h2>
+    <p>Kodomo no Hi is the day families fly a carp for every child — a wish to grow strong and rise. Hatameki keeps that wish on the wall for your team, every single sprint.</p>
+  </div>
+</section>
+
+<!-- ===================== HOW ===================== -->
+<section class="sec sec--mist" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Three steps to lift-off.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n" aria-hidden="true"></span><h3>Raise the pole</h3><p>Name a bet, add streams, assign owners and targets. Two minutes, no onboarding course.</p></div>
+      <div class="step"><span class="n" aria-hidden="true"></span><h3>Catch the wind</h3><p>Work flows in from the tools you already use. Hatameki reads pace and renders the climb.</p></div>
+      <div class="step"><span class="n" aria-hidden="true"></span><h3>Watch it fly</h3><p>The Friday digest tells you what rose, what stalled, and the one thing to push next week.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STATS BAND ===================== -->
+<section class="sec">
+  <div class="wrap">
+    <div class="statband">
+      <hr class="ribbon" />
+      <div class="stats">
+        <div class="stat"><div class="num a">4,200<span style="font-size:.5em">+</span></div><div class="lab">teams flying their goals on Hatameki</div></div>
+        <div class="stat"><div class="num g">+31%</div><div class="lab">median momentum lift in the first quarter</div></div>
+        <div class="stat"><div class="num r">2&nbsp;min</div><div class="lab">to raise your first pole, start to climb</div></div>
+        <div class="stat"><div class="num a">0</div><div class="lab">status meetings the average team kept</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRODUCT PEEK ===================== -->
+<section class="sec sec--mist">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">A look inside</span>
+      <h2>Your whole season, on one wall.</h2>
+      <p>The board you'll live in — bright, quiet, and honest about what's rising.</p>
+    </div>
+    <div class="peek" aria-label="Product preview">
+      <div class="peek__bar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="ttl">Hatameki — Q2 Pole · Growth</span>
+        <span class="chip chip--green tag"><span class="dot"></span>Wind +18%</span>
+      </div>
+      <div class="peek__body">
+        <div class="peek__panel">
+          <div class="peek__kpis">
+            <div class="kpi"><div class="k">Rising</div><div class="v" style="color:var(--green-ink)">14</div></div>
+            <div class="kpi"><div class="k">Stalled</div><div class="v" style="color:var(--amber-ink)">2</div></div>
+            <div class="kpi"><div class="k">On&nbsp;track</div><div class="v">86%</div></div>
+          </div>
+          <div class="streamrow">
+            <span class="av" style="background:linear-gradient(135deg,#1466FF,#5FA0FF)"></span>
+            <div style="flex:1"><div class="nm">Ship self-serve onboarding</div><div class="ph">Mei · KR 3 of 4</div></div>
+            <div class="rise g" style="width:120px"><i style="width:78%"></i></div>
+          </div>
+          <div class="streamrow">
+            <span class="av" style="background:linear-gradient(135deg,#16C66A,#7FE6AC)"></span>
+            <div style="flex:1"><div class="nm">Cut activation time to 1 day</div><div class="ph">Dev · KR 2 of 3</div></div>
+            <div class="rise" style="width:120px"><i style="width:54%"></i></div>
+          </div>
+          <div class="streamrow">
+            <span class="av" style="background:linear-gradient(135deg,#FF2E63,#FF8AA6)"></span>
+            <div style="flex:1"><div class="nm">Launch partner referrals</div><div class="ph">Sora · KR 1 of 3</div></div>
+            <div class="rise am" style="width:120px"><i style="width:22%"></i></div>
+          </div>
+        </div>
+        <div class="peek__panel" style="background:var(--mist)">
+          <div class="k" style="font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase">Momentum · 8 sprints</div>
+          <svg viewBox="0 0 320 150" width="100%" height="150" preserveAspectRatio="none" aria-hidden="true" style="margin-top:10px">
+            <defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1466FF" stop-opacity=".24"/><stop offset="1" stop-color="#1466FF" stop-opacity="0"/></linearGradient></defs>
+            <line x1="0" y1="112" x2="320" y2="112" stroke="#E6ECF4" stroke-width="1"/>
+            <line x1="0" y1="74" x2="320" y2="74" stroke="#E6ECF4" stroke-width="1"/>
+            <line x1="0" y1="36" x2="320" y2="36" stroke="#E6ECF4" stroke-width="1"/>
+            <path d="M0 104 L46 96 L92 100 L137 78 L183 82 L229 52 L274 44 L320 22 L320 150 L0 150 Z" fill="url(#pg)"/>
+            <path d="M0 104 L46 96 L92 100 L137 78 L183 82 L229 52 L274 44 L320 22" fill="none" stroke="#1466FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="320" cy="22" r="4.5" fill="#1466FF"/>
+          </svg>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+            <span class="chip chip--azure"><span class="dot"></span>Index 72</span>
+            <span class="chip chip--green"><span class="dot"></span>+18% vs last</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TESTIMONIAL ===================== -->
+<section class="sec">
+  <div class="wrap quote">
+    <span class="eyebrow" style="display:block;text-align:center;margin-bottom:22px">Why teams stay</span>
+    <blockquote>"We stopped asking 'where are we?' in every standup. The wind reading already answered it — and our streams have been <span class="mark mark--rose">rising</span> ever since."</blockquote>
+    <div class="by">
+      <span class="av" style="background:linear-gradient(135deg,#1466FF,#16C66A)"></span>
+      <div class="who"><b>Hana Mori</b><span>Head of Operations, Aoi Labs</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRICING ===================== -->
+<section class="sec sec--mist" id="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Pricing</span>
+      <h2>Start free. Fly when you're ready.</h2>
+      <p>Every plan includes streams, momentum, and the Friday digest. Pay only when your team grows.</p>
+    </div>
+    <div class="price">
+      <article class="tier">
+        <span class="nm">Breeze</span>
+        <div class="amt">$0 <small>/ forever</small></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Up to 3 poles</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Unlimited streams</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Weekly digest</li>
+        </ul>
+        <a class="btn btn--secondary" href="#cta">Start free</a>
+      </article>
+      <article class="tier feature">
+        <span class="chip chip--azure pin"><span class="dot"></span>Most popular</span>
+        <span class="nm">Gust</span>
+        <div class="amt">$12 <small>/ user · mo</small></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Unlimited poles</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Momentum index &amp; alerts</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Integrations &amp; API</li>
+        </ul>
+        <a class="btn btn--primary" href="#cta">Start 14-day trial</a>
+      </article>
+      <article class="tier">
+        <span class="nm">Tailwind</span>
+        <div class="amt">Custom</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>SSO &amp; SCIM</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Advanced roles</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Dedicated support</li>
+        </ul>
+        <a class="btn btn--secondary" href="#cta">Talk to us</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA + FORM ===================== -->
+<section class="sec" id="cta">
+  <div class="wrap">
+    <div class="cta">
+      <span class="blob" style="width:280px;height:280px;background:#5FE6A0;right:-60px;top:-80px"></span>
+      <span class="blob" style="width:220px;height:220px;background:#FF6E92;right:160px;bottom:-110px"></span>
+      <h2>Raise your first pole today.</h2>
+      <p>Free forever for small teams. Set up your season in two minutes and watch it climb.</p>
+      <form class="cta__form" onsubmit="return false">
+        <div class="grp">
+          <label class="label" for="email">Work email</label>
+          <input class="field" id="email" type="email" placeholder="you@company.com" autocomplete="email" />
+        </div>
+        <div class="grp">
+          <label class="label" for="size">Team size</label>
+          <div class="select-wrap">
+            <select class="select" id="size">
+              <option>Just me</option>
+              <option selected>2–10 people</option>
+              <option>11–50 people</option>
+              <option>51–200 people</option>
+              <option>200+ people</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn--pop btn--lg" type="submit" style="flex:0 0 auto">Start free</button>
+      </form>
+      <label class="check" style="margin-top:18px;color:rgba(255,255,255,.92)">
+        <input type="checkbox" checked />
+        <span class="box"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>
+        Send me the occasional product note. No spam, unsubscribe anytime.
+      </label>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__brand">
+        <a class="brand" href="#top" aria-label="Hatameki home">
+          <svg class="koi" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M4 20c6-9 17-13 27-9 3 1.2 5 3.4 5 5.2 0 .6-.4 1.1-1 1.1-1.3 0-2-1.3-3.4-1.3-1.3 0-2.2 1-2.2 2.3 0 1.5 1.2 2.4 1.2 3.6 0 1.7-2 3-5.6 3.8C16 31 9 27 4 20Z" fill="#1466FF"/>
+            <circle cx="11.6" cy="18.4" r="2.1" fill="#fff"/><circle cx="11.6" cy="18.4" r="1" fill="#0B1020"/>
+          </svg>
+          Hatameki
+        </a>
+        <p>The momentum platform for teams. Goals that catch the wind — built for Kodomo&nbsp;no&nbsp;Hi, the day every carp climbs.</p>
+        <form class="foot__news" onsubmit="return false" aria-label="Newsletter signup">
+          <input class="field" type="email" placeholder="Email for the monthly note" aria-label="Email address" />
+          <button class="btn btn--primary" type="submit">Join</button>
+        </form>
+      </div>
+      <div class="foot__col">
+        <h4>Product</h4>
+        <a href="#product">Streams</a><a href="#streams">Momentum</a><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#">Changelog</a>
+      </div>
+      <div class="foot__col">
+        <h4>Company</h4>
+        <a href="#">About</a><a href="#">Careers</a><a href="#">Blog</a><a href="#">Press</a>
+      </div>
+      <div class="foot__col">
+        <h4>Resources</h4>
+        <a href="#">Docs</a><a href="#">API</a><a href="#">Status</a><a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="foot__bottom">
+      <span class="sm">© 2026 Hatameki, Inc. · Made for the climb.</span>
+      <div class="select-wrap lang">
+        <select class="select" aria-label="Language">
+          <option>English (US)</option>
+          <option>日本語</option>
+          <option>Español</option>
+          <option>Deutsch</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // header solidifies on scroll
+  var head=document.getElementById('head');
+  function onScroll(){ head.classList.toggle('scrolled', window.scrollY>20); }
+  onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
+  // mobile menu
+  var burger=document.getElementById('burger'), sheet=document.getElementById('msheet');
+  burger.addEventListener('click',function(){
+    var open=sheet.classList.toggle('open');
+    burger.setAttribute('aria-expanded',open);
+  });
+  sheet.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){sheet.classList.remove('open');burger.setAttribute('aria-expanded',false);});});
+</script>
+</body>
+</html>

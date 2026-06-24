@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOBORI • Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --nb-bg: #FFFFFF;
+      --nb-surface: #F7F9FC;
+      --nb-surface-2: #EEF2F7;
+      --nb-text: #0B111A;
+      --nb-text-muted: #4A5568;
+      --nb-border: #D8DFE8;
+      --nb-sky: #00BFFF;
+      --nb-green: #00E68C;
+      --nb-pop: #FF2E7A;
+      --nb-control-h: 48px;
+      --nb-r-md: 14px;
+      --nb-r-lg: 22px;
+    }
+    
+    * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .font-display { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; letter-spacing: -0.035em; }
+    
+    body { background: #F7F9FC; color: var(--nb-text); }
+    
+    .nb-container { max-width: 1440px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+    
+    .nb-display { font-size: 42px; line-height: 1.06; font-weight: 700; letter-spacing: -0.04em; }
+    .nb-h1 { font-size: 28px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+    .nb-h2 { font-size: 20px; line-height: 1.2; font-weight: 700; letter-spacing: -0.015em; }
+    .nb-body { font-size: 15px; line-height: 1.6; }
+    
+    /* Top bar */
+    .nb-topbar {
+      height: 64px;
+      background: #fff;
+      border-bottom: 1px solid var(--nb-border);
+    }
+    
+    /* ONE CONTROL HEIGHT FOR ALL */
+    .nb-btn {
+      height: var(--nb-control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 22px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--nb-r-md);
+      transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .nb-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--nb-pop), 0 0 0 5px #fff;
+    }
+    
+    .nb-btn--primary { background: var(--nb-pop); color: #fff; }
+    .nb-btn--primary:hover { background: #E61A65; }
+    .nb-btn--primary:active { transform: scale(0.985); background: #C81050; }
+    .nb-btn--primary:disabled { opacity: .45; cursor: not-allowed; }
+    
+    .nb-btn--secondary { background: #fff; color: var(--nb-text); border-color: var(--nb-border); }
+    .nb-btn--secondary:hover { background: var(--nb-surface-2); }
+    .nb-btn--secondary:focus-visible { box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff; }
+    
+    .nb-btn--ghost { background: transparent; color: var(--nb-text); border: 0; padding: 0 14px; }
+    .nb-btn--ghost:hover { background: var(--nb-surface); }
+    .nb-btn--ghost:focus-visible { box-shadow: 0 0 0 3px var(--nb-green), 0 0 0 5px #fff; }
+    
+    .nb-btn--sky { background: var(--nb-sky); color: white; }
+    .nb-btn--sky:hover { background: #00A6DB; }
+    .nb-btn--sky:focus-visible { box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff; }
+    
+    .nb-btn--green { background: var(--nb-green); color: #0B111A; font-weight: 600; }
+    .nb-btn--green:hover { background: #00CC7A; }
+    
+    /* All form controls — 48px, focus rings, states */
+    .nb-input, .nb-select, .nb-textarea {
+      height: var(--nb-control-h);
+      background: #fff;
+      border: 1px solid var(--nb-border);
+      border-radius: var(--nb-r-md);
+      padding: 0 15px;
+      font-size: 15px;
+      width: 100%;
+      box-sizing: border-box;
+      color: var(--nb-text);
+    }
+    .nb-textarea { height: auto; min-height: 108px; padding: 13px 15px; line-height: 1.45; }
+    
+    .nb-input:hover, .nb-select:hover { border-color: #B6C1CE; }
+    
+    .nb-input:focus, .nb-select:focus, .nb-textarea:focus {
+      border-color: var(--nb-sky);
+      box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff;
+      outline: none;
+    }
+    
+    .nb-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='%234A5568' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+    }
+    
+    .nb-input:disabled, .nb-select:disabled { background: var(--nb-surface-2); color: var(--nb-text-muted); border-color: var(--nb-border); }
+    
+    /* Checkboxes & radios */
+    .nb-check { width: 18px; height: 18px; accent-color: var(--nb-sky); }
+    .nb-check:focus-visible { box-shadow: 0 0 0 3px var(--nb-sky); outline: none; }
+    
+    .nb-radio {
+      accent-color: var(--nb-green);
+    }
+    .nb-radio:focus-visible { box-shadow: 0 0 0 3px var(--nb-green); }
+    
+    /* Cards & surfaces */
+    .nb-card {
+      background: #fff;
+      border-radius: var(--nb-r-md);
+      box-shadow: 0 1px 2px rgb(11 17 26 / 0.03);
+    }
+    .nb-dash-card {
+      background: #fff;
+      border-radius: var(--nb-r-md);
+      transition: box-shadow .15s ease, transform .15s ease;
+    }
+    .nb-dash-card:hover { box-shadow: 0 10px 25px -12px rgb(0 0 0 / 0.07); }
+    
+    .nb-accent-bar {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: var(--nb-sky); border-radius: 14px 0 0 14px;
+    }
+    .bar-green { background: var(--nb-green); }
+    .bar-pop { background: var(--nb-pop); }
+    
+    .nb-section-head {
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      color: var(--nb-text-muted);
+    }
+    
+    /* Goal card */
+    .goal-card {
+      position: relative;
+      background: white;
+      border-radius: var(--nb-r-md);
+      padding: 22px 22px 20px;
+      transition: all .15s ease;
+    }
+    .goal-card:hover { transform: translateY(-1px); }
+    
+    .progress-track {
+      height: 5px;
+      background: var(--nb-surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      transition: width .4s cubic-bezier(0.23,1,.32,1);
+    }
+    
+    /* Table */
+    .nb-table { border-collapse: separate; border-spacing: 0 1px; width: 100%; }
+    .nb-table th {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--nb-text-muted); font-weight: 600; padding-bottom: 8px;
+    }
+    .nb-table td { padding: 13px 0; font-size: 14.5px; border-top: 1px solid var(--nb-border); }
+    .nb-table tbody tr:hover td { background: var(--nb-surface); }
+    
+    /* Top nav active */
+    .nb-nav-link {
+      font-size: 14px; font-weight: 500; padding: 6px 14px; border-radius: 999px;
+      transition: all .1s ease;
+    }
+    .nb-nav-link.active { background: var(--nb-surface-2); color: var(--nb-text); font-weight: 600; }
+    
+    .metric {
+      font-size: 28px; font-weight: 700; letter-spacing: -0.7px; line-height: 1;
+    }
+    
+    .nb-modal {
+      background: white;
+      border-radius: var(--nb-r-lg);
+      box-shadow: 0 25px 60px -15px rgb(0 0 0 / 0.25), 0 0 0 1px var(--nb-border);
+    }
+    
+    .nb-tag {
+      font-size: 10px; letter-spacing: 1px; padding: 1px 8px 2px; border-radius: 999px;
+      font-weight: 700;
+    }
+    
+    .koi-svg { width: 19px; height: 19px; }
+    
+    .nb-stat {
+      background: #fff;
+      border-radius: var(--nb-r-md);
+      padding: 18px 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- TOP BAR -->
+  <div class="nb-topbar sticky top-0 z-40">
+    <div class="nb-container h-full">
+      <div class="flex items-center justify-between h-full">
+        <!-- Logo -->
+        <div class="flex items-center gap-x-8">
+          <div class="flex items-center gap-x-2">
+            <svg class="koi-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 16 Q12 6 20 12 Q26 18 18 24 Q12 28 6 16" fill="none" stroke="#00BFFF" stroke-width="2.8" stroke-linecap="round"/>
+              <path d="M10 13 Q14 11 17 16" fill="none" stroke="#00E68C" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="22" cy="15" r="1.8" fill="#FF2E7A"/>
+            </svg>
+            <span class="font-display text-[21px] font-semibold tracking-[-1.1px]">NOBORI</span>
+          </div>
+          
+          <!-- Primary nav -->
+          <div class="hidden md:flex items-center gap-x-1 text-sm">
+            <a href="#" onclick="setActiveNav(this)" class="nb-nav-link active">Overview</a>
+            <a href="#" onclick="setActiveNav(this)" class="nb-nav-link">Goals</a>
+            <a href="#" onclick="setActiveNav(this)" class="nb-nav-link">Celebrations</a>
+            <a href="#" onclick="setActiveNav(this)" class="nb-nav-link">Insights</a>
+          </div>
+        </div>
+        
+        <!-- Search + actions -->
+        <div class="flex items-center gap-x-3 flex-1 max-w-[420px] mx-5">
+          <div class="relative flex-1">
+            <input id="global-search" type="text" class="nb-input h-[42px] text-sm pl-9" placeholder="Search goals or milestones..." onkeyup="filterGoals()">
+            <i class="fa-solid fa-search absolute left-3.5 top-3 text-[#94A3B8]"></i>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-x-3">
+          <button onclick="showQuickAdd()" class="nb-btn nb-btn--secondary hidden md:flex items-center gap-x-2 text-sm">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add milestone</span>
+          </button>
+          
+          <div class="flex items-center gap-x-2 pl-3 border-l border-[#D8DFE8]">
+            <div class="text-right hidden sm:block">
+              <div class="text-sm font-medium">Aiko Takahashi</div>
+              <div class="text-[11px] text-[#64748B] -mt-0.5">Osaka • Parent</div>
+            </div>
+            <div class="w-9 h-9 rounded-full overflow-hidden ring-1 ring-[#D8DFE8]">
+              <img src="./media/still.jpg" class="w-full h-full object-cover">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nb-container pt-8 pb-16">
+    <!-- HEADER -->
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-y-3 mb-8">
+      <div>
+        <div class="flex items-center gap-x-3">
+          <span class="font-display text-[34px] font-semibold tracking-[-1.6px]">Good morning, Aiko.</span>
+        </div>
+        <div class="flex items-center gap-3 mt-1">
+          <div class="text-[#475569]">Monday, 23 June 2026 • Early summer</div>
+          <div class="px-3 py-px rounded-full text-xs font-bold tracking-wider bg-[#00BFFF] text-white">KOINOBORI SEASON</div>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-x-3">
+        <button onclick="showAddGoalModal()" class="nb-btn nb-btn--primary flex items-center gap-x-2">
+          <i class="fa-solid fa-plus"></i>
+          <span>New goal</span>
+        </button>
+        <button onclick="window.location.href='./landing.html'" class="nb-btn nb-btn--secondary">View public site</button>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="nb-stat">
+        <div class="text-xs font-semibold tracking-widest text-[#4A5568]">ACTIVE ASCENTS</div>
+        <div class="metric mt-1 text-[#00BFFF]">14</div>
+        <div class="text-xs mt-2 flex items-center gap-1 text-[#00C853]">
+          <i class="fa-solid fa-arrow-trend-up"></i> <span>+3 this week</span>
+        </div>
+      </div>
+      <div class="nb-stat">
+        <div class="text-xs font-semibold tracking-widest text-[#4A5568]">MILESTONES THIS SEASON</div>
+        <div class="metric mt-1">87</div>
+        <div class="text-xs mt-2 flex items-center gap-1 text-[#4A5568]">12 completed last 7 days</div>
+      </div>
+      <div class="nb-stat">
+        <div class="text-xs font-semibold tracking-widest text-[#4A5568]">FAMILY LIFT</div>
+        <div class="metric mt-1">92<span class="text-xl align-baseline font-normal">%</span></div>
+        <div class="text-xs mt-2 text-[#00E68C]">↑ 11% from last month</div>
+      </div>
+      <div class="nb-stat">
+        <div class="text-xs font-semibold tracking-widest text-[#4A5568]">UPCOMING CELEBRATIONS</div>
+        <div class="metric mt-1">5</div>
+        <div class="flex items-center gap-2 mt-2">
+          <div class="text-xs px-2.5 py-0.5 rounded bg-[#FF2E7A] text-white font-medium">MAY 5</div>
+          <div class="text-xs text-[#4A5568]">Children’s Day main event</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      
+      <!-- GOALS / MAIN -->
+      <div class="xl:col-span-8">
+        <div class="flex justify-between items-end mb-4 px-1">
+          <div>
+            <div class="nb-section-head">ACTIVE FAMILY GOALS</div>
+            <div class="text-[21px] font-semibold tracking-tight mt-px">Rising together</div>
+          </div>
+          <div class="hidden md:block">
+            <select onchange="filterGoals()" id="filter-child" class="nb-select h-9 text-sm w-auto border-[#D8DFE8]">
+              <option value="">All children</option>
+              <option value="Yuna">Yuna (7)</option>
+              <option value="Kenji">Kenji (4)</option>
+              <option value="Haru">Haru (9)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- GOALS GRID -->
+        <div id="goals-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      
+      <!-- SIDEBAR -->
+      <div class="xl:col-span-4 space-y-6">
+        
+        <!-- UPCOMING -->
+        <div class="nb-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="nb-section-head">UPCOMING CELEBRATIONS</div>
+            <a href="#" class="text-xs font-semibold text-[#00BFFF]">View calendar</a>
+          </div>
+          
+          <div class="space-y-[13px]">
+            <div class="flex gap-3 items-start">
+              <div class="text-center w-10 shrink-0">
+                <div class="text-xs text-[#FF2E7A] font-bold">JUN 29</div>
+                <div class="text-[22px] font-semibold tracking-tighter leading-none mt-px">29</div>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold">Koinobori Day family flight</div>
+                <div class="text-xs text-[#64748B]">Yuna, Kenji, Haru • 4:30pm • Riverside</div>
+                <div class="flex gap-2 mt-2">
+                  <button onclick="rsvpEvent(this)" class="nb-btn nb-btn--green text-xs h-8 px-4">RSVP</button>
+                  <button onclick="editEvent(this)" class="nb-btn nb-btn--ghost text-xs h-8 px-3 text-[#4A5568]">Edit</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex gap-3 items-start pt-2 border-t border-[#EEF2F7]">
+              <div class="text-center w-10 shrink-0">
+                <div class="text-xs text-[#00BFFF] font-bold">JUL 7</div>
+                <div class="text-[22px] font-semibold tracking-tighter leading-none mt-px">7</div>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold">First swim + streamer launch</div>
+                <div class="text-xs text-[#64748B]">Kenji • Lake Biwa • 10:00am</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- QUICK ADD FORM -->
+        <div class="nb-card p-6">
+          <div class="nb-section-head mb-3">QUICK MILESTONE</div>
+          <form id="quick-milestone-form" onsubmit="addQuickMilestone(event)">
+            <div class="space-y-3">
+              <input type="text" id="quick-title" class="nb-input text-sm" placeholder="Title" value="Haru read 12 books" required>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <select id="quick-child" class="nb-select text-sm">
+                  <option>Yuna (7)</option>
+                  <option>Kenji (4)</option>
+                  <option>Haru (9)</option>
+                </select>
+                <input type="date" class="nb-input text-sm" value="2026-06-20">
+              </div>
+              
+              <div class="flex gap-2">
+                <button type="submit" class="nb-btn nb-btn--sky flex-1 text-sm">Log milestone</button>
+                <button type="button" onclick="clearQuickForm()" class="nb-btn nb-btn--secondary text-sm px-4">Clear</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <!-- LIFT CHART -->
+        <div class="nb-card p-6">
+          <div class="flex items-center justify-between mb-3">
+            <div class="nb-section-head">WEEKLY LIFT</div>
+            <div class="text-[11px] text-[#00E68C] font-bold">+19%</div>
+          </div>
+          
+          <div class="mt-1">
+            <svg id="lift-chart" width="100%" height="86" viewBox="0 0 280 86" class="overflow-visible"></svg>
+          </div>
+          <div class="flex justify-between text-[10px] text-[#64748B] mt-1 px-0.5">
+            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- RECENT + TABLE -->
+      <div class="xl:col-span-12 mt-2">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="nb-section-head">RECENT MILESTONES</div>
+          <button onclick="showAllMilestones()" class="nb-btn nb-btn--ghost text-xs text-[#4A5568]">See all →</button>
+        </div>
+        
+        <div class="nb-card overflow-hidden">
+          <table class="nb-table">
+            <thead>
+              <tr>
+                <th class="pl-6 text-left">MILESTONE</th>
+                <th class="text-left">CHILD</th>
+                <th class="text-left">DATE</th>
+                <th class="text-left">GOAL</th>
+                <th class="pr-6"></th>
+              </tr>
+            </thead>
+            <tbody id="milestones-tbody">
+              <!-- JS populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD GOAL MODAL -->
+  <div id="add-goal-modal" onclick="if (event.target.id === 'add-goal-modal') hideAddGoalModal()" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4">
+    <div onclick="event.stopImmediatePropagation()" class="nb-modal w-full max-w-[520px] p-8">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <div class="font-semibold text-xl tracking-tight">New family goal</div>
+          <div class="text-sm text-[#4A5568]">One clear direction. Measurable lift.</div>
+        </div>
+        <button onclick="hideAddGoalModal()" class="text-xl leading-none w-8 h-8 flex items-center justify-center text-[#64748B]">×</button>
+      </div>
+      
+      <form id="add-goal-form" onsubmit="createNewGoal(event)">
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs font-bold tracking-wider block mb-1.5">GOAL NAME</label>
+            <input id="goal-name" type="text" class="nb-input" placeholder="Master 20 new kanji" value="Speak confidently in front of class" required>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold tracking-wider block mb-1.5">FOR</label>
+              <select id="goal-child" class="nb-select">
+                <option value="Yuna">Yuna (7)</option>
+                <option value="Kenji">Kenji (4)</option>
+                <option value="Haru">Haru (9)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold tracking-wider block mb-1.5">TYPE</label>
+              <select id="goal-type" class="nb-select">
+                <option value="Personal">Personal growth</option>
+                <option value="Cultural">Cultural</option>
+                <option value="Academic">Academic</option>
+                <option value="Physical">Physical</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label class="text-xs font-bold tracking-wider block mb-1.5">DESCRIPTION</label>
+            <textarea id="goal-desc" class="nb-textarea" placeholder="What does success look like?">Lead the morning greeting circle for 3 consecutive weeks with clear voice.</textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-bold tracking-wider block mb-1.5">TARGET DATE</label>
+              <input id="goal-date" type="date" class="nb-input" value="2026-08-14">
+            </div>
+            <div>
+              <label class="text-xs font-bold tracking-wider block mb-1.5">PRIORITY</label>
+              <div class="flex items-center gap-x-5 h-[48px]">
+                <label class="flex items-center gap-x-2 text-sm"><input type="radio" name="priority" value="High" class="nb-radio" checked> High</label>
+                <label class="flex items-center gap-x-2 text-sm"><input type="radio" name="priority" value="Med" class="nb-radio"> Medium</label>
+                <label class="flex items-center gap-x-2 text-sm"><input type="radio" name="priority" value="Low" class="nb-radio"> Low</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="pt-1 flex items-center gap-2">
+            <button type="button" onclick="hideAddGoalModal()" class="nb-btn nb-btn--secondary flex-1">Cancel</button>
+            <button type="submit" class="nb-btn nb-btn--primary flex-1">Create goal</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Shared tokens in JS (for dynamic elements)
+    const TOKENS = {
+      sky: '#00BFFF',
+      green: '#00E68C',
+      pop: '#FF2E7A',
+      controlH: '48px',
+      radius: '14px'
+    };
+    
+    // Seed goals
+    let goals = [
+      {
+        id: 1, title: "Speak confidently in front of class", child: "Yuna", progress: 68, due: "2026-08-14", type: "Personal",
+        status: "active", desc: "Lead morning circle 3 weeks straight"
+      },
+      {
+        id: 2, title: "Swim 25m without stopping", child: "Kenji", progress: 41, due: "2026-07-18", type: "Physical",
+        status: "active", desc: "Build stamina for summer river day"
+      },
+      {
+        id: 3, title: "Write and perform original haiku", child: "Haru", progress: 93, due: "2026-06-28", type: "Cultural",
+        status: "active", desc: "For Koinobori family performance"
+      },
+      {
+        id: 4, title: "Read 25 books this season", child: "Yuna", progress: 76, due: "2026-08-30", type: "Academic",
+        status: "active", desc: "Mixed Japanese + English titles"
+      },
+      {
+        id: 5, title: "Help cook one family dinner a week", child: "Haru", progress: 25, due: "2026-09-02", type: "Personal",
+        status: "active", desc: "Focus on knife skills and timing"
+      }
+    ];
+    
+    let milestones = [
+      { id: 11, title: "Yuna led morning circle for first time", child: "Yuna", date: "2026-06-18", goal: "Speak confidently" },
+      { id: 12, title: "Kenji swam 10m unassisted", child: "Kenji", date: "2026-06-15", goal: "Swim 25m" },
+      { id: 13, title: "Haru finished first haiku draft", child: "Haru", date: "2026-06-11", goal: "Write haiku" }
+    ];
+    
+    function renderGoals(filteredGoals = null) {
+      const container = document.getElementById('goals-grid');
+      container.innerHTML = '';
+      const list = filteredGoals || goals;
+      
+      list.forEach(goal => {
+        const accent = goal.child === 'Yuna' ? 'sky' : goal.child === 'Kenji' ? 'green' : 'pop';
+        const accentColor = accent === 'sky' ? TOKENS.sky : accent === 'green' ? TOKENS.green : TOKENS.pop;
+        
+        const el = document.createElement('div');
+        el.className = `goal-card border border-[#EEF2F7]`;
+        el.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="pr-3">
+              <div class="flex items-center gap-2">
+                <div class="nb-tag" style="background:${accentColor}15; color:${accentColor}">${goal.type}</div>
+                <span class="text-xs px-1.5 font-semibold text-[#64748B]">${goal.child}</span>
+              </div>
+              <div class="font-semibold text-[15.5px] leading-tight mt-2 tracking-[-0.2px]">${goal.title}</div>
+              <div class="text-xs text-[#64748B] mt-1 line-clamp-1">${goal.desc}</div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="font-semibold text-xl tabular-nums tracking-tighter">${goal.progress}</div>
+              <div class="text-[10px] -mt-1 text-[#94A3B8]">%</div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <div class="progress-track mb-2">
+              <div class="progress-fill" style="width:${goal.progress}%; background:${accentColor}"></div>
+            </div>
+            
+            <div class="flex justify-between text-xs items-center">
+              <div class="text-[#64748B]">Due <span class="font-medium text-[#334155]">${new Date(goal.due).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</span></div>
+              
+              <div class="flex gap-x-[5px]">
+                <button onclick="markComplete(${goal.id}, this)" class="nb-btn nb-btn--ghost text-xs h-7 px-3 border border-[#E2E8F0]" style="height:28px">Mark done</button>
+                <button onclick="updateProgress(${goal.id}, this)" class="nb-btn nb-btn--ghost text-xs h-7 px-2.5" style="height:28px">+10%</button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+    
+    function filterGoals() {
+      const term = document.getElementById('global-search').value.toLowerCase().trim();
+      const childFilter = document.getElementById('filter-child').value;
+      
+      let filtered = goals;
+      
+      if (childFilter) {
+        filtered = filtered.filter(g => g.child === childFilter);
+      }
+      if (term) {
+        filtered = filtered.filter(g => 
+          g.title.toLowerCase().includes(term) || 
+          g.child.toLowerCase().includes(term) || 
+          (g.desc || '').toLowerCase().includes(term)
+        );
+      }
+      renderGoals(filtered);
+    }
+    
+    function markComplete(id, btnEl) {
+      const goal = goals.find(g => g.id === id);
+      if (!goal) return;
+      
+      goal.progress = 100;
+      goal.status = 'complete';
+      
+      // re-render
+      renderGoals();
+      
+      // optimistic toast
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 bg-[#0B111A] text-white rounded-[14px] text-sm flex items-center gap-x-3 shadow-xl`;
+      toast.innerHTML = `<span>Goal completed. Great work.</span>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1600);
+    }
+    
+    function updateProgress(id, btnEl) {
+      const goal = goals.find(g => g.id === id);
+      if (!goal || goal.progress >= 100) return;
+      
+      goal.progress = Math.min(100, goal.progress + 10);
+      renderGoals();
+    }
+    
+    function setActiveNav(el) {
+      document.querySelectorAll('.nb-nav-link').forEach(a => a.classList.remove('active'));
+      el.classList.add('active');
+    }
+    
+    // MODAL
+    function showAddGoalModal() {
+      document.getElementById('add-goal-modal').classList.remove('hidden');
+      document.getElementById('add-goal-modal').classList.add('flex');
+      setTimeout(() => {
+        document.getElementById('goal-name').focus();
+        document.getElementById('goal-name').select();
+      }, 60);
+    }
+    
+    function hideAddGoalModal() {
+      const m = document.getElementById('add-goal-modal');
+      m.classList.remove('flex');
+      m.classList.add('hidden');
+    }
+    
+    function createNewGoal(e) {
+      e.preventDefault();
+      
+      const newGoal = {
+        id: Date.now(),
+        title: document.getElementById('goal-name').value,
+        child: document.getElementById('goal-child').value,
+        progress: 0,
+        due: document.getElementById('goal-date').value,
+        type: document.getElementById('goal-type').value,
+        status: 'active',
+        desc: document.getElementById('goal-desc').value || 'New goal'
+      };
+      
+      goals.unshift(newGoal);
+      hideAddGoalModal();
+      renderGoals();
+      
+      // scroll to grid
+      document.getElementById('goals-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    function addQuickMilestone(e) {
+      e.preventDefault();
+      const title = document.getElementById('quick-title').value.trim();
+      if (!title) return;
+      
+      const childSel = document.getElementById('quick-child').value;
+      const child = childSel.split(' ')[0];
+      
+      const newMilestone = {
+        id: Date.now(),
+        title,
+        child,
+        date: new Date().toISOString().slice(0,10),
+        goal: '—'
+      };
+      
+      milestones.unshift(newMilestone);
+      renderMilestones();
+      
+      // bump one random goal progress
+      const matching = goals.find(g => g.child === child);
+      if (matching && matching.progress < 100) {
+        matching.progress = Math.min(100, matching.progress + 7);
+        renderGoals();
+      }
+      
+      e.target.reset();
+      
+      // success hint
+      const orig = e.target.innerHTML;
+      const success = document.createElement('div');
+      success.className = 'text-xs text-[#00E68C] mt-1 font-medium';
+      success.textContent = 'Logged. Lift updated.';
+      e.target.appendChild(success);
+      setTimeout(() => success.remove(), 1400);
+    }
+    
+    function clearQuickForm() {
+      document.getElementById('quick-milestone-form').reset();
+    }
+    
+    function renderMilestones() {
+      const tbody = document.getElementById('milestones-tbody');
+      tbody.innerHTML = '';
+      
+      milestones.slice(0, 5).forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="pl-6 font-medium">${m.title}</td>
+          <td><span class="text-xs px-2.5 py-px rounded" style="background:#F1F5F9">${m.child}</span></td>
+          <td class="text-sm text-[#64748B]">${new Date(m.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
+          <td class="text-sm text-[#475569]">${m.goal}</td>
+          <td class="pr-5 text-right">
+            <button onclick="removeMilestone(${m.id}, this)" class="nb-btn nb-btn--ghost text-xs text-[#94A3B8]" style="height:28px">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    function removeMilestone(id, el) {
+      milestones = milestones.filter(m => m.id !== id);
+      const row = el.closest('tr');
+      row.style.opacity = '0';
+      setTimeout(() => row.remove(), 120);
+    }
+    
+    function showAllMilestones() {
+      const container = document.getElementById('milestones-tbody').parentElement;
+      const all = milestones;
+      const html = all.map(m => `
+        <tr>
+          <td class="pl-6 font-medium">${m.title}</td>
+          <td><span class="text-xs px-2.5 py-px rounded" style="background:#F1F5F9">${m.child}</span></td>
+          <td class="text-sm text-[#64748B]">${new Date(m.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</td>
+          <td class="text-sm text-[#475569]">${m.goal}</td>
+          <td></td>
+        </tr>`).join('');
+      
+      const win = window.open('', '_blank', 'width=820,height=620');
+      win.document.write(`
+        <html><head><title>Recent Milestones • Nobori</title>
+        <style>
+          body { font-family: Inter, system-ui, sans-serif; padding:40px; background:#F7F9FC; color:#0B111A }
+          table { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden }
+          th,td { padding:14px 18px; text-align:left; border-bottom:1px solid #D8DFE8 }
+          th { font-size:11px; color:#64748B; text-transform:uppercase; letter-spacing:.6px }
+        </style></head><body>
+        <h2 style="margin:0 0 24px 0;font-size:21px">All Recent Milestones</h2>
+        <table><thead><tr><th>MILESTONE</th><th>CHILD</th><th>DATE</th><th>GOAL</th></tr></thead><tbody>${html}</tbody></table>
+        </body></html>
+      `);
+    }
+    
+    function rsvpEvent(btn) {
+      btn.outerHTML = `<span class="text-xs font-semibold px-3 py-1 bg-[#00E68C] rounded text-[#0B111A]">Attending</span>`;
+    }
+    
+    function editEvent(btn) {
+      btn.textContent = 'Saved';
+      setTimeout(() => { btn.textContent = 'Edit'; }, 1200);
+    }
+    
+    function updateLiftChart() {
+      const svg = document.getElementById('lift-chart');
+      if (!svg) return;
+      
+      // Clean
+      svg.innerHTML = '';
+      
+      const data = [48, 53, 61, 57, 72, 79, 91];
+      const w = 280, h = 86, pad = 10;
+      const max = 100;
+      
+      const pts = data.map((v, i) => {
+        const x = pad + (i * (w - pad * 2) / (data.length - 1));
+        const y = h - pad - ((v / max) * (h - pad * 2));
+        return `${x},${y}`;
+      }).join(' ');
+      
+      // grid lines
+      for (let i = 0; i < 3; i++) {
+        const y = 14 + i * 24;
+        const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        l.setAttribute('x1', pad);
+        l.setAttribute('x2', w - pad);
+        l.setAttribute('y1', y);
+        l.setAttribute('y2', y);
+        l.setAttribute('stroke', '#E2E8F0');
+        l.setAttribute('stroke-width', '1');
+        svg.appendChild(l);
+      }
+      
+      // line
+      const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      poly.setAttribute('points', pts);
+      poly.setAttribute('fill', 'none');
+      poly.setAttribute('stroke', TOKENS.sky);
+      poly.setAttribute('stroke-width', '2.5');
+      poly.setAttribute('stroke-linecap', 'round');
+      poly.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(poly);
+      
+      // dots
+      data.forEach((v, i) => {
+        const x = pad + (i * (w - pad * 2) / (data.length - 1));
+        const y = h - pad - ((v / max) * (h - pad * 2));
+        
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute('cx', x);
+        c.setAttribute('cy', y);
+        c.setAttribute('r', '3');
+        c.setAttribute('fill', i === data.length - 1 ? TOKENS.pop : '#fff');
+        c.setAttribute('stroke', i === data.length - 1 ? TOKENS.pop : TOKENS.sky);
+        c.setAttribute('stroke-width', '2');
+        svg.appendChild(c);
+      });
+    }
+    
+    function showQuickAdd() {
+      document.getElementById('quick-title').focus();
+      document.getElementById('quick-title').select();
+    }
+    
+    function initFilters() {
+      const childSel = document.getElementById('filter-child');
+      if (childSel) {
+        childSel.onchange = filterGoals;
+      }
+      
+      // global search live
+      const gs = document.getElementById('global-search');
+      if (gs) gs.oninput = filterGoals;
+    }
+    
+    function initDashboard() {
+      renderGoals();
+      renderMilestones();
+      updateLiftChart();
+      initFilters();
+      
+      // Seed a nice banner note if needed
+      console.log('%c[NOBORI] Dashboard initialized. Consistent 48px controls + visible focus rings + tokens applied.', 'color:#64748B');
+      
+      // Demo: occasionally highlight a goal on load (subtle)
+      setTimeout(() => {
+        const first = document.querySelector('#goals-grid .goal-card');
+        if (first) first.style.boxShadow = '0 0 0 1px #00BFFF30';
+      }, 900);
+    }
+    
+    // Boot
+    window.onload = function() {
+      initDashboard();
+    };
+    
+    // Keyboard: "/" focuses search
+    document.addEventListener('keydown', function(e) {
+      if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+        e.preventDefault();
+        const s = document.getElementById('global-search');
+        if (s) s.focus();
+      }
+    });
+  </script>
+</body>
+</html>

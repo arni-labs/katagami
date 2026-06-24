@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--ink:#0A0A0A;--ink-soft:#4A4A4A;--ink-muted:#767676;
+--line:#E8E8E8;--surface:#F5F5F5;--sky:#FAFAFA;--white:#FFFFFF;
+--sora:#0088FF;--sora-deep:#0066CC;
+--midori:#00CC66;--midori-deep:#00A854;
+--hi:#FF4D4D;--hi-deep:#E03030;
+--pop:#FF8800;
+--font-display:'Space Grotesk',system-ui,sans-serif;
+--font-body:'Inter',system-ui,sans-serif;
+--font-mono:'JetBrains Mono','SF Mono',monospace;
+--radius-sm:8px;--radius-md:16px;--radius-full:9999px;
+--control-h:48px;
+--shadow-lift:0 2px 8px rgba(10,10,10,0.06);
+--shadow-float:0 8px 32px rgba(10,10,10,0.08);
+--ease:cubic-bezier(0.25,0.1,0.25,1.0);
+}
+html{height:100%}
+body{font-family:var(--font-body);font-size:14px;line-height:1.4;color:var(--ink);background:var(--sky);-webkit-font-smoothing:antialiased;height:100%;overflow:hidden}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{background:var(--white);display:flex;flex-direction:column;border-right:1px solid var(--line);overflow-y:auto}
+.sidebar-logo{padding:20px 24px;font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-0.02em}
+.sidebar-logo span{color:var(--sora)}
+.sidebar-section{padding:8px 12px}
+.sidebar-label{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-muted);padding:8px 12px 4px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px}
+.sidebar-nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:14px;font-weight:500;color:var(--ink-soft);text-decoration:none;border-radius:var(--radius-sm);transition:all 150ms var(--ease)}
+.sidebar-nav a:hover{background:var(--surface);color:var(--ink)}
+.sidebar-nav a:focus-visible{outline:3px solid var(--sora);outline-offset:2px}
+.sidebar-nav a.active{background:var(--surface);color:var(--ink);font-weight:600}
+.sidebar-nav a .icon{width:20px;height:20px;flex-shrink:0;opacity:0.6}
+.sidebar-nav a.active .icon{opacity:1}
+.sidebar-nav a .badge{margin-left:auto;background:var(--hi);color:#FFF;font-size:11px;font-weight:600;padding:2px 7px;border-radius:var(--radius-full);min-width:20px;text-align:center}
+.sidebar-bottom{margin-top:auto;padding:16px 12px;border-top:1px solid var(--line)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm)}
+.sidebar-user:hover{background:var(--surface)}
+.avatar{width:32px;height:32px;border-radius:var(--radius-full);background:var(--sora);display:flex;align-items:center;justify-content:center;color:#FFF;font-weight:600;font-size:13px;flex-shrink:0}
+.avatar-sm{width:28px;height:28px;font-size:11px}
+.avatar-lg{width:40px;height:40px;font-size:15px}
+.sidebar-user-info{display:flex;flex-direction:column}
+.sidebar-user-name{font-size:13px;font-weight:600;color:var(--ink)}
+.sidebar-user-role{font-size:11px;color:var(--ink-muted)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+
+/* TOPBAR */
+.topbar{height:64px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 32px;gap:16px;flex-shrink:0}
+.topbar-search{position:relative;flex:1;max-width:400px}
+.topbar-search input{width:100%;height:var(--control-h);background:var(--surface);border:2px solid transparent;border-radius:var(--radius-md);padding:0 16px 0 40px;font-family:var(--font-body);font-size:14px;color:var(--ink);transition:all 200ms var(--ease)}
+.topbar-search input:hover{border-color:var(--line)}
+.topbar-search input:focus{outline:none;border-color:var(--sora);background:var(--white);box-shadow:0 0 0 3px rgba(0,136,255,0.15)}
+.topbar-search input::placeholder{color:var(--ink-muted)}
+.topbar-search .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-muted)}
+.topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{width:var(--control-h);height:var(--control-h);display:flex;align-items:center;justify-content:center;border:none;background:transparent;border-radius:var(--radius-sm);cursor:pointer;color:var(--ink-soft);transition:all 150ms var(--ease);position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--ink)}
+.icon-btn:focus-visible{outline:3px solid var(--sora);outline-offset:2px}
+.icon-btn:active{background:var(--line)}
+.icon-btn:disabled{color:var(--ink-muted);cursor:not-allowed}
+.icon-btn .dot{position:absolute;top:10px;right:10px;width:8px;height:8px;background:var(--hi);border-radius:var(--radius-full);border:2px solid var(--white)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:32px}
+.content-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px}
+.content-header h1{font-family:var(--font-display);font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.2}
+.content-header p{font-size:14px;color:var(--ink-muted);margin-top:4px}
+.content-actions{display:flex;gap:12px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;height:var(--control-h);padding:0 20px;font-family:var(--font-body);font-size:13px;font-weight:600;border-radius:var(--radius-md);border:none;cursor:pointer;text-decoration:none;transition:all 200ms var(--ease);gap:8px}
+.btn:focus-visible{outline:3px solid var(--sora);outline-offset:2px}
+.btn:disabled{cursor:not-allowed;opacity:0.5}
+.btn-primary{background:var(--sora);color:#FFF}
+.btn-primary:hover{background:var(--sora-deep);transform:translateY(-1px);box-shadow:var(--shadow-lift)}
+.btn-primary:active{transform:translateY(0);box-shadow:none}
+.btn-secondary{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn-secondary:hover{border-color:var(--ink);background:var(--surface)}
+.btn-secondary:active{background:var(--line)}
+.btn-ghost{background:transparent;color:var(--ink-soft);border:none;padding:0 12px}
+.btn-ghost:hover{background:var(--surface);color:var(--ink)}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px}
+.stat-card{background:var(--white);border-radius:var(--radius-md);padding:24px;display:flex;flex-direction:column;gap:8px}
+.stat-card-label{font-size:12px;font-weight:500;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.04em}
+.stat-card-value{font-family:var(--font-display);font-size:36px;font-weight:700;letter-spacing:-0.02em;line-height:1}
+.stat-card-change{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600}
+.stat-card-change.up{color:var(--midori)}
+.stat-card-change.down{color:var(--hi)}
+
+/* GRID LAYOUT */
+.dashboard-grid{display:grid;grid-template-columns:1fr 380px;gap:24px}
+
+/* CHART CARD */
+.card{background:var(--white);border-radius:var(--radius-md);padding:24px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-title{font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.card-subtitle{font-size:12px;color:var(--ink-muted);margin-top:2px}
+
+/* CHART */
+.chart-container{width:100%;height:220px;position:relative}
+.chart-bars{display:flex;align-items:flex-end;gap:8px;height:180px;padding-top:20px}
+.chart-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.chart-bar-stack{width:100%;display:flex;flex-direction:column;gap:2px;align-items:stretch}
+.chart-bar{border-radius:4px 4px 0 0;min-height:4px;transition:opacity 200ms}
+.chart-bar:hover{opacity:0.8}
+.chart-bar-label{font-size:11px;color:var(--ink-muted);text-align:center}
+.chart-legend{display:flex;gap:20px;margin-top:16px}
+.chart-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft)}
+.chart-legend-dot{width:8px;height:8px;border-radius:var(--radius-full)}
+
+/* TASKS TABLE */
+.tasks-table{width:100%}
+.tasks-table th{text-align:left;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-muted);padding:0 12px 12px;border-bottom:1px solid var(--line)}
+.tasks-table td{padding:14px 12px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.tasks-table tr:last-child td{border-bottom:none}
+.tasks-table tr:hover td{background:var(--sky)}
+.task-name{font-weight:500;color:var(--ink)}
+.task-id{font-family:var(--font-mono);font-size:12px;color:var(--ink-muted)}
+.task-status{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600}
+.task-status.in-progress{background:rgba(0,136,255,0.1);color:var(--sora)}
+.task-status.done{background:rgba(0,204,102,0.1);color:var(--midori-deep)}
+.task-status.review{background:rgba(255,136,0,0.1);color:var(--pop)}
+.task-status.blocked{background:rgba(255,77,77,0.1);color:var(--hi)}
+.task-priority{width:8px;height:8px;border-radius:var(--radius-full);display:inline-block}
+.task-priority.high{background:var(--hi)}
+.task-priority.medium{background:var(--pop)}
+.task-priority.low{background:var(--midori)}
+
+/* ACTIVITY FEED */
+.activity-feed{display:flex;flex-direction:column;gap:0}
+.activity-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:var(--radius-full);margin-top:6px;flex-shrink:0}
+.activity-dot.blue{background:var(--sora)}
+.activity-dot.green{background:var(--midori)}
+.activity-dot.coral{background:var(--hi)}
+.activity-dot.orange{background:var(--pop)}
+.activity-text{font-size:13px;color:var(--ink-soft);line-height:1.5}
+.activity-text strong{color:var(--ink);font-weight:600}
+.activity-time{font-size:11px;color:var(--ink-muted);margin-top:2px}
+
+/* TEAM ROW */
+.team-row{display:flex;gap:12px;margin-top:24px}
+.team-card{background:var(--white);border-radius:var(--radius-md);padding:20px;flex:1;display:flex;align-items:center;gap:14px}
+.team-card-info{display:flex;flex-direction:column}
+.team-card-name{font-size:14px;font-weight:600;color:var(--ink)}
+.team-card-role{font-size:12px;color:var(--ink-muted)}
+.team-card-tasks{margin-left:auto;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--sora)}
+
+/* FORM CONTROLS */
+.form-row{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.form-input{height:var(--control-h);background:var(--white);border:2px solid var(--line);border-radius:var(--radius-md);padding:0 16px;font-family:var(--font-body);font-size:14px;color:var(--ink);transition:all 200ms var(--ease)}
+.form-input:hover{border-color:var(--ink-muted)}
+.form-input:focus{outline:none;border-color:var(--sora);box-shadow:0 0 0 3px rgba(0,136,255,0.15)}
+.form-input::placeholder{color:var(--ink-muted)}
+.form-input:disabled{background:var(--surface);color:var(--ink-muted);cursor:not-allowed}
+.form-select{height:var(--control-h);background:var(--white);border:2px solid var(--line);border-radius:var(--radius-md);padding:0 16px;font-family:var(--font-body);font-size:14px;color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23767676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px;cursor:pointer;transition:all 200ms var(--ease)}
+.form-select:hover{border-color:var(--ink-muted)}
+.form-select:focus{outline:none;border-color:var(--sora);box-shadow:0 0 0 3px rgba(0,136,255,0.15)}
+.form-checkbox{width:20px;height:20px;border:2px solid var(--line);border-radius:4px;appearance:none;cursor:pointer;transition:all 150ms var(--ease);flex-shrink:0}
+.form-checkbox:hover{border-color:var(--ink-muted)}
+.form-checkbox:checked{background:var(--sora);border-color:var(--sora);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center}
+.form-checkbox:focus-visible{outline:3px solid var(--sora);outline-offset:2px}
+.form-toggle{position:relative;width:44px;height:24px;background:var(--line);border-radius:var(--radius-full);cursor:pointer;border:none;transition:background 200ms var(--ease);flex-shrink:0}
+.form-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:var(--white);border-radius:var(--radius-full);transition:transform 200ms var(--ease)}
+.form-toggle.active{background:var(--sora)}
+.form-toggle.active::after{transform:translateX(20px)}
+.form-toggle:focus-visible{outline:3px solid var(--sora);outline-offset:2px}
+
+/* RESPONSIVE */
+@media(max-width:1200px){
+.dashboard-grid{grid-template-columns:1fr}
+.stats-row{grid-template-columns:repeat(2,1fr)}
+.team-row{flex-wrap:wrap}
+.team-card{min-width:200px}
+}
+@media(max-width:768px){
+.app{grid-template-columns:1fr}
+.sidebar{display:none}
+.stats-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">nobori<span>.</span></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Workspace</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="active">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Tasks
+          <span class="badge">12</span>
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Team
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Messages
+          <span class="badge">3</span>
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Projects</div>
+      <nav class="sidebar-nav">
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+          Kinto Platform
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke="var(--midori)"/></svg>
+          Mobile App v3
+        </a>
+        <a href="#">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke="var(--pop)"/></svg>
+          Design System
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="avatar">MK</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Mika K.</div>
+          <div class="sidebar-user-role">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-search">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search tasks, people, docs..." class="topbar-search-input">
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" aria-label="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="dot"></span>
+        </button>
+        <button class="icon-btn" aria-label="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+        <div class="avatar" style="margin-left:8px">MK</div>
+      </div>
+    </header>
+
+    <!-- SCROLLABLE CONTENT -->
+    <div class="content">
+      <!-- HEADER -->
+      <div class="content-header">
+        <div>
+          <h1>Good morning, Mika</h1>
+          <p>Sprint 14 — Day 8 of 14 &middot; 6 tasks rising today</p>
+        </div>
+        <div class="content-actions">
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New task
+          </button>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-label">Tasks completed</div>
+          <div class="stat-card-value">34</div>
+          <div class="stat-card-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            +8 this week
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">In progress</div>
+          <div class="stat-card-value">12</div>
+          <div class="stat-card-change down">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            -3 from yesterday
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Sprint velocity</div>
+          <div class="stat-card-value">87<span style="font-size:20px;color:var(--ink-muted)">pts</span></div>
+          <div class="stat-card-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            +12% vs last sprint
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Blocked</div>
+          <div class="stat-card-value" style="color:var(--hi)">2</div>
+          <div class="stat-card-change" style="color:var(--ink-muted)">Needs attention</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="dashboard-grid">
+        <!-- LEFT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <!-- CHART -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Sprint Progress</div>
+                <div class="card-subtitle">Tasks completed per day — Sprint 14</div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-ghost" style="font-size:12px;padding:0 10px">Week</button>
+                <button class="btn btn-ghost" style="font-size:12px;padding:0 10px;background:var(--surface)">Sprint</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <div class="chart-bars">
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:40px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:15px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Mon</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:55px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:20px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Tue</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:35px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:25px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Wed</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:70px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:10px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Thu</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:50px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:30px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Fri</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:20px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:8px;background:var(--midori)"></div>
+                  </div>
+                  <div class="chart-bar-label">Sat</div>
+                </div>
+                <div class="chart-bar-group">
+                  <div class="chart-bar-stack">
+                    <div class="chart-bar" style="height:60px;background:var(--sora)"></div>
+                    <div class="chart-bar" style="height:18px;background:var(--midori)"></div>
+                    <div class="chart-bar" style="height:12px;background:var(--hi)"></div>
+                  </div>
+                  <div class="chart-bar-label">Today</div>
+                </div>
+              </div>
+              <div class="chart-legend">
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--sora)"></div> Completed</div>
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--midori)"></div> Reviewed</div>
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--hi)"></div> Reopened</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TASKS TABLE -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Rising Tasks</div>
+                <div class="card-subtitle">Active items in this sprint</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="form-select" style="font-size:12px;padding:0 32px 0 12px">
+                  <option>All statuses</option>
+                  <option>In progress</option>
+                  <option>Review</option>
+                  <option>Blocked</option>
+                </select>
+              </div>
+            </div>
+            <table class="tasks-table">
+              <thead>
+                <tr>
+                  <th style="width:40px"></th>
+                  <th>Task</th>
+                  <th>Status</th>
+                  <th>Assignee</th>
+                  <th style="width:80px">Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox"></td>
+                  <td><div class="task-name">Auth flow redesign</div><div class="task-id">NOB-142</div></td>
+                  <td><span class="task-status in-progress">In progress</span></td>
+                  <td><div class="avatar avatar-sm" style="background:var(--sora)">YT</div></td>
+                  <td><span class="task-priority high"></span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox"></td>
+                  <td><div class="task-name">API rate limiting</div><div class="task-id">NOB-138</div></td>
+                  <td><span class="task-status review">Review</span></td>
+                  <td><div class="avatar avatar-sm" style="background:var(--midori)">SK</div></td>
+                  <td><span class="task-priority high"></span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox" checked></td>
+                  <td><div class="task-name">Dashboard performance audit</div><div class="task-id">NOB-135</div></td>
+                  <td><span class="task-status done">Done</span></td>
+                  <td><div class="avatar avatar-sm" style="background:var(--pop)">AM</div></td>
+                  <td><span class="task-priority medium"></span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox"></td>
+                  <td><div class="task-name">Webhook retry logic</div><div class="task-id">NOB-144</div></td>
+                  <td><span class="task-status blocked">Blocked</span></td>
+                  <td><div class="avatar avatar-sm" style="background:var(--hi)">RN</div></td>
+                  <td><span class="task-priority high"></span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox"></td>
+                  <td><div class="task-name">Onboarding email sequence</div><div class="task-id">NOB-146</div></td>
+                  <td><span class="task-status in-progress">In progress</span></td>
+                  <td><div class="avatar avatar-sm" style="background:#7C5CFC">TH</div></td>
+                  <td><span class="task-priority low"></span></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="form-checkbox"></td>
+                  <td><div class="task-name">Mobile nav accessibility</div><div class="task-id">NOB-148</div></td>
+                  <td><span class="task-status in-progress">In progress</span></td>
+                  <td><div class="avatar avatar-sm" style="background:var(--sora)">YT</div></td>
+                  <td><span class="task-priority medium"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <!-- ACTIVITY FEED -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Activity</div>
+              <button class="btn btn-ghost" style="font-size:12px">View all</button>
+            </div>
+            <div class="activity-feed">
+              <div class="activity-item">
+                <div class="activity-dot green"></div>
+                <div>
+                  <div class="activity-text"><strong>Yuki T.</strong> completed <strong>Auth flow redesign</strong> — Phase 1</div>
+                  <div class="activity-time">12 minutes ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot blue"></div>
+                <div>
+                  <div class="activity-text"><strong>Sora K.</strong> moved <strong>API rate limiting</strong> to review</div>
+                  <div class="activity-time">34 minutes ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot coral"></div>
+                <div>
+                  <div class="activity-text"><strong>Rin N.</strong> flagged <strong>Webhook retry logic</strong> as blocked — waiting on infra team</div>
+                  <div class="activity-time">1 hour ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot orange"></div>
+                <div>
+                  <div class="activity-text"><strong>Aoi M.</strong> left a comment on <strong>Dashboard audit</strong></div>
+                  <div class="activity-time">2 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot blue"></div>
+                <div>
+                  <div class="activity-text"><strong>Tomo H.</strong> created <strong>Onboarding email sequence</strong></div>
+                  <div class="activity-time">3 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot green"></div>
+                <div>
+                  <div class="activity-text"><strong>Sprint 14</strong> velocity crossed 80 points — new team record</div>
+                  <div class="activity-time">Yesterday</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TEAM -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Team Load</div>
+              <button class="btn btn-ghost" style="font-size:12px">Manage</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
+                <div class="avatar" style="background:var(--sora)">YT</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Yuki Tanaka</div>
+                  <div style="font-size:11px;color:var(--ink-muted)">Frontend</div>
+                </div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--sora)">4</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
+                <div class="avatar" style="background:var(--midori)">SK</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Sora Kim</div>
+                  <div style="font-size:11px;color:var(--ink-muted)">Backend</div>
+                </div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--sora)">3</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
+                <div class="avatar" style="background:var(--pop)">AM</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Aoi Matsuda</div>
+                  <div style="font-size:11px;color:var(--ink-muted)">Full-stack</div>
+                </div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--midori)">2</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)">
+                <div class="avatar" style="background:var(--hi)">RN</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Rin Nakamura</div>
+                  <div style="font-size:11px;color:var(--ink-muted)">Infrastructure</div>
+                </div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--hi)">5</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+                <div class="avatar" style="background:#7C5CFC">TH</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Tomo Hayashi</div>
+                  <div style="font-size:11px;color:var(--ink-muted)">Product</div>
+                </div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--sora)">2</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QUICK SETTINGS CARD (demonstrates form controls) -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Quick Settings</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:13px;font-weight:500">Email notifications</div>
+                <button class="form-toggle active" aria-label="Toggle email notifications"></button>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:13px;font-weight:500">Sprint reminders</div>
+                <button class="form-toggle" aria-label="Toggle sprint reminders"></button>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:13px;font-weight:500">Auto-assign tasks</div>
+                <button class="form-toggle active" aria-label="Toggle auto-assign"></button>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <input type="text" class="form-input" placeholder="Filter label..." style="flex:1;font-size:13px" disabled>
+                <button class="btn btn-secondary" style="padding:0 14px;font-size:12px" disabled>Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Toggle switches
+document.querySelectorAll('.form-toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('active');
+  });
+});
+</script>
+
+</body>
+</html>

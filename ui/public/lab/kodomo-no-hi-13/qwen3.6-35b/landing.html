@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taketori — Kodomo no Hi Festival Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFFFFF;
+  --surface: #F8F9FA;
+  --text: #0A0A0A;
+  --muted: #6B7785;
+  --border: #E3E8ED;
+  --accent: #00B4D8;
+  --on-accent: #FFFFFF;
+  --success: #2DC653;
+  --warning: #FFA62A;
+  --error: #FF3366;
+  --info: #00B4D8;
+  --font-display: "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+  --font-body: "Inter", "Noto Sans JP", sans-serif;
+  --font-mono: "SF Mono", "Fira Code", monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
+  --text-3xl: 3.5rem;
+  --letter-display: -0.02em;
+  --letter-body: 0em;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-s: 0.75rem;
+  --space-m: 1rem;
+  --space-l: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+  --radius-none: 0;
+  --radius-card: 16px;
+  --radius-pill: 24px;
+  --radius-full: 9999px;
+  --control-height: 40px;
+  --hero-image: url('./media/hero-koinobori.jpg');
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font: var(--text-base) var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  letter-spacing: var(--letter-body);
+}
+
+/* ---- NAV ---- */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-m) var(--space-xl);
+  height: 64px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.nav-logo {
+  font: 700 1.25rem var(--font-display);
+  letter-spacing: var(--letter-display);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  list-style: none;
+}
+
+.nav-links a {
+  font: 500 var(--text-sm) var(--font-body);
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.nav-links a:hover { color: var(--text); }
+.nav-links a.active { color: var(--accent); }
+
+.nav-links .active::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 1px;
+  margin: var(--space-2xs) auto 0;
+}
+
+/* ---- BUTTONS ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  padding: 0 var(--space-xl);
+  border: none;
+  border-radius: var(--radius-pill);
+  font: 600 var(--text-sm) var(--font-body);
+  letter-spacing: var(--letter-body);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover { background: #0096C7; }
+.btn-primary:active { background: #0077B6; transform: scale(0.98); }
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--muted); }
+.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  padding: 0 var(--space-s);
+}
+.btn-ghost:hover { color: var(--text); background: var(--surface); }
+
+/* ---- HERO ---- */
+.hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  min-height: 600px;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--space-4xl) var(--space-xl) var(--space-4xl);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10,10,10,0.7) 0%, rgba(10,10,10,0.2) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+}
+
+.hero-tagline {
+  font: 400 var(--text-lg) var(--font-body);
+  color: rgba(255,255,255,0.85);
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+.hero h1 {
+  font: 900 var(--text-3xl) var(--font-display);
+  color: #FFFFFF;
+  letter-spacing: var(--letter-display);
+  line-height: 1.08;
+  margin-bottom: var(--space-xl);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+
+.hero-actions .btn-primary {
+  padding: 0 var(--space-2xl);
+  height: 48px;
+  font-size: var(--text-base);
+}
+
+/* ---- SECTIONS ---- */
+.section {
+  padding: var(--space-4xl) var(--space-xl);
+}
+
+.section-surface {
+  background: var(--surface);
+}
+
+.section-wide {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ---- ASCENT LINE ---- */
+.ascent-line {
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+.ascent-line-v {
+  display: inline-block;
+  height: 48px;
+  margin-bottom: var(--space-l);
+}
+
+/* ---- INTRO ---- */
+.intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4xl);
+  align-items: center;
+}
+
+.intro-grid > * {
+  min-width: 0;
+}
+
+.intro-text h2 {
+  font: 700 var(--text-2xl) var(--font-display);
+  letter-spacing: var(--letter-display);
+  line-height: 1.15;
+  margin-bottom: var(--space-l);
+}
+
+.intro-text p {
+  color: var(--muted);
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+/* ---- FEATURES ---- */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xl);
+  margin-top: var(--space-3xl);
+}
+
+.feature-card {
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  padding: var(--space-xl);
+  transition: transform 0.2s ease;
+}
+
+.feature-card:hover { transform: translateY(-4px); }
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-l);
+}
+
+.feature-icon-blue { background: rgba(0,180,216,0.1); color: var(--accent); }
+.feature-icon-green { background: rgba(45,198,83,0.1); color: var(--success); }
+.feature-icon-coral { background: rgba(255,51,102,0.1); color: var(--error); }
+
+.feature-card h3 {
+  font: 700 var(--text-lg) var(--font-display);
+  margin-bottom: var(--space-s);
+  letter-spacing: var(--letter-display);
+}
+
+.feature-card p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+/* ---- STATS ---- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xl);
+  text-align: center;
+}
+
+.stat-value {
+  font: 900 var(--text-2xl) var(--font-display);
+  color: var(--accent);
+  letter-spacing: var(--letter-display);
+  margin-bottom: var(--space-2xs);
+}
+
+.stat-label {
+  font: 500 var(--text-sm) var(--font-body);
+  color: var(--muted);
+}
+
+/* ---- CTA ---- */
+.cta-section {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.cta-section h2 {
+  font: 900 var(--text-2xl) var(--font-display);
+  letter-spacing: var(--letter-display);
+  line-height: 1.15;
+  margin-bottom: var(--space-m);
+}
+
+.cta-section p {
+  color: var(--muted);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-xl);
+}
+
+/* ---- FOOTER ---- */
+.footer {
+  padding: var(--space-2xl) var(--space-xl);
+  border-top: 1.5px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer p {
+  font: var(--text-sm) var(--font-body);
+  color: var(--muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--space-xl);
+  list-style: none;
+}
+
+.footer-links a {
+  font: var(--text-sm) var(--font-body);
+  color: var(--muted);
+  text-decoration: none;
+}
+.footer-links a:hover { color: var(--text); }
+
+/* ---- FORM ---- */
+.form-group {
+  margin-bottom: var(--space-l);
+}
+
+.form-label {
+  display: block;
+  font: 500 var(--text-sm) var(--font-body);
+  color: var(--text);
+  margin-bottom: var(--space-2xs);
+}
+
+input, select, textarea {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 var(--space-m);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  color: var(--text);
+  font: var(--text-base) var(--font-body);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--surface);
+  color: var(--text);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+textarea {
+  height: auto;
+  min-height: var(--control-height);
+  padding: var(--space-s) var(--space-m);
+  resize: vertical;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hero h1 { font-size: var(--text-xl); }
+  .intro-grid { grid-template-columns: 1fr; gap: var(--space-2xl); }
+  .features-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .section { padding: var(--space-3xl) var(--space-m); }
+}
+
+@media (min-width: 2560px) {
+  .section-wide, .hero-content { max-width: 1440px; }
+}
+
+/* ---- MOTION ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- REVEAL ANIMATION ---- */
+html.no-reveal .reveal { opacity: 0; }
+html.no-reveal .reveal-up {
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+html.reveal .reveal-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+html.reveal .reveal-delay-1 { transition-delay: 0.1s; }
+html.reveal .reveal-delay-2 { transition-delay: 0.2s; }
+html.reveal .reveal-delay-3 { transition-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo">Taketori</a>
+  <ul class="nav-links">
+    <li><a href="#features" class="active">Features</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#" class="btn btn-primary" style="padding:0 var(--space-l); font-size:var(--text-sm);">Launch App</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="reveal reveal-up reveal-delay-1">Every child a carp climbing toward the sky</h1>
+    <p class="hero-tagline reveal reveal-up reveal-delay-2">Kodomo no Hi — May 5th. A festival platform built for the whole family.</p>
+    <div class="hero-actions reveal reveal-up reveal-delay-2">
+      <a href="#" class="btn btn-primary">Start Free Festival</a>
+      <a href="#about" class="btn btn-secondary">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- INTRO -->
+<section class="section section-wide" id="about">
+  <div class="intro-grid">
+    <div class="intro-text">
+      <span class="ascent-line ascent-line-v reveal reveal-up"></span>
+      <h2 class="reveal reveal-up reveal-delay-1">A festival platform built for the whole family</h2>
+      <p class="reveal reveal-up reveal-delay-2">Taketori brings Kodomo no Hi to life with interactive carp-streamer schedules, neighborhood parade maps, and a children's activity tracker that turns tradition into something they'll remember. No clutter, no noise — just the spirit of early summer, organized.</p>
+    </div>
+    <div class="reveal reveal-up reveal-delay-2" style="background:var(--surface); border-radius:var(--radius-card); height:360px; display:flex; align-items:center; justify-content:center;">
+      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 10 L60 90" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M60 30 L85 20 L80 35 L95 28 L78 42" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M60 50 L80 42 L76 55 L90 48 L74 60" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M60 70 L78 62 L74 75 L88 68 L72 78" stroke="var(--error)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="60" cy="10" r="4" fill="var(--accent)"/>
+        <circle cx="60" cy="90" r="3" fill="var(--muted)" opacity="0.4"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section section-surface" id="features">
+  <div class="section-wide">
+    <div style="text-align:center; max-width:560px; margin:0 auto;">
+      <span class="ascent-line ascent-line-v reveal reveal-up" style="margin:0 auto var(--space-l);"></span>
+      <h2 class="reveal reveal-up reveal-delay-1" style="font:700 var(--text-2xl) var(--font-display); letter-spacing:var(--letter-display); line-height:1.15; margin-bottom:var(--space-m);">Everything for the festival. Nothing you don't need.</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-up reveal-delay-1">
+        <div class="feature-icon feature-icon-blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 22"/><path d="M8 6L12 2L16 6"/><path d="M6 14L12 10L18 14"/></svg>
+        </div>
+        <h3>Parade Routes</h3>
+        <p>Interactive neighborhood maps with real-time carp procession tracking. Know exactly where the parade is and when it reaches your street.</p>
+      </div>
+      <div class="feature-card reveal reveal-up reveal-delay-2">
+        <div class="feature-icon feature-icon-green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Family Schedules</h3>
+        <p>Coordinate who does what across the household. Assign children to activities, track preparation checklists, and share the day's plan.</p>
+      </div>
+      <div class="feature-card reveal reveal-up reveal-delay-3">
+        <div class="feature-icon feature-icon-coral">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>Children's Milestones</h3>
+        <p>Record each child's first koinobori, their favorite streamer, and the wishes they write. A growing tradition captured year by year.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section section-wide">
+  <div class="stats-row">
+    <div class="reveal reveal-up">
+      <div class="stat-value">47</div>
+      <div class="stat-label">Cities with parade routes</div>
+    </div>
+    <div class="reveal reveal-up reveal-delay-1">
+      <div class="stat-value">12K+</div>
+      <div class="stat-label">Families registered</div>
+    </div>
+    <div class="reveal reveal-up reveal-delay-2">
+      <div class="stat-value">5</div>
+      <div class="stat-label">Years of tradition tracked</div>
+    </div>
+    <div class="reveal reveal-up reveal-delay-3">
+      <div class="stat-value">Free</div>
+      <div class="stat-label">For every family</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section section-surface">
+  <div class="cta-section">
+    <h2 class="reveal reveal-up">Ready for May 5th?</h2>
+    <p class="reveal reveal-up reveal-delay-1">Join thousands of families making Kodomo no Hi a day they look forward to all year.</p>
+    <div class="reveal reveal-up reveal-delay-2" style="display:flex; justify-content:center; gap:var(--space-m);">
+      <a href="#" class="btn btn-primary" style="padding:0 var(--space-2xl); height:48px; font-size:var(--text-base);">Get Started Free</a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT FORM -->
+<section class="section section-wide" id="contact">
+  <div style="max-width:480px; margin:0 auto;">
+    <span class="ascent-line ascent-line-v reveal reveal-up" style="margin:0 auto var(--space-l);"></span>
+    <h2 class="reveal reveal-up reveal-delay-1" style="font:700 var(--text-xl) var(--font-display); letter-spacing:var(--letter-display); margin-bottom:var(--space-xl); text-align:center;">Get in Touch</h2>
+    <form onsubmit="event.preventDefault();">
+      <div class="form-group reveal reveal-up">
+        <label class="form-label" for="name">Full Name</label>
+        <input type="text" id="name" placeholder="Tanaka Yuki">
+      </div>
+      <div class="form-group reveal reveal-up reveal-delay-1">
+        <label class="form-label" for="email">Email</label>
+        <input type="email" id="email" placeholder="yuki@example.com">
+      </div>
+      <div class="form-group reveal reveal-up reveal-delay-2">
+        <label class="form-label" for="city">City</label>
+        <select id="city">
+          <option value="">Select your city</option>
+          <option>Tokyo</option>
+          <option>Osaka</option>
+          <option>Kyoto</option>
+          <option>Yokohama</option>
+          <option>Nagoya</option>
+        </select>
+      </div>
+      <div class="form-group reveal reveal-up reveal-delay-3">
+        <label class="form-label" for="message">Message</label>
+        <textarea id="message" rows="4" placeholder="Tell us about your community's plans..."></textarea>
+      </div>
+      <div class="reveal reveal-up reveal-delay-3" style="text-align:center;">
+        <button type="submit" class="btn btn-primary" style="padding:0 var(--space-2xl);">Send Message</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer section-wide">
+  <p>&copy; 2026 Taketori. Kodomo no Hi platform.</p>
+  <ul class="footer-links">
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Terms</a></li>
+    <li><a href="#">Twitter</a></li>
+  </ul>
+</footer>
+
+<script>
+// Reveal on scroll — respects no-JS by gating behind class
+(function() {
+  var html = document.documentElement;
+  html.classList.add('no-reveal');
+
+  var observer = new IntersectionObserver(function(entries) {
+    var allVisible = true;
+    document.querySelectorAll('.reveal-up').forEach(function(el) {
+      if (!el.getBoundingClientRect().top < window.innerHeight) allVisible = false;
+    });
+    if (allVisible || window.scrollY > 50) {
+      html.classList.remove('no-reveal');
+      html.classList.add('reveal');
+      observer.disconnect();
+    }
+  }, { threshold: 0.1 });
+
+  observer.observe(document.body);
+
+  // Also reveal on load if already scrolled
+  if (window.scrollY > 50) {
+    html.classList.remove('no-reveal');
+    html.classList.add('reveal');
+  }
+})();
+</script>
+
+</body>
+</html>
