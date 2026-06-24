@@ -1,8 +1,9 @@
 // Static manifest for the unlisted /lab model bake-off (published at /model-bake-off).
-// Artifacts are served from public/lab/<slug>/<model.dir>/{landing,dashboard,immersive}.html
-// One round shown (round 13 = "anti-slop rules"); round 14 ("no rules") rides along as a
-// per-model `variant` toggled in the UI (same 12 models, two generation conditions).
-// blindOrder is sorted by cost descending. Prior rounds live in git + bakeoff-results.json.
+// Artifact HTML/media is intentionally not kept in this repo. Configure
+// NEXT_PUBLIC_MODEL_BAKEOFF_ASSET_BASE_URL to point at the external artifact
+// source whose layout is <base>/<slug>/<model.dir>/{landing,dashboard,immersive}.html.
+// blindOrder is sorted by cost descending. Historical rounds live in the
+// external local bakeoff review corpus, not GitHub.
 
 export type LabView = "embodiment" | "landing" | "dashboard" | "immersive";
 
