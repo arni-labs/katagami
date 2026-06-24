@@ -144,20 +144,22 @@ export default async function LanguageDetailPage({
   const landingUrl = f.landing_file_id ? getFileUrl(f.landing_file_id) : "";
   const dashboardUrl = f.dashboard_file_id ? getFileUrl(f.dashboard_file_id) : "";
 
+  // Landing leads when present — its full-bleed hero is the strongest first
+  // impression on the detail page; the element showcase + dashboard follow.
   const embodimentTabs: EmbodimentTab[] = [];
-  if (embodimentRenderable)
-    embodimentTabs.push({
-      key: "embodiment",
-      label: "Embodiment",
-      url: embodimentUrl,
-      note: "the full element showcase",
-    });
   if (landingUrl)
     embodimentTabs.push({
       key: "landing",
       label: "Landing",
       url: landingUrl,
       note: "bespoke marketing landing",
+    });
+  if (embodimentRenderable)
+    embodimentTabs.push({
+      key: "embodiment",
+      label: "Embodiment",
+      url: embodimentUrl,
+      note: "the full element showcase",
     });
   if (dashboardUrl)
     embodimentTabs.push({

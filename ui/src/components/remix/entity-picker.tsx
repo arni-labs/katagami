@@ -146,20 +146,14 @@ function ItemRow({ item, active, onPick }: { item: PickItem; active: boolean; on
     >
       <ItemMedia item={item} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium text-foreground">{item.name}</span>
+        <span className="block truncate text-[14px] font-medium text-foreground sm:text-[13px]">{item.name}</span>
         {item.subtitle ? (
           <span className="block truncate font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
             {item.subtitle}
           </span>
         ) : null}
       </span>
-      {item.tags && item.tags.length ? (
-        <span className="hidden shrink-0 gap-2 sm:flex">
-          {item.tags.slice(0, 2).map((t) => (
-            <span key={t} className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground/55">{t}</span>
-          ))}
-        </span>
-      ) : null}
+      {active ? <span aria-hidden className="shrink-0 text-[12px] font-bold text-foreground">✓</span> : null}
     </button>
   );
 }
@@ -289,7 +283,9 @@ export function CommandPicker({
   );
 }
 
-// ── Variant B: filter drawer (slide-in panel with facet chips) ────────────────
+// ── Variant B: in-place picker — anchored dropdown on desktop, bottom-sheet on
+// mobile. Never takes over the viewport or scrolls the page away, so the live
+// preview below stays visible while you choose. Scroll position is preserved.
 
 export function DrawerPicker({
   label,
@@ -309,54 +305,106 @@ export function DrawerPicker({
   const facets = useFacets(items);
   const filtered = useFiltered(items, q, active);
   const visible = filtered.slice(0, RESULT_CAP);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const noun = label.toLowerCase();
 
+  function close() {
+    setOpen(false);
+    setQ("");
+    setActive({});
+  }
+
+  // Esc to close + click-away (desktop). The mobile backdrop handles its own close.
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
+    }
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) close();
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    // focus search WITHOUT scrolling the page to it (the old jump-to-top cause)
+    inputRef.current?.focus({ preventScroll: true });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
+
+  // On mobile only, lock the body while the sheet is up and restore the exact
+  // scroll position on close — so opening/closing never moves the page.
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined" || !window.matchMedia("(max-width: 639px)").matches) return;
+    const y = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width };
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.width = "100%";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      window.scrollTo(0, y);
+    };
   }, [open]);
 
   return (
-    <>
-      <Trigger label={label} current={current} onOpen={() => setOpen(true)} />
+    <div ref={rootRef} className="relative">
+      <Trigger label={label} current={current} onOpen={() => (open ? close() : setOpen(true))} />
       {open ? (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-          <div ref={panelRef} role="dialog" aria-label={label} className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col bg-card shadow-[-24px_0_70px_rgba(30,35,45,0.25)]">
-            <header className="flex items-center justify-between px-4 pb-2.5 pt-3.5">
-              <span className="stamp text-[var(--sumire)]">{label}</span>
-              <button type="button" onClick={() => setOpen(false)} className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground">close</button>
-            </header>
-            <div className="px-4 pb-3">
-              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={searchPlaceholder(facets)} className={KX_FIELD} />
-            </div>
-            {facets.length > 0 ? (
-              <>
-                <div className="sticker-perforation mx-4" />
-                <div className="px-4 py-3">
+        <>
+          {/* light scrim on mobile only — desktop stays a non-blocking dropdown */}
+          <div className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-[1px] sm:hidden" onClick={close} />
+          <div
+            role="dialog"
+            aria-label={label}
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[82vh] flex-col rounded-t-[16px] bg-card shadow-[0_-20px_60px_rgba(30,35,45,0.28)] sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+8px)] sm:z-30 sm:max-h-[58vh] sm:w-[clamp(300px,90vw,380px)] sm:max-w-[90vw] sm:rounded-none sm:shadow-[0_18px_50px_rgba(30,35,45,0.22)]"
+          >
+            {/* sticky head: drag affordance (mobile) + label + close, then search */}
+            <div className="shrink-0 bg-card pt-2">
+              <span aria-hidden className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-foreground/15 sm:hidden" />
+              <header className="flex items-center justify-between px-4 pb-2">
+                <span className="stamp text-[var(--sumire)]">{label}</span>
+                <button type="button" onClick={close} className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground">
+                  done
+                </button>
+              </header>
+              <div className="px-4 pb-2.5">
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={searchPlaceholder(facets)}
+                  className={`${KX_FIELD} h-10 text-[15px] sm:h-9 sm:text-[13px]`}
+                />
+              </div>
+              {facets.length > 0 ? (
+                <div className="px-4 pb-2.5">
                   <FacetChips facets={facets} active={active} onToggle={(k, v) => toggle(setActive, k, v)} />
                 </div>
-              </>
-            ) : null}
-            <div className="sticker-perforation mx-4" />
-            <div className="flex-1 overflow-y-auto py-1" role="listbox">
+              ) : null}
+              <div className="sticker-perforation mx-4" />
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain py-1" role="listbox">
               {visible.map((it) => (
-                <ItemRow key={it.id} item={it} active={it.id === value} onPick={() => { onSelect(it.id); setOpen(false); }} />
+                <ItemRow key={it.id} item={it} active={it.id === value} onPick={() => { onSelect(it.id); close(); }} />
               ))}
               {filtered.length === 0 ? <EmptyResults /> : null}
             </div>
-            <div className="sticker-perforation mx-4" />
-            <footer className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
-              {filtered.length === items.length ? `${items.length} ${noun}` : `${filtered.length} of ${items.length} ${noun}`}
-            </footer>
+            <div className="shrink-0 bg-card">
+              <div className="sticker-perforation mx-4" />
+              <footer className="px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                {filtered.length === items.length ? `${items.length} ${noun} · tap to apply` : `${filtered.length} of ${items.length} ${noun}`}
+              </footer>
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
-    </>
+    </div>
   );
 }

@@ -10,7 +10,9 @@ import { useEffect, useRef, useState } from "react";
 const VIEWPORT_WIDTH = 1440;
 const DEFAULT_HEIGHT = 900;
 const MIN_HEIGHT = 360;
-const MAX_HEIGHT = 6000;
+// Generous so a tall full-bleed landing (100svh hero + rich sections) is never
+// clipped — the old 6000 cap cut long compositions off mid-page.
+const MAX_HEIGHT = 16000;
 
 // Injected at the top of <head> before render: caps runaway 100vh layouts and
 // freezes animations/transitions so the preview is static and measurable.
@@ -112,7 +114,13 @@ export function ScaledFrame({
             transformOrigin: "top left",
           }}
           sandbox=""
-          onLoad={() => setTimeout(measureContent, 400)}
+          // Measure a few times: fonts/images settle after first paint, so a
+          // single early measure can under-read and clip the frame.
+          onLoad={() => {
+            measureContent();
+            setTimeout(measureContent, 350);
+            setTimeout(measureContent, 1000);
+          }}
           title={title}
         />
       ) : (
