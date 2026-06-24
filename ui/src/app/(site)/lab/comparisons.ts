@@ -2,7 +2,7 @@
 // Artifacts are served from public/lab/<slug>/<model.dir>/{landing,dashboard,immersive}.html
 // One round shown (round 13 = "anti-slop rules"); round 14 ("no rules") rides along as a
 // per-model `variant` toggled in the UI (same 12 models, two generation conditions).
-// Prior rounds live in git history + experiments/model-bakeoff/bakeoff-results.json.
+// blindOrder is sorted by cost descending. Prior rounds live in git + bakeoff-results.json.
 
 export type LabView = "embodiment" | "landing" | "dashboard" | "immersive";
 
@@ -35,7 +35,7 @@ export interface LabComparison {
   blurb: string;
   prompt?: string; // the brief handed to every model this round ("what was the prompt")
   views: LabView[];
-  blindOrder: string[]; // model keys in display order -> A, B, C, …
+  blindOrder: string[]; // model keys in display order -> A, B, C, … (cost descending)
   models: Record<string, LabModel>;
   variant?: LabVariant;
   judged: boolean;
@@ -52,18 +52,18 @@ export const COMPARISONS: LabComparison[] = [
       "CONCEPT\nA Kodomo no Hi (Japanese Children's Day) product, grounded in real, specific design precedent (fabricated references disqualify).\n\nAESTHETIC DIRECTION (bold, creative graphic design)\nBright, airy, hopeful early-summer Kodomo no Hi — clear light, fresh greenery, koinobori rising — pushed into confident GRAPHIC DESIGN. Lots of open white, then vivid, almost-neon accent colour used like highlighters (electric sky-blues, fresh greens, a hot pop), bright and clean, never muddy or washed-out pastel. Be creative and expressive — posters, editorial composition, strong type. Stay SLEEK, CLEAN, GROWN-UP — a product an adult would launch; not childish, not cluttered, not a toy. Commit to ONE strong aesthetic.",
     views: ["landing", "dashboard", "immersive"],
     blindOrder: [
-      "minimax",
-      "opus",
-      "kimi",
-      "gpt",
       "fugu-ultra",
+      "opus",
       "glm",
-      "grok-build",
-      "qwen37",
-      "deepseek",
-      "composer",
       "fugu",
+      "kimi",
+      "qwen37",
+      "composer",
+      "gpt",
+      "grok-build",
+      "minimax",
       "qwen36-or",
+      "deepseek",
     ],
     models: {
       "opus": { name: "Opus 4.8", dir: "opus-4.8", harness: "claude-code", imageModel: "Grok Imagine", tokens: "132K", cost: "$5.04", wall: "25m 09s" },
@@ -85,10 +85,11 @@ export const COMPARISONS: LabComparison[] = [
       slug: "kodomo-no-hi-14",
       views: ["landing", "dashboard"],
       models: {
+        "opus": { name: "Opus 4.8", dir: "opus-4.8", harness: "claude-code", imageModel: "Grok Imagine", tokens: "115K", cost: "$4.52", wall: "19m 39s" },
         "gpt": { name: "GPT-5.5", dir: "gpt-5", harness: "codex", imageModel: "gpt-image", tokens: "131K", cost: "$0.53", wall: "11m 21s" },
         "grok-build": { name: "Grok Build", dir: "grok-4.3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "72K", cost: "$0.46", wall: "4m 34s" },
         "composer": { name: "Composer 2.5", dir: "composer", harness: "grok-build", imageModel: "Grok Imagine", tokens: "88K", cost: "$0.65", wall: "2m 23s" },
-        "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "508K", cost: "$0.82", wall: "14m 38s" },
+        "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "585K", cost: "$0.91", wall: "14m 38s" },
         "qwen36-or": { name: "Qwen 3.6 35B", dir: "qwen3.6-35b", harness: "grok-build", imageModel: "Grok Imagine", tokens: "122K", cost: "$0.10", wall: "8m 27s" },
         "qwen37": { name: "Qwen 3.7 Max", dir: "qwen3.7-max", harness: "grok-build", imageModel: "Grok Imagine", tokens: "347K", cost: "$0.79", wall: "10m 57s" },
         "deepseek": { name: "DeepSeek V4", dir: "deepseek-v4", harness: "grok-build", imageModel: "Grok Imagine", tokens: "111K", cost: "$0.07", wall: "10m 12s" },
