@@ -80,8 +80,8 @@ export const COMPARISONS: LabComparison[] = [
       "fugu-ultra": { name: "Fugu Ultra", dir: "fugu-ultra", harness: "grok-build", imageModel: "Grok Imagine", tokens: "1.44M", cost: "$24.29", wall: "55m 10s" },
     },
     variant: {
-      label: "No rules",
-      primaryLabel: "With rules",
+      label: "no rules",
+      primaryLabel: "anti-slop rules",
       slug: "kodomo-no-hi-12",
       views: ["landing", "dashboard"],
       models: {
