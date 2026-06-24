@@ -16,6 +16,8 @@ export interface PaletteItem {
   tags: string[];
   /** Owner-pinned — floats to the "curator's picks" shelf. */
   featured?: boolean;
+  /** Canonical taxonomy category ids (for shelving the lane by category). */
+  taxonomyIds?: string[];
 }
 
 const NEUTRAL_ORDER = ["bg", "surface", "text", "muted", "border"];

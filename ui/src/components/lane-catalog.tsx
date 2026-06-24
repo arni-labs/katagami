@@ -81,12 +81,12 @@ function mediumShelves(items: ArtStyleItem[]): ShelfBucket<ArtStyleItem>[] {
 /** Shelve art styles by their taxonomy category (matching the home gallery):
  *  largest category first, Festival sunk to the bottom, untagged + archived
  *  last. Returns null when nothing is tagged, so the caller falls back to medium. */
-function taxonomyShelves(
-  items: ArtStyleItem[],
+function taxonomyShelves<T extends { status: string; taxonomyIds?: string[] }>(
+  items: T[],
   names: Record<string, string>,
-): ShelfBucket<ArtStyleItem>[] | null {
-  const buckets = new Map<string, ArtStyleItem[]>();
-  const archived: ArtStyleItem[] = [];
+): ShelfBucket<T>[] | null {
+  const buckets = new Map<string, T[]>();
+  const archived: T[] = [];
   let tagged = 0;
   for (const a of items) {
     if (a.status === "Archived") {
@@ -102,7 +102,7 @@ function taxonomyShelves(
   }
   if (tagged === 0) return null;
   const rank = (k: string) => (k === "__untagged__" ? 2 : k === BOTTOM_CATEGORY ? 1 : 0);
-  const shelves: ShelfBucket<ArtStyleItem>[] = [...buckets.entries()]
+  const shelves: ShelfBucket<T>[] = [...buckets.entries()]
     .sort((a, b) => rank(a[0]) - rank(b[0]) || b[1].length - a[1].length)
     .map(([key, arr], i) => ({
       key,
@@ -225,9 +225,13 @@ function ShelfSections<T extends { id: string }>({
 export function PaletteCatalog({
   items,
   canArchive = false,
+  categoryNames,
 }: {
   items: PaletteItem[];
   canArchive?: boolean;
+  /** taxonomy id → category name; when present the lane shelves by category
+   *  (like the home gallery), falling back to color-mood for untagged items. */
+  categoryNames?: Record<string, string>;
 }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
@@ -241,8 +245,11 @@ export function PaletteCatalog({
   }, [q, items]);
   const shelves = useMemo(() => {
     if (q.trim() || activeCount(items) <= LANE_SHELF_THRESHOLD) return null;
-    return groupIntoShelves(items, paletteShelfKey, PALETTE_SHELVES);
-  }, [q, items]);
+    return (
+      (categoryNames && taxonomyShelves(items, categoryNames)) ??
+      groupIntoShelves(items, paletteShelfKey, PALETTE_SHELVES)
+    );
+  }, [q, items, categoryNames]);
 
   const renderCard = (p: PaletteItem) => (
     <PaletteCard palette={p} owner={canArchive} />

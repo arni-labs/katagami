@@ -4,6 +4,7 @@ import {
   paletteDisplayName,
   paletteRoles,
   parseJson,
+  taxonomyFamilyIndex,
 } from "@/lib/odata";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { PaletteCatalog } from "@/components/lane-catalog";
@@ -20,7 +21,13 @@ export default async function PalettesPage() {
   // Published-only everywhere — draft/archived palettes never appear in the
   // catalog or counts. Owners can still archive published palettes.
   const owner = await isOwner();
-  const rows = await listPaletteSystems("Status eq 'Published'").catch(() => []);
+  const [rows, taxFamily] = await Promise.all([
+    listPaletteSystems("Status eq 'Published'").catch(() => []),
+    taxonomyFamilyIndex().catch(() => new Map<string, { name: string; parentId: string }>()),
+  ]);
+  // id → category name, so the lane can shelve by taxonomy like the home gallery.
+  const categoryNames: Record<string, string> = {};
+  for (const [id, info] of taxFamily) categoryNames[id] = info.name;
   const items: PaletteItem[] = rows
     .map((r) => {
       const core = paletteCore(r.fields);
@@ -34,6 +41,7 @@ export default async function PalettesPage() {
         ramps: parseJson<Record<string, Record<string, string>>>(r.fields.ramps) ?? {},
         tags: parseJson<string[]>(r.fields.tags) ?? [],
         featured: /^(true|1)$/i.test(String(r.fields.featured ?? "")),
+        taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
       };
     })
     // Keep archived items last so they never crowd the live catalog.
@@ -49,7 +57,7 @@ export default async function PalettesPage() {
         rightSlot={<HeroStat value={items.length} label="palettes" accent="ramune" />}
       />
       <div className="mt-10">
-        <PaletteCatalog items={items} canArchive={owner} />
+        <PaletteCatalog items={items} canArchive={owner} categoryNames={categoryNames} />
       </div>
     </div>
   );
