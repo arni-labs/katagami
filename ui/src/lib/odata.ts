@@ -894,10 +894,18 @@ export interface PaletteCore {
 export function paletteCore(fields: Record<string, string | undefined>): PaletteCore {
   const neutrals = parseJson<Record<string, string>>(fields.neutrals) ?? {};
   const semantic = parseJson<Record<string, string>>(fields.semantic) ?? {};
-  const rawSig = parseJson<Array<{ hex?: string; name?: string } | string>>(fields.signature) ?? [];
+  // `signature` may arrive as an array, or (after the commons PaletteSystem
+  // upgrade) as an object of named colors, or absent — coerce any shape to an
+  // array so a non-array value never throws `.map is not a function`.
+  const parsedSig = parseJson<unknown>(fields.signature);
+  const rawSig: Array<{ hex?: string; name?: string } | string> = Array.isArray(parsedSig)
+    ? (parsedSig as Array<{ hex?: string; name?: string } | string>)
+    : parsedSig && typeof parsedSig === "object"
+      ? (Object.values(parsedSig as Record<string, unknown>) as Array<{ hex?: string; name?: string } | string>)
+      : [];
   const signature: PaletteSwatch[] = rawSig
     .map((s) => (typeof s === "string" ? { hex: s } : { hex: s?.hex ?? "", name: s?.name }))
-    .filter((s) => /^#?[0-9a-f]{3,8}$/i.test(s.hex));
+    .filter((s) => typeof s.hex === "string" && /^#?[0-9a-f]{3,8}$/i.test(s.hex));
   const mood = parseJson<{ temperature?: string; key_hue?: string; summary?: string }>(fields.mood) ?? {};
   return { signature, neutrals, semantic, mood };
 }
