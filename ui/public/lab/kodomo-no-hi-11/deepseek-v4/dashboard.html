@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori Workshop — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800;9..144,900&family=Source+Sans+3:wght@400;600&family=Noto+Serif+JP:wght@700;900&family=Noto+Sans+JP:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F3EC;
+  --surface: #FFFFFF;
+  --text: #1C1A17;
+  --muted: #7A7368;
+  --border: #E0D9CE;
+  --accent: #D4453E;
+  --on-accent: #FFFFFF;
+  --accent-2: #3B5998;
+  --on-accent-2: #FFFFFF;
+  --success: #2D7A4F;
+  --warning: #D4943E;
+  --error: #D4453E;
+  --info: #3B7A9E;
+
+  --font-display: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Source Sans 3', 'Inter', system-ui, sans-serif;
+  --font-jp-display: 'Noto Serif JP', 'Hiragino Mincho Pro', serif;
+  --font-jp-body: 'Noto Sans JP', 'Hiragino Kaku Gothic Pro', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1.0625rem;
+  --text-md: 1.25rem; --text-lg: 1.5625rem; --text-xl: 1.953rem;
+  --text-2xl: 2.441rem; --text-3xl: 3.052rem;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  --radius-sm: 0; --radius-md: 16px; --radius-lg: 24px; --radius-full: 9999px;
+  --control-height: 44px;
+  --shadow-surface: 0 2px 16px rgba(28,26,23,0.08);
+  --shadow-modal: 0 8px 40px rgba(28,26,23,0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: var(--surface);
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.sidebar-brand {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  padding: 0 var(--space-3);
+}
+.sidebar-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: background 150ms ease, color 150ms ease;
+  height: var(--control-height);
+}
+.sidebar-nav a:hover { background: var(--bg); color: var(--text); }
+.sidebar-nav a.active { background: var(--accent); color: var(--on-accent); }
+.sidebar-nav svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* Main */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  background: var(--surface);
+  padding: var(--space-4) var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  max-width: 400px;
+}
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--accent-2);
+  color: var(--on-accent-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+/* Content */
+.content {
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  flex: 1;
+}
+
+/* Stat cards */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+.stat-card-label {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.stat-card-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-card-change {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-top: var(--space-2);
+}
+.stat-card-change.up { color: var(--success); }
+.stat-card-change.down { color: var(--error); }
+
+/* Panel */
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.panel-header {
+  padding: var(--space-6) var(--space-6) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.panel-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--text);
+}
+.panel-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  padding: var(--space-6);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+tr:hover td { background: var(--bg); }
+tr:last-child td { border-bottom: none; }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.badge-success { background: #E8F5EC; color: var(--success); }
+.badge-warning { background: #FDF3E4; color: var(--warning); }
+.badge-info { background: #E8F0F8; color: var(--info); }
+.badge-error { background: #FDE8E6; color: var(--error); }
+
+/* Form controls */
+.input, .select {
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  border: none;
+  outline: none;
+  transition: box-shadow 150ms ease;
+  width: 100%;
+}
+.input::placeholder { color: var(--muted); }
+.input:hover, .select:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.input:focus-visible, .select:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.input:disabled, .select:disabled { opacity: 0.4; cursor: not-allowed; background: var(--bg); }
+
+.select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%237A7368' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  padding-right: var(--space-10);
+}
+
+.btn {
+  height: var(--control-height);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  border: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: #C03D37; }
+.btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary:active { background: #A83530; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.btn-secondary:hover { background: var(--bg); }
+.btn-secondary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-secondary:active { background: var(--border); }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+.btn-ghost:hover { background: var(--bg); }
+.btn-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-ghost:active { background: var(--border); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Checkbox */
+.checkbox {
+  width: 20px; height: 20px;
+  appearance: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms ease, box-shadow 150ms ease;
+  vertical-align: middle;
+}
+.checkbox:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.checkbox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.checkbox:checked { background: var(--accent); box-shadow: none; }
+.checkbox:checked::after {
+  content: '';
+  width: 12px; height: 12px;
+  background: var(--on-accent);
+  clip-path: polygon(20% 50%, 40% 70%, 80% 30%, 70% 20%, 40% 55%, 30% 40%);
+}
+.checkbox:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Toggle */
+.switch {
+  width: 44px; height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background 150ms ease;
+  appearance: none;
+  border: none;
+  flex-shrink: 0;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  transition: transform 150ms ease;
+}
+.switch:hover { background: var(--muted); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(20px); }
+.switch:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Two-col layout */
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--border);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 400ms ease;
+}
+.progress-fill.success { background: var(--success); }
+.progress-fill.warning { background: var(--warning); }
+.progress-fill.info { background: var(--info); }
+
+/* Activity list */
+.activity-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.activity-item {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+  width: 10px; height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.activity-dot.success { background: var(--success); }
+.activity-dot.warning { background: var(--warning); }
+.activity-dot.info { background: var(--info); }
+.activity-text { flex: 1; min-width: 0; }
+.activity-text strong { display: block; font-size: var(--text-base); }
+.activity-text span { font-size: var(--text-sm); color: var(--muted); }
+.activity-time { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid { grid-template-columns: 1fr; }
+  .topbar { padding: var(--space-3) var(--space-4); }
+  .content { padding: var(--space-4); }
+}
+@media (min-width: 2560px) {
+  .content { max-width: 1600px; margin: 0 auto; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">Nobori</div>
+  <nav>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+        Orders
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M12 12l5 5"/></svg>
+        Inventory
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
+        Production
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="10" cy="6" r="3"/></svg>
+        Customers
+      </a></li>
+    </ul>
+  </nav>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-search">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="var(--muted)" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M12 12l5 5"/></svg>
+      <input type="text" class="input" placeholder="Search orders, customers, inventory..." style="box-shadow:none;background:transparent">
+    </div>
+    <div class="topbar-user">
+      <button class="switch" aria-label="Toggle notifications" checked></button>
+      <div class="avatar">TS</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card-label">Active Orders</div>
+        <div class="stat-card-value">47</div>
+        <div class="stat-card-change up">+12% from last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">In Production</div>
+        <div class="stat-card-value">23</div>
+        <div class="stat-card-change up">+4 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Ready to Ship</div>
+        <div class="stat-card-value">18</div>
+        <div class="stat-card-change down">-3 from yesterday</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Revenue (May)</div>
+        <div class="stat-card-value">&yen;4.2M</div>
+        <div class="stat-card-change up">+28% YoY</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Recent Orders</h3>
+          <div class="panel-actions">
+            <select class="select" style="width:auto">
+              <option>All Statuses</option>
+              <option>Pending</option>
+              <option>In Production</option>
+              <option>Ready</option>
+              <option>Shipped</option>
+            </select>
+            <button class="btn btn-secondary">Export</button>
+            <button class="btn btn-primary">New Order</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" class="checkbox"></th>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th>Due</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="checkbox"></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm)">#NB-2847</td>
+                <td>Tanaka Family</td>
+                <td>Household Set</td>
+                <td>6m pole</td>
+                <td><span class="badge badge-success">Ready</span></td>
+                <td>Apr 28</td>
+                <td style="font-weight:600">&yen;98,000</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="checkbox"></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm)">#NB-2848</td>
+                <td>Sato Residence</td>
+                <td>Dragon Climber</td>
+                <td>4m pole</td>
+                <td><span class="badge badge-warning">In Production</span></td>
+                <td>May 1</td>
+                <td style="font-weight:600">&yen;45,000</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="checkbox"></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm)">#NB-2849</td>
+                <td>Yamamoto Corp</td>
+                <td>First Koinobori &times; 3</td>
+                <td>Balcony</td>
+                <td><span class="badge badge-info">Pending</span></td>
+                <td>May 5</td>
+                <td style="font-weight:600">&yen;72,000</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="checkbox"></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm)">#NB-2850</td>
+                <td>Morimoto Yuki</td>
+                <td>First Koinobori</td>
+                <td>Balcony</td>
+                <td><span class="badge badge-success">Shipped</span></td>
+                <td>Apr 20</td>
+                <td style="font-weight:600">&yen;24,000</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="checkbox"></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm)">#NB-2851</td>
+                <td>Kyoto Hotel</td>
+                <td>Household Set &times; 2</td>
+                <td>8m pole</td>
+                <td><span class="badge badge-warning">In Production</span></td>
+                <td>Apr 30</td>
+                <td style="font-weight:600">&yen;196,000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Production Pipeline</h3>
+          </div>
+          <div style="padding:var(--space-6)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-2)">
+              <span style="font-size:var(--text-sm);color:var(--muted)">Silk Weaving</span>
+              <span style="font-size:var(--text-sm);font-weight:600">8/8 complete</span>
+            </div>
+            <div class="progress-bar" style="margin-bottom:var(--space-4)"><div class="progress-fill success" style="width:100%"></div></div>
+
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-2)">
+              <span style="font-size:var(--text-sm);color:var(--muted)">Dye &amp; Paint</span>
+              <span style="font-size:var(--text-sm);font-weight:600">14/23 in progress</span>
+            </div>
+            <div class="progress-bar" style="margin-bottom:var(--space-4)"><div class="progress-fill warning" style="width:61%"></div></div>
+
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-2)">
+              <span style="font-size:var(--text-sm);color:var(--muted)">Assembly</span>
+              <span style="font-size:var(--text-sm);font-weight:600">5/18 in progress</span>
+            </div>
+            <div class="progress-bar" style="margin-bottom:var(--space-4)"><div class="progress-fill info" style="width:28%"></div></div>
+
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-2)">
+              <span style="font-size:var(--text-sm);color:var(--muted)">Quality Check</span>
+              <span style="font-size:var(--text-sm);font-weight:600">18/18 passed</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill success" style="width:100%"></div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Workshop Activity</h3>
+          </div>
+          <div style="padding:var(--space-6)">
+            <ul class="activity-list">
+              <li class="activity-item">
+                <div class="activity-dot success"></div>
+                <div class="activity-text">
+                  <strong>#NB-2850 shipped</strong>
+                  <span>First Koinobori to Morimoto Yuki</span>
+                </div>
+                <div class="activity-time">14m ago</div>
+              </li>
+              <li class="activity-item">
+                <div class="activity-dot warning"></div>
+                <div class="activity-text">
+                  <strong>Dye batch #442 completed</strong>
+                  <span>Vermillion — 12 streamers painted</span>
+                </div>
+                <div class="activity-time">1h ago</div>
+              </li>
+              <li class="activity-item">
+                <div class="activity-dot info"></div>
+                <div class="activity-text">
+                  <strong>New order #NB-2851</strong>
+                  <span>Kyoto Hotel — 2 Household Sets</span>
+                </div>
+                <div class="activity-time">3h ago</div>
+              </li>
+              <li class="activity-item">
+                <div class="activity-dot success"></div>
+                <div class="activity-text">
+                  <strong>Silk shipment arrived</strong>
+                  <span>48 metres — Nishijin mill</span>
+                </div>
+                <div class="activity-time">5h ago</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form controls showcase -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Quick Order Entry</h3>
+      </div>
+      <div style="padding:var(--space-6);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-4);align-items:end">
+        <div>
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--muted);margin-bottom:var(--space-2)">Customer Name</label>
+          <input type="text" class="input" placeholder="Family or company name">
+        </div>
+        <div>
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--muted);margin-bottom:var(--space-2)">Product</label>
+          <select class="select">
+            <option>Household Set</option>
+            <option>First Koinobori</option>
+            <option>Dragon Climber</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--muted);margin-bottom:var(--space-2)">Pole Size</label>
+          <select class="select">
+            <option>Balcony (2m)</option>
+            <option>Standard (4m)</option>
+            <option>Large (6m)</option>
+            <option>Grand (8m)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:var(--text-sm);font-weight:600;color:var(--muted);margin-bottom:var(--space-2)">Quantity</label>
+          <input type="number" class="input" value="1" min="1" max="20" style="width:80px">
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-4);padding-top:var(--space-4)">
+          <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);cursor:pointer">
+            <input type="checkbox" class="checkbox"> Gift wrap
+          </label>
+          <label style="display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);cursor:pointer">
+            <input type="checkbox" class="switch"> Rush order
+          </label>
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%">Create Order</button>
+        </div>
+        <div>
+          <button class="btn btn-secondary" style="width:100%">Save Draft</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

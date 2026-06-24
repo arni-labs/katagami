@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KazeNest Dashboard — Nobori Current</title>
+  <style>
+    :root {
+      --nobori-paper: #fffdf7;
+      --nobori-cloth: #f7f1e4;
+      --nobori-foam: #eef7ff;
+      --nobori-ink: #111418;
+      --nobori-ink-soft: #39414a;
+      --nobori-muted: #6f7780;
+      --nobori-cobalt: #0757d8;
+      --nobori-cobalt-deep: #063c98;
+      --nobori-persimmon: #ff4b26;
+      --nobori-persimmon-deep: #ba2d15;
+      --nobori-leaf: #36a853;
+      --nobori-leaf-deep: #21733a;
+      --nobori-gold: #d89b10;
+      --nobori-shadow: 0 22px 70px rgba(17, 20, 24, 0.14);
+      --nobori-shadow-soft: 0 12px 34px rgba(17, 20, 24, 0.10);
+      --nobori-ring: 0 0 0 4px rgba(7, 87, 216, 0.22);
+      --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+      --font-body: "Inter", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+      --step-00: 0.82rem;
+      --step-0: 1rem;
+      --step-1: 1.125rem;
+      --step-2: 1.42rem;
+      --step-3: 2rem;
+      --step-4: clamp(2.8rem, 7vw, 6.8rem);
+      --tracking-display: -0.045em;
+      --tracking-label: 0.08em;
+      --leading-tight: 0.9;
+      --leading-body: 1.58;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4.5rem;
+      --space-9: 7rem;
+      --radius-none: 0;
+      --radius-small: 16px;
+      --radius-panel: 28px;
+      --radius-sail: 42px;
+      --radius-round: 999px;
+      --control-height: 48px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--nobori-ink);
+      background:
+        radial-gradient(circle at 85% 5%, rgba(7,87,216,.12), transparent 22rem),
+        radial-gradient(circle at 12% 88%, rgba(255,75,38,.10), transparent 20rem),
+        linear-gradient(90deg, rgba(17,20,24,.025) 1px, transparent 1px),
+        var(--nobori-cloth);
+      background-size: auto, auto, 32px 32px, auto;
+      line-height: var(--leading-body);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    h1, h2, h3 { margin: 0; font-family: var(--font-display); letter-spacing: var(--tracking-display); line-height: var(--leading-tight); }
+    h1 { font-size: clamp(2.4rem, 4vw, 4.9rem); }
+    h2 { font-size: var(--step-3); }
+    h3 { font-size: var(--step-2); }
+    p { margin: 0; color: var(--nobori-ink-soft); }
+    .eyebrow { margin: 0; font-size: var(--step-00); font-weight: 950; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--nobori-cobalt-deep); }
+
+    button, input, select, textarea, .nav-link, .seg-option, .check-row, .radio-row, .switch-row, .range-row { font: inherit; }
+    button, .button, .nav-link {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-round);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-5);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+    }
+    button.primary, .button.primary { background: var(--nobori-cobalt); color: var(--nobori-paper); box-shadow: var(--nobori-shadow-soft); }
+    button.primary:hover, .button.primary:hover { background: var(--nobori-cobalt-deep); transform: translateY(-2px); box-shadow: var(--nobori-shadow); }
+    button.secondary, .button.secondary { background: var(--nobori-paper); color: var(--nobori-ink); box-shadow: inset 0 0 0 1px rgba(17,20,24,.08), var(--nobori-shadow-soft); }
+    button.secondary:hover, .button.secondary:hover { background: var(--nobori-foam); transform: translateY(-2px); }
+    button.hot { background: var(--nobori-persimmon); color: var(--nobori-paper); box-shadow: var(--nobori-shadow-soft); }
+    button.hot:hover { background: var(--nobori-persimmon-deep); transform: translateY(-2px); }
+    button:focus-visible, .button:focus-visible, .nav-link:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .seg-option:focus-visible, .check-row:focus-within, .radio-row:focus-within, .switch-row:focus-within, .range-row:focus-within { outline: 0; box-shadow: var(--nobori-ring), inset 0 0 0 1px var(--nobori-cobalt); }
+    button:active, .button:active, .nav-link:active { transform: translateY(1px); box-shadow: 0 8px 18px rgba(17,20,24,.12); }
+    button:disabled { background: var(--nobori-cloth); color: var(--nobori-muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-small);
+      background: var(--nobori-paper);
+      color: var(--nobori-ink);
+      padding: 0 var(--space-4);
+      box-shadow: inset 0 0 0 1px rgba(17,20,24,.14);
+      transition: box-shadow .18s ease, background .18s ease;
+    }
+    input:hover, select:hover, textarea:hover { box-shadow: inset 0 0 0 1px rgba(17,20,24,.24); }
+    textarea { min-height: calc(var(--control-height) * 2.25); padding-block: var(--space-3); resize: vertical; }
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--nobori-ink) 50%), linear-gradient(135deg, var(--nobori-ink) 50%, transparent 50%);
+      background-position: calc(100% - 20px) 21px, calc(100% - 14px) 21px;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+    input::placeholder, textarea::placeholder { color: var(--nobori-muted); }
+    input:disabled, select:disabled, textarea:disabled { background: var(--nobori-cloth); color: var(--nobori-muted); cursor: not-allowed; opacity: .76; }
+
+    input[type="range"] {
+      appearance: none;
+      min-height: var(--control-height);
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+    }
+    input[type="range"]::-webkit-slider-runnable-track { height: 10px; border-radius: var(--radius-round); background: linear-gradient(90deg, var(--nobori-cobalt), var(--nobori-leaf)); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 28px; height: 28px; margin-top: -9px; border-radius: 50%; background: var(--nobori-paper); box-shadow: var(--nobori-shadow-soft), inset 0 0 0 4px var(--nobori-cobalt); }
+    input[type="range"]::-moz-range-track { height: 10px; border-radius: var(--radius-round); background: linear-gradient(90deg, var(--nobori-cobalt), var(--nobori-leaf)); }
+    input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--nobori-paper); box-shadow: var(--nobori-shadow-soft), inset 0 0 0 4px var(--nobori-cobalt); }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 292px minmax(0, 1fr);
+    }
+    .sidebar {
+      padding: var(--space-5);
+      background: rgba(17,20,24,.96);
+      color: var(--nobori-paper);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .brand { display: flex; align-items: center; gap: var(--space-3); font-weight: 950; letter-spacing: -.03em; }
+    .mark { width: 46px; height: 46px; border-radius: var(--radius-round); display: grid; place-items: center; color: var(--nobori-cobalt); background: var(--nobori-paper); box-shadow: 0 10px 26px rgba(0,0,0,.25); }
+    .side-title { color: rgba(255,253,247,.58); }
+    .nav-list { display: grid; gap: var(--space-2); }
+    .nav-link { justify-content: flex-start; padding: 0 var(--space-4); color: rgba(255,253,247,.78); background: transparent; }
+    .nav-link:hover { background: rgba(255,253,247,.10); color: var(--nobori-paper); }
+    .nav-link.active { background: var(--nobori-paper); color: var(--nobori-ink); box-shadow: var(--nobori-shadow-soft); }
+    .side-card {
+      margin-top: auto;
+      background: linear-gradient(155deg, rgba(7,87,216,.95), rgba(255,75,38,.88));
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      overflow: hidden;
+      position: relative;
+    }
+    .side-card::after { content: ""; position: absolute; width: 150px; height: 18px; right: -30px; top: 36px; border-radius: var(--radius-round); background: rgba(255,253,247,.82); transform: rotate(-18deg); }
+    .side-card p { color: rgba(255,253,247,.82); margin-top: var(--space-3); }
+
+    .main { padding: var(--space-6); min-width: 0; }
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 560px);
+      gap: var(--space-5);
+      align-items: end;
+      margin-bottom: var(--space-6);
+    }
+    .topbar p { max-width: 42rem; margin-top: var(--space-3); font-size: var(--step-1); }
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 170px auto;
+      gap: var(--space-3);
+      align-items: end;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(340px, .75fr);
+      gap: var(--space-5);
+      align-items: start;
+    }
+    .panel {
+      background: rgba(255,253,247,.94);
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      box-shadow: var(--nobori-shadow-soft);
+      overflow: hidden;
+      position: relative;
+    }
+    .panel.sail { border-radius: var(--radius-sail); }
+    .panel::before {
+      content: "";
+      position: absolute;
+      height: 12px;
+      width: 220px;
+      right: -54px;
+      top: 38px;
+      border-radius: var(--radius-round);
+      background: rgba(7,87,216,.16);
+      transform: rotate(-16deg);
+      pointer-events: none;
+    }
+    .panel-head { display: flex; justify-content: space-between; gap: var(--space-4); align-items: start; margin-bottom: var(--space-5); position: relative; z-index: 1; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
+    .metric {
+      min-height: 174px;
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      background: var(--nobori-cloth);
+      position: relative;
+      overflow: hidden;
+    }
+    .metric::after { content: ""; position: absolute; height: 10px; width: 70%; left: var(--space-5); bottom: var(--space-5); border-radius: var(--radius-round); background: var(--metric-color, var(--nobori-cobalt)); transform: rotate(-7deg); }
+    .metric:nth-child(2) { --metric-color: var(--nobori-persimmon); }
+    .metric:nth-child(3) { --metric-color: var(--nobori-leaf); }
+    .metric:nth-child(4) { --metric-color: var(--nobori-gold); }
+    .metric-value { display: block; margin-top: var(--space-3); font-family: var(--font-display); font-size: 3.3rem; letter-spacing: var(--tracking-display); line-height: .9; }
+    .metric span:last-child { color: var(--nobori-muted); font-weight: 800; }
+
+    .hero-art { border-radius: var(--radius-sail); overflow: hidden; box-shadow: var(--nobori-shadow); background: var(--nobori-paper); margin-bottom: var(--space-5); }
+    .hero-art img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+
+    .task-list { display: grid; gap: var(--space-3); }
+    .task-row {
+      min-height: 74px;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: center;
+      padding: var(--space-3);
+      border-radius: var(--radius-small);
+      background: var(--nobori-cloth);
+    }
+    .task-row:hover { background: var(--nobori-foam); }
+    .task-dot { width: 44px; height: 44px; border-radius: var(--radius-round); display: grid; place-items: center; color: var(--nobori-paper); background: var(--nobori-cobalt); font-weight: 950; }
+    .task-dot.hot { background: var(--nobori-persimmon); }
+    .task-dot.done { background: var(--nobori-leaf); }
+    .task-row strong { display: block; line-height: 1.2; }
+    .task-row small { color: var(--nobori-muted); font-weight: 750; }
+    .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 var(--space-3); border-radius: var(--radius-round); font-weight: 950; font-size: var(--step-00); color: var(--nobori-paper); }
+    .pill.blue { background: var(--nobori-cobalt); }
+    .pill.red { background: var(--nobori-persimmon); }
+    .pill.green { background: var(--nobori-leaf); }
+    .pill.gold { background: var(--nobori-gold); color: var(--nobori-ink); }
+
+    .table-wrap { overflow-x: auto; position: relative; z-index: 1; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0 var(--space-2); min-width: 680px; }
+    th { padding: 0 var(--space-4) var(--space-2); text-align: left; color: var(--nobori-muted); font-size: var(--step-00); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    td { padding: var(--space-3) var(--space-4); background: var(--nobori-cloth); font-weight: 750; }
+    td:first-child { border-radius: var(--radius-small) 0 0 var(--radius-small); }
+    td:last-child { border-radius: 0 var(--radius-small) var(--radius-small) 0; text-align: right; }
+    tbody tr:hover td { background: var(--nobori-foam); }
+
+    .right-stack { display: grid; gap: var(--space-5); }
+    .form-stack { display: grid; gap: var(--space-3); position: relative; z-index: 1; }
+    .form-line { display: grid; gap: var(--space-2); }
+    .segmented {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: var(--radius-round);
+      background: var(--nobori-cloth);
+      width: fit-content;
+    }
+    .seg-option {
+      min-height: calc(var(--control-height) - 8px);
+      border-radius: var(--radius-round);
+      padding: 0 var(--space-4);
+      display: inline-flex;
+      align-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--nobori-ink-soft);
+      font-weight: 900;
+    }
+    .seg-option[aria-pressed="true"] { background: var(--nobori-paper); color: var(--nobori-ink); box-shadow: var(--nobori-shadow-soft); }
+    .seg-option:hover { background: rgba(255,255,255,.68); }
+
+    .check-row, .radio-row, .switch-row, .range-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      border-radius: var(--radius-small);
+      padding: 0 var(--space-3);
+      cursor: pointer;
+    }
+    .range-row { align-items: center; padding-inline: 0; cursor: default; }
+    .check-row:hover, .radio-row:hover, .switch-row:hover { background: var(--nobori-foam); }
+    .check-row input, .radio-row input { width: 22px; height: 22px; min-height: 22px; padding: 0; accent-color: var(--nobori-cobalt); box-shadow: none; }
+    .switch-row input { position: absolute; opacity: 0; pointer-events: none; }
+    .switch-track { width: 48px; height: 28px; border-radius: var(--radius-round); background: var(--nobori-cloth); position: relative; flex: 0 0 auto; transition: background .18s ease; }
+    .switch-track::after { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: var(--nobori-paper); box-shadow: var(--nobori-shadow-soft); transition: transform .18s ease, width .18s ease; }
+    .switch-row input:checked + .switch-track { background: var(--nobori-cobalt); }
+    .switch-row input:checked + .switch-track::after { transform: translateX(20px); }
+    .switch-row:active .switch-track::after { width: 27px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-top: var(--space-5); }
+    .memory-card { min-height: 240px; display: grid; align-content: space-between; background: var(--nobori-ink); color: var(--nobori-paper); }
+    .memory-card p { color: rgba(255,253,247,.75); }
+    .memory-card::before { background: rgba(255,75,38,.7); }
+    .letter-preview { font-family: var(--font-display); font-size: 1.7rem; letter-spacing: -.035em; line-height: 1.1; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; }
+      .nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .side-card { margin-top: 0; }
+      .topbar, .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .main, .sidebar { padding: var(--space-4); }
+      .nav-list, .toolbar, .metric-grid, .two-col { grid-template-columns: 1fr; }
+      .panel-head { flex-direction: column; }
+      .task-row { grid-template-columns: 44px 1fr; }
+      .task-row .pill { grid-column: 2; width: fit-content; }
+      .segmented { width: 100%; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="KazeNest navigation">
+      <a class="brand" href="landing.html" aria-label="KazeNest landing page">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 44 44" width="28" height="28" fill="none"><path d="M7 22c6-9 17-12 30-9-3 5-3 12 0 17C24 34 13 31 7 22Z" fill="currentColor"/><circle cx="16" cy="20" r="3" fill="#fffdf7"/></svg>
+        </span>
+        <span>KazeNest</span>
+      </a>
+      <div>
+        <p class="eyebrow side-title">Festival cockpit</p>
+        <nav class="nav-list" aria-label="Dashboard sections">
+          <a class="nav-link active" href="#overview">Overview</a>
+          <a class="nav-link" href="#rituals">Rituals</a>
+          <a class="nav-link" href="#growth">Growth</a>
+          <a class="nav-link" href="#settings">Settings</a>
+        </nav>
+      </div>
+      <div class="side-card">
+        <p class="eyebrow" style="color: rgba(255,253,247,.8);">Wind note</p>
+        <h2>Streamer repair is the only blocker before May 5.</h2>
+        <p>Assign it today and the family current returns to green.</p>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Tanaka household · Nobori Current</p>
+          <h1>Children's Day is 9 days out.</h1>
+          <p>Plan the ceremony, share the lift, and preserve this year's growth without turning the festival into a spreadsheet.</p>
+        </div>
+        <form class="toolbar" aria-label="Dashboard filters">
+          <label>
+            <span class="eyebrow">Search</span>
+            <input type="search" placeholder="Find task, ritual, note" />
+          </label>
+          <label>
+            <span class="eyebrow">View</span>
+            <select>
+              <option>Festival week</option>
+              <option>All spring</option>
+              <option>Growth archive</option>
+            </select>
+          </label>
+          <button type="button" class="primary">Add ritual</button>
+        </form>
+      </header>
+
+      <section class="dashboard-grid" aria-label="KazeNest dashboard">
+        <div>
+          <section class="metric-grid" aria-label="Festival health metrics">
+            <article class="metric">
+              <p class="eyebrow">Ready</p>
+              <strong class="metric-value">81%</strong>
+              <span>household lift</span>
+            </article>
+            <article class="metric">
+              <p class="eyebrow">Urgent</p>
+              <strong class="metric-value">2</strong>
+              <span>wind shifts</span>
+            </article>
+            <article class="metric">
+              <p class="eyebrow">Captured</p>
+              <strong class="metric-value">14</strong>
+              <span>growth notes</span>
+            </article>
+            <article class="metric">
+              <p class="eyebrow">Family</p>
+              <strong class="metric-value">6</strong>
+              <span>helpers active</span>
+            </article>
+          </section>
+
+          <section class="panel sail" id="rituals">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Current queue</p>
+                <h2>Next lift</h2>
+              </div>
+              <div class="segmented" role="group" aria-label="Task filter">
+                <button type="button" class="seg-option" aria-pressed="true">Now</button>
+                <button type="button" class="seg-option" aria-pressed="false">May 5</button>
+                <button type="button" class="seg-option" aria-pressed="false">Archive</button>
+              </div>
+            </div>
+            <div class="task-list">
+              <article class="task-row">
+                <span class="task-dot hot">1</span>
+                <div><strong>Repair lower streamer knot</strong><small>Balcony rail · assigned to Ren · due tonight</small></div>
+                <span class="pill red">blocked</span>
+              </article>
+              <article class="task-row">
+                <span class="task-dot">2</span>
+                <div><strong>Record Haru's wish for the year</strong><small>Growth archive · voice note and transcript</small></div>
+                <span class="pill blue">record</span>
+              </article>
+              <article class="task-row">
+                <span class="task-dot done">3</span>
+                <div><strong>Confirm grandparents call window</strong><small>Sunday morning · shared with both households</small></div>
+                <span class="pill green">ready</span>
+              </article>
+              <article class="task-row">
+                <span class="task-dot">4</span>
+                <div><strong>Plan kashiwa mochi stop</strong><small>Market list · add iris bundle if available</small></div>
+                <span class="pill gold">errand</span>
+              </article>
+            </div>
+          </section>
+
+          <div class="two-col">
+            <section class="panel memory-card" id="growth">
+              <div>
+                <p class="eyebrow" style="color:#bcd5ff;">Annual letter</p>
+                <p class="letter-preview">“This year you learned to read wind by watching the carp turn before the rain.”</p>
+              </div>
+              <button type="button" class="secondary">Edit family letter</button>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Growth capture</p>
+                  <h2>Archive inputs</h2>
+                </div>
+              </div>
+              <form class="form-stack" aria-label="Growth archive controls">
+                <label class="form-line">
+                  <span class="eyebrow">Child note</span>
+                  <textarea placeholder="Add a small observation from this spring.">Haru asked why carp can fly only when the wind helps.</textarea>
+                </label>
+                <label class="range-row">
+                  <span class="eyebrow" style="min-width: 96px;">Archive</span>
+                  <input type="range" min="0" max="100" value="81" />
+                </label>
+              </form>
+            </section>
+          </div>
+
+          <section class="panel sail" style="margin-top: var(--space-5);">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Family handoff</p>
+                <h2>Who carries what</h2>
+              </div>
+              <button type="button" class="secondary">Export plan</button>
+            </div>
+            <div class="table-wrap">
+              <table aria-label="Caregiver task ownership">
+                <thead>
+                  <tr><th>Owner</th><th>Ritual</th><th>Due</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Ren</td><td>Balcony streamer knot and pole check</td><td>Tonight</td><td><span class="pill red">blocked</span></td></tr>
+                  <tr><td>Mika</td><td>Iris bath bundle and mochi pickup</td><td>May 3</td><td><span class="pill blue">queued</span></td></tr>
+                  <tr><td>Aki</td><td>Growth photo walk route</td><td>May 5</td><td><span class="pill green">ready</span></td></tr>
+                  <tr><td>Grandpa Jo</td><td>Story call about last year's carp</td><td>May 5</td><td><span class="pill gold">invited</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="right-stack" aria-label="Dashboard side controls">
+          <figure class="hero-art">
+            <img src="media/dashboard-ribbons.webp" alt="Koinobori-inspired data ribbons and tactile planning objects" />
+          </figure>
+
+          <section class="panel" id="settings">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Current settings</p>
+                <h2>Keep the rhythm gentle</h2>
+              </div>
+            </div>
+            <form class="form-stack" aria-label="Notification and planning settings">
+              <label class="form-line">
+                <span class="eyebrow">Primary caregiver</span>
+                <select>
+                  <option>Mika Tanaka</option>
+                  <option>Ren Tanaka</option>
+                  <option>Aki Tanaka</option>
+                </select>
+              </label>
+              <label class="switch-row">
+                <input type="checkbox" checked />
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>Send wind-shift reminders</span>
+              </label>
+              <label class="switch-row">
+                <input type="checkbox" />
+                <span class="switch-track" aria-hidden="true"></span>
+                <span>Share archive with grandparents</span>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" checked />
+                <span>Protect child notes from public sharing</span>
+              </label>
+              <label class="radio-row">
+                <input type="radio" name="tone" checked />
+                <span>Gentle reminders</span>
+              </label>
+              <label class="radio-row">
+                <input type="radio" name="tone" />
+                <span>Direct reminders</span>
+              </label>
+              <button type="button" class="primary">Save settings</button>
+              <button type="button" class="secondary" disabled>Invite link sent</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Live note</p>
+                <h2>Weather current</h2>
+              </div>
+              <span class="pill green">safe</span>
+            </div>
+            <p>Wind is forecast at 11 km/h on May 5 morning. The balcony streamer plan is safe once the lower knot is repaired.</p>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

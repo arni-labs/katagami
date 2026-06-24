@@ -1,0 +1,53 @@
+You are a Katagami design agent, working in the katagami repo.
+
+FIRST, read katagami-curation/knowledge/rules/design-language.md — these are the binding
+design rules. Obey EVERY rule; they govern palette, type, accents, radius, spacing,
+contrast, and naming.
+
+TASK: create ONE Katagami design language for a Kodomo no Hi (Japanese Children's Day)
+product, then show it living in two real product surfaces — a landing page and a dashboard.
+One language, one name, consistent across both.
+
+DEFINE A COMPLETE SYSTEM (DESIGN.md): you invent every value, but the system must be WHOLE
+and consistent with the rules — spacing scale; the radius set the rules allow; type scale;
+ONE shared control-height token; the full state matrix (default / hover / focus-with-a-
+visible-ring / active / disabled); surfaces separated by tone, not borders. Build button /
+input / card ONCE from these tokens and reuse them. Explicitly style every form control —
+no browser defaults.
+
+AESTHETIC DIRECTION (bold, creative graphic design):
+Bright, airy, hopeful early-summer Kodomo no Hi — clear light, fresh greenery, koinobori
+rising — pushed into confident GRAPHIC DESIGN. Lots of open white, then vivid, almost-neon
+accent colour used like highlighters (electric sky-blues, fresh greens, a hot pop), bright
+and clean, never muddy or washed-out pastel. Be creative and expressive — posters,
+editorial composition, strong type. Stay SLEEK, CLEAN, GROWN-UP — a product an adult would
+launch; not childish, not cluttered, not a toy. Commit to ONE strong aesthetic.
+
+MAKE THEM REAL PRODUCTS, NOT SPEC SHEETS: landing.html and dashboard.html must be
+believable, EXPRESSIVE product surfaces showing the language in use — a real product world,
+posters, editorial. Do NOT render token swatches, colour-chip rows, control-height labels,
+state-matrix grids, or "design language specimen" framing in the visible pages.
+
+IMAGERY (required): generate your hero and feature imagery with an IMAGE MODEL in one
+cohesive style — not hand-drawn SVG (SVG only for small UI marks). Use your harness's image
+generation, or an image MCP. GENERATE IMAGES BLIND: produce and save imagery from text prompts
+ONLY — do NOT open, view, screenshot, or feed any generated image (or a screenshot of your own
+pages) back to yourself; many models cannot accept image input and it CRASHES the run.
+Save under ./media/ (relative paths); run.json image_model must NOT be "none".
+
+SELF-CHECK (silent — keep it OUT of the visible pages): verify against the rules file AND
+your own code — accents ≤3 from your tokens, contrast safe, type from your scale, every
+control on the one control-height token with all states + a visible focus ring, radius only
+from the allowed set, no magic numbers, the name follows the naming rules. Fix what fails.
+Never put the checklist, the tokens, or the state matrix into the rendered pages.
+
+OUTPUT — create ONE folder named exactly  <your-model-name>_<YYYY-MM-DD_HHmm>  with
+EVERYTHING inside it, ONE consistent name across both surfaces:
+- DESIGN.md     — philosophy/POV, tokens, the complete control system + component recipes
+                  + states, layout, guidance
+- landing.html  — the marketing landing (single full-bleed hero)
+- dashboard.html — a real product dashboard
+- ./media/      — your generated imagery
+- run.json      — {"model":"...","harness":"claude-code|codex|grok-build",
+                   "image_model":"...","datetime":"YYYY-MM-DD HH:mm"}
+Every HTML file is self-contained.

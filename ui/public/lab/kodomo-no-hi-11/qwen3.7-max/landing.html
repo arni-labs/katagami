@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Where Children Rise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #FDFBF7;
+  --surface: #F3EDE2;
+  --surface-raised: #FAF6EF;
+  --text: #1C1915;
+  --text-display: #0F0D0A;
+  --muted: #7D776C;
+  --border: #E2DBCE;
+  --accent: #D93A20;
+  --accent-indigo: #2B5478;
+  --accent-shobu: #4D8C5E;
+  --on-accent: #FFFFFF;
+  --on-indigo: #F0EDE6;
+  --success: #4D8C5E;
+  --warning: #D4922A;
+  --error: #D93A20;
+  --info: #2B5478;
+  --control-h: 48px;
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-jp: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --hero-image: url('./media/hero.jpg');
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── NAV ─── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(253,251,247,0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(24px, 4vw, 64px);
+  z-index: 100;
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text-display);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.nav-logo span { color: var(--accent); }
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+.nav-links a:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; border-radius: 4px; }
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 28px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.nav-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.nav-cta:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.nav-cta:active { filter: brightness(0.95); transform: translateY(0) scale(0.98); }
+
+/* ─── HERO ─── */
+.hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  min-height: 600px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center 30%;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(15,13,10,0.82) 0%,
+    rgba(15,13,10,0.45) 40%,
+    rgba(15,13,10,0.08) 70%,
+    transparent 100%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: clamp(48px, 8vw, 128px) clamp(24px, 6vw, 96px);
+  max-width: 800px;
+}
+
+.hero-kanji {
+  font-family: var(--font-jp);
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 7vw, 72px);
+  line-height: 1.1;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+.hero-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.6;
+  color: rgba(255,255,255,0.82);
+  max-width: 540px;
+  margin-bottom: 40px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 32px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-primary:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.btn-primary:active { filter: brightness(0.95); transform: translateY(0) scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; pointer-events: none; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 32px;
+  background: rgba(255,255,255,0.12);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: filter 0.2s, transform 0.2s, background 0.2s;
+}
+
+.btn-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-1px); }
+.btn-secondary:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.btn-secondary:active { filter: brightness(0.95); transform: translateY(0) scale(0.98); }
+
+/* ─── SECTIONS ─── */
+.section {
+  padding: clamp(64px, 8vw, 128px) clamp(24px, 6vw, 96px);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--text-display);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--muted);
+  max-width: 560px;
+  margin-bottom: 48px;
+}
+
+/* ─── FEATURES GRID ─── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 24px;
+}
+
+.feature-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 32px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(28,25,21,0.07);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.feature-icon--vermillion { background: rgba(217,58,32,0.1); }
+.feature-icon--indigo { background: rgba(43,84,120,0.1); }
+.feature-icon--green { background: rgba(77,140,94,0.1); }
+
+.feature-icon svg { width: 24px; height: 24px; }
+
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-display);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.feature-card p {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--muted);
+}
+
+/* ─── SPLIT SECTION ─── */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.split-image {
+  border-radius: 24px;
+  overflow: hidden;
+  aspect-ratio: 3/2;
+  background-image: url('./media/feature-koi.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.split-content { padding: 24px 0; }
+
+.split-content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 40px);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--text-display);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.split-content p {
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+/* ─── STATS ─── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 32px;
+  text-align: center;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text-display);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-number .accent { color: var(--accent); }
+
+.stat-label {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ─── TESTIMONIAL ─── */
+.testimonial-section {
+  background: var(--accent-indigo);
+  border-radius: 0;
+  padding: clamp(64px, 8vw, 128px) clamp(24px, 6vw, 96px);
+  color: var(--on-indigo);
+}
+
+.testimonial-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.testimonial-quote {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 32px;
+}
+
+.testimonial-author {
+  font-size: 14px;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+/* ─── FORM SECTION ─── */
+.form-section {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: clamp(32px, 5vw, 64px);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.form-section h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-display);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.form-section p {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  height: var(--control-h);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(43,84,120,0.15);
+}
+
+.form-input:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.form-select {
+  width: 100%;
+  height: var(--control-h);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 17px;
+  color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237D776C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(43,84,120,0.15);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.form-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.form-check input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.form-check input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.form-check input[type="checkbox"]:focus-visible {
+  outline: 3px solid var(--accent-indigo);
+  outline-offset: 2px;
+}
+
+/* ─── FOOTER ─── */
+.footer {
+  padding: 48px clamp(24px, 6vw, 96px);
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--text-display);
+}
+
+.footer-brand span { color: var(--accent); }
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.footer-links a {
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--text); }
+
+.footer-copy {
+  font-size: 12px;
+  color: var(--muted);
+  width: 100%;
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .split { grid-template-columns: 1fr; gap: 32px; }
+  .split-image { order: -1; }
+  .form-row { grid-template-columns: 1fr; }
+  .hero-content { padding: 48px 24px; }
+  .footer { flex-direction: column; align-items: flex-start; }
+}
+
+@media (min-width: 2560px) {
+  .section { max-width: 1400px; }
+  .hero-content { max-width: 900px; }
+}
+
+/* ─── ANIMATION ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.anim .reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <a href="#" class="nav-logo">Nobori<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Programs</a></li>
+    <li><a href="#story">Our Story</a></li>
+    <li><a href="#impact">Impact</a></li>
+    <li><a href="#join">Join</a></li>
+  </ul>
+  <a href="#join" class="nav-cta">Start Free</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg" role="img" aria-label="Koinobori carp streamers flying over a spring river"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <p class="hero-kanji">こどもの日</p>
+    <h1 class="hero-title">Every child<br>deserves to <em>rise</em></h1>
+    <p class="hero-sub">Nobori is the learning platform where children aged 4-12 build courage, curiosity, and craft — guided by mentors who believe growth is a festival, not a race.</p>
+    <div class="hero-actions">
+      <a href="#join" class="btn-primary">Begin the Journey</a>
+      <a href="#story" class="btn-secondary">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <p class="section-label reveal">Programs</p>
+  <h2 class="section-title reveal">Three currents, one river</h2>
+  <p class="section-desc reveal">Each program is a stream that feeds the same goal: children who can think, make, and lead with confidence.</p>
+
+  <div class="features-grid">
+    <div class="feature-card reveal reveal-delay-1">
+      <div class="feature-icon feature-icon--vermillion">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D93A20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <h3>Courage Workshops</h3>
+      <p>Weekly live sessions where children present original work to peers — building the muscle of speaking up, receiving feedback, and iterating in public.</p>
+    </div>
+
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="feature-icon feature-icon--indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2B5478" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </div>
+      <h3>Curiosity Labs</h3>
+      <p>Self-paced investigations into real questions — why do rivers bend, how do bridges stand, what makes music move us — with mentors who ask better questions.</p>
+    </div>
+
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-icon feature-icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4D8C5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h3>Craft Studios</h3>
+      <p>Hands-on making — from woodworking to code to ceramics — where children ship real artifacts. Every term ends with an exhibition, not a test.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STORY / SPLIT -->
+<section class="section" id="story">
+  <div class="split">
+    <div class="split-content reveal">
+      <p class="section-label">The Legend</p>
+      <h2>The carp that climbed the waterfall became a dragon</h2>
+      <p>In Japanese tradition, the koi fish swims against the current — a symbol of perseverance. At the Dragon Gate waterfall, the strongest koi transforms into a dragon. Nobori takes its name from this ascent: every child has a waterfall to climb, and the right environment turns effort into transformation.</p>
+      <a href="#join" class="btn-primary">Join the Ascent</a>
+    </div>
+    <div class="split-image reveal reveal-delay-1" role="img" aria-label="Golden koi transforming into a dragon at the waterfall crest"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section" id="impact">
+  <p class="section-label reveal">Impact</p>
+  <h2 class="section-title reveal">Numbers that swim upstream</h2>
+  <p class="section-desc reveal">Since launching in 2024, Nobori has served families across 12 countries who believe learning should feel like a festival.</p>
+
+  <div class="stats-row">
+    <div class="stat-card reveal reveal-delay-1">
+      <div class="stat-number">4<span class="accent">,</span>200</div>
+      <div class="stat-label">Active learners</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-2">
+      <div class="stat-number">96<span class="accent">%</span></div>
+      <div class="stat-label">Term retention rate</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-3">
+      <div class="stat-number">12</div>
+      <div class="stat-label">Countries reached</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-number">340</div>
+      <div class="stat-label">Artifacts shipped</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial-section">
+  <div class="testimonial-inner reveal">
+    <p class="testimonial-quote">"My daughter used to hide when asked to speak. After two terms at Nobori, she presented a bridge she built from balsa wood to sixty people — and laughed when it wobbled."</p>
+    <p class="testimonial-author">Yuki Tanaka, parent — Tokyo</p>
+  </div>
+</section>
+
+<!-- JOIN FORM -->
+<section class="section" id="join">
+  <div class="form-section reveal">
+    <h2>Start your child's ascent</h2>
+    <p>Free for the first month. No credit card required.</p>
+
+    <form onsubmit="event.preventDefault()">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="parent-name">Parent name</label>
+          <input class="form-input" type="text" id="parent-name" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="child-name">Child's name</label>
+          <input class="form-input" type="text" id="child-name" placeholder="Child's first name">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" placeholder="you@example.com">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="age">Child's age</label>
+          <select class="form-select" id="age">
+            <option value="" disabled selected>Select age</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option>
+            <option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="program">Program interest</label>
+          <select class="form-select" id="program">
+            <option value="" disabled selected>Choose one</option>
+            <option>Courage Workshops</option>
+            <option>Curiosity Labs</option>
+            <option>Craft Studios</option>
+            <option>All three</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-check">
+          <input type="checkbox">
+          Send me weekly parenting insights from the Nobori team
+        </label>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Begin Free Trial</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">Nobori<span>.</span></div>
+  <ul class="footer-links">
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Terms</a></li>
+    <li><a href="#">Careers</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <p class="footer-copy">2026 Nobori Learning Inc. All rights reserved. Built with the spirit of Kodomo no Hi.</p>
+</footer>
+
+<script>
+(function() {
+  // Progressive enhancement: add .anim class for scroll reveals
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('anim');
+
+  const reveals = document.querySelectorAll('.reveal');
+  if (!reveals.length) return;
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  reveals.forEach(function(el) { observer.observe(el); });
+
+  // Fallback: make everything visible if IntersectionObserver not supported
+  if (!('IntersectionObserver' in window)) {
+    reveals.forEach(function(el) { el.classList.add('visible'); });
+  }
+})();
+</script>
+</body>
+</html>

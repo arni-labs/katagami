@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Parent Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #FDFBF7;
+  --surface: #F3EDE2;
+  --surface-raised: #FAF6EF;
+  --text: #1C1915;
+  --text-display: #0F0D0A;
+  --muted: #7D776C;
+  --border: #E2DBCE;
+  --accent: #D93A20;
+  --accent-indigo: #2B5478;
+  --accent-shobu: #4D8C5E;
+  --on-accent: #FFFFFF;
+  --on-indigo: #F0EDE6;
+  --success: #4D8C5E;
+  --warning: #D4922A;
+  --error: #D93A20;
+  --info: #2B5478;
+  --control-h: 48px;
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-jp: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── LAYOUT ─── */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  background: var(--surface);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text-display);
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+
+.sidebar-logo span { color: var(--accent); }
+
+.sidebar-nav { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--control-h);
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.sidebar-link:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.sidebar-link:focus-visible {
+  outline: 3px solid var(--accent-indigo);
+  outline-offset: 2px;
+}
+
+.sidebar-link:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.sidebar-link.active {
+  background: var(--bg);
+  color: var(--text-display);
+  font-weight: 600;
+}
+
+.sidebar-link svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-section {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 24px 16px 8px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--bg);
+}
+
+.sidebar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sidebar-user-info { min-width: 0; }
+.sidebar-user-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-role { font-size: 12px; color: var(--muted); }
+
+/* ─── MAIN CONTENT ─── */
+.main {
+  padding: 32px clamp(24px, 4vw, 48px);
+  max-width: 1200px;
+  min-width: 0;
+}
+
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.main-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-display);
+  letter-spacing: -0.02em;
+}
+
+.main-subtitle {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ─── BUTTONS ─── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 28px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-primary:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.btn-primary:active { filter: brightness(0.95); transform: translateY(0) scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; pointer-events: none; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 24px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.2s, background 0.2s;
+}
+
+.btn-secondary:hover { background: var(--surface-raised); transform: translateY(-1px); }
+.btn-secondary:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.btn-secondary:active { filter: brightness(0.95); transform: translateY(0) scale(0.98); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 20px;
+  background: transparent;
+  color: var(--accent-indigo);
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-ghost:hover { background: rgba(43,84,120,0.06); transform: translateY(-1px); }
+.btn-ghost:focus-visible { outline: 3px solid var(--accent-indigo); outline-offset: 2px; }
+.btn-ghost:active { transform: translateY(0) scale(0.98); }
+
+/* ─── STAT CARDS ─── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 24px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(28,25,21,0.06);
+}
+
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stat-badge--up { background: rgba(77,140,94,0.1); color: var(--accent-shobu); }
+.stat-badge--neutral { background: rgba(43,84,120,0.1); color: var(--accent-indigo); }
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text-display);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.stat-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ─── CONTENT GRID ─── */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+/* ─── CARD ─── */
+.card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 28px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(28,25,21,0.06);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-display);
+  letter-spacing: -0.01em;
+}
+
+/* ─── PROGRESS BAR ─── */
+.progress-list { display: flex; flex-direction: column; gap: 16px; }
+
+.progress-item { display: flex; flex-direction: column; gap: 6px; }
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.progress-pct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-indigo);
+}
+
+.progress-track {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s ease;
+}
+
+.progress-fill--vermillion { background: var(--accent); }
+.progress-fill--indigo { background: var(--accent-indigo); }
+.progress-fill--green { background: var(--accent-shobu); }
+
+/* ─── SCHEDULE ─── */
+.schedule-list { display: flex; flex-direction: column; gap: 12px; }
+
+.schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: 16px;
+  transition: transform 0.2s;
+}
+
+.schedule-item:hover { transform: translateY(-1px); }
+
+.schedule-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  min-width: 60px;
+  text-align: center;
+}
+
+.schedule-divider {
+  width: 3px;
+  height: 32px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.schedule-divider--vermillion { background: var(--accent); }
+.schedule-divider--indigo { background: var(--accent-indigo); }
+.schedule-divider--green { background: var(--accent-shobu); }
+
+.schedule-info { min-width: 0; flex: 1; }
+.schedule-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.schedule-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ─── TABLE ─── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14.5px;
+}
+
+.data-table thead th {
+  background: var(--surface-raised);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: left;
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+
+.data-table thead th:first-child { border-radius: 16px 0 0 0; }
+.data-table thead th:last-child { border-radius: 0 16px 0 0; }
+
+.data-table tbody td {
+  padding: 14px 16px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:nth-child(even) td { background: var(--surface-raised); }
+.data-table tbody tr:hover td { background: var(--bg); }
+
+.table-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.table-badge--success { background: rgba(77,140,94,0.1); color: var(--success); }
+.table-badge--warning { background: rgba(212,146,42,0.1); color: var(--warning); }
+.table-badge--info { background: rgba(43,84,120,0.1); color: var(--info); }
+
+/* ─── ACTIVITY FEED ─── */
+.activity-list { display: flex; flex-direction: column; gap: 16px; }
+
+.activity-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.activity-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.activity-dot--vermillion { background: var(--accent); }
+.activity-dot--indigo { background: var(--accent-indigo); }
+.activity-dot--green { background: var(--accent-shobu); }
+
+.activity-text { font-size: 14px; color: var(--text); line-height: 22px; }
+.activity-text strong { font-weight: 600; }
+.activity-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ─── HERO BANNER ─── */
+.dashboard-hero {
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+  height: 180px;
+  margin-bottom: 32px;
+  background-image: url('./media/dashboard.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.dashboard-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(15,13,10,0.75) 0%, rgba(15,13,10,0.3) 60%, transparent 100%);
+  display: flex;
+  align-items: center;
+  padding: 32px;
+}
+
+.dashboard-hero-text h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.dashboard-hero-text p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.78);
+}
+
+.dashboard-hero-kanji {
+  font-family: var(--font-jp);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+/* ─── FORM CONTROLS IN DASHBOARD ─── */
+.search-input {
+  height: var(--control-h);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 0 16px 0 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  width: 240px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237D776C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 14px center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(43,84,120,0.15);
+}
+
+.search-input::placeholder { color: var(--muted); opacity: 0.6; }
+
+/* ─── TOGGLE SWITCH ─── */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border);
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+
+.toggle-track::before {
+  content: '';
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 9999px;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--accent-shobu);
+}
+
+.toggle input:checked + .toggle-track::before {
+  transform: translateX(20px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 3px solid var(--accent-indigo);
+  outline-offset: 2px;
+}
+
+/* ─── FULL-WIDTH CARD ─── */
+.card--full { grid-column: 1 / -1; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1024px) {
+  .dashboard-layout { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    width: 260px;
+    z-index: 200;
+    transition: left 0.3s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+  }
+  .sidebar.open { left: 0; }
+  .content-grid { grid-template-columns: 1fr; }
+  .mobile-menu-btn { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .main { padding: 24px 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .main-header { flex-direction: column; }
+  .header-actions { width: 100%; }
+  .search-input { width: 100%; }
+  .dashboard-hero { height: 140px; }
+}
+
+@media (min-width: 2560px) {
+  .main { max-width: 1400px; }
+}
+
+/* Mobile menu button — hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  background: var(--surface);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-btn { display: flex; }
+}
+
+/* ─── ANIMATION ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.anim .reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-d1 { transition-delay: 0.05s; }
+.reveal-d2 { transition-delay: 0.1s; }
+.reveal-d3 { transition-delay: 0.15s; }
+.reveal-d4 { transition-delay: 0.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Dashboard navigation">
+    <div class="sidebar-logo">Nobori<span>.</span></div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#" class="sidebar-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Overview
+        </a>
+      </li>
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Programs
+        </a>
+      </li>
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Mentors
+        </a>
+      </li>
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Schedule
+        </a>
+      </li>
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Artifacts
+        </a>
+      </li>
+    </ul>
+
+    <p class="sidebar-section">Settings</p>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Preferences
+        </a>
+      </li>
+      <li>
+        <a href="#" class="sidebar-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Notifications
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">YT</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Yuki Tanaka</div>
+          <div class="sidebar-user-role">Parent</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="main-header">
+      <div>
+        <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Toggle menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <h1 class="main-title">Good morning, Yuki</h1>
+        <p class="main-subtitle">Hana's Term 3 progress — Week 8 of 12</p>
+      </div>
+      <div class="header-actions">
+        <input type="text" class="search-input" placeholder="Search programs..." aria-label="Search programs">
+        <button class="btn-secondary">Export Report</button>
+        <button class="btn-primary">Book Session</button>
+      </div>
+    </div>
+
+    <!-- Hero Banner -->
+    <div class="dashboard-hero reveal">
+      <div class="dashboard-hero-overlay">
+        <div class="dashboard-hero-text">
+          <p class="dashboard-hero-kanji">こどもの日</p>
+          <h2>Kodomo no Hi Festival Week</h2>
+          <p>Special workshops and exhibitions — May 3-7</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card reveal reveal-d1">
+        <div class="stat-header">
+          <span class="stat-label">Sessions Attended</span>
+          <span class="stat-badge stat-badge--up">+12%</span>
+        </div>
+        <div class="stat-value">24</div>
+        <div class="stat-sub">This term</div>
+      </div>
+      <div class="stat-card reveal reveal-d2">
+        <div class="stat-header">
+          <span class="stat-label">Artifacts Shipped</span>
+          <span class="stat-badge stat-badge--up">+3</span>
+        </div>
+        <div class="stat-value">7</div>
+        <div class="stat-sub">Portfolio pieces</div>
+      </div>
+      <div class="stat-card reveal reveal-d3">
+        <div class="stat-header">
+          <span class="stat-label">Courage Score</span>
+          <span class="stat-badge stat-badge--neutral">Steady</span>
+        </div>
+        <div class="stat-value">82</div>
+        <div class="stat-sub">Peer presentation confidence</div>
+      </div>
+      <div class="stat-card reveal reveal-d4">
+        <div class="stat-header">
+          <span class="stat-label">Next Exhibition</span>
+          <span class="stat-badge stat-badge--up">12 days</span>
+        </div>
+        <div class="stat-value">Jun 5</div>
+        <div class="stat-sub">Spring showcase</div>
+      </div>
+    </div>
+
+    <!-- Two-column content -->
+    <div class="content-grid">
+
+      <!-- Progress -->
+      <div class="card reveal">
+        <div class="card-header">
+          <h3 class="card-title">Program Progress</h3>
+          <button class="btn-ghost">View All</button>
+        </div>
+        <div class="progress-list">
+          <div class="progress-item">
+            <div class="progress-meta">
+              <span class="progress-name">Courage Workshops</span>
+              <span class="progress-pct">78%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-fill--vermillion" style="width: 78%"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-meta">
+              <span class="progress-name">Curiosity Labs</span>
+              <span class="progress-pct">62%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-fill--indigo" style="width: 62%"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-meta">
+              <span class="progress-name">Craft Studios</span>
+              <span class="progress-pct">45%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-fill--green" style="width: 45%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="card reveal reveal-d1">
+        <div class="card-header">
+          <h3 class="card-title">This Week</h3>
+          <button class="btn-ghost">Full Schedule</button>
+        </div>
+        <div class="schedule-list">
+          <div class="schedule-item">
+            <span class="schedule-time">Tue<br>10:00</span>
+            <div class="schedule-divider schedule-divider--vermillion"></div>
+            <div class="schedule-info">
+              <div class="schedule-title">Courage Workshop</div>
+              <div class="schedule-desc">Present your bridge prototype</div>
+            </div>
+          </div>
+          <div class="schedule-item">
+            <span class="schedule-time">Wed<br>14:00</span>
+            <div class="schedule-divider schedule-divider--indigo"></div>
+            <div class="schedule-info">
+              <div class="schedule-title">Curiosity Lab</div>
+              <div class="schedule-desc">Why do rivers bend? — Investigation</div>
+            </div>
+          </div>
+          <div class="schedule-item">
+            <span class="schedule-time">Fri<br>11:00</span>
+            <div class="schedule-divider schedule-divider--green"></div>
+            <div class="schedule-info">
+              <div class="schedule-title">Craft Studio</div>
+              <div class="schedule-desc">Balsa wood finishing + peer review</div>
+            </div>
+          </div>
+          <div class="schedule-item">
+            <span class="schedule-time">Sat<br>09:00</span>
+            <div class="schedule-divider schedule-divider--vermillion"></div>
+            <div class="schedule-info">
+              <div class="schedule-title">Festival Prep</div>
+              <div class="schedule-desc">Koinobori making workshop</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Artifacts Table -->
+      <div class="card card--full reveal">
+        <div class="card-header">
+          <h3 class="card-title">Recent Artifacts</h3>
+          <button class="btn-ghost">Portfolio</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Artifact</th>
+                <th>Program</th>
+                <th>Mentor</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Balsa Wood Bridge</strong></td>
+                <td>Craft Studios</td>
+                <td>Kenji M.</td>
+                <td><span class="table-badge table-badge--success">Shipped</span></td>
+                <td>May 18</td>
+              </tr>
+              <tr>
+                <td><strong>River Bend Investigation</strong></td>
+                <td>Curiosity Labs</td>
+                <td>Aiko S.</td>
+                <td><span class="table-badge table-badge--success">Shipped</span></td>
+                <td>May 14</td>
+              </tr>
+              <tr>
+                <td><strong>My First Presentation</strong></td>
+                <td>Courage Workshops</td>
+                <td>Kenji M.</td>
+                <td><span class="table-badge table-badge--info">In Review</span></td>
+                <td>May 10</td>
+              </tr>
+              <tr>
+                <td><strong>Clay Tea Bowl</strong></td>
+                <td>Craft Studios</td>
+                <td>Yumi T.</td>
+                <td><span class="table-badge table-badge--warning">In Progress</span></td>
+                <td>May 6</td>
+              </tr>
+              <tr>
+                <td><strong>Sound & Motion Essay</strong></td>
+                <td>Curiosity Labs</td>
+                <td>Aiko S.</td>
+                <td><span class="table-badge table-badge--success">Shipped</span></td>
+                <td>Apr 28</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="card reveal">
+        <div class="card-header">
+          <h3 class="card-title">Activity</h3>
+          <button class="btn-ghost">See All</button>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-dot activity-dot--green"></div>
+            <div>
+              <div class="activity-text"><strong>Hana</strong> shipped her balsa wood bridge to the portfolio</div>
+              <div class="activity-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot activity-dot--vermillion"></div>
+            <div>
+              <div class="activity-text"><strong>Kenji M.</strong> left feedback on the bridge presentation</div>
+              <div class="activity-time">5 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot activity-dot--indigo"></div>
+            <div>
+              <div class="activity-text"><strong>Hana</strong> completed the River Bend investigation module</div>
+              <div class="activity-time">Yesterday</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot activity-dot--green"></div>
+            <div>
+              <div class="activity-text"><strong>Hana</strong> earned the "First Presenter" badge in Courage Workshops</div>
+              <div class="activity-time">3 days ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Settings -->
+      <div class="card reveal reveal-d1">
+        <div class="card-header">
+          <h3 class="card-title">Quick Settings</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Email notifications</span>
+            <label class="toggle">
+              <input type="checkbox" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Weekly progress digest</span>
+            <label class="toggle">
+              <input type="checkbox" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Session reminders</span>
+            <label class="toggle">
+              <input type="checkbox">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Public portfolio</span>
+            <label class="toggle">
+              <input type="checkbox" checked>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('anim');
+
+  const reveals = document.querySelectorAll('.reveal');
+  if (!reveals.length) return;
+
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(function(el) { observer.observe(el); });
+
+  if (!('IntersectionObserver' in window)) {
+    reveals.forEach(function(el) { el.classList.add('visible'); });
+  }
+})();
+</script>
+</body>
+</html>

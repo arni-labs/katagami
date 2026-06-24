@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ryūmon — Every child deserves their climb</title>
+<meta name="description" content="Ryūmon is the family app for Kodomo no Hi. Create digital koinobori for each child, track growth milestones, and celebrate courage together.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============ RYŪMON DESIGN LANGUAGE TOKENS ============ */
+:root {
+  --bg: #F6F3EC;
+  --surface: #FFFFFF;
+  --surface-2: #EFE9DD;
+  --surface-3: #E6DFD0;
+  --text: #1B1B26;
+  --muted: #6A6A76;
+  --accent: #1769AA;
+  --accent-2: #D4A017;
+  --accent-3: #C44536;
+  --on-accent: #FFFFFF;
+  --success: #2E7D5B;
+  --warning: #D4A017;
+  --error: #C44536;
+  --info: #1769AA;
+  --ring: #1769AA;
+
+  --fs-display: clamp(2.75rem, 6vw, 5.5rem);
+  --fs-h1: clamp(2rem, 4vw, 2.75rem);
+  --fs-h2: clamp(1.5rem, 2.5vw, 2rem);
+  --fs-body: 1.0625rem;
+  --fs-small: 0.8125rem;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --space-9: 96px; --space-10: 128px;
+
+  --radius-0: 0; --radius-card: 24px; --radius-control: 16px; --radius-pill: 9999px;
+  --control-h: 44px;
+
+  --hero-image: url('media/hero-landing.jpg');
+
+  --font-display: 'Bricolage Grotesque', 'Zen Kaku Gothic New', sans-serif;
+  --font-jp: 'Zen Kaku Gothic New', 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Inter', 'Zen Kaku Gothic New', sans-serif;
+}
+
+/* ============ RESET ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ============ UTILITIES ============ */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 var(--space-6); width: 100%; }
+.container-wide { max-width: 1600px; margin: 0 auto; padding: 0 var(--space-6); width: 100%; }
+.center { text-align: center; }
+.jp { font-family: var(--font-jp); font-weight: 900; }
+
+/* Current divider — signature pattern */
+.current-divider {
+  height: 2px;
+  background: var(--accent);
+  width: 100%;
+  opacity: 0.15;
+}
+
+/* ============ BUTTONS ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-h);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-control);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  border: none;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  text-align: center;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover {
+  background: #145A8E;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(23,105,170,0.25);
+}
+.btn-primary:active { transform: translateY(0); background: #114E7A; }
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--bg);
+}
+.btn-primary:disabled {
+  background: var(--surface-3);
+  color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  background: var(--surface-3);
+  transform: translateY(-1px);
+}
+.btn-secondary:active { transform: translateY(0); }
+.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--bg);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px var(--bg);
+}
+.btn-lg { height: 52px; padding: 0 var(--space-6); font-size: 1.125rem; }
+
+/* ============ NAV ============ */
+nav.top {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(246,243,236,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.3s;
+}
+nav.top .nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+.nav-logo .logo-mark {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-logo .logo-mark svg { width: 16px; height: 16px; }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+.nav-links a {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta { display: flex; gap: var(--space-3); align-items: center; }
+.nav-burger { display: none; background: none; border: none; padding: var(--space-2); }
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  .nav-cta .btn-secondary { display: none; }
+}
+
+/* ============ HERO ============ */
+.hero {
+  height: 100svh;
+  min-height: 600px;
+  width: 100vw;
+  position: relative;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(27,27,38,0.72) 0%, rgba(27,27,38,0.28) 40%, rgba(27,27,38,0.1) 70%, rgba(27,27,38,0.35) 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--space-6) var(--space-9);
+  width: 100%;
+}
+.hero-kanji {
+  font-family: var(--font-jp);
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  color: var(--accent-2);
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-display);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  max-width: 16ch;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.3);
+}
+.hero h1 .accent-gold { color: var(--accent-2); }
+.hero-sub {
+  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+  color: rgba(255,255,255,0.92);
+  max-width: 42ch;
+  margin-top: var(--space-5);
+  line-height: 1.5;
+}
+.hero-cta {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-7);
+  flex-wrap: wrap;
+}
+.hero-meta {
+  display: flex;
+  gap: var(--space-6);
+  margin-top: var(--space-7);
+  flex-wrap: wrap;
+}
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hero-meta-item .val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--accent-2);
+  letter-spacing: -0.02em;
+}
+.hero-meta-item .label {
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .hero { min-height: 560px; }
+  .hero-content { padding-bottom: var(--space-7); }
+  .hero-meta { gap: var(--space-5); }
+  .hero-meta-item .val { font-size: 1.25rem; }
+}
+
+/* ============ SECTIONS ============ */
+section.block {
+  padding: clamp(64px, 10vw, 128px) 0;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  padding-block-start: var(--space-6);
+  max-width: 20ch;
+}
+.section-sub {
+  font-size: 1.125rem;
+  color: var(--muted);
+  max-width: 52ch;
+  margin-top: var(--space-4);
+  line-height: 1.55;
+}
+.eyebrow-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: var(--space-3);
+}
+.eyebrow-fold .dot {
+  width: 6px; height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-2);
+}
+
+/* ============ LEGEND SECTION ============ */
+.legend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: center;
+  margin-top: var(--space-8);
+}
+.legend-text h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  padding-block-start: var(--space-6);
+}
+.legend-text p {
+  margin-top: var(--space-5);
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  max-width: 48ch;
+}
+.legend-text .jp-quote {
+  font-family: var(--font-jp);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin-top: var(--space-6);
+  line-height: 1.4;
+}
+.legend-image {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  background: var(--surface-2);
+}
+.legend-image img { width: 100%; height: 100%; object-fit: cover; }
+.legend-steps {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+.legend-step {
+  flex: 1;
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.legend-step .num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.legend-step:nth-child(2) .num { color: var(--accent-2); }
+.legend-step:nth-child(3) .num { color: var(--accent-3); }
+.legend-step .desc {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  margin-top: var(--space-2);
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .legend-grid { grid-template-columns: 1fr; gap: var(--space-6); }
+  .legend-image { aspect-ratio: 4/3; max-height: 400px; }
+  .legend-steps { flex-direction: column; }
+}
+
+/* ============ FEATURES ============ */
+.features-head { max-width: 720px; }
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-8);
+}
+.feature-card {
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.feature-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.feature-card:nth-child(1) .feature-icon { background: rgba(23,105,170,0.1); }
+.feature-card:nth-child(2) .feature-icon { background: rgba(212,160,23,0.12); }
+.feature-card:nth-child(3) .feature-icon { background: rgba(196,69,54,0.1); }
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.375rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.feature-card p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.feature-card .feature-link {
+  margin-top: auto;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: 1fr; }
+}
+
+/* ============ HOW IT WORKS ============ */
+.how-section { background: var(--surface-2); }
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+.how-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.how-step-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 3.5rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--accent);
+}
+.how-step:nth-child(2) .how-step-num { color: var(--accent-2); }
+.how-step:nth-child(3) .how-step-num { color: var(--accent-3); }
+.how-step h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.375rem;
+  letter-spacing: -0.02em;
+}
+.how-step p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.how-step .how-detail {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.how-step .how-detail strong { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .how-grid { grid-template-columns: 1fr; gap: var(--space-7); }
+}
+
+/* ============ SHOWCASE ============ */
+.showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+.showcase-img {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--surface-2);
+}
+.showcase-img img { width: 100%; height: 100%; object-fit: cover; }
+.showcase-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-5);
+}
+.showcase-text h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  padding-block-start: var(--space-6);
+}
+.showcase-text p {
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+.showcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+.showcase-list-item {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.showcase-list-item .check {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+}
+.showcase-list-item .check svg { width: 14px; height: 14px; }
+.showcase-list-item .txt {
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.showcase-list-item .txt strong { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .showcase-grid { grid-template-columns: 1fr; }
+}
+
+/* ============ TESTIMONIAL ============ */
+.testimonial-section { background: var(--surface); }
+.testimonial {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+.testimonial .quote-mark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 4rem;
+  color: var(--accent-2);
+  line-height: 1;
+  margin-bottom: var(--space-4);
+}
+.testimonial blockquote {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.testimonial .author {
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+.testimonial .author .avatar {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent);
+}
+.testimonial .author .info { text-align: left; }
+.testimonial .author .name { font-weight: 600; font-size: 1rem; }
+.testimonial .author .role { font-size: 0.875rem; color: var(--muted); }
+
+/* ============ CTA SECTION ============ */
+.cta-section {
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: clamp(64px, 10vw, 112px) 0;
+  position: relative;
+  overflow: hidden;
+}
+.cta-section .cta-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.3;
+}
+.cta-section .blob-1 {
+  width: 400px; height: 400px;
+  background: var(--accent-2);
+  top: -100px; right: -100px;
+}
+.cta-section .blob-2 {
+  width: 300px; height: 300px;
+  background: var(--accent-3);
+  bottom: -80px; left: -50px;
+}
+.cta-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.cta-inner .kanji {
+  font-family: var(--font-jp);
+  font-weight: 900;
+  font-size: 1.75rem;
+  color: var(--accent-2);
+  margin-bottom: var(--space-4);
+  letter-spacing: 0.08em;
+}
+.cta-inner h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--on-accent);
+  padding-block-start: var(--space-6);
+}
+.cta-inner p {
+  margin-top: var(--space-5);
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.55;
+}
+.cta-inner .cta-btns {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  margin-top: var(--space-7);
+  flex-wrap: wrap;
+}
+.btn-on-accent {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+.btn-on-accent:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.btn-on-accent:focus-visible { box-shadow: 0 0 0 2px var(--accent-2), 0 0 0 4px var(--accent); }
+.btn-outline-light {
+  background: transparent;
+  color: var(--on-accent);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3);
+}
+.btn-outline-light:hover { background: rgba(255,255,255,0.1); }
+
+/* ============ FOOTER ============ */
+footer {
+  background: var(--bg);
+  padding: var(--space-9) 0 var(--space-6);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--space-6);
+}
+.footer-brand .nav-logo { margin-bottom: var(--space-4); }
+.footer-brand p {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  max-width: 32ch;
+  line-height: 1.55;
+}
+.footer-col h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.01em;
+}
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
+.footer-col a {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--text); }
+.footer-bottom {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.footer-bottom .jp-small {
+  font-family: var(--font-jp);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+  .footer-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .footer-grid { grid-template-columns: 1fr; }
+}
+
+/* ============ ANIMATION (progressive enhance) ============ */
+.anim .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+.anim .reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.anim .reveal-delay-1 { transition-delay: 0.1s; }
+.anim .reveal-delay-2 { transition-delay: 0.2s; }
+.anim .reveal-delay-3 { transition-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+  .btn, .btn-primary, .btn-secondary { transition: none; }
+}
+
+/* ============ MOBILE NAV ============ */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 64px; left: 0; right: 0;
+  background: var(--surface);
+  padding: var(--space-5) var(--space-6);
+  flex-direction: column;
+  gap: var(--space-4);
+  z-index: 99;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a { font-weight: 500; padding: var(--space-2) 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12c3-4 6-4 9 0s6 4 9 0" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="18" cy="10" r="1.5" fill="#fff"/>
+        </svg>
+      </span>
+      Ryūmon
+    </a>
+    <div class="nav-links">
+      <a href="#legend">The Legend</a>
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#story">Stories</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-secondary">Sign in</a>
+      <a href="#cta" class="btn btn-primary">Start free</a>
+      <button class="nav-burger" id="burger" aria-label="Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#1B1B26" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#legend">The Legend</a>
+  <a href="#features">Features</a>
+  <a href="#how">How It Works</a>
+  <a href="#story">Stories</a>
+  <a href="#cta">Start free</a>
+</div>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-scrim"></div>
+  <div class="hero-content">
+    <div class="hero-kanji">こどもの日 · 鯉のぼり</div>
+    <h1>Every child deserves <span class="accent-gold">their climb</span>.</h1>
+    <p class="hero-sub">Ryūmon is the family app for Kodomo no Hi. Create a digital koinobori for each child, track their growth milestones through the year, and celebrate the courage it takes to swim upstream — together, every May fifth.</p>
+    <div class="hero-cta">
+      <a href="#cta" class="btn btn-primary btn-lg">Create your family's koinobori</a>
+      <a href="#how" class="btn btn-secondary btn-lg">See how it works</a>
+    </div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="val">12,400+</span>
+        <span class="label">Families celebrating</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="val">May 5</span>
+        <span class="label">Kodomo no Hi</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="val">Free</span>
+        <span class="label">For every child</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="current-divider"></div>
+
+<!-- LEGEND -->
+<section class="block" id="legend">
+  <div class="container">
+    <div class="legend-grid">
+      <div class="legend-text reveal">
+        <div class="eyebrow-fold"><span class="dot"></span> The legend behind the streamers</div>
+        <h2>A carp swims upstream. A dragon rises.</h2>
+        <p>Long before there were streamers, there was a story. A single carp chose the hardest river — the one that ends in a waterfall called Ryūmon, the Dragon Gate. It climbed, against the current, against the odds. And at the top, it became a dragon.</p>
+        <p>That is why families fly koinobori on Children's Day. Every streamer is a wish: that your child will have the courage to climb their own waterfall.</p>
+        <div class="jp-quote">鯉の滝登り — koi no taki-nobori</div>
+        <div class="legend-steps">
+          <div class="legend-step">
+            <div class="num">01</div>
+            <div class="desc">The carp enters the river, swimming against the current.</div>
+          </div>
+          <div class="legend-step">
+            <div class="num">02</div>
+            <div class="desc">It reaches the base of the Dragon Gate waterfall.</div>
+          </div>
+          <div class="legend-step">
+            <div class="num">03</div>
+            <div class="desc">It climbs — and transforms into a dragon.</div>
+          </div>
+        </div>
+      </div>
+      <div class="legend-image reveal reveal-delay-2">
+        <img src="media/feature-carp-streamer.jpg" alt="A higoi carp streamer flying against a clear blue sky" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="current-divider"></div>
+
+<!-- FEATURES -->
+<section class="block" id="features">
+  <div class="container">
+    <div class="features-head reveal">
+      <div class="eyebrow-fold"><span class="dot"></span> What Ryūmon does for your family</div>
+      <h2 class="section-title">Three ways to celebrate the climb.</h2>
+      <p class="section-sub">Ryūmon turns the old ritual into something you can hold in your hand — a living record of each child's courage, growth, and the people cheering them on.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 14c2-3 4-3 6 0s4 3 6 0 4-3 6 0" stroke="#1769AA" stroke-width="2" stroke-linecap="round"/><path d="M3 19c2-3 4-3 6 0s4 3 6 0 4-3 6 0" stroke="#1769AA" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg>
+        </div>
+        <h3>Digital koinobori for each child</h3>
+        <p>Design a streamer for every child in your family — choose the carp, the colours, the pole height. Each one flies on your family's page and animates in the spring wind.</p>
+        <a href="#" class="feature-link">Design a streamer
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#1769AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Growth milestones, tracked all year</h3>
+        <p>First steps, first kanji, the day they rode without training wheels. Log milestones with a photo and a date; Ryūmon plots them on a growth chart that rises like the carp's journey.</p>
+        <a href="#" class="feature-link">See the growth chart
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="#C44536" stroke-width="2"/><circle cx="17" cy="10" r="2.5" stroke="#C44536" stroke-width="2"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M14 19c0-2 2-3.5 4-3.5s4 1.5 4 3.5" stroke="#C44536" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Family sharing, across generations</h3>
+        <p>Grandparents in another city can watch the streamers fly and leave courage notes on each milestone. Ryūmon keeps the whole family on the same river, no matter how far apart.</p>
+        <a href="#" class="feature-link">Invite your family
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#C44536" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="current-divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="block how-section" id="how">
+  <div class="container">
+    <div class="features-head reveal">
+      <div class="eyebrow-fold"><span class="dot"></span> From sign-up to streamers in three steps</div>
+      <h2 class="section-title">How a family gets on the river.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-step reveal">
+        <div class="how-step-num">01</div>
+        <h3>Create your family</h3>
+        <p>Sign up, add each child by name and birthdate. Ryūmon assigns every child their own koinobori pole on your family page.</p>
+        <div class="how-detail"><strong>Takes 2 minutes.</strong> No payment, no trial clock. Free for every child, forever.</div>
+      </div>
+      <div class="how-step reveal reveal-delay-1">
+        <div class="how-step-num">02</div>
+        <h3>Track the milestones</h3>
+        <p>Through the year, log firsts and favourites with a photo. Each entry lands on the growth chart and sends a courage note to the family circle.</p>
+        <div class="how-detail"><strong>Avg: 1 entry per week.</strong> Grandparents get a push notification each time.</div>
+      </div>
+      <div class="how-step reveal reveal-delay-2">
+        <div class="how-step-num">03</div>
+        <h3>Celebrate on May fifth</h3>
+        <p>On Kodomo no Hi, every child's streamer flies at full height. The family page plays the year back — a highlight reel of the climb.</p>
+        <div class="how-detail"><strong>One day, one river.</strong> The whole family watches the streamers rise together.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="current-divider"></div>
+
+<!-- SHOWCASE / STORY -->
+<section class="block" id="story">
+  <div class="container">
+    <div class="showcase-grid">
+      <div class="showcase-img reveal">
+        <img src="media/feature-child-painting.jpg" alt="A child painting a carp on a stone at a low table outdoors" loading="lazy">
+      </div>
+      <div class="showcase-text reveal reveal-delay-1">
+        <div class="eyebrow-fold"><span class="dot"></span> One family's story</div>
+        <h2>Mei's first kanji, and the streamer that watched it happen.</h2>
+        <p>The Tanaka family joined Ryūmon when Mei was four. Her father designed a small indigo carp streamer — the same colour as the one his own grandfather flew for him. Over the year, they logged 47 milestones: the first time she wrote her name in hiragana, the day she counted to one hundred, the afternoon she finally rode her bike down the hill without help.</p>
+        <div class="showcase-list">
+          <div class="showcase-list-item">
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="txt"><strong>47 milestones</strong> logged in one year, each with a photo and a grandparent's note.</span>
+          </div>
+          <div class="showcase-list-item">
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="txt"><strong>3 generations</strong> on one family page — Osaka, Sapporo, and Sendai.</span>
+          </div>
+          <div class="showcase-list-item">
+            <span class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="txt">On May fifth, Mei's streamer <strong>flew at full height</strong> — and the family watched the year play back together.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="current-divider"></div>
+
+<!-- TESTIMONIAL -->
+<section class="block testimonial-section">
+  <div class="container">
+    <div class="testimonial reveal">
+      <div class="quote-mark">"</div>
+      <blockquote>My mother lives in Sapporo. She hasn't seen the kids in two years. But every Sunday she opens Ryūmon and watches their streamers fly. She says it's the closest she's been to the river.</blockquote>
+      <div class="author">
+        <div class="avatar">K</div>
+        <div class="info">
+          <div class="name">Kenji Watanabe</div>
+          <div class="role">Father of two · Tokyo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="cta-blob blob-1"></div>
+  <div class="cta-blob blob-2"></div>
+  <div class="container">
+    <div class="cta-inner reveal">
+      <div class="kanji">鯉のぼりを上げよう</div>
+      <h2>Put a streamer in the sky this May.</h2>
+      <p>Create your family's koinobori today. Free for every child, every year — because every child deserves their climb.</p>
+      <div class="cta-btns">
+        <a href="#" class="btn btn-on-accent btn-lg">Create your family's koinobori</a>
+        <a href="#" class="btn btn-outline-light btn-lg">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 12c3-4 6-4 9 0s6 4 9 0" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="18" cy="10" r="1.5" fill="#fff"/></svg>
+          </span>
+          Ryūmon
+        </a>
+        <p>The family app for Kodomo no Hi. Digital koinobori, growth milestones, and the courage to climb — together.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#story">Family stories</a></li>
+          <li><a href="#">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Family</h4>
+        <ul>
+          <li><a href="#">Sign in</a></li>
+          <li><a href="#">Create account</a></li>
+          <li><a href="#">Invite grandparents</a></li>
+          <li><a href="#">Help centre</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">The legend</a></li>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Ryūmon · Made for Kodomo no Hi</span>
+      <span class="jp-small">こどもの日 · 五月五日</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Progressive enhancement: add .anim class, then reveal on scroll
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('anim');
+
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  reveals.forEach(el => io.observe(el));
+
+  // Mobile menu
+  const burger = document.getElementById('burger');
+  const menu = document.getElementById('mobileMenu');
+  if (burger) {
+    burger.addEventListener('click', () => menu.classList.toggle('open'));
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => menu.classList.remove('open')));
+  }
+})();
+</script>
+</body>
+</html>

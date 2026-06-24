@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Flight for Kodomo no Hi low-poly world</title>
+  <style>
+    :root {
+      --bg: #fff8ea;
+      --surface: #fff1d2;
+      --surface-raised: #ffffff;
+      --surface-sunk: #f2dfb8;
+      --text: #10100e;
+      --muted: #5f5547;
+      --border: #1c1712;
+      --accent: #d9432f;
+      --on-accent: #fffaf0;
+      --success: #287a52;
+      --warning: #d9432f;
+      --error: #9b2b22;
+      --info: #176f93;
+      --font-display: "Avenir Next", "Inter", ui-sans-serif, system-ui, sans-serif;
+      --font-body: "Avenir Next", "Inter", ui-sans-serif, system-ui, sans-serif;
+      --font-jp: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+      --step-0: clamp(17px, 0.92rem + 0.18vw, 20px);
+      --step-1: clamp(20px, 1rem + 0.5vw, 26px);
+      --step-2: clamp(26px, 1.3rem + 1vw, 38px);
+      --step-3: clamp(40px, 2.25rem + 2.4vw, 78px);
+      --step-4: clamp(58px, 3rem + 5vw, 138px);
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 40px;
+      --space-5: 64px;
+      --space-6: 96px;
+      --radius-none: 0;
+      --radius-sm: 16px;
+      --radius-md: 24px;
+      --radius-pill: 9999px;
+      --control-height: 48px;
+      --focus-ring: 0 0 0 4px color-mix(in srgb, var(--info) 35%, transparent);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); color: var(--text); font: 17px/1.5 var(--font-body); }
+    body { margin: 0; min-width: 0; overflow-x: hidden; background: var(--bg); color: var(--text); }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.045em; line-height: 0.94; }
+    h1 { font-size: var(--step-4); max-width: 9ch; }
+    h2 { font-size: var(--step-3); max-width: 11ch; }
+    p { color: var(--muted); font-size: var(--step-0); line-height: 1.6; }
+    .jp { font-family: var(--font-jp); font-weight: 900; letter-spacing: -0.06em; }
+
+    #world {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      width: 100vw;
+      height: 100svh;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--info) 20%, var(--surface-raised));
+    }
+    #world canvas { display: block; width: 100%; height: 100%; }
+    .readability-scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 26% 34%, color-mix(in srgb, var(--surface-raised) 22%, transparent), transparent 34%),
+        linear-gradient(90deg, color-mix(in srgb, var(--text) 22%, transparent), transparent 48% 100%),
+        linear-gradient(0deg, color-mix(in srgb, var(--text) 16%, transparent), transparent 42%);
+    }
+    .fallback-world {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: linear-gradient(color-mix(in srgb, var(--info) 18%, var(--surface-raised)) 0 48%, var(--surface) 48% 54%, color-mix(in srgb, var(--success) 58%, var(--surface)) 54% 100%);
+    }
+    .fallback-world::before {
+      content: "";
+      position: absolute;
+      inset: 12% -8% auto -8%;
+      height: 58%;
+      clip-path: polygon(0 58%, 14% 22%, 28% 58%, 44% 16%, 58% 58%, 74% 24%, 88% 58%, 100% 26%, 100% 100%, 0 100%);
+      background-color: color-mix(in srgb, var(--success) 54%, var(--surface));
+      opacity: 0.9;
+    }
+    .fallback-river {
+      position: absolute;
+      left: 40%;
+      top: 50%;
+      width: 22%;
+      height: 58%;
+      background: var(--info);
+      clip-path: polygon(42% 0, 64% 0, 84% 100%, 0 100%);
+      opacity: 0.86;
+    }
+    .fallback-flags {
+      position: absolute;
+      inset: 28% 10% auto;
+      height: 36%;
+      background:
+        linear-gradient(90deg, transparent 0 8%, var(--border) 8% 9%, transparent 9% 22%, var(--border) 22% 23%, transparent 23% 36%, var(--border) 36% 37%, transparent 37% 52%, var(--border) 52% 53%, transparent 53% 70%, var(--border) 70% 71%, transparent 71% 100%);
+    }
+    .fallback-flags::after {
+      content: "";
+      position: absolute;
+      inset: 18% 0 auto 0;
+      height: 22px;
+      background: repeating-linear-gradient(90deg, var(--accent) 0 9%, transparent 9% 14%, var(--info) 14% 23%, transparent 23% 30%, var(--success) 30% 40%, transparent 40% 50%);
+      filter: drop-shadow(0 14px 0 var(--surface)) drop-shadow(0 28px 0 var(--accent));
+    }
+    .no-webgl #world, .reduced #world { display: none; }
+    .no-webgl .fallback-world, .reduced .fallback-world { display: block; }
+
+    .nav {
+      position: fixed;
+      z-index: 10;
+      top: var(--space-2);
+      left: 50%;
+      width: min(1120px, calc(100vw - 32px));
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: 10px 12px 10px 20px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--surface-raised) 80%, transparent);
+      box-shadow: 0 18px 50px color-mix(in srgb, var(--border) 16%, transparent);
+      backdrop-filter: blur(20px);
+    }
+    .brand { color: var(--text); font-weight: 900; letter-spacing: -0.04em; font-size: 22px; text-decoration: none; }
+    .nav-note { color: var(--muted); font-size: 15px; font-weight: 800; }
+
+    .btn, button {
+      appearance: none;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 22px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      font: 800 16px/1 var(--font-body);
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+    }
+    .btn.primary, button.primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .btn.quiet, button.quiet { background: var(--surface-raised); color: var(--text); box-shadow: 0 10px 24px color-mix(in srgb, var(--border) 10%, transparent); }
+    .btn:hover, button:hover { transform: translateY(-2px); }
+    .btn.primary:hover, button.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
+    .btn.quiet:hover, button.quiet:hover { background: var(--surface); }
+    .btn:focus-visible, button:focus-visible { outline: 0; box-shadow: var(--focus-ring), 0 0 0 2px var(--border) inset; }
+    .btn:active, button:active { transform: translateY(1px); }
+    .btn.primary:active, button.primary:active { background: color-mix(in srgb, var(--accent) 76%, var(--text)); }
+    .btn.quiet:active, button.quiet:active { background: var(--surface-sunk); }
+    .btn[disabled], button:disabled { opacity: 0.48; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    main { position: relative; z-index: 2; min-height: 760svh; }
+    .segment {
+      min-height: 120svh;
+      display: grid;
+      align-items: center;
+      padding: 120px max(18px, calc((100vw - 1120px) / 2));
+    }
+    .segment.camera-only { min-height: 70svh; pointer-events: none; }
+    .panel {
+      width: min(560px, 100%);
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--surface-raised) 84%, transparent);
+      box-shadow: 0 28px 90px color-mix(in srgb, var(--border) 22%, transparent);
+      backdrop-filter: blur(24px) saturate(1.12);
+      min-width: 0;
+    }
+    .panel.right { margin-left: auto; }
+    .panel.center { margin-left: auto; margin-right: auto; text-align: center; }
+    .panel.dark {
+      background: color-mix(in srgb, var(--text) 82%, transparent);
+      color: var(--on-accent);
+    }
+    .panel.dark p, .panel.dark h1, .panel.dark h2 { color: var(--on-accent); }
+    .panel.dark p { color: color-mix(in srgb, var(--on-accent) 78%, transparent); }
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); min-width: 0; }
+    .fact { background: var(--surface); border-radius: var(--radius-sm); padding: var(--space-2); min-width: 0; text-align: left; }
+    .fact strong { display: block; color: var(--accent); font-size: 27px; letter-spacing: -0.04em; line-height: 1; }
+    .fact span { display: block; color: var(--muted); font-size: 14px; margin-top: 7px; line-height: 1.25; }
+    .panel.dark .fact { background: color-mix(in srgb, var(--surface-raised) 12%, transparent); }
+    .panel.dark .fact span { color: color-mix(in srgb, var(--on-accent) 68%, transparent); }
+    .accent { color: var(--accent); font-weight: 900; }
+    .river { color: var(--info); font-weight: 900; }
+    .iris { color: var(--success); font-weight: 900; }
+    .char-split span { display: inline-block; }
+    .story-panel { opacity: 0; transform: translateY(34px); pointer-events: none; }
+
+    .status {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 8;
+      transform: translateX(-50%);
+      width: min(1120px, calc(100vw - 32px));
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      pointer-events: none;
+    }
+    .status span { height: 8px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface-raised) 52%, transparent); box-shadow: 0 4px 20px color-mix(in srgb, var(--border) 15%, transparent); }
+    .status span.active { background: var(--accent); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+      main { min-height: auto; }
+      .segment, .segment.camera-only { min-height: auto; padding-top: 128px; padding-bottom: 80px; }
+      .story-panel { opacity: 1; transform: none; pointer-events: auto; }
+      .status { display: none; }
+    }
+
+    @media (max-width: 780px) {
+      .nav { top: 10px; width: calc(100vw - 20px); }
+      .nav-note { display: none; }
+      .segment { padding: 112px 16px 80px; min-height: 118svh; }
+      .panel, .panel.right, .panel.center { margin: 0; width: 100%; padding: var(--space-3); }
+      h1 { font-size: clamp(54px, 16vw, 86px); }
+      h2 { font-size: clamp(38px, 11vw, 62px); }
+      .facts, .status { grid-template-columns: 1fr; }
+      .status { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="world" aria-hidden="true"></div>
+  <div class="fallback-world" aria-hidden="true"><div class="fallback-river"></div><div class="fallback-flags"></div></div>
+  <div class="readability-scrim" aria-hidden="true"></div>
+
+  <nav class="nav" aria-label="Nobori flight">
+    <a class="brand" href="#begin">Nobori</a>
+    <span class="nav-note">One living low-poly Kodomo no Hi world</span>
+    <a class="btn primary" href="landing.html">Open Ledger</a>
+  </nav>
+
+  <main id="begin">
+    <section class="segment" data-phase="0">
+      <article class="panel story-panel">
+        <h1 class="char-split"><span class="jp">こどもの日</span> takes the river.</h1>
+        <p>Morning light opens over the Nobori route. Carp streamers lift from the town edge and point families toward the water.</p>
+        <div class="facts">
+          <div class="fact"><strong>May 5</strong><span>festival morning</span></div>
+          <div class="fact"><strong>Free</strong><span>family route pass</span></div>
+          <div class="fact"><strong>Ages 3 to 12</strong><span>child-first path</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="segment camera-only" data-phase="1" aria-hidden="true"></section>
+
+    <section class="segment" data-phase="2">
+      <article class="panel right story-panel">
+        <h2>The avenue of carp starts to breathe.</h2>
+        <p>Fukinagashi windsocks catch the first crosswind. The flags are shader-driven cloth, not a still image, with wind strength changing through the flight.</p>
+        <p><span class="accent">Vermilion</span> marks celebration, <span class="river">river blue</span> leads the path, and <span class="iris">iris green</span> holds safety.</p>
+      </article>
+    </section>
+
+    <section class="segment camera-only" data-phase="3" aria-hidden="true"></section>
+
+    <section class="segment" data-phase="4">
+      <article class="panel story-panel">
+        <h2>The river bends toward courage.</h2>
+        <p>The camera does not trail the route. It anticipates the bend, reveals the waterfall, and lets the carp climb through mist toward the dragon ridge.</p>
+        <div class="facts">
+          <div class="fact"><strong>38</strong><span>stations visible</span></div>
+          <div class="fact"><strong>4</strong><span>safety crews</span></div>
+          <div class="fact"><strong>1</strong><span>continuous world</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="segment camera-only" data-phase="5" aria-hidden="true"></section>
+
+    <section class="segment" data-phase="6">
+      <article class="panel dark center story-panel">
+        <h2><span class="jp">鯉のぼり</span> becomes the dragon.</h2>
+        <p>Dusk settles into warm fog. The waterfall glows, petals drift through the fill light, and the final ridge turns the children's route into a story about growth.</p>
+        <a class="btn primary" href="dashboard.html">Run the festival board</a>
+      </article>
+    </section>
+  </main>
+
+  <div class="status" aria-hidden="true"><span class="active"></span><span></span><span></span><span></span></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js"></script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) document.body.classList.add('reduced');
+
+    function canUseWebGL() {
+      try {
+        const canvas = document.createElement('canvas');
+        return Boolean(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      } catch (error) {
+        return false;
+      }
+    }
+
+    if (!reduceMotion && canUseWebGL()) {
+      bootWorld();
+    } else {
+      document.body.classList.add('no-webgl');
+      document.querySelectorAll('.story-panel').forEach(panel => {
+        panel.style.opacity = '1';
+        panel.style.transform = 'none';
+        panel.style.pointerEvents = 'auto';
+      });
+    }
+
+    function bootWorld() {
+      gsap.registerPlugin(ScrollTrigger, CustomEase);
+      CustomEase.create('windRise', 'M0,0 C0.16,0.02 0.24,0.92 1,1');
+      CustomEase.create('riverBend', 'M0,0 C0.22,0.1 0.26,0.68 0.48,0.78 0.7,0.88 0.78,0.98 1,1');
+      CustomEase.create('dragonLift', 'M0,0 C0.12,0.08 0.3,0.18 0.42,0.52 0.58,0.98 0.78,1 1,1');
+      CustomEase.create('quietDrift', 'M0,0 C0.3,0 0.52,0.26 0.66,0.54 0.82,0.86 0.9,1 1,1');
+
+      const container = document.getElementById('world');
+      const scene = new THREE.Scene();
+      const token = {
+        bg: new THREE.Color(0xfff8ea),
+        surface: new THREE.Color(0xfff1d2),
+        surfaceRaised: new THREE.Color(0xffffff),
+        surfaceSunk: new THREE.Color(0xf2dfb8),
+        text: new THREE.Color(0x10100e),
+        muted: new THREE.Color(0x5f5547),
+        border: new THREE.Color(0x1c1712),
+        accent: new THREE.Color(0xd9432f),
+        success: new THREE.Color(0x287a52),
+        info: new THREE.Color(0x176f93),
+        onAccent: new THREE.Color(0xfffaf0)
+      };
+      const morningFog = token.info.clone().lerp(token.surfaceRaised, 0.78);
+      const duskFog = token.accent.clone().lerp(token.surface, 0.72);
+      scene.background = morningFog.clone();
+      scene.fog = new THREE.Fog(morningFog.clone(), 28, 145);
+
+      const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 260);
+      camera.position.set(-18, 10, -58);
+      const cameraTarget = new THREE.Vector3(-18, 10, -58);
+      const lookTarget = new THREE.Vector3(0, 4, -28);
+      const lookActual = lookTarget.clone();
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.04;
+      container.appendChild(renderer.domElement);
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.34, 0.74, 0.64);
+      composer.addPass(bloom);
+
+      const ambient = new THREE.AmbientLight(token.surfaceRaised.clone().lerp(token.surface, 0.26), 1.35);
+      scene.add(ambient);
+      const key = new THREE.DirectionalLight(token.surfaceRaised.clone().lerp(token.surface, 0.38), 2.35);
+      key.position.set(-28, 34, -26);
+      scene.add(key);
+      const fill = new THREE.PointLight(token.info.clone().lerp(token.surfaceRaised, 0.28), 2.3, 82);
+      fill.position.set(24, 8, -16);
+      scene.add(fill);
+      const fallsGlow = new THREE.PointLight(token.accent.clone().lerp(token.surface, 0.32), 0.85, 76);
+      fallsGlow.position.set(1, 13, 51);
+      scene.add(fallsGlow);
+
+      const palette = {
+        ground: token.success.clone().lerp(token.surface, 0.34),
+        ridge: token.success.clone().lerp(token.text, 0.28),
+        far: token.success.clone().lerp(token.surfaceRaised, 0.52),
+        stone: token.surfaceSunk.clone().lerp(token.muted, 0.24),
+        river: token.info.clone(),
+        riverFoam: token.info.clone().lerp(token.surfaceRaised, 0.44),
+        foam: token.surfaceRaised.clone().lerp(token.onAccent, 0.4),
+        vermilion: token.accent.clone(),
+        iris: token.success.clone(),
+        paper: token.surface.clone(),
+        ink: token.text.clone(),
+        dusk: duskFog.clone(),
+        successHigh: token.success.clone().lerp(token.surfaceRaised, 0.62),
+        successDeep: token.success.clone().lerp(token.text, 0.18),
+        roof: token.accent.clone().lerp(token.text, 0.42),
+        sun: token.surface.clone().lerp(token.accent, 0.24),
+        petal: token.surface.clone().lerp(token.accent, 0.18),
+        surfaceMist: token.surfaceRaised.clone()
+      };
+
+      const flat = (color, roughness = 0.92) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness, metalness: 0.02 });
+      const flagUniforms = [];
+      const terrain = buildTerrain();
+      scene.add(terrain);
+      scene.add(buildRiver());
+      scene.add(buildWaterfall());
+      scene.add(buildMountains());
+      scene.add(buildVillage());
+      scene.add(buildSun());
+      scene.add(buildKoinoboriAvenue());
+      scene.add(buildDragon());
+      const petals = buildPetals();
+      scene.add(petals.mesh);
+      const mist = buildMist();
+      scene.add(mist.mesh);
+
+      function buildTerrain() {
+        const geometry = new THREE.PlaneGeometry(150, 180, 28, 34);
+        geometry.rotateX(-Math.PI / 2);
+        const pos = geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const z = pos.getZ(i);
+          const riverCut = Math.exp(-Math.pow((x - Math.sin(z * 0.05) * 7) / 10, 2));
+          const ridge = Math.max(0, (Math.abs(x) - 18) * 0.08);
+          const hill = Math.sin(x * 0.13) * 0.85 + Math.cos(z * 0.09) * 0.72 + ridge;
+          pos.setY(i, hill - riverCut * 1.7 + Math.max(0, z - 36) * 0.11);
+        }
+        geometry.computeVertexNormals();
+        const mesh = new THREE.Mesh(geometry, flat(palette.ground));
+        mesh.receiveShadow = true;
+        return mesh;
+      }
+
+      function riverPoint(t) {
+        const z = -66 + t * 126;
+        const x = Math.sin(t * Math.PI * 2.1) * 9 - Math.cos(t * Math.PI * 0.8) * 3;
+        const y = -0.72 + t * 4.2;
+        return new THREE.Vector3(x, y, z);
+      }
+
+      function buildRiver() {
+        const verts = [];
+        const indices = [];
+        const colors = [];
+        const steps = 74;
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const p = riverPoint(t);
+          const next = riverPoint(Math.min(1, t + 0.01));
+          const dir = next.clone().sub(p).normalize();
+          const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+          const width = 4.7 + Math.sin(t * Math.PI) * 3.4;
+          const left = p.clone().add(side.clone().multiplyScalar(width));
+          const right = p.clone().add(side.clone().multiplyScalar(-width));
+          verts.push(left.x, left.y, left.z, right.x, right.y, right.z);
+          const c = palette.river.clone().lerp(palette.riverFoam, t * 0.35);
+          colors.push(c.r, c.g, c.b, c.r, c.g, c.b);
+          if (i < steps) {
+            const a = i * 2;
+            indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+          }
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0, flatShading: true, transparent: true, opacity: 0.95 });
+        const river = new THREE.Mesh(geometry, material);
+        const foamGeo = new THREE.ConeGeometry(0.28, 1.2, 3);
+        const foamMat = flat(palette.foam, 0.5);
+        const foam = new THREE.InstancedMesh(foamGeo, foamMat, 68);
+        const m = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const s = new THREE.Vector3(1, 0.28, 1);
+        for (let i = 0; i < 68; i++) {
+          const t = i / 68;
+          const p = riverPoint(t).add(new THREE.Vector3((Math.random() - 0.5) * 5, 0.08, (Math.random() - 0.5) * 1.5));
+          q.setFromEuler(new THREE.Euler(Math.PI / 2, 0, Math.random() * Math.PI));
+          m.compose(p, q, s);
+          foam.setMatrixAt(i, m);
+        }
+        const group = new THREE.Group();
+        group.add(river, foam);
+        return group;
+      }
+
+      function buildWaterfall() {
+        const group = new THREE.Group();
+        const fallMat = new THREE.MeshStandardMaterial({ color: palette.riverFoam, transparent: true, opacity: 0.78, flatShading: true, roughness: 0.4 });
+        for (let i = 0; i < 9; i++) {
+          const geo = new THREE.PlaneGeometry(1.4 + Math.random() * 1.8, 18 + Math.random() * 5, 1, 5);
+          const mesh = new THREE.Mesh(geo, fallMat);
+          mesh.position.set(-5 + i * 1.25, 9, 55 + Math.sin(i) * 0.7);
+          mesh.rotation.set(0.08, 0, (Math.random() - 0.5) * 0.16);
+          group.add(mesh);
+        }
+        const rockMat = flat(palette.stone);
+        for (let i = 0; i < 22; i++) {
+          const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(2 + Math.random() * 2.8, 0), rockMat);
+          rock.position.set((Math.random() - 0.5) * 24, 1 + Math.random() * 13, 50 + Math.random() * 14);
+          rock.rotation.set(Math.random(), Math.random(), Math.random());
+          rock.scale.y = 0.7 + Math.random() * 1.8;
+          group.add(rock);
+        }
+        return group;
+      }
+
+      function buildMountains() {
+        const group = new THREE.Group();
+        const colors = [palette.far, palette.ridge, palette.successHigh, palette.successDeep];
+        for (let i = 0; i < 34; i++) {
+          const dist = i % 2 === 0 ? -78 - Math.random() * 24 : 62 + Math.random() * 34;
+          const x = (Math.random() - 0.5) * 135;
+          const z = dist;
+          const lod = new THREE.LOD();
+          const high = new THREE.Mesh(new THREE.ConeGeometry(8 + Math.random() * 9, 18 + Math.random() * 24, 5 + Math.floor(Math.random() * 2)), flat(colors[i % colors.length]));
+          const low = new THREE.Mesh(new THREE.ConeGeometry(8 + Math.random() * 9, 18 + Math.random() * 24, 4), flat(colors[(i + 1) % colors.length]));
+          high.position.y = high.geometry.parameters.height / 2 - 1;
+          low.position.y = low.geometry.parameters.height / 2 - 1;
+          lod.addLevel(high, 0);
+          lod.addLevel(low, 70);
+          lod.position.set(x, 0, z);
+          lod.rotation.y = Math.random() * Math.PI;
+          group.add(lod);
+        }
+        return group;
+      }
+
+      function buildVillage() {
+        const group = new THREE.Group();
+        const houseMat = flat(palette.paper);
+        const roofMat = flat(palette.roof);
+        for (let i = 0; i < 28; i++) {
+          const side = i % 2 === 0 ? -1 : 1;
+          const z = -44 + Math.random() * 70;
+          const x = side * (24 + Math.random() * 16);
+          const base = new THREE.Mesh(new THREE.BoxGeometry(3 + Math.random() * 3, 2.2 + Math.random() * 1.4, 3 + Math.random() * 4), houseMat);
+          base.position.set(x, 1.2, z);
+          const roof = new THREE.Mesh(new THREE.ConeGeometry(3.1, 2.4, 4), roofMat);
+          roof.position.set(x, 3.3, z);
+          roof.rotation.y = Math.PI / 4;
+          group.add(base, roof);
+        }
+        return group;
+      }
+
+      function buildSun() {
+        const group = new THREE.Group();
+        const sun = new THREE.Mesh(new THREE.IcosahedronGeometry(6, 1), new THREE.MeshBasicMaterial({ color: palette.sun }));
+        sun.position.set(-38, 42, -48);
+        group.add(sun);
+        return group;
+      }
+
+      function makeFlagMaterial() {
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: { value: 0 },
+            uWind: { value: new THREE.Vector2(1.0, 0.32) },
+            uWindStrength: { value: 1.0 },
+            uInk: { value: palette.ink.clone() },
+            uPaper: { value: palette.paper.clone() }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform vec2 uWind;
+            uniform float uWindStrength;
+            void main() {
+              vUv = uv;
+              vColor = instanceColor;
+              vec3 p = position;
+              float anchor = smoothstep(0.02, 0.98, uv.x);
+              float waveA = sin((p.x * 3.8 + uTime * 2.4) * uWind.x + p.y * 2.0 + uWind.y * 2.2);
+              float waveB = sin(p.x * 7.1 + uTime * 1.35 + p.y * 1.6);
+              p.z += (waveA * 0.34 + waveB * 0.12) * anchor * uWindStrength;
+              p.y += sin(p.x * 4.2 + uTime * 1.7) * 0.06 * anchor * uWindStrength;
+              vec4 world = instanceMatrix * vec4(p, 1.0);
+              gl_Position = projectionMatrix * modelViewMatrix * world;
+            }
+          `,
+          fragmentShader: `
+            precision highp float;
+            varying vec2 vUv;
+            varying vec3 vColor;
+            uniform vec3 uInk;
+            uniform vec3 uPaper;
+            void main() {
+              float tail = step(0.88, vUv.x) * step(abs(vUv.y - 0.5), 0.18);
+              if (tail > 0.5) discard;
+              vec3 color = vColor;
+              float eyeWhite = 1.0 - smoothstep(0.045, 0.065, distance(vUv, vec2(0.16, 0.68)));
+              float eyeInk = 1.0 - smoothstep(0.018, 0.032, distance(vUv, vec2(0.16, 0.68)));
+              float scaleLine = smoothstep(0.94, 1.0, abs(sin((vUv.x * 11.0 + vUv.y * 3.0) * 3.14159))) * 0.16;
+              color = mix(color, uPaper, eyeWhite);
+              color = mix(color, uInk, eyeInk);
+              color = mix(color, uInk, scaleLine);
+              gl_FragColor = vec4(color, 1.0);
+            }
+          `,
+          side: THREE.DoubleSide,
+          transparent: false
+        });
+        flagUniforms.push(material.uniforms);
+        return material;
+      }
+
+      function buildKoinoboriAvenue() {
+        const group = new THREE.Group();
+        const poleCount = 44;
+        const poleGeo = new THREE.CylinderGeometry(0.08, 0.12, 8.8, 5);
+        const poleMat = flat(palette.ink.clone().lerp(palette.roof, 0.22), 0.78);
+        const poles = new THREE.InstancedMesh(poleGeo, poleMat, poleCount);
+        const streamerGeo = new THREE.PlaneGeometry(3.5, 0.92, 10, 2);
+        streamerGeo.translate(1.75, 0, 0);
+        const flags = new THREE.InstancedMesh(streamerGeo, makeFlagMaterial(), poleCount * 3);
+        flags.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(poleCount * 3 * 3), 3);
+        const ribbonGeo = new THREE.PlaneGeometry(2.7, 0.36, 8, 1);
+        ribbonGeo.translate(1.35, 0, 0);
+        const ribbons = new THREE.InstancedMesh(ribbonGeo, makeFlagMaterial(), poleCount * 2);
+        ribbons.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(poleCount * 2 * 3), 3);
+        const colors = [palette.vermilion.clone(), palette.river.clone(), palette.iris.clone(), palette.paper.clone()];
+        const m = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const s = new THREE.Vector3();
+        let flagIndex = 0;
+        let ribbonIndex = 0;
+        for (let i = 0; i < poleCount; i++) {
+          const t = i / (poleCount - 1);
+          const p = riverPoint(t * 0.82 + 0.05);
+          const side = i % 2 === 0 ? -1 : 1;
+          const x = p.x + side * (8.5 + Math.sin(i * 1.7) * 2.2);
+          const y = p.y + 4.2;
+          const z = p.z;
+          q.setFromEuler(new THREE.Euler(0, 0, 0));
+          s.set(1, 1, 1);
+          m.compose(new THREE.Vector3(x, y, z), q, s);
+          poles.setMatrixAt(i, m);
+          const faceAngle = side < 0 ? -0.18 : Math.PI + 0.18;
+          for (let j = 0; j < 3; j++) {
+            q.setFromEuler(new THREE.Euler(0, faceAngle + Math.sin(i + j) * 0.12, 0.05 * side));
+            s.set(0.88 - j * 0.1, 0.88 - j * 0.08, 1);
+            m.compose(new THREE.Vector3(x, y + 2.8 - j * 1.05, z), q, s);
+            flags.setMatrixAt(flagIndex, m);
+            flags.setColorAt(flagIndex, colors[(i + j) % colors.length]);
+            flagIndex++;
+          }
+          for (let j = 0; j < 2; j++) {
+            q.setFromEuler(new THREE.Euler(0, faceAngle + 0.04 * j, 0.34 * side));
+            s.set(1.1, 1, 1);
+            m.compose(new THREE.Vector3(x, y + 4.2 - j * 0.28, z), q, s);
+            ribbons.setMatrixAt(ribbonIndex, m);
+            ribbons.setColorAt(ribbonIndex, colors[(i + j + 1) % colors.length]);
+            ribbonIndex++;
+          }
+        }
+        poles.instanceMatrix.needsUpdate = true;
+        flags.instanceMatrix.needsUpdate = true;
+        flags.instanceColor.needsUpdate = true;
+        ribbons.instanceMatrix.needsUpdate = true;
+        ribbons.instanceColor.needsUpdate = true;
+        group.add(poles, flags, ribbons);
+        return group;
+      }
+
+      function buildDragon() {
+        const group = new THREE.Group();
+        const bodyMat = flat(palette.vermilion, 0.68);
+        const bellyMat = flat(palette.paper, 0.76);
+        const finMat = flat(palette.river, 0.72);
+        const path = [];
+        for (let i = 0; i < 22; i++) {
+          const t = i / 21;
+          path.push(new THREE.Vector3(Math.sin(t * Math.PI * 2.3) * 5, 7 + t * 16 + Math.sin(t * 8) * 1.4, 47 + t * 22));
+        }
+        for (let i = 0; i < path.length; i++) {
+          const radius = 1.6 - i * 0.035;
+          const body = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 0), bodyMat);
+          body.position.copy(path[i]);
+          body.scale.set(1.2, 0.75, 1.35);
+          body.rotation.set(Math.random(), Math.random(), Math.random());
+          group.add(body);
+          if (i % 3 === 0) {
+            const fin = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2.8, 3), finMat);
+            fin.position.copy(path[i]).add(new THREE.Vector3(0, 0.9, -0.3));
+            fin.rotation.set(Math.PI * 0.5, Math.random(), 0);
+            group.add(fin);
+          }
+        }
+        const head = new THREE.Mesh(new THREE.DodecahedronGeometry(2.4, 0), bodyMat);
+        head.position.copy(path[path.length - 1]).add(new THREE.Vector3(0, 1.2, 1.6));
+        head.scale.set(1.25, 0.9, 1.55);
+        group.add(head);
+        const jaw = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.8, 4), bellyMat);
+        jaw.position.copy(head.position).add(new THREE.Vector3(0, -0.65, 1.6));
+        jaw.rotation.x = Math.PI / 2;
+        group.add(jaw);
+        for (const side of [-1, 1]) {
+          const horn = new THREE.Mesh(new THREE.ConeGeometry(0.24, 2.6, 4), bellyMat);
+          horn.position.copy(head.position).add(new THREE.Vector3(side * 0.8, 1.55, -0.4));
+          horn.rotation.z = side * 0.38;
+          group.add(horn);
+          const whisker = new THREE.Mesh(new THREE.ConeGeometry(0.08, 4.6, 3), flat(palette.ink, 0.9));
+          whisker.position.copy(head.position).add(new THREE.Vector3(side * 1.25, -0.2, 1.2));
+          whisker.rotation.set(1.2, 0, side * 0.9);
+          group.add(whisker);
+        }
+        return group;
+      }
+
+      function buildPetals() {
+        const count = 420;
+        const geo = new THREE.TetrahedronGeometry(0.16, 0);
+        const mat = new THREE.MeshStandardMaterial({ color: palette.petal, flatShading: true, roughness: 0.8, transparent: true, opacity: 0.74 });
+        const mesh = new THREE.InstancedMesh(geo, mat, count);
+        const data = [];
+        const m = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const s = new THREE.Vector3();
+        for (let i = 0; i < count; i++) {
+          const p = new THREE.Vector3((Math.random() - 0.5) * 110, 3 + Math.random() * 28, -70 + Math.random() * 142);
+          const speed = 0.2 + Math.random() * 0.8;
+          const size = 0.45 + Math.random() * 1.35;
+          data.push({ p, base: p.clone(), speed, phase: Math.random() * Math.PI * 2, size });
+          q.setFromEuler(new THREE.Euler(Math.random(), Math.random(), Math.random()));
+          s.setScalar(size);
+          m.compose(p, q, s);
+          mesh.setMatrixAt(i, m);
+        }
+        return { mesh, data };
+      }
+
+      function buildMist() {
+        const count = 160;
+        const geo = new THREE.IcosahedronGeometry(0.55, 0);
+        const mat = new THREE.MeshBasicMaterial({ color: palette.surfaceMist, transparent: true, opacity: 0.22 });
+        const mesh = new THREE.InstancedMesh(geo, mat, count);
+        const data = [];
+        const m = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const s = new THREE.Vector3();
+        for (let i = 0; i < count; i++) {
+          const p = new THREE.Vector3((Math.random() - 0.5) * 18, 1 + Math.random() * 22, 47 + Math.random() * 26);
+          const size = 0.5 + Math.random() * 2.8;
+          data.push({ p, base: p.clone(), phase: Math.random() * 8, size });
+          q.setFromEuler(new THREE.Euler(Math.random(), Math.random(), Math.random()));
+          s.setScalar(size);
+          m.compose(p, q, s);
+          mesh.setMatrixAt(i, m);
+        }
+        return { mesh, data };
+      }
+
+      const SEGMENTS = [
+        { label: 'town gate', start: 0.00, end: 0.16, duration: 1.1, ease: 'windRise', pos: [-18, 10, -58], look: [-2, 5, -30] },
+        { label: 'carp avenue', start: 0.16, end: 0.33, duration: 1.7, ease: 'quietDrift', pos: [-13, 7, -30], look: [5, 5, -4] },
+        { label: 'river reveal', start: 0.33, end: 0.52, duration: 1.25, ease: 'riverBend', pos: [15, 9, -4], look: [-3, 4, 22] },
+        { label: 'waterfall climb', start: 0.52, end: 0.75, duration: 2.05, ease: 'dragonLift', pos: [-10, 15, 30], look: [0, 10, 58] },
+        { label: 'dragon dusk', start: 0.75, end: 1.00, duration: 1.55, ease: 'windRise', pos: [12, 21, 78], look: [0, 20, 66] }
+      ];
+
+      const rig = { px: -18, py: 10, pz: -58, lx: -2, ly: 5, lz: -30, wind: 0.9 };
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: document.body,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: true,
+          onUpdate: self => updateStatus(self.progress)
+        }
+      });
+      SEGMENTS.slice(1).forEach(segment => {
+        const rangeStart = segment.start * 100;
+        const rangeDuration = (segment.end - segment.start) * 100;
+        tl.to(rig, {
+          px: segment.pos[0], py: segment.pos[1], pz: segment.pos[2],
+          lx: segment.look[0], ly: segment.look[1], lz: segment.look[2],
+          wind: 0.9 + segment.end * 1.2,
+          duration: rangeDuration,
+          ease: segment.ease
+        }, rangeStart);
+      });
+
+      const panels = gsap.utils.toArray('.story-panel');
+      panels.forEach((panel) => {
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: panel.closest('.segment'),
+            start: 'top 64%',
+            end: 'bottom 34%',
+            scrub: true
+          }
+        })
+        .fromTo(panel, { opacity: 0, y: 34, pointerEvents: 'none' }, { opacity: 1, y: 0, pointerEvents: 'auto', duration: 0.35, ease: 'power2.out' })
+        .to(panel, { opacity: 1, y: 0, pointerEvents: 'auto', duration: 0.42 })
+        .to(panel, { opacity: 0, y: -28, pointerEvents: 'none', duration: 0.23, ease: 'power2.in' });
+      });
+
+      document.querySelectorAll('.char-split').forEach(node => {
+        const parts = node.textContent.split('');
+        node.textContent = '';
+        parts.forEach(part => {
+          const span = document.createElement('span');
+          span.textContent = part === ' ' ? '\u00a0' : part;
+          node.appendChild(span);
+        });
+        gsap.fromTo(node.querySelectorAll('span'), { yPercent: 60, opacity: 0 }, {
+          yPercent: 0, opacity: 1, stagger: 0.025, duration: 0.7, ease: 'windRise',
+          scrollTrigger: { trigger: node, start: 'top 78%', end: 'bottom 52%', scrub: true }
+        });
+      });
+
+      function updateStatus(progress) {
+        const bars = document.querySelectorAll('.status span');
+        const active = Math.min(3, Math.floor(progress * 4));
+        bars.forEach((bar, index) => bar.classList.toggle('active', index <= active));
+      }
+
+      const clock = new THREE.Clock();
+      const tempColor = new THREE.Color();
+      const tempMatrix = new THREE.Matrix4();
+      const tempQuat = new THREE.Quaternion();
+      const tempScale = new THREE.Vector3();
+      let visible = true;
+
+      function render() {
+        const time = clock.getElapsedTime();
+        const progress = tl.scrollTrigger ? tl.scrollTrigger.progress : 0;
+        cameraTarget.set(rig.px, rig.py, rig.pz);
+        lookTarget.set(rig.lx, rig.ly, rig.lz);
+        camera.position.lerp(cameraTarget, 0.09);
+        lookActual.lerp(lookTarget, 0.1);
+        camera.lookAt(lookActual);
+
+        const day = tempColor.copy(morningFog).lerp(duskFog, Math.pow(progress, 1.4));
+        scene.background = day;
+        scene.fog.color.copy(day);
+        scene.fog.near = 24 + progress * 10;
+        scene.fog.far = 138 - progress * 18;
+        ambient.intensity = 1.35 - progress * 0.45;
+        key.intensity = 2.35 - progress * 0.72;
+        key.position.set(-28 + progress * 56, 34 - progress * 8, -26 + progress * 70);
+        fill.intensity = 2.3 + progress * 0.8;
+        fallsGlow.intensity = 0.85 + progress * 2.2;
+        bloom.strength = 0.28 + progress * 0.22;
+
+        flagUniforms.forEach(uniforms => {
+          uniforms.uTime.value = time;
+          uniforms.uWind.value.set(1, 0.28 + Math.sin(time * 0.2) * 0.22);
+          uniforms.uWindStrength.value = rig.wind;
+        });
+
+        petals.data.forEach((item, index) => {
+          item.p.x = item.base.x + Math.sin(time * item.speed + item.phase) * 5.4 + progress * 8;
+          item.p.y = item.base.y + Math.sin(time * item.speed * 1.7 + item.phase) * 1.2;
+          item.p.z = item.base.z + ((time * item.speed * 2.2 + index * 0.2) % 12) - 6;
+          tempQuat.setFromEuler(new THREE.Euler(time * 0.4 + item.phase, time * 0.23, item.phase));
+          tempScale.setScalar(item.size);
+          tempMatrix.compose(item.p, tempQuat, tempScale);
+          petals.mesh.setMatrixAt(index, tempMatrix);
+        });
+        petals.mesh.instanceMatrix.needsUpdate = true;
+
+        mist.data.forEach((item, index) => {
+          item.p.x = item.base.x + Math.sin(time * 0.55 + item.phase) * 2.5;
+          item.p.y = item.base.y + ((time * 0.32 + item.phase) % 7) * 0.35;
+          item.p.z = item.base.z + Math.cos(time * 0.35 + item.phase) * 1.7;
+          tempQuat.setFromEuler(new THREE.Euler(time * 0.08, time * 0.06 + item.phase, 0));
+          tempScale.setScalar(item.size * (0.8 + Math.sin(time + item.phase) * 0.12));
+          tempMatrix.compose(item.p, tempQuat, tempScale);
+          mist.mesh.setMatrixAt(index, tempMatrix);
+        });
+        mist.mesh.instanceMatrix.needsUpdate = true;
+
+        composer.render();
+      }
+
+      function setLoop(active) {
+        if (active) {
+          renderer.setAnimationLoop(render);
+        } else {
+          renderer.setAnimationLoop(null);
+        }
+      }
+      setLoop(true);
+
+      document.addEventListener('visibilitychange', () => {
+        visible = document.visibilityState === 'visible';
+        setLoop(visible);
+      });
+
+      window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        composer.setSize(w, h);
+        bloom.setSize(w, h);
+      });
+    }
+  </script>
+</body>
+</html>

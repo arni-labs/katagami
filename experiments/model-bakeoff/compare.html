@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model bake-off — stargazing · Katagami</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light}
+  body{-webkit-font-smoothing:antialiased;overflow-x:hidden;background:#FBFAF6;color:#181A1F;font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.55;letter-spacing:-0.005em}
+  button,a{appearance:none;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:none}
+  :root{--paper:#FBFAF6;--paper-deep:#ECE8DE;--ink:#181A1F;--ink-soft:#474B54;--ink-faint:#8A8E97;--indigo:#27306B;--indigo-mid:#3B4A8C;--amber:#E0A23B;--amber-deep:#B97F22;--ember:#C2421F}
+  .mono{font-family:'Space Mono',monospace;letter-spacing:0.04em}
+
+  header.top{padding:40px clamp(20px,5vw,56px) 8px;max-width:1340px;margin:0 auto}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--indigo)}
+  h1{font-family:'Bodoni Moda',serif;font-weight:500;font-size:clamp(34px,5vw,56px);letter-spacing:-0.02em;line-height:1.02;margin:14px 0 10px}
+  h1 em{font-style:italic;color:var(--indigo)}
+  .method{font-size:17px;color:var(--ink-soft);max-width:78ch}
+  .method b{color:var(--ink);font-weight:600}
+  .gen{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--ink-faint);margin-top:8px}
+
+  .controls{position:sticky;top:0;z-index:30;background:rgba(251,250,246,0.92);backdrop-filter:blur(12px);padding:14px clamp(20px,5vw,56px);margin-top:18px}
+  .controls .inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .seg{display:inline-flex;background:var(--paper-deep);border-radius:9999px;padding:4px}
+  .seg button{padding:8px 18px;border-radius:9999px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.04em;color:var(--ink-soft);text-transform:capitalize}
+  .seg button.on{background:var(--paper);color:var(--ink);font-weight:700}
+  .spacer{flex:1}
+  .reveal-btn{padding:10px 20px;border-radius:9999px;background:var(--indigo);color:var(--paper);font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.05em;text-transform:uppercase;font-weight:700}
+  .reveal-btn.on{background:var(--amber);color:#26190A}
+
+  main{max-width:1340px;margin:0 auto;padding:24px clamp(20px,5vw,56px) 72px}
+
+  .triptych{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .col-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .chip{display:inline-flex;align-items:center;gap:9px}
+  .chip .badge{width:34px;height:34px;border-radius:9999px;background:var(--indigo);color:var(--paper);display:grid;place-items:center;font-family:'Bodoni Moda',serif;font-size:18px;font-weight:500}
+  .chip .who{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;letter-spacing:0.04em}
+  .chip .who small{display:block;font-weight:400;color:var(--ink-faint);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase}
+  .score{font-family:'Bodoni Moda',serif;font-size:34px;font-weight:500;letter-spacing:-0.01em;line-height:1;text-align:right}
+  .score small{font-family:'Space Mono',monospace;font-size:12px;color:var(--ink-faint);letter-spacing:0.06em}
+  .score.na{color:var(--ink-faint);font-size:18px;font-family:'Space Mono',monospace}
+
+  .preview{position:relative;width:100%;aspect-ratio:5/6;overflow:hidden;border-radius:24px;background:#fff}
+  .preview iframe{position:absolute;top:0;left:0;width:312.5%;height:312.5%;transform:scale(0.32);transform-origin:top left;border:0}
+  .preview .empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:8px;padding:24px;color:var(--ink-faint)}
+  .preview .empty .big{font-family:'Bodoni Moda',serif;font-style:italic;font-size:22px;color:var(--ink-soft)}
+  .links{display:flex;gap:16px;font-family:'Space Mono',monospace;font-size:12.5px;letter-spacing:0.04em}
+  .links a{color:var(--indigo)}.links a:hover{color:var(--amber-deep)}
+  .links a.muted{color:var(--ink-faint)}
+
+  .scoreblock{margin-top:56px}
+  .scoreblock h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:clamp(26px,3.4vw,38px);letter-spacing:-0.02em;margin-bottom:6px}
+  .scoreblock .note{font-size:15px;color:var(--ink-soft);max-width:74ch;margin-bottom:24px}
+  .card{background:var(--paper-deep);border-radius:24px;padding:14px clamp(12px,2vw,26px) 24px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:560px}
+  thead th{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:400;padding:16px 14px;text-align:center}
+  thead th:first-child{text-align:left;width:34%}
+  thead th .badge{width:26px;height:26px;border-radius:9999px;background:var(--indigo);color:var(--paper);display:inline-grid;place-items:center;font-family:'Bodoni Moda',serif;font-size:14px;margin-bottom:4px}
+  tbody td{padding:14px;vertical-align:middle}
+  tbody td:first-child{color:var(--ink);font-weight:600;font-size:15.5px}
+  tbody td:first-child small{display:block;font-weight:400;color:var(--ink-faint);font-size:12.5px;margin-top:2px}
+  tbody tr + tr td{box-shadow:0 -1px 0 rgba(39,48,107,0.07)}
+  .cell{display:flex;align-items:center;gap:12px}
+  .cell .num{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;width:30px;text-align:right;color:var(--ink)}
+  .cell .bar{flex:1;height:8px;border-radius:9999px;background:var(--paper);overflow:hidden;min-width:54px}
+  .cell .fill{height:100%;border-radius:9999px;background:var(--indigo-mid)}
+  .cell.best .fill{background:var(--amber)}
+  .cell.best .num{color:var(--amber-deep)}
+  .cell.empty .num{color:var(--ink-faint);font-weight:400}
+  tfoot td{padding:18px 14px 6px;font-family:'Bodoni Moda',serif;font-size:28px;font-weight:500}
+  tfoot td:first-child{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:400;vertical-align:bottom;padding-bottom:12px}
+  tfoot td small{font-family:'Space Mono',monospace;font-size:12px;color:var(--ink-faint)}
+  tfoot td.best{color:var(--amber-deep)}
+
+  .reasons{margin-top:20px;display:none}
+  .reasons.show{display:block}
+  .reasons h3{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-faint);margin:18px 0 10px}
+  .reason{font-size:14.5px;color:var(--ink-soft);padding:7px 0;line-height:1.5}
+  .reason b{color:var(--ink);font-family:'Space Mono',monospace;font-size:12.5px}
+
+  .vote{margin-top:48px;background:var(--paper-deep);border-radius:24px;padding:28px clamp(18px,3vw,32px)}
+  .vote h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:26px;letter-spacing:-0.02em;margin-bottom:4px}
+  .vote p{font-size:15px;color:var(--ink-soft);margin-bottom:18px}
+  .vote-row{display:flex;gap:12px;flex-wrap:wrap}
+  .vote-row button{padding:12px 26px;border-radius:9999px;background:var(--paper);font-family:'Space Mono',monospace;font-size:14px;font-weight:700;letter-spacing:0.04em}
+  .vote-row button.picked{background:var(--amber);color:#26190A}
+  .vote-msg{margin-top:14px;font-family:'Space Mono',monospace;font-size:13px;color:var(--indigo)}
+
+  footer{max-width:1340px;margin:0 auto;padding:8px clamp(20px,5vw,56px) 56px;font-family:'Space Mono',monospace;font-size:12.5px;color:var(--ink-faint)}
+  .err{max-width:900px;margin:60px auto;padding:32px;background:var(--paper-deep);border-radius:24px;font-family:'Space Mono',monospace;font-size:14px;color:var(--ink-soft);line-height:1.7}
+  @media (max-width:900px){.triptych{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="eyebrow">Katagami · design-language bake-off</span>
+  <h1>One concept, three models, <em>judged blind</em>.</h1>
+  <p class="method">Each model researched the concept — <b>stargazing</b> — with tools on, then created a design language and embodied it the Katagami way: a <b>DESIGN.md</b> + an <b>embodiment</b>, a <b>landing</b>, and a <b>dashboard</b>. The score is a five-part rubric — sourcing, synthesis, coherence, craft, distinctiveness — graded by a <b>blind cross-model panel</b> where no model scores its own work. The taste vote is yours.</p>
+  <p class="gen" id="gen"></p>
+</header>
+
+<div class="controls">
+  <div class="inner">
+    <div class="seg" id="viewseg">
+      <button data-view="embodiment" class="on">embodiment</button>
+      <button data-view="landing">landing</button>
+      <button data-view="dashboard">dashboard</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="reveal-btn" id="revealBtn">Reveal models</button>
+  </div>
+</div>
+
+<main>
+  <div class="triptych" id="triptych"></div>
+
+  <section class="scoreblock">
+    <h2>The rubric scorecard</h2>
+    <p class="note" id="scnote"></p>
+    <div class="card"><table id="scorecard"></table></div>
+    <div class="reasons" id="reasons"></div>
+  </section>
+
+  <section class="vote">
+    <h2>Which would you ship?</h2>
+    <p>Look only at the work. Pick before you reveal.</p>
+    <div class="vote-row" id="voteRow"></div>
+    <div class="vote-msg" id="voteMsg"></div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+
+<script>
+const LABELS=['A','B','C','D','E'];
+const NAMES={'opus-4-8':'Opus 4.8','glm-5-2':'GLM 5.2','grok':'Grok'};
+let revealed=false, view='embodiment', vote=null, R=null;
+const nameFor=(s)=>NAMES[s]||s;
+
+async function load(){
+  try{
+    const res=await fetch('results.json?_='+Date.now());
+    if(!res.ok) throw new Error('no results.json');
+    R=await res.json();
+  }catch(e){
+    document.querySelector('main').innerHTML='<div class="err">Could not load <b>results.json</b>.<br><br>Run:&nbsp; node aggregate.mjs<br><br>then reload over a local server (so the iframes load).</div>';
+    return;
+  }
+  document.getElementById('gen').textContent='generated '+(R.generatedAt||'')+' · concept: '+(R.concept||'');
+  document.getElementById('foot').textContent='Katagami bake-off · '+R.blindOrder.length+' models · judges: '+(R.judges.length?R.judges.length:'none yet')+' · rubric via aggregate.mjs';
+  const judged=R.judges.length>0;
+  document.getElementById('scnote').innerHTML = judged
+    ? 'Mean of the blind cross-model panel ('+R.judges.length+' judges), 1–5 per dimension. No model’s score counts toward its own entry. Best per row in amber.'
+    : 'No judges yet — run the blind panel (see judge-packet.md), then <span class="mono">node aggregate.mjs</span>. The showcase above is live now.';
+  renderTriptych(); renderScorecard(); renderReasons(); renderVote(); applyReveal();
+}
+
+function bestSlugFor(dimId){
+  let best=-1, slug=null;
+  for(const s of R.blindOrder){ const m=R.entries[s].dims?.[dimId]?.mean; if(m!=null&&m>best){best=m;slug=s;} }
+  return best>0?slug:null;
+}
+function bestOverall(){
+  let best=-1, slug=null;
+  for(const s of R.blindOrder){ const o=R.entries[s].overall; if(o!=null&&o>best){best=o;slug=s;} }
+  return best>0?slug:null;
+}
+
+function renderTriptych(){
+  const t=document.getElementById('triptych'); t.innerHTML='';
+  R.blindOrder.forEach((slug,i)=>{
+    const e=R.entries[slug], label=LABELS[i];
+    const has=e.artifacts&&e.artifacts[view];
+    const score=(e.overall!=null)?`<div class="score">${e.overall.toFixed(2)}<small> / 5</small></div>`:`<div class="score na">unjudged</div>`;
+    const preview=has?`<iframe loading="lazy" data-slug="${slug}" src="runs/${slug}/${view}.html" title="${label}"></iframe>`
+      :`<div class="empty"><div class="big">awaiting output</div><div class="mono" style="font-size:12px">run the packet for ${nameFor(slug)}<br>→ runs/${slug}/</div></div>`;
+    const col=document.createElement('div'); col.className='col';
+    col.innerHTML=`
+      <div class="col-head">
+        <div class="chip"><span class="badge">${label}</span><span class="who" data-reveal-name="${slug}">Model ${label}</span></div>
+        ${score}
+      </div>
+      <div class="preview">${preview}</div>
+      <div class="links">
+        ${e.present?`<a class="open" href="runs/${slug}/${view}.html" target="_blank">open ${view} ↗</a>`:'<span class="open muted">no file yet</span>'}
+        ${e.artifacts&&e.artifacts.design?`<a href="runs/${slug}/DESIGN.md" target="_blank">DESIGN.md ↗</a>`:''}
+      </div>`;
+    t.appendChild(col);
+  });
+}
+
+function renderScorecard(){
+  const order=R.blindOrder;
+  let head='<thead><tr><th>Dimension</th>';
+  order.forEach((s,i)=>head+=`<th><span class="badge">${LABELS[i]}</span><br><span data-reveal-name="${s}">Model ${LABELS[i]}</span></th>`);
+  head+='</tr></thead>';
+  let body='<tbody>';
+  for(const d of R.dimensions){
+    const best=bestSlugFor(d.id);
+    body+=`<tr><td>${d.name}</td>`;
+    order.forEach(s=>{
+      const m=R.entries[s].dims?.[d.id]?.mean;
+      if(m==null){ body+=`<td><div class="cell empty"><span class="num">—</span><span class="bar"></span></div></td>`; }
+      else{ const pct=Math.round(m/5*100); body+=`<td><div class="cell ${s===best?'best':''}"><span class="num">${m.toFixed(1)}</span><span class="bar"><span class="fill" style="width:${pct}%"></span></span></div></td>`; }
+    });
+    body+='</tr>';
+  }
+  body+='</tbody>';
+  const bo=bestOverall();
+  let foot='<tfoot><tr><td>Overall</td>';
+  order.forEach(s=>{ const o=R.entries[s].overall; foot+=`<td class="${s===bo?'best':''}">${o!=null?o.toFixed(2):'<small>—</small>'}</td>`; });
+  foot+='</tr></tfoot>';
+  document.getElementById('scorecard').innerHTML=head+body+foot;
+}
+
+function renderReasons(){
+  if(!R.judges.length){ document.getElementById('reasons').classList.remove('show'); return; }
+  const box=document.getElementById('reasons'); box.classList.add('show');
+  let html='<h3>Why — panel notes (revealed)</h3>';
+  R.blindOrder.forEach((slug,i)=>{
+    const e=R.entries[slug];
+    for(const d of R.dimensions){
+      const sc=e.dims?.[d.id]?.scores||[];
+      sc.forEach(x=>{ html+=`<div class="reason" data-reveal-block="${slug}"><b>${LABELS[i]} · ${d.name} · ${x.score}/5</b> — ${x.reason} <span class="mono" style="color:var(--ink-faint);font-size:11.5px">(${revealed?nameFor(x.judge):'judge'})</span></div>`; });
+    }
+  });
+  box.innerHTML=html;
+}
+
+function renderVote(){
+  const row=document.getElementById('voteRow'); row.innerHTML='';
+  R.blindOrder.forEach((slug,i)=>{
+    const b=document.createElement('button'); b.textContent='Ship '+LABELS[i];
+    b.onclick=()=>{vote=slug;document.querySelectorAll('#voteRow button').forEach(x=>x.classList.remove('picked'));b.classList.add('picked');voteMsg();};
+    row.appendChild(b);
+  });
+  voteMsg();
+}
+function voteMsg(){
+  const el=document.getElementById('voteMsg');
+  if(!vote){el.textContent='';return;}
+  const label=LABELS[R.blindOrder.indexOf(vote)];
+  el.textContent=revealed?`You'd ship Model ${label} — that's ${nameFor(vote)}.`:`You picked Model ${label}. Reveal to see which model it is.`;
+}
+
+function applyReveal(){
+  document.querySelectorAll('[data-reveal-name]').forEach(el=>{
+    const s=el.getAttribute('data-reveal-name'); const i=R.blindOrder.indexOf(s);
+    el.innerHTML=revealed?`${nameFor(s)}<small>model ${LABELS[i]}</small>`:`Model ${LABELS[i]}`;
+  });
+  renderReasons(); voteMsg();
+}
+
+document.getElementById('revealBtn').onclick=(e)=>{
+  revealed=!revealed; e.target.classList.toggle('on',revealed);
+  e.target.textContent=revealed?'Hide models':'Reveal models'; applyReveal();
+};
+document.getElementById('viewseg').onclick=(e)=>{
+  const b=e.target.closest('button'); if(!b)return;
+  view=b.dataset.view;
+  document.querySelectorAll('#viewseg button').forEach(x=>x.classList.toggle('on',x===b));
+  renderTriptych();
+};
+load();
+</script>
+</body>
+</html>

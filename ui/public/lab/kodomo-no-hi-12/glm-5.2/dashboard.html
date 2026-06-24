@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aozora — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --aozora-sky: #0B5FFF; --aozora-deep: #0A1B3D; --aozora-koi: #E8483B; --aozora-gold: #F5A623;
+  --aozora-cloud: #FFFFFF; --aozora-mist: #F0F5FF; --aozora-ink: #0F172A;
+  --aozora-slate: #64748B; --aozora-slate-light: #94A3B8;
+  --aozora-control-bg: #FFFFFF; --aozora-control-bg-hover: #F0F5FF;
+  --aozora-control-bg-active: #E0EAFF; --aozora-control-bg-disabled: #F1F5F9;
+  --aozora-focus-ring: #0B5FFF;
+  --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Inter', sans-serif;
+  --text-display: 64px; --text-h1: 48px; --text-h2: 36px; --text-h3: 28px; --text-h4: 22px;
+  --text-body-lg: 19px; --text-body: 17px; --text-body-sm: 15px; --text-label: 14px;
+  --text-caption: 13px; --text-micro: 12px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
+  --space-20: 80px; --space-24: 96px; --space-32: 128px;
+  --radius-sm: 0px; --radius-md: 16px; --radius-lg: 24px; --radius-full: 9999px;
+  --control-height: 44px;
+  --ease-lift: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 150ms var(--ease-lift); --transition-normal: 300ms var(--ease-lift);
+  --shadow-hover: 0 8px 24px rgba(10, 27, 61, 0.08);
+  --shadow-card: 0 2px 8px rgba(10, 27, 61, 0.04);
+  --shadow-float: 0 16px 48px rgba(10, 27, 61, 0.12);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-body); font-size: var(--text-body); line-height: 1.6; color: var(--aozora-ink); background: var(--aozora-mist); }
+img { max-width: 100%; display: block; }
+a { color: var(--aozora-sky); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--aozora-focus-ring); outline-offset: 2px; border-radius: inherit; }
+
+/* ===== Layout ===== */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; background: var(--aozora-deep); color: rgba(255,255,255,0.7);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 50; padding: var(--space-6) var(--space-4);
+}
+.main { flex: 1; margin-left: 260px; padding: var(--space-8) var(--space-8); max-width: calc(100% - 260px); }
+
+/* ===== Sidebar ===== */
+.sidebar-logo {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  color: var(--aozora-cloud); letter-spacing: -0.02em; margin-bottom: var(--space-8); padding: 0 var(--space-3);
+}
+.sidebar-logo-mark {
+  width: 32px; height: 32px; border-radius: var(--radius-full); background: var(--aozora-sky);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sidebar-nav { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
+.sidebar-section-label {
+  font-size: var(--text-micro); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); padding: var(--space-4) var(--space-3) var(--space-2);
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3); border-radius: var(--radius-md);
+  font-size: var(--text-body-sm); font-weight: 500; color: rgba(255,255,255,0.6);
+  transition: all var(--transition-fast); cursor: pointer;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.06); color: var(--aozora-cloud); }
+.sidebar-item.active { background: var(--aozora-sky); color: var(--aozora-cloud); }
+.sidebar-item svg { flex-shrink: 0; }
+.sidebar-footer { padding-top: var(--space-6); }
+.sidebar-user {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3);
+  border-radius: var(--radius-md); cursor: pointer; transition: background var(--transition-fast);
+}
+.sidebar-user:hover { background: rgba(255,255,255,0.06); }
+
+/* ===== Typography ===== */
+.display { font-family: var(--font-display); font-size: var(--text-display); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
+h1, .h1 { font-family: var(--font-display); font-size: var(--text-h1); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
+h2, .h2 { font-family: var(--font-display); font-size: var(--text-h2); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
+h3, .h3 { font-family: var(--font-display); font-size: var(--text-h3); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+h4, .h4 { font-family: var(--font-display); font-size: var(--text-h4); font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; }
+.lead { font-size: var(--text-body-lg); line-height: 1.6; color: var(--aozora-slate); }
+.body-sm { font-size: var(--text-body-sm); }
+.caption { font-size: var(--text-caption); color: var(--aozora-slate); }
+.micro { font-size: var(--text-micro); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: var(--control-height); padding: 0 var(--space-5);
+  font-family: var(--font-body); font-size: var(--text-label); font-weight: 600;
+  border-radius: var(--radius-md); border: none; transition: all var(--transition-fast); white-space: nowrap;
+}
+.btn-primary { background: var(--aozora-sky); color: var(--aozora-cloud); }
+.btn-primary:hover { background: #0A52E0; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(11,95,255,0.25); }
+.btn-primary:active { background: #0948B8; transform: translateY(0); }
+.btn-primary:disabled { background: var(--aozora-slate-light); color: rgba(255,255,255,0.6); cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary { background: var(--aozora-mist); color: var(--aozora-ink); }
+.btn-secondary:hover { background: #E0EAFF; transform: translateY(-1px); }
+.btn-secondary:active { background: var(--aozora-control-bg-active); transform: translateY(0); }
+.btn-secondary:disabled { background: var(--aozora-control-bg-disabled); color: var(--aozora-slate-light); cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: var(--aozora-sky); }
+.btn-ghost:hover { background: var(--aozora-mist); }
+.btn-ghost:active { background: var(--aozora-control-bg-active); }
+.btn-ghost:disabled { color: var(--aozora-slate-light); cursor: not-allowed; }
+.btn-danger { background: var(--aozora-koi); color: var(--aozora-cloud); }
+.btn-danger:hover { background: #D13D31; transform: translateY(-1px); }
+.btn-danger:active { background: #B8332A; transform: translateY(0); }
+.btn-danger:disabled { background: var(--aozora-slate-light); color: rgba(255,255,255,0.6); cursor: not-allowed; }
+.btn-sm { height: 36px; padding: 0 var(--space-4); font-size: var(--text-caption); }
+.btn-icon { width: var(--control-height); padding: 0; }
+
+/* ===== Top bar ===== */
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-8); }
+.topbar-left { display: flex; align-items: center; gap: var(--space-6); }
+.topbar-title h1 { font-size: var(--text-h2); }
+.topbar-title p { font-size: var(--text-body-sm); color: var(--aozora-slate); margin-top: var(--space-1); }
+.topbar-right { display: flex; align-items: center; gap: var(--space-3); }
+.search-box { position: relative; }
+.search-box .input { padding-left: 40px; width: 280px; }
+.search-box svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--aozora-slate-light); }
+
+/* ===== Cards ===== */
+.card {
+  background: var(--aozora-cloud); border-radius: var(--radius-lg);
+  padding: var(--space-6); transition: all var(--transition-normal);
+}
+.card:hover { box-shadow: var(--shadow-hover); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
+.card-header h3 { font-size: var(--text-h4); }
+
+/* ===== Stats ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8); }
+.stat-card { background: var(--aozora-cloud); border-radius: var(--radius-lg); padding: var(--space-6); }
+.stat-card .micro { color: var(--aozora-slate); margin-bottom: var(--space-2); }
+.stat-value { font-family: var(--font-display); font-size: var(--text-h2); font-weight: 700; letter-spacing: -0.02em; }
+.stat-trend { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-caption); margin-top: var(--space-2); }
+.stat-trend-up { color: #16A34A; }
+.stat-trend-down { color: var(--aozora-koi); }
+
+/* ===== Dashboard grid ===== */
+.dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); margin-bottom: var(--space-8); }
+.dash-grid-rev { grid-template-columns: 1fr 2fr; }
+
+/* ===== Koinobori visualization ===== */
+.koinobori-card { background: var(--aozora-deep); border-radius: var(--radius-lg); padding: var(--space-8); color: var(--aozora-cloud); position: relative; overflow: hidden; }
+.koinobori-card::before { content: ''; position: absolute; top: -30%; right: -10%; width: 300px; height: 300px; border-radius: var(--radius-full); background: rgba(11,95,255,0.15); filter: blur(60px); }
+.koinobori-card > * { position: relative; z-index: 1; }
+.koinobori-card h3 { color: var(--aozora-cloud); margin-bottom: var(--space-2); }
+.koinobori-card p { color: rgba(255,255,255,0.6); font-size: var(--text-body-sm); margin-bottom: var(--space-6); }
+.koinobori-stream { display: flex; gap: var(--space-3); align-items: flex-end; height: 160px; padding-top: var(--space-4); }
+.streamer { flex: 1; border-radius: var(--radius-full); position: relative; transition: height 600ms var(--ease-lift); }
+.streamer-body { width: 100%; border-radius: var(--radius-full); position: relative; overflow: hidden; }
+.streamer-eye { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: var(--radius-full); background: rgba(255,255,255,0.9); }
+.streamer-label { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); font-size: var(--text-micro); color: rgba(255,255,255,0.5); white-space: nowrap; }
+
+/* ===== Goal list ===== */
+.goal-item { padding: var(--space-5) 0; }
+.goal-item + .goal-item { border-top: 1px solid var(--aozora-mist); }
+.goal-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.goal-name { font-size: var(--text-body); font-weight: 600; }
+.goal-meta { display: flex; align-items: center; gap: var(--space-3); }
+.goal-progress-info { font-size: var(--text-caption); color: var(--aozora-slate); }
+.progress { width: 100%; height: 8px; border-radius: var(--radius-full); background: var(--aozora-mist); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: var(--radius-full); background: var(--aozora-sky); transition: width 600ms var(--ease-lift); }
+.progress-fill-gold { background: var(--aozora-gold); }
+.progress-fill-koi { background: var(--aozora-koi); }
+
+/* ===== Activity feed ===== */
+.activity-item { display: flex; gap: var(--space-3); padding: var(--space-3) 0; }
+.activity-item + .activity-item { border-top: 1px solid var(--aozora-mist); }
+.activity-dot { width: 10px; height: 10px; border-radius: var(--radius-full); flex-shrink: 0; margin-top: 6px; }
+.activity-dot-sky { background: var(--aozora-sky); }
+.activity-dot-gold { background: var(--aozora-gold); }
+.activity-dot-koi { background: var(--aozora-koi); }
+.activity-dot-success { background: #16A34A; }
+.activity-content { flex: 1; }
+.activity-text { font-size: var(--text-body-sm); }
+.activity-time { font-size: var(--text-caption); color: var(--aozora-slate); margin-top: var(--space-1); }
+
+/* ===== Badge ===== */
+.badge { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
+.badge-sky { background: rgba(11,95,255,0.1); color: var(--aozora-sky); }
+.badge-koi { background: rgba(232,72,59,0.1); color: var(--aozora-koi); }
+.badge-gold { background: rgba(245,166,35,0.12); color: #C98714; }
+.badge-slate { background: var(--aozora-mist); color: var(--aozora-slate); }
+.badge-success { background: rgba(22,163,74,0.1); color: #16A34A; }
+
+/* ===== Avatar ===== */
+.avatar { width: 40px; height: 40px; border-radius: var(--radius-full); background: var(--aozora-mist); display: flex; align-items: center; justify-content: center; font-size: var(--text-label); font-weight: 600; color: var(--aozora-ink); flex-shrink: 0; }
+.avatar-sm { width: 28px; height: 28px; font-size: var(--text-micro); }
+.avatar-lg { width: 56px; height: 56px; font-size: var(--text-body); }
+
+/* ===== Form controls ===== */
+.input-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
+.label { font-size: var(--text-label); font-weight: 600; color: var(--aozora-ink); }
+.label-required::after { content: ' *'; color: var(--aozora-koi); }
+.input, .select, .textarea {
+  height: var(--control-height); padding: 0 var(--space-4);
+  font-family: var(--font-body); font-size: var(--text-body); color: var(--aozora-ink);
+  background: var(--aozora-cloud); border: none; border-radius: var(--radius-md);
+  transition: all var(--transition-fast); width: 100%;
+}
+.input::placeholder, .textarea::placeholder { color: var(--aozora-slate-light); }
+.input:hover, .select:hover, .textarea:hover { background: var(--aozora-mist); }
+.input:focus, .select:focus, .textarea:focus { background: var(--aozora-cloud); outline: 3px solid var(--aozora-focus-ring); outline-offset: 2px; }
+.input:active, .select:active { background: var(--aozora-control-bg-active); }
+.input:disabled, .select:disabled, .textarea:disabled { background: var(--aozora-control-bg-disabled); color: var(--aozora-slate-light); cursor: not-allowed; }
+.textarea { height: auto; min-height: 100px; padding: var(--space-4); resize: vertical; line-height: 1.6; }
+.select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right var(--space-4) center; padding-right: var(--space-10);
+}
+.checkbox-wrap { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+.checkbox-wrap input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; width: 20px; height: 20px;
+  border-radius: var(--radius-sm); background: var(--aozora-cloud);
+  box-shadow: inset 0 0 0 2px var(--aozora-slate-light); cursor: pointer; transition: all var(--transition-fast); flex-shrink: 0;
+}
+.checkbox-wrap input[type="checkbox"]:hover { box-shadow: inset 0 0 0 2px var(--aozora-sky); }
+.checkbox-wrap input[type="checkbox"]:checked { background: var(--aozora-sky); box-shadow: inset 0 0 0 2px var(--aozora-sky); }
+.checkbox-wrap input[type="checkbox"]:checked::after { content: ''; display: block; width: 6px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin: 2px auto; }
+.checkbox-wrap input[type="checkbox"]:disabled { background: var(--aozora-control-bg-disabled); box-shadow: inset 0 0 0 2px var(--aozora-slate-light); cursor: not-allowed; }
+.checkbox-label { font-size: var(--text-body-sm); color: var(--aozora-ink); }
+.radio-wrap { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+.radio-wrap input[type="radio"] {
+  appearance: none; -webkit-appearance: none; width: 20px; height: 20px;
+  border-radius: var(--radius-full); background: var(--aozora-cloud);
+  box-shadow: inset 0 0 0 2px var(--aozora-slate-light); cursor: pointer; transition: all var(--transition-fast); flex-shrink: 0;
+}
+.radio-wrap input[type="radio"]:hover { box-shadow: inset 0 0 0 2px var(--aozora-sky); }
+.radio-wrap input[type="radio"]:checked { box-shadow: inset 0 0 0 2px var(--aozora-sky); background: radial-gradient(circle, var(--aozora-sky) 40%, transparent 45%); }
+.radio-wrap input[type="radio"]:disabled { background: var(--aozora-control-bg-disabled); cursor: not-allowed; }
+.radio-label { font-size: var(--text-body-sm); color: var(--aozora-ink); }
+.toggle-wrap { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
+.toggle-wrap input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; width: 44px; height: 24px;
+  border-radius: var(--radius-full); background: var(--aozora-slate-light); cursor: pointer; transition: background var(--transition-fast); position: relative; flex-shrink: 0;
+}
+.toggle-wrap input[type="checkbox"]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: var(--radius-full); background: white; transition: transform var(--transition-fast); }
+.toggle-wrap input[type="checkbox"]:checked { background: var(--aozora-sky); }
+.toggle-wrap input[type="checkbox"]:checked::after { transform: translateX(20px); }
+.toggle-wrap input[type="checkbox"]:disabled { background: var(--aozora-control-bg-disabled); cursor: not-allowed; opacity: 0.5; }
+.toggle-label { font-size: var(--text-body-sm); color: var(--aozora-ink); }
+.range-wrap { display: flex; flex-direction: column; gap: var(--space-2); }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: var(--radius-full); background: var(--aozora-mist); cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: var(--radius-full); background: var(--aozora-sky); box-shadow: 0 0 0 4px white; cursor: pointer; transition: all var(--transition-fast); }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]:focus::-webkit-slider-thumb { outline: 3px solid var(--aozora-focus-ring); outline-offset: 2px; }
+input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: var(--radius-full); background: var(--aozora-sky); border: none; box-shadow: 0 0 0 4px white; cursor: pointer; }
+input[type="range"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== Tabs ===== */
+.tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-6); }
+.tab { padding: var(--space-3) var(--space-4); font-size: var(--text-label); font-weight: 600; color: var(--aozora-slate); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); }
+.tab:hover { background: var(--aozora-mist); color: var(--aozora-ink); }
+.tab.active { background: var(--aozora-sky); color: var(--aozora-cloud); }
+
+/* ===== Table ===== */
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; font-size: var(--text-micro); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--aozora-slate); padding: var(--space-3) var(--space-4); }
+.table td { padding: var(--space-4); font-size: var(--text-body-sm); border-top: 1px solid var(--aozora-mist); }
+.table tr:hover td { background: var(--aozora-mist); }
+
+/* ===== Modal ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(10,27,61,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 200; padding: var(--space-6); }
+.modal { background: var(--aozora-cloud); border-radius: var(--radius-lg); padding: var(--space-8); max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-float); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
+.modal-header h2 { font-size: var(--text-h3); }
+.modal-close { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--aozora-slate); cursor: pointer; transition: all var(--transition-fast); }
+.modal-close:hover { background: var(--aozora-mist); color: var(--aozora-ink); }
+.modal-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.modal-form-full { grid-column: 1 / -1; }
+.modal-actions { display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-6); }
+
+/* ===== Responsive ===== */
+@media (max-width: 1100px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-grid, .dash-grid-rev { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); transition: transform var(--transition-normal); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; max-width: 100%; padding: var(--space-4); }
+  .topbar-right .search-box { display: none; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .modal-form-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== Sidebar ===== -->
+<aside class="sidebar">
+  <a href="#" class="sidebar-logo">
+    <span class="sidebar-logo-mark">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L12 22 M6 8 Q12 4 18 8 M4 14 Q12 10 20 14 M3 20 Q12 16 21 20"/></svg>
+    </span>
+    Aozora
+  </a>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Workspace</div>
+    <div class="sidebar-item active">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+    <div class="sidebar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Goals
+    </div>
+    <div class="sidebar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+      Milestones
+    </div>
+    <div class="sidebar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a18 18 0 0 0-7-1.5a18 18 0 0 0-7 1.5"/><path d="M11.7 6.5a18 18 0 0 0-7 1.5"/><path d="M15.7 9.5a18 18 0 0 0-7 1.5"/></svg>
+      Streamers
+    </div>
+    <div class="sidebar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Circle
+    </div>
+    <div class="sidebar-section-label">Account</div>
+    <div class="sidebar-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="avatar avatar-sm" style="background: rgba(255,255,255,0.1); color: var(--aozora-cloud);">YT</div>
+      <div>
+        <div style="font-size: var(--text-body-sm); font-weight: 600; color: var(--aozora-cloud);">Yuki Tanaka</div>
+        <div style="font-size: var(--text-caption); color: rgba(255,255,255,0.4);">Family plan</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Main content ===== -->
+<main class="main">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">
+        <h1>Good morning, Yuki</h1>
+        <p>You have 3 milestones rising today. The wind is fair.</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="input" placeholder="Search goals, milestones...">
+      </div>
+      <button class="btn btn-ghost btn-icon" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="btn btn-primary" onclick="document.getElementById('newGoalModal').style.display='flex'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New goal
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="micro">Active goals</div>
+      <div class="stat-value">7</div>
+      <div class="stat-trend stat-trend-up">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        +2 this month
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="micro">Milestones completed</div>
+      <div class="stat-value">24</div>
+      <div class="stat-trend stat-trend-up">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        +5 this week
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="micro">Streamers raised</div>
+      <div class="stat-value">18</div>
+      <div class="stat-trend stat-trend-up">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        +3 this week
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="micro">Dragon badges</div>
+      <div class="stat-value">4</div>
+      <div class="stat-trend stat-trend-up">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        +1 this month
+      </div>
+    </div>
+  </div>
+
+  <!-- Koinobori + Activity -->
+  <div class="dash-grid">
+    <!-- Koinobori visualization -->
+    <div class="koinobori-card">
+      <h3>Your streamers</h3>
+      <p>Each streamer represents a completed milestone. Watch them rise.</p>
+      <div class="koinobori-stream">
+        <div class="streamer" style="height: 100%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-sky);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Reading</div>
+        </div>
+        <div class="streamer" style="height: 85%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-koi);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Swimming</div>
+        </div>
+        <div class="streamer" style="height: 70%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-gold);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Math</div>
+        </div>
+        <div class="streamer" style="height: 60%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-sky);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Art</div>
+        </div>
+        <div class="streamer" style="height: 50%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-koi);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Music</div>
+        </div>
+        <div class="streamer" style="height: 40%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-gold);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Coding</div>
+        </div>
+        <div class="streamer" style="height: 30%;">
+          <div class="streamer-body" style="height: 100%; background: var(--aozora-sky);">
+            <div class="streamer-eye"></div>
+          </div>
+          <div class="streamer-label">Garden</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity feed -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent activity</h3>
+        <a href="#" class="body-sm" style="color: var(--aozora-sky);">View all</a>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot activity-dot-gold"></div>
+        <div class="activity-content">
+          <div class="activity-text"><strong>Dragon badge earned!</strong> "Read 10 books" goal completed.</div>
+          <div class="activity-time">2 hours ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot activity-dot-sky"></div>
+        <div class="activity-content">
+          <div class="activity-text">Milestone completed: <strong>Chapter 8</strong> in Reading goal</div>
+          <div class="activity-time">Yesterday at 4:30 PM</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot activity-dot-koi"></div>
+        <div class="activity-content">
+          <div class="activity-text">New streamer raised for <strong>Swimming</strong> milestone</div>
+          <div class="activity-time">Yesterday at 10:15 AM</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot activity-dot-success"></div>
+        <div class="activity-content">
+          <div class="activity-text">Mei commented on <strong>Math goal</strong>: "Great progress!"</div>
+          <div class="activity-time">2 days ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot activity-dot-sky"></div>
+        <div class="activity-content">
+          <div class="activity-text">Milestone completed: <strong>Freestyle 25m</strong> in Swimming</div>
+          <div class="activity-time">3 days ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active goals -->
+  <div class="card" style="margin-bottom: var(--space-8);">
+    <div class="card-header">
+      <div style="display: flex; align-items: center; gap: var(--space-4);">
+        <h3>Active goals</h3>
+        <div class="tabs">
+          <div class="tab active">All</div>
+          <div class="tab">Family</div>
+          <div class="tab">Personal</div>
+        </div>
+      </div>
+      <select class="select" style="width: auto; height: 36px; font-size: var(--text-caption);">
+        <option>Sort by: Recent</option>
+        <option>Sort by: Progress</option>
+        <option>Sort by: Deadline</option>
+      </select>
+    </div>
+
+    <div class="goal-item">
+      <div class="goal-row">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <span class="goal-name">Read 10 books this season</span>
+          <span class="badge badge-gold">Dragon earned</span>
+        </div>
+        <div class="goal-meta">
+          <span class="goal-progress-info">10/10 milestones</span>
+          <span class="badge badge-success">Complete</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill progress-fill-gold" style="width: 100%;"></div></div>
+    </div>
+
+    <div class="goal-item">
+      <div class="goal-row">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <span class="goal-name">Swim freestyle 50m</span>
+          <span class="badge badge-sky">In progress</span>
+        </div>
+        <div class="goal-meta">
+          <span class="goal-progress-info">6/8 milestones</span>
+          <span class="caption">Due Jul 15</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width: 75%;"></div></div>
+    </div>
+
+    <div class="goal-item">
+      <div class="goal-row">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <span class="goal-name">Master multiplication tables</span>
+          <span class="badge badge-sky">In progress</span>
+        </div>
+        <div class="goal-meta">
+          <span class="goal-progress-info">5/12 milestones</span>
+          <span class="caption">Due Aug 30</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width: 42%;"></div></div>
+    </div>
+
+    <div class="goal-item">
+      <div class="goal-row">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <span class="goal-name">Daily art practice — 30 days</span>
+          <span class="badge badge-koi">Behind</span>
+        </div>
+        <div class="goal-meta">
+          <span class="goal-progress-info">8/30 milestones</span>
+          <span class="caption">Due Jul 5</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill progress-fill-koi" style="width: 27%;"></div></div>
+    </div>
+
+    <div class="goal-item">
+      <div class="goal-row">
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <span class="goal-name">Learn 20 kanji this month</span>
+          <span class="badge badge-sky">In progress</span>
+        </div>
+        <div class="goal-meta">
+          <span class="goal-progress-info">14/20 milestones</span>
+          <span class="caption">Due Jun 30</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width: 70%;"></div></div>
+    </div>
+  </div>
+
+  <!-- Goal detail + form -->
+  <div class="dash-grid dash-grid-rev" style="margin-bottom: var(--space-8);">
+    <!-- Add milestone form -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Add a milestone</h3>
+      </div>
+      <form onsubmit="event.preventDefault();">
+        <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+          <div class="input-wrap">
+            <label class="label label-required" for="ms-title">Milestone name</label>
+            <input type="text" id="ms-title" class="input" placeholder="e.g. Read chapter 9">
+          </div>
+          <div class="input-wrap">
+            <label class="label" for="ms-goal">Assign to goal</label>
+            <select id="ms-goal" class="select">
+              <option>Read 10 books this season</option>
+              <option>Swim freestyle 50m</option>
+              <option>Master multiplication tables</option>
+              <option>Daily art practice — 30 days</option>
+              <option>Learn 20 kanji this month</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <label class="label" for="ms-date">Target date</label>
+            <input type="date" id="ms-date" class="input">
+          </div>
+          <div class="input-wrap">
+            <label class="label" for="ms-priority">Priority</label>
+            <div style="display: flex; gap: var(--space-4); margin-top: var(--space-1);">
+              <div class="radio-wrap"><input type="radio" id="pri-low" name="priority"><label for="pri-low" class="radio-label">Low</label></div>
+              <div class="radio-wrap"><input type="radio" id="pri-med" name="priority" checked><label for="pri-med" class="radio-label">Medium</label></div>
+              <div class="radio-wrap"><input type="radio" id="pri-high" name="priority"><label for="pri-high" class="radio-label">High</label></div>
+            </div>
+          </div>
+          <div class="input-wrap">
+            <label class="label" for="ms-notes">Notes</label>
+            <textarea id="ms-notes" class="textarea" placeholder="Any details about this milestone..."></textarea>
+          </div>
+          <div style="display: flex; align-items: center; gap: var(--space-6);">
+            <div class="toggle-wrap"><input type="checkbox" id="ms-notify" checked><label for="ms-notify" class="toggle-label">Notify circle</label></div>
+            <div class="checkbox-wrap"><input type="checkbox" id="ms-celebrate" checked><label for="ms-celebrate" class="checkbox-label">Raise a streamer on completion</label></div>
+          </div>
+          <div style="display: flex; gap: var(--space-3); margin-top: var(--space-2);">
+            <button type="submit" class="btn btn-primary">Add milestone</button>
+            <button type="button" class="btn btn-ghost" disabled>Save as template</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Goal detail card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Swim freestyle 50m</h3>
+          <p class="caption" style="margin-top: var(--space-1);">Created May 5 · 6 of 8 milestones complete</p>
+        </div>
+        <span class="badge badge-sky">In progress</span>
+      </div>
+
+      <div style="margin-bottom: var(--space-6);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+          <span class="body-sm" style="font-weight: 600;">Overall progress</span>
+          <span class="body-sm" style="color: var(--aozora-sky); font-weight: 600;">75%</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width: 75%;"></div></div>
+      </div>
+
+      <div class="input-wrap" style="margin-bottom: var(--space-6);">
+        <label class="label" for="difficulty">Difficulty adjustment</label>
+        <div class="range-wrap">
+          <input type="range" id="difficulty" min="1" max="10" value="6">
+          <div style="display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--aozora-slate);">
+            <span>Easy</span>
+            <span id="diffValue" style="font-weight: 600; color: var(--aozora-sky);">6 / 10</span>
+            <span>Hard</span>
+          </div>
+        </div>
+      </div>
+
+      <h4 style="margin-bottom: var(--space-4);">Milestone timeline</h4>
+      <table class="table">
+        <thead><tr><th>Milestone</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td>Bubble blowing 30s</td><td><span class="badge badge-success">Done</span></td><td>May 10</td></tr>
+          <tr><td>Kickboard 10m</td><td><span class="badge badge-success">Done</span></td><td>May 17</td></tr>
+          <tr><td>Freestyle 10m</td><td><span class="badge badge-success">Done</span></td><td>May 24</td></tr>
+          <tr><td>Freestyle 25m</td><td><span class="badge badge-success">Done</span></td><td>Jun 7</td></tr>
+          <tr><td>Breathing rhythm</td><td><span class="badge badge-success">Done</span></td><td>Jun 14</td></tr>
+          <tr><td>Freestyle 35m</td><td><span class="badge badge-sky">Current</span></td><td>Jun 28</td></tr>
+          <tr><td>Freestyle 45m</td><td><span class="badge badge-slate">Upcoming</span></td><td>Jul 5</td></tr>
+          <tr><td>Freestyle 50m</td><td><span class="badge badge-slate">Upcoming</span></td><td>Jul 15</td></tr>
+        </tbody>
+      </table>
+
+      <div style="display: flex; gap: var(--space-3); margin-top: var(--space-6);">
+        <button class="btn btn-secondary btn-sm">Edit goal</button>
+        <button class="btn btn-ghost btn-sm">Share</button>
+        <button class="btn btn-danger btn-sm" style="margin-left: auto;">Archive</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Circle section -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Your circle</h3>
+      <button class="btn btn-secondary btn-sm">Invite member</button>
+    </div>
+    <div style="display: flex; gap: var(--space-6); flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="avatar avatar-lg" style="background: rgba(11,95,255,0.1); color: var(--aozora-sky);">MK</div>
+        <div>
+          <div style="font-weight: 600; font-size: var(--text-body-sm);">Mei Kobayashi</div>
+          <div class="caption">Mother · 4 goals shared</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="avatar avatar-lg" style="background: rgba(232,72,59,0.1); color: var(--aozora-koi);">HK</div>
+        <div>
+          <div style="font-weight: 600; font-size: var(--text-body-sm);">Haruto Kobayashi</div>
+          <div class="caption">Father · 3 goals shared</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="avatar avatar-lg" style="background: rgba(245,166,35,0.12); color: #C98714;">SK</div>
+        <div>
+          <div style="font-weight: 600; font-size: var(--text-body-sm);">Sora Kobayashi</div>
+          <div class="caption">Child · 7 goals tracked</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="avatar avatar-lg" style="background: rgba(22,163,74,0.1); color: #16A34A;">RT</div>
+        <div>
+          <div style="font-weight: 600; font-size: var(--text-body-sm);">Riku Tanaka</div>
+          <div class="caption">Teacher · 2 goals shared</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ===== New Goal Modal ===== -->
+<div class="modal-overlay" id="newGoalModal" style="display: none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Create a new goal</h2>
+      <button class="modal-close" onclick="document.getElementById('newGoalModal').style.display='none'" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form onsubmit="event.preventDefault(); document.getElementById('newGoalModal').style.display='none';">
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <div class="input-wrap">
+          <label class="label label-required" for="goal-name">Goal name</label>
+          <input type="text" id="goal-name" class="input" placeholder="e.g. Learn to play piano">
+        </div>
+        <div class="input-wrap">
+          <label class="label" for="goal-desc">Description</label>
+          <textarea id="goal-desc" class="textarea" placeholder="What does success look like?"></textarea>
+        </div>
+        <div class="modal-form-grid">
+          <div class="input-wrap">
+            <label class="label" for="goal-cat">Category</label>
+            <select id="goal-cat" class="select">
+              <option>Academic</option>
+              <option>Athletic</option>
+              <option>Personal</option>
+              <option>Creative</option>
+              <option>Professional</option>
+            </select>
+          </div>
+          <div class="input-wrap">
+            <label class="label" for="goal-deadline">Target deadline</label>
+            <input type="date" id="goal-deadline" class="input">
+          </div>
+        </div>
+        <div class="input-wrap">
+          <label class="label" for="goal-ms-count">Number of milestones</label>
+          <div class="range-wrap">
+            <input type="range" id="goal-ms-count" min="3" max="20" value="8">
+            <div style="display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--aozora-slate);">
+              <span>3</span>
+              <span id="modalRangeValue" style="font-weight: 600; color: var(--aozora-sky);">8 milestones</span>
+              <span>20</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-form-grid">
+          <div class="input-wrap">
+            <label class="label">Check-in cadence</label>
+            <div style="display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-1);">
+              <div class="radio-wrap"><input type="radio" id="cad-daily" name="modal-cadence"><label for="cad-daily" class="radio-label">Daily</label></div>
+              <div class="radio-wrap"><input type="radio" id="cad-weekly" name="modal-cadence" checked><label for="cad-weekly" class="radio-label">Weekly</label></div>
+              <div class="radio-wrap"><input type="radio" id="cad-monthly" name="modal-cadence" disabled><label for="cad-monthly" class="radio-label" style="color: var(--aozora-slate-light);">Monthly (Pro)</label></div>
+            </div>
+          </div>
+          <div class="input-wrap">
+            <label class="label">Options</label>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-1);">
+              <div class="toggle-wrap"><input type="checkbox" id="opt-share" checked><label for="opt-share" class="toggle-label">Share with circle</label></div>
+              <div class="checkbox-wrap"><input type="checkbox" id="opt-streamer" checked><label for="opt-streamer" class="checkbox-label">Raise streamers</label></div>
+              <div class="checkbox-wrap"><input type="checkbox" id="opt-dragon"><label for="opt-dragon" class="checkbox-label">Dragon badge on completion</label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('newGoalModal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Range slider displays
+const diffInput = document.getElementById('difficulty');
+const diffValue = document.getElementById('diffValue');
+if (diffInput && diffValue) { diffInput.addEventListener('input', function() { diffValue.textContent = this.value + ' / 10'; }); }
+
+const modalRange = document.getElementById('goal-ms-count');
+const modalRangeValue = document.getElementById('modalRangeValue');
+if (modalRange && modalRangeValue) { modalRange.addEventListener('input', function() { modalRangeValue.textContent = this.value + ' milestones'; }); }
+
+// Close modal on overlay click
+document.getElementById('newGoalModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+
+</body>
+</html>

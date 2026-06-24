@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Atlas — the sky, drawn in daylight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ---- frozen baseline reset ---- */
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:light;scroll-behavior:smooth}
+  body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  button,input,select,textarea,a{appearance:none;-webkit-appearance:none;border:0;background:none;color:inherit;font:inherit;outline:none;text-decoration:none}
+  button{cursor:pointer}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}html{scroll-behavior:auto}}
+
+  /* ---- tokens ---- */
+  :root{
+    --paper:#FBFAF6;--paper-warm:#F4F1EA;--paper-deep:#ECE8DE;
+    --ink:#181A1F;--ink-soft:#474B54;--ink-faint:#8A8E97;
+    --indigo:#27306B;--indigo-mid:#3B4A8C;--indigo-mist:#AEB6DC;
+    --amber:#E0A23B;--amber-deep:#B97F22;--ember:#C2421F;
+    --r-md:16px;--r-lg:24px;--r-full:9999px;
+    --rule:rgba(39,48,107,0.06);--tick:#8A8E97;
+    --ease:cubic-bezier(0.22,1,0.36,1);
+  }
+  body{background:var(--paper);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.6;letter-spacing:-0.005em}
+  .mono{font-family:'Space Mono',monospace;letter-spacing:0.04em}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--indigo-mid)}
+
+  /* the coordinate ruling — faint RA/Dec grid in the backdrop */
+  .ruled{
+    background-color:var(--paper);
+    background-image:
+      repeating-linear-gradient(to right, transparent 0 95px, var(--rule) 95px 96px),
+      repeating-linear-gradient(to bottom, transparent 0 95px, var(--rule) 95px 96px);
+  }
+
+  /* plate — registered to the grid by corner ticks, never a border */
+  .plate{position:relative;background:var(--paper-deep);border-radius:var(--r-md);padding:28px 28px 26px}
+  .plate::before{
+    content:'';position:absolute;inset:9px;pointer-events:none;
+    background:
+      linear-gradient(var(--tick),var(--tick)) 0 0/13px 1.5px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 0 0/1.5px 13px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 100% 0/13px 1.5px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 100% 0/1.5px 13px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 0 100%/13px 1.5px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 0 100%/1.5px 13px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 100% 100%/13px 1.5px no-repeat,
+      linear-gradient(var(--tick),var(--tick)) 100% 100%/1.5px 13px no-repeat;
+    opacity:0.55;transition:opacity 240ms var(--ease);
+  }
+  .plate:hover::before{opacity:0.9}
+
+  /* ---- ascension nav ---- */
+  .nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px clamp(20px,5vw,56px);background:rgba(251,250,246,0.86);backdrop-filter:blur(14px)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{width:34px;height:34px;border-radius:var(--r-full);background:var(--indigo);position:relative;display:grid;place-items:center}
+  .brand-mark::after{content:'';position:absolute;width:7px;height:7px;border-radius:var(--r-full);background:var(--amber);top:9px;left:10px;box-shadow:11px 7px 0 -1.5px var(--paper),4px 13px 0 -2px var(--indigo-mist)}
+  .brand-name{font-family:'Bodoni Moda',serif;font-size:23px;font-weight:500;letter-spacing:-0.01em}
+  .nav-links{display:flex;align-items:center;gap:6px}
+  .nav-links a{padding:9px 15px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);border-radius:var(--r-full);transition:color 180ms var(--ease)}
+  .nav-links a:hover{color:var(--indigo)}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:var(--amber);color:#26190A;border-radius:var(--r-full);font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;transition:background 200ms var(--ease)}
+  .btn-primary:hover{background:var(--amber-deep)}
+  .btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;color:var(--ink);border-radius:var(--r-full);font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;background:var(--paper-deep);transition:background 200ms var(--ease)}
+  .btn-ghost:hover{background:var(--paper-warm)}
+
+  /* ---- hero (single, full-bleed, LIGHT) ---- */
+  .hero{position:relative;display:grid;grid-template-columns:1.05fr 0.95fr;gap:40px;align-items:center;padding:clamp(56px,9vh,108px) clamp(20px,5vw,56px) clamp(64px,10vh,120px)}
+  .hero-text{display:flex;flex-direction:column;gap:26px;max-width:620px}
+  .hero-eyebrow{display:flex;align-items:center;gap:14px}
+  .hero-eyebrow::before{content:'';width:42px;height:1.5px;background:var(--indigo-mid)}
+  .hero h1{font-family:'Bodoni Moda',serif;font-weight:500;font-size:clamp(46px,6.4vw,84px);line-height:0.98;letter-spacing:-0.02em}
+  .hero h1 em{font-style:italic;color:var(--indigo)}
+  .hero-lead{font-family:'Spectral',serif;font-size:21px;line-height:1.55;color:var(--ink-soft);max-width:50ch}
+  .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .hero-meta{display:flex;gap:28px;margin-top:14px;flex-wrap:wrap}
+  .hero-meta .stat .n{font-family:'Bodoni Moda',serif;font-size:28px;font-weight:500;letter-spacing:-0.01em}
+  .hero-meta .stat .l{font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-faint)}
+
+  /* hero plate — an engraved constellation on paper */
+  .hero-plate{position:relative;aspect-ratio:5/6;max-height:540px;border-radius:var(--r-lg);overflow:hidden;background:var(--paper-deep)}
+  .hero-plate svg{position:absolute;inset:0;width:100%;height:100%}
+  .hero-plate .cap{position:absolute;left:22px;bottom:18px;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-faint)}
+  .hero-plate .cap b{color:var(--ink);font-weight:700}
+  .grid-rule line{stroke:var(--indigo);stroke-width:0.5;opacity:0.12}
+  .constellation line{stroke:var(--indigo-mid);stroke-width:1.4;opacity:0.85}
+  .star{fill:var(--ink)}
+  .star.bright{fill:var(--amber)}
+  .star-label{font-family:'Space Mono',monospace;font-size:9px;fill:var(--ink-faint);letter-spacing:0.06em}
+
+  /* ---- section scaffold ---- */
+  section{padding:clamp(64px,10vh,128px) clamp(20px,5vw,56px)}
+  .wrap{max-width:1180px;margin:0 auto}
+  .section-head{max-width:62ch;margin-bottom:48px}
+  .section-head .eyebrow{display:block;margin-bottom:18px}
+  h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:clamp(34px,4.6vw,56px);line-height:1.03;letter-spacing:-0.02em;margin-bottom:18px}
+  h2 em{font-style:italic;color:var(--indigo)}
+  .lead{font-family:'Spectral',serif;font-size:20px;line-height:1.6;color:var(--ink-soft)}
+
+  /* motif diagram */
+  .motif{display:grid;grid-template-columns:1.1fr 0.9fr;gap:48px;align-items:center}
+  .motif-figure{position:relative;border-radius:var(--r-lg);background:var(--paper-deep);padding:18px}
+  .motif-figure svg{width:100%;height:auto;display:block;border-radius:var(--r-md)}
+  .figure-note{font-family:'Space Mono',monospace;font-size:13px;line-height:1.5;letter-spacing:0.02em;color:var(--ink-faint);margin-top:14px;padding-left:18px;position:relative}
+  .figure-note::before{content:'';position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:var(--r-full);background:var(--amber)}
+  .motif-points{display:flex;flex-direction:column;gap:24px}
+  .mp{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start}
+  .mp .idx{font-family:'Bodoni Moda',serif;font-style:italic;font-size:26px;color:var(--amber-deep);line-height:1}
+  .mp h3{font-family:'Spectral',serif;font-size:20px;font-weight:500;margin-bottom:4px}
+  .mp p{font-size:16px;color:var(--ink-soft)}
+
+  /* object plates */
+  .objects{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:8px}
+  .object-plate .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .object-plate .name{font-family:'Spectral',serif;font-size:21px;font-weight:500}
+  .object-plate .mag{font-family:'Space Mono',monospace;font-size:13px;color:var(--ink);background:var(--paper);padding:3px 10px;border-radius:var(--r-full)}
+  .object-plate .mag.bright{background:var(--amber);color:#26190A;font-weight:700}
+  .object-plate dl{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-family:'Space Mono',monospace;font-size:13px}
+  .object-plate dt{color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em}
+  .object-plate dd{color:var(--ink-soft);text-align:right}
+
+  /* ---- the night-pane (the one dark surface) ---- */
+  .night{position:relative;margin:0 clamp(12px,3vw,40px);border-radius:var(--r-lg);overflow:hidden;background:var(--indigo);color:var(--paper)}
+  .night-sky{position:relative;min-height:300px;padding:clamp(40px,6vw,72px) clamp(28px,5vw,64px)}
+  .night-sky::before{content:'';position:absolute;inset:0;pointer-events:none;background:
+    radial-gradient(2px 2px at 12% 28%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 26% 64%, var(--indigo-mist), transparent),
+    radial-gradient(2px 2px at 44% 22%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 58% 72%, var(--indigo-mist), transparent),
+    radial-gradient(2.5px 2.5px at 72% 40%, var(--amber), transparent),
+    radial-gradient(1.5px 1.5px at 84% 60%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 92% 30%, var(--indigo-mist), transparent),
+    radial-gradient(2px 2px at 34% 84%, #fff, transparent);
+    opacity:0.9}
+  .night .eyebrow{color:var(--indigo-mist)}
+  .night h2{color:var(--paper)}
+  .night h2 em{color:var(--amber)}
+  .night-lead{font-family:'Spectral',serif;font-size:20px;color:var(--indigo-mist);max-width:54ch;position:relative;z-index:2;margin-top:8px}
+  .ribbon{position:relative;z-index:2;display:flex;gap:14px;flex-wrap:wrap;margin-top:34px}
+  .ribbon .obj{display:flex;align-items:center;gap:10px;padding:11px 16px;background:rgba(255,255,255,0.07);border-radius:var(--r-full);font-family:'Space Mono',monospace;font-size:14px}
+  .ribbon .obj .dot{width:9px;height:9px;border-radius:var(--r-full);background:var(--indigo-mist)}
+  .ribbon .obj.now .dot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  .ribbon .obj b{font-weight:700;letter-spacing:0.03em}
+  .ribbon .obj span{color:var(--indigo-mist)}
+
+  /* ---- closing ---- */
+  .closing{text-align:left}
+  .closing .wrap{display:grid;grid-template-columns:1.3fr 0.7fr;gap:40px;align-items:end}
+  .closing h2{margin-bottom:14px}
+  .closing p{font-family:'Spectral',serif;font-size:19px;color:var(--ink-soft);max-width:46ch}
+  .closing-cta{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+  .closing-cta .mono{font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-faint)}
+
+  footer{padding:28px clamp(20px,5vw,56px);display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:13px;letter-spacing:0.06em;color:var(--ink-faint)}
+
+  @media (max-width:980px){
+    .hero{grid-template-columns:1fr;gap:36px}
+    .hero-plate{max-height:420px;order:-1}
+    .motif{grid-template-columns:1fr;gap:32px}
+    .objects{grid-template-columns:1fr}
+    .closing .wrap{grid-template-columns:1fr;align-items:start;gap:28px}
+  }
+  @media (max-width:640px){
+    .nav-links{display:none}
+    .hero-meta{gap:20px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Lumen Atlas</span>
+  </div>
+  <div class="nav-links">
+    <a href="#tonight">Tonight</a>
+    <a href="#atlas">The atlas</a>
+    <a href="#ruling">The ruling</a>
+    <a href="#log">Log</a>
+  </div>
+  <a href="#start" class="btn-primary">Start observing</a>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero ruled">
+  <div class="hero-text">
+    <span class="eyebrow hero-eyebrow">A celestial atlas, made to work</span>
+    <h1>The sky, drawn in <em>daylight</em>.</h1>
+    <p class="hero-lead">For four centuries the night was recorded in ink on cream paper. Lumen brings that atlas back as a working app — plan tonight, browse the sky, keep your log, all on paper, never a black screen.</p>
+    <div class="hero-actions">
+      <a href="#start" class="btn-primary">Start observing</a>
+      <a href="#ruling" class="btn-ghost">How it reads</a>
+    </div>
+    <div class="hero-meta">
+      <div class="stat"><div class="n mono">9,110</div><div class="l">objects charted</div></div>
+      <div class="stat"><div class="n mono">88</div><div class="l">constellations</div></div>
+      <div class="stat"><div class="n mono">B1–B9</div><div class="l">Bortle aware</div></div>
+    </div>
+  </div>
+
+  <figure class="hero-plate" aria-label="An engraved plate of Ursa Major">
+    <svg viewBox="0 0 400 480" role="img" aria-hidden="true">
+      <g class="grid-rule">
+        <line x1="0" y1="80" x2="400" y2="80"/><line x1="0" y1="160" x2="400" y2="160"/>
+        <line x1="0" y1="240" x2="400" y2="240"/><line x1="0" y1="320" x2="400" y2="320"/>
+        <line x1="0" y1="400" x2="400" y2="400"/>
+        <line x1="80" y1="0" x2="80" y2="480"/><line x1="160" y1="0" x2="160" y2="480"/>
+        <line x1="240" y1="0" x2="240" y2="480"/><line x1="320" y1="0" x2="320" y2="480"/>
+      </g>
+      <!-- The Plough / Big Dipper -->
+      <g class="constellation">
+        <line x1="70" y1="300" x2="130" y2="270"/>
+        <line x1="130" y1="270" x2="195" y2="285"/>
+        <line x1="195" y1="285" x2="245" y2="240"/>
+        <line x1="245" y1="240" x2="300" y2="200"/>
+        <line x1="300" y1="200" x2="330" y2="140"/>
+        <line x1="330" y1="140" x2="255" y2="150"/>
+        <line x1="255" y1="150" x2="245" y2="240"/>
+      </g>
+      <g>
+        <circle class="star bright" cx="70" cy="300" r="6"/>
+        <circle class="star" cx="130" cy="270" r="4.5"/>
+        <circle class="star bright" cx="195" cy="285" r="5.5"/>
+        <circle class="star" cx="245" cy="240" r="4"/>
+        <circle class="star" cx="300" cy="200" r="5"/>
+        <circle class="star bright" cx="330" cy="140" r="6.5"/>
+        <circle class="star" cx="255" cy="150" r="4"/>
+      </g>
+      <text class="star-label" x="58" y="322">Alkaid</text>
+      <text class="star-label" x="306" y="128">Dubhe</text>
+      <text class="star-label" x="200" y="306">Alioth</text>
+    </svg>
+    <figcaption class="cap"><b>Plate XII</b> &nbsp;·&nbsp; Ursa Major &nbsp;·&nbsp; RA 11h Dec +55°</figcaption>
+  </figure>
+</header>
+
+<!-- ===================== THESIS ===================== -->
+<section id="atlas">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Why paper</span>
+      <h2>Every other star app hands you a <em>black screen</em>. The sky deserves a plate.</h2>
+      <p class="lead">A glowing dark UI kills your night vision and flattens the sky to dots. The historical answer was better: a ruled plate, objects placed by coordinate, brightness drawn as contrast. Lumen reads like that atlas — and stays out of your dark-adapted eyes.</p>
+    </div>
+
+    <div class="objects">
+      <article class="plate object-plate">
+        <div class="top"><span class="name">Jupiter</span><span class="mag bright mono">−2.3</span></div>
+        <dl>
+          <dt>RA</dt><dd>04h 41m</dd>
+          <dt>Dec</dt><dd>+21° 38′</dd>
+          <dt>Rises</dt><dd>19:12</dd>
+          <dt>Transit</dt><dd>00:41</dd>
+        </dl>
+      </article>
+      <article class="plate object-plate">
+        <div class="top"><span class="name">M31 · Andromeda</span><span class="mag mono">3.4</span></div>
+        <dl>
+          <dt>RA</dt><dd>00h 42m</dd>
+          <dt>Dec</dt><dd>+41° 16′</dd>
+          <dt>Rises</dt><dd>17:48</dd>
+          <dt>Transit</dt><dd>23:55</dd>
+        </dl>
+      </article>
+      <article class="plate object-plate">
+        <div class="top"><span class="name">Saturn</span><span class="mag mono">0.7</span></div>
+        <dl>
+          <dt>RA</dt><dd>22h 09m</dd>
+          <dt>Dec</dt><dd>−12° 50′</dd>
+          <dt>Rises</dt><dd>15:30</dd>
+          <dt>Transit</dt><dd>20:58</dd>
+        </dl>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MOTIF / DIAGRAM ===================== -->
+<section id="ruling" class="ruled">
+  <div class="wrap motif">
+    <div>
+      <figure class="motif-figure">
+        <svg viewBox="0 0 520 300" role="img" aria-label="The coordinate ruling, a plate registered to it, and magnitude as contrast">
+          <rect width="520" height="300" fill="#ECE8DE"/>
+          <g stroke="#27306B" stroke-width="0.6" opacity="0.16">
+            <line x1="65" y1="20" x2="65" y2="280"/><line x1="160" y1="20" x2="160" y2="280"/>
+            <line x1="255" y1="20" x2="255" y2="280"/><line x1="350" y1="20" x2="350" y2="280"/>
+            <line x1="445" y1="20" x2="445" y2="280"/>
+            <line x1="40" y1="70" x2="500" y2="70"/><line x1="40" y1="140" x2="500" y2="140"/>
+            <line x1="40" y1="210" x2="500" y2="210"/>
+          </g>
+          <!-- a plate registered with corner ticks -->
+          <g stroke="#8A8E97" stroke-width="1.5">
+            <path d="M150 95 h16 M150 95 v16" fill="none"/>
+            <path d="M380 95 h-16 M380 95 v16" fill="none"/>
+            <path d="M150 235 h16 M150 235 v-16" fill="none"/>
+            <path d="M380 235 h-16 M380 235 v-16" fill="none"/>
+          </g>
+          <!-- magnitude dots: bright -> faint -->
+          <circle cx="200" cy="150" r="9" fill="#E0A23B"/>
+          <circle cx="265" cy="135" r="6" fill="#181A1F"/>
+          <circle cx="320" cy="180" r="4" fill="#474B54"/>
+          <circle cx="345" cy="120" r="2.5" fill="#8A8E97"/>
+          <text x="158" y="220" font-family="'Space Mono',monospace" font-size="11" fill="#8A8E97">mag −2 · · · · +5</text>
+        </svg>
+        <figcaption class="figure-note">The faint grid is the right-ascension / declination ruling. The plate is framed by corner ticks, not a border. The dots show the rule that runs everywhere in Lumen: brighter dot = more important, exactly as on a real chart.</figcaption>
+      </figure>
+    </div>
+    <div class="motif-points">
+      <div class="section-head" style="margin-bottom:8px">
+        <span class="eyebrow">The structural idea</span>
+        <h2 style="font-size:clamp(30px,3.6vw,44px)">One motif: <em>the ruling</em>.</h2>
+      </div>
+      <div class="mp"><div class="idx">i</div><div><h3>Ruled, never bordered.</h3><p>Every screen sits on the coordinate grid; content is framed by engraver's corner ticks. No lines box anything in.</p></div></div>
+      <div class="mp"><div class="idx">ii</div><div><h3>Hierarchy is magnitude.</h3><p>The most important element is the brightest — full ink and the single amber mark. Supporting content dims, like fainter stars.</p></div></div>
+      <div class="mp"><div class="idx">iii</div><div><h3>The night gets one pane.</h3><p>Exactly one dark indigo surface per view. The page stays light, so the sky doesn't blind you at the eyepiece.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== NIGHT-PANE ===================== -->
+<section id="tonight" style="padding-left:0;padding-right:0">
+  <div class="night">
+    <div class="night-sky">
+      <span class="eyebrow">Tonight · 41.4°N · clear after 22:00</span>
+      <h2 style="margin-top:14px">The one <em>dark pane</em>, earned.</h2>
+      <p class="night-lead">Lumen shows the live sky in a single indigo strip — the only place darkness belongs. Everything else stays on paper.</p>
+      <div class="ribbon">
+        <div class="obj now"><span class="dot"></span><b>Jupiter</b><span>alt 58° · now</span></div>
+        <div class="obj"><span class="dot"></span><b>Saturn</b><span>alt 31°</span></div>
+        <div class="obj"><span class="dot"></span><b>M31</b><span>alt 67°</span></div>
+        <div class="obj"><span class="dot"></span><b>Moon</b><span>14% waxing</span></div>
+        <div class="obj"><span class="dot"></span><b>ISS</b><span>21:48 pass</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CLOSING ===================== -->
+<section id="start" class="closing">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Begin</span>
+      <h2>Open your first <em>plate</em> tonight.</h2>
+      <p>Set your location, see what's up, and log your first object. Free to browse the atlas; an account keeps your observation log.</p>
+    </div>
+    <div class="closing-cta">
+      <a href="#" class="btn-primary">Start observing</a>
+      <span class="mono">no account needed to browse</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Lumen Atlas · a Katagami design language</span>
+  <span class="mono">RA 00h → 24h · Dec −90° → +90°</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koinobori — Raise every child on their own wind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Instrument+Sans:wght@500;600&amp;display=swap');
+
+    :root {
+      --color-bg: #F8F5EF;
+      --color-surface: #FFFFFF;
+      --color-surface-2: #F1EDE4;
+      --color-ink: #0E1B2B;
+      --color-ink-muted: #4A5568;
+      --color-blue: #2A6A9C;
+      --color-blue-light: #4A8DC2;
+      --color-red: #C94F3A;
+      --color-green: #3F7A55;
+      --color-gold: #C5A05A;
+      --color-sky: #D4E6F5;
+      --color-border-subtle: #D9D3C7;
+      --color-focus-ring: #2A6A9C;
+      --control-h: 48px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", "Noto Sans JP", Roboto, sans-serif;
+    }
+
+    .display {
+      font-family: 'Instrument Sans', 'Inter', system-ui, -apple-system, sans-serif;
+      font-feature-settings: "tnum" 0;
+    }
+
+    .koinagare-surface {
+      background-color: var(--color-surface);
+    }
+
+    .section {
+      padding-top: 96px;
+      padding-bottom: 96px;
+    }
+
+    .nav {
+      height: 76px;
+    }
+
+    .control {
+      height: var(--control-h);
+      min-height: var(--control-h);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+      line-height: 1;
+    }
+
+    /* Primary Button — full states */
+    .btn-primary {
+      background-color: var(--color-blue);
+      color: white;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: var(--color-blue-light);
+      transform: translateY(-1px);
+    }
+    .btn-primary:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring), 0 0 0 6px rgba(255,255,255,0.85);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Secondary Button */
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-ink);
+      border: 1.5px solid var(--color-border-subtle);
+    }
+    .btn-secondary:hover {
+      border-color: var(--color-blue);
+      color: var(--color-blue);
+      background-color: rgba(42, 106, 156, 0.04);
+    }
+    .btn-secondary:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring), 0 0 0 5px rgba(255,255,255,0.9);
+    }
+    .btn-secondary:active {
+      background-color: rgba(42, 106, 156, 0.08);
+    }
+
+    /* Ghost */
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-ink-muted);
+      border: none;
+    }
+    .btn-ghost:hover {
+      background-color: var(--color-surface-2);
+      color: var(--color-ink);
+    }
+    .btn-ghost:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring);
+    }
+
+    /* Red emphasis */
+    .btn-red {
+      background-color: var(--color-red);
+      color: white;
+      border: none;
+    }
+    .btn-red:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+    .btn-red:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px #C94F3A, 0 0 0 6px rgba(255,255,255,0.85);
+    }
+
+    /* Form controls — all on single height token */
+    .input {
+      height: var(--control-h);
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border-subtle);
+      background-color: var(--color-surface);
+      color: var(--color-ink);
+      padding: 0 16px;
+      font-size: 15px;
+      transition: border-color 120ms, box-shadow 120ms;
+    }
+    .input:hover {
+      border-color: #C8C0B0;
+    }
+    .input:focus-visible {
+      outline: none;
+      border-color: var(--color-blue);
+      box-shadow: 0 0 0 3px rgba(42,106,156,0.18);
+    }
+    .input:disabled {
+      background-color: var(--color-surface-2);
+      color: var(--color-ink-muted);
+      border-color: var(--color-border-subtle);
+      cursor: not-allowed;
+    }
+
+    .select {
+      height: var(--control-h);
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border-subtle);
+      background-color: var(--color-surface);
+      color: var(--color-ink);
+      padding: 0 16px;
+      font-size: 15px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234A5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+    }
+    .select:focus-visible {
+      outline: none;
+      border-color: var(--color-blue);
+      box-shadow: 0 0 0 3px rgba(42,106,156,0.18);
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1.5px solid var(--color-border-subtle);
+      background-color: var(--color-surface);
+      transition: all 120ms;
+      cursor: pointer;
+    }
+    .checkbox:checked {
+      background-color: var(--color-blue);
+      border-color: var(--color-blue);
+    }
+    .checkbox:focus-visible {
+      box-shadow: 0 0 0 3px rgba(42,106,156,0.18);
+    }
+
+    .switch {
+      width: 48px;
+      height: 28px;
+      background-color: var(--color-surface-2);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 9999px;
+      position: relative;
+      transition: background-color 160ms ease;
+      cursor: pointer;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 9999px;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+      transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .switch.on {
+      background-color: var(--color-blue);
+      border-color: var(--color-blue);
+    }
+    .switch.on::after {
+      transform: translateX(20px);
+    }
+
+    .card {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 10px rgb(0 0 0 / 0.03);
+      border: 1px solid var(--color-border-subtle);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.06), 0 12px 28px rgb(0 0 0 / 0.05);
+    }
+
+    .flow-step {
+      position: relative;
+    }
+    .flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 28px;
+      top: 42px;
+      bottom: -24px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--color-border-subtle), transparent);
+    }
+
+    .banner-blue { color: var(--color-blue); }
+    .banner-red { color: var(--color-red); }
+    .banner-green { color: var(--color-green); }
+    .banner-gold { color: var(--color-gold); }
+
+    .hero-bg {
+      background-image: linear-gradient(rgba(14,27,43,0.22), rgba(14,27,43,0.26)), url('./media/hero.jpg');
+      background-size: cover;
+      background-position: center 40%;
+    }
+
+    .section-title {
+      font-size: 38px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .wind-line {
+      stroke: var(--color-gold);
+      stroke-width: 1.5;
+      stroke-dasharray: 1 3;
+      opacity: 0.35;
+    }
+
+    .nav-link {
+      transition: color 120ms ease;
+    }
+    .nav-link:hover {
+      color: var(--color-blue);
+    }
+
+    .koinobori-mark {
+      width: 28px;
+      height: 28px;
+    }
+
+    .metric {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F5EF] text-[#0E1B2B] antialiased">
+  <!-- Top Nav -->
+  <nav class="nav bg-white/95 backdrop-blur-md border-b border-[#D9D3C7] fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-[1120px] mx-auto px-8 h-full flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Mark: simple upward streamer -->
+        <div class="flex items-center gap-2.5">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 8 Q9 5 14 8 Q19 11 24 8" stroke="#2A6A9C" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M4 14 Q9 11 14 14 Q19 17 24 14" stroke="#C94F3A" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M4 20 Q9 17 14 20 Q19 23 24 20" stroke="#3F7A55" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <div>
+            <span class="font-semibold text-[21px] tracking-[-0.01em]">koinobori</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden md:flex items-center gap-8 text-[15px]">
+        <a href="#flow" class="nav-link font-medium text-[#4A5568]">How it flows</a>
+        <a href="#families" class="nav-link font-medium text-[#4A5568]">For families</a>
+        <a href="#festival" class="nav-link font-medium text-[#4A5568]">The festival</a>
+        <a href="#stories" class="nav-link font-medium text-[#4A5568]">Stories</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="showLogin()" class="btn-ghost control text-sm px-5">Log in</button>
+        <button onclick="startFree()" class="btn-primary control text-sm px-6">Start free</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- FULL-BLEED HERO -->
+  <header class="hero-bg h-[100dvh] min-h-[720px] flex items-center pt-16 relative">
+    <div class="max-w-[1120px] mx-auto px-8 pt-10 md:pt-0">
+      <div class="max-w-[640px]">
+        <div class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 h-8 mb-6 text-sm font-medium tracking-wide" style="box-shadow: 0 1px 2px rgb(0 0 0 / 0.04)">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#2A6A9C]"></span>
+          <span class="text-[#0E1B2B]">Kodomo no Hi • May 5</span>
+        </div>
+
+        <h1 class="display text-[60px] md:text-[68px] leading-[1.02] tracking-[-0.025em] font-semibold text-white mb-6">
+          Every child rises<br>on their own wind.
+        </h1>
+        
+        <p class="text-[19px] md:text-[21px] leading-tight text-white/95 max-w-[480px] mb-9">
+          Koinobori is the modern home for families who want to celebrate strength, track growth, and make every Kodomo no Hi unforgettable.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="startFree()" 
+                  class="btn-primary control px-8 text-base shadow-lg shadow-black/10">
+            Begin your family stream
+          </button>
+          <button onclick="document.getElementById('flow').scrollIntoView({ behavior: 'smooth' })" 
+                  class="btn-secondary control px-8 text-base bg-white/90 text-[#0E1B2B] border-white/70 hover:bg-white hover:border-[#2A6A9C]">
+            See how it works
+          </button>
+        </div>
+
+        <div class="flex items-center gap-8 mt-10 text-white/80 text-sm">
+          <div class="flex -space-x-2">
+            <div class="w-7 h-7 rounded-full bg-white/90 border border-white ring-1 ring-white/70"></div>
+            <div class="w-7 h-7 rounded-full bg-[#D4E6F5] border border-white ring-1 ring-white/70"></div>
+            <div class="w-7 h-7 rounded-full bg-[#E8E0D4] border border-white ring-1 ring-white/70"></div>
+          </div>
+          <div class="text-sm">Joined this week by <span class="font-semibold text-white">2,184</span> families</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subtle wind indicator -->
+    <div class="absolute bottom-12 right-8 hidden lg:block">
+      <svg width="120" height="36" viewBox="0 0 120 36" fill="none">
+        <path d="M4 18 Q28 8 52 18 Q76 28 100 14" stroke="white" stroke-width="1.5" stroke-opacity="0.35"/>
+        <path d="M14 26 Q36 18 60 26 Q84 33 108 22" stroke="white" stroke-width="1.25" stroke-opacity="0.25"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- TRUST BAR -->
+  <div class="border-b border-[#D9D3C7] bg-white">
+    <div class="max-w-[1120px] mx-auto px-8 py-5 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-sm text-[#4A5568]">
+      <div class="flex items-center gap-2"><span class="font-semibold text-[#0E1B2B]">42,800</span> children flying</div>
+      <div class="hidden md:block w-px h-3 bg-[#D9D3C7]"></div>
+      <div>Used in <span class="font-semibold text-[#0E1B2B]">186</span> schools</div>
+      <div class="hidden md:block w-px h-3 bg-[#D9D3C7]"></div>
+      <div>Kodomo no Hi 2026 featured in <span class="font-semibold text-[#0E1B2B]">Nikkei</span></div>
+    </div>
+  </div>
+
+  <!-- THE FLOW -->
+  <section id="flow" class="section max-w-[1120px] mx-auto px-8">
+    <div class="flex flex-col items-center text-center mb-14">
+      <div class="text-[#2A6A9C] font-semibold tracking-[0.5px] text-sm mb-3">THE RITUAL</div>
+      <h2 class="display section-title font-semibold max-w-md">Four movements.<br>One upward year.</h2>
+      <p class="max-w-md text-[#4A5568] mt-4 text-[17px]">Koinobori turns everyday moments into a continuous story of strength and joy — just like the banners that climb higher each spring.</p>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-5">
+      <div class="flow-step bg-white rounded-2xl border border-[#D9D3C7] p-7">
+        <div class="w-9 h-9 rounded-xl bg-[#2A6A9C]/10 flex items-center justify-center mb-6">
+          <span class="font-mono font-semibold text-[#2A6A9C]">01</span>
+        </div>
+        <div class="font-semibold text-xl mb-2">Name your carp</div>
+        <div class="text-[#4A5568] text-[15px] leading-relaxed">Give each child their own koinobori. Choose colors that tell their story. The first banner is always the most important.</div>
+      </div>
+      <div class="flow-step bg-white rounded-2xl border border-[#D9D3C7] p-7">
+        <div class="w-9 h-9 rounded-xl bg-[#2A6A9C]/10 flex items-center justify-center mb-6">
+          <span class="font-mono font-semibold text-[#2A6A9C]">02</span>
+        </div>
+        <div class="font-semibold text-xl mb-2">Log the swim</div>
+        <div class="text-[#4A5568] text-[15px] leading-relaxed">Every small victory — a new word, a brave choice, a finished drawing — becomes height on the pole. The wind carries it.</div>
+      </div>
+      <div class="flow-step bg-white rounded-2xl border border-[#D9D3C7] p-7">
+        <div class="w-9 h-9 rounded-xl bg-[#2A6A9C]/10 flex items-center justify-center mb-6">
+          <span class="font-mono font-semibold text-[#2A6A9C]">03</span>
+        </div>
+        <div class="font-semibold text-xl mb-2">Fly together</div>
+        <div class="text-[#4A5568] text-[15px] leading-relaxed">On Kodomo no Hi and throughout the year, gather the family, print the banners, hang them, and watch the stream rise in real time.</div>
+      </div>
+      <div class="flow-step bg-white rounded-2xl border border-[#D9D3C7] p-7">
+        <div class="w-9 h-9 rounded-xl bg-[#2A6A9C]/10 flex items-center justify-center mb-6">
+          <span class="font-mono font-semibold text-[#2A6A9C]">04</span>
+        </div>
+        <div class="font-semibold text-xl mb-2">Pass the wind</div>
+        <div class="text-[#4A5568] text-[15px] leading-relaxed">Each year the pole grows taller. Your children see the record of their own courage. The oldest banners become family heirlooms.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR FAMILIES -->
+  <section id="families" class="bg-white border-y border-[#D9D3C7]">
+    <div class="max-w-[1120px] mx-auto px-8 py-20">
+      <div class="grid md:grid-cols-2 gap-14 items-center">
+        <div>
+          <div class="uppercase tracking-[1px] text-xs font-semibold text-[#C94F3A] mb-3">FOR FAMILIES</div>
+          <h3 class="display text-[42px] leading-[1.05] font-semibold tracking-[-0.02em] mb-5">A living banner<br>for every child.</h3>
+          <p class="text-[17px] text-[#4A5568] max-w-[42ch] mb-8">Koinobori replaces scattered photos and forgotten promises with one beautiful, always-growing record of who your children are becoming.</p>
+          
+          <ul class="space-y-3 text-[15px]">
+            <li class="flex gap-3"><span class="mt-1.5 block w-1 h-1 rounded-full bg-[#2A6A9C]"></span> <span>Private family timeline with beautiful printed keepsakes</span></li>
+            <li class="flex gap-3"><span class="mt-1.5 block w-1 h-1 rounded-full bg-[#2A6A9C]"></span> <span>Shared goals that feel like a game, never a chore</span></li>
+            <li class="flex gap-3"><span class="mt-1.5 block w-1 h-1 rounded-full bg-[#2A6A9C]"></span> <span>Simple rituals for every season and every small triumph</span></li>
+          </ul>
+
+          <div class="mt-8">
+            <button onclick="startFree()" class="btn-primary control px-7">Create your first banners</button>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="overflow-hidden rounded-[20px] border border-[#D9D3C7] shadow-sm">
+            <img src="./media/craft.jpg" alt="" class="w-full object-cover" style="aspect-ratio: 4 / 3">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="overflow-hidden rounded-[20px] border border-[#D9D3C7] shadow-sm">
+              <img src="./media/freedom.jpg" alt="" class="w-full object-cover" style="aspect-ratio: 4 / 3">
+            </div>
+            <div class="overflow-hidden rounded-[20px] border border-[#D9D3C7] shadow-sm">
+              <img src="./media/balcony.jpg" alt="" class="w-full object-cover" style="aspect-ratio: 4 / 3">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FESTIVAL MOMENTS -->
+  <section id="festival" class="section max-w-[1120px] mx-auto px-8">
+    <div class="grid md:grid-cols-12 gap-x-8 gap-y-8 items-end mb-9">
+      <div class="md:col-span-7">
+        <div class="text-[#3F7A55] font-semibold text-sm tracking-[0.5px]">KODOMO NO HI &amp; EVERY DAY AFTER</div>
+        <h3 class="display text-[42px] font-semibold tracking-[-0.02em] leading-[1.05] mt-2">The wind belongs<br>to everyone now.</h3>
+      </div>
+      <div class="md:col-span-5 text-[17px] text-[#4A5568]">
+        Koinobori makes the ancient festival a living practice. Families plan, craft, fly, and remember — together and across the year.
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-5 gap-5">
+      <div class="md:col-span-3 rounded-[20px] overflow-hidden border border-[#D9D3C7] shadow-sm">
+        <img src="./media/festival.jpg" alt="" class="w-full object-cover" style="aspect-ratio: 16 / 9">
+      </div>
+      <div class="md:col-span-2 card p-8 flex flex-col">
+        <div class="flex-1">
+          <div class="font-semibold text-2xl tracking-tight">Plan the day.<br>Fly the year.</div>
+          <p class="mt-4 text-[#4A5568]">Create event pages, invite grandparents, print pole signs, and track every banner that rises in your neighborhood.</p>
+        </div>
+        <div class="pt-6">
+          <button onclick="openFestivalModal()" class="btn-secondary control w-full justify-center">Explore festival tools</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 grid md:grid-cols-3 gap-5">
+      <div class="card p-7">
+        <div class="text-[#C5A05A] text-xs tracking-[1px] font-semibold mb-2">MAY 5 • EVERYWHERE</div>
+        <div class="font-semibold text-[21px]">Digital + physical kits</div>
+        <p class="mt-3 text-[#4A5568] text-[15px]">Order printed banners, wish tags, and pole toppers that match exactly what your family built online.</p>
+      </div>
+      <div class="card p-7">
+        <div class="text-[#C5A05A] text-xs tracking-[1px] font-semibold mb-2">COMMUNITY</div>
+        <div class="font-semibold text-[21px]">Neighborhood streams</div>
+        <p class="mt-3 text-[#4A5568] text-[15px]">See how high the children in your town are flying. Optional, beautiful, and inspiring.</p>
+      </div>
+      <div class="card p-7">
+        <div class="text-[#C5A05A] text-xs tracking-[1px] font-semibold mb-2">LEGACY</div>
+        <div class="font-semibold text-[21px]">Year-over-year growth</div>
+        <p class="mt-3 text-[#4A5568] text-[15px]">Watch the same child’s banner climb the pole from age 3 to 13. The record becomes a family treasure.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORIES / TESTIMONIALS -->
+  <section id="stories" class="bg-[#F1EDE4] border-y border-[#D9D3C7]">
+    <div class="max-w-[1120px] mx-auto px-8 py-20">
+      <div class="flex justify-between items-end mb-9">
+        <div>
+          <div class="text-xs font-semibold tracking-widest text-[#2A6A9C]">REAL FAMILIES</div>
+          <div class="display text-[34px] font-semibold tracking-[-0.01em] mt-1">How the wind feels.</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="card p-8">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-10 h-10 rounded-full bg-[#2A6A9C]/10 flex items-center justify-center text-[#2A6A9C] font-semibold">YN</div>
+            <div>
+              <div class="font-semibold">Yuki &amp; Naoki Sato</div>
+              <div class="text-sm text-[#4A5568]">Parents of Mei (7) and Ren (4) • Kyoto</div>
+            </div>
+          </div>
+          <p class="text-[15px] leading-relaxed">"Ren was terrified of swimming lessons. After we logged his first ‘upstream swim’ in Koinobori and printed the little blue banner, he asked to go back the next day. He now checks his height every Sunday."</p>
+        </div>
+        
+        <div class="card p-8">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-10 h-10 rounded-full bg-[#C94F3A]/10 flex items-center justify-center text-[#C94F3A] font-semibold">TK</div>
+            <div>
+              <div class="font-semibold">Tanaka Family</div>
+              <div class="text-sm text-[#4A5568]">Mika, Haru &amp; grandparents • Tokyo</div>
+            </div>
+          </div>
+          <p class="text-[15px] leading-relaxed">"We flew four koinobori on the balcony this year for the first time. The kids still talk about the moment the biggest one caught the wind. The app made the whole week feel like a real festival instead of just a day off school."</p>
+        </div>
+
+        <div class="card p-8">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-10 h-10 rounded-full bg-[#3F7A55]/10 flex items-center justify-center text-[#3F7A55] font-semibold">AI</div>
+            <div>
+              <div class="font-semibold">Aiko Inoue</div>
+              <div class="text-sm text-[#4A5568]">Teacher, Shinagawa Elementary</div>
+            </div>
+          </div>
+          <p class="text-[15px] leading-relaxed">"We use Koinobori with 38 children. Every Friday we add one achievement together. The parents say it is the first school project that actually comes home and stays on the wall. The banners are beautiful."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA + imagery detail -->
+  <section class="max-w-[1120px] mx-auto px-8 py-20">
+    <div class="rounded-[22px] overflow-hidden border border-[#D9D3C7] bg-white grid md:grid-cols-12">
+      <div class="md:col-span-7 p-10 md:p-12">
+        <div class="max-w-md">
+          <div class="text-[#C5A05A] font-semibold text-sm tracking-widest">BEGIN TODAY</div>
+          <h4 class="display text-[36px] leading-none tracking-[-0.02em] font-semibold mt-3 mb-5">Your children’s wind is already blowing.</h4>
+          <p class="text-[#4A5568]">Start a free family stream. Add your first child in under two minutes. The first banner is on us.</p>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <button onclick="startFree()" class="btn-primary control px-8">Start your stream free</button>
+          <button onclick="showLogin()" class="btn-secondary control px-8">I already have a stream</button>
+        </div>
+        <p class="text-xs text-[#4A5568] mt-5">Free for up to three children. No card required.</p>
+      </div>
+      <div class="md:col-span-5 bg-[#F1EDE4] relative">
+        <img src="./media/flow.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-90">
+        <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-[#D9D3C7] bg-white py-9">
+    <div class="max-w-[1120px] mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-y-4 text-sm text-[#4A5568]">
+      <div class="flex items-center gap-5">
+        <span>© Koinobori 2026</span>
+        <span class="hidden md:inline">•</span>
+        <a href="#" class="hover:text-[#0E1B2B]">Festival calendar</a>
+        <a href="#" class="hover:text-[#0E1B2B]">Print shop</a>
+        <a href="#" class="hover:text-[#0E1B2B]">For schools</a>
+      </div>
+      <div class="flex items-center gap-4 text-xs">
+        <span>Made for every child who swims upstream</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modals -->
+  <!-- Signup / Start Free modal -->
+  <div id="start-modal" onclick="if (event.target.id === 'start-modal') hideStartModal()" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center p-6">
+    <div onclick="event.stopImmediatePropagation()" class="koinagare-surface rounded-[20px] border border-[#D9D3C7] w-full max-w-[480px] overflow-hidden shadow-xl">
+      <div class="p-8">
+        <div class="flex justify-between mb-5">
+          <div>
+            <div class="font-semibold text-2xl">Start your family stream</div>
+            <div class="text-[#4A5568] text-sm mt-0.5">Free. Beautiful. Yours forever.</div>
+          </div>
+          <button onclick="hideStartModal()" class="text-[#4A5568] text-xl leading-none">×</button>
+        </div>
+
+        <div class="space-y-4 mt-6">
+          <div>
+            <label class="block text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5">FAMILY NAME</label>
+            <input type="text" value="The Takahashi Family" class="input w-full">
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5">FIRST CHILD</label>
+              <input type="text" value="Sora" class="input w-full">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5">AGE</label>
+              <input type="text" value="6" class="input w-full">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5">COLOR FOR SORA’S BANNER</label>
+            <select class="select w-full">
+              <option>Indigo (strength &amp; calm)</option>
+              <option>Red (courage &amp; warmth)</option>
+              <option>Green (growth)</option>
+              <option>Gold (joy)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-3 pt-1">
+            <input type="checkbox" checked class="checkbox accent-[#2A6A9C]">
+            <span class="text-sm text-[#4A5568]">Send me the beautiful printed first-banner kit (we cover shipping)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-[#D9D3C7] bg-[#F8F5EF] px-8 py-5 flex items-center justify-between">
+        <button onclick="hideStartModal(); completeOnboarding()" class="btn-primary control px-8">Create my stream</button>
+        <button onclick="hideStartModal()" class="btn-ghost control px-5 text-sm">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Festival tools modal -->
+  <div id="festival-modal" onclick="if (event.target.id === 'festival-modal') hideFestivalModal()" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center p-6">
+    <div onclick="event.stopImmediatePropagation()" class="koinagare-surface w-full max-w-[520px] rounded-[20px] border border-[#D9D3C7] overflow-hidden">
+      <div class="p-8">
+        <div class="font-semibold text-xl mb-1">Plan your Kodomo no Hi</div>
+        <div class="text-[#4A5568] text-sm">Everything you need to fly together this year.</div>
+
+        <div class="mt-7 space-y-4">
+          <div class="flex items-center justify-between py-1">
+            <div>
+              <div class="font-medium">May 5 celebration page</div>
+              <div class="text-xs text-[#4A5568]">Public or private link for family &amp; friends</div>
+            </div>
+            <div class="switch on" onclick="this.classList.toggle('on')"></div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5 block">NUMBER OF POLES</label>
+            <select class="select w-full">
+              <option>2 poles (small balcony)</option>
+              <option>3 poles (standard family)</option>
+              <option>5 poles (neighborhood gathering)</option>
+              <option>7 poles (school or community)</option>
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-1">
+            <div class="flex-1">
+              <label class="text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5 block">WISH TAGS TO PRINT</label>
+              <input type="text" value="24" class="input w-full">
+            </div>
+            <div class="flex-1">
+              <label class="text-xs font-semibold tracking-wider text-[#4A5568] mb-1.5 block">GUEST RSVP</label>
+              <select class="select w-full">
+                <option>Everyone invited</option>
+                <option>Family only</option>
+                <option>Close friends + family</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-[#F8F5EF] border-t border-[#D9D3C7] px-8 py-5 flex gap-3">
+        <button onclick="hideFestivalModal()" class="btn-primary control flex-1">Save &amp; send invites</button>
+        <button onclick="hideFestivalModal()" class="btn-secondary control flex-1">Save draft</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple login modal -->
+  <div id="login-modal" onclick="if (event.target.id === 'login-modal') hideLoginModal()" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center p-6">
+    <div onclick="event.stopImmediatePropagation()" class="koinagare-surface rounded-[20px] w-full max-w-sm border border-[#D9D3C7] overflow-hidden">
+      <div class="px-8 pt-8 pb-6">
+        <div class="font-semibold text-2xl mb-6">Welcome back</div>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs font-semibold tracking-wider text-[#4A5568] mb-1 block">EMAIL</label>
+            <input type="email" value="mika.takahashi@family.jp" class="input w-full">
+          </div>
+          <div>
+            <label class="text-xs font-semibold tracking-wider text-[#4A5568] mb-1 block">PASSWORD</label>
+            <input type="password" value="••••••••" class="input w-full">
+          </div>
+        </div>
+      </div>
+      <div class="px-8 py-5 bg-[#F8F5EF] border-t border-[#D9D3C7] flex gap-3">
+        <button onclick="hideLoginModal(); window.location.href='dashboard.html'" class="btn-primary control flex-1">Enter my stream</button>
+        <button onclick="hideLoginModal()" class="btn-ghost control px-6">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tailwind config — enforce Koinagare tokens
+    function initTailwind() {
+      document.documentElement.style.setProperty('--color-bg', '#F8F5EF');
+      document.documentElement.style.setProperty('--color-surface', '#FFFFFF');
+      document.documentElement.style.setProperty('--color-surface-2', '#F1EDE4');
+      document.documentElement.style.setProperty('--color-ink', '#0E1B2B');
+      document.documentElement.style.setProperty('--color-ink-muted', '#4A5568');
+      document.documentElement.style.setProperty('--color-blue', '#2A6A9C');
+      document.documentElement.style.setProperty('--color-blue-light', '#4A8DC2');
+      document.documentElement.style.setProperty('--color-red', '#C94F3A');
+      document.documentElement.style.setProperty('--color-green', '#3F7A55');
+      document.documentElement.style.setProperty('--color-gold', '#C5A05A');
+      document.documentElement.style.setProperty('--color-border-subtle', '#D9D3C7');
+      document.documentElement.style.setProperty('--control-h', '48px');
+
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'koi-bg': '#F8F5EF',
+              'koi-ink': '#0E1B2B',
+              'koi-blue': '#2A6A9C',
+              'koi-red': '#C94F3A',
+              'koi-green': '#3F7A55',
+              'koi-gold': '#C5A05A',
+            }
+          }
+        }
+      };
+    }
+
+    function startFree() {
+      document.getElementById('start-modal').classList.remove('hidden');
+      document.getElementById('start-modal').classList.add('flex');
+    }
+    function hideStartModal() {
+      const m = document.getElementById('start-modal');
+      m.classList.remove('flex');
+      m.classList.add('hidden');
+    }
+
+    function openFestivalModal() {
+      document.getElementById('festival-modal').classList.remove('hidden');
+      document.getElementById('festival-modal').classList.add('flex');
+    }
+    function hideFestivalModal() {
+      const m = document.getElementById('festival-modal');
+      m.classList.remove('flex');
+      m.classList.add('hidden');
+    }
+
+    function showLogin() {
+      document.getElementById('login-modal').classList.remove('hidden');
+      document.getElementById('login-modal').classList.add('flex');
+    }
+    function hideLoginModal() {
+      const m = document.getElementById('login-modal');
+      m.classList.remove('flex');
+      m.classList.add('hidden');
+    }
+
+    function completeOnboarding() {
+      const modal = document.getElementById('start-modal');
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+      
+      // Show a quick success toast then redirect to dashboard
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0E1B2B] text-white px-6 h-11 rounded-[9999px] flex items-center text-sm shadow-xl';
+      toast.innerHTML = 'Welcome. Your first koinobori is ready. <span class="ml-3 opacity-75">→</span>';
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.transition = 'all 180ms';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          toast.remove();
+          window.location.href = 'dashboard.html';
+        }, 120);
+      }, 1250);
+    }
+
+    // Keyboard escape for all modals
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.fixed.inset-0').forEach(m => {
+          if (!m.classList.contains('hidden')) {
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+          }
+        });
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const visible = document.querySelector('#start-modal:not(.hidden), #festival-modal:not(.hidden)');
+        if (visible) {
+          if (visible.id === 'start-modal') completeOnboarding();
+          else hideFestivalModal();
+        }
+      }
+    });
+
+    // Demo: make switches toggle
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('switch')) {
+        e.target.classList.toggle('on');
+      }
+    });
+
+    // Boot
+    window.onload = function() {
+      initTailwind();
+      
+      // Gentle focus ring demo hint on one primary button (silent, only if user doesn't interact)
+      setTimeout(() => {
+        const primary = document.querySelector('.btn-primary');
+        if (primary && !primary.matches(':hover') && document.activeElement.tagName === 'BODY') {
+          // do nothing — we never want to force styles that feel like a tutorial
+        }
+      }, 3200);
+    };
+
+    // Expose for console sanity (never visible)
+    window.KOINAGARE = { version: '2026.05', language: 'Koinagare', product: 'Koinobori' };
+  </script>
+</body>
+</html>

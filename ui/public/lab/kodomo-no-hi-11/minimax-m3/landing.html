@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Koinobori — Carp streamers for the fifth of May</title>
+<meta name="description" content="A Kanazawa print studio that designs, dyes and ships custom koinobori sets for families celebrating Children's Day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Shippori+Mincho+B1:wght@400;600;800&family=Shippori+Mincho:wght@500;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   KOINOBORI — DESIGN TOKENS
+   ============================================================ */
+:root {
+  /* Accents (3) */
+  --kon:   #1A2D5A;   /* kon-iro, deep indigo */
+  --shu:   #C8341F;   /* shu-iro, vermilion */
+  --kinka: #D9A13A;   /* kinka, gold */
+
+  /* Neutrals (tuned to washi warmth) */
+  --paper:   #F5EEDC;
+  --paper-2: #EFE5CB;
+  --paper-3: #E8DCBE;
+  --ink:     #0E0F14;
+  --sumi:    #5A4F3F;
+  --line:    #B9AC8A;
+
+  /* Semantic role vars */
+  --bg:        var(--paper);
+  --surface:   var(--paper-2);
+  --surface-2: var(--paper-3);
+  --text:      var(--ink);
+  --muted:     var(--sumi);
+  --border:    var(--line);
+  --accent:    var(--shu);
+  --accent-2:  var(--kon);
+  --accent-3:  var(--kinka);
+  --on-accent: var(--paper);
+  --success:   var(--kon);
+  --warning:   var(--kinka);
+  --error:     var(--shu);
+  --info:      var(--kon);
+
+  /* Type */
+  --f-display-jp: "Shippori Mincho B1", "Shippori Mincho", "Playfair Display", serif;
+  --f-display:    "Playfair Display", "Shippori Mincho B1", serif;
+  --f-body-jp:    "Shippori Mincho", "Inter", serif;
+  --f-body:       "Inter", "Shippori Mincho", system-ui, sans-serif;
+
+  /* Geometry */
+  --control-h: 48px;
+  --radius-btn: 16px;
+  --radius-card: 24px;
+  --radius-pill: 9999px;
+  --max: 1440px;
+  --gutter: clamp(20px, 4vw, 56px);
+
+  /* Hero image — swappable via --hero-image */
+  --hero-image: url("./media/hero-morning-set.jpg");
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body { overflow-x: clip; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+
+/* Type scale */
+.t-display { font-family: var(--f-display-jp); font-weight: 800; letter-spacing: -0.02em; line-height: 1.0; }
+.t-h2  { font-family: var(--f-display); font-weight: 800; font-size: 44px; line-height: 1.05; letter-spacing: -0.02em; margin: 0; }
+.t-h3  { font-family: var(--f-display); font-weight: 700; font-size: 32px; line-height: 1.1;  letter-spacing: -0.01em; margin: 0; }
+.t-lede { font-family: var(--f-body); font-size: 24px; line-height: 1.35; font-weight: 400; margin: 0; }
+.t-body { font-size: 17px; line-height: 1.55; }
+.t-small{ font-size: 14.5px; line-height: 1.45; color: var(--muted); }
+.t-mono-num { font-variant-numeric: tabular-nums; }
+.t-jp { font-family: var(--f-body-jp); font-weight: 500; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.shell { width: 100%; max-width: var(--max); margin: 0 auto; padding-left: var(--gutter); padding-right: var(--gutter); }
+.section { padding: clamp(64px, 9vw, 128px) 0; }
+.section + .section { padding-top: 0; }
+
+/* ============================================================
+   NAV — five items
+   ============================================================ */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.nav-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: 24px; height: 72px;
+}
+.nav-brand {
+  display: inline-flex; align-items: baseline; gap: 10px;
+  font-family: var(--f-display-jp); font-weight: 800; font-size: 24px; letter-spacing: -0.01em;
+  color: var(--text);
+}
+.nav-brand .mark {
+  display: inline-block; width: 28px; height: 28px;
+  background: var(--kon);
+  border-radius: 0;
+  position: relative;
+}
+.nav-brand .mark::after {
+  content: ""; position: absolute; left: 6px; top: 4px;
+  width: 16px; height: 20px;
+  background: var(--shu);
+  clip-path: polygon(50% 0%, 100% 35%, 80% 100%, 20% 100%, 0% 35%);
+}
+.nav-links {
+  display: flex; gap: 28px; justify-content: center; align-items: center;
+  font-size: 15px; font-weight: 500;
+}
+.nav-links a {
+  position: relative; padding: 6px 0;
+  transition: color 160ms ease;
+}
+.nav-links a:hover { color: var(--accent); }
+.nav-links a.active::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--accent);
+}
+.nav-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: var(--control-h); padding: 0 22px;
+  background: var(--accent); color: var(--on-accent);
+  border: 0; border-radius: var(--radius-btn);
+  font-weight: 600; font-size: 15px;
+  transition: background-color 180ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.nav-cta:hover { background: #A8281A; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(200,52,31,.25); }
+.nav-cta:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
+.nav-cta:active { background: #8B2014; transform: translateY(0); }
+.nav-cta[disabled] { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ============================================================
+   HERO — full-bleed, 100svh, swappable background
+   ============================================================ */
+.hero {
+  position: relative;
+  width: 100vw;
+  min-height: 100svh;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 1.4fr;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.hero-image {
+  position: relative;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center 40%;
+  min-height: 100svh;
+}
+.hero-image::after {
+  /* a deliberate block scrim, not a lazy gradient */
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 80px;
+  background: linear-gradient(to right, var(--paper-2) 0%, color-mix(in srgb, var(--paper-2) 70%, transparent) 60%, transparent 100%);
+  pointer-events: none;
+}
+.hero-panel {
+  padding: clamp(48px, 6vw, 96px) clamp(28px, 4vw, 64px);
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 32px;
+}
+.hero-shoulder {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--f-display-jp); font-weight: 800; font-size: 14px;
+  letter-spacing: 0.04em; text-transform: none;
+  color: var(--accent);
+}
+.hero-shoulder .kanji {
+  font-size: 22px; font-weight: 800; color: var(--text);
+  padding: 4px 12px;
+  background: var(--kinka);
+  color: var(--ink);
+  display: inline-block;
+}
+.hero-shoulder .rule { flex: 0 0 36px; height: 2px; background: currentColor; }
+.hero-headline {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(56px, 7vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin: 0;
+}
+.hero-headline em {
+  font-family: var(--f-display-jp);
+  font-style: normal;
+  color: var(--accent);
+  display: inline-block;
+  margin-right: 8px;
+}
+.hero-deck {
+  font-family: var(--f-body);
+  font-size: clamp(18px, 1.6vw, 22px);
+  line-height: 1.4;
+  color: var(--text);
+  max-width: 36ch;
+}
+.hero-deck strong { color: var(--accent-2); font-weight: 600; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.hero-meta {
+  display: grid; grid-template-columns: repeat(3, auto); gap: 32px;
+  font-size: 14px; color: var(--muted);
+  padding-top: 24px; border-top: 1px solid var(--line);
+}
+.hero-meta strong { display: block; font-size: 28px; color: var(--text); font-family: var(--f-display); font-weight: 800; font-variant-numeric: tabular-nums; }
+.hero-meta span { font-family: var(--f-display-jp); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; color: var(--accent-2); text-transform: uppercase; }
+
+/* ============================================================
+   BUTTONS — shared height, all states
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: var(--control-h); padding: 0 22px;
+  border-radius: var(--radius-btn);
+  border: 1px solid transparent;
+  font-family: var(--f-body); font-weight: 600; font-size: 15px;
+  text-align: center; white-space: nowrap;
+  transition: background-color 180ms ease, color 180ms ease, transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn .arrow { width: 16px; height: 10px; flex: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn-primary:hover { background: #A8281A; border-color: #A8281A; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(200,52,31,.25); }
+.btn-primary:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
+.btn-primary:active { background: #8B2014; border-color: #8B2014; transform: translateY(0); box-shadow: none; }
+.btn-primary[disabled] { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-secondary { background: var(--bg); color: var(--text); border-color: var(--text); }
+.btn-secondary:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn-secondary:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
+.btn-secondary:active { background: #1F2128; border-color: #1F2128; }
+.btn-secondary[disabled] { opacity: .5; cursor: not-allowed; }
+
+.btn-link {
+  height: var(--control-h); padding: 0 4px;
+  background: transparent; color: var(--text); border: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  font-weight: 600; font-size: 15px;
+}
+.btn-link:hover { color: var(--accent); }
+.btn-link:focus-visible { outline: 2px solid var(--accent-3); outline-offset: 2px; }
+
+/* ============================================================
+   THE FIVE BAND — signature mechanic divider
+   ============================================================ */
+.band-5 {
+  display: flex; align-items: stretch; gap: 4px;
+  height: 12px;
+}
+.band-5 span { flex: 1; display: block; }
+.band-5 span:nth-child(1) { background: var(--shu); }
+.band-5 span:nth-child(2) { background: var(--kinka); }
+.band-5 span:nth-child(3) { background: var(--kon); }
+.band-5 span:nth-child(4) { background: var(--paper-3); }
+.band-5 span:nth-child(5) { background: var(--ink); }
+
+/* ============================================================
+   SECTION: The Set (intro + image)
+   ============================================================ */
+.intro {
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 96px); align-items: center;
+}
+.intro-art {
+  background-image: url("./media/featured-fabric.jpg");
+  background-size: cover;
+  background-position: center;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-card);
+  position: relative;
+}
+.intro-art::after {
+  content: ""; position: absolute; right: -20px; bottom: -20px;
+  width: 50%; height: 50%;
+  background-image: url("./media/artisan-brush.jpg");
+  background-size: cover; background-position: center;
+  border-radius: var(--radius-card);
+  border: 6px solid var(--bg);
+}
+.intro-copy h2 { margin: 24px 0 24px; }
+.intro-copy p { color: var(--muted); font-size: 19px; line-height: 1.55; margin: 0 0 16px; max-width: 50ch; }
+.intro-copy .kicker {
+  font-family: var(--f-display-jp); font-weight: 800; font-size: 18px;
+  color: var(--accent); display: flex; align-items: center; gap: 12px;
+}
+.intro-copy .kicker::before { content: ""; width: 28px; height: 2px; background: var(--accent); }
+
+/* ============================================================
+   FIVE-SET GRID — 5 cards (signature mechanic)
+   ============================================================ */
+.fivehead {
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px;
+  margin-bottom: 48px;
+}
+.fivehead .lead { max-width: 56ch; color: var(--muted); font-size: 19px; }
+.fivehead .num {
+  font-family: var(--f-display); font-weight: 800; font-size: 96px; line-height: 0.9;
+  color: var(--accent-2); letter-spacing: -0.04em;
+}
+.fivehead .num small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 14px; color: var(--muted); letter-spacing: 0; }
+
+.set-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+}
+.set-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 32px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+  min-height: 360px;
+  position: relative;
+}
+.set-card .swatch {
+  height: 56px; border-radius: var(--radius-btn);
+}
+.set-card.s-magoi .swatch { background: var(--ink); }
+.set-card.s-higoi .swatch { background: var(--shu); }
+.set-card.s-midori .swatch { background: #4F7E50; }
+.set-card.s-mizu   .swatch { background: #4D7CA1; }
+.set-card.s-kinka  .swatch { background: var(--kinka); }
+.set-card .order {
+  font-family: var(--f-display-jp); font-weight: 800; font-size: 14px;
+  color: var(--accent); letter-spacing: 0.06em;
+}
+.set-card .name {
+  font-family: var(--f-display); font-weight: 800; font-size: 28px; line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.set-card .jp {
+  font-family: var(--f-display-jp); font-weight: 800; font-size: 16px; color: var(--muted);
+}
+.set-card .desc { color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+.set-card .role {
+  margin-top: auto; padding-top: 16px;
+  font-size: 12px; color: var(--accent-2);
+  font-family: var(--f-body-jp); font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/* ============================================================
+   PROCESS — five steps, horizontal strip
+   ============================================================ */
+.process { background: var(--ink); color: var(--paper); padding: clamp(64px, 9vw, 128px) 0; }
+.process .shell { padding-left: var(--gutter); padding-right: var(--gutter); }
+.process .t-h2 { color: var(--paper); }
+.process .lead { color: color-mix(in srgb, var(--paper) 70%, transparent); max-width: 56ch; }
+.process .num { color: var(--kinka); }
+
+.proc-strip {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+  margin-top: 48px;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
+}
+.proc-step {
+  padding: 32px 24px 32px 0;
+  border-right: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
+  display: flex; flex-direction: column; gap: 16px; min-height: 280px;
+}
+.proc-step:last-child { border-right: 0; }
+.proc-step .stepno {
+  font-family: var(--f-display); font-weight: 800; font-size: 14px; letter-spacing: 0.06em;
+  color: var(--kinka);
+}
+.proc-step .stepname { font-family: var(--f-display); font-weight: 800; font-size: 26px; line-height: 1.05; letter-spacing: -0.01em; }
+.proc-step .stepjp   { font-family: var(--f-display-jp); font-weight: 700; font-size: 18px; color: var(--shu); }
+.proc-step .stepdesc { color: color-mix(in srgb, var(--paper) 70%, transparent); font-size: 14.5px; line-height: 1.5; }
+.proc-step .stepdays { margin-top: auto; font-size: 12px; color: color-mix(in srgb, var(--paper) 50%, transparent); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+
+/* ============================================================
+   MATERIALS — five material cards
+   ============================================================ */
+.materials {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; gap: 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.materials .left {
+  background-image: url("./media/materials-drying.jpg");
+  background-size: cover; background-position: center;
+  min-height: 480px;
+  position: relative;
+}
+.materials .left .caption {
+  position: absolute; left: 24px; bottom: 24px; right: 24px;
+  background: var(--paper); padding: 16px 20px; border-radius: var(--radius-btn);
+}
+.materials .left .caption .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.materials .left .caption .v { font-family: var(--f-display); font-weight: 800; font-size: 22px; }
+.mat-cell {
+  background: var(--surface);
+  padding: 32px 24px;
+  display: flex; flex-direction: column; gap: 12px; justify-content: flex-end;
+  min-height: 240px;
+}
+.mat-cell + .mat-cell { border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+.mat-cell .icon {
+  width: 36px; height: 36px; flex: none;
+  display: grid; place-items: center;
+  background: var(--paper); border-radius: 8px;
+}
+.mat-cell .k { font-family: var(--f-body-jp); font-weight: 700; font-size: 13px; color: var(--accent); letter-spacing: 0.04em; }
+.mat-cell .n { font-family: var(--f-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -0.01em; }
+.mat-cell .d { color: var(--muted); font-size: 14.5px; line-height: 1.45; }
+
+/* ============================================================
+   CALENDAR — May weeks
+   ============================================================ */
+.cal {
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 80px); align-items: start;
+}
+.cal-list { list-style: none; margin: 0; padding: 0; }
+.cal-row {
+  display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 24px;
+  padding: 24px 0; border-bottom: 1px solid var(--line);
+}
+.cal-row .date { font-family: var(--f-display); font-weight: 800; font-size: 24px; color: var(--accent); }
+.cal-row .date small { display: block; font-family: var(--f-body-jp); font-weight: 700; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.cal-row .what { font-family: var(--f-display); font-weight: 700; font-size: 19px; }
+.cal-row .what small { display: block; font-weight: 400; font-size: 14.5px; color: var(--muted); margin-top: 4px; }
+.cal-row .tag { font-size: 12px; padding: 6px 12px; background: var(--paper-3); border-radius: var(--radius-pill); color: var(--ink); font-weight: 600; }
+.cal-row .tag.t-now { background: var(--shu); color: var(--paper); }
+.cal-row .tag.t-ship { background: var(--kon); color: var(--paper); }
+
+/* ============================================================
+   PRICING — five tiers (1+1+3)
+   ============================================================ */
+.price-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+}
+.price {
+  background: var(--surface);
+  padding: 32px 24px;
+  border-radius: var(--radius-card);
+  display: flex; flex-direction: column; gap: 16px; min-height: 460px;
+  position: relative;
+}
+.price.featured { background: var(--kon); color: var(--paper); }
+.price.featured .ptag { background: var(--kinka); color: var(--ink); }
+.price .ptag {
+  align-self: flex-start; padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--paper-3); color: var(--ink);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.price .pname { font-family: var(--f-display); font-weight: 800; font-size: 24px; line-height: 1.05; letter-spacing: -0.01em; }
+.price .pjp { font-family: var(--f-display-jp); font-weight: 800; font-size: 16px; opacity: 0.7; }
+.price .pprice { font-family: var(--f-display); font-weight: 800; font-size: 36px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.price .pprice small { font-family: var(--f-body); font-weight: 600; font-size: 13px; opacity: 0.7; display: block; }
+.price .plist { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; }
+.price .plist li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: start; }
+.price .plist li::before { content: ""; display: block; width: 14px; height: 8px; margin-top: 8px; background: var(--accent); -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8'><path d='M0 4 L5 8 L14 0' stroke='black' fill='none' stroke-width='2'/></svg>") center/contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 8'><path d='M0 4 L5 8 L14 0' stroke='black' fill='none' stroke-width='2'/></svg>") center/contain no-repeat; }
+.price.featured .plist li::before { background: var(--kinka); }
+.price .pcta { margin-top: auto; }
+
+/* ============================================================
+   STUDIO NOTE — inverted editorial
+   ============================================================ */
+.studio {
+  background: var(--ink); color: var(--paper);
+  padding: clamp(64px, 9vw, 128px) 0;
+}
+.studio .shell { padding-left: var(--gutter); padding-right: var(--gutter); }
+.studio .grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(40px, 6vw, 80px); align-items: center; }
+.studio h2 { color: var(--paper); margin: 16px 0 32px; }
+.studio p { color: color-mix(in srgb, var(--paper) 78%, transparent); font-size: 19px; line-height: 1.55; max-width: 50ch; }
+.studio .sign { margin-top: 32px; font-family: var(--f-display-jp); font-weight: 800; font-size: 32px; color: var(--kinka); }
+.studio .sign small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 14px; color: color-mix(in srgb, var(--paper) 60%, transparent); margin-top: 8px; }
+.studio-img {
+  background-image: url("./media/process-flatlay.jpg");
+  background-size: cover; background-position: center;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-card);
+  position: relative;
+}
+.studio-img::after {
+  content: ""; position: absolute; left: -24px; bottom: -24px;
+  width: 50%; height: 50%;
+  background: var(--kinka);
+  border-radius: var(--radius-card);
+  z-index: -1;
+}
+
+/* ============================================================
+   CTA / FOOTER
+   ============================================================ */
+.cta {
+  padding: clamp(80px, 10vw, 160px) 0;
+  text-align: center;
+}
+.cta h2 { font-size: clamp(40px, 5vw, 72px); margin: 24px 0 32px; max-width: 18ch; margin-inline: auto; }
+.cta h2 em { font-family: var(--f-display-jp); font-style: normal; color: var(--accent); }
+.cta .actions { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.cta .note { margin-top: 24px; color: var(--muted); font-size: 14.5px; }
+
+footer {
+  background: var(--ink); color: var(--paper);
+  padding: 64px 0 32px;
+}
+footer .shell { padding-left: var(--gutter); padding-right: var(--gutter); }
+footer .grid {
+  display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 32px;
+  padding-bottom: 48px; border-bottom: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
+}
+footer h4 { font-family: var(--f-body); font-size: 12px; letter-spacing: 0.08em; color: var(--kinka); margin: 0 0 16px; text-transform: uppercase; font-weight: 700; }
+footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; }
+footer .brand { font-family: var(--f-display-jp); font-weight: 800; font-size: 32px; letter-spacing: -0.01em; }
+footer .brand small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 14px; color: color-mix(in srgb, var(--paper) 60%, transparent); margin-top: 8px; letter-spacing: 0; }
+footer .legal { display: flex; justify-content: space-between; padding-top: 24px; font-size: 14px; color: color-mix(in srgb, var(--paper) 60%, transparent); }
+
+/* ============================================================
+   ANIMATION — progressive reveal
+   ============================================================ */
+.anim-init .reveal { opacity: 0; transform: translateY(16px); transition: opacity 700ms cubic-bezier(.2,.7,.2,1), transform 700ms cubic-bezier(.2,.7,.2,1); }
+.anim-init .reveal.in { opacity: 1; transform: translateY(0); }
+.anim-init .reveal.d1 { transition-delay: 80ms; }
+.anim-init .reveal.d2 { transition-delay: 160ms; }
+.anim-init .reveal.d3 { transition-delay: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-init .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1080px) {
+  .hero { grid-template-columns: 1fr; grid-template-rows: 60svh auto; }
+  .hero-image { min-height: 60svh; }
+  .hero-image::after { width: 100%; height: 80px; top: auto; bottom: 0; background: linear-gradient(to bottom, transparent, var(--paper-2)); }
+  .intro { grid-template-columns: 1fr; }
+  .intro-art::after { right: 12px; bottom: -12px; width: 40%; height: 30%; }
+  .materials { grid-template-columns: 1fr 1fr; }
+  .materials .left { grid-column: 1 / -1; }
+  .cal { grid-template-columns: 1fr; }
+  .studio .grid { grid-template-columns: 1fr; }
+  .price-grid { grid-template-columns: 1fr 1fr; }
+  .set-grid { grid-template-columns: 1fr 1fr; }
+  .proc-strip { grid-template-columns: 1fr 1fr; }
+  .proc-step { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--paper) 20%, transparent); }
+  .proc-step:nth-child(2n) { border-right: 0; }
+  .proc-step:nth-child(5) { border-bottom: 0; }
+  footer .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .nav-row { grid-template-columns: auto 1fr; }
+  .hero-meta { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .hero-meta > div:nth-child(3) { grid-column: 1 / -1; }
+  .set-grid, .proc-strip, .price-grid, .materials { grid-template-columns: 1fr; }
+  .proc-step, .mat-cell, .price { border-right: 0; border-bottom: 1px solid var(--line); }
+  .materials .left { min-height: 280px; }
+  .cal-row { grid-template-columns: 64px 1fr; }
+  .cal-row .tag { grid-column: 2; justify-self: start; }
+  footer .grid { grid-template-columns: 1fr; }
+  footer .legal { flex-direction: column; gap: 12px; }
+}
+</style>
+</head>
+<body class="anim-init">
+
+<!-- ============================================================
+     NAV
+     ============================================================ -->
+<nav class="nav" aria-label="Primary">
+  <div class="shell nav-row">
+    <a class="nav-brand" href="#top" aria-label="Koinobori home">
+      <span class="mark" aria-hidden="true"></span>
+      <span>Koinobori</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#set" class="active">The Set</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#materials">Materials</a></li>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#studio">Studio</a></li>
+    </ul>
+    <a class="nav-cta" href="#pricing">
+      Order a set
+      <svg class="arrow" viewBox="0 0 16 10" fill="none" aria-hidden="true"><path d="M0 5h14M10 1l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<header class="hero" id="top" role="banner">
+  <div class="hero-image" role="img" aria-label="Koinobori — five streamers on bamboo poles catching the morning wind above a Kanazawa valley"></div>
+  <div class="hero-panel">
+    <div class="hero-shoulder reveal">
+      <span class="kanji t-jp">鯉のぼり</span>
+      <span class="rule"></span>
+      <span>Studio No. 11 · May 2026</span>
+    </div>
+
+    <h1 class="hero-headline reveal d1">
+      <em class="t-jp">Hang</em> courage<br>
+      on the fifth<br>
+      of May.
+    </h1>
+
+    <p class="hero-deck reveal d2">
+      Koinobori is a Kanazawa print studio that designs, dyes and ships
+      custom carp streamers for families marking Children's Day. Five
+      streamers, one house, one serious set.
+    </p>
+
+    <div class="hero-actions reveal d3">
+      <a href="#pricing" class="btn btn-primary">
+        Order the Magoi set
+        <svg class="arrow" viewBox="0 0 16 10" fill="none" aria-hidden="true"><path d="M0 5h14M10 1l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#process" class="btn btn-secondary">See how a set is made</a>
+    </div>
+
+    <div class="hero-meta reveal d3">
+      <div>
+        <strong class="t-mono-num">1968</strong>
+        <span>Founded · Kanazawa</span>
+      </div>
+      <div>
+        <strong class="t-mono-num">5</strong>
+        <span>Streamers per set</span>
+      </div>
+      <div>
+        <strong class="t-mono-num">¥48k</strong>
+        <span>From · shipped</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell"><div class="band-5 reveal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div></div>
+
+<!-- ============================================================
+     THE SET — intro + image
+     ============================================================ -->
+<section class="section" id="set">
+  <div class="shell intro">
+    <div class="intro-art reveal" role="img" aria-label="Hand-painted indigo koinobori fabric with gold family crest"></div>
+    <div class="intro-copy">
+      <p class="kicker reveal"><span class="t-jp">節句 ·</span> Tango no sekku</p>
+      <h2 class="t-h2 reveal d1">A set is a household that flies together.</h2>
+      <p class="reveal d2">The legend is the carp: it swims the river, climbs the falls, and crosses the threshold into the dragon. On the fifth of May each family hangs that journey on a pole outside their house — one black <em>magoi</em>, one red <em>higoi</em>, and three smaller child streamers. The wind does the rest.</p>
+      <p class="reveal d2">Koinobori studio dyes each streamer by hand, paints each crest from a family-supplied mon, and ships the assembled set in a numbered wooden crate. You hang it; the wind scales the falls.</p>
+      <p style="margin-top: 24px;" class="reveal d3"><a href="#process" class="btn-link">How a set is made <svg class="arrow" viewBox="0 0 16 10" fill="none" aria-hidden="true" width="16" height="10"><path d="M0 5h14M10 1l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FIVE-SET GRID — signature mechanic
+     ============================================================ -->
+<section class="section">
+  <div class="shell">
+    <div class="fivehead">
+      <div>
+        <p class="kicker reveal"><span class="t-jp">五本一組 ·</span> The set of five</p>
+        <h2 class="t-h2 reveal d1">Every set we ship is one <em class="t-jp" style="font-style:normal; color: var(--accent);">magoi</em>, one <em class="t-jp" style="font-style:normal; color: var(--accent);">higoi</em>, and three child streamers.</h2>
+        <p class="lead reveal d2">The standard has not changed since the studio opened in 1968. The five-count is also the rhythm of this page — five nav items, five steps, five material cards, five price tiers.</p>
+      </div>
+      <div class="num reveal d1">5<span class="t-jp" style="display:block; font-size:18px; color: var(--muted); font-weight:600; letter-spacing:0;">本</span><small>streamers · one set</small></div>
+    </div>
+
+    <div class="set-grid reveal d2">
+      <article class="set-card s-magoi">
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="order">No. 01 · 真鯉</span>
+        <h3 class="name">Magoi</h3>
+        <span class="jp">The great black carp</span>
+        <p class="desc">Indigo-dyed silk, 5 metres, painted with the family mon in gold leaf. Always flown at the top of the pole — the father of the set.</p>
+        <span class="role">Father</span>
+      </article>
+      <article class="set-card s-higoi">
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="order">No. 02 · 緋鯉</span>
+        <h3 class="name">Higoi</h3>
+        <span class="jp">The red carp</span>
+        <p class="desc">Vermilion silk, 4 metres. The mother of the set, paired to the magoi. Painted crest matches the family mon by hand.</p>
+        <span class="role">Mother</span>
+      </article>
+      <article class="set-card s-midori">
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="order">No. 03 · 緑鯉</span>
+        <h3 class="name">Midori</h3>
+        <span class="jp">Green carp</span>
+        <p class="desc">Moss-green silk, 2 metres. The first of the child streamers — usually the eldest. Soft paint finish, breathes in wind.</p>
+        <span class="role">First child</span>
+      </article>
+      <article class="set-card s-mizu">
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="order">No. 04 · 水鯉</span>
+        <h3 class="name">Mizu</h3>
+        <span class="jp">Water-blue carp</span>
+        <p class="desc">River-blue silk, 1.6 metres. The middle child. The colour is custom — match the river closest to your house if you like.</p>
+        <span class="role">Middle child</span>
+      </article>
+      <article class="set-card s-kinka">
+        <span class="swatch" aria-hidden="true"></span>
+        <span class="order">No. 05 · 金鯉</span>
+        <h3 class="name">Kinka</h3>
+        <span class="jp">Gold carp</span>
+        <p class="desc">Gold-leaf over indigo silk, 1.2 metres. The youngest — and the only one finished with the studio's signature gilding.</p>
+        <span class="role">Youngest</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PROCESS — five steps on ink ground
+     ============================================================ -->
+<section class="process" id="process">
+  <div class="shell">
+    <p class="kicker reveal" style="color: var(--kinka); font-family: var(--f-body-jp); font-weight: 700; font-size: 18px; letter-spacing: 0.04em;"><span class="t-jp">工程 ·</span> The five-week process</p>
+    <div class="fivehead" style="margin-top: 16px;">
+      <div>
+        <h2 class="t-h2 reveal d1">From your <span class="t-jp" style="font-family: var(--f-display-jp);">紋</span> to the wind, in five weeks.</h2>
+        <p class="lead reveal d2">Every set is a numbered commission. We do not print-on-demand; we dye, paint and assemble by hand, on a calendar that closes on the last day of February.</p>
+      </div>
+      <div class="num reveal d1">5<small>weeks lead time</small></div>
+    </div>
+
+    <div class="proc-strip reveal">
+      <div class="proc-step">
+        <span class="stepno">STEP 01</span>
+        <h3 class="stepname">Design the mon</h3>
+        <span class="stepjp t-jp">紋を写す</span>
+        <p class="stepdesc">You send us the family crest — a photograph of the old set, a sketch on washi, or just a description. We redraw it for the pole.</p>
+        <span class="stepdays">Week 1</span>
+      </div>
+      <div class="proc-step">
+        <span class="stepno">STEP 02</span>
+        <h3 class="stepname">Cut the silk</h3>
+        <span class="stepjp t-jp">絹を裁つ</span>
+        <p class="stepdesc">Hand-cut panels of Habotai silk, one panel per streamer. The five streamers go 5m / 4m / 2m / 1.6m / 1.2m — the standard taper.</p>
+        <span class="stepdays">Week 2</span>
+      </div>
+      <div class="proc-step">
+        <span class="stepno">STEP 03</span>
+        <h3 class="stepname">Dye the silk</h3>
+        <span class="stepjp t-jp">染める</span>
+        <p class="stepdesc">Indigo, vermilion, moss, river blue, and a gold-leaf finish. Each panel dipped five times — the depth is what makes the colour hold in wind.</p>
+        <span class="stepdays">Week 3</span>
+      </div>
+      <div class="proc-step">
+        <span class="stepno">STEP 04</span>
+        <h3 class="stepname">Paint the crest</h3>
+        <span class="stepjp t-jp">家紋を描く</span>
+        <p class="stepdesc">The family mon painted by hand across all five streamers. Two passes — first ink, then gold leaf for the kinka.</p>
+        <span class="stepdays">Week 4</span>
+      </div>
+      <div class="proc-step">
+        <span class="stepno">STEP 05</span>
+        <h3 class="stepname">Hang and ship</h3>
+        <span class="stepjp t-jp">揚げる</span>
+        <p class="stepdesc">Bamboo pole cut to the height of your house, streamers mounted, set packed in a numbered crate, dispatched by truck.</p>
+        <span class="stepdays">Week 5</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="shell"><div class="band-5 reveal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div></div>
+
+<!-- ============================================================
+     MATERIALS
+     ============================================================ -->
+<section class="section" id="materials">
+  <div class="shell">
+    <div class="fivehead">
+      <div>
+        <p class="kicker reveal"><span class="t-jp">素材 ·</span> What goes into a set</p>
+        <h2 class="t-h2 reveal d1">Five materials, sourced within 80 km of the studio.</h2>
+      </div>
+      <div class="num reveal d1">5<small>materials · one set</small></div>
+    </div>
+
+    <div class="materials reveal">
+      <div class="left" role="img" aria-label="Three finished koinobori drying on bamboo poles in front of cream washi paper">
+        <div class="caption">
+          <div class="label">From the studio</div>
+          <div class="v">Three streamers drying, March 2026.</div>
+        </div>
+      </div>
+      <div class="mat-cell">
+        <div class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" fill="#1A2D5A"/><path d="M6 10h8M10 6v8" stroke="#D9A13A" stroke-width="1.5"/></svg>
+        </div>
+        <span class="k">絹 · No. 01</span>
+        <h3 class="n">Habotai silk</h3>
+        <p class="d">Woven in Ishikawa. Holds dye in five passes; the colour does not bleed in rain.</p>
+      </div>
+      <div class="mat-cell">
+        <div class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" fill="#C8341F"/></svg>
+        </div>
+        <span class="k">染料 · No. 02</span>
+        <h3 class="n">Plant dye</h3>
+        <p class="d">Indigo from Hokkaido, vermilion from safflower. No chemical fixatives — only alum.</p>
+      </div>
+      <div class="mat-cell">
+        <div class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 17 L10 3 L17 17 Z" fill="#D9A13A"/></svg>
+        </div>
+        <span class="k">金箔 · No. 03</span>
+        <h3 class="n">Gold leaf</h3>
+        <p class="d">Kanazawa gold leaf, hammered to 1/10,000 mm. Used for the kinka streamer only.</p>
+      </div>
+      <div class="mat-cell">
+        <div class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="6" y="2" width="8" height="16" rx="1" fill="#5A4F3F"/></svg>
+        </div>
+        <span class="k">竹 · No. 04</span>
+        <h3 class="n">Bamboo pole</h3>
+        <p class="d">Cut to the height of your eaves. Treated with persimmon tannin — survives three seasons.</p>
+      </div>
+      <div class="mat-cell">
+        <div class="icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 6h14v10H3z" fill="#EFE5CB" stroke="#5A4F3F"/></svg>
+        </div>
+        <span class="k">和紙 · No. 05</span>
+        <h3 class="n">Washi paper</h3>
+        <p class="d">Mino washi for the wrapping. Holds the streamers between dispatch and hang.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CALENDAR
+     ============================================================ -->
+<section class="section" id="calendar" style="background: var(--surface); margin-top: 32px;">
+  <div class="shell" style="padding-top: clamp(64px, 9vw, 128px); padding-bottom: clamp(64px, 9vw, 128px);">
+    <div class="fivehead">
+      <div>
+        <p class="kicker reveal"><span class="t-jp">暦 ·</span> May 2026</p>
+        <h2 class="t-h2 reveal d1">The festival has a calendar. So does the studio.</h2>
+        <p class="lead reveal d2">Orders open in November, close on the last day of February. The window is fixed — every set is hand-made and the dye floor runs once a season.</p>
+      </div>
+      <div class="num reveal d1">12<small>weeks of season</small></div>
+    </div>
+
+    <div class="cal">
+      <ul class="cal-list reveal d2">
+        <li class="cal-row">
+          <span class="date">Apr 5<small>四月</small></span>
+          <span class="what">Studio opens for Hang Day prep<small>Crates dispatched, families receive wind-line instructions</small></span>
+          <span class="tag t-ship">Dispatch</span>
+        </li>
+        <li class="cal-row">
+          <span class="date">Apr 20<small>卯月</small></span>
+          <span class="what">Yuri crest calligrapher visit<small>Bring your family mon — we re-draw it free of charge</small></span>
+          <span class="tag">Studio</span>
+        </li>
+        <li class="cal-row">
+          <span class="date">Apr 28<small>卯月</small></span>
+          <span class="what">Last call for standard sets<small>Express orders (5-day lead) close at noon</small></span>
+          <span class="tag">Studio</span>
+        </li>
+        <li class="cal-row">
+          <span class="date">May 1<small>皐月</small></span>
+          <span class="what">Sets begin arriving at households<small>Hang window opens — pick a calm morning</small></span>
+          <span class="tag t-ship">On site</span>
+        </li>
+        <li class="cal-row">
+          <span class="date">May 5<small>端午</small></span>
+          <span class="what">端午 · Tango no sekku<small>Children's Day. The wind does the rest.</small></span>
+          <span class="tag t-now">Festival</span>
+        </li>
+        <li class="cal-row">
+          <span class="date">May 12<small>皐月</small></span>
+          <span class="what">Studio returns for take-down<small>Re-wrapping, storage crates, off-season care</small></span>
+          <span class="tag">Studio</span>
+        </li>
+      </ul>
+
+      <aside style="background: var(--paper); border-radius: var(--radius-card); padding: 32px; align-self: start;">
+        <p class="kicker"><span class="t-jp">申込 ·</span> How to order</p>
+        <h3 class="t-h3" style="margin: 16px 0 16px; font-size: 26px;">Three steps, one form.</h3>
+        <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: step;">
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 14px;">
+            <span style="font-family: var(--f-display); font-weight: 800; font-size: 22px; color: var(--accent);">01</span>
+            <span><strong style="display: block; font-family: var(--f-display); font-size: 18px;">Send your mon.</strong> A photograph of your existing set, a sketch, or a written description. The studio redraws it for the new pole.</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 14px;">
+            <span style="font-family: var(--f-display); font-weight: 800; font-size: 22px; color: var(--accent);">02</span>
+            <span><strong style="display: block; font-family: var(--f-display); font-size: 18px;">Confirm dimensions.</strong> Height of your eaves, width of the yard, number of child streamers. We size the bamboo and the silk.</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 14px;">
+            <span style="font-family: var(--f-display); font-weight: 800; font-size: 22px; color: var(--accent);">03</span>
+            <span><strong style="display: block; font-family: var(--f-display); font-size: 18px;">Pay the deposit.</strong> 30% on order, 70% on dispatch. Standard lead time is five weeks; express is five days for an existing mon.</span>
+          </li>
+        </ol>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PRICING
+     ============================================================ -->
+<section class="section" id="pricing">
+  <div class="shell">
+    <div class="fivehead">
+      <div>
+        <p class="kicker reveal"><span class="t-jp">価格 ·</span> Five tiers</p>
+        <h2 class="t-h2 reveal d1">The standard set, plus four ways to make it yours.</h2>
+        <p class="lead reveal d2">Every tier ships the same five-streamer set. The difference is the mon, the dye depth, and whether the studio visits your house to hang it.</p>
+      </div>
+      <div class="num reveal d1">¥48k<small>from · shipped</small></div>
+    </div>
+
+    <div class="price-grid reveal d2">
+      <article class="price">
+        <span class="ptag">No. 01 · Starter</span>
+        <h3 class="pname">Higoi Set</h3>
+        <span class="pjp t-jp">緋鯉セット</span>
+        <p class="pprice">¥48,000<small>Standard · 5 streamers</small></p>
+        <ul class="plist">
+          <li>Plain crest — studio mon</li>
+          <li>Single-pass dye</li>
+          <li>Bamboo pole, 6 m</li>
+          <li>Dispatched in May shipping crate</li>
+        </ul>
+        <a href="#" class="btn btn-secondary pcta">Order</a>
+      </article>
+      <article class="price">
+        <span class="ptag">No. 02 · Family</span>
+        <h3 class="pname">Magoi Set</h3>
+        <span class="pjp t-jp">真鯉セット</span>
+        <p class="pprice">¥68,000<small>Family mon · 5 streamers</small></p>
+        <ul class="plist">
+          <li>Your family mon painted by hand</li>
+          <li>Two-pass dye — holds three seasons</li>
+          <li>Bamboo pole, sized to your eaves</li>
+          <li>Numbered dispatch crate</li>
+        </ul>
+        <a href="#" class="btn btn-secondary pcta">Order</a>
+      </article>
+      <article class="price featured">
+        <span class="ptag">No. 03 · Most ordered</span>
+        <h3 class="pname">Sora Set</h3>
+        <span class="pjp t-jp">そらセット</span>
+        <p class="pprice">¥96,000<small>Custom · 5 streamers</small></p>
+        <ul class="plist">
+          <li>Custom crest, designed from scratch</li>
+          <li>Three-pass dye with alum fixative</li>
+          <li>Bamboo pole, gold-leaf-finish ring</li>
+          <li>Hang-day visit by a studio assistant</li>
+        </ul>
+        <a href="#" class="btn btn-primary pcta">Order the Sora</a>
+      </article>
+      <article class="price">
+        <span class="ptag">No. 04 · Heirloom</span>
+        <h3 class="pname">Kinka Set</h3>
+        <span class="pjp t-jp">金鯉セット</span>
+        <p class="pprice">¥148,000<small>Gold-leaf · 5 streamers</small></p>
+        <ul class="plist">
+          <li>Custom crest with Kanazawa gold leaf</li>
+          <li>Five-pass dye, three colours</li>
+          <li>Premium bamboo, lacquered ring</li>
+          <li>Two hang-day visits</li>
+        </ul>
+        <a href="#" class="btn btn-secondary pcta">Order</a>
+      </article>
+      <article class="price">
+        <span class="ptag">No. 05 · Anniversary</span>
+        <h3 class="pname">Tsuki Set</h3>
+        <span class="pjp t-jp">月セット</span>
+        <p class="pprice">¥248,000<small>Studio visit · 5 streamers</small></p>
+        <ul class="plist">
+          <li>Director paints the mon in person</li>
+          <li>Custom dye, indigo-river blend</li>
+          <li>Bamboo pole, full-length lacquer</li>
+          <li>Annual visit for the next five festivals</li>
+        </ul>
+        <a href="#" class="btn btn-secondary pcta">Order</a>
+      </article>
+    </div>
+
+    <p class="t-small reveal" style="text-align: center; margin-top: 32px;">Prices include dispatch to anywhere in Japan. International shipping quoted separately. All sets numbered, all deposits refundable until 31 March.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     STUDIO NOTE
+     ============================================================ -->
+<section class="studio" id="studio">
+  <div class="shell">
+    <div class="grid">
+      <div>
+        <p class="kicker reveal" style="color: var(--kinka); font-family: var(--f-body-jp); font-weight: 700; font-size: 18px; letter-spacing: 0.04em;"><span class="t-jp">工房より ·</span> A note from the studio</p>
+        <h2 class="t-h2 reveal d1">Three people, one dye floor, eleven sets a year.</h2>
+        <p class="reveal d2">Koinobori studio is run by Akiko Mori, her brother Daiki, and one apprentice named Yuna. They have been dyeing silk in the same wood-frame house in Kanazawa since 1968. The dye floor still uses the same four vats their father built.</p>
+        <p class="reveal d3">They do not print, they do not mass-dye, and they do not take commissions after February. The studio answers the phone on weekday mornings and on Saturday until noon.</p>
+        <div class="sign reveal d3">
+          — Akiko Mori
+          <small>Director, Koinobori studio · 第三代目</small>
+        </div>
+      </div>
+      <div class="studio-img reveal d2" role="img" aria-label="Overhead view of the studio's workshop table with bamboo poles, indigo silk, gold leaf sheets, calligraphy brushes"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CTA — closing
+     ============================================================ -->
+<section class="cta">
+  <div class="shell">
+    <p class="kicker reveal" style="color: var(--accent); font-family: var(--f-body-jp); font-weight: 700; font-size: 18px; letter-spacing: 0.04em;"><span class="t-jp">五月五日 ·</span> The fifth of May is closer than you think.</p>
+    <h2 class="t-h2 reveal d1">Order your <em class="t-jp">家</em> a set this season.</h2>
+    <div class="actions reveal d2">
+      <a href="#" class="btn btn-primary">Begin a commission
+        <svg class="arrow" viewBox="0 0 16 10" fill="none" aria-hidden="true"><path d="M0 5h14M10 1l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#studio" class="btn-link">Or read the studio note</a>
+    </div>
+    <p class="note reveal d3">Standard lead time: five weeks. Express lead time: five days for an existing mon. The window closes 28 February.</p>
+  </div>
+</section>
+
+<div class="shell"><div class="band-5 reveal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div></div>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer>
+  <div class="shell">
+    <div class="grid">
+      <div>
+        <div class="brand">鯉のぼり<span>Koinobori studio · Kanazawa</span></div>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="#set">The set</a></li>
+          <li><a href="#process">Process</a></li>
+          <li><a href="#materials">Materials</a></li>
+          <li><a href="#studio">A note from Akiko</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Order</h4>
+        <ul>
+          <li><a href="#pricing">Five tiers</a></li>
+          <li><a href="#calendar">May calendar</a></li>
+          <li><a href="#">Express (5 days)</a></li>
+          <li><a href="#">International</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Visit</h4>
+        <ul>
+          <li>14-2 Hirosaka</li>
+          <li>Kanazawa 920-0962</li>
+          <li>Ishikawa, Japan</li>
+          <li>Open Tue–Sat · 9–12</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:studio@koinobori.example">studio@koinobori.example</a></li>
+          <li><a href="tel:+81762300000">+81 76 230 0000</a></li>
+          <li><a href="#">Take-down visits</a></li>
+          <li><a href="#">Repair service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <span>© 1968–2026 Koinobori Mori studio · 第三代目</span>
+      <span>Made by hand in Kanazawa, not by an algorithm.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Progressive reveal: tiny inline script — page never stays hidden */
+(function () {
+  var body = document.body;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    body.classList.remove('anim-init');
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    return;
+  }
+  body.classList.add('anim-init');
+  var io;
+  if ('IntersectionObserver' in window) {
+    io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+  }
+  /* Active nav link */
+  var sections = document.querySelectorAll('section[id]');
+  var navLinks = document.querySelectorAll('.nav-links a');
+  function onScroll() {
+    var y = window.scrollY + 100;
+    var current = '';
+    sections.forEach(function (s) { if (s.offsetTop <= y) current = s.id; });
+    navLinks.forEach(function (a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

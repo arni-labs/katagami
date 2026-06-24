@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream • Koinobori</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Instrument+Sans:wght@500;600&amp;display=swap');
+
+    :root {
+      --color-bg: #F8F5EF;
+      --color-surface: #FFFFFF;
+      --color-surface-2: #F1EDE4;
+      --color-ink: #0E1B2B;
+      --color-ink-muted: #4A5568;
+      --color-blue: #2A6A9C;
+      --color-blue-light: #4A8DC2;
+      --color-red: #C94F3A;
+      --color-green: #3F7A55;
+      --color-gold: #C5A05A;
+      --color-sky: #D4E6F5;
+      --color-border-subtle: #D9D3C7;
+      --color-focus-ring: #2A6A9C;
+      --control-h: 48px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", "Noto Sans JP", Roboto, sans-serif;
+    }
+
+    .display { font-family: 'Instrument Sans', 'Inter', system-ui, -apple-system, sans-serif; }
+
+    .koinagare-bg { background-color: var(--color-bg); }
+    .koinagare-surface { background-color: var(--color-surface); }
+
+    .nav-top {
+      height: 64px;
+      background: white;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .control {
+      height: var(--control-h);
+      min-height: var(--control-h);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 14.5px;
+      letter-spacing: 0.01em;
+      transition: all 120ms cubic-bezier(0.4, 0.0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      line-height: 1;
+    }
+
+    .btn-primary {
+      background-color: var(--color-blue);
+      color: white;
+      border: none;
+    }
+    .btn-primary:hover { background-color: var(--color-blue-light); transform: translateY(-1px); }
+    .btn-primary:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring), 0 0 0 5px rgba(255,255,255,0.8);
+    }
+    .btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
+    .btn-primary:disabled { opacity: .5; pointer-events: none; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-ink);
+      border: 1.5px solid var(--color-border-subtle);
+    }
+    .btn-secondary:hover { border-color: var(--color-blue); color: var(--color-blue); background: rgba(42,106,156,.04); }
+    .btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-focus-ring); }
+    .btn-secondary:active { background: rgba(42,106,156,.08); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-ink-muted);
+      border: none;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .btn-ghost:hover { background: var(--color-surface-2); color: var(--color-ink); }
+    .btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-focus-ring); }
+
+    .input, .select, textarea {
+      height: var(--control-h);
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border-subtle);
+      background: var(--color-surface);
+      color: var(--color-ink);
+      font-size: 15px;
+      padding: 0 15px;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    textarea { height: auto; min-height: 108px; padding-top: 14px; padding-bottom: 14px; resize: vertical; }
+    .input:hover, .select:hover { border-color: #C8C0B0; }
+    .input:focus-visible, .select:focus-visible, textarea:focus-visible {
+      outline: none;
+      border-color: var(--color-blue);
+      box-shadow: 0 0 0 3px rgba(42,106,156,0.18);
+    }
+    .input:disabled, .select:disabled {
+      background: var(--color-surface-2);
+      color: var(--color-ink-muted);
+      border-color: var(--color-border-subtle);
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1.5px solid var(--color-border-subtle);
+      background-color: var(--color-surface);
+      transition: all 120ms;
+      cursor: pointer;
+      appearance: none;
+      vertical-align: middle;
+    }
+    .checkbox:checked {
+      background-color: var(--color-blue);
+      border-color: var(--color-blue);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 12px;
+    }
+    .checkbox:focus-visible {
+      box-shadow: 0 0 0 3px rgba(42,106,156,0.18);
+    }
+
+    .switch {
+      width: 48px;
+      height: 28px;
+      background-color: var(--color-surface-2);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 9999px;
+      position: relative;
+      transition: background-color 160ms ease;
+      cursor: pointer;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 9999px;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+      transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .switch.on {
+      background-color: var(--color-blue);
+      border-color: var(--color-blue);
+    }
+    .switch.on::after {
+      transform: translateX(20px);
+    }
+
+    .card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 10px rgb(0 0 0 / 0.03);
+    }
+
+    .child-banner {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border-subtle);
+      overflow: hidden;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .child-banner:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / 0.06); }
+
+    .banner-bar {
+      height: 7px;
+      background: linear-gradient(to right, var(--c1), var(--c2));
+      border-radius: 9999px;
+    }
+
+    .section-head {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--color-ink-muted);
+      text-transform: uppercase;
+    }
+
+    .koi-table th {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--color-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-bottom: 10px;
+    }
+    .koi-table td {
+      padding-top: 13px;
+      padding-bottom: 13px;
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: 14.5px;
+    }
+    .koi-table tr:hover td { background: var(--color-surface-2); }
+
+    .nav-item {
+      font-weight: 500;
+      font-size: 14.5px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      color: var(--color-ink-muted);
+      transition: all .1s;
+    }
+    .nav-item.active {
+      background: var(--color-surface-2);
+      color: var(--color-ink);
+      font-weight: 600;
+    }
+    .nav-item:hover:not(.active) { color: var(--color-ink); background: var(--color-surface-2); }
+
+    .metric-value {
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .focus-ring {
+      transition: box-shadow 80ms;
+    }
+    .focus-ring:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring), 0 0 0 6px rgba(255,255,255,.75);
+    }
+
+    .dashboard-main { max-width: 1200px; margin: 0 auto; }
+    
+    .streamer {
+      height: 6px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #2A6A9C, #4A8DC2);
+    }
+  </style>
+</head>
+<body class="koinagare-bg text-[#0E1B2B]">
+  <!-- Top Navigation -->
+  <nav class="nav-top fixed top-0 left-0 right-0 z-40">
+    <div class="dashboard-main px-8 h-full flex items-center justify-between">
+      <div class="flex items-center gap-9">
+        <!-- Logo -->
+        <div class="flex items-center gap-2.5">
+          <svg width="26" height="26" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 8 Q9 5 14 8 Q19 11 24 8" stroke="#2A6A9C" stroke-width="2.75" stroke-linecap="round"/>
+            <path d="M4 14 Q9 11 14 14 Q19 17 24 14" stroke="#C94F3A" stroke-width="2.75" stroke-linecap="round"/>
+            <path d="M4 20 Q9 17 14 20 Q19 23 24 20" stroke="#3F7A55" stroke-width="2.75" stroke-linecap="round"/>
+          </svg>
+          <span class="font-semibold text-xl tracking-[-0.01em]">koinobori</span>
+        </div>
+
+        <!-- Family switcher -->
+        <div class="flex items-center gap-2 rounded-[9999px] border border-[#D9D3C7] bg-white pl-1.5 pr-2 h-9 text-sm">
+          <div class="flex items-center gap-1.5 pl-1.5">
+            <div class="w-5 h-5 bg-[#2A6A9C] rounded-full flex items-center justify-center text-[9px] text-white font-bold">T</div>
+            <span class="font-medium text-sm">Takahashi</span>
+          </div>
+          <button onclick="switchFamily()" class="text-[#4A5568] text-xs px-2 py-px rounded hover:bg-[#F1EDE4]">↻</button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="hidden md:flex items-center text-sm">
+          <a href="#" class="nav-item px-4 active">Stream</a>
+          <a href="#" class="nav-item px-4">Goals</a>
+          <a href="#" class="nav-item px-4">Festival</a>
+          <a href="#" class="nav-item px-4">Stories</a>
+        </div>
+
+        <div class="w-px h-5 bg-[#D9D3C7] mx-2 hidden md:block"></div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center">
+            <img src="./media/balcony.jpg" class="w-7 h-7 rounded-full object-cover ring-2 ring-white border border-[#D9D3C7]" alt="">
+            <img src="./media/craft.jpg" class="w-7 h-7 -ml-1.5 rounded-full object-cover ring-2 ring-white border border-[#D9D3C7]" alt="">
+          </div>
+          <div class="text-sm font-medium">Mika</div>
+          <button onclick="showAccountMenu()" class="btn-ghost control text-xs px-1.5">▾</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="pt-16 dashboard-main px-8 pb-16">
+    <!-- Greeting header -->
+    <div class="flex items-end justify-between pt-9 pb-6">
+      <div>
+        <div class="text-sm text-[#4A5568]">May 23, 2026 • Clear skies, 14°C</div>
+        <div class="display text-[34px] font-semibold tracking-[-0.015em] mt-1">Good morning, Mika.<br>The wind is steady today.</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="logUpstream()" class="btn-primary control px-6 text-sm">Log an upstream moment</button>
+        <button onclick="openFestivalPlan()" class="btn-secondary control px-6 text-sm">Plan May 5</button>
+      </div>
+    </div>
+
+    <!-- Key metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-7">
+      <div class="card p-5">
+        <div class="section-head mb-3">FAMILY HEIGHT</div>
+        <div class="flex items-baseline gap-2">
+          <span class="metric-value">164</span>
+          <span class="text-sm text-[#4A5568]">cm total</span>
+        </div>
+        <div class="text-xs text-[#3F7A55] mt-1">+22 cm this month</div>
+      </div>
+      <div class="card p-5">
+        <div class="section-head mb-3">BANNERS FLYING</div>
+        <div class="flex items-baseline gap-2">
+          <span class="metric-value">3</span>
+          <span class="text-sm text-[#4A5568]">children</span>
+        </div>
+        <div class="text-xs text-[#4A5568] mt-1">Sora • Ren • Aoi</div>
+      </div>
+      <div class="card p-5">
+        <div class="section-head mb-3">SWIMS THIS MONTH</div>
+        <div class="flex items-baseline gap-2">
+          <span class="metric-value">19</span>
+        </div>
+        <div class="text-xs text-[#4A5568] mt-1">12 logged by you</div>
+      </div>
+      <div class="card p-5 flex flex-col">
+        <div class="section-head mb-3">NEXT RITUAL</div>
+        <div>
+          <div class="font-semibold">Kodomo no Hi • 12 days</div>
+          <div class="text-xs text-[#4A5568]">3 poles • 18 guests confirmed</div>
+        </div>
+        <div class="flex-1"></div>
+        <button onclick="openFestivalPlan()" class="text-xs font-semibold text-[#2A6A9C] hover:underline mt-2 text-left">View plan →</button>
+      </div>
+    </div>
+
+    <!-- Children's Streamers -->
+    <div class="mb-3 flex items-center justify-between">
+      <div class="section-head">YOUR STREAM</div>
+      <button onclick="logUpstream()" class="btn-ghost text-xs flex items-center gap-1">+ Add child <span class="text-base leading-none">+</span></button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <!-- Sora -->
+      <div class="child-banner bg-white p-5">
+        <div class="flex justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-[#2A6A9C] flex items-center justify-center text-white text-xs font-semibold ring-2 ring-offset-2 ring-offset-white ring-[#2A6A9C]/30">S</div>
+              <div>
+                <div class="font-semibold">Sora Takahashi</div>
+                <div class="text-xs text-[#4A5568]">6 years • Indigo banner</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[28px] leading-none font-semibold tabular-nums">87</div>
+            <div class="text-[10px] text-[#4A5568] -mt-0.5">cm</div>
+          </div>
+        </div>
+
+        <div class="mt-5 mb-2">
+          <div class="h-2 bg-[#EDE8DF] rounded-full overflow-hidden">
+            <div class="h-2 rounded-full" style="width: 87%; background: linear-gradient(to right, #2A6A9C, #4A8DC2);"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1">
+            <span class="px-2 py-px rounded-full bg-[#2A6A9C]/10 text-[#2A6A9C] font-medium text-[10px]">3 this week</span>
+          </div>
+          <div class="text-[#4A5568]">Last: May 19 • Read a full book</div>
+        </div>
+      </div>
+
+      <!-- Ren -->
+      <div class="child-banner bg-white p-5">
+        <div class="flex justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-[#C94F3A] flex items-center justify-center text-white text-xs font-semibold ring-2 ring-offset-2 ring-offset-white ring-[#C94F3A]/30">R</div>
+              <div>
+                <div class="font-semibold">Ren Takahashi</div>
+                <div class="text-xs text-[#4A5568]">4 years • Red banner</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[28px] leading-none font-semibold tabular-nums">51</div>
+            <div class="text-[10px] text-[#4A5568] -mt-0.5">cm</div>
+          </div>
+        </div>
+
+        <div class="mt-5 mb-2">
+          <div class="h-2 bg-[#EDE8DF] rounded-full overflow-hidden">
+            <div class="h-2 rounded-full" style="width: 51%; background: linear-gradient(to right, #C94F3A, #E07D5F);"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1">
+            <span class="px-2 py-px rounded-full bg-[#C94F3A]/10 text-[#C94F3A] font-medium text-[10px]">5 this week</span>
+          </div>
+          <div class="text-[#4A5568]">Last: Today • Shared toy</div>
+        </div>
+      </div>
+
+      <!-- Aoi -->
+      <div class="child-banner bg-white p-5">
+        <div class="flex justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-[#3F7A55] flex items-center justify-center text-white text-xs font-semibold ring-2 ring-offset-2 ring-offset-white ring-[#3F7A55]/30">A</div>
+              <div>
+                <div class="font-semibold">Aoi Takahashi</div>
+                <div class="text-xs text-[#4A5568]">2 years • Green banner</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[28px] leading-none font-semibold tabular-nums">26</div>
+            <div class="text-[10px] text-[#4A5568] -mt-0.5">cm</div>
+          </div>
+        </div>
+
+        <div class="mt-5 mb-2">
+          <div class="h-2 bg-[#EDE8DF] rounded-full overflow-hidden">
+            <div class="h-2 rounded-full" style="width: 26%; background: linear-gradient(to right, #3F7A55, #5FA37C);"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1">
+            <span class="px-2 py-px rounded-full bg-[#3F7A55]/10 text-[#3F7A55] font-medium text-[10px]">2 this week</span>
+          </div>
+          <div class="text-[#4A5568]">Last: May 20 • First full sentence</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two column: Quick log + Activity -->
+    <div class="grid md:grid-cols-5 gap-4">
+      <!-- Quick log card -->
+      <div class="md:col-span-2 card p-6">
+        <div class="section-head mb-4">QUICK LOG</div>
+        
+        <form id="quick-log-form" onsubmit="submitQuickLog(event)">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-[#4A5568] mb-1.5">WHO SWAM?</label>
+              <select id="child-select" class="select w-full">
+                <option value="Sora">Sora (6)</option>
+                <option value="Ren">Ren (4)</option>
+                <option value="Aoi">Aoi (2)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-[#4A5568] mb-1.5">WHAT DID THEY DO?</label>
+              <input id="achievement" type="text" class="input w-full" value="Helped set the table without being asked" placeholder="Describe the moment">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-[#4A5568] mb-1.5">CATEGORY</label>
+                <select id="category" class="select w-full">
+                  <option>Kindness</option>
+                  <option>Courage</option>
+                  <option>Learning</option>
+                  <option>Creativity</option>
+                  <option>Independence</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-[#4A5568] mb-1.5">HEIGHT GAIN</label>
+                <div class="flex items-center gap-2">
+                  <input id="height-gain" type="text" class="input flex-1" value="4">
+                  <span class="text-xs text-[#4A5568] font-medium">cm</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" class="checkbox" checked>
+                <span class="text-sm text-[#4A5568]">Add to this week’s family note</span>
+              </label>
+              <button type="submit" class="btn-primary control px-7 text-sm">Log swim</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="md:col-span-3 card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="section-head">RECENT SWIMS</div>
+          <button class="btn-ghost text-xs">View full history →</button>
+        </div>
+
+        <table class="w-full koi-table">
+          <thead>
+            <tr>
+              <th class="text-left font-normal">Child</th>
+              <th class="text-left font-normal">Moment</th>
+              <th class="text-right font-normal">Height</th>
+              <th class="text-right font-normal pr-1">Date</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr>
+              <td><span class="font-medium">Ren</span></td>
+              <td class="text-[#4A5568]">Shared his favorite toy with Aoi</td>
+              <td class="text-right tabular-nums font-medium">+3 cm</td>
+              <td class="text-right text-[#4A5568] pr-1">Today</td>
+            </tr>
+            <tr>
+              <td><span class="font-medium">Sora</span></td>
+              <td class="text-[#4A5568]">Read an entire chapter alone</td>
+              <td class="text-right tabular-nums font-medium">+5 cm</td>
+              <td class="text-right text-[#4A5568] pr-1">May 19</td>
+            </tr>
+            <tr>
+              <td><span class="font-medium">Aoi</span></td>
+              <td class="text-[#4A5568]">Tried onigiri for the first time</td>
+              <td class="text-right tabular-nums font-medium">+2 cm</td>
+              <td class="text-right text-[#4A5568] pr-1">May 18</td>
+            </tr>
+            <tr>
+              <td><span class="font-medium">Sora</span></td>
+              <td class="text-[#4A5568]">Drew a full koinobori by herself</td>
+              <td class="text-right tabular-nums font-medium">+4 cm</td>
+              <td class="text-right text-[#4A5568] pr-1">May 16</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Festival prep + Stories row -->
+    <div class="grid md:grid-cols-2 gap-4 mt-4">
+      <div class="card p-6">
+        <div class="section-head mb-4">FESTIVAL PREP — MAY 5</div>
+        <div class="flex items-start gap-6">
+          <div class="flex-1 space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-[#4A5568]">Poles reserved</span> <span class="font-semibold">3</span></div>
+            <div class="flex justify-between"><span class="text-[#4A5568]">Printed banners ready</span> <span class="font-semibold">3 / 3</span></div>
+            <div class="flex justify-between"><span class="text-[#4A5568]">Wish tags printed</span> <span class="font-semibold">28</span></div>
+            <div class="flex justify-between"><span class="text-[#4A5568]">Guests confirmed</span> <span class="font-semibold">18 / 22</span></div>
+          </div>
+          <div>
+            <button onclick="openFestivalPlan()" class="btn-secondary control px-5 text-sm whitespace-nowrap">Edit plan</button>
+          </div>
+        </div>
+        <div class="mt-5 pt-4 border-t border-[#D9D3C7] text-xs flex items-center gap-2 text-[#4A5568]">
+          <div class="flex-1 h-1 bg-[#EDE8DF] rounded"><div class="h-1 bg-[#C5A05A] rounded" style="width: 82%"></div></div>
+          <span>82% ready</span>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <div class="section-head mb-3">THIS WEEK IN STORIES</div>
+        <div class="space-y-4 text-sm">
+          <div class="flex gap-3">
+            <div class="text-[#2A6A9C] mt-0.5">•</div>
+            <div><span class="font-medium">Sora</span> wrote her first letter to grandma about the new banner.</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="text-[#2A6A9C] mt-0.5">•</div>
+            <div><span class="font-medium">Ren</span> asked if the koinobori can “talk to the wind.” We said yes.</div>
+          </div>
+          <div class="flex gap-3">
+            <div class="text-[#2A6A9C] mt-0.5">•</div>
+            <div>Grandpa sent photos of the old pole from 1997. Uploaded to the family archive.</div>
+          </div>
+        </div>
+        <button class="btn-ghost text-xs mt-4">Open full story archive →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Upstream Modal (all form controls demonstrated) -->
+  <div id="log-modal" onclick="if (event.target.id === 'log-modal') hideLogModal()" class="hidden fixed inset-0 bg-black/40 z-[60] backdrop-blur-sm flex items-center justify-center p-6">
+    <div onclick="event.stopImmediatePropagation()" class="koinagare-surface w-full max-w-lg rounded-[20px] border border-[#D9D3C7] overflow-hidden shadow-2xl">
+      <div class="px-8 pt-8">
+        <div class="font-semibold text-xl tracking-tight">Log an upstream moment</div>
+        <div class="text-sm text-[#4A5568] mt-1">Every small victory lifts the whole stream.</div>
+
+        <form id="log-form" onsubmit="submitFullLog(event)" class="mt-7 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold tracking-wider mb-1.5 text-[#4A5568]">CHILD</label>
+              <select id="log-child" class="select w-full">
+                <option>Sora Takahashi</option>
+                <option>Ren Takahashi</option>
+                <option>Aoi Takahashi</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold tracking-wider mb-1.5 text-[#4A5568]">CATEGORY</label>
+              <select id="log-category" class="select w-full">
+                <option>Kindness &amp; Empathy</option>
+                <option>Courage &amp; Bravery</option>
+                <option>Learning &amp; Discovery</option>
+                <option>Creativity &amp; Making</option>
+                <option>Independence</option>
+                <option>Health &amp; Strength</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold tracking-wider mb-1.5 text-[#4A5568]">WHAT HAPPENED?</label>
+            <textarea id="log-desc" class="input w-full" rows="3" placeholder="Describe the moment in your own words...">Sora stood up for her friend when another child was being unkind at the park.</textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold tracking-wider mb-1.5 text-[#4A5568]">HEIGHT GAIN</label>
+              <div class="relative">
+                <input id="log-height" type="text" value="5" class="input w-full pr-10">
+                <div class="absolute right-4 top-3.5 text-xs text-[#4A5568]">cm</div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold tracking-wider mb-1.5 text-[#4A5568]">DATE</label>
+              <input type="text" value="May 23, 2026" class="input w-full">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold tracking-wider mb-2 text-[#4A5568]">VISIBILITY</label>
+            <div class="flex gap-3">
+              <label class="flex-1 flex items-center gap-2 rounded-lg border border-[#D9D3C7] px-4 h-11 cursor-pointer">
+                <input type="radio" name="vis" checked class="accent-[#2A6A9C]">
+                <span class="text-sm">Family only</span>
+              </label>
+              <label class="flex-1 flex items-center gap-2 rounded-lg border border-[#D9D3C7] px-4 h-11 cursor-pointer">
+                <input type="radio" name="vis" class="accent-[#2A6A9C]">
+                <span class="text-sm">Include grandparents</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 pt-1 pb-1">
+            <div onclick="toggleSwitch(this)" class="switch on"></div>
+            <span class="text-sm text-[#4A5568]">Post this to the family stream timeline</span>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-[#F8F5EF] border-t border-[#D9D3C7] px-8 py-5 flex items-center justify-end gap-3">
+        <button type="button" onclick="hideLogModal()" class="btn-ghost control px-7 text-sm">Cancel</button>
+        <button onclick="submitFullLog(event)" class="btn-primary control px-8 text-sm">Save to the stream</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Festival Plan Modal -->
+  <div id="festival-modal" onclick="if (event.target.id === 'festival-modal') hideFestivalModal()" class="hidden fixed inset-0 bg-black/40 z-[60] backdrop-blur-sm flex items-center justify-center p-6">
+    <div onclick="event.stopImmediatePropagation()" class="koinagare-surface rounded-[20px] w-full max-w-[520px] border border-[#D9D3C7] overflow-hidden">
+      <div class="p-8">
+        <div class="font-semibold tracking-tight text-[22px]">Kodomo no Hi 2026</div>
+        <div class="text-sm text-[#4A5568]">May 5 • Takahashi House • 3 poles</div>
+
+        <div class="mt-7 space-y-5">
+          <div>
+            <label class="text-xs font-semibold tracking-widest text-[#4A5568]">GUEST LIST</label>
+            <div class="mt-2 grid grid-cols-3 gap-3 text-sm">
+              <div class="bg-[#F8F5EF] rounded-lg px-4 py-3 border border-[#D9D3C7]">Grandparents (4)</div>
+              <div class="bg-[#F8F5EF] rounded-lg px-4 py-3 border border-[#D9D3C7]">Aunt &amp; Uncle</div>
+              <div class="bg-[#F8F5EF] rounded-lg px-4 py-3 border border-[#D9D3C7]">Neighbors (6)</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold tracking-widest text-[#4A5568] mb-1.5 block">PRINTED BANNERS</label>
+              <select class="select w-full"><option>3 full size (Sora, Ren, Aoi)</option><option>5 (add cousins)</option></select>
+            </div>
+            <div>
+              <label class="text-xs font-semibold tracking-widest text-[#4A5568] mb-1.5 block">WISH TAGS</label>
+              <input type="text" class="input w-full" value="32">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold tracking-widest text-[#4A5568] mb-1.5 block">MENU</label>
+            <div class="flex flex-wrap gap-2 text-sm">
+              <div class="px-4 py-1 rounded-full border border-[#D9D3C7] bg-white">Kashiwa mochi</div>
+              <div class="px-4 py-1 rounded-full border border-[#D9D3C7] bg-white">Chimaki</div>
+              <div class="px-4 py-1 rounded-full border border-[#D9D3C7] bg-white">Fresh strawberries</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-8 py-5 bg-[#F8F5EF] border-t flex gap-3 border-[#D9D3C7]">
+        <button onclick="hideFestivalModal()" class="btn-primary control flex-1">Save &amp; send updates</button>
+        <button onclick="hideFestivalModal()" class="btn-secondary control px-6">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function initConfig() {
+      // Ensure tokens are present
+      const r = document.documentElement;
+      r.style.setProperty('--color-bg', '#F8F5EF');
+      r.style.setProperty('--color-surface', '#FFFFFF');
+      r.style.setProperty('--color-surface-2', '#F1EDE4');
+      r.style.setProperty('--color-ink', '#0E1B2B');
+      r.style.setProperty('--color-ink-muted', '#4A5568');
+      r.style.setProperty('--color-blue', '#2A6A9C');
+      r.style.setProperty('--color-blue-light', '#4A8DC2');
+      r.style.setProperty('--color-red', '#C94F3A');
+      r.style.setProperty('--color-green', '#3F7A55');
+      r.style.setProperty('--color-gold', '#C5A05A');
+      r.style.setProperty('--color-border-subtle', '#D9D3C7');
+      r.style.setProperty('--color-focus-ring', '#2A6A9C');
+      r.style.setProperty('--control-h', '48px');
+      r.style.setProperty('--radius-md', '12px');
+      r.style.setProperty('--radius-lg', '20px');
+
+      tailwind.config = {
+        theme: { extend: {
+          colors: {
+            'koi-bg': '#F8F5EF', 'koi-surface': '#FFFFFF', 'koi-ink': '#0E1B2B',
+            'koi-blue': '#2A6A9C', 'koi-red': '#C94F3A', 'koi-green': '#3F7A55'
+          }
+        }}
+      };
+    }
+
+    function logUpstream() {
+      const modal = document.getElementById('log-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    function hideLogModal() {
+      const m = document.getElementById('log-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function submitQuickLog(e) {
+      e.preventDefault();
+      const child = document.getElementById('child-select').value;
+      const msg = document.getElementById('achievement').value || 'A quiet, brave moment';
+      const gain = document.getElementById('height-gain').value || '3';
+
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0E1B2B] text-white px-7 h-[46px] rounded-[9999px] flex items-center text-sm shadow-xl gap-3';
+      toast.innerHTML = `${child} +${gain} cm &nbsp;<span class="opacity-60">•</span>&nbsp; ${msg.substring(0,42)}...`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.transition = 'opacity 140ms';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          toast.remove();
+          // refresh feel
+          location.reload();
+        }, 100);
+      }, 1650);
+    }
+
+    function submitFullLog(e) {
+      if (e) e.preventDefault();
+      hideLogModal();
+
+      const child = document.getElementById('log-child').value;
+      const desc = document.getElementById('log-desc').value || 'A meaningful step forward';
+      
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 px-7 h-[46px] rounded-[9999px] flex items-center text-sm shadow-xl gap-3 bg-[#2A6A9C] text-white';
+      toast.innerHTML = `Logged for ${child.split(' ')[0]} • ${desc.substring(0, 38)}...`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.transition = 'all 120ms';
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          toast.remove();
+          location.reload();
+        }, 80);
+      }, 1350);
+    }
+
+    function openFestivalPlan() {
+      document.getElementById('festival-modal').classList.remove('hidden');
+      document.getElementById('festival-modal').classList.add('flex');
+    }
+    function hideFestivalModal() {
+      const m = document.getElementById('festival-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function switchFamily() {
+      const sel = prompt('Switch family stream (demo):', 'Takahashi');
+      if (sel) {
+        const header = document.querySelector('.nav-top .flex.items-center.gap-2\\.5 span');
+        if (header) header.textContent = sel.toLowerCase();
+      }
+    }
+
+    function toggleSwitch(el) {
+      el.classList.toggle('on');
+    }
+
+    function showAccountMenu() {
+      const menu = document.createElement('div');
+      menu.className = 'fixed right-8 top-[58px] bg-white border border-[#D9D3C7] shadow-xl rounded-xl py-1.5 w-44 text-sm z-[80]';
+      menu.innerHTML = `
+        <div class="px-4 py-2 text-xs text-[#4A5568]">Mika Takahashi</div>
+        <a href="#" class="block px-4 py-[7px] hover:bg-[#F1EDE4]">Account settings</a>
+        <a href="#" class="block px-4 py-[7px] hover:bg-[#F1EDE4]">Print shop</a>
+        <a href="#" class="block px-4 py-[7px] hover:bg-[#F1EDE4]">Invite family</a>
+        <div class="h-px bg-[#D9D3C7] my-1 mx-2"></div>
+        <a href="landing.html" class="block px-4 py-[7px] hover:bg-[#F1EDE4] text-[#C94F3A]">Sign out</a>
+      `;
+      document.body.appendChild(menu);
+
+      function close(e) {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener('click', close, true);
+        }
+      }
+      setTimeout(() => document.addEventListener('click', close, true), 10);
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key === '/' && document.activeElement.tagName === 'BODY') {
+        ev.preventDefault();
+        const q = document.getElementById('achievement');
+        if (q) q.focus();
+      }
+      if (ev.metaKey && ev.key.toLowerCase() === 'k') {
+        ev.preventDefault();
+        const modal = document.getElementById('log-modal');
+        if (!modal.classList.contains('hidden')) hideLogModal();
+        else logUpstream();
+      }
+    });
+
+    // Initialize switches inside modals etc.
+    document.addEventListener('click', function(ev) {
+      if (ev.target.classList.contains('switch')) {
+        ev.target.classList.toggle('on');
+      }
+    });
+
+    window.onload = function() {
+      initConfig();
+      // Easter egg: press ? shows the language name in console only
+      document.addEventListener('keypress', function(e) {
+        if (e.key === '?') console.log('%c[Koinagare] One language. Two surfaces. All tokens respected.', 'color:#4A5568');
+      });
+    };
+
+    // Silent verification hook
+    window.__KOINAGARE_DASHBOARD = { language: "Koinagare", controlHeight: "48px" };
+  </script>
+</body>
+</html>

@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TomoTrail - Nobori Current Landing</title>
+  <style>
+    :root {
+      --rice: #fffaf0;
+      --paper: #f5ead8;
+      --paper-strong: #ead7b8;
+      --sumi: #11100d;
+      --sumi-soft: #39352e;
+      --river: #123e75;
+      --river-quiet: #dbe9f7;
+      --lacquer: #d52b1e;
+      --leaf: #247a55;
+      --marigold: #f0b72f;
+      --sky: #d7efff;
+      --mist: #f8f4ec;
+      --disabled-bg: #e8dfd0;
+      --disabled-fg: #8a8172;
+      --ring: #f0b72f;
+      --font-display: "Iowan Old Style", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+      --font-body: "Avenir Next", "Hiragino Sans", "Yu Gothic", Verdana, sans-serif;
+      --type-hero: clamp(4.2rem, 9vw, 9.4rem);
+      --type-h2: clamp(2.1rem, 5vw, 4.25rem);
+      --type-h3: clamp(1.45rem, 3vw, 2.25rem);
+      --type-body: 1.0625rem;
+      --type-small: 0.9rem;
+      --type-micro: 0.78rem;
+      --tracking-display: -0.02em;
+      --tracking-label: 0.08em;
+      --leading-tight: 0.9;
+      --leading-body: 1.58;
+      --space-1: 0.375rem;
+      --space-2: 0.625rem;
+      --space-3: 1rem;
+      --space-4: 1.5rem;
+      --space-5: 2.25rem;
+      --space-6: 3.5rem;
+      --space-7: 5rem;
+      --space-8: 7rem;
+      --page-x: clamp(1rem, 4vw, 4.75rem);
+      --radius-0: 0;
+      --radius-1: 16px;
+      --radius-2: 24px;
+      --radius-pill: 999px;
+      --control-height: 48px;
+      --shadow-ink: 0 18px 50px rgba(17, 16, 13, 0.14);
+      --shadow-cloth: 0 10px 28px rgba(18, 62, 117, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--rice);
+      color: var(--sumi);
+      font-family: var(--font-body);
+      font-size: var(--type-body);
+      line-height: var(--leading-body);
+      text-rendering: optimizeLegibility;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.38;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(240, 183, 47, 0.2) 0 9rem, transparent 9.1rem),
+        radial-gradient(circle at 92% 62%, rgba(215, 43, 30, 0.1) 0 10rem, transparent 10.1rem),
+        repeating-linear-gradient(135deg, rgba(17, 16, 13, 0.025) 0 1px, transparent 1px 16px);
+      z-index: -1;
+    }
+
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    p { margin: 0; }
+
+    .skip-link {
+      position: fixed;
+      left: var(--space-3);
+      top: var(--space-3);
+      z-index: 20;
+      transform: translateY(-160%);
+      background: var(--sumi);
+      color: var(--rice);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-pill);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .nav {
+      position: fixed;
+      z-index: 10;
+      top: var(--space-3);
+      left: var(--page-x);
+      right: var(--page-x);
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: 0 var(--space-2) 0 var(--space-4);
+      color: var(--sumi);
+      background: rgba(255, 250, 240, 0.82);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-cloth);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      min-height: var(--control-height);
+    }
+
+    .mark {
+      inline-size: 34px;
+      block-size: 34px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 36% 36%, var(--rice) 0 4px, transparent 4.5px),
+        repeating-linear-gradient(135deg, var(--lacquer) 0 7px, var(--marigold) 7px 14px, var(--river) 14px 21px);
+      box-shadow: inset 0 0 0 2px rgba(17, 16, 13, 0.18);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .nav-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--control-height);
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-pill);
+      color: var(--sumi);
+      font-size: var(--type-small);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover { background: rgba(255, 255, 255, 0.72); }
+    .nav-links a:focus-visible,
+    .brand:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    .btn,
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .btn,
+    button {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--space-4);
+      color: var(--sumi);
+      background: var(--marigold);
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 12px 22px rgba(17, 16, 13, 0.16);
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease;
+    }
+
+    .btn:hover,
+    button:hover {
+      transform: translateY(-1px);
+      background: #f4c955;
+      box-shadow: 0 18px 30px rgba(17, 16, 13, 0.2);
+    }
+
+    .btn:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    .btn:active,
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 16px rgba(17, 16, 13, 0.16);
+    }
+
+    .btn[aria-disabled="true"],
+    button:disabled {
+      color: var(--disabled-fg);
+      background: var(--disabled-bg);
+      box-shadow: none;
+      cursor: default;
+      transform: none;
+    }
+
+    .btn.secondary {
+      color: var(--rice);
+      background: var(--river);
+    }
+
+    .btn.secondary:hover { background: #174d8f; }
+
+    .btn.quiet {
+      background: rgba(255, 250, 240, 0.85);
+      color: var(--sumi);
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.08), var(--shadow-cloth);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-1);
+      color: var(--sumi);
+      background: var(--rice);
+      padding: 0 var(--space-3);
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.16), 0 9px 20px rgba(17, 16, 13, 0.06);
+      transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    textarea {
+      min-height: calc(var(--control-height) * 2.4);
+      padding-block: var(--space-3);
+      resize: vertical;
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: #fffefd;
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.26), 0 12px 24px rgba(17, 16, 13, 0.08);
+    }
+
+    input:active,
+    select:active,
+    textarea:active {
+      transform: translateY(1px);
+    }
+
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      color: var(--disabled-fg);
+      background: var(--disabled-bg);
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .field:focus-within label { color: var(--river); }
+
+    label,
+    .eyebrow {
+      color: var(--sumi-soft);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 92vh;
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      padding: 8rem var(--page-x) var(--space-7);
+      background-image: url("media/hero.png");
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(255, 250, 240, 0.9) 0 34%, rgba(255, 250, 240, 0.46) 54%, rgba(255, 250, 240, 0.1) 100%),
+        linear-gradient(0deg, rgba(17, 16, 13, 0.12), transparent 45%);
+    }
+
+    .hero-copy {
+      max-width: 840px;
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 9ch;
+      font-family: var(--font-display);
+      font-size: var(--type-hero);
+      letter-spacing: var(--tracking-display);
+      line-height: var(--leading-tight);
+    }
+
+    .hero .lead {
+      max-width: 650px;
+      color: var(--sumi);
+      font-size: clamp(1.15rem, 2vw, 1.5rem);
+      font-weight: 700;
+      line-height: 1.38;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-3);
+      max-width: 780px;
+      margin-top: var(--space-3);
+    }
+
+    .stat-chip {
+      min-height: 112px;
+      display: grid;
+      align-content: center;
+      gap: var(--space-1);
+      padding: var(--space-3);
+      background: rgba(255, 250, 240, 0.78);
+      border-radius: var(--radius-2);
+      box-shadow: var(--shadow-cloth);
+      backdrop-filter: blur(12px);
+    }
+
+    .stat-chip strong {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 0.9;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .stat-chip span {
+      font-size: var(--type-small);
+      font-weight: 800;
+      color: var(--sumi-soft);
+    }
+
+    main {
+      overflow: hidden;
+    }
+
+    section {
+      padding: var(--space-8) var(--page-x);
+    }
+
+    .section-head {
+      display: grid;
+      gap: var(--space-3);
+      max-width: 860px;
+      margin-bottom: var(--space-6);
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: var(--type-h2);
+      letter-spacing: var(--tracking-display);
+      line-height: 0.98;
+    }
+
+    .section-head p {
+      max-width: 690px;
+      color: var(--sumi-soft);
+      font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+      font-weight: 650;
+    }
+
+    .wind-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      gap: var(--space-5);
+      align-items: stretch;
+    }
+
+    .image-panel {
+      position: relative;
+      min-height: 560px;
+      overflow: hidden;
+      border-radius: var(--radius-2);
+      background: var(--paper);
+      box-shadow: var(--shadow-ink);
+    }
+
+    .image-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 34%;
+      background: linear-gradient(0deg, rgba(17, 16, 13, 0.42), transparent);
+      pointer-events: none;
+    }
+
+    .image-caption {
+      position: absolute;
+      left: var(--space-4);
+      right: var(--space-4);
+      bottom: var(--space-4);
+      z-index: 1;
+      color: var(--rice);
+      font-weight: 850;
+      line-height: 1.25;
+    }
+
+    .feature-stack {
+      display: grid;
+      gap: var(--space-3);
+      align-content: center;
+    }
+
+    .feature-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-2);
+      background: rgba(255, 250, 240, 0.86);
+      box-shadow: var(--shadow-cloth);
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      background: var(--accent, var(--river));
+    }
+
+    .feature-icon {
+      display: grid;
+      place-items: center;
+      inline-size: 72px;
+      block-size: 72px;
+      border-radius: var(--radius-1);
+      color: var(--rice);
+      background: var(--accent, var(--river));
+      box-shadow: inset 0 -8px 0 rgba(17, 16, 13, 0.12);
+    }
+
+    .feature-icon svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .feature-card h3 {
+      margin: 0 0 var(--space-1);
+      font-family: var(--font-display);
+      font-size: var(--type-h3);
+      letter-spacing: var(--tracking-display);
+      line-height: 1.02;
+    }
+
+    .feature-card p { color: var(--sumi-soft); font-weight: 650; }
+
+    .river-band {
+      color: var(--rice);
+      background: var(--river);
+    }
+
+    .river-band .section-head p,
+    .river-band .eyebrow { color: rgba(255, 250, 240, 0.76); }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .moment {
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-4);
+      border-radius: var(--radius-2);
+      background: rgba(255, 250, 240, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(255, 250, 240, 0.18);
+    }
+
+    .moment time {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      min-height: var(--control-height);
+      padding: 0 var(--space-3);
+      color: var(--sumi);
+      background: var(--marigold);
+      border-radius: var(--radius-pill);
+      font-weight: 900;
+    }
+
+    .moment h3 {
+      margin: var(--space-5) 0 var(--space-2);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      letter-spacing: var(--tracking-display);
+      line-height: 0.95;
+    }
+
+    .moment p { color: rgba(255, 250, 240, 0.78); font-weight: 650; }
+
+    .scale-run {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: var(--space-1);
+      margin-top: var(--space-4);
+    }
+
+    .scale-run span {
+      aspect-ratio: 1.6 / 1;
+      border-radius: 999px 999px 0 0;
+      background: var(--scale-color, var(--marigold));
+      opacity: 0.9;
+    }
+
+    .scale-run span:nth-child(3n + 1) { --scale-color: var(--lacquer); }
+    .scale-run span:nth-child(3n + 2) { --scale-color: var(--leaf); }
+
+    .quote-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+      gap: var(--space-6);
+      align-items: center;
+    }
+
+    .quote {
+      position: relative;
+      padding-left: var(--space-5);
+    }
+
+    .quote::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      width: 12px;
+      border-radius: var(--radius-pill);
+      background: repeating-linear-gradient(180deg, var(--lacquer) 0 20px, var(--marigold) 20px 40px, var(--river) 40px 60px);
+    }
+
+    blockquote {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.1rem, 5.5vw, 5.9rem);
+      line-height: 0.94;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .quote cite {
+      display: block;
+      margin-top: var(--space-4);
+      color: var(--sumi-soft);
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    .reserve {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+      gap: var(--space-5);
+      align-items: center;
+      background: var(--paper);
+    }
+
+    .reserve h2 {
+      margin: var(--space-2) 0 var(--space-3);
+      font-family: var(--font-display);
+      font-size: var(--type-h2);
+      letter-spacing: var(--tracking-display);
+      line-height: 0.98;
+    }
+
+    .reserve-form {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      border-radius: var(--radius-2);
+      background: var(--rice);
+      box-shadow: var(--shadow-ink);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .check-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-1);
+      background: var(--mist);
+      color: var(--sumi-soft);
+      font-size: var(--type-small);
+      font-weight: 750;
+      cursor: pointer;
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .check-row:hover { background: #fffefd; }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      appearance: none;
+      flex: 0 0 auto;
+      inline-size: calc(var(--control-height) * 0.42);
+      block-size: calc(var(--control-height) * 0.42);
+      min-height: auto;
+      padding: 0;
+      border-radius: 6px;
+      background: var(--rice);
+      box-shadow: inset 0 0 0 2px var(--sumi);
+      cursor: pointer;
+    }
+
+    input[type="radio"] { border-radius: var(--radius-pill); }
+    input[type="checkbox"]:hover,
+    input[type="radio"]:hover { box-shadow: inset 0 0 0 2px var(--sumi), 0 0 0 6px rgba(240, 183, 47, 0.2); }
+    input[type="checkbox"]:active,
+    input[type="radio"]:active { transform: scale(0.96); }
+    input[type="checkbox"]:checked,
+    input[type="radio"]:checked {
+      background:
+        radial-gradient(circle at 50% 50%, var(--rice) 0 34%, transparent 36%),
+        var(--river);
+      box-shadow: inset 0 0 0 2px var(--river);
+    }
+
+    input[type="checkbox"]:disabled,
+    input[type="radio"]:disabled {
+      background: var(--disabled-bg);
+      box-shadow: inset 0 0 0 2px var(--disabled-fg);
+      cursor: default;
+    }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-5) var(--page-x);
+      color: var(--rice);
+      background: var(--sumi);
+    }
+
+    footer a {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--space-2);
+      color: var(--rice);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    footer a:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .nav { left: var(--space-3); right: var(--space-3); }
+      .nav-links a:not(:last-child) { display: none; }
+      .hero { min-height: 88vh; padding-top: 7rem; background-position: 58% center; }
+      .hero-stats,
+      .timeline,
+      .wind-grid,
+      .quote-wrap,
+      .reserve {
+        grid-template-columns: 1fr;
+      }
+      .image-panel { min-height: 420px; }
+      .quote { padding-left: var(--space-4); }
+    }
+
+    @media (max-width: 640px) {
+      :root { --control-height: 46px; }
+      .nav { padding-left: var(--space-3); }
+      .brand span:last-child { display: none; }
+      .hero { padding-bottom: var(--space-5); }
+      .hero h1 { max-width: 7ch; }
+      .hero-stats { gap: var(--space-2); }
+      .stat-chip { min-height: 96px; padding: var(--space-2); }
+      section { padding-block: var(--space-7); }
+      .feature-card { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      footer { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="brand" href="#">
+      <span class="mark" aria-hidden="true"></span>
+      <span>TomoTrail</span>
+    </a>
+    <div class="nav-links">
+      <a href="#routes">Routes</a>
+      <a href="#dayof">Day-of</a>
+      <a href="#reserve">Reserve</a>
+      <a class="btn secondary" href="dashboard.html">Open dashboard</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Nobori Current for Kodomo no Hi</span>
+      <h1>Every carp rises on time.</h1>
+      <p class="lead">TomoTrail coordinates streamer routes, family kits, volunteers, and wind windows for neighborhood Children's Day celebrations.</p>
+      <div class="hero-actions" aria-label="Landing actions">
+        <a class="btn" href="#reserve">Plan a May route</a>
+        <a class="btn quiet" href="#routes">See the product world</a>
+      </div>
+      <div class="hero-stats" aria-label="Product metrics">
+        <div class="stat-chip">
+          <strong>312</strong>
+          <span>families sequenced</span>
+        </div>
+        <div class="stat-chip">
+          <strong>18m</strong>
+          <span>average setup window</span>
+        </div>
+        <div class="stat-chip">
+          <strong>94%</strong>
+          <span>kits ready before dawn</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="routes" aria-labelledby="routes-title">
+      <div class="section-head">
+        <span class="eyebrow">Route, kit, weather, volunteer</span>
+        <h2 id="routes-title">A festival plan that moves like fabric.</h2>
+        <p>Turn one neighborhood's worth of addresses, rooftops, lantern stalls, schoolyard workshops, and volunteer windows into a day that feels effortless from the street.</p>
+      </div>
+
+      <div class="wind-grid">
+        <figure class="image-panel">
+          <img src="media/feature-planning.png" alt="Festival planning materials with koinobori fabric, route cards, and product objects">
+          <figcaption class="image-caption">Planning artifacts become one wind-aware operations path.</figcaption>
+        </figure>
+
+        <div class="feature-stack">
+          <article class="feature-card" style="--accent: var(--lacquer);">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M8 26c8-12 24-12 32 0-8 12-24 12-32 0Z" fill="currentColor" opacity=".95"></path>
+                <circle cx="17" cy="26" r="3" fill="#fffaf0"></circle>
+                <path d="M28 15v22M35 18v16" stroke="#fffaf0" stroke-width="3" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Wind-window routing</h3>
+              <p>Assign rooftop raises when gusts are calm, then pivot teams when a river corridor starts to pull harder.</p>
+            </div>
+          </article>
+
+          <article class="feature-card" style="--accent: var(--river);">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M11 13h26v22H11z" fill="currentColor"></path>
+                <path d="M16 20h16M16 26h10M16 32h14" stroke="#fffaf0" stroke-width="3" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Family kit ledger</h3>
+              <p>Track poles, fasteners, craft cards, allergy notes, pickup slots, and delivery exceptions without losing the celebratory feel.</p>
+            </div>
+          </article>
+
+          <article class="feature-card" style="--accent: var(--leaf);">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M24 9c9 5 14 12 14 20a14 14 0 1 1-28 0c0-8 5-15 14-20Z" fill="currentColor"></path>
+                <path d="M17 28l5 5 10-14" stroke="#fffaf0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Volunteer wake-up board</h3>
+              <p>Give each team a clean morning run: first stop, kit count, contact notes, weather risk, and tea stall handoff.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="dayof" class="river-band" aria-labelledby="dayof-title">
+      <div class="section-head">
+        <span class="eyebrow">The fifth morning</span>
+        <h2 id="dayof-title">Day-of command, without command-center coldness.</h2>
+        <p>When the neighborhood starts moving, TomoTrail keeps people oriented through small, human-readable changes.</p>
+      </div>
+      <div class="timeline">
+        <article class="moment">
+          <div>
+            <time datetime="06:10">06:10</time>
+            <h3>Teams lift the first poles.</h3>
+            <p>Routes open in batches so narrow streets never fill with vans at the same time.</p>
+          </div>
+          <div class="scale-run" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </article>
+        <article class="moment">
+          <div>
+            <time datetime="09:25">09:25</time>
+            <h3>Craft kits meet classrooms.</h3>
+            <p>Allergy notes, helper badges, and material counts stay attached to each workshop.</p>
+          </div>
+          <div class="scale-run" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </article>
+        <article class="moment">
+          <div>
+            <time datetime="14:40">14:40</time>
+            <h3>Wind shifts, routes bend.</h3>
+            <p>A river gust reroutes two teams and alerts families before anyone is waiting outside.</p>
+          </div>
+          <div class="scale-run" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="trust-title">
+      <div class="quote-wrap">
+        <div class="quote">
+          <span class="eyebrow">Used by parent groups and ward teams</span>
+          <blockquote id="trust-title">The street felt spontaneous because the plan was not.</blockquote>
+          <cite>Mai K., community center coordinator, Setagaya pilot</cite>
+        </div>
+        <div class="feature-stack" aria-label="Operational details">
+          <article class="feature-card" style="--accent: var(--marigold);">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M9 28h30v10H9zM14 10h20v18H14z" fill="currentColor"></path>
+                <path d="M18 18h12M18 24h12" stroke="#11100d" stroke-width="3" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Receipts for every handoff</h3>
+              <p>Each kit has a human trail: who packed it, who carried it, who received it, and what changed.</p>
+            </div>
+          </article>
+          <article class="feature-card" style="--accent: var(--river);">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M24 7 39 39H9L24 7Z" fill="currentColor"></path>
+                <path d="M24 19v8M24 33h.1" stroke="#fffaf0" stroke-width="4" stroke-linecap="round"></path>
+              </svg>
+            </div>
+            <div>
+              <h3>Gentle escalation</h3>
+              <p>Risk notes stay calm and specific: wind, late driver, missing fastener, school gate locked.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="reserve" class="reserve" aria-labelledby="reserve-title">
+      <div>
+        <span class="eyebrow">Reserve a neighborhood run</span>
+        <h2 id="reserve-title">Bring Nobori Current to your May schedule.</h2>
+        <p>TomoTrail opens new city pilots each winter. Share the shape of your celebration and we will map the first route packet.</p>
+      </div>
+      <form class="reserve-form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="name">Coordinator name</label>
+            <input id="name" name="name" autocomplete="name" placeholder="Aya Tanaka">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="aya@example.com">
+          </div>
+          <div class="field">
+            <label for="families">Expected families</label>
+            <select id="families" name="families">
+              <option>40 to 100</option>
+              <option>101 to 250</option>
+              <option>251 to 500</option>
+              <option>500 plus</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="date">Target date</label>
+            <input id="date" name="date" type="date" value="2027-05-05">
+          </div>
+          <div class="field full">
+            <label for="notes">Celebration shape</label>
+            <textarea id="notes" name="notes" placeholder="Rooftop streamers, two school workshops, morning delivery route..."></textarea>
+          </div>
+          <label class="check-row full">
+            <input type="checkbox" name="pilot" checked>
+            <span>Include volunteer route planning in the pilot packet.</span>
+          </label>
+        </div>
+        <button type="submit">Request route packet</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <strong>TomoTrail uses the Nobori Current design language.</strong>
+    <nav aria-label="Footer navigation">
+      <a href="#routes">Routes</a>
+      <a href="#dayof">Day-of</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+  </footer>
+</body>
+</html>

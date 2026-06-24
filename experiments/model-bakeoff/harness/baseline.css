@@ -1,0 +1,28 @@
+/* Shared baseline reset — every model's landing.html and dashboard.html must
+   begin from this exact block (inside their inline <style>), then build on top.
+   This is the only frozen styling; everything visual after it is the model's. */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { color-scheme: light; }
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+button, input, select, textarea, a {
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: none; color: inherit; font: inherit;
+  outline: none; text-decoration: none;
+}
+button { cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

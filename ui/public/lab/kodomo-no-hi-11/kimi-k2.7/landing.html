@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nobori — Kodomo no Hi, made brave</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FDF8F3;
+      --surface: #FFFFFF;
+      --surface-raised: #FFFFFF;
+      --surface-sunk: #F5EDE6;
+      --text: #1A1614;
+      --muted: #6B6560;
+      --border: #E8E0D8;
+      --accent: #E63946;
+      --accent-2: #2A9D8F;
+      --accent-3: #F4A261;
+      --on-accent: #FFFFFF;
+      --success: #2A9D8F;
+      --warning: #F4A261;
+      --error: #E63946;
+      --info: #457B9D;
+      --focus-ring: #E63946;
+
+      --font-display: "Inter", "Noto Sans JP", system-ui, sans-serif;
+      --font-body: "Inter", "Noto Sans JP", system-ui, sans-serif;
+      --font-jp: "Noto Sans JP", sans-serif;
+
+      --text-xs: 14px;
+      --text-sm: 15px;
+      --text-base: 17px;
+      --text-lg: 19px;
+      --text-xl: 24px;
+      --text-2xl: 32px;
+      --text-3xl: clamp(36px, 5vw, 44px);
+      --text-4xl: clamp(48px, 8vw, 64px);
+      --text-5xl: clamp(64px, 10vw, 88px);
+
+      --leading-tight: 1.05;
+      --leading-snug: 1.25;
+      --leading-normal: 1.55;
+      --tracking-tight: -0.03em;
+      --tracking-normal: -0.01em;
+
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --space-10: 128px;
+
+      --radius-none: 0;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      --control-height: 48px;
+      --hero-image: url('./media/landing-hero.jpg');
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: var(--leading-normal);
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, p { margin: 0; }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+
+    .container {
+      width: min(1320px, calc(100% - var(--space-6) * 2));
+      margin-inline: auto;
+    }
+    .container-wide {
+      width: min(1520px, calc(100% - var(--space-6) * 2));
+      margin-inline: auto;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      padding: var(--space-4) 0;
+      background: rgba(253, 248, 243, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent;
+      transition: background 200ms, border-color 200ms;
+    }
+    .nav.scrolled {
+      background: rgba(253, 248, 243, 0.96);
+      border-color: var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 800;
+      letter-spacing: var(--tracking-tight);
+      color: var(--text);
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .nav-links a {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--text);
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -4px;
+      height: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 200ms;
+    }
+    .nav-links a:hover::after,
+    .nav-links a:focus-visible::after { transform: scaleX(1); }
+    .nav-links a:focus-visible { outline: none; }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--control-height);
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      color: var(--on-accent);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 150ms, background 150ms, box-shadow 150ms;
+    }
+    .nav-cta:hover { background: #c92d3a; transform: translateY(-1px); }
+    .nav-cta:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(230,57,70,0.35); }
+    .nav-cta:active { transform: translateY(0); background: #b52834; }
+    .nav-toggle {
+      display: none;
+      width: var(--control-height);
+      height: var(--control-height);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    .nav-toggle svg { width: 24px; height: 24px; stroke: var(--text); }
+
+    @media (max-width: 800px) {
+      .nav-links { display: none; }
+      .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      width: 100vw;
+      height: 100svh;
+      min-height: 640px;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(26,22,20,0.18) 0%, rgba(26,22,20,0.55) 100%);
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: var(--space-9) 0;
+      color: #fff;
+    }
+    .hero-kicker {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: var(--space-4);
+    }
+    .hero-headline {
+      font-family: var(--font-display);
+      font-size: var(--text-5xl);
+      font-weight: 800;
+      line-height: var(--leading-tight);
+      letter-spacing: var(--tracking-tight);
+      max-width: 900px;
+      margin-bottom: var(--space-5);
+    }
+    .hero-headline .jp {
+      font-family: var(--font-jp);
+      font-weight: 900;
+      color: var(--accent-3);
+    }
+    .hero-sub {
+      font-size: var(--text-lg);
+      line-height: var(--leading-snug);
+      max-width: 560px;
+      margin-bottom: var(--space-6);
+      color: rgba(255,255,255,0.92);
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--control-height);
+      padding: 0 var(--space-6);
+      border-radius: var(--radius-full);
+      font-size: var(--text-base);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 150ms, background 150ms, box-shadow 150ms, border-color 150ms;
+    }
+    .btn:focus-visible { outline: none; }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+    .btn-primary:hover { background: #c92d3a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(230,57,70,0.28); }
+    .btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(230,57,70,0.35); }
+    .btn-primary:active { transform: translateY(0); background: #b52834; box-shadow: none; }
+    .btn-secondary {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.55); }
+    .btn-secondary:focus-visible { box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+    .btn-secondary:active { background: rgba(255,255,255,0.08); }
+
+    @media (max-width: 600px) {
+      .hero-headline { font-size: clamp(40px, 12vw, 56px); }
+      .hero-actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+
+    /* Sections */
+    .section { padding: var(--space-10) 0; }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      line-height: var(--leading-snug);
+      letter-spacing: var(--tracking-tight);
+      margin-bottom: var(--space-5);
+      padding-top: var(--space-4);
+    }
+    .section-title .accent { color: var(--accent); }
+    .section-lead {
+      font-size: var(--text-lg);
+      color: var(--muted);
+      max-width: 640px;
+      margin-bottom: var(--space-7);
+    }
+
+    /* Intro */
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+      align-items: center;
+    }
+    .intro-body {
+      font-size: var(--text-lg);
+      line-height: var(--leading-normal);
+    }
+    .intro-body p + p { margin-top: var(--space-5); }
+    .intro-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-5);
+    }
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: 0 4px 24px rgba(26,22,20,0.05);
+    }
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: var(--space-3);
+    }
+    .stat-label { font-size: var(--text-sm); color: var(--muted); font-weight: 500; }
+
+    @media (max-width: 900px) {
+      .intro-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Features */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+    }
+    .feature-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(26,22,20,0.05);
+    }
+    .feature-image {
+      aspect-ratio: 4 / 3;
+      background-size: cover;
+      background-position: center;
+    }
+    .feature-content { padding: var(--space-6); }
+    .feature-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--surface-sunk);
+      color: var(--muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      margin-bottom: var(--space-4);
+    }
+    .feature-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      line-height: var(--leading-snug);
+      margin-bottom: var(--space-3);
+    }
+    .feature-text { color: var(--muted); font-size: var(--text-base); }
+
+    @media (max-width: 1024px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Kit builder */
+    .kit-section {
+      background: var(--surface-sunk);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-7);
+    }
+    .kit-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: var(--space-8);
+      align-items: center;
+    }
+    .kit-form {
+      display: grid;
+      gap: var(--space-5);
+    }
+    .field { display: grid; gap: var(--space-2); }
+    .field-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text);
+    }
+    .input, .select, .textarea {
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text);
+      font-size: var(--text-base);
+      font-family: inherit;
+      width: 100%;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .input::placeholder, .textarea::placeholder { color: var(--muted); }
+    .input:hover, .select:hover, .textarea:hover { border-color: var(--muted); }
+    .input:focus, .select:focus, .textarea:focus {
+      outline: none;
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 3px rgba(230,57,70,0.25);
+    }
+    .input:disabled, .select:disabled, .textarea:disabled {
+      background: var(--surface-sunk);
+      color: var(--muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .textarea { height: auto; min-height: 120px; padding: var(--space-4); resize: vertical; }
+    .select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236B6560' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+    .checkbox-row, .radio-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      font-size: var(--text-base);
+    }
+    .checkbox-row input, .radio-row input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: background 150ms;
+    }
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      background: var(--surface);
+      border-radius: var(--radius-full);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      transition: transform 150ms;
+    }
+    .switch input:checked + .switch-track { background: var(--accent); }
+    .switch input:checked + .switch-track + .switch-thumb { transform: translateX(22px); }
+    .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(230,57,70,0.25); }
+    .kit-summary {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: 0 4px 24px rgba(26,22,20,0.05);
+    }
+    .kit-summary h3 {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      margin-bottom: var(--space-5);
+    }
+    .kit-list { list-style: none; margin: 0; padding: 0; }
+    .kit-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border);
+      font-size: var(--text-base);
+    }
+    .kit-list li:last-child { border-bottom: none; }
+    .kit-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-5);
+      padding-top: var(--space-5);
+      border-top: 2px solid var(--text);
+      font-weight: 700;
+      font-size: var(--text-xl);
+    }
+
+    @media (max-width: 900px) {
+      .kit-grid { grid-template-columns: 1fr; }
+    }
+
+    /* CTA */
+    .cta-section {
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-lg);
+      padding: var(--space-9) var(--space-7);
+      text-align: center;
+    }
+    .cta-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      margin-bottom: var(--space-4);
+    }
+    .cta-title .jp { font-family: var(--font-jp); color: var(--accent-3); }
+    .cta-text {
+      font-size: var(--text-lg);
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto var(--space-6);
+    }
+    .cta-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+
+    /* Footer */
+    .footer {
+      padding: var(--space-8) 0 var(--space-6);
+      border-top: 1px solid var(--border);
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: var(--space-7);
+      margin-bottom: var(--space-8);
+    }
+    .footer-brand {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 800;
+      margin-bottom: var(--space-4);
+    }
+    .footer-brand span { color: var(--accent); }
+    .footer-desc { color: var(--muted); max-width: 280px; }
+    .footer-col h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--space-4);
+    }
+    .footer-col ul { list-style: none; margin: 0; padding: 0; }
+    .footer-col li + li { margin-top: var(--space-3); }
+    .footer-col a { color: var(--muted); font-size: var(--text-base); transition: color 150ms; }
+    .footer-col a:hover { color: var(--text); }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+
+    @media (max-width: 800px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 500px) {
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: var(--space-3); text-align: center; }
+    }
+
+    /* Animation progressive enhancement */
+    @media (prefers-reduced-motion: no-preference) {
+      .anim .hero-content { opacity: 0; transform: translateY(24px); animation: rise 900ms cubic-bezier(0.2,0,0.2,1) forwards; }
+      .anim .feature-card { opacity: 0; transform: translateY(24px); }
+      .anim .feature-card.in-view { animation: rise 700ms cubic-bezier(0.2,0,0.2,1) forwards; }
+      .anim .stat-card { opacity: 0; transform: translateY(24px); }
+      .anim .stat-card.in-view { animation: rise 700ms cubic-bezier(0.2,0,0.2,1) forwards; }
+    }
+    @keyframes rise {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">Nobori<span>.</span></a>
+      <ul class="nav-links">
+        <li><a href="#story">Story</a></li>
+        <li><a href="#kits">Kits</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#dashboard">Dashboard</a></li>
+      </ul>
+      <button class="nav-cta">Get a kit</button>
+      <button class="nav-toggle" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container hero-content">
+      <p class="hero-kicker">Kodomo no Hi — 5 May</p>
+      <h1 class="hero-headline">Raise a streamer. Raise a dragon. <span class="jp">こどもの日</span></h1>
+      <p class="hero-sub">Nobori ships everything your family needs to celebrate Children's Day — hand-finished koinobori, iris sets, and a digital story that turns your child into the carp that swam upstream.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary">Build your kit</button>
+        <button class="btn btn-secondary">Watch the story</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="story">
+      <div class="container">
+        <div class="intro-grid">
+          <div>
+            <h2 class="section-title">A festival built for <span class="accent">small hands</span> and big hearts.</h2>
+            <div class="intro-body">
+              <p>Every spring, families across Japan raise koinobori so children grow as strong and determined as the carp that becomes a dragon. Nobori brings that ritual home — with modern materials, clear instructions, and a story your child steps into.</p>
+              <p>We partner with paper artisans in Saitama and dye workshops in Tokushima to make each streamer light enough for a breeze yet vivid enough to last generations.</p>
+            </div>
+          </div>
+          <div class="intro-stats">
+            <div class="stat-card">
+              <div class="stat-number">12</div>
+              <div class="stat-label">Artisan families in our supply circle</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">4.9</div>
+              <div class="stat-label">Average kit rating this season</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">3</div>
+              <div class="stat-label">Days from order to doorstep</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">0</div>
+              <div class="stat-label">Plastic parts in the classic kit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background: var(--surface-sunk);">
+      <div class="container">
+        <h2 class="section-title">What arrives <span class="accent">on your pole</span></h2>
+        <p class="section-lead">Each kit is assembled by hand and packed in a reusable washi-lined box. Choose your streamer count, add iris or kabuto, and we handle the rest.</p>
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-image" style="background-image: url('./media/landing-feature-1.jpg');"></div>
+            <div class="feature-content">
+              <span class="feature-tag">The kit</span>
+              <h3 class="feature-title">Koinobori, poles, and the story scroll</h3>
+              <p class="feature-text">Three carp streamers in black, red, and teal with a collapsible bamboo pole and a hand-illustrated origin scroll.</p>
+            </div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-image" style="background-image: url('./media/landing-feature-2.jpg');"></div>
+            <div class="feature-content">
+              <span class="feature-tag">The moment</span>
+              <h3 class="feature-title">A ceremony the kids lead</h3>
+              <p class="feature-text">Step-by-step cards guide children to raise the streamer themselves, plus a printable badge for the day.</p>
+            </div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-image" style="background-image: url('./media/landing-feature-3.jpg');"></div>
+            <div class="feature-content">
+              <span class="feature-tag">The craft</span>
+              <h3 class="feature-title">Fabric that moves like water</h3>
+              <p class="feature-text">Washi-textured cloth ripples in a light wind and folds flat for storage until next May.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="kits">
+      <div class="container">
+        <h2 class="section-title">Build your <span class="accent">family kit</span></h2>
+        <p class="section-lead">Tell us who you are celebrating and we will size the pole, pick the streamers, and add the right story chapter.</p>
+        <div class="kit-section">
+          <div class="kit-grid">
+            <form class="kit-form" onsubmit="event.preventDefault();">
+              <div class="field">
+                <label class="field-label" for="childName">Child's first name</label>
+                <input class="input" id="childName" type="text" placeholder="e.g. Hana">
+              </div>
+              <div class="field">
+                <label class="field-label" for="age">Age on 5 May</label>
+                <select class="select" id="age">
+                  <option>Under 2</option>
+                  <option>2–5</option>
+                  <option selected>6–9</option>
+                  <option>10–12</option>
+                  <option>Teen</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Kit size</label>
+                <label class="radio-row"><input type="radio" name="size" checked> Classic — 3 streamers</label>
+                <label class="radio-row"><input type="radio" name="size"> Grand — 5 streamers + iris</label>
+              </div>
+              <div class="field">
+                <label class="field-label">Add-ons</label>
+                <label class="checkbox-row"><input type="checkbox" checked> Kabuto ornament</label>
+                <label class="checkbox-row"><input type="checkbox"> Iris seed packet</label>
+                <label class="checkbox-row"><input type="checkbox"> Digital story pass</label>
+              </div>
+              <div class="switch-row">
+                <span class="field-label">Gift wrap in furoshiki cloth</span>
+                <label class="switch">
+                  <input type="checkbox">
+                  <span class="switch-track"></span>
+                  <span class="switch-thumb"></span>
+                </label>
+              </div>
+              <div class="field">
+                <label class="field-label" for="note">Note for the story (optional)</label>
+                <textarea class="textarea" id="note" placeholder="What makes this child brave?"></textarea>
+              </div>
+              <button class="btn btn-primary" style="width: 100%;">Add to cart — ¥8,400</button>
+            </form>
+            <div class="kit-summary">
+              <h3>Your Nobori kit</h3>
+              <ul class="kit-list">
+                <li><span>Grand 5-streamer set</span><span>¥6,500</span></li>
+                <li><span>Kabuto ornament</span><span>¥1,200</span></li>
+                <li><span>Digital story pass</span><span>¥0</span></li>
+                <li><span>Express shipping</span><span>¥700</span></li>
+              </ul>
+              <div class="kit-total"><span>Total</span><span>¥8,400</span></div>
+              <p style="color: var(--muted); font-size: var(--text-sm); margin-top: var(--space-4);">Free returns within 14 days. Ships from Saitama.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="cta-section">
+          <h2 class="cta-title">Ready to raise your streamer? <span class="jp">鯉のぼり</span></h2>
+          <p class="cta-text">Order by 28 April for guaranteed delivery before Kodomo no Hi. Every kit plants an iris bulb in a community garden.</p>
+          <div class="cta-actions">
+            <button class="btn btn-primary">Start your kit</button>
+            <button class="btn btn-secondary" style="color: #fff;">See the 3D world</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">Nobori<span>.</span></div>
+          <p class="footer-desc">Modern Kodomo no Hi kits and stories, made with artisans in Japan and shipped worldwide.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="#">Classic kit</a></li>
+            <li><a href="#">Grand kit</a></li>
+            <li><a href="#">Digital story</a></li>
+            <li><a href="#">Gift cards</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="#">The carp and dragon story</a></li>
+            <li><a href="#">How to raise a pole</a></li>
+            <li><a href="#">Artisan map</a></li>
+            <li><a href="#">School programs</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Sustainability</a></li>
+            <li><a href="#">Shipping</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Nobori Inc.</span>
+        <span>Made for Kodomo no Hi</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.documentElement.classList.add('anim');
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('in-view');
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.feature-card, .stat-card').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
