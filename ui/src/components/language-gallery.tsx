@@ -241,6 +241,9 @@ function familyLabel(name: string): string {
   return (trimmed || name).toLowerCase();
 }
 
+// Categories that always sink to the bottom of the wall, regardless of size.
+const BOTTOM_CATEGORY = "en-019efb96-d5ca-7330-9a3c-d5dc2b9f9ee3"; // Festival & Poster Graphics
+
 // Spot-ink trio (sakura / yuzu / ramune) plus violet as a tasteful fourth —
 // no muddy greens in the chrome.
 const FAMILY_INKS = [
@@ -310,6 +313,10 @@ function buildFamilyShelves(
   );
 
   const ordered = [...byCategory.entries()].sort((a, b) => {
+    // Festival & Poster Graphics always sinks to the bottom of the wall.
+    const aBottom = a[0] === BOTTOM_CATEGORY ? 1 : 0;
+    const bBottom = b[0] === BOTTOM_CATEGORY ? 1 : 0;
+    if (aBottom !== bBottom) return aBottom - bBottom;
     const fa = rootFamilyOf(a[0], parents);
     const fb = rootFamilyOf(b[0], parents);
     if (fa !== fb) return (rankOf.get(fa) ?? 99) - (rankOf.get(fb) ?? 99);
