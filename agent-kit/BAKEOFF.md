@@ -10,19 +10,51 @@ A bake-off **round** = one **Direction** (a reimagine brief) handed to N harness
 
 ## Per round
 
-### 1. Create the Direction (the round)
+### 0. Preflight — ensure the pipeline is installed (idempotent, no redeploy)
+The composites + `Direction` entity are installed on openpaw via Genesis at runtime; an openpaw pod restart can wipe that (ARN‑69). Run this before each round — it self-heals and is a no-op if already current. (No Railway redeploy, no CI.)
+```bash
+set -a; source .env.katagami-curator.local; set +a; GEN="https://genesis-production-164d.up.railway.app"
+HASH=$(curl -s -H "X-Tenant-Id: default" "$GEN/tdata/Apps('app-katagami-katagami-commons')" | python3 -c 'import json,sys;print(json.load(sys.stdin)["fields"]["LatestVersionHash"])')
+curl -sS -X POST "$TEMPER_API_URL/paw/apps/install-from-genesis" -H "Authorization: Bearer $TEMPER_API_KEY" -H "X-Tenant-Id: default" -H "Content-Type: application/json" \
+  --data "{\"app_ref\":\"katagami/katagami-commons@$HASH\",\"registry_url\":\"$GEN\",\"registry_tenant\":\"default\",\"follow_policy\":\"pinned\"}" >/dev/null
+# confirm: this must be 200
+curl -s -o /dev/null -w "Directions endpoint: %{http_code}\n" -H "X-Tenant-Id: default" -H "Authorization: Bearer $TEMPER_API_KEY" "$TEMPER_API_URL/tdata/Directions"
+```
+
+### 1. Start a round from a design language link (the one input)
+You give the orchestrator **a design language URL** (e.g. `https://katagami.ai/language/<id-or-slug>`) — or just the id/slug — and an optional brief. This script resolves the link to the SOURCE id, creates the `Direction` (the round), and prints `SOURCE_ID` + `DIRECTION_ID` to fan out with. If no brief is given it defaults to a bold reimagine.
+
 ```bash
 set -a; source .env.katagami-curator.local; set +a; BASE="$TEMPER_API_URL"
-H=(-H "X-Tenant-Id: default" -H "Authorization: Bearer $TEMPER_API_KEY" -H "Content-Type: application/json")
-DID=$(curl -s -X POST "$BASE/tdata/Directions" "${H[@]}" -d '{}' | python3 -c 'import json,sys;print(json.load(sys.stdin)["entity_id"])')
-curl -s -X POST "$BASE/tdata/Directions('$DID')/KatagamiCommons.SetDirection" "${H[@]}" -d '{
-  "title":"Round 1 — <theme>",
-  "brief":"<the reimagine brief: the angle/concept to reimagine the source toward + constraints + what good looks like>",
-  "source_language_id":"<SOURCE_LANGUAGE_ID>",
-  "is_bakeoff":"true", "round_label":"r1",
-  "model_pool":"[\"opus\",\"grok\",\"codex\"]" }'
-echo "DIRECTION_ID=$DID   SOURCE=<SOURCE_LANGUAGE_ID>"
+LINK="$1"   # the design language URL, id, or slug
+BRIEF="${2:-Reimagine this design language as an independent, bold reconception per the Katagami rulebook — keep its essence, reconceive its execution (different signature mechanic, layout, hero, type). Commit to ONE strong aesthetic.}"
+eval "$(python3 - "$BASE" "$TEMPER_API_KEY" "$LINK" "$BRIEF" <<'PY'
+import sys, re, json, urllib.request, urllib.parse
+base, key, link, brief = sys.argv[1:5]
+h = {"X-Tenant-Id": "default", "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+def call(path, body=None, method="GET"):
+    data = json.dumps(body).encode() if body is not None else None
+    return json.load(urllib.request.urlopen(urllib.request.Request(base + path, data=data, headers=h, method=method)))
+x = link.rstrip("/").split("/")[-1]                       # URL -> last segment (id or slug)
+if re.match(r"^en-", x):
+    sid = x
+else:                                                     # slug -> resolve to entity id
+    v = call("/tdata/DesignLanguages?$filter=" + urllib.parse.quote(f"slug eq '{x}'") + "&$top=1")["value"]
+    if not v: sys.exit(f"echo 'no language found for: {x}'; false")
+    sid = v[0].get("Id") or v[0].get("entity_id")
+src = call(f"/tdata/DesignLanguages('{sid}')")["fields"]
+did = call("/tdata/Directions", {}, "POST")["entity_id"]
+call(f"/tdata/Directions('{did}')/KatagamiCommons.SetDirection",
+     {"title": f"Reimagine {src.get('name','')}", "brief": brief, "source_language_id": sid,
+      "is_bakeoff": "true", "round_label": "r1", "model_pool": "[\"opus\",\"grok\",\"codex\"]"}, "POST")
+print(f"SOURCE_ID={sid}")
+print(f"SOURCE_NAME={json.dumps(src.get('name',''))}")
+print(f"DIRECTION_ID={did}")
+PY
+)"
+echo "round ready -> SOURCE_ID=$SOURCE_ID  DIRECTION_ID=$DIRECTION_ID  (source: $SOURCE_NAME)"
 ```
+Now fan out the harness prompt below with these `SOURCE_ID` and `DIRECTION_ID`.
 
 ### 2. Invoke each harness
 Run each harness CLI with the **harness prompt** below, filling `{SOURCE_ID}`, `{DIRECTION_ID}` (= `$DID`), and `{MODEL_ID}` (e.g. `opus`/`grok`/`codex`). The harnesses run independently (no shared state); each produces one full set.
