@@ -72,11 +72,22 @@ export async function GET(
   const contentType = res.headers.get("content-type") || "text/html";
   const upstreamBody = await res.arrayBuffer();
   const body = decodeBase64ImageValue(upstreamBody, contentType);
+  // Images are content-addressed and immutable, safe to cache for a day. HTML
+  // compositions (landing/embodiment/dashboard) are MUTABLE — they're re-PUT in
+  // place during curation — so a 24h CDN cache makes every fix invisible for a
+  // day. Short-cache HTML so edits appear within ~30s; long-cache images.
+  const isImage = contentType.toLowerCase().startsWith("image/");
+  const browserCache = isImage
+    ? ASSET_BROWSER_CACHE_CONTROL
+    : "public, max-age=0, must-revalidate";
+  const cdnCache = isImage
+    ? ASSET_CDN_CACHE_CONTROL
+    : "public, s-maxage=30, stale-while-revalidate=60";
   const responseHeaders = new Headers({
     "Content-Type": contentType,
-    "Cache-Control": ASSET_BROWSER_CACHE_CONTROL,
-    "CDN-Cache-Control": ASSET_CDN_CACHE_CONTROL,
-    "Vercel-CDN-Cache-Control": ASSET_CDN_CACHE_CONTROL,
+    "Cache-Control": browserCache,
+    "CDN-Cache-Control": cdnCache,
+    "Vercel-CDN-Cache-Control": cdnCache,
   });
   responseHeaders.set("Content-Length", String(body.byteLength));
 

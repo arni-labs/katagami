@@ -18,7 +18,7 @@ const API_BASE = cleanEnv(
 );
 const TENANT = cleanEnv(process.env.NEXT_PUBLIC_TEMPER_TENANT, "default");
 const API_KEY = cleanEnv(process.env.TEMPER_API_KEY, "");
-const FILE_PROXY_CACHE_VERSION = "asset-cdn-v2";
+const FILE_PROXY_CACHE_VERSION = "asset-cdn-v3";
 
 interface ODataResponse<T> {
   value: T[];
