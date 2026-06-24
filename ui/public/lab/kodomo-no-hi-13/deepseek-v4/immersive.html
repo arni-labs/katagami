@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Koinobori — The Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent-sky: #0EA5E9;
+  --accent-green: #22C55E;
+  --accent-coral: #FF6B6B;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-jp: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{font-family:var(--font-sans);font-size:17px;line-height:1.5;color:#fff;background:#000;-webkit-font-smoothing:antialiased}
+
+#canvas-container{
+  position:fixed;inset:0;z-index:0;
+}
+
+/* Scroll driver */
+#scroll-driver{
+  position:relative;z-index:1;
+  pointer-events:none;
+}
+#scroll-spacer{height:600vh}
+
+/* Content segments */
+.segment{
+  position:fixed;z-index:2;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .8s;
+}
+.segment.active{opacity:1}
+
+.segment-inner{
+  max-width:600px;
+  padding:var(--space-2xl,48px);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-radius:24px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+}
+
+.segment-inner .jp-display{
+  font-family:var(--font-jp);
+  font-size:clamp(36px,5vw,72px);
+  font-weight:900;
+  line-height:.88;
+  letter-spacing:-.02em;
+  margin-bottom:16px;
+  color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+
+.segment-inner h2{
+  font-family:var(--font-display);
+  font-size:clamp(20px,2.5vw,32px);
+  font-weight:700;
+  line-height:1.15;
+  margin-bottom:12px;
+  color:#fff;
+}
+
+.segment-inner p{
+  font-size:17px;
+  line-height:1.6;
+  color:rgba(255,255,255,.85);
+}
+
+.segment-inner .accent{
+  color:var(--accent-coral);
+  font-weight:600;
+}
+
+.segment-inner .accent-sky{color:var(--accent-sky);font-weight:600}
+.segment-inner .accent-green{color:var(--accent-green);font-weight:600}
+
+/* Segment positions */
+#seg-1{left:8%;top:15%}
+#seg-2{left:8%;top:50%}
+#seg-3{right:8%;top:20%}
+#seg-4{left:8%;top:30%}
+#seg-5{left:calc(50% - 300px);top:15%;max-width:600px}
+
+/* Fallback */
+.fallback{
+  display:none;
+  position:fixed;inset:0;z-index:10;
+  background:linear-gradient(180deg,#87CEEB 0%,#E0F0FF 40%,#90EE90 70%,#228B22 100%);
+  align-items:center;justify-content:center;
+  flex-direction:column;text-align:center;
+  padding:48px;
+}
+.fallback .jp-display{
+  font-family:var(--font-jp);
+  font-size:clamp(36px,5vw,72px);
+  font-weight:900;
+  color:#1A1A1A;
+}
+.fallback p{font-size:19px;color:#333;max-width:500px;margin-top:16px}
+.no-webgl .fallback{display:flex}
+.no-webgl #canvas-container,.no-webgl #scroll-driver,.no-webgl .segment{display:none}
+
+@media(max-width:768px){
+  #seg-1,#seg-2,#seg-3,#seg-4,#seg-5{left:4%;right:4%;top:auto}
+  #seg-1{bottom:20%}
+  #seg-2{bottom:20%}
+  #seg-3{bottom:20%}
+  #seg-4{bottom:20%}
+  #seg-5{bottom:15%;left:4%;max-width:none}
+}
+@media(prefers-reduced-motion:reduce){
+  #scroll-driver{display:none}
+  .fallback{display:flex}
+  #canvas-container canvas{display:block}
+}
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="scroll-driver">
+  <div id="scroll-spacer"></div>
+</div>
+
+<div class="segment" id="seg-1">
+  <div class="segment-inner">
+    <div class="jp-display">鯉のぼり</div>
+    <p>The carp streamers rise — a wish for every child's <span class="accent">courage</span> and <span class="accent">growth</span>.</p>
+  </div>
+</div>
+
+<div class="segment" id="seg-2">
+  <div class="segment-inner">
+    <h2>The avenue of carp</h2>
+    <p>Each windsock carries a family's hopes into the <span class="accent-sky">early-summer sky</span>. The largest, the black <span class="accent-green">magoi</span>, leads the way.</p>
+  </div>
+</div>
+
+<div class="segment" id="seg-3">
+  <div class="segment-inner">
+    <h2>The river's bend</h2>
+    <p>Like the carp that swims against the current, the journey demands <span class="accent">strength</span>. Every stream leads to the falls.</p>
+  </div>
+</div>
+
+<div class="segment" id="seg-4">
+  <div class="segment-inner">
+    <h2>The waterfall</h2>
+    <p>Legend says the carp that climbs the Dragon Gate waterfall <span class="accent">transforms</span>. Courage becomes greatness.</p>
+  </div>
+</div>
+
+<div class="segment" id="seg-5">
+  <div class="segment-inner">
+    <div class="jp-display">こどもの日</div>
+    <p>Kodomo no Hi — <span class="accent-sky">May 5th</span>. Free for all <span class="accent-green">children</span>. A festival of <span class="accent-coral">possibility</span>.</p>
+  </div>
+</div>
+
+<div class="fallback" id="fallback">
+  <div class="jp-display">鯉のぼり</div>
+  <p>Kodomo no Hi — the festival of carp streamers rising against early-summer skies. A wish for every child's courage and growth.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// WebGL check
+const canvas = document.createElement('canvas');
+const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+if (!gl) {
+  document.documentElement.classList.add('no-webgl');
+  throw new Error('WebGL not available');
+}
+
+const container = document.getElementById('canvas-container');
+const dpr = Math.min(window.devicePixelRatio, 2);
+
+// Scene setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#87CEEB');
+scene.fog = new THREE.Fog('#87CEEB', 60, 300);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
+camera.position.set(0, 6, 25);
+camera.lookAt(0, 2, 0);
+
+const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: 'high-performance'});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(dpr);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+// --- Lighting ---
+const ambient = new THREE.AmbientLight('#ffe8d6', 0.6);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight('#fff5e8', 3.5);
+sun.position.set(40, 30, -20);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 200;
+sun.shadow.camera.left = -60;
+sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60;
+sun.shadow.camera.bottom = -60;
+sun.shadow.bias = -0.0001;
+scene.add(sun);
+
+const fillLight = new THREE.PointLight('#b8d4ff', 40, 80, 1.5);
+fillLight.position.set(-10, 12, 10);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight('#ffe0c0', 30, 60, 1.5);
+rimLight.position.set(20, 5, -15);
+scene.add(rimLight);
+
+// --- Materials ---
+const matGround = new THREE.MeshStandardMaterial({color:'#5a9e4b', roughness:0.85, flatShading:true});
+const matGroundDark = new THREE.MeshStandardMaterial({color:'#4a8a3b', roughness:0.85, flatShading:true});
+const matRock = new THREE.MeshStandardMaterial({color:'#8a8a80', roughness:0.7, flatShading:true});
+const matRockLight = new THREE.MeshStandardMaterial({color:'#a0a098', roughness:0.7, flatShading:true});
+const matWater = new THREE.MeshStandardMaterial({color:'#4a90d9', roughness:0.2, metalness:0.3, flatShading:true});
+const matWaterDeep = new THREE.MeshStandardMaterial({color:'#2a6aaa', roughness:0.2, metalness:0.3, flatShading:true});
+const matTree = new THREE.MeshStandardMaterial({color:'#3d7a2f', roughness:0.8, flatShading:true});
+const matTreeLight = new THREE.MeshStandardMaterial({color:'#5a9e3f', roughness:0.8, flatShading:true});
+const matPole = new THREE.MeshStandardMaterial({color:'#c4a46c', roughness:0.6, flatShading:true});
+const matCarpBody = new THREE.MeshStandardMaterial({color:'#e83030', roughness:0.4, flatShading:true});
+const matCarpAccent = new THREE.MeshStandardMaterial({color:'#ff6b6b', roughness:0.4, flatShading:true});
+const matCarpBlue = new THREE.MeshStandardMaterial({color:'#0ea5e9', roughness:0.4, flatShading:true});
+const matCarpGreen = new THREE.MeshStandardMaterial({color:'#22c55e', roughness:0.4, flatShading:true});
+const matCarpGold = new THREE.MeshStandardMaterial({color:'#e8b830', roughness:0.3, flatShading:true});
+const matDistant = new THREE.MeshStandardMaterial({color:'#7aaa80', roughness:0.9, flatShading:true});
+const matCloud = new THREE.MeshStandardMaterial({color:'#ffffff', roughness:1, flatShading:true, transparent:true, opacity:0.7});
+
+// --- GROUND ---
+function createGround(){
+  const geo = new THREE.PlaneGeometry(200, 200, 40, 40);
+  // Displace vertices for gentle rolling terrain
+  const pos = geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const dist = Math.sqrt(x*x+y*y);
+    let h = Math.sin(x*0.08)*Math.cos(y*0.06)*3 + Math.sin(x*0.15+y*0.1)*1.5;
+    if(dist>60) h -= (dist-60)*0.3;
+    pos.setZ(i, h);
+  }
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, matGround);
+  mesh.rotation.x = -Math.PI/2;
+  mesh.position.y = -4;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+
+// --- RIVER ---
+function createRiver(){
+  const shape = new THREE.Shape();
+  const w = 2.5;
+  shape.moveTo(-w, -80);
+  shape.quadraticCurveTo(-w-1, -40, w-1, 0);
+  shape.quadraticCurveTo(w, 40, w, 80);
+  shape.lineTo(w+6, 80);
+  shape.quadraticCurveTo(w+6, 40, w+5, 0);
+  shape.quadraticCurveTo(w+5, -40, w+4, -80);
+  shape.closePath();
+
+  const geo = new THREE.ShapeGeometry(shape);
+  const mesh = new THREE.Mesh(geo, matWater);
+  mesh.rotation.x = -Math.PI/2;
+  mesh.position.set(0, -3.7, 0);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+
+// --- WATERFALL ---
+function createWaterfall(){
+  const group = new THREE.Group();
+  // Cliff
+  const cliffGeo = new THREE.BoxGeometry(14, 10, 6, 3, 3, 1);
+  const cliff = new THREE.Mesh(cliffGeo, matRock);
+  cliff.position.set(0, 3, -70);
+  cliff.castShadow = true;
+  cliff.receiveShadow = true;
+  group.add(cliff);
+
+  // Waterfall column
+  const fallGeo = new THREE.BoxGeometry(4, 10, 0.3);
+  const fall = new THREE.Mesh(fallGeo, matWater);
+  fall.position.set(0, 3, -67);
+  group.add(fall);
+
+  // Pool at base
+  const poolGeo = new THREE.CylinderGeometry(6, 7, 0.5, 12);
+  const pool = new THREE.Mesh(poolGeo, matWaterDeep);
+  pool.position.set(0, -2, -66);
+  pool.receiveShadow = true;
+  group.add(pool);
+
+  // Rocks around pool
+  for(let i=0;i<8;i++){
+    const angle = i/8*Math.PI*2;
+    const r = 6.5+Math.random()*2;
+    const rockGeo = new THREE.IcosahedronGeometry(0.5+Math.random()*0.8, 0);
+    const rock = new THREE.Mesh(rockGeo, i%2===0?matRock:matRockLight);
+    rock.position.set(Math.cos(angle)*r, -2.3, -66+Math.sin(angle)*r);
+    rock.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    rock.scale.set(1,0.4+Math.random()*0.3,1);
+    rock.castShadow = true;
+    group.add(rock);
+  }
+
+  scene.add(group);
+  return group;
+}
+
+// --- DISTANT MOUNTAINS ---
+function createMountains(){
+  const group = new THREE.Group();
+  for(let i=0;i<12;i++){
+    const x = (i-6)*15 + Math.random()*5;
+    const z = -80-Math.random()*30;
+    const h = 6+Math.random()*14;
+    const w = 4+Math.random()*6;
+    const geo = new THREE.ConeGeometry(w, h, 8, 2);
+    const mesh = new THREE.Mesh(geo, matDistant);
+    mesh.position.set(x, -4+h/2, z);
+    mesh.rotation.y = Math.random()*Math.PI;
+    mesh.scale.set(1+Math.random()*0.5, 1, 1+Math.random()*0.5);
+    group.add(mesh);
+  }
+  scene.add(group);
+  return group;
+}
+
+// --- TREES ---
+function createTrees(){
+  const group = new THREE.Group();
+  const trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.5, 5);
+  const leafGeoL1 = new THREE.ConeGeometry(0.9, 1.6, 6);
+  const leafGeoL2 = new THREE.ConeGeometry(0.7, 1.3, 6);
+  const leafGeoL3 = new THREE.ConeGeometry(0.5, 1.0, 6);
+
+  const positions = [];
+  for(let i=0;i<80;i++){
+    const x = (Math.random()-0.5)*80;
+    const z = (Math.random()-0.5)*80;
+    // Don't place in river
+    const riverDist = Math.abs(x);
+    if(riverDist<4 && z>-50 && z<80) continue;
+    // Don't place behind waterfall
+    if(z<-60 && Math.abs(x)<8) continue;
+    positions.push([x,z]);
+  }
+
+  for(const [x,z] of positions){
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(trunkGeo, matTree);
+    trunk.position.y = 0.75;
+    trunk.castShadow = true;
+    g.add(trunk);
+
+    const leaf1 = new THREE.Mesh(leafGeoL1, Math.random()>0.5?matTree:matTreeLight);
+    leaf1.position.y = 1.8;
+    leaf1.castShadow = true;
+    g.add(leaf1);
+
+    const leaf2 = new THREE.Mesh(leafGeoL2, Math.random()>0.5?matTree:matTreeLight);
+    leaf2.position.y = 2.8;
+    leaf2.castShadow = true;
+    g.add(leaf2);
+
+    if(Math.random()>0.4){
+      const leaf3 = new THREE.Mesh(leafGeoL3, Math.random()>0.5?matTree:matTreeLight);
+      leaf3.position.y = 3.5;
+      leaf3.castShadow = true;
+      g.add(leaf3);
+    }
+
+    g.position.set(x, -3.5, z);
+    g.scale.setScalar(0.7+Math.random()*0.8);
+    group.add(g);
+  }
+  scene.add(group);
+  return group;
+}
+
+// --- CLOUDS ---
+function createClouds(){
+  const group = new THREE.Group();
+  for(let i=0;i<25;i++){
+    const g = new THREE.Group();
+    const count = 3+Math.floor(Math.random()*6);
+    for(let j=0;j<count;j++){
+      const r = 0.5+Math.random()*1.5;
+      const geo = new THREE.SphereGeometry(r, 6, 4);
+      const blob = new THREE.Mesh(geo, matCloud);
+      blob.position.set(j*1.2-count*0.6, Math.random()*0.4, Math.random()*0.5);
+      g.add(blob);
+    }
+    g.position.set((Math.random()-0.5)*100, 15+Math.random()*20, (Math.random()-0.5)*60-20);
+    g.scale.setScalar(0.8+Math.random()*2);
+    group.add(g);
+  }
+  scene.add(group);
+  return group;
+}
+
+// --- KOINOBORI POLES ---
+function createKoinoboriPoles(){
+  const group = new THREE.Group();
+  const poleGeo = new THREE.CylinderGeometry(0.12, 0.18, 12, 8);
+  const ballGeo = new THREE.SphereGeometry(0.3, 8, 6);
+
+  const positions = [
+    [-8, -3, -15], [-4, -3, -18], [0, -3, -20], [4, -3, -18], [8, -3, -15],
+    [-6, -3, 10], [6, -3, 10],
+    [-3, -3, -60], [3, -3, -60]
+  ];
+
+  for(const [x, y, z] of positions){
+    const poleGroup = new THREE.Group();
+
+    const pole = new THREE.Mesh(poleGeo, matPole);
+    pole.position.y = 6;
+    pole.castShadow = true;
+    poleGroup.add(pole);
+
+    const ball = new THREE.Mesh(ballGeo, matCarpGold);
+    ball.position.y = 12.2;
+    poleGroup.add(ball);
+
+    // Fukinagashi (streamer at top)
+    const fukiGeo = new THREE.PlaneGeometry(0.3, 2.5, 4, 8);
+    const fuki = new THREE.Mesh(fukiGeo, matCarpAccent);
+    fuki.position.set(0, 13.5, 0);
+    fuki.rotation.x = -0.1;
+    fuki.userData.isStreamer = true;
+    fuki.userData.baseY = 13.5;
+    poleGroup.add(fuki);
+
+    // Carp streamers at different heights
+    const carpConfigs = [
+      {h:10.5, color:matCarpBody, scale:1.0, idx:0},
+      {h:8.5, color:matCarpBlue, scale:0.85, idx:1},
+      {h:6.5, color:matCarpGreen, scale:0.7, idx:2},
+    ];
+
+    for(const cfg of carpConfigs){
+      const carpGroup = new THREE.Group();
+      const bodyGeo = new THREE.CylinderGeometry(0.25*cfg.scale, 0.35*cfg.scale, 1.5*cfg.scale, 8, 4);
+      // Taper the cylinder for fish shape
+      const bpos = bodyGeo.attributes.position;
+      for(let i=0;i<bpos.count;i++){
+        const py = bpos.getY(i);
+        const t = (py/(0.75*cfg.scale)+1)/2;
+        bpos.setX(i, bpos.getX(i)*(1-t*0.5));
+        bpos.setZ(i, bpos.getZ(i)*(1-t*0.5));
+      }
+      bodyGeo.computeVertexNormals();
+      const body = new THREE.Mesh(bodyGeo, cfg.color);
+      body.rotation.x = Math.PI/2;
+      body.castShadow = true;
+      carpGroup.add(body);
+
+      // Tail
+      const tailGeo = new THREE.ConeGeometry(0.2*cfg.scale, 0.6*cfg.scale, 6);
+      const tail = new THREE.Mesh(tailGeo, cfg.color);
+      tail.position.y = 0.8*cfg.scale;
+      tail.castShadow = true;
+      carpGroup.add(tail);
+
+      // Eyes
+      const eyeGeo = new THREE.SphereGeometry(0.06*cfg.scale, 4, 4);
+      const eyeMat = new THREE.MeshStandardMaterial({color:'#ffffff', roughness:0.2, flatShading:true});
+      const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeL.position.set(0.12*cfg.scale, 0.1*cfg.scale, 0.1*cfg.scale);
+      carpGroup.add(eyeL);
+      const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeR.position.set(-0.12*cfg.scale, 0.1*cfg.scale, 0.1*cfg.scale);
+      carpGroup.add(eyeR);
+
+      carpGroup.position.set(0, cfg.h, 0);
+      carpGroup.userData.isCarp = true;
+      carpGroup.userData.baseH = cfg.h;
+      carpGroup.userData.carpIdx = cfg.idx;
+      poleGroup.add(carpGroup);
+    }
+
+    poleGroup.position.set(x, y, z);
+    group.add(poleGroup);
+  }
+
+  group.children.forEach(poleGroup=>{
+    poleGroup.children.forEach(child=>{
+      if(child.isMesh) child.castShadow = true;
+    });
+  });
+
+  scene.add(group);
+  return group;
+}
+
+// --- PETALS (cherry blossom / spring) ---
+function createPetals(){
+  const count = 300;
+  const geo = new THREE.PlaneGeometry(0.15, 0.2, 2, 2);
+  const mat = new THREE.MeshStandardMaterial({
+    color:'#ffb7c5', roughness:0.5, flatShading:true,
+    side:THREE.DoubleSide, transparent:true, opacity:0.8
+  });
+  const mesh = new THREE.InstancedMesh(geo, mat, count);
+  const dummy = new THREE.Object3D();
+
+  const petalData = [];
+  for(let i=0;i<count;i++){
+    const x = (Math.random()-0.5)*60;
+    const y = 2+Math.random()*20;
+    const z = (Math.random()-0.5)*60;
+    dummy.position.set(x,y,z);
+    dummy.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    dummy.scale.setScalar(0.5+Math.random());
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    petalData.push({
+      x,y,z,
+      vx:(Math.random()-0.5)*0.02,
+      vy:-0.01-Math.random()*0.03,
+      vz:(Math.random()-0.5)*0.02,
+      rx:Math.random()*0.02,
+      ry:Math.random()*0.02,
+      rz:Math.random()*0.02,
+      minY:-5
+    });
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.userData.petalData = petalData;
+  scene.add(mesh);
+  return mesh;
+}
+
+// --- Build world ---
+const ground = createGround();
+const river = createRiver();
+const waterfall = createWaterfall();
+const mountains = createMountains();
+const trees = createTrees();
+const clouds = createClouds();
+const koinoboriPoles = createKoinoboriPoles();
+const petals = createPetals();
+
+// --- Camera rig ---
+const camPosCurrent = new THREE.Vector3(0, 6, 25);
+const camLookCurrent = new THREE.Vector3(0, 2, 0);
+
+// Scroll progress (0-1) driven by GSAP ScrollTrigger
+let scrollProgress = 0;
+
+// --- Camera path keyframes ---
+CustomEase.create('koinobori-1', 'M0,0 C0.2,0 0.4,0.6 0.6,0.8 C0.75,0.95 0.85,1 1,1');
+CustomEase.create('koinobori-2', 'M0,0 C0.3,0.1 0.6,0.9 1,1');
+CustomEase.create('koinobori-3', 'M0,0 C0.25,0 0.5,0.5 0.75,1 0.85,1 1,1');
+
+// Each keyframe: [x,y,z] for camera position, [lx,ly,lz] for lookAt
+const camKeyframes = [
+  {t:0,    pos:[0,8,28],    look:[0,3,-10]},
+  {t:0.18, pos:[-6,5,12],   look:[-3,4,-5]},
+  {t:0.35, pos:[4,4,5],     look:[2,4,10]},
+  {t:0.5,  pos:[8,7,0],     look:[0,2,20]},
+  {t:0.65, pos:[3,6,-40],   look:[0,2,-65]},
+  {t:0.8,  pos:[0,5,-55],   look:[0,3,-70]},
+  {t:1.0,  pos:[0,15,25],   look:[0,5,-10]},
+];
+
+// Build GSAP timeline for camera position and lookAt
+const camPosObj = {px:0,py:6,pz:28, lx:0,ly:2,lz:-10};
+const camTimeline = gsap.timeline({paused:true});
+
+for(let i=1;i<camKeyframes.length;i++){
+  const prev = camKeyframes[i-1];
+  const curr = camKeyframes[i];
+  const dur = curr.t - prev.t;
+  camTimeline.to(camPosObj, {
+    px:curr.pos[0], py:curr.pos[1], pz:curr.pos[2],
+    lx:curr.look[0], ly:curr.look[1], lz:curr.look[2],
+    duration:dur,
+    ease:'koinobori-1',
+  }, prev.t);
+}
+
+// --- GSAP ScrollTrigger ---
+gsap.registerPlugin(ScrollTrigger);
+
+ScrollTrigger.create({
+  trigger:'#scroll-spacer',
+  start:'top top',
+  end:'bottom bottom',
+  scrub:true,
+  onUpdate:(self)=>{
+    scrollProgress = self.progress;
+    camTimeline.progress(self.progress);
+  }
+});
+
+// --- Segment visibility via ScrollTrigger ---
+const segmentDefs = [
+  {id:'seg-1', range:[0,0.18]},
+  {id:'seg-2', range:[0.18,0.38]},
+  {id:'seg-3', range:[0.38,0.58]},
+  {id:'seg-4', range:[0.6,0.78]},
+  {id:'seg-5', range:[0.82,1.0]},
+];
+
+// Use a single object for segment opacity driven by scroll
+segmentDefs.forEach(seg=>{
+  ScrollTrigger.create({
+    trigger:'#scroll-spacer',
+    start:'top top',
+    end:'bottom bottom',
+    scrub:true,
+    onUpdate:(self)=>{
+      const el = document.getElementById(seg.id);
+      if(!el) return;
+      const t = self.progress;
+      const inRange = t>=seg.range[0] && t<=seg.range[1];
+      if(inRange){el.classList.add('active')}
+      else{el.classList.remove('active')}
+    }
+  });
+});
+
+// --- Time of day ---
+function updateTimeOfDay(t){
+  // Morning (0) → midday (0.4) → dusk (0.8) → twilight (1.0)
+  const morning = Math.max(0, 1-t*1.5);
+  const dusk = Math.max(0, (t-0.7)*3);
+
+  // Sky color
+  const skyR = 0.53 + morning*0.25;
+  const skyG = 0.81 - morning*0.15 - dusk*0.15;
+  const skyB = 0.92 - morning*0.1 - dusk*0.3;
+  const skyColor = new THREE.Color(skyR, skyG, skyB);
+  scene.background = skyColor;
+  scene.fog.color = skyColor;
+
+  // Sun intensity and color
+  const sunIntensity = 3.5 - dusk*2.5;
+  sun.intensity = sunIntensity;
+  const sunColor = new THREE.Color().lerpColors(
+    new THREE.Color('#fff5e8'),
+    new THREE.Color('#ff9966'),
+    dusk
+  );
+  sun.color = sunColor;
+
+  // Ambient
+  ambient.intensity = 0.6 - dusk*0.3;
+
+  // Fog distance
+  scene.fog.near = 60 - t*20;
+  scene.fog.far = 300 - t*100;
+}
+
+// --- Animation ---
+const clock = new THREE.Clock();
+let isTabVisible = true;
+
+document.addEventListener('visibilitychange', ()=>{
+  isTabVisible = !document.hidden;
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  if(!isTabVisible) return;
+
+  const dt = Math.min(clock.getDelta(), 0.1);
+  const t = scrollProgress;
+
+  // Update camera from GSAP-driven camPosObj
+  camPosCurrent.lerp(
+    new THREE.Vector3(camPosObj.px, camPosObj.py, camPosObj.pz),
+    4*dt
+  );
+  camLookCurrent.lerp(
+    new THREE.Vector3(camPosObj.lx, camPosObj.ly, camPosObj.lz),
+    4*dt
+  );
+  camera.position.copy(camPosCurrent);
+  camera.lookAt(camLookCurrent);
+
+  // Update time of day
+  updateTimeOfDay(scrollProgress);
+
+  // Animate koinobori + streamers
+  const time = performance.now()*0.001;
+  koinoboriPoles.children.forEach(poleGroup=>{
+    poleGroup.children.forEach(child=>{
+      if(child.userData.isCarp){
+        const idx = child.userData.carpIdx||0;
+        const baseH = child.userData.baseH||0;
+        // Gentle sway
+        child.position.x = Math.sin(time*1.5+idx*2+poleGroup.position.x)*0.3;
+        child.position.y = baseH + Math.sin(time*1.2+idx)*0.15;
+        child.rotation.z = Math.sin(time*1.3+idx)*0.08;
+      }
+      if(child.userData.isStreamer){
+        const baseY = child.userData.baseY||0;
+        // Ripple effect on streamer
+        child.position.x = Math.sin(time*3+poleGroup.position.x)*0.4;
+        child.position.y = baseY + Math.sin(time*2.5)*0.1;
+        child.rotation.z = Math.sin(time*2.8)*0.15;
+      }
+    });
+  });
+
+  // Animate clouds
+  clouds.children.forEach(cloud=>{
+    cloud.position.x += dt*0.3;
+    if(cloud.position.x>60) cloud.position.x = -60;
+  });
+
+  // Animate petals
+  if(petals.userData.petalData){
+    const pData = petals.userData.petalData;
+    const dummy = new THREE.Object3D();
+    for(let i=0;i<pData.length;i++){
+      const p = pData[i];
+      p.x += p.vx + Math.sin(time+p.y)*0.01;
+      p.y += p.vy;
+      p.z += p.vz + Math.cos(time+p.x)*0.01;
+      if(p.y<p.minY){p.y=18+Math.random()*5;p.x=(Math.random()-0.5)*60;p.z=(Math.random()-0.5)*60}
+      dummy.position.set(p.x,p.y,p.z);
+      dummy.rotation.set(time*p.rx,time*p.ry,time*p.rz);
+      dummy.scale.setScalar(0.5+Math.random()*0.1);
+      dummy.updateMatrix();
+      petals.setMatrixAt(i, dummy.matrix);
+    }
+    petals.instanceMatrix.needsUpdate = true;
+  }
+
+  renderer.render(scene, camera);
+}
+
+// --- Handle reduced motion ---
+const motionQuery = window.matchMedia('(prefers-reduced-motion:reduce)');
+if(motionQuery.matches){
+  document.getElementById('fallback').style.display = 'flex';
+  document.getElementById('canvas-container').style.display = 'none';
+  document.getElementById('scroll-driver').style.display = 'none';
+  document.querySelectorAll('.segment').forEach(s=>s.style.display='none');
+} else {
+  animate();
+}
+
+// --- Resize ---
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

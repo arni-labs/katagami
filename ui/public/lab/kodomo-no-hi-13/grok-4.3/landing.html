@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koinobori — The wind that lifts what we become</title>
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F8FAFC;
+      --surface-2: #F1F5F9;
+      --surface-3: #E8EDF3;
+      --text: #0F172A;
+      --text-strong: #020617;
+      --muted: #64748B;
+      --muted-2: #94A3B8;
+      --accent: #00D4FF;
+      --accent-2: #00F38A;
+      --accent-3: #FF2D92;
+      --on-accent: #0A0A0A;
+      --on-dark: #FFFFFF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #00D4FF;
+      --border: #E2E8F0;
+      --border-subtle: #F1F5F9;
+
+      --font-sans: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      --font-display: "Hiragino Sans", system-ui, -apple-system, "Noto Sans JP", sans-serif;
+
+      --fs-xs: 13px;
+      --fs-sm: 15px;
+      --fs-base: 17px;
+      --fs-lg: 19px;
+      --fs-xl: 22px;
+      --fs-2xl: 28px;
+      --fs-3xl: 36px;
+      --fs-display: 64px;
+      --fs-hero: 84px;
+
+      --lh-tight: 1.05;
+      --lh-snug: 1.15;
+      --lh-normal: 1.5;
+      --lh-relaxed: 1.65;
+
+      --ls-tight: -0.025em;
+      --ls-normal: -0.01em;
+
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --space-10: 128px;
+
+      --radius: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      --h-control: 48px;
+
+      --ease-standard: cubic-bezier(0.2, 0.0, 0.0, 1.0);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      font-size: var(--fs-base);
+      line-height: var(--lh-normal);
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      line-height: var(--lh-tight);
+      letter-spacing: var(--ls-tight);
+      margin: 0 0 var(--space-4) 0;
+    }
+    .display { font-size: var(--fs-hero); line-height: 0.96; letter-spacing: -0.03em; }
+    .display-2 { font-size: var(--fs-display); }
+    p { margin: 0 0 var(--space-5) 0; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+    @media (max-width: 640px) {
+      .container { padding: 0 var(--space-5); }
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-strong);
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: var(--space-7);
+      align-items: center;
+      list-style: none;
+      margin: 0; padding: 0;
+    }
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: var(--fs-sm);
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-ctas { display: flex; gap: var(--space-3); align-items: center; }
+
+    /* BUTTONS — single shared height, one primary, full state matrix */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--h-control);
+      padding: 0 var(--space-6);
+      font-family: var(--font-display);
+      font-size: var(--fs-base);
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 120ms var(--ease-standard), background-color 120ms var(--ease-standard), box-shadow 120ms var(--ease-standard), color 120ms var(--ease-standard);
+      white-space: nowrap;
+    }
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--on-accent);
+      font-weight: 700;
+    }
+    .btn-primary:hover { background: #00BFE8; }
+    .btn-primary:active { background: #00A8CC; }
+
+    .btn-secondary {
+      background: var(--text);
+      color: #FFFFFF;
+    }
+    .btn-secondary:hover { background: #020617; }
+    .btn-secondary:active { background: #000000; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0 calc(var(--space-6) - 1px);
+    }
+    .btn-ghost:hover { background: var(--surface-2); border-color: var(--border-subtle); }
+    .btn-ghost:active { background: var(--surface-3); }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+      transform: none;
+    }
+
+    /* HERO — full bleed, background var, no scroll cue */
+    .hero {
+      position: relative;
+      height: 100svh;
+      min-height: 640px;
+      display: flex;
+      align-items: center;
+      background-color: #F1F5F9;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center 40%;
+      background-repeat: no-repeat;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 35%, rgba(255,255,255,0.68) 72%);
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 820px;
+    }
+    .hero .jp {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-strong);
+      margin-bottom: var(--space-3);
+    }
+    .hero .tag {
+      display: inline-block;
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      background: rgba(255,255,255,0.92);
+      color: var(--text-strong);
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-5);
+    }
+
+    /* SECTIONS */
+    section { padding: var(--space-10) 0; }
+    .section-head {
+      margin-bottom: var(--space-8);
+    }
+    .section-head h2 {
+      font-size: var(--fs-3xl);
+      margin-bottom: var(--space-3);
+    }
+    .section-head p {
+      max-width: 620px;
+      color: var(--muted);
+      font-size: var(--fs-lg);
+    }
+
+    /* CARDS — tone separated, no borders, generous */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+    }
+    @media (max-width: 900px) {
+      .grid-3 { grid-template-columns: 1fr; gap: var(--space-5); }
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-7);
+      min-height: 100%;
+    }
+    .card h3 {
+      font-size: var(--fs-xl);
+      margin-bottom: var(--space-3);
+    }
+    .card p { color: var(--muted); margin-bottom: 0; }
+
+    .feature {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: var(--space-9);
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .feature { grid-template-columns: 1fr; }
+    }
+    .feature-media {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--surface-2);
+      aspect-ratio: 16 / 11;
+    }
+    .feature-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* QUOTES / RITUALS */
+    .quote {
+      background: var(--surface-2);
+      border-radius: var(--radius);
+      padding: var(--space-8);
+      font-size: var(--fs-lg);
+    }
+    .quote .attribution {
+      margin-top: var(--space-5);
+      font-size: var(--fs-sm);
+      color: var(--muted);
+    }
+
+    /* STEPS */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-6);
+    }
+    @media (max-width: 900px) {
+      .steps { grid-template-columns: repeat(2, 1fr); }
+    }
+    .step {
+      position: relative;
+      padding-left: var(--space-7);
+    }
+    .step-num {
+      position: absolute;
+      left: 0;
+      top: 2px;
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .step h4 { font-size: var(--fs-lg); margin-bottom: var(--space-2); }
+    .step p { font-size: var(--fs-sm); color: var(--muted); }
+
+    /* FOOTER CTA */
+    .footer-cta {
+      background: var(--text);
+      color: #FFFFFF;
+      padding: var(--space-10) 0;
+    }
+    .footer-cta .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-6);
+    }
+    .footer-cta h3 {
+      color: #FFFFFF;
+      font-size: var(--fs-2xl);
+      margin: 0;
+    }
+    .footer-cta p {
+      color: #94A3B8;
+      margin: 0;
+    }
+
+    /* FORM CONTROLS — explicit, one height, full states */
+    .form-row { margin-bottom: var(--space-5); }
+    label {
+      display: block;
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+      color: var(--text-strong);
+    }
+    input[type="text"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      height: var(--h-control);
+      padding: 0 var(--space-4);
+      font-family: var(--font-sans);
+      font-size: var(--fs-base);
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 120ms, box-shadow 120ms;
+    }
+    textarea { height: auto; padding: var(--space-4); min-height: 120px; resize: vertical; }
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.18);
+    }
+    input::placeholder { color: var(--muted-2); }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '';
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-45%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--muted);
+      pointer-events: none;
+    }
+    select {
+      appearance: none;
+      padding-right: 42px;
+    }
+
+    /* Custom checkbox */
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      font-size: var(--fs-sm);
+    }
+    .checkbox input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .checkbox .box {
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 120ms;
+      flex-shrink: 0;
+    }
+    .checkbox input:checked + .box {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .checkbox input:focus-visible + .box {
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.18);
+    }
+
+    /* Simple divider */
+    .rule {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: var(--space-9) 0;
+    }
+
+    .muted { color: var(--muted); }
+
+    .accent { color: var(--accent); }
+
+    .stats {
+      display: flex;
+      gap: var(--space-9);
+      margin-top: var(--space-3);
+    }
+    .stat { font-size: var(--fs-sm); }
+    .stat strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 28px;
+      line-height: 1;
+      color: var(--text-strong);
+    }
+
+    .koinobori-mark {
+      display: inline-block;
+      width: 18px;
+      height: 2px;
+      background: var(--accent);
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav>
+    <div class="container nav-inner">
+      <a href="#" class="logo">KOINOBORI</a>
+      <ul class="nav-links">
+        <li><a href="#rituals">Rituals</a></li>
+        <li><a href="#growth">Growth</a></li>
+        <li><a href="#journal">Journal</a></li>
+        <li><a href="#families">For Families</a></li>
+      </ul>
+      <div class="nav-ctas">
+        <a href="#start" class="btn btn-ghost">Log in</a>
+        <a href="#start" class="btn btn-primary">Start 30 days free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO full-bleed, var background, no scroll cue -->
+  <header class="hero" style="--hero-image: url('./media/hero.jpg');">
+    <div class="container">
+      <div class="hero-content">
+        <div class="jp">こどもの日</div>
+        <div class="tag">MAY 5</div>
+        <h1 class="display" style="max-width: 18ch;">The wind lifts<br>what we become.</h1>
+        <p style="max-width: 38ch; font-size: var(--fs-xl); color: var(--text-strong); margin-bottom: var(--space-7);">Koinobori helps families raise children who know their own strength. Start with the clearest day of the year.</p>
+        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
+          <a href="#start" class="btn btn-primary" style="min-width: 196px;">Begin the season</a>
+          <a href="immersive.html" class="btn btn-secondary" style="min-width: 196px;">Enter the flight</a>
+        </div>
+        <div class="stats" style="margin-top: var(--space-8);">
+          <div class="stat"><strong>14,820</strong> families this May</div>
+          <div class="stat"><strong>92%</strong> return for the next season</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- INTRO / PRINCIPLES -->
+  <section id="rituals">
+    <div class="container">
+      <div class="section-head">
+        <h2>The flags you raise shape the children they become.</h2>
+        <p>Koinobori is not a party planner. It is a living calendar of rituals, stories and small daily challenges that turn ordinary seasons into a deliberate practice of courage.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div style="width:48px;height:3px;background:var(--accent);margin-bottom:var(--space-5);"></div>
+          <h3>Rise together</h3>
+          <p>Every May 5 we raise a new streamer as a family. The ritual marks the year the child steps into a new role — not a birthday, a becoming.</p>
+        </div>
+        <div class="card">
+          <div style="width:48px;height:3px;background:var(--accent-2);margin-bottom:var(--space-5);"></div>
+          <h3>Wind carries</h3>
+          <p>Between festivals, small challenges travel with the child. Ten minutes of courage a day. The journal records what the wind caught.</p>
+        </div>
+        <div class="card">
+          <div style="width:48px;height:3px;background:var(--accent-3);margin-bottom:var(--space-5);"></div>
+          <h3>Return stronger</h3>
+          <p>Next season the streamer is taller, the child older, the family stronger. The record is visible, beautiful and lasting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- FEATURE 1 -->
+  <section id="growth">
+    <div class="container">
+      <div class="feature">
+        <div>
+          <div style="font-size:var(--fs-sm);font-weight:700;letter-spacing:0.06em;color:var(--accent);margin-bottom:var(--space-3);">THE RIVER PATH</div>
+          <h2 class="display-2" style="margin-bottom:var(--space-4);">Every child climbs<br>their own falls.</h2>
+          <p class="muted" style="max-width: 42ch;">Koinobori maps the year as a river. From the first small streamer to the climb at the waterfall, each child follows a visible path of courage, creativity and contribution.</p>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-7);">
+            <div>
+              <div style="font-size:32px;line-height:1;font-weight:700;color:var(--text-strong);">3–5</div>
+              <div style="font-size:var(--fs-sm);color:var(--muted);">First streamer<br>age</div>
+            </div>
+            <div>
+              <div style="font-size:32px;line-height:1;font-weight:700;color:var(--text-strong);">6–9</div>
+              <div style="font-size:var(--fs-sm);color:var(--muted);">River challenges<br>age</div>
+            </div>
+            <div>
+              <div style="font-size:32px;line-height:1;font-weight:700;color:var(--text-strong);">10–12</div>
+              <div style="font-size:var(--fs-sm);color:var(--muted);">Waterfall year<br>age</div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-media">
+          <img src="./media/river.jpg" alt="">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURE 2 -->
+  <section id="journal">
+    <div class="container">
+      <div class="feature" style="grid-template-columns: 1fr 1.15fr;">
+        <div class="feature-media">
+          <img src="./media/family.jpg" alt="">
+        </div>
+        <div>
+          <div style="font-size:var(--fs-sm);font-weight:700;letter-spacing:0.06em;color:var(--accent-2);margin-bottom:var(--space-3);">THE JOURNAL</div>
+          <h2 class="display-2" style="margin-bottom:var(--space-4);">Write what the wind caught.</h2>
+          <p class="muted">The Koinobori Journal is not a scrapbook. Each entry is tied to a ritual, a challenge or a moment the family chose to mark. Beautiful enough to stay on the table all year.</p>
+
+          <div class="stats" style="margin-top:var(--space-6);">
+            <div class="stat"><strong>4,812</strong><br>entries written this week</div>
+            <div class="stat"><strong>41</strong><br>average entries per child per season</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- QUOTES -->
+  <section id="families">
+    <div class="container">
+      <div class="section-head">
+        <h2>Families who raise their flags together stay together.</h2>
+      </div>
+
+      <div class="grid-3">
+        <div class="quote">
+          “We used to do ‘something nice’ for Children’s Day. Now the children plan the streamer themselves and the whole year feels different.”
+          <div class="attribution">— Sato family, Tokyo • three children</div>
+        </div>
+        <div class="quote">
+          “The challenges are small but they accumulate. My daughter now asks for the next one. She calls them her ‘wind days’.”
+          <div class="attribution">— M. Patel + A. Kim, Kyoto</div>
+        </div>
+        <div class="quote">
+          “We are not Japanese. The language didn’t matter. The clarity of one strong day each year and the visible record of growth did.”
+          <div class="attribution">— The Okafor family, Osaka</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <div class="container">
+      <div class="section-head">
+        <h2>How the season moves.</h2>
+        <p>Four movements. One year. The same flags, raised higher each time.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h4>Raise</h4>
+          <p>Choose and raise the family streamer together on May 5. The first act of the season.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h4>Listen</h4>
+          <p>Weekly prompts arrive with the wind. Ten-minute challenges that fit real life.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h4>Record</h4>
+          <p>Write what happened in the shared journal. Photos, drawings, one-line truths.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <h4>Return</h4>
+          <p>Next May the child chooses a taller pole or a new color. The climb continues.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- START / FORM -->
+  <section id="start" style="padding-top: var(--space-6); padding-bottom: var(--space-10);">
+    <div class="container">
+      <div style="max-width: 620px;">
+        <h2 class="display-2" style="margin-bottom: var(--space-4);">Start the season with your family.</h2>
+        <p class="muted">Thirty days free. Cancel any time before the first flag rises. Your first streamer is included.</p>
+      </div>
+
+      <div style="max-width: 520px; margin-top: var(--space-7);">
+        <form id="start-form" onsubmit="submitForm(event)">
+          <div class="form-row">
+            <label for="family">Family name</label>
+            <input type="text" id="family" placeholder="The Yamada family" required>
+          </div>
+          <div class="form-row">
+            <label for="email">Parent email</label>
+            <input type="email" id="email" placeholder="you@family.jp" required>
+          </div>
+          <div class="form-row">
+            <label for="children">Number of children joining this season</label>
+            <div class="select-wrap">
+              <select id="children" required>
+                <option value="">Select…</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5+</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top: var(--space-2);">
+            <label class="checkbox">
+              <input type="checkbox" checked>
+              <span class="box"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1.5 4.5L4.5 7.5L10.5 1.5" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <span>Send the May 5 ritual guide immediately</span>
+            </label>
+          </div>
+
+          <div style="margin-top: var(--space-5); display:flex; gap:var(--space-3); align-items:center;">
+            <button type="submit" class="btn btn-primary" style="min-width: 210px;">Start 30 days free</button>
+            <div style="font-size:var(--fs-sm);color:var(--muted);">No card required.</div>
+          </div>
+        </form>
+        <div id="form-success" style="display:none; margin-top:var(--space-5); padding:var(--space-4) var(--space-5); background:var(--surface-2); border-radius:var(--radius); font-size:var(--fs-sm);">
+          Welcome. Your first streamer is on its way. Check your inbox for the raising guide.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL BAND -->
+  <div class="footer-cta">
+    <div class="container">
+      <div>
+        <h3>こどもの日 2026</h3>
+        <p>May 5 — the day we remember to lift.</p>
+      </div>
+      <a href="immersive.html" class="btn btn-secondary">Fly through the world</a>
+    </div>
+  </div>
+
+  <script>
+    // Entrance motion gated, respects reduced motion, settled state visible without JS
+    (function() {
+      const html = document.documentElement;
+      if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        html.style.setProperty('--motion-ready', '1');
+        // Gentle fade-in for hero content only
+        const heroContent = document.querySelector('.hero-content');
+        if (heroContent) {
+          heroContent.style.transition = 'opacity 420ms var(--ease-standard), transform 520ms var(--ease-standard)';
+          heroContent.style.opacity = '0';
+          heroContent.style.transform = 'translateY(12px)';
+          requestAnimationFrame(() => {
+            heroContent.style.opacity = '1';
+            heroContent.style.transform = 'translateY(0)';
+          });
+        }
+      }
+    })();
+
+    function submitForm(e) {
+      e.preventDefault();
+      const form = document.getElementById('start-form');
+      const success = document.getElementById('form-success');
+      form.style.display = 'none';
+      success.style.display = 'block';
+      // In a real product this would POST. Here we simply confirm.
+    }
+
+    // Keyboard escape for any future modals — nothing open here
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const success = document.getElementById('form-success');
+        if (success && success.style.display === 'block') {
+          success.style.display = 'none';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

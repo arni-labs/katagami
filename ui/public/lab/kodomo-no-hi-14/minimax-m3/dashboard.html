@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOBORI — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== NOBORI Design Language ===== */
+  :root {
+    --sky: #FFFFFF;
+    --ink: #0A0A0A;
+    --blue: #0066FF;
+    --leaf: #00B86B;
+    --pop: #FF2D55;
+
+    --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    --type-display-xl: 96px;
+    --type-display-lg: 64px;
+    --type-display-md: 40px;
+    --type-heading: 24px;
+    --type-body-lg: 19px;
+    --type-body: 17px;
+    --type-body-sm: 15px;
+    --type-caption: 13px;
+    --type-mono: 14px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --space-9: 96px;
+    --space-10: 128px;
+    --space-11: 192px;
+
+    --radius-0: 0px;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-pill: 9999px;
+
+    --control-height: 48px;
+
+    --motion-quick: 120ms cubic-bezier(0.2, 0, 0, 1);
+    --motion-deliberate: 240ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--sky);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  img { display: block; max-width: 100%; height: auto; }
+  a { color: inherit; text-decoration: none; }
+
+  /* ===== Typography ===== */
+  .display-xl { font-size: var(--type-display-xl); line-height: 0.95; letter-spacing: -0.04em; font-weight: 700; }
+  .display-lg { font-size: var(--type-display-lg); line-height: 1.0; letter-spacing: -0.03em; font-weight: 700; }
+  .display-md { font-size: var(--type-display-md); line-height: 1.1; letter-spacing: -0.02em; font-weight: 600; }
+  .heading { font-size: var(--type-heading); line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; }
+  .body-lg { font-size: var(--type-body-lg); line-height: 1.5; }
+  .body-sm { font-size: var(--type-body-sm); line-height: 1.5; }
+  .caption { font-size: var(--type-caption); line-height: 1.4; letter-spacing: 0.02em; font-weight: 500; text-transform: uppercase; }
+  .mono { font-family: var(--font-mono); font-size: var(--type-mono); }
+
+  /* ===== App layout ===== */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 1024px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    border-right: 1px solid rgba(10, 10, 10, 0.08);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  @media (max-width: 1024px) {
+    .sidebar {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    }
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .sidebar-brand-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--ink);
+    border-radius: var(--radius-0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sky);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .sidebar-section h4 {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    opacity: 0.5;
+    margin-bottom: var(--space-3);
+  }
+  .sidebar-nav {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--type-body-sm);
+    font-weight: 500;
+    color: var(--ink);
+    opacity: 0.7;
+    cursor: pointer;
+    transition: all var(--motion-quick);
+    position: relative;
+  }
+  .sidebar-nav-item:hover {
+    opacity: 1;
+    background: rgba(10, 10, 10, 0.04);
+  }
+  .sidebar-nav-item.active {
+    opacity: 1;
+    background: var(--ink);
+    color: var(--sky);
+  }
+  .sidebar-nav-item.active .nav-icon { color: var(--blue); }
+  .sidebar-nav-item:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-icon svg { width: 100%; height: 100%; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--pop);
+    color: var(--sky);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    line-height: 1;
+  }
+  .sidebar-nav-item.active .nav-badge { background: var(--blue); }
+
+  .sidebar-user {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .sidebar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-pill);
+    background: var(--blue);
+    color: var(--sky);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .sidebar-user-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .sidebar-user-name {
+    font-size: var(--type-body-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-user-role {
+    font-size: var(--type-caption);
+    opacity: 0.6;
+  }
+  @media (max-width: 1024px) {
+    .sidebar-user { margin-top: 0; }
+  }
+
+  /* ===== Main ===== */
+  .main {
+    padding: var(--space-7) var(--space-8);
+    max-width: 1400px;
+  }
+  @media (max-width: 768px) {
+    .main { padding: var(--space-5); }
+  }
+
+  /* ===== Top bar ===== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-7);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .topbar-left h1 {
+    font-size: var(--type-display-md);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+  }
+  .topbar-left p {
+    font-size: var(--type-body);
+    opacity: 0.7;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* ===== Buttons ===== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--control-height);
+    padding: 0 var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--motion-quick);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { cursor: not-allowed; opacity: 0.3; }
+
+  .btn-primary { background: var(--ink); color: var(--sky); }
+  .btn-primary:hover:not(:disabled) { background: var(--ink); color: var(--blue); }
+
+  .btn-secondary { background: var(--sky); color: var(--ink); border-color: var(--ink); }
+  .btn-secondary:hover:not(:disabled) { background: var(--ink); color: var(--sky); }
+
+  .btn-ghost { background: transparent; color: var(--ink); }
+  .btn-ghost:hover:not(:disabled) { background: rgba(10, 10, 10, 0.06); }
+
+  .btn-accent-blue { background: var(--blue); color: var(--sky); }
+  .btn-accent-blue:hover:not(:disabled) { background: var(--sky); color: var(--blue); border-color: var(--blue); }
+
+  .btn-sm { height: 40px; padding: 0 var(--space-4); font-size: var(--type-body-sm); }
+  .btn-icon {
+    width: var(--control-height);
+    height: var(--control-height);
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .btn-icon.btn-sm { width: 40px; height: 40px; }
+
+  /* ===== Form controls ===== */
+  .input {
+    height: var(--control-height);
+    padding: 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    color: var(--ink);
+    background: var(--sky);
+    border: 1px solid rgba(10, 10, 10, 0.2);
+    border-radius: var(--radius-sm);
+    transition: all var(--motion-quick);
+    width: 100%;
+  }
+  .input::placeholder { color: rgba(10, 10, 10, 0.4); }
+  .input:hover { border-color: rgba(10, 10, 10, 0.4); }
+  .input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+  }
+  .input:disabled {
+    background: rgba(10, 10, 10, 0.04);
+    border-color: rgba(10, 10, 10, 0.1);
+    cursor: not-allowed;
+  }
+
+  .select {
+    height: var(--control-height);
+    padding: 0 var(--space-7) 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    color: var(--ink);
+    background: var(--sky);
+    border: 1px solid rgba(10, 10, 10, 0.2);
+    border-radius: var(--radius-sm);
+    transition: all var(--motion-quick);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%230A0A0A' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-4) center;
+  }
+  .select:hover { border-color: rgba(10, 10, 10, 0.4); }
+  .select:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+  }
+  .select:disabled {
+    background-color: rgba(10, 10, 10, 0.04);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(10, 10, 10, 0.4);
+    border-radius: var(--radius-0);
+    background: var(--sky);
+    cursor: pointer;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--motion-quick);
+    flex-shrink: 0;
+  }
+  .checkbox:hover { border-color: var(--ink); }
+  .checkbox:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .checkbox:checked {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .checkbox:checked::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: var(--sky);
+    mask: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6L5 9L10 3' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6L5 9L10 3' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .checkbox:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .radio {
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(10, 10, 10, 0.4);
+    border-radius: var(--radius-pill);
+    background: var(--sky);
+    cursor: pointer;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--motion-quick);
+    flex-shrink: 0;
+  }
+  .radio:hover { border-color: var(--ink); }
+  .radio:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .radio:checked {
+    border-color: var(--ink);
+    border-width: 2px;
+  }
+  .radio:checked::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: var(--ink);
+    border-radius: var(--radius-pill);
+  }
+  .radio:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .toggle {
+    width: 48px;
+    height: 28px;
+    background: rgba(10, 10, 10, 0.15);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    appearance: none;
+    position: relative;
+    transition: background var(--motion-quick);
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    background: var(--sky);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-pill);
+    transition: all var(--motion-quick);
+  }
+  .toggle:checked {
+    background: var(--ink);
+  }
+  .toggle:checked::after {
+    left: 23px;
+    border-color: var(--ink);
+  }
+  .toggle:hover::after { transform: scale(1.05); }
+  .toggle:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .toggle:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ===== Tags ===== */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--type-caption);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: rgba(10, 10, 10, 0.08);
+    color: var(--ink);
+    line-height: 1;
+  }
+  .tag-blue { background: rgba(0, 102, 255, 0.12); color: var(--blue); }
+  .tag-leaf { background: rgba(0, 184, 107, 0.12); color: var(--leaf); }
+  .tag-pop { background: rgba(255, 45, 85, 0.12); color: var(--pop); }
+  .tag-solid-blue { background: var(--blue); color: var(--sky); }
+  .tag-solid-leaf { background: var(--leaf); color: var(--sky); }
+  .tag-solid-pop { background: var(--pop); color: var(--sky); }
+  .tag-solid-ink { background: var(--ink); color: var(--sky); }
+
+  /* ===== Cards ===== */
+  .card {
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    background: var(--sky);
+    transition: all var(--motion-quick);
+  }
+  .card:hover {
+    border-color: rgba(10, 10, 10, 0.2);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+    gap: var(--space-3);
+  }
+  .card-title {
+    font-size: var(--type-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .card-subtitle {
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+    margin-top: var(--space-1);
+  }
+
+  /* ===== Hero card (upcoming festival) ===== */
+  .hero-card {
+    background: var(--ink);
+    color: var(--sky);
+    border-radius: var(--radius-md);
+    padding: var(--space-7);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-7);
+    align-items: center;
+    margin-bottom: var(--space-6);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: var(--blue);
+    border-radius: var(--radius-pill);
+    opacity: 0.2;
+  }
+  .hero-card-content {
+    position: relative;
+    z-index: 1;
+  }
+  .hero-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--pop);
+    color: var(--sky);
+    border-radius: var(--radius-pill);
+    font-size: var(--type-caption);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-4);
+  }
+  .hero-card-tag-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--sky);
+    border-radius: var(--radius-pill);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .hero-card-title {
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+  }
+  .hero-card-title .accent { color: var(--blue); }
+  .hero-card-meta {
+    display: flex;
+    gap: var(--space-5);
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+  }
+  .hero-card-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .hero-card-meta-label {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    opacity: 0.6;
+  }
+  .hero-card-meta-value {
+    font-family: var(--font-mono);
+    font-size: var(--type-body-lg);
+    font-weight: 500;
+  }
+  .hero-card-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .hero-card-image {
+    position: relative;
+    z-index: 1;
+    aspect-ratio: 4/3;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .hero-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  @media (max-width: 768px) {
+    .hero-card { grid-template-columns: 1fr; padding: var(--space-6); }
+  }
+
+  /* ===== Stats grid ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+  @media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat-card {
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    background: var(--sky);
+  }
+  .stat-label {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    opacity: 0.6;
+    margin-bottom: var(--space-3);
+  }
+  .stat-value {
+    font-size: var(--type-display-md);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+  }
+  .stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--type-body-sm);
+    font-weight: 500;
+  }
+  .stat-change.up { color: var(--leaf); }
+  .stat-change.down { color: var(--pop); }
+
+  /* ===== Two column layout ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+  }
+  @media (max-width: 1024px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Checklist ===== */
+  .checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    transition: background var(--motion-quick);
+    cursor: pointer;
+  }
+  .checklist-item:hover { background: rgba(10, 10, 10, 0.04); }
+  .checklist-item-label {
+    flex: 1;
+    font-size: var(--type-body);
+  }
+  .checklist-item.done .checklist-item-label {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+  .checklist-item-meta {
+    font-family: var(--font-mono);
+    font-size: var(--type-caption);
+    opacity: 0.6;
+  }
+
+  /* ===== Calendar widget ===== */
+  .mini-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-1);
+  }
+  .mini-cal-day-header {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    opacity: 0.5;
+    text-align: center;
+    padding: var(--space-2) 0;
+  }
+  .mini-cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: var(--type-body-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--motion-quick);
+    position: relative;
+  }
+  .mini-cal-day:hover { background: rgba(10, 10, 10, 0.06); }
+  .mini-cal-day.other-month { opacity: 0.3; }
+  .mini-cal-day.today {
+    background: var(--ink);
+    color: var(--sky);
+    font-weight: 600;
+  }
+  .mini-cal-day.festival {
+    background: var(--pop);
+    color: var(--sky);
+    font-weight: 600;
+  }
+  .mini-cal-day.prep {
+    background: rgba(0, 102, 255, 0.12);
+    color: var(--blue);
+    font-weight: 500;
+  }
+
+  /* ===== Children ===== */
+  .children-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  @media (max-width: 1024px) {
+    .children-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .children-grid { grid-template-columns: 1fr; }
+  }
+  .child-card {
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    background: var(--sky);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    transition: all var(--motion-quick);
+  }
+  .child-card:hover {
+    border-color: rgba(10, 10, 10, 0.2);
+    transform: translateY(-2px);
+  }
+  .child-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .child-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-pill);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--type-body-lg);
+    color: var(--sky);
+    flex-shrink: 0;
+  }
+  .child-info { flex: 1; min-width: 0; }
+  .child-name {
+    font-size: var(--type-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .child-age {
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+  }
+  .child-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .child-stat {
+    text-align: center;
+  }
+  .child-stat-value {
+    font-family: var(--font-mono);
+    font-size: var(--type-body-lg);
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: var(--space-1);
+  }
+  .child-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    opacity: 0.6;
+  }
+
+  /* ===== Progress ===== */
+  .progress {
+    height: 8px;
+    background: rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--ink);
+    border-radius: var(--radius-pill);
+    transition: width var(--motion-deliberate);
+  }
+  .progress-fill.blue { background: var(--blue); }
+  .progress-fill.leaf { background: var(--leaf); }
+  .progress-fill.pop { background: var(--pop); }
+
+  /* ===== Activity feed ===== */
+  .activity-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-pill);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .activity-icon.blue { background: rgba(0, 102, 255, 0.12); color: var(--blue); }
+  .activity-icon.leaf { background: rgba(0, 184, 107, 0.12); color: var(--leaf); }
+  .activity-icon.pop { background: rgba(255, 45, 85, 0.12); color: var(--pop); }
+  .activity-icon.ink { background: rgba(10, 10, 10, 0.08); color: var(--ink); }
+  .activity-content { flex: 1; min-width: 0; }
+  .activity-title {
+    font-size: var(--type-body);
+    font-weight: 500;
+    margin-bottom: var(--space-1);
+  }
+  .activity-meta {
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+  }
+
+  /* ===== Table ===== */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-body-sm);
+  }
+  .table th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    opacity: 0.6;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    background: rgba(10, 10, 10, 0.02);
+  }
+  .table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: rgba(10, 10, 10, 0.02); }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    margin-bottom: var(--space-5);
+    gap: var(--space-5);
+  }
+  .tab {
+    height: var(--control-height);
+    display: flex;
+    align-items: center;
+    font-size: var(--type-body);
+    font-weight: 500;
+    color: var(--ink);
+    opacity: 0.6;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all var(--motion-quick);
+    padding: 0 var(--space-1);
+  }
+  .tab:hover { opacity: 1; }
+  .tab.active {
+    opacity: 1;
+    border-bottom-color: var(--ink);
+  }
+  .tab:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ===== Settings row ===== */
+  .settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+    gap: var(--space-5);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-info { flex: 1; min-width: 0; }
+  .settings-row-title {
+    font-size: var(--type-body);
+    font-weight: 500;
+    margin-bottom: var(--space-1);
+  }
+  .settings-row-desc {
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+    max-width: 480px;
+  }
+
+  /* ===== Form group ===== */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .form-label {
+    font-size: var(--type-body-sm);
+    font-weight: 500;
+  }
+  .form-help {
+    font-size: var(--type-caption);
+    opacity: 0.6;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  @media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Reduced motion ===== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="#" class="sidebar-brand">
+      <span class="sidebar-brand-mark">N</span>
+      <span>NOBORI</span>
+    </a>
+
+    <div class="sidebar-section">
+      <h4>Navigate</h4>
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-item active" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="7" height="7"/><rect x="11" y="2" width="7" height="7"/><rect x="2" y="11" width="7" height="7"/><rect x="11" y="11" width="7" height="7"/></svg>
+          </span>
+          Dashboard
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="16" height="15" rx="1"/><path d="M2 7h16M6 1v4M14 1v4"/></svg>
+          </span>
+          Calendar
+          <span class="nav-badge">3</span>
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-3 3-5 7-5s7 2 7 5"/></svg>
+          </span>
+          Children
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h12v12H4z"/><path d="M4 8h12M8 4v12"/></svg>
+          </span>
+          Activities
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17l5-5 4 4 5-7"/><circle cx="17" cy="9" r="1" fill="currentColor"/></svg>
+          </span>
+          Milestones
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l8 4 8-4M2 5v10l8 4 8-4V5l-8 4-8-4z"/></svg>
+          </span>
+          Library
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h4>Settings</h4>
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 1v2M10 17v2M3 10H1M19 10h-2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+          </span>
+          Preferences
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
+          </span>
+          Reminders
+        </li>
+        <li class="sidebar-nav-item" tabindex="0">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2L3 6v6c0 4 3 6 7 6s7-2 7-6V6l-7-4z"/></svg>
+          </span>
+          Privacy
+        </li>
+      </ul>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">YK</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Yuki Kobayashi</div>
+        <div class="sidebar-user-role">Family plan · Tokyo</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Good morning, Yuki.</h1>
+        <p>Tuesday, April 21, 2026 · 14 days until Kodomo no Hi</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost btn-icon" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" aria-label="Notifications">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8a5 5 0 0110 0c0 4 2 5 2 5H3s2-1 2-5zM7 16a3 3 0 006 0"/></svg>
+        </button>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M2 8h12"/></svg>
+          Add child
+        </button>
+        <button class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M2 8h12"/></svg>
+          New activity
+        </button>
+      </div>
+    </div>
+
+    <!-- Hero card: upcoming festival -->
+    <div class="hero-card">
+      <div class="hero-card-content">
+        <span class="hero-card-tag">
+          <span class="hero-card-tag-dot"></span>
+          Upcoming · 14 days
+        </span>
+        <h2 class="hero-card-title">Kodomo no Hi <span class="accent">approaches.</span></h2>
+        <div class="hero-card-meta">
+          <div class="hero-card-meta-item">
+            <span class="hero-card-meta-label">Date</span>
+            <span class="hero-card-meta-value">2026.05.05</span>
+          </div>
+          <div class="hero-card-meta-item">
+            <span class="hero-card-meta-label">Prep window</span>
+            <span class="hero-card-meta-value">14 days</span>
+          </div>
+          <div class="hero-card-meta-item">
+            <span class="hero-card-meta-label">Tasks remaining</span>
+            <span class="hero-card-meta-value">7 of 12</span>
+          </div>
+        </div>
+        <div class="hero-card-actions">
+          <button class="btn btn-primary">View checklist</button>
+          <button class="btn btn-secondary">Mark complete</button>
+        </div>
+      </div>
+      <div class="hero-card-image">
+        <img src="media/hero-koinobori-sky.jpg" alt="Koinobori carp streamers">
+      </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Festivals this year</div>
+        <div class="stat-value">03</div>
+        <div class="stat-change up">↑ 1 from last year</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Activities completed</div>
+        <div class="stat-value">28</div>
+        <div class="stat-change up">↑ 12 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Photos archived</div>
+        <div class="stat-value">147</div>
+        <div class="stat-change up">↑ 23 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Children</div>
+        <div class="stat-value">02</div>
+        <div class="stat-change">Active profiles</div>
+      </div>
+    </div>
+
+    <!-- Two column: checklist + calendar -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Kodomo no Hi checklist</div>
+            <div class="card-subtitle">12 tasks · 7 remaining · 14 days until festival</div>
+          </div>
+          <span class="tag tag-pop">In progress</span>
+        </div>
+
+        <div style="margin-bottom: var(--space-5);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+            <span class="caption">Overall progress</span>
+            <span class="mono">58%</span>
+          </div>
+          <div class="progress">
+            <div class="progress-fill pop" style="width: 58%;"></div>
+          </div>
+        </div>
+
+        <ul class="checklist">
+          <li class="checklist-item done">
+            <input type="checkbox" class="checkbox" checked aria-label="Order koinobori carp streamers">
+            <span class="checklist-item-label">Order koinobori carp streamers</span>
+            <span class="checklist-item-meta">Apr 8</span>
+          </li>
+          <li class="checklist-item done">
+            <input type="checkbox" class="checkbox" checked aria-label="Buy bamboo poles">
+            <span class="checklist-item-label">Buy bamboo poles (3m × 5)</span>
+            <span class="checklist-item-meta">Apr 10</span>
+          </li>
+          <li class="checklist-item done">
+            <input type="checkbox" class="checkbox" checked aria-label="Gather kabuto materials">
+            <span class="checklist-item-label">Gather kabuto helmet materials</span>
+            <span class="checklist-item-meta">Apr 12</span>
+          </li>
+          <li class="checklist-item done">
+            <input type="checkbox" class="checkbox" checked aria-label="Make chimaki dumplings">
+            <span class="checklist-item-label">Make chimaki rice dumplings</span>
+            <span class="checklist-item-meta">Apr 15</span>
+          </li>
+          <li class="checklist-item done">
+            <input type="checkbox" class="checkbox" checked aria-label="Print festival story">
+            <span class="checklist-item-label">Print Hinamatsuri → Kodomo no Hi story</span>
+            <span class="checklist-item-meta">Apr 18</span>
+          </li>
+          <li class="checklist-item">
+            <input type="checkbox" class="checkbox" aria-label="Assemble carp streamers">
+            <span class="checklist-item-label">Assemble carp streamers on poles</span>
+            <span class="checklist-item-meta">Apr 28</span>
+          </li>
+          <li class="checklist-item">
+            <input type="checkbox" class="checkbox" aria-label="Raise poles in garden">
+            <span class="checklist-item-label">Raise poles in garden</span>
+            <span class="checklist-item-meta">May 1</span>
+          </li>
+          <li class="checklist-item">
+            <input type="checkbox" class="checkbox" aria-label="Prepare festival breakfast">
+            <span class="checklist-item-label">Prepare festival breakfast (kashiwa mochi)</span>
+            <span class="checklist-item-meta">May 5</span>
+          </li>
+        </ul>
+
+        <div style="margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid rgba(10,10,10,0.08);">
+          <button class="btn btn-ghost btn-sm">View all 12 tasks →</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">May 2026</div>
+            <div class="card-subtitle">Kodomo no Hi · May 5</div>
+          </div>
+          <div style="display: flex; gap: var(--space-1);">
+            <button class="btn btn-ghost btn-icon btn-sm" aria-label="Previous month">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-icon btn-sm" aria-label="Next month">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3l5 5-5 5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="mini-calendar">
+          <div class="mini-cal-day-header">S</div>
+          <div class="mini-cal-day-header">M</div>
+          <div class="mini-cal-day-header">T</div>
+          <div class="mini-cal-day-header">W</div>
+          <div class="mini-cal-day-header">T</div>
+          <div class="mini-cal-day-header">F</div>
+          <div class="mini-cal-day-header">S</div>
+
+          <div class="mini-cal-day other-month">26</div>
+          <div class="mini-cal-day other-month">27</div>
+          <div class="mini-cal-day other-month">28</div>
+          <div class="mini-cal-day other-month">29</div>
+          <div class="mini-cal-day other-month">30</div>
+          <div class="mini-cal-day">1</div>
+          <div class="mini-cal-day">2</div>
+
+          <div class="mini-cal-day">3</div>
+          <div class="mini-cal-day">4</div>
+          <div class="mini-cal-day festival">5</div>
+          <div class="mini-cal-day">6</div>
+          <div class="mini-cal-day">7</div>
+          <div class="mini-cal-day">8</div>
+          <div class="mini-cal-day">9</div>
+
+          <div class="mini-cal-day">10</div>
+          <div class="mini-cal-day">11</div>
+          <div class="mini-cal-day">12</div>
+          <div class="mini-cal-day">13</div>
+          <div class="mini-cal-day">14</div>
+          <div class="mini-cal-day">15</div>
+          <div class="mini-cal-day">16</div>
+
+          <div class="mini-cal-day">17</div>
+          <div class="mini-cal-day">18</div>
+          <div class="mini-cal-day">19</div>
+          <div class="mini-cal-day">20</div>
+          <div class="mini-cal-day today">21</div>
+          <div class="mini-cal-day">22</div>
+          <div class="mini-cal-day">23</div>
+
+          <div class="mini-cal-day">24</div>
+          <div class="mini-cal-day">25</div>
+          <div class="mini-cal-day">26</div>
+          <div class="mini-cal-day">27</div>
+          <div class="mini-cal-day">28</div>
+          <div class="mini-cal-day">29</div>
+          <div class="mini-cal-day">30</div>
+
+          <div class="mini-cal-day">31</div>
+        </div>
+
+        <div style="margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3);">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <span style="width: 12px; height: 12px; background: var(--pop); border-radius: var(--radius-0);"></span>
+            <span style="font-size: var(--type-body-sm);">Festival day</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <span style="width: 12px; height: 12px; background: rgba(0,102,255,0.12); border-radius: var(--radius-0);"></span>
+            <span style="font-size: var(--type-body-sm);">Prep window</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <span style="width: 12px; height: 12px; background: var(--ink); border-radius: var(--radius-0);"></span>
+            <span style="font-size: var(--type-body-sm);">Today</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Children -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Children</div>
+          <div class="card-subtitle">2 active profiles · Festival journey tracking</div>
+        </div>
+        <button class="btn btn-ghost btn-sm">Manage profiles →</button>
+      </div>
+
+      <div class="children-grid">
+        <div class="child-card">
+          <div class="child-card-header">
+            <div class="child-avatar" style="background: var(--blue);">H</div>
+            <div class="child-info">
+              <div class="child-name">Haruki</div>
+              <div class="child-age">Age 7 · Born 2018.09.14</div>
+            </div>
+            <span class="tag tag-blue">Eldest</span>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+              <span class="caption">Festival journey</span>
+              <span class="mono">14 / 18</span>
+            </div>
+            <div class="progress">
+              <div class="progress-fill blue" style="width: 78%;"></div>
+            </div>
+          </div>
+          <div class="child-stats">
+            <div class="child-stat">
+              <div class="child-stat-value">14</div>
+              <div class="child-stat-label">Festivals</div>
+            </div>
+            <div class="child-stat">
+              <div class="child-stat-value">42</div>
+              <div class="child-stat-label">Activities</div>
+            </div>
+            <div class="child-stat">
+              <div class="child-stat-value">89</div>
+              <div class="child-stat-label">Photos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="child-card">
+          <div class="child-card-header">
+            <div class="child-avatar" style="background: var(--leaf);">S</div>
+            <div class="child-info">
+              <div class="child-name">Sakura</div>
+              <div class="child-age">Age 4 · Born 2021.03.22</div>
+            </div>
+            <span class="tag tag-leaf">Youngest</span>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+              <span class="caption">Festival journey</span>
+              <span class="mono">08 / 18</span>
+            </div>
+            <div class="progress">
+              <div class="progress-fill leaf" style="width: 44%;"></div>
+            </div>
+          </div>
+          <div class="child-stats">
+            <div class="child-stat">
+              <div class="child-stat-value">08</div>
+              <div class="child-stat-label">Festivals</div>
+            </div>
+            <div class="child-stat">
+              <div class="child-stat-value">24</div>
+              <div class="child-stat-label">Activities</div>
+            </div>
+            <div class="child-stat">
+              <div class="child-stat-value">58</div>
+              <div class="child-stat-label">Photos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="child-card" style="border-style: dashed; background: transparent;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--space-5) 0; gap: var(--space-3); height: 100%;">
+            <div style="width: 48px; height: 48px; border-radius: var(--radius-pill); background: rgba(10,10,10,0.06); display: flex; align-items: center; justify-content: center;">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+            </div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: var(--space-1);">Add another child</div>
+              <div style="font-size: var(--type-body-sm); opacity: 0.6;">Up to 6 profiles on Family plan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recent activity</div>
+            <div class="card-subtitle">Last 7 days across all children</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">View all →</button>
+        </div>
+
+        <ul class="activity-list">
+          <li class="activity-item">
+            <div class="activity-icon pop">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="14" height="14" rx="1"/><path d="M5 6h8M5 9h8M5 12h5"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Chimaki dumplings prepared for Kodomo no Hi</div>
+              <div class="activity-meta">Haruki · 2 days ago · 4 photos added</div>
+            </div>
+            <span class="tag tag-pop">Festival prep</span>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon blue">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Reminder set: Raise carp poles (May 1)</div>
+              <div class="activity-meta">System · 3 days ago</div>
+            </div>
+            <span class="tag tag-blue">Reminder</span>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon leaf">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 15l5-5 4 4 5-7"/><circle cx="14" cy="7" r="1" fill="currentColor"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Sakura completed: Hanami flower viewing</div>
+              <div class="activity-meta">Sakura · 5 days ago · First hanami milestone</div>
+            </div>
+            <span class="tag tag-leaf">Milestone</span>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon ink">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l8 4 8-4M2 5v10l8 4 8-4V5l-8 4-8-4z"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Koinobori story read aloud — 3rd time this month</div>
+              <div class="activity-meta">Haruki · 6 days ago</div>
+            </div>
+            <span class="tag">Story</span>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon pop">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L2 6v6c0 4 3 6 7 6s7-2 7-6V6l-7-4z"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Kabuto helmet materials gathered</div>
+              <div class="activity-meta">Family · 1 week ago · 2 photos added</div>
+            </div>
+            <span class="tag tag-pop">Festival prep</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Upcoming reminders</div>
+            <div class="card-subtitle">Next 14 days</div>
+          </div>
+        </div>
+
+        <ul class="activity-list">
+          <li class="activity-item">
+            <div class="activity-icon blue">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Assemble carp streamers</div>
+              <div class="activity-meta">Apr 28 · 7 days</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon blue">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Raise poles in garden</div>
+              <div class="activity-meta">May 1 · 10 days</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon pop">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L2 6v6c0 4 3 6 7 6s7-2 7-6V6l-7-4z"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Kodomo no Hi festival day</div>
+              <div class="activity-meta">May 5 · 14 days</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-icon blue">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 2"/></svg>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">Take down carp streamers</div>
+              <div class="activity-meta">May 15 · 24 days</div>
+            </div>
+          </li>
+        </ul>
+
+        <div style="margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid rgba(10,10,10,0.08);">
+          <button class="btn btn-secondary btn-sm" style="width: 100%;">View all reminders</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs: Activities / Library -->
+    <div class="card" style="margin-bottom: var(--space-6);">
+      <div class="tabs">
+        <div class="tab active" tabindex="0">Activities</div>
+        <div class="tab" tabindex="0">Library</div>
+        <div class="tab" tabindex="0">Stories</div>
+        <div class="tab" tabindex="0">Materials</div>
+      </div>
+
+      <div class="table-wrap" style="border: none;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Activity</th>
+              <th>Festival</th>
+              <th>Child</th>
+              <th>Status</th>
+              <th>Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Assemble carp streamers</strong><br><span style="opacity: 0.6; font-size: var(--type-caption);">Outdoor · 45 min · Ages 5+</span></td>
+              <td>Kodomo no Hi</td>
+              <td>Haruki, Sakura</td>
+              <td><span class="tag tag-blue">Scheduled</span></td>
+              <td class="mono">Apr 28</td>
+            </tr>
+            <tr>
+              <td><strong>Make kabuto helmet</strong><br><span style="opacity: 0.6; font-size: var(--type-caption);">Craft · 60 min · Ages 6+</span></td>
+              <td>Kodomo no Hi</td>
+              <td>Haruki</td>
+              <td><span class="tag tag-leaf">In progress</span></td>
+              <td class="mono">Apr 25</td>
+            </tr>
+            <tr>
+              <td><strong>Prepare chimaki dumplings</strong><br><span style="opacity: 0.6; font-size: var(--type-caption);">Cooking · 90 min · Ages 8+</span></td>
+              <td>Kodomo no Hi</td>
+              <td>Family</td>
+              <td><span class="tag tag-solid-leaf">Complete</span></td>
+              <td class="mono">Apr 15</td>
+            </tr>
+            <tr>
+              <td><strong>Read koinobori story aloud</strong><br><span style="opacity: 0.6; font-size: var(--type-caption);">Reading · 15 min · Ages 3+</span></td>
+              <td>Kodomo no Hi</td>
+              <td>Haruki, Sakura</td>
+              <td><span class="tag tag-solid-leaf">Complete</span></td>
+              <td class="mono">Apr 18</td>
+            </tr>
+            <tr>
+              <td><strong>Festival breakfast: kashiwa mochi</strong><br><span style="opacity: 0.6; font-size: var(--type-caption);">Cooking · 45 min · Ages 5+</span></td>
+              <td>Kodomo no Hi</td>
+              <td>Family</td>
+              <td><span class="tag">Not started</span></td>
+              <td class="mono">May 5</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Reminder preferences</div>
+          <div class="card-subtitle">How NOBORI notifies you about upcoming festivals</div>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">14-day preparation reminder</div>
+          <div class="settings-row-desc">Receive a notification two weeks before each festival with the full preparation checklist.</div>
+        </div>
+        <input type="checkbox" class="toggle" checked aria-label="14-day preparation reminder">
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">7-day materials reminder</div>
+          <div class="settings-row-desc">A focused list of materials to gather, sent one week before the festival.</div>
+        </div>
+        <input type="checkbox" class="toggle" checked aria-label="7-day materials reminder">
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Morning-of check-in</div>
+          <div class="settings-row-desc">A final gentle reminder on the morning of the festival with the day's schedule.</div>
+        </div>
+        <input type="checkbox" class="toggle" aria-label="Morning-of check-in">
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Milestone celebrations</div>
+          <div class="settings-row-desc">Get notified when your child completes a major festival milestone for the first time.</div>
+        </div>
+        <input type="checkbox" class="toggle" checked aria-label="Milestone celebrations">
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Weekly digest email</div>
+          <div class="settings-row-desc">A Sunday morning summary of the week ahead in your family's festival calendar.</div>
+        </div>
+        <input type="checkbox" class="toggle" aria-label="Weekly digest email">
+      </div>
+
+      <div style="margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid rgba(10,10,10,0.08);">
+        <div class="caption" style="margin-bottom: var(--space-4);">Add a new family member</div>
+        <form style="display: flex; flex-direction: column; gap: var(--space-4);" onsubmit="event.preventDefault();">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="child-name">Child's name</label>
+              <input type="text" class="input" id="child-name" placeholder="e.g. Yuki">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="child-birthdate">Birthdate</label>
+              <input type="date" class="input" id="child-birthdate">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="child-festival">First festival to celebrate</label>
+              <select class="select" id="child-festival">
+                <option>Kodomo no Hi · May 5</option>
+                <option>Hinamatsuri · March 3</option>
+                <option>Hanami · April 4</option>
+                <option>Obon · August 13</option>
+                <option>Tsukimi · September 15</option>
+                <option>Shichi-Go-San · November 15</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="child-role">Role in family</label>
+              <select class="select" id="child-role">
+                <option>Eldest</option>
+                <option>Middle</option>
+                <option>Youngest</option>
+                <option>Only child</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Profile color</label>
+            <div style="display: flex; gap: var(--space-3); align-items: center;">
+              <input type="radio" class="radio" name="color" id="color-blue" checked>
+              <label for="color-blue" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm);">
+                <span style="width: 16px; height: 16px; background: var(--blue); border-radius: var(--radius-pill);"></span>
+                Electric blue
+              </label>
+              <input type="radio" class="radio" name="color" id="color-leaf">
+              <label for="color-leaf" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm);">
+                <span style="width: 16px; height: 16px; background: var(--leaf); border-radius: var(--radius-pill);"></span>
+                Fresh leaf
+              </label>
+              <input type="radio" class="radio" name="color" id="color-pop">
+              <label for="color-pop" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm);">
+                <span style="width: 16px; height: 16px; background: var(--pop); border-radius: var(--radius-pill);"></span>
+                Hot pop
+              </label>
+            </div>
+          </div>
+          <div style="display: flex; gap: var(--space-3); justify-content: flex-end;">
+            <button type="button" class="btn btn-ghost">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add child</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+</body>
+</html>

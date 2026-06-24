@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Field — Aonobori Signal</title>
+  <meta name="description" content="Nobori Field is a launch and operations platform for bright, coordinated Kodomo no Hi festival moments.">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-cool: #F7FFF9;
+      --ink: #061015;
+      --ink-soft: #20343D;
+      --sky: #00A8FF;
+      --leaf: #21F26A;
+      --hot: #FF2D75;
+      --sun: #D9FF32;
+      --mist: #EAF8FF;
+      --shadow-ink: rgba(6, 16, 21, 0.14);
+      --sky-soft: rgba(0, 168, 255, 0.16);
+      --hot-soft: rgba(255, 45, 117, 0.18);
+      --leaf-soft: rgba(33, 242, 106, 0.2);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-display: "Arial Black", Inter, ui-sans-serif, system-ui, sans-serif;
+      --tracking-display: -0.055em;
+      --tracking-ui: 0.02em;
+      --text-xs: 0.76rem;
+      --text-sm: 0.88rem;
+      --text-md: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.45rem;
+      --text-2xl: 2rem;
+      --text-hero: clamp(3.4rem, 9vw, 9.2rem);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 72px;
+      --space-9: 104px;
+      --radius-none: 0;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --shadow-card: 0 24px 80px rgba(6, 16, 21, 0.12);
+      --shadow-lift: 0 18px 46px rgba(0, 168, 255, 0.2);
+      --control-height: 52px;
+      --fast: 160ms cubic-bezier(.2,.8,.2,1);
+      --slow: 420ms cubic-bezier(.16,1,.3,1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 17px;
+      line-height: 1.5;
+      text-rendering: geometricPrecision;
+    }
+
+    img { max-width: 100%; display: block; }
+
+    a { color: inherit; text-decoration: none; }
+
+    ::selection { background: var(--sun); color: var(--ink); }
+
+    .site-shell { overflow: hidden; background: var(--paper); }
+
+    .topbar {
+      position: absolute;
+      z-index: 5;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      padding: var(--space-5) clamp(var(--space-5), 5vw, var(--space-8));
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 12px 40px rgba(6,16,21,.08);
+      backdrop-filter: blur(12px);
+      font-weight: 900;
+      letter-spacing: var(--tracking-ui);
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-pill);
+      background:
+        linear-gradient(135deg, var(--sky) 0 42%, transparent 42% 50%, var(--leaf) 50% 76%, var(--hot) 76%);
+      box-shadow: 0 0 0 7px var(--sky-soft);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1);
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,.82);
+      box-shadow: 0 14px 46px rgba(6,16,21,.08);
+      backdrop-filter: blur(12px);
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      font-size: var(--text-sm);
+      font-weight: 800;
+      letter-spacing: var(--tracking-ui);
+      color: var(--ink-soft);
+      transition: transform var(--fast), background var(--fast), color var(--fast);
+    }
+
+    nav a:hover { background: var(--leaf); color: var(--ink); transform: translateY(-1px); }
+    nav a:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft); }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      align-items: stretch;
+      background: var(--paper);
+    }
+
+    .hero-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.82) 36%, rgba(255,255,255,.28) 69%, rgba(255,255,255,.08) 100%),
+        radial-gradient(circle at 16% 62%, rgba(33,242,106,.22), transparent 22%),
+        radial-gradient(circle at 54% 16%, rgba(0,168,255,.18), transparent 24%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: min(1460px, 100%);
+      margin: 0 auto;
+      padding: clamp(130px, 17vh, 210px) clamp(var(--space-5), 5vw, var(--space-8)) var(--space-8);
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(300px, .52fr);
+      align-items: end;
+      gap: var(--space-7);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: 40px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--sun);
+      color: var(--ink);
+      font-size: var(--text-xs);
+      font-weight: 950;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--hot);
+      box-shadow: 14px 0 0 var(--sky), 28px 0 0 var(--leaf);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      margin-top: var(--space-5);
+      max-width: 11ch;
+      font-family: var(--font-display);
+      font-size: var(--text-hero);
+      line-height: .82;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .hero-copy {
+      max-width: 670px;
+      margin-top: var(--space-6);
+      color: var(--ink-soft);
+      font-size: clamp(1.08rem, 1.7vw, 1.42rem);
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .button, button, input[type="button"], input[type="submit"], input[type="reset"] {
+      appearance: none;
+      border: 0;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-pill);
+      background: var(--ink);
+      color: var(--paper);
+      box-shadow: 0 16px 34px rgba(6,16,21,.18), 0 0 0 8px var(--hot-soft);
+      font: 900 var(--text-md)/1 var(--font-sans);
+      letter-spacing: var(--tracking-ui);
+      cursor: pointer;
+      transition: transform var(--fast), box-shadow var(--fast), background var(--fast), opacity var(--fast);
+    }
+
+    .button:hover, button:hover, input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift), 0 0 0 8px var(--hot-soft);
+    }
+
+    .button:focus-visible, button:focus-visible, input[type="button"]:focus-visible, input[type="submit"]:focus-visible, input[type="reset"]:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), 0 16px 34px rgba(6,16,21,.18);
+    }
+
+    .button:active, button:active, input[type="button"]:active, input[type="submit"]:active, input[type="reset"]:active {
+      transform: translateY(1px) scale(.99);
+    }
+
+    .button[disabled], button:disabled, input:disabled, select:disabled, textarea:disabled {
+      opacity: .42;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .button.secondary {
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 2px var(--ink), 0 12px 36px rgba(255,255,255,.4);
+    }
+
+    .button.secondary:hover { background: var(--leaf); box-shadow: inset 0 0 0 2px var(--ink), 0 16px 40px var(--leaf-soft); }
+
+    .signal-card {
+      align-self: end;
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.9);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(14px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-card::before {
+      content: "";
+      position: absolute;
+      top: var(--space-5);
+      right: var(--space-5);
+      width: 118px;
+      height: 18px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf), var(--hot));
+      transform: rotate(-13deg);
+    }
+
+    .signal-card strong {
+      display: block;
+      max-width: 8ch;
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 6vw, 5.8rem);
+      line-height: .86;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .signal-card p { margin-top: var(--space-5); color: var(--ink-soft); font-weight: 700; }
+
+    main { position: relative; }
+
+    section { padding: var(--space-9) clamp(var(--space-5), 5vw, var(--space-8)); }
+
+    .section-inner { width: min(1220px, 100%); margin: 0 auto; }
+
+    .section-kicker {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      color: var(--ink-soft);
+      font-weight: 950;
+    }
+
+    .section-title {
+      margin-top: var(--space-4);
+      max-width: 820px;
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5.4vw, 5.8rem);
+      line-height: .9;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .section-lede {
+      margin-top: var(--space-5);
+      max-width: 740px;
+      color: var(--ink-soft);
+      font-size: var(--text-lg);
+      font-weight: 600;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-7);
+      align-items: stretch;
+    }
+
+    .feature-image {
+      min-height: 620px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      background: var(--mist);
+      position: relative;
+    }
+
+    .feature-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .feature-stack {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .feature-card {
+      min-height: 184px;
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+      background: var(--paper-cool);
+      box-shadow: inset 0 -12px 0 rgba(33,242,106,.16);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:nth-child(2) { background: var(--mist); box-shadow: inset 0 -12px 0 rgba(0,168,255,.16); }
+    .feature-card:nth-child(3) { background: #fff; box-shadow: var(--shadow-card); }
+
+    .feature-card::after {
+      content: "";
+      position: absolute;
+      top: var(--space-5);
+      right: var(--space-5);
+      width: 72px;
+      height: 14px;
+      border-radius: var(--radius-pill);
+      background: var(--hot);
+      transform: rotate(-16deg);
+    }
+
+    .feature-card h3 {
+      max-width: 430px;
+      font-size: var(--text-xl);
+      line-height: 1.02;
+      letter-spacing: -.03em;
+    }
+
+    .feature-card p { margin-top: var(--space-4); color: var(--ink-soft); font-weight: 600; }
+
+    .metrics-band {
+      margin-top: var(--space-8);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3);
+    }
+
+    .metric {
+      min-height: 174px;
+      padding: var(--space-5);
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric:nth-child(2) { background: var(--sky); color: var(--ink); }
+    .metric:nth-child(3) { background: var(--leaf); color: var(--ink); }
+    .metric:nth-child(4) { background: var(--hot); color: var(--paper); }
+
+    .metric span {
+      display: block;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 950;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: var(--space-5);
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 4.5vw, 4.8rem);
+      line-height: .85;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .flow-section { background: var(--paper-cool); }
+
+    .flow-lanes {
+      margin-top: var(--space-7);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .lane {
+      display: grid;
+      grid-template-columns: 130px 1fr minmax(180px, 260px);
+      align-items: center;
+      gap: var(--space-5);
+      min-height: 112px;
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      box-shadow: 0 16px 58px rgba(6,16,21,.07);
+    }
+
+    .lane-number {
+      font-family: var(--font-display);
+      font-size: clamp(2.1rem, 4vw, 3.6rem);
+      line-height: .85;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .lane h3 { font-size: var(--text-xl); letter-spacing: -.035em; }
+    .lane p { margin-top: var(--space-2); color: var(--ink-soft); font-weight: 600; }
+
+    .lane-tag {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--sun);
+      color: var(--ink);
+      font-size: var(--text-xs);
+      font-weight: 950;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .cta-section { padding-bottom: var(--space-9); }
+
+    .cta-panel {
+      width: min(1220px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr .74fr;
+      gap: var(--space-6);
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+      background: var(--ink);
+      color: var(--paper);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cta-panel::before {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -80px;
+      top: -130px;
+      background: var(--sky);
+      border-radius: 50%;
+      filter: blur(10px);
+      opacity: .48;
+    }
+
+    .cta-panel::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: 180px;
+      bottom: -160px;
+      background: var(--leaf);
+      border-radius: 50%;
+      opacity: .52;
+    }
+
+    .cta-copy, .signup-card { position: relative; z-index: 1; }
+
+    .cta-copy { padding: var(--space-5); }
+
+    .cta-copy h2 {
+      max-width: 700px;
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 6.3rem);
+      line-height: .88;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .cta-copy p { margin-top: var(--space-5); max-width: 600px; color: rgba(255,255,255,.78); font-weight: 650; }
+
+    .signup-card {
+      padding: var(--space-5);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.95);
+      color: var(--ink);
+    }
+
+    form { display: grid; gap: var(--space-4); }
+
+    label {
+      display: grid;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-weight: 950;
+      color: var(--ink-soft);
+    }
+
+    input[type="text"], input[type="email"], input[type="search"], input[type="date"], input[type="number"], input[type="tel"], input[type="url"], input[type="password"], select, textarea {
+      appearance: none;
+      width: 100%;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 2px rgba(6,16,21,.16);
+      padding: 0 var(--space-4);
+      font: 800 var(--text-md)/1.2 var(--font-sans);
+      transition: box-shadow var(--fast), background var(--fast), opacity var(--fast);
+      caret-color: var(--hot);
+    }
+
+    textarea {
+      min-height: calc(var(--control-height) * 2.45);
+      height: auto;
+      resize: vertical;
+      border-radius: var(--radius-lg);
+      padding-block: var(--space-4);
+      line-height: 1.45;
+    }
+
+    select {
+      padding-right: calc(var(--space-6) + var(--space-4));
+      background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position: calc(100% - 24px) 22px, calc(100% - 17px) 22px;
+      background-size: 8px 8px, 8px 8px;
+      background-repeat: no-repeat;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(32,52,61,.58); }
+
+    input:hover, select:hover, textarea:hover { box-shadow: inset 0 0 0 2px rgba(6,16,21,.26), 0 0 0 6px var(--sky-soft); }
+    input:focus, select:focus, textarea:focus { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), inset 0 0 0 2px var(--ink); }
+
+    .control-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    input[type="checkbox"], input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border: 0;
+      border-radius: 7px;
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px var(--ink);
+      display: grid;
+      place-items: center;
+      transition: box-shadow var(--fast), background var(--fast), transform var(--fast);
+    }
+
+    input[type="radio"] { border-radius: 50%; }
+    input[type="checkbox"]::after, input[type="radio"]::after { content: ""; width: 10px; height: 10px; border-radius: 3px; transform: scale(0); background: var(--leaf); transition: transform var(--fast); }
+    input[type="radio"]::after { border-radius: 50%; }
+    input[type="checkbox"]:checked, input[type="radio"]:checked { background: var(--ink); box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 6px var(--leaf-soft); }
+    input[type="checkbox"]:checked::after, input[type="radio"]:checked::after { transform: scale(1); }
+    input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 0; box-shadow: 0 0 0 4px var(--sky-soft), 0 0 0 7px var(--hot-soft), inset 0 0 0 2px var(--ink); }
+
+    input[type="range"] {
+      appearance: none;
+      width: 100%;
+      height: var(--control-height);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    input[type="range"]::-moz-range-track { height: 6px; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: var(--hot); box-shadow: 0 0 0 7px var(--hot-soft); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--hot); box-shadow: 0 0 0 7px var(--hot-soft); }
+    input[type="range"]:focus-visible { outline: 0; filter: drop-shadow(0 0 8px rgba(0,168,255,.65)); }
+
+    .form-note { color: var(--ink-soft); font-size: var(--text-sm); font-weight: 650; }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-7) clamp(var(--space-5), 5vw, var(--space-8));
+      color: var(--ink-soft);
+      font-size: var(--text-sm);
+      font-weight: 750;
+    }
+
+    @media (max-width: 980px) {
+      .topbar { position: relative; padding-bottom: var(--space-3); }
+      nav { display: none; }
+      .hero { min-height: auto; }
+      .hero-content { grid-template-columns: 1fr; padding-top: var(--space-8); }
+      .signal-card { max-width: 520px; }
+      .product-grid, .cta-panel { grid-template-columns: 1fr; }
+      .feature-image { min-height: 420px; }
+      .metrics-band { grid-template-columns: 1fr 1fr; }
+      .lane { grid-template-columns: 1fr; }
+      .lane-tag { justify-self: start; }
+    }
+
+    @media (max-width: 640px) {
+      section { padding-block: var(--space-8); }
+      .topbar { padding-inline: var(--space-4); }
+      .hero-content { padding-inline: var(--space-4); }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .button { width: 100%; }
+      .metrics-band { grid-template-columns: 1fr; }
+      .cta-panel { padding: var(--space-4); }
+      .signup-card, .cta-copy { padding: var(--space-4); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .button:hover, nav a:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar" aria-label="Site header">
+      <a class="brand" href="#top" aria-label="Nobori Field home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Nobori Field</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#coordinate">Coordinate</a>
+        <a href="#flow">Flow</a>
+        <a href="#launch">Launch</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="top" aria-label="Nobori Field launch platform">
+      <img class="hero-image" src="./media/hero-aonobori-signal.png" alt="Bright graphic Kodomo no Hi koinobori streamers rising through early-summer light and greenery.">
+      <div class="hero-content">
+        <div>
+          <span class="eyebrow">Aonobori Signal</span>
+          <h1>Raise the whole day.</h1>
+          <p class="hero-copy">Nobori Field gives parks, schools, and cultural teams one bright operating layer for Kodomo no Hi launches: wind windows, sponsor readiness, field crews, public timing, and every koinobori moment rising on cue.</p>
+          <div class="hero-actions" aria-label="Hero actions">
+            <a class="button" href="#launch">Plan a festival</a>
+            <a class="button secondary" href="dashboard.html">View dashboard</a>
+          </div>
+        </div>
+        <aside class="signal-card" aria-label="Live signal summary">
+          <strong>96% lift ready</strong>
+          <p>Three riverfront zones are cleared for morning launch, with volunteer crews synced and sponsor checks complete.</p>
+        </aside>
+      </div>
+    </section>
+
+    <main>
+      <section id="coordinate" aria-labelledby="coordinate-title">
+        <div class="section-inner">
+          <p class="section-kicker">Product world</p>
+          <h2 class="section-title" id="coordinate-title">Festival operations with poster energy.</h2>
+          <p class="section-lede">The work is practical: permits, wind, rigging, families, donors, field updates. The interface stays bright enough for a public celebration and precise enough for the adults running it.</p>
+
+          <div class="product-grid">
+            <div class="feature-image">
+              <img src="./media/feature-flow.png" alt="Abstract product operations scene with koinobori-like data ribbons, greenery, and vivid highlighter colors.">
+            </div>
+            <div class="feature-stack" aria-label="Feature list">
+              <article class="feature-card">
+                <h3>Wind-aware launch windows</h3>
+                <p>Combine forecast confidence, site exposure, rigging notes, and field leads into one clean go/no-go rhythm.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Partner readiness without spreadsheet fog</h3>
+                <p>Schools, merchants, sponsors, and parks teams see the same signal: what is ready, what needs a call, what can wait.</p>
+              </article>
+              <article class="feature-card">
+                <h3>Public moments timed like a campaign</h3>
+                <p>Schedule the first hoist, procession, food court opening, and evening close with a shared run-of-show that reads at a glance.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="metrics-band" aria-label="Festival metrics">
+            <div class="metric"><span>District sites</span><strong>18</strong></div>
+            <div class="metric"><span>Launch windows</span><strong>42</strong></div>
+            <div class="metric"><span>Crew shifts</span><strong>310</strong></div>
+            <div class="metric"><span>Calls avoided</span><strong>1.7k</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="flow-section" id="flow" aria-labelledby="flow-title">
+        <div class="section-inner">
+          <p class="section-kicker">Operating flow</p>
+          <h2 class="section-title" id="flow-title">One rising signal from first permit to final lantern.</h2>
+          <p class="section-lede">Aonobori Signal turns festival complexity into clean lanes: each lane has a clear owner, a vivid state, and enough white space to make the next action obvious.</p>
+          <div class="flow-lanes">
+            <article class="lane">
+              <div class="lane-number">01</div>
+              <div>
+                <h3>Map the wind corridors</h3>
+                <p>Import site plans, assign mast clusters, and mark the morning windows where koinobori will rise cleanly.</p>
+              </div>
+              <span class="lane-tag">Sky pass</span>
+            </article>
+            <article class="lane">
+              <div class="lane-number">02</div>
+              <div>
+                <h3>Sync the grown-up dependencies</h3>
+                <p>Permits, insurance, sponsor copy, school pickup points, and vendor access become visible without draining the mood.</p>
+              </div>
+              <span class="lane-tag">Leaf ready</span>
+            </article>
+            <article class="lane">
+              <div class="lane-number">03</div>
+              <div>
+                <h3>Publish the public day</h3>
+                <p>Turn internal certainty into a polished public schedule with live changes and one calm source of truth.</p>
+              </div>
+              <span class="lane-tag">Hot moment</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section" id="launch" aria-labelledby="launch-title">
+        <div class="cta-panel">
+          <div class="cta-copy">
+            <p class="section-kicker">Launch desk</p>
+            <h2 id="launch-title">Bring the carp streamers up without the back-channel chaos.</h2>
+            <p>Start with one district, one riverfront, or one school network. Nobori Field gives the team a shared operating surface and the public a bright, confident day.</p>
+          </div>
+          <div class="signup-card">
+            <form>
+              <label>
+                Work email
+                <input type="email" name="email" placeholder="festival@city.example" autocomplete="email">
+              </label>
+              <label>
+                Launch scale
+                <select name="scale">
+                  <option>Neighborhood pilot</option>
+                  <option>Citywide celebration</option>
+                  <option>School network</option>
+                  <option>Riverfront route</option>
+                </select>
+              </label>
+              <label>
+                Target date
+                <input type="date" name="date" value="2026-05-05">
+              </label>
+              <label>
+                Expected sites
+                <input type="number" name="sites" min="1" max="80" value="18">
+              </label>
+              <label>
+                Launch note
+                <textarea name="note" placeholder="Tell us what has to rise on time."></textarea>
+              </label>
+              <label class="control-row">
+                <input type="checkbox" name="updates" checked>
+                Send a readiness brief before the first planning call
+              </label>
+              <label>
+                Coordination confidence
+                <input type="range" name="confidence" min="0" max="100" value="72">
+              </label>
+              <button type="submit">Request planning desk</button>
+              <p class="form-note">No toy templates, no generic event portal — just a bright operating language for a serious public celebration.</p>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Nobori Field / Aonobori Signal</span>
+      <span>Kodomo no Hi operations, rendered bright and grown-up.</span>
+    </footer>
+  </div>
+</body>
+</html>

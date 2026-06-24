@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" class="js">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Koinobori — Japanese festivals, discovered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent-sky: #0EA5E9;
+  --accent-green: #22C55E;
+  --accent-coral: #FF6B6B;
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --text: #1A1A1A;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #0EA5E9;
+  --on-accent-sky: #FFFFFF;
+  --on-accent-green: #FFFFFF;
+  --on-accent-coral: #FFFFFF;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-jp: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+  --text-display: clamp(48px, 6vw, 96px);
+  --text-h1: clamp(32px, 4vw, 56px);
+  --text-h2: clamp(24px, 3vw, 40px);
+  --text-h3: clamp(20px, 2vw, 28px);
+  --text-body: 17px;
+  --text-body-lg: 19px;
+  --text-small: 14px;
+  --text-caption: 12px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+  --space-5xl: 128px;
+  --radius-none: 0;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  --control-height: 44px;
+  --hero-image: url('media/hero.jpg');
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{font-family:var(--font-sans);font-size:var(--text-body);line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+body{min-height:100vh}
+
+img{display:block;max-width:100%}
+
+a{color:var(--accent-sky);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Motion gate — settled state is default */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease-out,transform .6s ease-out}
+html.js .reveal.revealed{opacity:1;transform:translateY(0)}
+
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+}
+
+/* Hero */
+.hero{
+  width:100vw;height:100svh;
+  background-image:var(--hero-image);
+  background-size:cover;
+  background-position:center;
+  position:relative;
+  display:flex;align-items:flex-end;
+  padding:var(--space-5xl) var(--space-2xl) var(--space-3xl);
+}
+
+.hero::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.35) 70%,rgba(0,0,0,.55) 100%);
+  pointer-events:none;
+}
+
+.hero-content{
+  position:relative;z-index:1;
+  max-width:800px;
+}
+
+.hero-content .jp-display{
+  font-family:var(--font-jp);
+  font-size:var(--text-display);
+  font-weight:900;
+  line-height:.88;
+  letter-spacing:-.02em;
+  color:#fff;
+  margin-bottom:var(--space-lg);
+}
+
+.hero-content .tagline{
+  font-family:var(--font-display);
+  font-size:var(--text-h3);
+  font-weight:600;
+  color:rgba(255,255,255,.9);
+  line-height:1.2;
+  margin-bottom:var(--space-xl);
+}
+
+/* Nav */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:var(--space-lg) var(--space-2xl);
+  display:flex;align-items:center;justify-content:space-between;
+  transition:background .3s;
+}
+.nav.scrolled{background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.nav.scrolled .nav-logo{color:var(--text)}
+.nav.scrolled .nav-link{color:var(--muted)}
+.nav.scrolled .nav-link:hover{color:var(--text)}
+.nav.scrolled .nav-cta{background:var(--accent-sky);color:var(--on-accent-sky)}
+
+.nav-logo{
+  font-family:var(--font-jp);font-size:20px;font-weight:900;
+  color:#fff;transition:color .3s;
+}
+
+.nav-links{display:flex;align-items:center;gap:var(--space-xl)}
+
+.nav-link{
+  font-size:var(--text-small);font-weight:500;
+  color:rgba(255,255,255,.85);transition:color .2s;
+  text-decoration:none;
+}
+.nav-link:hover{color:#fff;text-decoration:none}
+
+.nav-cta{
+  height:var(--control-height);padding:0 var(--space-lg);
+  border-radius:var(--radius-md);
+  font-family:var(--font-sans);font-size:var(--text-small);font-weight:600;
+  background:rgba(255,255,255,.2);color:#fff;
+  border:none;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.nav-cta:hover{background:rgba(255,255,255,.3);transform:translateY(-1px)}
+.nav-cta:focus-visible{outline:2px solid var(--accent-sky);outline-offset:2px}
+.nav-cta:active{transform:translateY(0)}
+
+/* Sections */
+.section{padding:var(--space-4xl) var(--space-2xl)}
+.section-alt{background:var(--surface)}
+.section-inner{max-width:1280px;margin:0 auto}
+
+/* Rising line */
+.rising-line{position:relative;padding-top:var(--space-2xl)}
+.rising-line::before{
+  content:'';position:absolute;top:0;left:0;
+  width:100px;height:2px;
+  background:var(--accent-sky);
+  transform:rotate(-15deg);transform-origin:left center;
+}
+
+/* Intro section */
+.intro-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:var(--space-4xl);
+  align-items:center;
+}
+.intro-text h2{
+  font-family:var(--font-display);
+  font-size:var(--text-h2);font-weight:700;
+  line-height:1.15;margin-bottom:var(--space-lg);
+}
+.intro-text p{
+  font-size:var(--text-body-lg);color:var(--muted);
+  line-height:1.6;margin-bottom:var(--space-md);
+}
+.intro-visual{
+  aspect-ratio:1;
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.intro-visual img{width:100%;height:100%;object-fit:cover}
+
+/* Features */
+.features-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--space-xl);
+}
+.feature-card{
+  background:var(--surface);
+  border-radius:var(--radius-md);
+  padding:var(--space-2xl);
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.feature-card h3{
+  font-family:var(--font-display);
+  font-size:var(--text-h3);font-weight:600;
+  line-height:1.2;margin-bottom:var(--space-md);
+}
+.feature-card p{
+  font-size:var(--text-body);color:var(--muted);
+  line-height:1.5;
+}
+.feature-icon{
+  width:48px;height:48px;
+  border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:var(--space-lg);
+}
+.feature-icon.sky{background:rgba(14,165,233,.1);color:var(--accent-sky)}
+.feature-icon.green{background:rgba(34,197,94,.1);color:var(--accent-green)}
+.feature-icon.coral{background:rgba(255,107,107,.1);color:var(--accent-coral)}
+.feature-icon svg{width:24px;height:24px}
+
+/* CTA section */
+.cta-section{
+  text-align:center;
+  padding:var(--space-5xl) var(--space-2xl);
+}
+.cta-section h2{
+  font-family:var(--font-jp);
+  font-size:var(--text-h1);font-weight:900;
+  line-height:1.1;letter-spacing:-.01em;
+  margin-bottom:var(--space-lg);
+}
+.cta-section p{
+  font-size:var(--text-body-lg);color:var(--muted);
+  max-width:560px;margin:0 auto var(--space-2xl);
+  line-height:1.6;
+}
+
+/* Buttons */
+.btn{
+  height:var(--control-height);padding:0 var(--space-xl);
+  border-radius:var(--radius-md);
+  font-family:var(--font-sans);font-size:var(--text-body);font-weight:600;
+  border:none;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:var(--space-sm);
+  transition:all .2s;
+}
+.btn-primary{
+  background:var(--accent-sky);color:var(--on-accent-sky);
+}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 12px rgba(14,165,233,.25)}
+.btn-primary:focus-visible{outline:2px solid var(--accent-sky);outline-offset:2px}
+.btn-primary:active{filter:brightness(.95);transform:translateY(0);box-shadow:none}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+.btn-secondary{
+  background:transparent;color:var(--accent-sky);
+  box-shadow:inset 0 0 0 1.5px var(--accent-sky);
+}
+.btn-secondary:hover{background:rgba(14,165,233,.06);transform:translateY(-1px)}
+.btn-secondary:focus-visible{outline:2px solid var(--accent-sky);outline-offset:2px}
+.btn-secondary:active{transform:translateY(0)}
+.btn-secondary:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* Form controls */
+input[type="email"],input[type="text"],select,textarea{
+  height:var(--control-height);padding:0 var(--space-md);
+  border-radius:var(--radius-md);
+  font-family:var(--font-sans);font-size:var(--text-body);
+  background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--border);
+  border:none;outline:none;
+  transition:box-shadow .2s;
+  width:100%;
+}
+input[type="email"]:hover,input[type="text"]:hover,select:hover,textarea:hover{
+  box-shadow:inset 0 0 0 1.5px var(--muted);
+}
+input[type="email"]:focus-visible,input[type="text"]:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent-sky);outline-offset:2px;box-shadow:none;
+}
+input[type="email"]:disabled,input[type="text"]:disabled,select:disabled,textarea:disabled{
+  opacity:.4;background:var(--bg);cursor:not-allowed;
+}
+input[type="email"]::placeholder,input[type="text"]::placeholder,textarea::placeholder{
+  color:var(--muted);opacity:.6;
+}
+
+/* Newsletter form */
+.newsletter-form{
+  display:flex;gap:var(--space-sm);
+  max-width:440px;margin:0 auto;
+}
+.newsletter-form input{flex:1}
+
+/* Footer */
+.footer{
+  padding:var(--space-3xl) var(--space-2xl);
+  background:var(--surface);
+}
+.footer-inner{
+  max-width:1280px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-logo{
+  font-family:var(--font-jp);font-size:18px;font-weight:900;
+}
+.footer-links{display:flex;gap:var(--space-xl)}
+.footer-links a{font-size:var(--text-small);color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--text)}
+
+/* Responsive */
+@media(max-width:768px){
+  .intro-grid{grid-template-columns:1fr;gap:var(--space-2xl)}
+  .features-grid{grid-template-columns:1fr}
+  .nav-links{gap:var(--space-md)}
+  .nav-link.hide-mobile{display:none}
+  .hero{padding:var(--space-5xl) var(--space-lg) var(--space-2xl)}
+  .section{padding:var(--space-3xl) var(--space-lg)}
+  .footer-inner{flex-direction:column;gap:var(--space-lg);text-align:center}
+  .footer-links{flex-wrap:wrap;justify-content:center}
+  .newsletter-form{flex-direction:column}
+}
+@media(min-width:1920px){
+  .section-inner{max-width:1280px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <span class="nav-logo">Koinobori</span>
+  <div class="nav-links">
+    <a href="#" class="nav-link hide-mobile">Festivals</a>
+    <a href="#" class="nav-link hide-mobile">About</a>
+    <a href="#" class="nav-link hide-mobile">Journal</a>
+    <button class="nav-cta">Get early access</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="jp-display reveal">鯉のぼり</div>
+    <div class="tagline reveal">Japanese festivals, discovered. From Kodomo no Hi to Gion Matsuri — every celebration, one place.</div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-inner">
+    <div class="intro-grid">
+      <div class="intro-text rising-line reveal">
+        <h2>Every festival has a story. We find the ones worth traveling for.</h2>
+        <p>Koinobori maps Japan's 300,000+ annual matsuri — from the carp streamers of Kodomo no Hi to the firelit processions of Kurama. Real-time dates, local guides, and the cultural context that turns a trip into a memory.</p>
+        <p>Built with festival committees across 47 prefectures. Updated daily.</p>
+      </div>
+      <div class="intro-visual reveal">
+        <img src="media/feature-1.jpg" alt="Koinobori rising against summer sky">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="section-inner">
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon sky">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Live festival calendar</h3>
+        <p>Dates shift with the lunar calendar. We track every change so you never miss a torches-lit procession or a dawn ceremony.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <h3>Local guides, local voices</h3>
+        <p>Every listing is written by someone who lives there. Routes, food stalls, the quiet spot with the best view — not a tourist checklist.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon coral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>Plan together</h3>
+        <p>Share itineraries with your group. Vote on which festivals to hit, split lodging, and keep everyone in sync — no group-chat chaos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-inner">
+    <div class="intro-grid" style="direction:rtl">
+      <div class="intro-text rising-line reveal" style="direction:ltr">
+        <h2>The carp that became a dragon</h2>
+        <p>Kodomo no Hi isn't just Children's Day. The koinobori tell the legend of a carp that swam upstream, climbed a waterfall, and transformed into a dragon — a wish for every child's courage and growth.</p>
+        <p>Our name carries that story. Every festival we surface is a chance to see something transform.</p>
+      </div>
+      <div class="intro-visual reveal" style="direction:ltr">
+        <img src="media/feature-2.jpg" alt="Bamboo grove with koinobori in the distance">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="reveal">
+    <h2>こどもの日</h2>
+    <p>Koinobori launches this Kodomo no Hi. Join the waitlist and get early access to the full festival calendar, plus a curated guide to May 5th celebrations in every prefecture.</p>
+    <form class="newsletter-form" onsubmit="event.preventDefault()">
+      <input type="email" placeholder="Your email address" required aria-label="Email address">
+      <button type="submit" class="btn btn-primary">Get early access</button>
+    </form>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-logo">Koinobori</span>
+    <div class="footer-links">
+      <a href="#">Festivals</a>
+      <a href="#">About</a>
+      <a href="#">Journal</a>
+      <a href="#">Privacy</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var html=document.documentElement;
+  html.classList.add('js');
+  var reveals=document.querySelectorAll('.reveal');
+  var nav=document.getElementById('nav');
+
+  function onScroll(){
+    if(window.scrollY>60){nav.classList.add('scrolled')}
+    else{nav.classList.remove('scrolled')}
+  }
+
+  function revealOnScroll(){
+    var wh=window.innerHeight;
+    for(var i=0;i<reveals.length;i++){
+      var el=reveals[i];
+      var top=el.getBoundingClientRect().top;
+      if(top<wh*.85&&!el.classList.contains('revealed')){
+        el.classList.add('revealed');
+      }
+    }
+  }
+
+  var mq=window.matchMedia('(prefers-reduced-motion:reduce)');
+  if(!mq.matches){
+    window.addEventListener('scroll',function(){
+      onScroll();
+      revealOnScroll();
+    },{passive:true});
+    revealOnScroll();
+    onScroll();
+  }else{
+    for(var i=0;i<reveals.length;i++){reveals[i].classList.add('revealed')}
+  }
+})();
+</script>
+
+</body>
+</html>
