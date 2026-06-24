@@ -176,6 +176,7 @@ function FullCard({
   const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
   const hasThumbnailPreview = Boolean(thumbnailAssetUrl || thumbnailProxyFileId);
 
+
   return (
     <article
       className="sticker-card relative flex h-full w-full max-w-full flex-col overflow-hidden"
