@@ -21,19 +21,22 @@ function refUrls(raw?: string): string[] {
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
-// The backend SubmitForReview guard forced reference_image_file_ids to a single
-// id on some styles, so that field shows only one image. The full set lives in
-// reference_assets (the public serving plane). Prefer it; fall back to the ids.
+// Build image URLs from the governed File ids -> /api/file proxy (reliable for
+// every style). We DON'T use reference_assets VALUES: some are assets.katagami.ai
+// CDN urls whose publish never completed (404). And reference_image_file_ids is
+// guard-limited to one id on some styles. So collect file ids from the manifest
+// (full set), the reference_assets KEYS (which are file ids), and the id field.
 function refImageUrls(fields: Record<string, string | undefined>): string[] {
-  const assets = parseJson<Record<string, unknown> | unknown[]>(fields.reference_assets);
-  const urls: string[] = [];
-  const push = (u: unknown) => {
-    if (typeof u === "string" && u.startsWith("http")) urls.push(u);
-    else if (u && typeof u === "object" && typeof (u as { url?: string }).url === "string") urls.push((u as { url: string }).url);
+  const ids: string[] = [];
+  const add = (id: unknown) => {
+    if (typeof id === "string" && id.startsWith("fl-") && !ids.includes(id)) ids.push(id);
   };
-  if (Array.isArray(assets)) assets.forEach(push);
-  else if (assets && typeof assets === "object") Object.values(assets).forEach(push);
-  return urls.length ? urls : refUrls(fields.reference_image_file_ids);
+  const manifest = parseJson<{ items?: Array<{ file?: string }>; references?: Array<{ file?: string }> }>(fields.reference_manifest);
+  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file));
+  const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
+  if (assets && typeof assets === "object" && !Array.isArray(assets)) Object.keys(assets).forEach(add);
+  (parseJson<string[]>(fields.reference_image_file_ids) ?? []).forEach(add);
+  return ids.map((id) => getFileUrl(id));
 }
 
 export default async function ArtStylesPage() {

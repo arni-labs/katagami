@@ -26,18 +26,21 @@ function refUrls(raw?: string): string[] {
   return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
-// Prefer reference_assets (full serving set) over the guard-limited
-// reference_image_file_ids, which the SubmitForReview guard forced to one id.
+// Build image URLs from File ids -> /api/file proxy (reliable). Avoid
+// reference_assets VALUES (some are assets.katagami.ai CDN urls that 404) and
+// the guard-limited reference_image_file_ids; collect ids from the manifest
+// (full set), the reference_assets KEYS (file ids), and the id field.
 function refImageUrls(fields: Record<string, string | undefined>): string[] {
-  const assets = parseJson<Record<string, unknown> | unknown[]>(fields.reference_assets);
-  const urls: string[] = [];
-  const push = (u: unknown) => {
-    if (typeof u === "string" && u.startsWith("http")) urls.push(u);
-    else if (u && typeof u === "object" && typeof (u as { url?: string }).url === "string") urls.push((u as { url: string }).url);
+  const ids: string[] = [];
+  const add = (id: unknown) => {
+    if (typeof id === "string" && id.startsWith("fl-") && !ids.includes(id)) ids.push(id);
   };
-  if (Array.isArray(assets)) assets.forEach(push);
-  else if (assets && typeof assets === "object") Object.values(assets).forEach(push);
-  return urls.length ? urls : refUrls(fields.reference_image_file_ids);
+  const manifest = parseJson<{ items?: Array<{ file?: string }>; references?: Array<{ file?: string }> }>(fields.reference_manifest);
+  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file));
+  const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
+  if (assets && typeof assets === "object" && !Array.isArray(assets)) Object.keys(assets).forEach(add);
+  (parseJson<string[]>(fields.reference_image_file_ids) ?? []).forEach(add);
+  return ids.map((id) => getFileUrl(id));
 }
 
 /** Render a parsed-JSON value as text. These maps are typed as string values,
