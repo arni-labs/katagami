@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nobori Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F4F8FB;
+      --surface-raised: #E8F2F8;
+      --text: #0A1628;
+      --muted: #5A6B7D;
+      --border: transparent;
+      --accent: #00AEEF;
+      --accent-2: #00D68F;
+      --accent-3: #FF3D5A;
+      --on-accent: #FFFFFF;
+      --success: #00D68F;
+      --warning: #FFB020;
+      --error: #E8193B;
+      --info: #00AEEF;
+      --font-display: 'Outfit', system-ui, sans-serif;
+      --font-body: 'Outfit', system-ui, sans-serif;
+      --font-jp: 'Zen Kaku Gothic New', sans-serif;
+      --text-display-lg: clamp(1.75rem, 3vw, 2.25rem);
+      --text-display-md: 1.5rem;
+      --text-body: 1.0625rem;
+      --text-small: 0.90625rem;
+      --text-table: 0.90625rem;
+      --letter-display: -0.02em;
+      --line-body: 1.55;
+      --space-xs: 0.5rem;
+      --space-sm: 0.75rem;
+      --space-md: 1.25rem;
+      --space-lg: 2rem;
+      --space-xl: 3.5rem;
+      --title-pad-top: var(--space-lg);
+      --radius-none: 0;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --content-max: 1400px;
+      --control-height: 48px;
+      --sidebar-width: 260px;
+      --hero-image: url('./media/dashboard-banner.jpg');
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-body);
+      line-height: var(--line-body);
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+    button, input, select, textarea { font: inherit; border: none; }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--surface);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+      min-width: 0;
+    }
+    .sidebar-logo {
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: var(--letter-display);
+      padding-top: var(--space-sm);
+    }
+    .sidebar-logo span {
+      font-family: var(--font-jp);
+      color: var(--accent);
+      margin-left: 0.3rem;
+    }
+    .nav-group { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .nav-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: var(--space-sm) var(--space-sm) var(--space-xs);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 0 var(--space-md);
+      height: 40px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-small);
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--surface-raised); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .nav-item:focus-visible { outline: 3px solid #00AEEF40; outline-offset: 2px; }
+    .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Main */
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .topbar h1 {
+      font-size: var(--text-display-md);
+      font-weight: 700;
+      letter-spacing: var(--letter-display);
+      padding-top: var(--space-xs);
+    }
+    .topbar-actions { display: flex; gap: var(--space-sm); align-items: center; }
+
+    .search-input {
+      height: var(--control-height);
+      padding: 0 var(--space-md);
+      background: var(--surface);
+      border-radius: var(--radius-pill);
+      width: 220px;
+      color: var(--text);
+    }
+    .search-input:hover { background: var(--surface-raised); }
+    .search-input:focus-visible { outline: 3px solid #00AEEF40; background: var(--bg); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--control-height);
+      padding: 0 1.25rem;
+      border-radius: var(--radius-pill);
+      font-weight: 600;
+      font-size: var(--text-small);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: var(--on-accent); }
+    .btn-primary:hover { background: #0098D4; transform: translateY(-1px); }
+    .btn-primary:focus-visible { outline: 3px solid #00AEEF40; outline-offset: 2px; }
+    .btn-primary:active { background: #0088BE; transform: translateY(0); }
+    .btn-primary:disabled { background: #B8D4E8; pointer-events: none; opacity: 0.7; }
+    .btn-secondary { background: var(--surface-raised); color: var(--text); }
+    .btn-secondary:hover { background: #D8EAF4; }
+    .btn-secondary:focus-visible { outline: 3px solid #00AEEF40; outline-offset: 2px; }
+
+    .content { padding: 0 var(--space-lg) var(--space-xl); flex: 1; min-width: 0; }
+
+    /* Banner */
+    .banner {
+      height: 180px;
+      border-radius: var(--radius-lg);
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      margin-bottom: var(--space-lg);
+      overflow: hidden;
+    }
+    .banner-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(10,22,40,0.75) 0%, rgba(10,22,40,0.2) 100%);
+      display: flex;
+      align-items: center;
+      padding: var(--space-lg);
+      color: #FFF;
+    }
+    .banner-scrim h2 {
+      font-size: var(--text-display-lg);
+      font-weight: 800;
+      letter-spacing: var(--letter-display);
+    }
+    .banner-scrim .kanji {
+      font-family: var(--font-jp);
+      font-weight: 900;
+      font-size: 1.1rem;
+      opacity: 0.85;
+      margin-bottom: var(--space-xs);
+    }
+    .banner-date {
+      display: inline-block;
+      background: var(--accent-3);
+      padding: 0.2em 0.6em;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: var(--text-small);
+      margin-top: var(--space-sm);
+    }
+
+    /* Metrics */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+    .metric {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      min-width: 0;
+    }
+    .metric-label {
+      font-size: var(--text-small);
+      color: var(--muted);
+      margin-bottom: var(--space-xs);
+    }
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: var(--letter-display);
+    }
+    .metric-value.accent { color: var(--accent); }
+    .metric-value.green { color: var(--accent-2); }
+    .metric-value.pop { color: var(--accent-3); }
+    .metric-delta {
+      font-size: var(--text-small);
+      color: var(--accent-2);
+      margin-top: var(--space-xs);
+      font-weight: 600;
+    }
+
+    /* Grid layout */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--space-lg);
+      min-width: 0;
+    }
+    .panel {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      min-width: 0;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+      padding-top: var(--space-xs);
+    }
+    .panel-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: var(--letter-display);
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-table);
+    }
+    .data-table th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--surface-raised);
+      border-radius: var(--radius-md);
+    }
+    .data-table th:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+    .data-table th:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+    .data-table td {
+      padding: var(--space-md);
+    }
+    .data-table tbody tr:nth-child(even) td {
+      background: var(--surface-raised);
+    }
+    .status {
+      display: inline-block;
+      padding: 0.2em 0.65em;
+      border-radius: var(--radius-pill);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status.ready { background: rgba(0,214,143,0.15); color: var(--accent-2); }
+    .status.pending { background: rgba(0,174,239,0.12); color: var(--accent); }
+    .status.alert { background: rgba(255,61,90,0.12); color: var(--accent-3); }
+
+    /* Form controls in panel */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-md);
+    }
+    .form-row label {
+      font-size: var(--text-small);
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .form-row input, .form-row select {
+      height: var(--control-height);
+      padding: 0 var(--space-md);
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      color: var(--text);
+    }
+    .form-row input:hover, .form-row select:hover { background: var(--surface-raised); }
+    .form-row input:focus-visible, .form-row select:focus-visible {
+      outline: 3px solid #00AEEF40;
+      background: var(--bg);
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .checkbox-row input[type="checkbox"]:focus-visible {
+      outline: 3px solid #00AEEF40;
+      outline-offset: 2px;
+    }
+    .checkbox-row label { font-size: var(--text-small); cursor: pointer; }
+
+    /* Activity list */
+    .activity-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-md); }
+    .activity-item {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: flex-start;
+    }
+    .activity-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: var(--radius-pill);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .activity-dot.blue { background: var(--accent); }
+    .activity-dot.green { background: var(--accent-2); }
+    .activity-dot.pop { background: var(--accent-3); }
+    .activity-text { font-size: var(--text-small); }
+    .activity-time { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    /* Chart placeholder */
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: var(--space-sm);
+      height: 120px;
+      padding-top: var(--space-md);
+    }
+    .chart-bar {
+      flex: 1;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      min-width: 0;
+      transition: height 0.3s;
+    }
+
+    @media (max-width: 1100px) {
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dash-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .metrics { grid-template-columns: 1fr; }
+      .search-input { width: 100%; }
+      .data-table .col-hide { display: none; }
+    }
+
+    @media (min-width: 1800px) {
+      .content { max-width: 1600px; margin-inline: auto; width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .btn, .chart-bar { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-logo">Nobori<span>のぼり</span></div>
+      <nav>
+        <div class="nav-group">
+          <span class="nav-label">Festival</span>
+          <a class="nav-item active" href="#">
+            <svg class="nav-icon" viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="3" width="14" height="12" rx="2" opacity="0.3"/><rect x="4" y="6" width="10" height="2" rx="1"/><rect x="4" y="10" width="6" height="2" rx="1"/></svg>
+            Overview
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-icon" viewBox="0 0 18 18" fill="currentColor"><path d="M9 2L11 7h5l-4 3 1.5 5L9 12l-4.5 3L6 10 2 7h5z"/></svg>
+            Koinobori poles
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-icon" viewBox="0 0 18 18" fill="currentColor"><circle cx="9" cy="6" r="3"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+            Growth tracker
+          </a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-label">Block</span>
+          <a class="nav-item" href="#">
+            <svg class="nav-icon" viewBox="0 0 18 18" fill="currentColor"><path d="M2 8l7-5 7 5v8H2V8z"/></svg>
+            Neighborhood
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-icon" viewBox="0 0 18 18" fill="currentColor"><rect x="3" y="4" width="12" height="10" rx="1"/><path d="M3 7h12" stroke="currentColor" stroke-width="1.5"/></svg>
+            Wind forecast
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h1>Sakura-dori Festival Board</h1>
+        <div class="topbar-actions">
+          <input type="search" class="search-input" placeholder="Search families, poles...">
+          <button class="btn btn-secondary">Export</button>
+          <button class="btn btn-primary">Add family</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="banner">
+          <div class="banner-scrim">
+            <div>
+              <p class="kanji">こどもの日 · May 5</p>
+              <h2>12 days until the climb</h2>
+              <span class="banner-date">Golden Week prep</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Registered families</div>
+            <div class="metric-value accent">24</div>
+            <div class="metric-delta">+3 this week</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Koinobori poles</div>
+            <div class="metric-value green">18</div>
+            <div class="metric-delta">2 awaiting rigging</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Avg child height</div>
+            <div class="metric-value">118<span style="font-size:1rem;font-weight:600;color:var(--muted)">cm</span></div>
+            <div class="metric-delta">+4cm since last year</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Wind readiness</div>
+            <div class="metric-value pop">82%</div>
+            <div class="metric-delta">Forecast: 12 km/h SW</div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Pole assignments</h3>
+              <button class="btn btn-secondary" style="height:36px;padding:0 1rem;font-size:0.8rem;">Filter</button>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Family</th>
+                  <th>Pole #</th>
+                  <th class="col-hide">Streamers</th>
+                  <th>Status</th>
+                  <th class="col-hide">Height</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tanaka</td>
+                  <td>3</td>
+                  <td class="col-hide">3 carp</td>
+                  <td><span class="status ready">Rigged</span></td>
+                  <td class="col-hide">4.2m</td>
+                </tr>
+                <tr>
+                  <td>Suzuki</td>
+                  <td>4</td>
+                  <td class="col-hide">2 carp</td>
+                  <td><span class="status pending">Pending</span></td>
+                  <td class="col-hide">3.8m</td>
+                </tr>
+                <tr>
+                  <td>Yamamoto</td>
+                  <td>5</td>
+                  <td class="col-hide">4 carp</td>
+                  <td><span class="status ready">Rigged</span></td>
+                  <td class="col-hide">5.1m</td>
+                </tr>
+                <tr>
+                  <td>Watanabe</td>
+                  <td>6</td>
+                  <td class="col-hide">3 carp</td>
+                  <td><span class="status alert">Wind alert</span></td>
+                  <td class="col-hide">4.5m</td>
+                </tr>
+                <tr>
+                  <td>Sato</td>
+                  <td>7</td>
+                  <td class="col-hide">2 carp</td>
+                  <td><span class="status ready">Rigged</span></td>
+                  <td class="col-hide">3.6m</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Quick actions</h3>
+            </div>
+            <div class="form-row">
+              <label for="pole-select">Assign pole</label>
+              <select id="pole-select">
+                <option>Pole 8 — available</option>
+                <option>Pole 9 — available</option>
+                <option>Pole 10 — reserved</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="family-input">Family name</label>
+              <input type="text" id="family-input" placeholder="Enter family name">
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="fukinagashi" checked>
+              <label for="fukinagashi">Include fukinagashi windsock</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="notify">
+              <label for="notify">Notify block on assignment</label>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:var(--space-sm);">Assign pole</button>
+          </div>
+        </div>
+
+        <div class="dash-grid" style="margin-top:var(--space-lg);">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Growth milestones</h3>
+            </div>
+            <div class="chart-bars">
+              <div class="chart-bar" style="height:45%;background:var(--accent);"></div>
+              <div class="chart-bar" style="height:62%;background:var(--accent-2);"></div>
+              <div class="chart-bar" style="height:55%;background:var(--accent);"></div>
+              <div class="chart-bar" style="height:78%;background:var(--accent-3);"></div>
+              <div class="chart-bar" style="height:70%;background:var(--accent-2);"></div>
+              <div class="chart-bar" style="height:85%;background:var(--accent);"></div>
+              <div class="chart-bar" style="height:90%;background:var(--accent-3);"></div>
+            </div>
+            <p style="font-size:var(--text-small);color:var(--muted);margin-top:var(--space-md);">Average child height across registered families, 2019–2026. Current cohort trending +4cm year over year.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Recent activity</h3>
+            </div>
+            <ul class="activity-list">
+              <li class="activity-item">
+                <span class="activity-dot green"></span>
+                <div>
+                  <div class="activity-text">Yamamoto rigged pole 5 with 4 streamers</div>
+                  <div class="activity-time">2 hours ago</div>
+                </div>
+              </li>
+              <li class="activity-item">
+                <span class="activity-dot pop"></span>
+                <div>
+                  <div class="activity-text">Wind alert issued for Watanabe pole 6</div>
+                  <div class="activity-time">4 hours ago</div>
+                </div>
+              </li>
+              <li class="activity-item">
+                <span class="activity-dot blue"></span>
+                <div>
+                  <div class="activity-text">Suzuki family joined the block board</div>
+                  <div class="activity-time">Yesterday</div>
+                </div>
+              </li>
+              <li class="activity-item">
+                <span class="activity-dot green"></span>
+                <div>
+                  <div class="activity-text">Kashiwa mochi pickup scheduled for May 4</div>
+                  <div class="activity-time">2 days ago</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOBORI — Mark the season. Honor the child.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== NOBORI Design Language ===== */
+  :root {
+    /* Color */
+    --sky: #FFFFFF;
+    --ink: #0A0A0A;
+    --blue: #0066FF;
+    --leaf: #00B86B;
+    --pop: #FF2D55;
+
+    /* Type */
+    --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* Type scale */
+    --type-display-xl: 96px;
+    --type-display-lg: 64px;
+    --type-display-md: 40px;
+    --type-heading: 24px;
+    --type-body-lg: 19px;
+    --type-body: 17px;
+    --type-body-sm: 15px;
+    --type-caption: 13px;
+    --type-mono: 14px;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+    --space-9: 96px;
+    --space-10: 128px;
+    --space-11: 192px;
+
+    /* Radius */
+    --radius-0: 0px;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-pill: 9999px;
+
+    /* Control */
+    --control-height: 48px;
+
+    /* Motion */
+    --motion-quick: 120ms cubic-bezier(0.2, 0, 0, 1);
+    --motion-deliberate: 240ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    line-height: 1.55;
+    color: var(--ink);
+    background: var(--sky);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  img { display: block; max-width: 100%; height: auto; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ===== Typography ===== */
+  .display-xl {
+    font-size: var(--type-display-xl);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+  }
+  .display-lg {
+    font-size: var(--type-display-lg);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+  .display-md {
+    font-size: var(--type-display-md);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .heading {
+    font-size: var(--type-heading);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  .body-lg {
+    font-size: var(--type-body-lg);
+    line-height: 1.5;
+  }
+  .body-sm {
+    font-size: var(--type-body-sm);
+    line-height: 1.5;
+  }
+  .caption {
+    font-size: var(--type-caption);
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .mono {
+    font-family: var(--font-mono);
+    font-size: var(--type-mono);
+  }
+
+  /* ===== Layout ===== */
+  .container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--space-9);
+  }
+  @media (max-width: 768px) {
+    .container { padding: 0 var(--space-5); }
+  }
+
+  .section {
+    padding: var(--space-10) 0;
+  }
+  @media (max-width: 768px) {
+    .section { padding: var(--space-9) 0; }
+  }
+
+  /* ===== Navigation ===== */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--sky);
+    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--ink);
+    border-radius: var(--radius-0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sky);
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: var(--type-body-sm);
+    font-weight: 500;
+    color: var(--ink);
+    opacity: 0.7;
+    transition: opacity var(--motion-quick);
+  }
+  .nav-links a:hover { opacity: 1; }
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+  }
+
+  /* ===== Buttons ===== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--control-height);
+    padding: 0 var(--space-5);
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--motion-quick);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { cursor: not-allowed; opacity: 0.3; }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--sky);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--blue);
+  }
+
+  .btn-secondary {
+    background: var(--sky);
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--sky);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(10, 10, 10, 0.06);
+  }
+
+  .btn-accent-blue {
+    background: var(--blue);
+    color: var(--sky);
+  }
+  .btn-accent-blue:hover:not(:disabled) {
+    background: var(--sky);
+    color: var(--blue);
+    border-color: var(--blue);
+  }
+
+  .btn-sm {
+    height: 40px;
+    padding: 0 var(--space-4);
+    font-size: var(--type-body-sm);
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    position: relative;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .hero-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+  }
+  .hero-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.95) 100%);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-7) 0 var(--space-9);
+  }
+  .hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--ink);
+    color: var(--sky);
+    border-radius: var(--radius-pill);
+    font-size: var(--type-caption);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .hero-tag-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--leaf);
+    border-radius: var(--radius-pill);
+  }
+  .hero-date {
+    font-family: var(--font-mono);
+    font-size: var(--type-mono);
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .hero-headline {
+    max-width: 900px;
+    margin-top: auto;
+  }
+  .hero-headline h1 {
+    font-size: clamp(48px, 9vw, 120px);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .hero-headline h1 .accent {
+    color: var(--blue);
+  }
+  .hero-headline h1 .pop {
+    color: var(--pop);
+  }
+  .hero-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-7);
+    align-items: end;
+    margin-top: var(--space-7);
+  }
+  .hero-lead {
+    max-width: 480px;
+    font-size: var(--type-body-lg);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .hero-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+  }
+  @media (max-width: 768px) {
+    .hero-bottom {
+      grid-template-columns: 1fr;
+      gap: var(--space-5);
+    }
+    .hero-actions { justify-content: flex-start; flex-wrap: wrap; }
+    .hero-top { flex-direction: column; gap: var(--space-4); }
+  }
+
+  /* ===== Marquee ===== */
+  .marquee {
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: var(--space-4) 0;
+    overflow: hidden;
+    background: var(--sky);
+  }
+  .marquee-inner {
+    display: flex;
+    gap: var(--space-7);
+    animation: marquee 30s linear infinite;
+    white-space: nowrap;
+  }
+  .marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--type-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .marquee-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-pill);
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ===== Section header ===== */
+  .section-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--space-7);
+    margin-bottom: var(--space-9);
+    align-items: end;
+  }
+  .section-header .caption { display: block; margin-bottom: var(--space-3); }
+  .section-header h2 {
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+  .section-header p {
+    font-size: var(--type-body-lg);
+    line-height: 1.5;
+    max-width: 560px;
+    opacity: 0.8;
+  }
+  @media (max-width: 768px) {
+    .section-header { grid-template-columns: 1fr; gap: var(--space-5); }
+  }
+
+  /* ===== Feature grid ===== */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--space-5);
+  }
+  .feature {
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    background: var(--sky);
+    transition: all var(--motion-quick);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .feature:hover {
+    border-color: rgba(10, 10, 10, 0.2);
+    transform: translateY(-2px);
+  }
+  .feature-1 { grid-column: span 7; }
+  .feature-2 { grid-column: span 5; }
+  .feature-3 { grid-column: span 5; }
+  .feature-4 { grid-column: span 7; }
+  .feature-5 { grid-column: span 12; }
+  @media (max-width: 768px) {
+    .feature-1, .feature-2, .feature-3, .feature-4, .feature-5 { grid-column: span 12; }
+  }
+  .feature-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--ink);
+  }
+  .feature-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .feature-image.tall { aspect-ratio: 4/3; }
+  .feature-image.square { aspect-ratio: 1/1; }
+  .feature-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-caption);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .feature-label-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+  }
+  .feature h3 {
+    font-size: var(--type-display-md);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .feature p {
+    font-size: var(--type-body);
+    line-height: 1.55;
+    opacity: 0.75;
+  }
+  .feature-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--space-4);
+    border-top: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .feature-meta .mono {
+    font-size: var(--type-caption);
+    opacity: 0.6;
+  }
+
+  /* ===== Story section ===== */
+  .story {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--space-9);
+    align-items: center;
+  }
+  .story-image {
+    aspect-ratio: 4/5;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--ink);
+  }
+  .story-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .story-content .caption { margin-bottom: var(--space-4); }
+  .story-content h2 {
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    margin-bottom: var(--space-5);
+  }
+  .story-content p {
+    font-size: var(--type-body-lg);
+    line-height: 1.55;
+    margin-bottom: var(--space-4);
+    max-width: 560px;
+  }
+  .story-content p:last-of-type { margin-bottom: var(--space-6); }
+  .story-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+    padding-top: var(--space-6);
+    border-top: 1px solid rgba(10, 10, 10, 0.08);
+  }
+  .stat-value {
+    font-size: var(--type-display-md);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+  }
+  .stat-label {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    opacity: 0.6;
+  }
+  @media (max-width: 768px) {
+    .story { grid-template-columns: 1fr; gap: var(--space-7); }
+    .story-stats { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ===== Calendar section ===== */
+  .calendar {
+    background: var(--ink);
+    color: var(--sky);
+    border-radius: var(--radius-md);
+    padding: var(--space-9);
+    overflow: hidden;
+    position: relative;
+  }
+  .calendar::before {
+    content: '';
+    position: absolute;
+    top: var(--space-7);
+    right: var(--space-7);
+    width: 120px;
+    height: 120px;
+    background: var(--blue);
+    border-radius: var(--radius-pill);
+    opacity: 0.15;
+  }
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--space-7);
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+  .calendar-header .caption { color: var(--sky); opacity: 0.6; margin-bottom: var(--space-3); }
+  .calendar-header h2 {
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .month {
+    background: var(--ink);
+    padding: var(--space-4);
+    aspect-ratio: 1/1.2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: background var(--motion-quick);
+    cursor: pointer;
+  }
+  .month:hover { background: rgba(255, 255, 255, 0.05); }
+  .month-name {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    opacity: 0.6;
+  }
+  .month-num {
+    font-family: var(--font-mono);
+    font-size: var(--type-heading);
+    font-weight: 500;
+  }
+  .month.active {
+    background: var(--blue);
+  }
+  .month.active .month-name { opacity: 1; }
+  .month.active .month-num { color: var(--sky); }
+  .month.featured {
+    background: var(--pop);
+  }
+  .month.featured .month-name { opacity: 1; }
+  .month.featured .month-num { color: var(--sky); }
+  @media (max-width: 768px) {
+    .calendar-grid { grid-template-columns: repeat(4, 1fr); }
+    .calendar { padding: var(--space-7); }
+  }
+  @media (max-width: 480px) {
+    .calendar-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* ===== Testimonial ===== */
+  .testimonial {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .testimonial blockquote {
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin-bottom: var(--space-6);
+  }
+  .testimonial blockquote .accent { color: var(--blue); }
+  .testimonial cite {
+    font-style: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+  }
+  .testimonial-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: var(--sky);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+  .testimonial-meta {
+    text-align: left;
+  }
+  .testimonial-meta strong {
+    display: block;
+    font-size: var(--type-body);
+    font-weight: 600;
+  }
+  .testimonial-meta span {
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+  }
+
+  /* ===== Pricing ===== */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+  }
+  .pricing-card {
+    border: 1px solid rgba(10, 10, 10, 0.08);
+    border-radius: var(--radius-md);
+    padding: var(--space-7);
+    background: var(--sky);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    transition: all var(--motion-quick);
+  }
+  .pricing-card:hover {
+    border-color: rgba(10, 10, 10, 0.2);
+    transform: translateY(-2px);
+  }
+  .pricing-card.featured {
+    background: var(--ink);
+    color: var(--sky);
+    border-color: var(--ink);
+  }
+  .pricing-card.featured .pricing-name { color: var(--sky); }
+  .pricing-card.featured .pricing-price { color: var(--sky); }
+  .pricing-card.featured .pricing-feature { color: var(--sky); }
+  .pricing-card.featured .pricing-feature::before { background: var(--blue); }
+  .pricing-name {
+    font-size: var(--type-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .pricing-price {
+    font-size: var(--type-display-lg);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .pricing-price .unit {
+    font-size: var(--type-body);
+    font-weight: 400;
+    opacity: 0.6;
+  }
+  .pricing-desc {
+    font-size: var(--type-body-sm);
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+  .pricing-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: var(--space-3) 0;
+  }
+  .pricing-feature {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--type-body-sm);
+  }
+  .pricing-feature::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--ink);
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+  }
+  .pricing-card .btn { margin-top: auto; }
+  @media (max-width: 768px) {
+    .pricing-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== CTA section ===== */
+  .cta {
+    background: var(--blue);
+    color: var(--sky);
+    border-radius: var(--radius-md);
+    padding: var(--space-10);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    width: 300px;
+    height: 300px;
+    background: var(--pop);
+    border-radius: var(--radius-pill);
+    opacity: 0.3;
+  }
+  .cta::after {
+    content: '';
+    position: absolute;
+    bottom: -150px;
+    right: -150px;
+    width: 400px;
+    height: 400px;
+    background: var(--leaf);
+    border-radius: var(--radius-pill);
+    opacity: 0.2;
+  }
+  .cta-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .cta h2 {
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    margin-bottom: var(--space-5);
+  }
+  .cta p {
+    font-size: var(--type-body-lg);
+    line-height: 1.5;
+    margin-bottom: var(--space-7);
+    opacity: 0.9;
+  }
+  .cta-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta .btn-primary {
+    background: var(--sky);
+    color: var(--blue);
+  }
+  .cta .btn-primary:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--sky);
+  }
+  .cta .btn-secondary {
+    background: transparent;
+    color: var(--sky);
+    border-color: var(--sky);
+  }
+  .cta .btn-secondary:hover:not(:disabled) {
+    background: var(--sky);
+    color: var(--blue);
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    border-top: 1px solid rgba(10, 10, 10, 0.08);
+    padding: var(--space-9) 0 var(--space-7);
+  }
+  .footer-inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-7);
+    margin-bottom: var(--space-7);
+  }
+  .footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .footer-brand .nav-brand { font-size: 24px; }
+  .footer-brand p {
+    font-size: var(--type-body-sm);
+    opacity: 0.7;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+  .footer-col h4 {
+    font-size: var(--type-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    margin-bottom: var(--space-4);
+    opacity: 0.6;
+  }
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .footer-col a {
+    font-size: var(--type-body-sm);
+    transition: opacity var(--motion-quick);
+  }
+  .footer-col a:hover { opacity: 0.6; }
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--space-5);
+    border-top: 1px solid rgba(10, 10, 10, 0.08);
+    font-size: var(--type-body-sm);
+    opacity: 0.6;
+  }
+  @media (max-width: 768px) {
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+    .footer-bottom { flex-direction: column; gap: var(--space-3); align-items: flex-start; }
+  }
+
+  /* ===== Form ===== */
+  .form-row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .input {
+    height: var(--control-height);
+    padding: 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--type-body);
+    color: var(--ink);
+    background: var(--sky);
+    border: 1px solid rgba(10, 10, 10, 0.2);
+    border-radius: var(--radius-sm);
+    transition: all var(--motion-quick);
+    flex: 1;
+    min-width: 0;
+  }
+  .input::placeholder { color: rgba(10, 10, 10, 0.4); }
+  .input:hover { border-color: rgba(10, 10, 10, 0.4); }
+  .input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+  }
+  .input:disabled {
+    background: rgba(10, 10, 10, 0.04);
+    border-color: rgba(10, 10, 10, 0.1);
+    cursor: not-allowed;
+  }
+
+  /* ===== Reduced motion ===== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .marquee-inner { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="#" class="nav-brand">
+      <span class="nav-brand-mark">N</span>
+      <span>NOBORI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#story">Story</a></li>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <a href="#cta" class="btn btn-primary btn-sm">Start free trial</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-image">
+    <img src="media/hero-koinobori-sky.jpg" alt="Koinobori carp streamers rising against a vivid blue May sky">
+  </div>
+  <div class="container hero-content">
+    <div class="hero-top">
+      <span class="hero-tag">
+        <span class="hero-tag-dot"></span>
+        Kodomo no Hi · May 5
+      </span>
+      <span class="hero-date">2026.05.05 — TUESDAY</span>
+    </div>
+    <div class="hero-headline">
+      <h1>
+        Mark the season.<br>
+        Honor the <span class="accent">child</span>.<br>
+        Watch the carp <span class="pop">rise</span>.
+      </h1>
+    </div>
+    <div class="hero-bottom">
+      <p class="hero-lead">
+        NOBORI is a seasonal family calendar for Japanese festivals — built for parents who want their children to grow up inside the rhythm of the year, not outside it.
+      </p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn btn-primary">Plan the festival</a>
+        <a href="#features" class="btn btn-secondary">See how it works</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Marquee -->
+<div class="marquee">
+  <div class="marquee-inner">
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--blue)"></span>HINAMATSURI · MAR 3</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--leaf)"></span>HANAMI · APR 4</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--pop)"></span>KODOMO NO HI · MAY 5</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--blue)"></span>OBON · AUG 13</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--leaf)"></span>TSUKIMI · SEP 15</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--pop)"></span>SHICHI-GO-SAN · NOV 15</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--blue)"></span>HINAMATSURI · MAR 3</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--leaf)"></span>HANAMI · APR 4</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--pop)"></span>KODOMO NO HI · MAY 5</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--blue)"></span>OBON · AUG 13</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--leaf)"></span>TSUKIMI · SEP 15</span>
+    <span class="marquee-item"><span class="marquee-dot" style="background: var(--pop)"></span>SHICHI-GO-SAN · NOV 15</span>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="caption">01 — The system</span>
+      </div>
+      <div>
+        <h2>Six festivals. One rhythm. A childhood lived in season.</h2>
+      </div>
+    </div>
+
+    <div class="features">
+      <article class="feature feature-1">
+        <div class="feature-image">
+          <img src="media/feature-festival-flatlay.jpg" alt="Traditional Kodomo no Hi festival items arranged on white">
+        </div>
+        <span class="feature-label">
+          <span class="feature-label-dot" style="background: var(--blue)"></span>
+          Calendar
+        </span>
+        <h3>The year, marked.</h3>
+        <p>Six major seasonal festivals, each with a 14-day preparation window. NOBORI tells you what's coming, what to gather, and what to make — so the festival arrives as a celebration, not a scramble.</p>
+        <div class="feature-meta">
+          <span class="mono">14-day prep window</span>
+          <span class="mono">06 festivals / year</span>
+        </div>
+      </article>
+
+      <article class="feature feature-2">
+        <span class="feature-label">
+          <span class="feature-label-dot" style="background: var(--leaf)"></span>
+          Activities
+        </span>
+        <h3>Make, don't buy.</h3>
+        <p>Step-by-step guides for koinobori, chimaki, kabuto helmets, and the other crafts that anchor each festival. Designed for small hands and patient parents.</p>
+        <div class="feature-meta">
+          <span class="mono">42 activities</span>
+          <span class="mono">Ages 3–12</span>
+        </div>
+      </article>
+
+      <article class="feature feature-3">
+        <span class="feature-label">
+          <span class="feature-label-dot" style="background: var(--pop)"></span>
+          Stories
+        </span>
+        <h3>The why behind the what.</h3>
+        <p>Each festival comes with its origin story, retold in plain language — so your child knows they're not just making a carp, they're joining a thousand-year conversation.</p>
+        <div class="feature-meta">
+          <span class="mono">06 origin stories</span>
+          <span class="mono">Read-aloud ready</span>
+        </div>
+      </article>
+
+      <article class="feature feature-4">
+        <div class="feature-image tall">
+          <img src="media/feature-red-carp.jpg" alt="Single red koinobori carp streamer against white">
+        </div>
+        <span class="feature-label">
+          <span class="feature-label-dot" style="background: var(--blue)"></span>
+          Family profiles
+        </span>
+        <h3>One calendar, many children.</h3>
+        <p>Track each child's festival journey — their first koinobori, their first chimaki, the year they carried the family kabuto. Photos, notes, and milestones, kept in one place.</p>
+        <div class="feature-meta">
+          <span class="mono">Up to 6 children</span>
+          <span class="mono">Private by default</span>
+        </div>
+      </article>
+
+      <article class="feature feature-5">
+        <div class="feature-image">
+          <img src="media/feature-blue-carp.jpg" alt="Close-up of blue koinobori carp streamer">
+        </div>
+        <span class="feature-label">
+          <span class="feature-label-dot" style="background: var(--leaf)"></span>
+          Reminders
+        </span>
+        <h3>The festival arrives. You're ready.</h3>
+        <p>Smart reminders that adapt to your family's pace — gentle nudges two weeks out, material lists one week out, and a final morning-of check so nothing is forgotten on May 5.</p>
+        <div class="feature-meta">
+          <span class="mono">3 reminder tiers</span>
+          <span class="mono">iOS · Android · Web</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Story -->
+<section class="section" id="story">
+  <div class="container">
+    <div class="story">
+      <div class="story-image">
+        <img src="media/family-celebration.jpg" alt="Family watching koinobori from apartment window">
+      </div>
+      <div class="story-content">
+        <span class="caption">02 — The why</span>
+        <h2>Built for parents who want their children to grow up inside the year.</h2>
+        <p>The festivals are not nostalgia. They are not performance. They are the rhythm a child grows inside — the May sky full of carp, the March dolls, the November kimono. NOBORI is a tool for families who want that rhythm to be present, not performed.</p>
+        <p>We don't gamify. We don't streak. We don't notify you that you haven't opened the app in 9 days. NOBORI is a calendar that respects your attention and a craft guide that respects your hands.</p>
+        <div class="story-stats">
+          <div>
+            <div class="stat-value">2,400+</div>
+            <div class="stat-label">Families</div>
+          </div>
+          <div>
+            <div class="stat-value">06</div>
+            <div class="stat-label">Festivals</div>
+          </div>
+          <div>
+            <div class="stat-value">42</div>
+            <div class="stat-label">Activities</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Calendar -->
+<section class="section" id="calendar">
+  <div class="container">
+    <div class="calendar">
+      <div class="calendar-header">
+        <div>
+          <span class="caption">03 — The year</span>
+          <h2>Twelve months.<br>Six festivals.</h2>
+        </div>
+        <p style="font-size: var(--type-body-lg); max-width: 360px; opacity: 0.8;">
+          Each month has its work. NOBORI marks the major festivals and the quiet weeks of preparation between them.
+        </p>
+      </div>
+      <div class="calendar-grid">
+        <div class="month">
+          <span class="month-name">Jan</span>
+          <span class="month-num">01</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Feb</span>
+          <span class="month-num">02</span>
+        </div>
+        <div class="month active">
+          <span class="month-name">Mar</span>
+          <span class="month-num">03</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Apr</span>
+          <span class="month-num">04</span>
+        </div>
+        <div class="month featured">
+          <span class="month-name">May</span>
+          <span class="month-num">05</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Jun</span>
+          <span class="month-num">06</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Jul</span>
+          <span class="month-num">07</span>
+        </div>
+        <div class="month active">
+          <span class="month-name">Aug</span>
+          <span class="month-num">08</span>
+        </div>
+        <div class="month active">
+          <span class="month-name">Sep</span>
+          <span class="month-num">09</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Oct</span>
+          <span class="month-num">10</span>
+        </div>
+        <div class="month active">
+          <span class="month-name">Nov</span>
+          <span class="month-num">11</span>
+        </div>
+        <div class="month">
+          <span class="month-name">Dec</span>
+          <span class="month-num">12</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonial -->
+<section class="section">
+  <div class="container">
+    <div class="testimonial">
+      <blockquote>
+        "My daughter asked why we hang the carp every May. I didn't have a good answer. <span class="accent">NOBORI gave me one — and now she tells her friends.</span>"
+      </blockquote>
+      <cite>
+        <div class="testimonial-avatar">YK</div>
+        <div class="testimonial-meta">
+          <strong>Yuki K.</strong>
+          <span>Parent · Tokyo · since 2024</span>
+        </div>
+      </cite>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <span class="caption">04 — The plan</span>
+      </div>
+      <div>
+        <h2>One family. One year. ¥3,600.</h2>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-name">Single</div>
+          <div class="pricing-price">¥1,200<span class="unit">/year</span></div>
+          <p class="pricing-desc">One child. All six festivals. All activities.</p>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature">1 child profile</li>
+          <li class="pricing-feature">6 festivals, 42 activities</li>
+          <li class="pricing-feature">iOS, Android, Web</li>
+          <li class="pricing-feature">Email support</li>
+        </ul>
+        <a href="#cta" class="btn btn-secondary">Start free trial</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div>
+          <div class="pricing-name">Family</div>
+          <div class="pricing-price">¥3,600<span class="unit">/year</span></div>
+          <p class="pricing-desc">Up to six children. Shared calendar. Photo archive.</p>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature">Up to 6 child profiles</li>
+          <li class="pricing-feature">6 festivals, 42 activities</li>
+          <li class="pricing-feature">Photo archive & milestones</li>
+          <li class="pricing-feature">Shared family calendar</li>
+          <li class="pricing-feature">Priority support</li>
+        </ul>
+        <a href="#cta" class="btn btn-primary">Start free trial</a>
+      </div>
+
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-name">Gift</div>
+          <div class="pricing-price">¥5,400<span class="unit">/year</span></div>
+          <p class="pricing-desc">Give a year of NOBORI to a family you love.</p>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature">Everything in Family</li>
+          <li class="pricing-feature">Gift wrap & personal note</li>
+          <li class="pricing-feature">Printed festival guide</li>
+          <li class="pricing-feature">Hand-written card</li>
+        </ul>
+        <a href="#cta" class="btn btn-secondary">Send as gift</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" id="cta">
+  <div class="container">
+    <div class="cta">
+      <div class="cta-inner">
+        <h2>The carp rises.<br>So does your family.</h2>
+        <p>Start a 14-day free trial. No credit card. Cancel any time before May 5 and the festival is still yours.</p>
+        <form class="form-row" style="max-width: 480px; margin: 0 auto var(--space-5);" onsubmit="event.preventDefault();">
+          <input type="email" class="input" placeholder="your@email.com" aria-label="Email address" required>
+          <button type="submit" class="btn btn-primary">Start trial</button>
+        </form>
+        <p style="font-size: var(--type-body-sm); opacity: 0.7;">14 days free · Cancel anytime · ¥3,600/year after</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="nav-brand">
+          <span class="nav-brand-mark">N</span>
+          <span>NOBORI</span>
+        </a>
+        <p>A seasonal family calendar for Japanese festivals. Built in Tokyo. Used in 23 countries.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#calendar">Calendar</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Festivals</h4>
+        <ul>
+          <li><a href="#">Hinamatsuri</a></li>
+          <li><a href="#">Hanami</a></li>
+          <li><a href="#">Kodomo no Hi</a></li>
+          <li><a href="#">Obon</a></li>
+          <li><a href="#">Tsukimi</a></li>
+          <li><a href="#">Shichi-Go-San</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 NOBORI. All rights reserved.</span>
+      <span class="mono">v2.4.1 · Tokyo, Japan</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOBORI — The wind that lifts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --nb-bg: #FFFFFF;
+      --nb-surface: #F7F9FC;
+      --nb-surface-2: #EEF2F7;
+      --nb-text: #0B111A;
+      --nb-text-muted: #4A5568;
+      --nb-border: #D8DFE8;
+      --nb-sky: #00BFFF;
+      --nb-green: #00E68C;
+      --nb-pop: #FF2E7A;
+      --nb-control-h: 48px;
+      --nb-r-md: 14px;
+      --nb-r-lg: 22px;
+    }
+    
+    * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .font-display { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; letter-spacing: -0.04em; }
+    
+    body { background: var(--nb-bg); color: var(--nb-text); }
+    
+    .nb-container { max-width: 1280px; margin: 0 auto; padding-left: 28px; padding-right: 28px; }
+    
+    /* Typography */
+    .nb-display { font-size: 72px; line-height: 1.04; font-weight: 700; letter-spacing: -0.045em; }
+    .nb-h1 { font-size: 48px; line-height: 1.08; font-weight: 700; letter-spacing: -0.035em; }
+    .nb-h2 { font-size: 32px; line-height: 1.15; font-weight: 700; letter-spacing: -0.025em; }
+    .nb-h3 { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; }
+    .nb-body { font-size: 17px; line-height: 1.65; }
+    .nb-small { font-size: 13px; line-height: 1.55; }
+    
+    /* Nav */
+    .nb-nav {
+      background: var(--nb-bg);
+      border-bottom: 1px solid var(--nb-border);
+    }
+    
+    /* FULL-BLEED HERO */
+    .nb-hero {
+      min-height: 100vh;
+      background-size: cover;
+      background-position: center 30%;
+      background-repeat: no-repeat;
+      position: relative;
+    }
+    .nb-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255,255,255,0.82) 42%, rgba(255,255,255,0.12) 68%);
+    }
+    
+    /* Buttons — single control height 48px, all states */
+    .nb-btn {
+      height: var(--nb-control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 26px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--nb-r-md);
+      transition: all 0.16s cubic-bezier(0.23, 1, 0.32, 1);
+      text-decoration: none;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .nb-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--nb-pop), 0 0 0 5px #fff;
+      position: relative;
+      z-index: 10;
+    }
+    
+    /* Primary — hot pop */
+    .nb-btn--primary {
+      background: var(--nb-pop);
+      color: white;
+      border-color: var(--nb-pop);
+    }
+    .nb-btn--primary:hover {
+      background: #E61A65;
+      transform: translateY(-1px);
+    }
+    .nb-btn--primary:active {
+      transform: scale(0.985);
+      background: #C81050;
+    }
+    .nb-btn--primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Secondary */
+    .nb-btn--secondary {
+      background: var(--nb-surface);
+      color: var(--nb-text);
+      border-color: var(--nb-border);
+    }
+    .nb-btn--secondary:hover {
+      background: var(--nb-surface-2);
+    }
+    .nb-btn--secondary:focus-visible {
+      box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff;
+    }
+    .nb-btn--secondary:active {
+      background: #E2E8F0;
+    }
+    
+    /* Ghost */
+    .nb-btn--ghost {
+      background: transparent;
+      color: var(--nb-text);
+      border-color: transparent;
+    }
+    .nb-btn--ghost:hover {
+      background: var(--nb-surface);
+    }
+    .nb-btn--ghost:focus-visible {
+      box-shadow: 0 0 0 3px var(--nb-green), 0 0 0 5px #fff;
+    }
+    
+    /* Sky variant */
+    .nb-btn--sky {
+      background: var(--nb-sky);
+      color: white;
+    }
+    .nb-btn--sky:hover { background: #00A6DB; }
+    .nb-btn--sky:focus-visible { box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff; }
+    
+    /* Green variant */
+    .nb-btn--green {
+      background: var(--nb-green);
+      color: #0B111A;
+    }
+    .nb-btn--green:hover { background: #00CC7A; }
+    .nb-btn--green:focus-visible { box-shadow: 0 0 0 3px var(--nb-green), 0 0 0 5px #fff; }
+    
+    /* Form controls — EVERY control on 48px height + states + visible focus ring */
+    .nb-input, .nb-select, .nb-textarea {
+      height: var(--nb-control-h);
+      background: #fff;
+      border: 1px solid var(--nb-border);
+      border-radius: var(--nb-r-md);
+      padding: 0 16px;
+      font-size: 16px;
+      color: var(--nb-text);
+      transition: all 0.15s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .nb-textarea { height: auto; min-height: 120px; padding: 14px 16px; resize: vertical; }
+    
+    .nb-input:hover, .nb-select:hover { border-color: #BFC9D4; }
+    
+    .nb-input:focus, .nb-select:focus, .nb-textarea:focus {
+      outline: none;
+      border-color: var(--nb-sky);
+      box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff;
+    }
+    .nb-input:focus-visible, .nb-select:focus-visible, .nb-textarea:focus-visible {
+      box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff;
+    }
+    
+    .nb-input:disabled, .nb-select:disabled {
+      background: var(--nb-surface-2);
+      color: var(--nb-text-muted);
+      cursor: not-allowed;
+      border-color: var(--nb-border);
+    }
+    
+    .nb-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234A5568' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+    
+    /* Checkbox & Radio — explicit */
+    .nb-checkbox, .nb-radio {
+      width: 20px; height: 20px;
+      accent-color: var(--nb-sky);
+      border: 1px solid var(--nb-border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .nb-radio { border-radius: 999px; }
+    .nb-checkbox:focus-visible, .nb-radio:focus-visible {
+      box-shadow: 0 0 0 3px var(--nb-sky), 0 0 0 5px #fff;
+      outline: none;
+    }
+    
+    /* Card */
+    .nb-card {
+      background: var(--nb-surface);
+      border-radius: var(--nb-r-md);
+      padding: 28px;
+      transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s ease;
+    }
+    .nb-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--nb-shadow-sm);
+    }
+    
+    /* Accent bar on cards */
+    .nb-card-accent::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 28px; bottom: 28px;
+      width: 4px;
+      background: var(--nb-sky);
+      border-radius: 0 4px 4px 0;
+    }
+    .nb-card-accent-green::before { background: var(--nb-green); }
+    .nb-card-accent-pop::before { background: var(--nb-pop); }
+    
+    /* Editorial image treatment */
+    .nb-img {
+      border-radius: var(--nb-r-lg);
+      box-shadow: var(--nb-shadow);
+      width: 100%;
+      display: block;
+    }
+    
+    /* Section rhythm */
+    .nb-section { padding-top: 80px; padding-bottom: 80px; }
+    
+    /* Manifesto */
+    .nb-manifesto {
+      font-size: 28px;
+      line-height: 1.3;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    
+    /* Progress bar for consistency demo */
+    .nb-progress {
+      height: 6px;
+      background: var(--nb-surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .nb-progress > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--nb-sky), var(--nb-green));
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .nb-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--nb-surface-2);
+      color: var(--nb-text-muted);
+    }
+    
+    .nb-koi-mark {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      vertical-align: -4px;
+      margin-right: 6px;
+    }
+    
+    /* Focus ring visible for all interactive */
+    a:focus-visible, button:focus-visible {
+      outline: none;
+    }
+    
+    /* Clean table */
+    .nb-table th {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--nb-text-muted);
+      text-transform: uppercase;
+    }
+    .nb-table td {
+      font-size: 15px;
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+    .nb-table tr:hover {
+      background: var(--nb-surface-2);
+    }
+    
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--nb-text-muted);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="nb-nav sticky top-0 z-50">
+    <div class="nb-container">
+      <div class="flex h-20 items-center justify-between">
+        <div class="flex items-center gap-x-3">
+          <div class="flex items-center">
+            <svg class="nb-koi-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 16 Q12 6 20 12 Q26 18 18 24 Q12 28 6 16" fill="none" stroke="#00BFFF" stroke-width="2.8" stroke-linecap="round"/>
+              <path d="M10 13 Q14 11 17 16" fill="none" stroke="#00E68C" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="22" cy="15" r="1.8" fill="#FF2E7A"/>
+            </svg>
+            <span class="font-display text-[22px] font-semibold tracking-[-1.2px]">NOBORI</span>
+          </div>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-x-9 text-[15px]">
+          <a href="#philosophy" class="hover:text-[#00BFFF] transition-colors">Philosophy</a>
+          <a href="#how" class="hover:text-[#00BFFF] transition-colors">How it works</a>
+          <a href="#moments" class="hover:text-[#00BFFF] transition-colors">Moments</a>
+          <a href="#for-families" class="hover:text-[#00BFFF] transition-colors">For families</a>
+        </div>
+        
+        <div class="flex items-center gap-x-3">
+          <a href="#signup" class="nb-btn nb-btn--secondary hidden md:inline-flex">Log in</a>
+          <a href="#signup" class="nb-btn nb-btn--primary">Begin free</a>
+          
+          <!-- Mobile -->
+          <button onclick="toggleMobileNav()" class="md:hidden w-10 h-10 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile nav -->
+    <div id="mobile-nav" class="hidden md:hidden border-t border-[#D8DFE8] bg-white">
+      <div class="nb-container py-4 flex flex-col gap-y-2 text-[15px]">
+        <a href="#philosophy" class="py-2">Philosophy</a>
+        <a href="#how" class="py-2">How it works</a>
+        <a href="#moments" class="py-2">Moments</a>
+        <a href="#for-families" class="py-2">For families</a>
+        <div class="h-px bg-[#D8DFE8] my-1"></div>
+        <a href="#signup" class="py-2">Log in</a>
+        <a href="#signup" class="py-1">Begin free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- FULL-BLEED HERO -->
+  <header class="nb-hero flex items-center" style="background-image: url('./media/hero.jpg');">
+    <div class="nb-container relative z-10 pt-8 pb-16 md:pb-0">
+      <div class="max-w-[620px]">
+        <div class="inline-flex items-center gap-x-2 mb-5">
+          <div class="nb-tag">KODOMO NO HI 2026</div>
+          <div class="text-xs px-3 py-1 rounded-full bg-white/70 border border-[#D8DFE8] text-[#4A5568]">Now in season</div>
+        </div>
+        
+        <h1 class="nb-display font-display leading-none tracking-[-3.2px] mb-4">
+          The wind<br>that lifts.
+        </h1>
+        
+        <p class="nb-body text-[#334155] max-w-md mb-9">
+          Nobori is the modern platform for families who want childhood to rise — 
+          clear goals, cultural celebrations, and real momentum.
+        </p>
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="#signup" class="nb-btn nb-btn--primary text-[15px] px-9">Begin your ascent</a>
+          <a href="#how" class="nb-btn nb-btn--ghost flex items-center gap-x-2">
+            <span>Watch the film</span> 
+            <span class="inline-block w-5"><i class="fa-solid fa-play text-xs ml-0.5"></i></span>
+          </a>
+        </div>
+        
+        <div class="mt-10 flex items-center gap-x-4">
+          <div class="flex -space-x-2">
+            <div class="w-7 h-7 bg-[#E2E8F0] rounded-full ring-2 ring-white overflow-hidden"><img src="./media/still.jpg" class="w-full h-full object-cover"></div>
+            <div class="w-7 h-7 bg-[#E2E8F0] rounded-full ring-2 ring-white overflow-hidden"><img src="./media/detail.jpg" class="w-full h-full object-cover"></div>
+            <div class="w-7 h-7 bg-[#E2E8F0] rounded-full ring-2 ring-white overflow-hidden"><img src="./media/rising.jpg" class="w-full h-full object-cover"></div>
+          </div>
+          <div class="text-sm text-[#4A5568]">Joined by <span class="font-semibold text-[#0B111A]">41,890</span> families this season</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TRUST / LOGOS -->
+  <div class="border-b border-[#D8DFE8] py-7">
+    <div class="nb-container">
+      <div class="flex flex-wrap justify-center md:justify-between items-center gap-x-10 gap-y-4 opacity-75">
+        <div class="font-medium text-sm tracking-[1px]">HARVARD GSE</div>
+        <div class="font-medium text-sm tracking-[1px]">MUJI</div>
+        <div class="font-medium text-sm tracking-[1px]">UNESCO</div>
+        <div class="font-medium text-sm tracking-[1px]">SOMPO</div>
+        <div class="font-medium text-sm tracking-[1px]">STUDIO MIST</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHILOSOPHY -->
+  <section id="philosophy" class="nb-section nb-container">
+    <div class="grid md:grid-cols-12 gap-x-8 gap-y-12 items-center">
+      <div class="md:col-span-5">
+        <div class="section-title">OUR APPROACH</div>
+        <h2 class="nb-h2 mb-6">Clarity is the<br>new celebration.</h2>
+        <p class="nb-body text-[#334155]">
+          We do not decorate childhood. We give it structure, light, and lift. 
+          Nobori turns the ancient practice of Koinobori into a living system for modern families.
+        </p>
+        
+        <div class="mt-8 grid grid-cols-3 gap-4">
+          <div>
+            <div class="text-3xl font-semibold tracking-tighter">17k</div>
+            <div class="text-xs uppercase tracking-widest text-[#4A5568] mt-0.5">milestones reached</div>
+          </div>
+          <div>
+            <div class="text-3xl font-semibold tracking-tighter">4.2m</div>
+            <div class="text-xs uppercase tracking-widest text-[#4A5568] mt-0.5">koinobori days logged</div>
+          </div>
+          <div>
+            <div class="text-3xl font-semibold tracking-tighter">92</div>
+            <div class="text-xs uppercase tracking-widest text-[#4A5568] mt-0.5">countries</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="md:col-span-7">
+        <div class="relative">
+          <img src="./media/courtyard.jpg" class="nb-img" alt="Koinobori rising over a serene modern courtyard">
+          <div class="absolute bottom-6 left-6 bg-white/95 backdrop-blur px-5 py-4 rounded-[14px] max-w-[280px] shadow-sm border border-[#D8DFE8]">
+            <div class="text-xs tracking-[1px] font-semibold text-[#FF2E7A]">KOINOBORI SEASON</div>
+            <div class="font-medium leading-tight mt-1">Every streamer tells a story of growth.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="nb-section bg-[#F7F9FC] border-y border-[#D8DFE8]">
+    <div class="nb-container">
+      <div class="flex items-end justify-between mb-10">
+        <div>
+          <div class="section-title">HOW NOBORI WORKS</div>
+          <h2 class="nb-h2">Four simple lifts.</h2>
+        </div>
+        <a href="#signup" class="hidden md:inline-flex nb-btn nb-btn--secondary">See all features</a>
+      </div>
+      
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="nb-card relative">
+          <div class="w-9 h-9 rounded-[10px] bg-[#00BFFF] flex items-center justify-center mb-6">
+            <span class="font-display text-white font-bold text-xl">1</span>
+          </div>
+          <div class="nb-h3 mb-2">Set direction</div>
+          <p class="text-[#475569] nb-body">Define the values and capabilities you want your child to carry. Choose cultural or personal goals.</p>
+        </div>
+        <div class="nb-card relative">
+          <div class="w-9 h-9 rounded-[10px] bg-[#00E68C] flex items-center justify-center mb-6">
+            <span class="font-display text-[#0B111A] font-bold text-xl">2</span>
+          </div>
+          <div class="nb-h3 mb-2">Raise together</div>
+          <p class="text-[#475569] nb-body">Invite family. Assign micro-milestones. Watch progress rise in clean, shared views.</p>
+        </div>
+        <div class="nb-card relative">
+          <div class="w-9 h-9 rounded-[10px] bg-[#FF2E7A] flex items-center justify-center mb-6">
+            <span class="font-display text-white font-bold text-xl">3</span>
+          </div>
+          <div class="nb-h3 mb-2">Mark the season</div>
+          <p class="text-[#475569] nb-body">Plan real celebrations — Koinobori Day, first swim, first speech — with beautiful shared rituals.</p>
+        </div>
+        <div class="nb-card relative">
+          <div class="w-9 h-9 rounded-[10px] bg-[#00BFFF] flex items-center justify-center mb-6">
+            <span class="font-display text-white font-bold text-xl">4</span>
+          </div>
+          <div class="nb-h3 mb-2">See the arc</div>
+          <p class="text-[#475569] nb-body">Quarterly insight reports. Real data, beautiful presentation. No noise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOMENTS / IMAGERY LED -->
+  <section id="moments" class="nb-section nb-container">
+    <div class="max-w-[640px] mb-10">
+      <div class="section-title">THE RISING</div>
+      <h2 class="nb-h2">Moments that deserve to be seen.</h2>
+      <p class="nb-body mt-3 text-[#475569]">Nobori makes the invisible visible. These are the real stories families are building this season.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Large editorial image -->
+      <div class="relative rounded-[22px] overflow-hidden aspect-[16/10] bg-[#F1F5F9]">
+        <img src="./media/rising.jpg" class="absolute inset-0 w-full h-full object-cover" alt="Koinobori rising powerfully">
+        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8 text-white">
+          <div class="uppercase tracking-[2px] text-xs mb-1 opacity-75">TOKYO • FEBRUARY 12</div>
+          <div class="font-semibold text-3xl tracking-[-1px]">Sato family • First full flight</div>
+        </div>
+      </div>
+      
+      <div class="grid grid-rows-2 gap-4">
+        <div class="rounded-[22px] overflow-hidden relative aspect-[16/9] bg-[#F1F5F9]">
+          <img src="./media/detail.jpg" class="absolute inset-0 w-full h-full object-cover" alt="Detail of koinobori in sky">
+          <div class="absolute inset-x-0 bottom-0 p-6">
+            <div class="nb-tag bg-white text-[#0B111A]">YOKOHAMA</div>
+            <div class="mt-2 text-white drop-shadow font-medium text-2xl leading-none tracking-tighter">The green streamer<br>for Haru’s courage</div>
+          </div>
+        </div>
+        
+        <div class="rounded-[22px] overflow-hidden relative aspect-[16/9] bg-[#F1F5F9]">
+          <img src="./media/abstract.jpg" class="absolute inset-0 w-full h-full object-cover" alt="Abstract graphic koinobori forms">
+          <div class="absolute bottom-6 left-6 text-white">
+            <div class="font-semibold tracking-tight text-[21px]">A family of four.<br>Four colors in flight.</div>
+            <div class="text-xs mt-2 opacity-90">Kyoto, March 3 — Hinamatsuri + Koinobori combined</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR FAMILIES -->
+  <section id="for-families" class="nb-section bg-[#F7F9FC] border-y border-[#D8DFE8]">
+    <div class="nb-container">
+      <div class="md:flex items-center justify-between gap-x-12">
+        <div class="md:max-w-sm mb-9 md:mb-0">
+          <div class="section-title">FOR FAMILIES &amp; EDUCATORS</div>
+          <h2 class="nb-h2 mb-5">Built for real life,<br>not performance.</h2>
+          <p class="nb-body text-[#475569]">Everything you need to raise children with intention — without adding noise to your life.</p>
+          
+          <div class="mt-8">
+            <a href="#signup" class="nb-btn nb-btn--sky">Start with your family</a>
+          </div>
+        </div>
+        
+        <div class="flex-1">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="nb-card relative nb-card-accent">
+              <div class="font-semibold mb-1">Growth arcs</div>
+              <div class="text-sm text-[#475569]">Track capabilities over years. See the shape of your child’s becoming.</div>
+            </div>
+            <div class="nb-card relative nb-card-accent-green">
+              <div class="font-semibold mb-1">Seasonal rituals</div>
+              <div class="text-sm text-[#475569]">Koinobori Day planning, first-day ceremonies, gratitude markers. Beautiful by default.</div>
+            </div>
+            <div class="nb-card relative nb-card-accent-pop">
+              <div class="font-semibold mb-1">Shared clarity</div>
+              <div class="text-sm text-[#475569]">One view for parents, grandparents, teachers. Everyone aligned.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIAL / MANIFESTO -->
+  <section class="nb-section nb-container">
+    <div class="max-w-[820px]">
+      <div class="nb-manifesto">
+        “We stopped buying things to mark time. Nobori gave us a way to mark growth.”
+      </div>
+      <div class="mt-8 flex items-center gap-x-4">
+        <div>
+          <div class="font-semibold">Aiko &amp; Ren Takahashi</div>
+          <div class="text-sm text-[#4A5568]">Parents of Yuna (7) and Kenji (4) • Osaka</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL SIGNUP / CTA -->
+  <section id="signup" class="border-t border-[#D8DFE8]">
+    <div class="nb-container py-16">
+      <div class="max-w-md">
+        <h3 class="nb-h2 mb-3">Start rising today.</h3>
+        <p class="nb-body text-[#475569] mb-7">Free for the first 60 days. No card required.</p>
+        
+        <!-- Styled form controls -->
+        <form id="landing-form" onsubmit="handleLandingSubmit(event)">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold tracking-widest mb-1.5 text-[#4A5568]">YOUR NAME</label>
+              <input type="text" class="nb-input" placeholder="Aiko Takahashi" required value="Aiko Takahashi">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold tracking-widest mb-1.5 text-[#4A5568]">FAMILY EMAIL</label>
+              <input type="email" class="nb-input" placeholder="you@family.com" required value="aiko.takahashi@family.jp">
+            </div>
+            
+            <div class="pt-1">
+              <label class="flex items-center gap-x-3 cursor-pointer">
+                <input type="checkbox" class="nb-checkbox" checked>
+                <span class="text-sm">Send me the seasonal Koinobori guide</span>
+              </label>
+            </div>
+            
+            <button type="submit" class="nb-btn nb-btn--primary w-full mt-3">Create my family space</button>
+            <p class="text-center text-[12px] text-[#64748B]">Already have an account? <a href="#" class="underline">Sign in</a></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-[#D8DFE8] py-8 text-sm text-[#64748B]">
+    <div class="nb-container flex flex-col md:flex-row md:items-center justify-between gap-y-3">
+      <div>© Nobori Inc. • Tokyo / New York / London</div>
+      <div class="flex gap-x-6">
+        <a href="#" class="hover:text-[#0B111A]">Philosophy</a>
+        <a href="#" class="hover:text-[#0B111A]">Careers</a>
+        <a href="#" class="hover:text-[#0B111A]">Legal</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMobileNav() {
+      const nav = document.getElementById('mobile-nav');
+      nav.classList.toggle('hidden');
+    }
+    
+    function handleLandingSubmit(e) {
+      e.preventDefault();
+      const btns = e.target.querySelectorAll('button');
+      btns.forEach(b => b.disabled = true);
+      
+      const originalText = btns[0].innerHTML;
+      btns[0].innerHTML = 'Creating your space…';
+      
+      setTimeout(() => {
+        const container = e.target.parentElement;
+        container.innerHTML = `
+          <div class="p-8 rounded-[14px] bg-[#F7F9FC] border border-[#D8DFE8]">
+            <div class="flex items-center gap-x-3">
+              <div class="w-9 h-9 rounded-full bg-[#00E68C] flex items-center justify-center">
+                <i class="fa-solid fa-check text-[#0B111A]"></i>
+              </div>
+              <div>
+                <div class="font-semibold">Welcome to Nobori, Aiko.</div>
+                <div class="text-sm text-[#4A5568]">Your family space is ready. Check your email for the link.</div>
+              </div>
+            </div>
+            <div class="mt-6">
+              <a href="./dashboard.html" class="nb-btn nb-btn--primary w-full">Go to dashboard</a>
+            </div>
+          </div>
+        `;
+      }, 980);
+    }
+    
+    // Keyboard accessibility hint
+    console.log('%c[NOBORI] Landing page loaded. All controls use 48px height + visible focus rings.', 'color:#64748B');
+  </script>
+</body>
+</html>

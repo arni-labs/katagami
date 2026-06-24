@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kazeform — Family growth, rising together</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-white: #FFFFFF;
+      --color-ink: #0A0A0A;
+      --color-ink-secondary: #2E2E2E;
+      --color-ink-muted: #5C5C5C;
+      --color-sky: #0099FF;
+      --color-leaf: #00E070;
+      --color-pop: #FF2D55;
+      --color-surface-muted: #F6F6F6;
+      --color-surface-sky: #E8F6FF;
+      --color-surface-leaf: #E8FFF2;
+      --color-focus-ring: #0099FF;
+      --font-display: 'Syne', system-ui, sans-serif;
+      --font-body: 'Instrument Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --text-xs: 12px;
+      --text-sm: 14.5px;
+      --text-base: 17px;
+      --text-lg: 20px;
+      --text-xl: 24px;
+      --text-2xl: 32px;
+      --text-3xl: 48px;
+      --text-4xl: 64px;
+      --text-5xl: 80px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --space-10: 128px;
+      --radius-none: 0;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --control-height: 44px;
+      --transition-fast: 120ms ease;
+      --transition-base: 200ms ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      color: var(--color-ink);
+      background: var(--color-white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    img { display: block; max-width: 100%; height: auto; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-5);
+    }
+
+    @media (min-width: 768px) {
+      .container { padding: 0 var(--space-7); }
+    }
+
+    /* Components */
+    .btn-primary {
+      height: var(--control-height);
+      padding: 0 var(--space-5);
+      font: 600 var(--text-sm) var(--font-body);
+      color: var(--color-white);
+      background: var(--color-ink);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary:hover { background: var(--color-ink-secondary); }
+    .btn-primary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+    .btn-primary:active { transform: scale(0.98); background: #000000; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    .btn-secondary {
+      height: var(--control-height);
+      padding: 0 var(--space-5);
+      font: 600 var(--text-sm) var(--font-body);
+      color: var(--color-ink);
+      background: var(--color-surface-sky);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .btn-secondary:hover { background: #D4EEFF; }
+    .btn-secondary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+    .btn-secondary:active { background: #B8E4FF; transform: scale(0.98); }
+    .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-ghost {
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      font: 500 var(--text-sm) var(--font-body);
+      color: var(--color-ink-muted);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: color var(--transition-fast), background var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .btn-ghost:hover { color: var(--color-ink); background: var(--color-surface-muted); }
+    .btn-ghost:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+    .btn-ghost:active { background: #EBEBEB; }
+    .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .input {
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      font: 400 var(--text-base) var(--font-body);
+      color: var(--color-ink);
+      background: var(--color-white);
+      border: none;
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 2px var(--color-surface-muted);
+      width: 100%;
+      transition: box-shadow var(--transition-fast);
+    }
+    .input::placeholder { color: var(--color-ink-muted); }
+    .input:hover { box-shadow: inset 0 0 0 2px #E0E0E0; }
+    .input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--color-sky), 0 0 0 3px rgba(0,153,255,0.25); }
+    .input:disabled { opacity: 0.5; background: var(--color-surface-muted); cursor: not-allowed; }
+
+    .badge {
+      height: 28px;
+      padding: 0 var(--space-3);
+      font: 600 var(--text-xs) var(--font-body);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .badge-sky { background: var(--color-surface-sky); color: #0066AA; }
+    .badge-leaf { background: var(--color-surface-leaf); color: #007A3D; }
+    .badge-pop { background: #FFE8ED; color: #CC0033; }
+
+    .mark-sky { background: linear-gradient(transparent 42%, rgba(0,153,255,0.32) 42%); }
+    .mark-leaf { background: linear-gradient(transparent 42%, rgba(0,224,112,0.32) 42%); }
+    .mark-pop { background: linear-gradient(transparent 42%, rgba(255,45,85,0.28) 42%); }
+
+    /* Nav */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-3) var(--space-5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+    @media (min-width: 768px) {
+      .nav-inner { padding: var(--space-3) var(--space-7); }
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: var(--text-xl);
+      letter-spacing: -0.02em;
+      color: var(--color-ink);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    @media (min-width: 768px) {
+      .nav-links { display: flex; }
+    }
+    .nav-link {
+      height: var(--control-height);
+      padding: 0 var(--space-4);
+      font: 500 var(--text-sm) var(--font-body);
+      color: var(--color-ink-muted);
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: color var(--transition-fast), background var(--transition-fast);
+    }
+    .nav-link:hover { color: var(--color-ink); background: var(--color-surface-muted); }
+    .nav-link:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+    .nav-link.active { color: var(--color-ink); background: var(--color-surface-sky); font-weight: 600; }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Hero */
+    .hero {
+      margin-top: 68px;
+      position: relative;
+      min-height: 72vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+    }
+    .hero-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.1) 100%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: var(--space-8) var(--space-5) var(--space-9);
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    @media (min-width: 768px) {
+      .hero-content { padding: var(--space-9) var(--space-7) var(--space-10); }
+    }
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(40px, 8vw, var(--text-5xl));
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      max-width: 14ch;
+      margin-bottom: var(--space-5);
+    }
+    .hero-lead {
+      font-size: var(--text-lg);
+      color: var(--color-ink-secondary);
+      max-width: 52ch;
+      margin-bottom: var(--space-6);
+      line-height: 1.5;
+    }
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+    }
+    .hero-stat {
+      margin-top: var(--space-7);
+      display: flex;
+      gap: var(--space-7);
+      flex-wrap: wrap;
+    }
+    .hero-stat-item strong {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: block;
+    }
+    .hero-stat-item span {
+      font-size: var(--text-sm);
+      color: var(--color-ink-muted);
+    }
+
+    /* Sections */
+    section {
+      padding: var(--space-9) 0;
+    }
+    .section-label {
+      font: 600 var(--text-xs) var(--font-body);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-sky);
+      margin-bottom: var(--space-4);
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(32px, 5vw, var(--text-3xl));
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-5);
+      max-width: 20ch;
+    }
+    .section-lead {
+      font-size: var(--text-lg);
+      color: var(--color-ink-muted);
+      max-width: 48ch;
+      line-height: 1.5;
+    }
+
+    /* Feature grid */
+    .feature-grid {
+      display: grid;
+      gap: var(--space-8);
+      align-items: center;
+      margin-top: var(--space-8);
+    }
+    @media (min-width: 900px) {
+      .feature-grid { grid-template-columns: 1fr 1fr; gap: var(--space-9); }
+      .feature-grid.reverse .feature-text { order: 2; }
+      .feature-grid.reverse .feature-visual { order: 1; }
+    }
+    .feature-visual img {
+      border-radius: var(--radius-lg);
+      width: 100%;
+      aspect-ratio: 16/10;
+      object-fit: cover;
+    }
+    .feature-list {
+      list-style: none;
+      margin-top: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .feature-list li {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      font-size: var(--text-base);
+      color: var(--color-ink-secondary);
+    }
+    .feature-list svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Bento */
+    .bento {
+      display: grid;
+      gap: var(--space-5);
+      margin-top: var(--space-8);
+    }
+    @media (min-width: 768px) {
+      .bento { grid-template-columns: repeat(3, 1fr); }
+    }
+    .bento-card {
+      background: var(--color-surface-muted);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .bento-card.accent-sky { background: var(--color-surface-sky); }
+    .bento-card.accent-leaf { background: var(--color-surface-leaf); }
+    .bento-card h3 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-xl);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .bento-card p {
+      font-size: var(--text-sm);
+      color: var(--color-ink-muted);
+      line-height: 1.5;
+    }
+    .bento-number {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: var(--text-4xl);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .bento-number.sky { color: var(--color-sky); }
+    .bento-number.leaf { color: var(--color-leaf); }
+    .bento-number.pop { color: var(--color-pop); }
+
+    /* Testimonial */
+    .quote-block {
+      background: var(--color-ink);
+      color: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-7);
+      margin-top: var(--space-8);
+      position: relative;
+      overflow: hidden;
+    }
+    .quote-block::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -20px;
+      width: 200px;
+      height: 200px;
+      background: var(--color-sky);
+      opacity: 0.15;
+      border-radius: var(--radius-pill);
+    }
+    .quote-text {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(24px, 4vw, var(--text-2xl));
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      max-width: 28ch;
+      position: relative;
+    }
+    .quote-attr {
+      margin-top: var(--space-5);
+      font-size: var(--text-sm);
+      color: rgba(255,255,255,0.6);
+      position: relative;
+    }
+
+    /* CTA band */
+    .cta-band {
+      background: var(--color-surface-muted);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8) var(--space-7);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+      align-items: flex-start;
+    }
+    @media (min-width: 768px) {
+      .cta-band {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+    .cta-band h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-2xl);
+      letter-spacing: -0.02em;
+      max-width: 20ch;
+    }
+    .cta-form {
+      display: flex;
+      gap: var(--space-3);
+      width: 100%;
+      max-width: 420px;
+    }
+    .cta-form .input { flex: 1; }
+
+    /* Footer */
+    footer {
+      padding: var(--space-8) 0 var(--space-7);
+    }
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+    @media (min-width: 768px) {
+      .footer-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+    }
+    .footer-col h4 {
+      font: 600 var(--text-sm) var(--font-body);
+      margin-bottom: var(--space-3);
+      letter-spacing: 0.01em;
+    }
+    .footer-col a {
+      display: block;
+      font-size: var(--text-sm);
+      color: var(--color-ink-muted);
+      text-decoration: none;
+      padding: var(--space-1) 0;
+      transition: color var(--transition-fast);
+    }
+    .footer-col a:hover { color: var(--color-ink); }
+    .footer-col a:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; border-radius: 4px; }
+    .footer-bottom {
+      margin-top: var(--space-7);
+      padding-top: var(--space-5);
+      font-size: var(--text-sm);
+      color: var(--color-ink-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#" class="logo" aria-label="Kazeform home">
+        <svg class="logo-mark" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <path d="M4 22 L14 6 L24 22" stroke="#0099FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 18 L14 10 L20 18" stroke="#00E070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="14" cy="4" r="2" fill="#FF2D55"/>
+        </svg>
+        Kazeform
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#traditions" class="nav-link">Traditions</a>
+        <a href="#stories" class="nav-link">Stories</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+      </div>
+      <div class="nav-actions">
+        <a href="#" class="btn-ghost">Sign in</a>
+        <a href="#" class="btn-primary">Start free</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <img class="hero-image" src="./media/hero.jpg" alt="Koinobori carp streamers rising against a brilliant early-summer sky above fresh green hills" width="2400" height="1080">
+    <div class="hero-overlay" aria-hidden="true"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="badge badge-sky">Kodomo no Hi 2026</span>
+        <span class="badge badge-leaf">Now in beta</span>
+      </div>
+      <h1 class="hero-title">Watch them <span class="mark-sky">rise</span>, every single day</h1>
+      <p class="hero-lead">Kazeform is the family growth platform for milestone journals, tradition calendars, and shared memory timelines — built for parents who want clarity, not clutter.</p>
+      <div class="hero-cta">
+        <a href="#" class="btn-primary">Start your timeline</a>
+        <a href="#" class="btn-secondary">See how it works</a>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-item">
+          <strong>12k+</strong>
+          <span>Families ascending</span>
+        </div>
+        <div class="hero-stat-item">
+          <strong>340k</strong>
+          <span>Milestones captured</span>
+        </div>
+        <div class="hero-stat-item">
+          <strong>48</strong>
+          <span>Tradition templates</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="container">
+      <p class="section-label">Ascent Engine</p>
+      <h2 class="section-title">Growth you can <span class="mark-leaf">see</span> and celebrate</h2>
+      <p class="section-lead">From first steps to fifth-grade recitals — every moment gets the editorial treatment it deserves. No buried camera rolls. No lost sticky notes.</p>
+
+      <div class="feature-grid">
+        <div class="feature-text">
+          <span class="badge badge-pop" style="margin-bottom: var(--space-4);">New</span>
+          <h3 class="section-title" style="font-size: var(--text-2xl); max-width: none;">Milestone arcs that tell a story</h3>
+          <p class="section-lead" style="margin-bottom: 0;">Visualize development across years with ascending timeline arcs inspired by koinobori — each milestone a pennant catching the wind of memory.</p>
+          <ul class="feature-list">
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#00E070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Auto-organized photo clusters by child and age
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#00E070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Voice notes transcribed and searchable
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#00E070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Export beautiful annual review books
+            </li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <img src="./media/feature-ascent.jpg" alt="Abstract ascending koinobori arcs in electric blue and fresh green on white" width="1280" height="800" loading="lazy">
+        </div>
+      </div>
+
+      <div class="feature-grid reverse" style="margin-top: var(--space-10);">
+        <div class="feature-text">
+          <h3 class="section-title" style="font-size: var(--text-2xl); max-width: none;">Tradition <span class="mark-pop">calendars</span> that actually happen</h3>
+          <p class="section-lead" style="margin-bottom: 0;">Kodomo no Hi, Shichi-Go-San, birthdays abroad — plan rituals with gentle reminders, supply lists, and family task assignments. Culture without the chaos.</p>
+          <ul class="feature-list">
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#0099FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Pre-built Kodomo no Hi koinobori setup guides
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#0099FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Shared prep lists for grandparents and caregivers
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10 L8 14 L16 6" stroke="#0099FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Year-over-year tradition comparison views
+            </li>
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <img src="./media/feature-garden.jpg" alt="Bright garden terrace with koinobori pennants under clear early-summer sky" width="1280" height="960" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="traditions" style="background: var(--color-surface-muted);">
+    <div class="container">
+      <p class="section-label">Why families choose Kazeform</p>
+      <div class="bento">
+        <div class="bento-card">
+          <span class="bento-number sky">94%</span>
+          <h3>Stick with it past year one</h3>
+          <p>Families who start with a tradition template are nearly twice as likely to maintain their journal through the following Kodomo no Hi.</p>
+        </div>
+        <div class="bento-card accent-sky">
+          <span class="bento-number leaf">3.2×</span>
+          <h3>More shared moments</h3>
+          <p>Invite grandparents and aunties. Every contributor sees the same ascending timeline — no more scattered group chats.</p>
+        </div>
+        <div class="bento-card accent-leaf">
+          <span class="bento-number pop">18min</span>
+          <h3>Weekly time investment</h3>
+          <p>Quick-capture flows mean you document more with less effort. Batch upload Sunday photos in one sitting.</p>
+        </div>
+      </div>
+
+      <div class="quote-block" id="stories">
+        <p class="quote-text">"We hung koinobori every May without recording why. Now our kids read last year's entries while we string new ones. It's become the ritual behind the ritual."</p>
+        <p class="quote-attr">— Yuki &amp; Marcus T., Portland · using Kazeform since 2024</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="container">
+      <div class="feature-grid">
+        <div class="feature-visual">
+          <img src="./media/feature-milestones.jpg" alt="Hands arranging family milestone cards on a bright white desk with koinobori accent pin" width="1200" height="800" loading="lazy">
+        </div>
+        <div class="feature-text">
+          <p class="section-label">Simple pricing</p>
+          <h2 class="section-title">One plan. <span class="mark-sky">Unlimited</span> ascent.</h2>
+          <p class="section-lead">Free for one child through their fifth birthday. Family plan covers everyone, every tradition, every grandparent seat.</p>
+          <div style="margin-top: var(--space-6); display: flex; align-items: baseline; gap: var(--space-2);">
+            <span style="font-family: var(--font-display); font-weight: 800; font-size: var(--text-4xl); letter-spacing: -0.02em;">$9</span>
+            <span style="font-size: var(--text-sm); color: var(--color-ink-muted);">/ month · billed annually</span>
+          </div>
+          <div style="margin-top: var(--space-5); display: flex; gap: var(--space-3); flex-wrap: wrap;">
+            <a href="#" class="btn-primary">Start free trial</a>
+            <a href="#" class="btn-ghost">Compare plans</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-band" style="margin-top: var(--space-9);">
+        <h2>Ready to rise together this Kodomo no Hi?</h2>
+        <form class="cta-form" action="#" method="get">
+          <input type="email" class="input" placeholder="your@email.com" aria-label="Email address" required>
+          <button type="submit" class="btn-primary">Get started</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <a href="#" class="logo" style="margin-bottom: var(--space-4);">
+            <svg class="logo-mark" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path d="M4 22 L14 6 L24 22" stroke="#0099FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 18 L14 10 L20 18" stroke="#00E070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="14" cy="4" r="2" fill="#FF2D55"/>
+            </svg>
+            Kazeform
+          </a>
+          <p style="font-size: var(--text-sm); color: var(--color-ink-muted); max-width: 28ch;">Family growth platform. Built with hope, designed for clarity.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#">Features</a>
+          <a href="#">Traditions</a>
+          <a href="#">Pricing</a>
+          <a href="#">Changelog</a>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="#">Kodomo no Hi guide</a>
+          <a href="#">Milestone templates</a>
+          <a href="#">Help center</a>
+          <a href="#">API</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Careers</a>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Kazeform Inc.</span>
+        <span>風形 — wind-form</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

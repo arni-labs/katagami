@@ -1,5 +1,5 @@
 {
-  "snapshotAt": "2026-06-24T00:54:32.911Z",
+  "snapshotAt": "2026-06-24T03:11:01.201Z",
   "rounds": {
     "kodomo-no-hi": {
       "tag": "R1 · dark",
@@ -847,6 +847,250 @@
           "tokens": "142K",
           "cost": "$0.14",
           "wall": "6m 38s"
+        }
+      ]
+    },
+    "kodomo-no-hi-13": {
+      "tag": "R13",
+      "title": "Kodomo no Hi",
+      "capturedAt": "2026-06-24T03:11:01.201Z",
+      "models": [
+        {
+          "key": "minimax",
+          "name": "MiniMax M3",
+          "dir": "minimax-m3",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "289K",
+          "cost": "$0.25",
+          "wall": "22m 31s"
+        },
+        {
+          "key": "opus",
+          "name": "Opus 4.8",
+          "dir": "opus-4.8",
+          "harness": "claude-code",
+          "imageModel": "Grok Imagine",
+          "tokens": "132K",
+          "cost": "$5.04",
+          "wall": "25m 09s"
+        },
+        {
+          "key": "kimi",
+          "name": "Kimi K2.7",
+          "dir": "kimi-k2.7",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "600K",
+          "cost": "$1.20",
+          "wall": "15m 24s"
+        },
+        {
+          "key": "gpt",
+          "name": "GPT-5.5",
+          "dir": "gpt-5",
+          "harness": "codex",
+          "imageModel": "gpt-image",
+          "tokens": "132K",
+          "cost": "$0.65",
+          "wall": "13m 41s"
+        },
+        {
+          "key": "fugu-ultra",
+          "name": "Fugu Ultra",
+          "dir": "fugu-ultra",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "589K",
+          "cost": "$9.88",
+          "wall": "39m 48s"
+        },
+        {
+          "key": "glm",
+          "name": "GLM 5.2",
+          "dir": "glm-5.2",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "837K",
+          "cost": "$1.91",
+          "wall": "33m 54s"
+        },
+        {
+          "key": "grok-build",
+          "name": "Grok Build",
+          "dir": "grok-4.3",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "68K",
+          "cost": "$0.42",
+          "wall": "5m 45s"
+        },
+        {
+          "key": "qwen37",
+          "name": "Qwen 3.7 Max",
+          "dir": "qwen3.7-max",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "172K",
+          "cost": "$0.83",
+          "wall": "14m 56s"
+        },
+        {
+          "key": "deepseek",
+          "name": "DeepSeek V4",
+          "dir": "deepseek-v4",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "160K",
+          "cost": "$0.09",
+          "wall": "9m 32s"
+        },
+        {
+          "key": "composer",
+          "name": "Composer 2.5",
+          "dir": "composer",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "80K",
+          "cost": "$0.70",
+          "wall": "2m 52s"
+        },
+        {
+          "key": "fugu",
+          "name": "Fugu",
+          "dir": "fugu",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "134K",
+          "cost": "$1.39",
+          "wall": "11m 36s"
+        },
+        {
+          "key": "qwen36-or",
+          "name": "Qwen 3.6 35B",
+          "dir": "qwen3.6-35b",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "170K",
+          "cost": "$0.23",
+          "wall": "5m 00s"
+        }
+      ]
+    },
+    "kodomo-no-hi-14": {
+      "tag": "R13·no rules",
+      "title": "Kodomo no Hi — no rules",
+      "capturedAt": "2026-06-24T03:11:01.201Z",
+      "models": [
+        {
+          "key": "minimax",
+          "name": "MiniMax M3",
+          "dir": "minimax-m3",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "215K",
+          "cost": "$0.18",
+          "wall": "6m 16s"
+        },
+        {
+          "key": "kimi",
+          "name": "Kimi K2.7",
+          "dir": "kimi-k2.7",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "95K",
+          "cost": "$0.32",
+          "wall": "11m 13s"
+        },
+        {
+          "key": "gpt",
+          "name": "GPT-5.5",
+          "dir": "gpt-5",
+          "harness": "codex",
+          "imageModel": "gpt-image",
+          "tokens": "131K",
+          "cost": "$0.53",
+          "wall": "11m 21s"
+        },
+        {
+          "key": "fugu-ultra",
+          "name": "Fugu Ultra",
+          "dir": "fugu-ultra",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "185K",
+          "cost": "$3.03",
+          "wall": "13m 29s"
+        },
+        {
+          "key": "glm",
+          "name": "GLM 5.2",
+          "dir": "glm-5.2",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "508K",
+          "cost": "$0.82",
+          "wall": "14m 38s"
+        },
+        {
+          "key": "grok-build",
+          "name": "Grok Build",
+          "dir": "grok-4.3",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "72K",
+          "cost": "$0.46",
+          "wall": "4m 34s"
+        },
+        {
+          "key": "qwen37",
+          "name": "Qwen 3.7 Max",
+          "dir": "qwen3.7-max",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "347K",
+          "cost": "$0.79",
+          "wall": "10m 57s"
+        },
+        {
+          "key": "deepseek",
+          "name": "DeepSeek V4",
+          "dir": "deepseek-v4",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "111K",
+          "cost": "$0.07",
+          "wall": "10m 12s"
+        },
+        {
+          "key": "composer",
+          "name": "Composer 2.5",
+          "dir": "composer",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "88K",
+          "cost": "$0.65",
+          "wall": "2m 23s"
+        },
+        {
+          "key": "fugu",
+          "name": "Fugu",
+          "dir": "fugu",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "230K",
+          "cost": "$1.21",
+          "wall": "8m 53s"
+        },
+        {
+          "key": "qwen36-or",
+          "name": "Qwen 3.6 35B",
+          "dir": "qwen3.6-35b",
+          "harness": "grok-build",
+          "imageModel": "Grok Imagine",
+          "tokens": "122K",
+          "cost": "$0.10",
+          "wall": "8m 27s"
         }
       ]
     }

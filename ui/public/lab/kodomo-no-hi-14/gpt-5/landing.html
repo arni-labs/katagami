@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aonagi Field - Kodomo no Hi Operations</title>
+  <meta name="description" content="Aonagi Field coordinates Kodomo no Hi koinobori installations with wind-aware schedules, site readiness, and calm civic operations.">
+  <style>
+    :root {
+      --ar-white: #ffffff;
+      --ar-ink: #05070a;
+      --ar-ink-soft: #232a30;
+      --ar-paper: #f5fbf8;
+      --ar-snow: #f8fbff;
+      --ar-mist: #dbe8e7;
+      --ar-blue: #05a7ff;
+      --ar-blue-deep: #006ad8;
+      --ar-green: #28f26b;
+      --ar-green-deep: #00a83f;
+      --ar-coral: #ff3f67;
+      --ar-coral-deep: #b91238;
+      --ar-yellow: #fff45c;
+      --ar-shadow: 0 24px 70px rgba(5, 7, 10, 0.12);
+      --ar-shadow-tight: 0 12px 32px rgba(5, 7, 10, 0.10);
+      --font-display: "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", sans-serif;
+      --font-body: "Avenir Next", "Helvetica Neue", Helvetica, sans-serif;
+      --control-height: 48px;
+      --focus-ring: 0 0 0 3px var(--ar-white), 0 0 0 7px var(--ar-blue);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--ar-white);
+    }
+
+    body {
+      margin: 0;
+      color: var(--ar-ink);
+      background: var(--ar-white);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .skip-link {
+      position: absolute;
+      inset: 16px auto auto 16px;
+      z-index: 10;
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 0 18px;
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      transform: translateY(-90px);
+      transition: transform 180ms ease;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .site-shell {
+      overflow: hidden;
+      background: var(--ar-white);
+    }
+
+    .nav {
+      position: absolute;
+      z-index: 4;
+      top: 20px;
+      left: 50%;
+      width: min(1180px, calc(100% - 32px));
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px 10px 10px 18px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 18px 60px rgba(5, 7, 10, 0.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      min-height: var(--control-height);
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: 9999px;
+      background: var(--ar-ink);
+      box-shadow: inset 11px 0 0 var(--ar-blue), inset -8px 0 0 var(--ar-green);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      right: 5px;
+      top: 6px;
+      border-radius: 9999px;
+      background: var(--ar-white);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: rgba(5, 7, 10, 0.72);
+    }
+
+    .nav-links a {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 14px;
+      border-radius: 9999px;
+      transition: background 160ms ease, color 160ms ease;
+    }
+
+    .nav-links a:hover {
+      background: var(--ar-paper);
+      color: var(--ar-ink);
+    }
+
+    .nav-links a:focus-visible,
+    .button:focus-visible,
+    .field:focus-visible,
+    .text-link:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .button {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 22px;
+      background: var(--ar-green);
+      color: var(--ar-ink);
+      box-shadow: var(--ar-shadow-tight);
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 42px rgba(5, 7, 10, 0.16);
+      background: #39ff7a;
+    }
+
+    .button:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 18px rgba(5, 7, 10, 0.12);
+    }
+
+    .button[disabled] {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .button.secondary {
+      background: var(--ar-white);
+      color: var(--ar-ink);
+    }
+
+    .button.blue {
+      background: var(--ar-blue);
+      color: var(--ar-ink);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 88svh;
+      display: grid;
+      align-items: end;
+      isolation: isolate;
+      overflow: hidden;
+      background: var(--ar-snow);
+    }
+
+    .hero-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -3;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .hero-sheet {
+      width: min(1120px, calc(100% - 36px));
+      margin: 0 auto 7vh;
+      min-height: 58vh;
+      display: grid;
+      align-content: end;
+      padding: clamp(28px, 5vw, 64px);
+      background: rgba(255, 255, 255, 0.9);
+      clip-path: polygon(0 0, 88% 0, 100% 88%, 6% 100%, 0 92%);
+      box-shadow: 0 24px 80px rgba(5, 7, 10, 0.10);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      color: var(--ar-ink);
+      font-size: 0.78rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      background: var(--ar-green);
+      box-shadow: 16px 0 0 var(--ar-coral);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .hero h1 {
+      max-width: 820px;
+      margin-top: 22px;
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 11vw, 9.8rem);
+      line-height: 0.84;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-weight: 950;
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin-top: 24px;
+      color: var(--ar-ink-soft);
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      font-weight: 650;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .next-strip {
+      position: absolute;
+      right: min(7vw, 96px);
+      bottom: 28px;
+      z-index: 2;
+      width: min(410px, calc(100% - 44px));
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 24px;
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      box-shadow: var(--ar-shadow);
+    }
+
+    .next-strip strong {
+      display: block;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ar-green);
+    }
+
+    .next-strip span {
+      display: block;
+      margin-top: 2px;
+      font-weight: 750;
+      line-height: 1.25;
+    }
+
+    .mini-meter {
+      position: relative;
+      height: 64px;
+      border-radius: 18px;
+      background: var(--ar-blue);
+      clip-path: polygon(0 0, 100% 16%, 88% 100%, 8% 86%);
+      overflow: hidden;
+    }
+
+    .mini-meter::before,
+    .mini-meter::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+    }
+
+    .mini-meter::before {
+      left: 28%;
+      width: 42%;
+      background: var(--ar-green);
+    }
+
+    .mini-meter::after {
+      right: 0;
+      width: 30%;
+      background: var(--ar-coral);
+    }
+
+    .section {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: clamp(72px, 11vw, 132px) 0;
+    }
+
+    .section.compact {
+      padding-top: 42px;
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+      gap: clamp(32px, 6vw, 76px);
+      align-items: center;
+    }
+
+    .section-kicker {
+      display: inline-flex;
+      min-height: 34px;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 9999px;
+      background: var(--ar-yellow);
+      color: var(--ar-ink);
+      font-weight: 950;
+      font-size: 0.78rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .section h2 {
+      margin-top: 20px;
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7vw, 7rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-weight: 950;
+    }
+
+    .lead {
+      margin-top: 24px;
+      color: var(--ar-ink-soft);
+      font-size: clamp(1.08rem, 1.8vw, 1.34rem);
+      font-weight: 650;
+      max-width: 720px;
+    }
+
+    .signal-list {
+      margin-top: 34px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .signal-item {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 16px;
+      align-items: start;
+      padding: 18px;
+      border-radius: 24px;
+      background: var(--ar-white);
+      box-shadow: var(--ar-shadow-tight);
+    }
+
+    .signal-number {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      font-family: var(--font-display);
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .signal-item h3 {
+      font-size: 1.05rem;
+      line-height: 1.15;
+      font-weight: 950;
+    }
+
+    .signal-item p {
+      margin-top: 6px;
+      color: rgba(5, 7, 10, 0.68);
+      font-weight: 620;
+    }
+
+    .feature-frame {
+      position: relative;
+      min-height: 520px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--ar-paper);
+      box-shadow: var(--ar-shadow);
+      isolation: isolate;
+    }
+
+    .feature-frame img {
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      object-fit: cover;
+    }
+
+    .feature-frame::after {
+      content: "";
+      position: absolute;
+      inset: auto 26px 26px auto;
+      width: 118px;
+      height: 118px;
+      background: var(--ar-coral);
+      clip-path: polygon(0 0, 100% 18%, 74% 100%, 12% 76%);
+      mix-blend-mode: multiply;
+    }
+
+    .feature-caption {
+      position: absolute;
+      left: 22px;
+      bottom: 22px;
+      width: min(300px, calc(100% - 44px));
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--ar-shadow-tight);
+      font-weight: 850;
+      line-height: 1.25;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 48px;
+    }
+
+    .proof {
+      min-height: 210px;
+      padding: 28px;
+      border-radius: 24px;
+      background: var(--ar-paper);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .proof::after {
+      content: "";
+      position: absolute;
+      width: 88px;
+      height: 18px;
+      right: 24px;
+      bottom: 28px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      box-shadow: -44px -30px 0 var(--ar-green), -12px -62px 0 var(--ar-coral);
+      transform: rotate(-14deg);
+    }
+
+    .proof strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 5vw, 5.8rem);
+      line-height: 0.8;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .proof span {
+      display: block;
+      margin-top: 18px;
+      max-width: 250px;
+      color: rgba(5, 7, 10, 0.7);
+      font-weight: 760;
+    }
+
+    .workflow {
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      margin-top: 30px;
+    }
+
+    .workflow .section-kicker {
+      background: var(--ar-green);
+    }
+
+    .workflow .lead {
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 46px;
+    }
+
+    .flow-card {
+      min-height: 310px;
+      padding: 24px;
+      border-radius: 24px;
+      background: #10171d;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-card:nth-child(2) {
+      transform: translateY(28px);
+    }
+
+    .flow-card:nth-child(3) {
+      transform: translateY(-18px);
+    }
+
+    .flow-card::before {
+      content: "";
+      position: absolute;
+      inset: 18px 18px auto auto;
+      width: 74px;
+      height: 28px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      transform: rotate(-15deg);
+    }
+
+    .flow-card:nth-child(2)::before {
+      background: var(--ar-green);
+    }
+
+    .flow-card:nth-child(3)::before {
+      background: var(--ar-coral);
+    }
+
+    .flow-card:nth-child(4)::before {
+      background: var(--ar-yellow);
+    }
+
+    .flow-card h3 {
+      margin-top: 86px;
+      font-size: 1.25rem;
+      line-height: 1.1;
+      font-weight: 950;
+    }
+
+    .flow-card p {
+      margin-top: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 620;
+    }
+
+    .image-band {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
+      gap: clamp(28px, 5vw, 70px);
+      align-items: center;
+    }
+
+    .ops-image {
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--ar-shadow);
+      background: var(--ar-paper);
+    }
+
+    .ops-image img {
+      width: 100%;
+      min-height: 460px;
+      object-fit: cover;
+    }
+
+    .quote-panel {
+      padding: clamp(28px, 5vw, 56px);
+      border-radius: 24px;
+      background: var(--ar-snow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quote-panel::before {
+      content: "";
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 96px;
+      height: 96px;
+      background: var(--ar-green);
+      clip-path: polygon(0 20%, 100% 0, 82% 100%, 12% 76%);
+    }
+
+    .quote-panel blockquote {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 6vw, 5.8rem);
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-weight: 950;
+    }
+
+    .quote-panel cite {
+      display: block;
+      margin-top: 24px;
+      color: rgba(5, 7, 10, 0.64);
+      font-style: normal;
+      font-weight: 850;
+    }
+
+    .cta {
+      padding-bottom: clamp(80px, 10vw, 132px);
+    }
+
+    .cta-panel {
+      position: relative;
+      overflow: hidden;
+      min-height: 430px;
+      display: grid;
+      align-content: end;
+      padding: clamp(30px, 6vw, 70px);
+      border-radius: 24px;
+      background: var(--ar-green);
+      box-shadow: var(--ar-shadow);
+    }
+
+    .cta-panel::before,
+    .cta-panel::after {
+      content: "";
+      position: absolute;
+      border-radius: 9999px;
+      background: var(--ar-white);
+      opacity: 0.95;
+    }
+
+    .cta-panel::before {
+      width: 420px;
+      height: 74px;
+      top: 62px;
+      right: -86px;
+      transform: rotate(-12deg);
+    }
+
+    .cta-panel::after {
+      width: 240px;
+      height: 46px;
+      top: 150px;
+      right: 118px;
+      background: var(--ar-blue);
+      transform: rotate(-12deg);
+    }
+
+    .cta-panel h2 {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      margin-top: 0;
+    }
+
+    .cta-panel p {
+      position: relative;
+      z-index: 1;
+      max-width: 620px;
+      margin-top: 20px;
+      color: rgba(5, 7, 10, 0.72);
+      font-size: 1.18rem;
+      font-weight: 700;
+    }
+
+    .cta-panel .hero-actions {
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 0 0 34px;
+      color: rgba(5, 7, 10, 0.56);
+      font-size: 0.9rem;
+      font-weight: 760;
+    }
+
+    @media (max-width: 920px) {
+      .nav {
+        align-items: stretch;
+        border-radius: 24px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        min-height: 91svh;
+      }
+
+      .hero-sheet {
+        min-height: 58vh;
+        clip-path: polygon(0 0, 100% 0, 100% 94%, 6% 100%, 0 90%);
+      }
+
+      .next-strip {
+        left: 18px;
+        right: auto;
+        bottom: 16px;
+      }
+
+      .intro-grid,
+      .image-band {
+        grid-template-columns: 1fr;
+      }
+
+      .proof-grid,
+      .flow-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-card,
+      .flow-card:nth-child(2),
+      .flow-card:nth-child(3) {
+        min-height: 230px;
+        transform: none;
+      }
+
+      .feature-frame,
+      .feature-frame img,
+      .ops-image img {
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        font-size: 16px;
+      }
+
+      .nav {
+        top: 12px;
+        width: calc(100% - 24px);
+      }
+
+      .brand span {
+        max-width: 126px;
+        line-height: 1.05;
+      }
+
+      .nav .button {
+        padding-inline: 14px;
+      }
+
+      .hero-sheet {
+        width: calc(100% - 24px);
+        margin-bottom: 116px;
+        padding: 26px 22px 34px;
+      }
+
+      .hero h1 {
+        font-size: clamp(3.7rem, 20vw, 5rem);
+      }
+
+      .next-strip {
+        grid-template-columns: 58px 1fr;
+      }
+
+      .mini-meter {
+        height: 48px;
+      }
+
+      .section {
+        width: calc(100% - 24px);
+      }
+
+      .section h2,
+      .quote-panel blockquote {
+        font-size: clamp(2.7rem, 17vw, 4.2rem);
+      }
+
+      .signal-item {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        flex-direction: column;
+        width: calc(100% - 24px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .button:hover,
+      .flow-card,
+      .flow-card:nth-child(2),
+      .flow-card:nth-child(3) {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="site-shell">
+    <header class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#" aria-label="Aonagi Field home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Aonagi Field</span>
+      </a>
+      <nav class="nav-links" aria-label="Landing page">
+        <a href="#readiness">Readiness</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#signals">Signals</a>
+      </nav>
+      <a class="button blue" href="dashboard.html">Open cockpit</a>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <img class="hero-image" src="media/aonagi-rise-hero.png" alt="Koinobori streamers rising through bright early summer air above a clean riverside park.">
+        <div class="hero-sheet">
+          <span class="eyebrow">Kodomo no Hi operations</span>
+          <h1 id="hero-title">When the wind rises, the city is ready.</h1>
+          <p class="hero-copy">Aonagi Field gives civic teams a clear command layer for koinobori installations, volunteer crews, safety windows, vendor gates, and the public moments that make Children's Day feel effortless.</p>
+          <div class="hero-actions" aria-label="Primary calls to action">
+            <a class="button" href="#readiness">Plan the lift</a>
+            <a class="button secondary" href="#signals">See live signals</a>
+          </div>
+        </div>
+        <aside class="next-strip" aria-label="Current launch signal">
+          <span class="mini-meter" aria-hidden="true"></span>
+          <div>
+            <strong>Today 08:40</strong>
+            <span>South bank crews cleared for pole lift across five sites.</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section compact" id="readiness">
+        <div class="intro-grid">
+          <div>
+            <span class="section-kicker">Site intelligence</span>
+            <h2>Festival plans that move with weather, crews, and crowds.</h2>
+            <p class="lead">Replace scattered spreadsheets with one airy operations field. Aonagi Field watches wind windows, installation readiness, crowd paths, and public notices without turning the day into a control-room wall.</p>
+            <div class="signal-list" aria-label="Product capabilities">
+              <article class="signal-item">
+                <span class="signal-number">1</span>
+                <div>
+                  <h3>Wind-aware lift windows</h3>
+                  <p>Schedule pole teams around gust forecasts, river exposure, and streamer load so crews move once with confidence.</p>
+                </div>
+              </article>
+              <article class="signal-item">
+                <span class="signal-number">2</span>
+                <div>
+                  <h3>Readiness by installation zone</h3>
+                  <p>See anchors, lines, streamer inventory, volunteer coverage, and inspection notes in one living site layer.</p>
+                </div>
+              </article>
+              <article class="signal-item">
+                <span class="signal-number">3</span>
+                <div>
+                  <h3>Public updates without panic</h3>
+                  <p>Turn internal signals into calm public notices for gate changes, viewing routes, photo zones, and delayed launches.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+          <figure class="feature-frame">
+            <img src="media/aonagi-rise-site-map.png" alt="Graphic operational map of a riverside Kodomo no Hi festival site with koinobori routes and vivid signal colors.">
+            <figcaption class="feature-caption">The site plan stays spatial, bright, and readable from the first morning check to the final public announcement.</figcaption>
+          </figure>
+        </div>
+
+        <div class="proof-grid" aria-label="Operational proof points">
+          <article class="proof">
+            <strong>42</strong>
+            <span>installation checks reconciled before first visitor arrival</span>
+          </article>
+          <article class="proof">
+            <strong>8m/s</strong>
+            <span>gust threshold translated into practical crew windows</span>
+          </article>
+          <article class="proof">
+            <strong>14</strong>
+            <span>public-facing changes published from one approved note</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="workflow" id="workflow">
+        <div class="section">
+          <span class="section-kicker">Operating rhythm</span>
+          <h2>One clean signal from dawn setup to evening retrieval.</h2>
+          <p class="lead">Aonagi Field is built for the real cadence of a festival day: inspect, lift, watch, adjust, publish, and close without losing the feel of the celebration.</p>
+          <div class="flow-grid">
+            <article class="flow-card">
+              <h3>Morning pole sweep</h3>
+              <p>Crews check anchors, rope tension, ground mats, and nearby access paths with a phone-ready checklist.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Wind corridor watch</h3>
+              <p>Exposed river bends, schoolyard courtyards, and roofline turbulence stay visible as live operating zones.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Gate and vendor sync</h3>
+              <p>Food stalls, first aid, photo queues, and viewing routes receive the same schedule changes as field crews.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Public calm layer</h3>
+              <p>Approved updates publish in plain language so families know where to go and what changed.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="signals">
+        <div class="image-band">
+          <figure class="ops-image">
+            <img src="media/aonagi-rise-ops-table.png" alt="Bright operations table for a Kodomo no Hi site with koinobori visible outside and vivid signal overlays.">
+          </figure>
+          <div class="quote-panel">
+            <span class="section-kicker">Field proof</span>
+            <blockquote>Keep the wonder public. Keep the work precise.</blockquote>
+            <cite>For parks departments, cultural offices, schools, sponsors, and production teams sharing one festival sky.</cite>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta">
+        <div class="cta-panel">
+          <h2>Launch the festival as one rising system.</h2>
+          <p>Build a clear Kodomo no Hi operating layer for every pole, path, crew, notice, and public moment.</p>
+          <div class="hero-actions">
+            <a class="button secondary" href="dashboard.html">View dashboard</a>
+            <a class="button blue" href="#readiness">Read the readiness model</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Aonagi Field</span>
+      <span>Aonagi Rise design language</span>
+      <span>Kodomo no Hi operations, 2026</span>
+    </footer>
+  </div>
+</body>
+</html>

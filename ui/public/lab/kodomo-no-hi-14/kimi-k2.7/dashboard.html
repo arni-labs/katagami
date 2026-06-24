@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koinobori Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ko-white: #FFFFFF;
+      --ko-ink: #081922;
+      --ko-sky: #00D4FF;
+      --ko-leaf: #00E676;
+      --ko-pop: #FF3366;
+      --ko-sky-50: #E6FBFF;
+      --ko-leaf-50: #E6FFF0;
+      --ko-pop-50: #FFE6ED;
+      --ko-ink-8: rgba(8, 25, 34, 0.08);
+      --ko-ink-48: rgba(8, 25, 34, 0.48);
+      --ko-ink-64: rgba(8, 25, 34, 0.64);
+      --ko-font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ko-control-height: 48px;
+      --ko-radius-none: 0;
+      --ko-radius-md: 16px;
+      --ko-radius-lg: 24px;
+      --ko-radius-full: 9999px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--ko-font);
+      color: var(--ko-ink);
+      background: var(--ko-white);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .ko-app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 1024px) { .ko-app { grid-template-columns: 1fr; } }
+
+    /* Typography */
+    .ko-title {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-weight: 800;
+      margin: 0 0 1rem;
+    }
+    .ko-heading {
+      font-size: 1.125rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+    }
+    .ko-body {
+      font-size: 1.0625rem;
+      line-height: 1.6;
+      font-weight: 500;
+      color: var(--ko-ink-64);
+      margin: 0 0 1rem;
+    }
+    .ko-small {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+    .ko-micro {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Buttons */
+    .ko-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--ko-control-height);
+      padding: 0 1.25rem;
+      border-radius: var(--ko-radius-full);
+      border: none;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      background: var(--ko-ink);
+      color: var(--ko-white);
+    }
+    .ko-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(8,25,34,0.12); }
+    .ko-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.35); }
+    .ko-btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(8,25,34,0.1); }
+    .ko-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .ko-btn--sky { background: var(--ko-sky); color: var(--ko-ink); }
+    .ko-btn--pop { background: var(--ko-pop); color: var(--ko-white); }
+    .ko-btn--ghost {
+      background: transparent;
+      color: var(--ko-ink);
+      border: 1.5px solid var(--ko-ink-8);
+    }
+    .ko-btn--icon {
+      width: var(--ko-control-height);
+      height: var(--ko-control-height);
+      padding: 0;
+    }
+
+    /* Inputs, Select, Textarea */
+    .ko-input,
+    .ko-select {
+      width: 100%;
+      height: var(--ko-control-height);
+      padding: 0 1rem;
+      border-radius: var(--ko-radius-full);
+      border: 1.5px solid var(--ko-ink-8);
+      background: var(--ko-white);
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ko-ink);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+      appearance: none;
+    }
+    .ko-input::placeholder { color: var(--ko-ink-48); }
+    .ko-input:hover, .ko-select:hover { border-color: var(--ko-ink-64); }
+    .ko-input:focus, .ko-select:focus { outline: none; border-color: var(--ko-sky); box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.25); }
+    .ko-input:disabled, .ko-select:disabled { background: var(--ko-sky-50); opacity: 0.6; cursor: not-allowed; }
+    .ko-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23081922' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.75rem;
+    }
+    .ko-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 1rem;
+      border-radius: var(--ko-radius-md);
+      border: 1.5px solid var(--ko-ink-8);
+      background: var(--ko-white);
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ko-ink);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+      resize: vertical;
+    }
+    .ko-textarea:hover { border-color: var(--ko-ink-64); }
+    .ko-textarea:focus { outline: none; border-color: var(--ko-sky); box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.25); }
+
+    /* Checkbox / Radio */
+    .ko-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+    .ko-check input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      border: 2px solid rgba(8,25,34,0.16);
+      background: var(--ko-white);
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      appearance: none;
+    }
+    .ko-check input[type="checkbox"] { border-radius: 0; }
+    .ko-check input[type="radio"] { border-radius: var(--ko-radius-full); }
+    .ko-check input:checked {
+      background: var(--ko-sky);
+      border-color: var(--ko-sky);
+    }
+    .ko-check input[type="checkbox"]:checked {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .ko-check input[type="radio"]:checked {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Ccircle cx='4' cy='4' r='4' fill='%23fff'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .ko-check input:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.35); }
+    .ko-check input:disabled { background: var(--ko-sky-50); opacity: 0.6; cursor: not-allowed; }
+
+    /* Sidebar */
+    .ko-sidebar {
+      background: var(--ko-ink);
+      color: var(--ko-white);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    @media (max-width: 1024px) { .ko-sidebar { display: none; } }
+    .ko-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--ko-white);
+      text-decoration: none;
+    }
+    .ko-logo__mark {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--ko-radius-full);
+      background: linear-gradient(135deg, var(--ko-sky) 0%, var(--ko-leaf) 100%);
+      display: grid;
+      place-items: center;
+    }
+    .ko-logo__mark svg { width: 18px; height: 18px; }
+    .ko-nav { display: flex; flex-direction: column; gap: 0.25rem; }
+    .ko-nav__item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      height: var(--ko-control-height);
+      padding: 0 0.875rem;
+      border-radius: var(--ko-radius-md);
+      color: rgba(255,255,255,0.72);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .ko-nav__item:hover { background: rgba(255,255,255,0.08); color: var(--ko-white); }
+    .ko-nav__item:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.35); }
+    .ko-nav__item--active { background: rgba(255,255,255,0.12); color: var(--ko-white); }
+    .ko-nav__item svg { width: 20px; height: 20px; }
+
+    /* Main */
+    .ko-main {
+      background: var(--ko-white);
+      display: flex;
+      flex-direction: column;
+    }
+    .ko-topbar {
+      height: 72px;
+      border-bottom: 1px solid var(--ko-ink-8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      gap: 1rem;
+    }
+    @media (min-width: 1024px) { .ko-topbar { padding: 0 2rem; } }
+    .ko-search { position: relative; max-width: 360px; flex: 1; }
+    .ko-search svg {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: var(--ko-ink-48);
+      pointer-events: none;
+    }
+    .ko-search .ko-input { padding-left: 2.75rem; }
+    .ko-topbar__actions { display: flex; align-items: center; gap: 0.75rem; }
+    .ko-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--ko-radius-full);
+      background: linear-gradient(135deg, var(--ko-pop) 0%, var(--ko-sky) 100%);
+      display: grid;
+      place-items: center;
+      color: var(--ko-white);
+      font-weight: 800;
+      font-size: 0.875rem;
+    }
+
+    /* Content */
+    .ko-content { padding: 2rem 1.5rem 4rem; overflow-y: auto; }
+    @media (min-width: 1024px) { .ko-content { padding: 2.5rem 2rem 4rem; } }
+
+    /* Cards */
+    .ko-card {
+      background: var(--ko-white);
+      border-radius: var(--ko-radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--ko-ink-8);
+    }
+    .ko-card--tint-sky { background: var(--ko-sky-50); border-color: transparent; }
+    .ko-card--tint-leaf { background: var(--ko-leaf-50); border-color: transparent; }
+    .ko-card--tint-pop { background: var(--ko-pop-50); border-color: transparent; }
+
+    .ko-grid {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 768px) { .ko-grid--4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .ko-grid--4 { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1024px) { .ko-grid--3 { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .ko-grid--2 { grid-template-columns: repeat(2, 1fr); } }
+
+    .ko-stat__num {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .ko-stat__label { color: var(--ko-ink-64); font-weight: 600; font-size: 0.875rem; }
+    .ko-stat__delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }
+
+    /* Chart */
+    .ko-chart { display: flex; align-items: flex-end; gap: 0.75rem; height: 180px; padding-top: 1rem; }
+    .ko-chart__bar {
+      flex: 1;
+      border-radius: 0;
+      background: var(--ko-sky);
+      min-height: 24px;
+      position: relative;
+      transition: opacity 160ms ease;
+    }
+    .ko-chart__bar:hover { opacity: 0.8; }
+    .ko-chart__bar--leaf { background: var(--ko-leaf); }
+    .ko-chart__bar--pop { background: var(--ko-pop); }
+    .ko-chart__label {
+      position: absolute;
+      bottom: -1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ko-ink-64);
+      white-space: nowrap;
+    }
+
+    /* Table */
+    .ko-table { width: 100%; border-collapse: collapse; }
+    .ko-table th, .ko-table td { text-align: left; padding: 0.875rem 1rem; }
+    .ko-table th {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ko-ink-48);
+      border-bottom: 1px solid var(--ko-ink-8);
+    }
+    .ko-table td { font-size: 0.9375rem; font-weight: 500; border-bottom: 1px solid var(--ko-ink-8); }
+    .ko-table tr:last-child td { border-bottom: none; }
+    .ko-badge {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 0.625rem;
+      border-radius: var(--ko-radius-full);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .ko-badge--sky { background: var(--ko-sky-50); color: var(--ko-ink); }
+    .ko-badge--leaf { background: var(--ko-leaf-50); color: var(--ko-ink); }
+    .ko-badge--pop { background: var(--ko-pop-50); color: var(--ko-pop); }
+
+    /* Welcome banner */
+    .ko-welcome {
+      display: grid;
+      gap: 2rem;
+      align-items: center;
+      background: var(--ko-sky-50);
+      border-radius: var(--ko-radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    @media (min-width: 768px) { .ko-welcome { grid-template-columns: 1fr 220px; } }
+    .ko-welcome__media {
+      border-radius: var(--ko-radius-md);
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+    }
+    .ko-welcome__media img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Form layout */
+    .ko-form-row { display: grid; gap: 1rem; margin-bottom: 1rem; }
+    @media (min-width: 768px) { .ko-form-row--2 { grid-template-columns: repeat(2, 1fr); } }
+    .ko-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.375rem;
+      color: var(--ko-ink);
+    }
+    .ko-field { margin-bottom: 1.25rem; }
+    .ko-field--inline {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ko-app">
+    <aside class="ko-sidebar">
+      <a href="landing.html" class="ko-logo" aria-label="Koinobori home">
+        <span class="ko-logo__mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 16c2-4 6-8 12-10 2 4 0 9-4 12-3 2-6 2-8 0z"/>
+            <path d="M12 6c3 2 5 5 5 8"/>
+          </svg>
+        </span>
+        Koinobori
+      </a>
+      <nav class="ko-nav" aria-label="Sidebar">
+        <a href="#" class="ko-nav__item ko-nav__item--active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="#" class="ko-nav__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Events
+        </a>
+        <a href="#" class="ko-nav__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Galleries
+        </a>
+        <a href="#" class="ko-nav__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Families
+        </a>
+        <a href="#" class="ko-nav__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Templates
+        </a>
+        <a href="#" class="ko-nav__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+    </aside>
+
+    <main class="ko-main">
+      <header class="ko-topbar">
+        <div class="ko-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="search" class="ko-input" placeholder="Search events, families, photos..." aria-label="Search">
+        </div>
+        <div class="ko-topbar__actions">
+          <button class="ko-btn ko-btn--ghost ko-btn--icon" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <button class="ko-btn ko-btn--sky" style="padding:0 1rem;font-size:.75rem;">+ New event</button>
+          <div class="ko-avatar" aria-label="User avatar">RN</div>
+        </div>
+      </header>
+
+      <div class="ko-content">
+        <div class="ko-welcome">
+          <div>
+            <span class="ko-micro" style="color:var(--ko-sky);">May 5, 2026</span>
+            <h1 class="ko-title" style="margin-top:0.5rem;">Good morning, Rita</h1>
+            <p class="ko-body" style="max-width:520px;">Kodomo no Hi is in 12 days. You have 3 events to finalize and 24 new photos waiting for review.</p>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <button class="ko-btn ko-btn--sky">Review photos</button>
+              <button class="ko-btn ko-btn--ghost">Open calendar</button>
+            </div>
+          </div>
+          <div class="ko-welcome__media">
+            <img src="media/dashboard-welcome.jpg" alt="Abstract koinobori streamers and rising lines in bright accent colors">
+          </div>
+        </div>
+
+        <div class="ko-grid ko-grid--4" style="margin-bottom:2rem;">
+          <article class="ko-card ko-card--tint-sky">
+            <div class="ko-stat__num">8</div>
+            <div class="ko-stat__label">Active events</div>
+            <div class="ko-stat__delta" style="color:var(--ko-leaf);">+2 this week</div>
+          </article>
+          <article class="ko-card ko-card--tint-leaf">
+            <div class="ko-stat__num">1,248</div>
+            <div class="ko-stat__label">Photos uploaded</div>
+            <div class="ko-stat__delta" style="color:var(--ko-leaf);">+124 today</div>
+          </article>
+          <article class="ko-card ko-card--tint-pop">
+            <div class="ko-stat__num">342</div>
+            <div class="ko-stat__label">Families reached</div>
+            <div class="ko-stat__delta" style="color:var(--ko-pop);">+18 today</div>
+          </article>
+          <article class="ko-card">
+            <div class="ko-stat__num" style="color:var(--ko-sky);">94%</div>
+            <div class="ko-stat__label">Tasks complete</div>
+            <div class="ko-stat__delta" style="color:var(--ko-ink-48);">On track</div>
+          </article>
+        </div>
+
+        <div class="ko-grid ko-grid--2" style="margin-bottom:2rem;">
+          <section class="ko-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h2 class="ko-heading">Uploads this week</h2>
+              <select class="ko-select" style="width:auto;min-width:140px;" aria-label="Time range">
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>This year</option>
+              </select>
+            </div>
+            <div class="ko-chart" aria-label="Uploads bar chart">
+              <div class="ko-chart__bar" style="height:35%;"><span class="ko-chart__label">Mon</span></div>
+              <div class="ko-chart__bar" style="height:55%;"><span class="ko-chart__label">Tue</span></div>
+              <div class="ko-chart__bar ko-chart__bar--leaf" style="height:45%;"><span class="ko-chart__label">Wed</span></div>
+              <div class="ko-chart__bar" style="height:70%;"><span class="ko-chart__label">Thu</span></div>
+              <div class="ko-chart__bar ko-chart__bar--pop" style="height:60%;"><span class="ko-chart__label">Fri</span></div>
+              <div class="ko-chart__bar" style="height:85%;"><span class="ko-chart__label">Sat</span></div>
+              <div class="ko-chart__bar ko-chart__bar--leaf" style="height:50%;"><span class="ko-chart__label">Sun</span></div>
+            </div>
+          </section>
+
+          <section class="ko-card">
+            <h2 class="ko-heading" style="margin-bottom:1rem;">Quick invite</h2>
+            <form>
+              <div class="ko-form-row ko-form-row--2">
+                <div class="ko-field">
+                  <label class="ko-label" for="firstName">First name</label>
+                  <input type="text" id="firstName" class="ko-input" placeholder="Yuki">
+                </div>
+                <div class="ko-field">
+                  <label class="ko-label" for="lastName">Last name</label>
+                  <input type="text" id="lastName" class="ko-input" placeholder="Tanaka">
+                </div>
+              </div>
+              <div class="ko-field">
+                <label class="ko-label" for="email">Email</label>
+                <input type="email" id="email" class="ko-input" placeholder="yuki@example.com">
+              </div>
+              <div class="ko-field">
+                <label class="ko-label" for="role">Role</label>
+                <select id="role" class="ko-select">
+                  <option>Parent</option>
+                  <option>Teacher</option>
+                  <option>Volunteer</option>
+                  <option>Organizer</option>
+                </select>
+              </div>
+              <div class="ko-field">
+                <label class="ko-label" for="note">Note</label>
+                <textarea id="note" class="ko-textarea" placeholder="Add a personal message..."></textarea>
+              </div>
+              <div class="ko-field ko-field--inline">
+                <label class="ko-check">
+                  <input type="checkbox" checked>
+                  Send welcome email
+                </label>
+                <label class="ko-check">
+                  <input type="radio" name="notify" checked>
+                  Notify now
+                </label>
+                <label class="ko-check">
+                  <input type="radio" name="notify">
+                  Notify later
+                </label>
+              </div>
+              <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                <button type="submit" class="ko-btn ko-btn--sky">Send invite</button>
+                <button type="reset" class="ko-btn ko-btn--ghost">Reset</button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <section class="ko-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem;">
+            <h2 class="ko-heading">Upcoming events</h2>
+            <div style="display:flex;gap:0.75rem;">
+              <input type="text" class="ko-input" placeholder="Filter events..." aria-label="Filter events" style="width:auto;min-width:180px;">
+              <button class="ko-btn ko-btn--ghost" style="height:var(--ko-control-height);">Export</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="ko-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Date</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Attendees</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Sakura Elementary Festival</strong></td>
+                  <td>May 5, 10:00 AM</td>
+                  <td>Tokyo</td>
+                  <td><span class="ko-badge ko-badge--leaf">Confirmed</span></td>
+                  <td>142</td>
+                </tr>
+                <tr>
+                  <td><strong>Koinobori Craft Workshop</strong></td>
+                  <td>May 3, 2:00 PM</td>
+                  <td>Osaka</td>
+                  <td><span class="ko-badge ko-badge--sky">Planning</span></td>
+                  <td>38</td>
+                </tr>
+                <tr>
+                  <td><strong>Family Picnic & Streamers</strong></td>
+                  <td>May 4, 11:00 AM</td>
+                  <td>Kyoto</td>
+                  <td><span class="ko-badge ko-badge--pop">Needs review</span></td>
+                  <td>76</td>
+                </tr>
+                <tr>
+                  <td><strong>District Parade Rehearsal</strong></td>
+                  <td>Apr 28, 4:00 PM</td>
+                  <td>Yokohama</td>
+                  <td><span class="ko-badge ko-badge--leaf">Confirmed</span></td>
+                  <td>210</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

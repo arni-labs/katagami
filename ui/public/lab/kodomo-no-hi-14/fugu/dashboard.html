@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Desk Dashboard — Updraft Kin</title>
+  <meta name="description" content="Nobori Desk dashboard for Kodomo no Hi program operations.">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --mist: #F6FFF8;
+      --ink: #07110F;
+      --ink-soft: #35504A;
+      --line: rgba(7, 17, 15, 0.10);
+      --sky: #00A6FF;
+      --sky-deep: #006DFF;
+      --leaf: #28F06B;
+      --hot: #FF2E7A;
+      --sun: #FFF246;
+      --shadow: rgba(7, 17, 15, 0.12);
+      --font-display: "Arial Narrow", "Aptos Display", "Helvetica Neue", Arial, sans-serif;
+      --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --type-h1: clamp(3.25rem, 8vw, 7rem);
+      --type-h2: clamp(2.25rem, 5vw, 4.6rem);
+      --type-h3: 1.55rem;
+      --type-body: 1.0625rem;
+      --type-small: .88rem;
+      --type-micro: .72rem;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 72px;
+      --radius-none: 0;
+      --radius-s: 16px;
+      --radius-m: 24px;
+      --radius-pill: 9999px;
+      --elevate-1: 0 18px 50px rgba(7, 17, 15, .08);
+      --elevate-2: 0 32px 90px rgba(7, 17, 15, .12);
+      --control-height: 48px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: var(--type-body);
+      line-height: 1.62;
+      letter-spacing: -0.01em;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    ::selection { background: var(--sun); color: var(--ink); }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(260px, 300px) 1fr;
+      background:
+        radial-gradient(circle at 86% 4%, rgba(0, 166, 255, .16), transparent 22%),
+        radial-gradient(circle at 18% 18%, rgba(40, 240, 107, .14), transparent 18%),
+        var(--paper);
+    }
+    .sidebar {
+      min-height: 100vh;
+      padding: 24px;
+      background: var(--ink);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      position: sticky;
+      top: 0;
+    }
+    .brand {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-pill);
+      background:
+        radial-gradient(circle at 72% 32%, var(--hot) 0 8%, transparent 9%),
+        linear-gradient(135deg, var(--sky) 0 50%, var(--leaf) 50% 100%);
+      box-shadow: inset -8px 0 0 rgba(255, 255, 255, .45);
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 8px;
+      right: -9px;
+      top: 14px;
+      background: var(--sun);
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+    .season-card {
+      border-radius: var(--radius-m);
+      background: rgba(255, 255, 255, .10);
+      padding: var(--space-3);
+      overflow: hidden;
+      position: relative;
+    }
+    .season-card::after {
+      content: "";
+      position: absolute;
+      right: -30px;
+      bottom: -18px;
+      width: 124px;
+      height: 38px;
+      border-radius: var(--radius-pill);
+      background: var(--leaf);
+      transform: rotate(-18deg);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      border-radius: var(--radius-pill);
+      padding: 0 12px;
+      background: var(--sky);
+      color: var(--ink);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .season-card h1 {
+      margin: 18px 0 8px;
+      font-family: var(--font-display);
+      font-size: 3.2rem;
+      line-height: .86;
+      font-weight: 900;
+      letter-spacing: -0.07em;
+      text-transform: uppercase;
+      max-width: 180px;
+    }
+    .season-card p { margin: 0; color: rgba(255,255,255,.72); font-size: .92rem; font-weight: 650; }
+    .nav { display: grid; gap: 6px; }
+    .nav a {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-radius: var(--radius-pill);
+      padding: 0 14px;
+      color: rgba(255,255,255,.72);
+      font-size: .93rem;
+      font-weight: 820;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+    .nav a::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.28);
+    }
+    .nav a.active, .nav a:hover { background: rgba(255,255,255,.12); color: white; transform: translateX(2px); }
+    .nav a.active::before { background: var(--leaf); box-shadow: 0 0 0 5px rgba(40,240,107,.15); }
+    .nav a:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .side-footer { margin-top: auto; display: grid; gap: 14px; }
+    .capacity {
+      border-radius: var(--radius-m);
+      background: white;
+      color: var(--ink);
+      padding: var(--space-3);
+    }
+    .capacity span { display: block; font-size: var(--type-micro); letter-spacing: .14em; text-transform: uppercase; font-weight: 900; color: var(--ink-soft); }
+    .capacity strong { display: block; margin-top: 8px; font-family: var(--font-mono); font-size: 2.6rem; line-height: 1; letter-spacing: -0.07em; }
+    .meter { height: 10px; background: var(--mist); border-radius: var(--radius-pill); overflow: hidden; margin-top: 14px; }
+    .meter i { display: block; width: 86%; height: 100%; background: linear-gradient(90deg, var(--sky), var(--leaf)); border-radius: inherit; }
+
+    .main {
+      min-width: 0;
+      padding: 24px 28px 48px;
+    }
+    .topbar {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: 24px;
+    }
+    .search-wrap {
+      flex: 1;
+      max-width: 560px;
+      position: relative;
+    }
+    .search-wrap::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 3px var(--sky);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    .search-wrap::after {
+      content: "";
+      position: absolute;
+      left: 30px;
+      top: 31px;
+      width: 9px;
+      height: 3px;
+      background: var(--sky);
+      transform: rotate(45deg);
+      border-radius: var(--radius-pill);
+      pointer-events: none;
+    }
+    input, select, textarea {
+      min-height: var(--control-height);
+      width: 100%;
+      border: 0;
+      border-radius: var(--radius-s);
+      background: var(--mist);
+      color: var(--ink);
+      padding: 0 16px;
+      font: 700 .96rem/1.2 var(--font-body);
+      box-shadow: inset 0 0 0 1px rgba(7, 17, 15, .08);
+      transition: background .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+    .search-wrap input { border-radius: var(--radius-pill); padding-left: 46px; background: white; box-shadow: var(--elevate-1); }
+    textarea { min-height: calc(var(--control-height) * 2.6); padding-block: 14px; resize: vertical; }
+    input::placeholder, textarea::placeholder { color: rgba(53, 80, 74, .62); }
+    input:hover, select:hover, textarea:hover { background: white; box-shadow: inset 0 0 0 1px rgba(0, 166, 255, .22); }
+    .search-wrap input:hover { box-shadow: 0 18px 50px rgba(7,17,15,.08), inset 0 0 0 1px rgba(0,166,255,.22); }
+    input:focus, select:focus, textarea:focus { outline: 3px solid var(--sun); outline-offset: 2px; background: white; box-shadow: 0 0 0 6px rgba(0, 166, 255, .14); }
+    input:invalid:not(:placeholder-shown) { box-shadow: inset 0 0 0 2px var(--hot); }
+    input:disabled, select:disabled, textarea:disabled { opacity: .48; cursor: not-allowed; }
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 21px, calc(100% - 12px) 21px;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 42px;
+    }
+
+    .button {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font: 850 .9rem/1 var(--font-body);
+      letter-spacing: .03em;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease, opacity .18s ease;
+      white-space: nowrap;
+    }
+    .button.primary { background: var(--ink); color: #fff; box-shadow: inset 0 -4px 0 var(--sky); }
+    .button.sky { background: var(--sky); color: var(--ink); box-shadow: inset 0 -4px 0 rgba(255, 255, 255, .48); }
+    .button.hot { background: var(--hot); color: white; box-shadow: inset 0 -4px 0 rgba(7, 17, 15, .18); }
+    .button.ghost { background: white; color: var(--ink); box-shadow: var(--elevate-1); }
+    .button:hover { transform: translateY(-2px); box-shadow: var(--elevate-1); }
+    .button.primary:hover { background: #111F1C; }
+    .button.sky:hover { background: #31B8FF; }
+    .button.hot:hover { background: #E61767; }
+    .button.ghost:hover { background: var(--mist); }
+    .button:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .button:active { transform: translateY(1px); box-shadow: none; }
+    .button:disabled, .button[aria-disabled="true"] { opacity: .42; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .user-chip {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: var(--radius-pill);
+      padding: 6px 10px 6px 6px;
+      background: white;
+      box-shadow: var(--elevate-1);
+      font-weight: 850;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--leaf), var(--sky));
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: .8rem;
+      font-weight: 950;
+    }
+
+    .hero-panel {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: var(--space-4);
+      align-items: stretch;
+      margin-bottom: var(--space-4);
+    }
+    .overview {
+      min-height: 320px;
+      border-radius: var(--radius-m);
+      padding: var(--space-5);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255, 242, 70, .72), transparent 13%),
+        radial-gradient(circle at 96% 10%, rgba(0, 166, 255, .20), transparent 22%),
+        white;
+      box-shadow: var(--elevate-2);
+      position: relative;
+      overflow: hidden;
+    }
+    .overview::after {
+      content: "";
+      position: absolute;
+      right: -44px;
+      top: 84px;
+      width: 340px;
+      height: 68px;
+      border-radius: var(--radius-pill);
+      background: var(--leaf);
+      transform: rotate(-14deg);
+      opacity: .92;
+    }
+    .overview::before {
+      content: "";
+      position: absolute;
+      right: 96px;
+      top: 56px;
+      width: 180px;
+      height: 42px;
+      border-radius: var(--radius-pill);
+      background: var(--hot);
+      transform: rotate(-14deg);
+      z-index: 1;
+    }
+    .overview > * { position: relative; z-index: 2; }
+    .overview h2 {
+      margin: 22px 0 18px;
+      max-width: 760px;
+      font-family: var(--font-display);
+      font-size: var(--type-h1);
+      line-height: .88;
+      font-weight: 900;
+      letter-spacing: -0.065em;
+      text-transform: uppercase;
+    }
+    .overview p { max-width: 600px; margin: 0; color: var(--ink-soft); font-size: 1.15rem; font-weight: 650; }
+    .overview-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: var(--space-4); }
+    .banner-card {
+      border-radius: var(--radius-m);
+      overflow: hidden;
+      background: var(--mist);
+      box-shadow: var(--elevate-1);
+      min-height: 320px;
+      position: relative;
+    }
+    .banner-card img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-card .banner-label {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      right: 18px;
+      border-radius: var(--radius-m);
+      background: rgba(7, 17, 15, .82);
+      color: white;
+      padding: 16px;
+      font-weight: 800;
+      line-height: 1.25;
+      backdrop-filter: blur(12px);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: var(--space-4);
+    }
+    .kpi {
+      border-radius: var(--radius-m);
+      background: white;
+      padding: var(--space-3);
+      box-shadow: var(--elevate-1);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi::before {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      width: 54px;
+      height: 10px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      transform: rotate(-14deg);
+    }
+    .kpi:nth-child(2)::before { background: var(--leaf); }
+    .kpi:nth-child(3)::before { background: var(--hot); }
+    .kpi:nth-child(4)::before { background: var(--sun); }
+    .kpi span { display: block; color: var(--ink-soft); font-size: var(--type-micro); font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .kpi strong { display: block; margin-top: 18px; font-family: var(--font-mono); font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1; letter-spacing: -0.075em; }
+    .kpi small { display: block; margin-top: 10px; color: var(--ink-soft); font-weight: 750; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+    .panel {
+      border-radius: var(--radius-m);
+      background: white;
+      box-shadow: var(--elevate-1);
+      overflow: hidden;
+    }
+    .panel-head {
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-4);
+    }
+    .panel-head h3 { margin: 0; font-size: var(--type-h3); line-height: 1.05; letter-spacing: -0.035em; }
+    .panel-head p { margin: 8px 0 0; color: var(--ink-soft); font-size: .92rem; font-weight: 650; }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filters select { width: auto; min-width: 156px; border-radius: var(--radius-pill); background-color: var(--mist); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 0 24px 12px;
+      color: var(--ink-soft);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    td {
+      min-height: 64px;
+      padding: 18px 24px;
+      font-size: .96rem;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    tbody tr { transition: background .18s ease; }
+    tbody tr:hover { background: var(--mist); }
+    tbody tr:focus-within, tbody tr:focus-visible { outline: 3px solid var(--sun); outline-offset: -3px; }
+    .site-name { display: flex; align-items: center; gap: 12px; }
+    .site-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 6px rgba(0,166,255,.12); }
+    .site-dot.leaf { background: var(--leaf); box-shadow: 0 0 0 6px rgba(40,240,107,.14); }
+    .site-dot.hot { background: var(--hot); box-shadow: 0 0 0 6px rgba(255,46,122,.12); }
+    .status {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-pill);
+      padding: 0 12px;
+      background: var(--mist);
+      color: var(--ink);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .status.live { background: rgba(40,240,107,.20); }
+    .status.watch { background: rgba(255,242,70,.45); }
+    .status.alert { background: rgba(255,46,122,.14); color: #A9003F; }
+    .mono { font-family: var(--font-mono); letter-spacing: -0.04em; font-weight: 850; }
+
+    .side-stack { display: grid; gap: var(--space-4); }
+    .action-panel { padding: var(--space-4); }
+    .action-panel h3 { margin: 0 0 8px; font-size: var(--type-h3); line-height: 1.05; letter-spacing: -0.035em; }
+    .action-panel p { margin: 0 0 20px; color: var(--ink-soft); font-weight: 650; }
+    .field { display: grid; gap: 8px; margin-bottom: 14px; }
+    label { color: var(--ink); font-size: var(--type-small); font-weight: 850; }
+    .toggle-row, .check-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      font-weight: 760;
+      color: var(--ink-soft);
+    }
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      flex: 0 0 auto;
+    }
+    .toggle input { position: absolute; opacity: 0; inset: 0; min-height: 0; width: 100%; height: 100%; }
+    .track {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-pill);
+      background: rgba(7,17,15,.18);
+      transition: background .18s ease;
+    }
+    .track::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 6px 16px rgba(7,17,15,.18);
+      transition: transform .18s ease;
+    }
+    .toggle input:checked + .track { background: var(--leaf); }
+    .toggle input:checked + .track::after { transform: translateX(20px); }
+    .toggle input:focus-visible + .track { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .toggle input:disabled + .track { opacity: .45; cursor: not-allowed; }
+    input[type="checkbox"], input[type="radio"] {
+      min-height: 22px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border-radius: 7px;
+      accent-color: var(--sky);
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+    input[type="radio"] { border-radius: 50%; }
+    input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+    input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: .45; cursor: not-allowed; }
+
+    .chart-card { padding: var(--space-4); }
+    .chart-card h3 { margin: 0 0 18px; font-size: var(--type-h3); line-height: 1.05; letter-spacing: -0.035em; }
+    .bars { display: grid; gap: 14px; }
+    .bar-row { display: grid; grid-template-columns: 80px 1fr 48px; align-items: center; gap: 12px; font-size: .88rem; font-weight: 850; color: var(--ink-soft); }
+    .bar-track { height: 12px; border-radius: var(--radius-pill); background: var(--mist); overflow: hidden; }
+    .bar-track i { display: block; height: 100%; border-radius: inherit; background: var(--sky); }
+    .bar-row:nth-child(2) .bar-track i { background: var(--leaf); }
+    .bar-row:nth-child(3) .bar-track i { background: var(--hot); }
+    .bar-row:nth-child(4) .bar-track i { background: var(--sun); }
+
+    .activity { padding: var(--space-4); }
+    .activity h3 { margin: 0 0 18px; font-size: var(--type-h3); line-height: 1.05; letter-spacing: -0.035em; }
+    .feed { display: grid; gap: 14px; }
+    .feed-item {
+      display: grid;
+      grid-template-columns: 12px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .feed-item::before { content: ""; width: 12px; height: 12px; margin-top: 8px; border-radius: 50%; background: var(--sky); }
+    .feed-item:nth-child(2)::before { background: var(--leaf); }
+    .feed-item:nth-child(3)::before { background: var(--hot); }
+    .feed-item strong { display: block; line-height: 1.2; }
+    .feed-item span { color: var(--ink-soft); font-size: .88rem; font-weight: 650; }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { min-height: auto; position: static; }
+      .nav { grid-template-columns: repeat(3, 1fr); }
+      .side-footer { display: none; }
+      .hero-panel, .workspace { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .main { padding: 16px 14px 36px; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .panel-head { flex-direction: column; align-items: flex-start; }
+      .filters, .filters select, .button { width: 100%; }
+      th:nth-child(3), td:nth-child(3), th:nth-child(4), td:nth-child(4) { display: none; }
+      td, th { padding-left: 16px; padding-right: 16px; }
+      .overview { padding: var(--space-4); }
+    }
+    @media (max-width: 520px) {
+      .sidebar { padding: 16px; }
+      .nav { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: 1fr; }
+      .overview h2 { font-size: clamp(3.2rem, 20vw, 5rem); }
+      .user-chip { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <a class="brand" href="landing.html" aria-label="Nobori Desk landing page">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Nobori Desk</span>
+      </a>
+      <section class="season-card" aria-labelledby="season-title">
+        <span class="eyebrow">Updraft Kin</span>
+        <h1 id="season-title">Children’s Day 2026</h1>
+        <p>Tokyo west district · 48 public sites · opening in 9 days</p>
+      </section>
+      <nav class="nav" aria-label="Dashboard sections">
+        <a class="active" href="#overview">Overview</a>
+        <a href="#sites">Sites</a>
+        <a href="#dispatch">Dispatch</a>
+        <a href="#public">Public page</a>
+        <a href="#sponsors">Sponsors</a>
+        <a href="#reports">Reports</a>
+      </nav>
+      <div class="side-footer">
+        <div class="capacity">
+          <span>Season lift</span>
+          <strong>86%</strong>
+          <div class="meter" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topbar">
+        <div class="search-wrap">
+          <label class="visually-hidden" for="search">Search sites, crews, or sponsors</label>
+          <input id="search" type="search" placeholder="Search sites, crews, sponsors...">
+        </div>
+        <button class="button ghost" type="button">Export proof</button>
+        <button class="button sky" type="button">New dispatch</button>
+        <div class="user-chip" aria-label="Signed in user"><span class="avatar">AT</span><span>Aiko</span></div>
+      </header>
+
+      <section class="hero-panel" aria-labelledby="overview-title">
+        <div class="overview">
+          <span class="eyebrow">Morning command</span>
+          <h2 id="overview-title">The wind is good. Three sites need attention.</h2>
+          <p>Field crews are ahead of route plan. Keep hot focus on Kaminoge pole replacement, sponsor photo proof, and wind advisory copy before the public page opens.</p>
+          <div class="overview-actions">
+            <button class="button primary" type="button">Resolve hot items</button>
+            <button class="button ghost" type="button">Publish public update</button>
+          </div>
+        </div>
+        <figure class="banner-card">
+          <img src="media/dashboard-banner.webp" alt="Abstract bright koinobori data trails rising through white early-summer air.">
+          <figcaption class="banner-label">Live banner: readiness, wind, and family-flow signals for coordinators.</figcaption>
+        </figure>
+      </section>
+
+      <section class="kpis" aria-label="Key season metrics">
+        <article class="kpi"><span>Sites ready</span><strong>42/48</strong><small>+7 since yesterday</small></article>
+        <article class="kpi"><span>Crews active</span><strong>18</strong><small>4 routes finishing early</small></article>
+        <article class="kpi"><span>Hot items</span><strong>3</strong><small>1 safety, 2 sponsor proof</small></article>
+        <article class="kpi"><span>Family reach</span><strong>6.1k</strong><small>public updates subscribed</small></article>
+      </section>
+
+      <div class="workspace">
+        <section class="panel" id="sites" aria-labelledby="sites-title">
+          <div class="panel-head">
+            <div>
+              <h3 id="sites-title">Site readiness board</h3>
+              <p>Rows change as field teams submit proof, incidents, and public-facing changes.</p>
+            </div>
+            <div class="filters" aria-label="Site filters">
+              <label class="visually-hidden" for="ward-filter">Ward</label>
+              <select id="ward-filter">
+                <option>All wards</option>
+                <option>Setagaya</option>
+                <option>Suginami</option>
+                <option>Nakano</option>
+              </select>
+              <label class="visually-hidden" for="status-filter">Status</label>
+              <select id="status-filter">
+                <option>All status</option>
+                <option>Live</option>
+                <option>Watch</option>
+                <option>Alert</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Site</th><th>Status</th><th>Crew</th><th>Wind</th><th>Next action</th></tr>
+            </thead>
+            <tbody>
+              <tr tabindex="0"><td><span class="site-name"><i class="site-dot leaf"></i>Futako Riverside</span></td><td><span class="status live">Live</span></td><td>Green 04</td><td class="mono">8 km/h</td><td>Open family route</td></tr>
+              <tr tabindex="0"><td><span class="site-name"><i class="site-dot hot"></i>Kaminoge Station</span></td><td><span class="status alert">Alert</span></td><td>Sky 11</td><td class="mono">18 km/h</td><td>Replace pole brace</td></tr>
+              <tr tabindex="0"><td><span class="site-name"><i class="site-dot"></i>Kinuta Park Gate</span></td><td><span class="status watch">Watch</span></td><td>Leaf 02</td><td class="mono">14 km/h</td><td>Confirm sponsor photo</td></tr>
+              <tr tabindex="0"><td><span class="site-name"><i class="site-dot leaf"></i>Yoga Library</span></td><td><span class="status live">Live</span></td><td>Sky 07</td><td class="mono">6 km/h</td><td>Queue quiet-hour copy</td></tr>
+              <tr tabindex="0"><td><span class="site-name"><i class="site-dot"></i>Sakuragaoka School</span></td><td><span class="status watch">Watch</span></td><td>Green 01</td><td class="mono">12 km/h</td><td>Upload morning proof</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <aside class="side-stack" aria-label="Controls and insights">
+          <section class="panel action-panel" id="dispatch" aria-labelledby="dispatch-title">
+            <h3 id="dispatch-title">Create dispatch</h3>
+            <p>Send a precise field task without pulling the whole team into chat.</p>
+            <form action="#" method="get">
+              <div class="field">
+                <label for="dispatch-site">Site</label>
+                <select id="dispatch-site" name="dispatch-site">
+                  <option>Kaminoge Station</option>
+                  <option>Kinuta Park Gate</option>
+                  <option>Sakuragaoka School</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dispatch-type">Dispatch type</label>
+                <select id="dispatch-type" name="dispatch-type">
+                  <option>Safety check</option>
+                  <option>Sponsor proof</option>
+                  <option>Public update</option>
+                  <option>Material run</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dispatch-note">Crew note</label>
+                <textarea id="dispatch-note" name="dispatch-note" placeholder="Brace pole C, photograph from north side, update status when complete."></textarea>
+              </div>
+              <label class="toggle-row">Publish when resolved <span class="toggle"><input type="checkbox" checked><span class="track"></span></span></label>
+              <label class="check-row"><span>Mark sponsor-visible</span><input type="checkbox" name="sponsor-visible"></label>
+              <button class="button hot" type="submit">Send dispatch</button>
+            </form>
+          </section>
+
+          <section class="panel chart-card" aria-labelledby="chart-title">
+            <h3 id="chart-title">Program lift</h3>
+            <div class="bars" role="img" aria-label="Readiness bars for installs, staff, public updates, and proof.">
+              <div class="bar-row"><span>Installs</span><span class="bar-track"><i style="width:88%"></i></span><span class="mono">88%</span></div>
+              <div class="bar-row"><span>Staff</span><span class="bar-track"><i style="width:94%"></i></span><span class="mono">94%</span></div>
+              <div class="bar-row"><span>Issues</span><span class="bar-track"><i style="width:18%"></i></span><span class="mono">3</span></div>
+              <div class="bar-row"><span>Proof</span><span class="bar-track"><i style="width:71%"></i></span><span class="mono">71%</span></div>
+            </div>
+          </section>
+
+          <section class="panel activity" aria-labelledby="activity-title">
+            <h3 id="activity-title">Live trail</h3>
+            <div class="feed">
+              <div class="feed-item"><div><strong>Green 04 opened Riverside route.</strong><span>2 minutes ago · family map updated</span></div></div>
+              <div class="feed-item"><div><strong>Leaf 02 uploaded sponsor proof.</strong><span>11 minutes ago · waiting approval</span></div></div>
+              <div class="feed-item"><div><strong>Sky 11 flagged brace replacement.</strong><span>19 minutes ago · hot item assigned</span></div></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOI — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   KOI Design Language — dashboard.html
+   ======================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Neutrals */
+  --color-white: #FFFFFF;
+  --color-bg: #FAFBFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E8ECF0;
+  --color-text: #0F1923;
+  --color-text-secondary: #5A6A7A;
+  --color-text-tertiary: #8A96A4;
+
+  /* Accent — electric sky-blue */
+  --color-accent: #00A0FF;
+  --color-accent-hover: #0088DD;
+  --color-accent-active: #006BBB;
+  --color-accent-light: #E8F6FF;
+
+  /* Accent — fresh green */
+  --color-green: #00D68F;
+  --color-green-hover: #00B87A;
+  --color-green-light: #E6FAF3;
+
+  /* Accent — hot coral */
+  --color-coral: #FF4D6A;
+  --color-coral-hover: #E63A55;
+  --color-coral-light: #FFF0F3;
+
+  /* Semantic */
+  --color-success: #00D68F;
+  --color-warning: #FFB020;
+  --color-error: #FF4D6A;
+  --color-info: #00A0FF;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-round: 9999px;
+
+  /* Height token — shared control height */
+  --height-control: 44px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15,25,35,0.06);
+  --shadow-md: 0 4px 16px rgba(15,25,35,0.08);
+  --shadow-lg: 0 8px 32px rgba(15,25,35,0.10);
+  --shadow-accent: 0 4px 24px rgba(0,160,255,0.15);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+/* ---- LAYOUT ---- */
+.dashboard {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  text-decoration: none;
+  margin-bottom: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sidebar-logo .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.sidebar-nav {
+  list-style: none;
+  flex: 1;
+}
+
+.sidebar-nav li {
+  margin-bottom: 2px;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-nav a:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.sidebar-nav a.active {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.sidebar-nav a svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding: var(--space-xl) var(--space-md) var(--space-sm);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+/* ---- MAIN ---- */
+.main {
+  padding: var(--space-xl) var(--space-2xl);
+  overflow-y: auto;
+}
+
+/* ---- TOP BAR ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2xl);
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.topbar-left h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+}
+
+.topbar-left p {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* ---- SEARCH ---- */
+.search-input {
+  height: var(--height-control);
+  padding: 0 var(--space-md) 0 var(--space-lg);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  width: 260px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.search-input:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+/* ---- DATE SELECTOR ---- */
+.date-selector {
+  display: inline-flex;
+  align-items: center;
+  height: var(--height-control);
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.15s;
+}
+
+.date-selector:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.date-selector:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent), 0 0 0 4px var(--color-accent-light);
+}
+
+.date-selector:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.date-selector svg {
+  width: 16px;
+  height: 16px;
+  margin-left: var(--space-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ---- STAT CARDS ---- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg) var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.stat-card-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: var(--radius-round);
+}
+
+.stat-card-badge.up {
+  background: var(--color-green-light);
+  color: var(--color-green);
+}
+
+.stat-card-badge.down {
+  background: var(--color-coral-light);
+  color: var(--color-coral);
+}
+
+.stat-card-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.stat-card-change {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+/* ---- CHART AREA ---- */
+.chart-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* ---- TAB BUTTONS ---- */
+.tabs {
+  display: inline-flex;
+  height: var(--height-control);
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+}
+
+.tab-btn {
+  height: 38px;
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+}
+
+.tab-btn.active {
+  background: var(--color-white);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.tab-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.tab-btn:disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ---- CHART (CSS-only sparkline) ---- */
+.chart-container {
+  height: 220px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  padding-top: var(--space-md);
+}
+
+.chart-bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: opacity 0.15s;
+  position: relative;
+}
+
+.chart-bar:hover {
+  opacity: 0.8;
+}
+
+.chart-bar.accent { background: var(--color-accent); }
+.chart-bar.green { background: var(--color-green); }
+
+/* ---- DONUT CHART ---- */
+.donut-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.donut {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-accent) 0deg 162deg,
+    var(--color-green) 162deg 252deg,
+    var(--color-coral) 252deg 306deg,
+    var(--color-border) 306deg 360deg
+  );
+  position: relative;
+}
+
+.donut::after {
+  content: '';
+  position: absolute;
+  inset: 30px;
+  background: var(--color-surface);
+  border-radius: 50%;
+}
+
+.donut-legend {
+  width: 100%;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  font-size: 0.875rem;
+}
+
+.legend-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  color: var(--color-text-secondary);
+}
+
+.legend-value {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ---- TABLE ---- */
+.table-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead th {
+  background: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-secondary);
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-accent-light);
+}
+
+.data-table tbody td {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-tight);
+}
+
+.data-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-round);
+}
+
+.status-badge.active {
+  background: var(--color-green-light);
+  color: var(--color-green);
+}
+
+.status-badge.warning {
+  background: #FFF8E6;
+  color: #B8860B;
+}
+
+.status-badge.error {
+  background: var(--color-coral-light);
+  color: var(--color-coral);
+}
+
+/* ---- FORM CONTROLS ---- */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.form-input {
+  height: var(--height-control);
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.form-input:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.form-select {
+  height: var(--height-control);
+  padding: 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%235A6A7A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.form-select:disabled {
+  background-color: var(--color-bg);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+}
+
+.form-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-accent);
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.form-checkbox input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.form-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.form-checkbox input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.form-checkbox input[type="checkbox"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.form-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  display: inline-block;
+}
+
+.form-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.form-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-border);
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.form-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: var(--color-white);
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-toggle input:checked + .form-toggle-track {
+  background: var(--color-accent);
+}
+
+.form-toggle input:checked + .form-toggle-track::after {
+  transform: translateX(20px);
+}
+
+.form-toggle input:focus-visible + .form-toggle-track {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.form-toggle input:disabled + .form-toggle-track {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.form-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 1200px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-section { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .dashboard { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: var(--space-lg); }
+  .stats-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .search-input { width: 180px; }
+}
+
+/* ---- REDUCED MOTION ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a href="#" class="sidebar-logo">
+      <span class="dot"></span>KOI
+    </a>
+
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Teams
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Reports
+      </a></li>
+    </ul>
+
+    <p class="sidebar-section-label">Settings</p>
+    <ul class="sidebar-nav">
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">MT</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Mika Tanaka</div>
+        <div class="sidebar-user-role">Admin</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Dashboard</h1>
+        <p>Welcome back, Mika — here's what's happening today.</p>
+      </div>
+      <div class="topbar-right">
+        <input type="text" class="search-input" placeholder="Search anything…">
+        <button class="date-selector">
+          Last 30 days
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn btn-primary" style="height:var(--height-control);padding:0 var(--space-lg);font-size:0.9375rem;">
+          + New Report
+        </button>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <span class="stat-card-label">Total Revenue</span>
+          <span class="stat-card-badge up">↑ 12.5%</span>
+        </div>
+        <div class="stat-card-value">$84,254</div>
+        <div class="stat-card-change">vs $74,938 last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <span class="stat-card-label">Active Users</span>
+          <span class="stat-card-badge up">↑ 8.2%</span>
+        </div>
+        <div class="stat-card-value">12,847</div>
+        <div class="stat-card-change">vs 11,869 last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <span class="stat-card-label">Conversion Rate</span>
+          <span class="stat-card-badge down">↓ 2.1%</span>
+        </div>
+        <div class="stat-card-value">3.24%</div>
+        <div class="stat-card-change">vs 3.31% last month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <span class="stat-card-label">Avg. Response</span>
+          <span class="stat-card-badge up">↑ 18ms</span>
+        </div>
+        <div class="stat-card-value">42ms</div>
+        <div class="stat-card-change">vs 60ms last month</div>
+      </div>
+    </div>
+
+    <!-- CHART + DONUT -->
+    <div class="chart-section">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Revenue Trend</h2>
+          <div class="card-actions">
+            <div class="tabs">
+              <button class="tab-btn">7D</button>
+              <button class="tab-btn active">30D</button>
+              <button class="tab-btn">90D</button>
+              <button class="tab-btn">1Y</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-container" id="revenueChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Traffic Sources</h2>
+        </div>
+        <div class="donut-container">
+          <div class="donut"></div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <span class="legend-item-left">
+                <span class="legend-dot" style="background:var(--color-accent)"></span>
+                <span class="legend-label">Direct</span>
+              </span>
+              <span class="legend-value">45%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-item-left">
+                <span class="legend-dot" style="background:var(--color-green)"></span>
+                <span class="legend-label">Organic</span>
+              </span>
+              <span class="legend-value">25%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-item-left">
+                <span class="legend-dot" style="background:var(--color-coral)"></span>
+                <span class="legend-label">Referral</span>
+              </span>
+              <span class="legend-value">15%</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-item-left">
+                <span class="legend-dot" style="background:var(--color-border)"></span>
+                <span class="legend-label">Other</span>
+              </span>
+              <span class="legend-value">15%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="card table-section">
+      <div class="card-header">
+        <h2 class="card-title">Recent Projects</h2>
+        <button class="btn btn-ghost" style="height:var(--height-control);padding:0 var(--space-md);font-size:0.9375rem;">
+          View All →
+        </button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Team</th>
+            <th>Progress</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Koi Landing Redesign</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td>Design</td>
+            <td>78%</td>
+            <td>Jun 28</td>
+          </tr>
+          <tr>
+            <td>API v3 Migration</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td>Engineering</td>
+            <td>45%</td>
+            <td>Jul 15</td>
+          </tr>
+          <tr>
+            <td>Onboarding Flow</td>
+            <td><span class="status-badge warning">Review</span></td>
+            <td>Product</td>
+            <td>92%</td>
+            <td>Jun 25</td>
+          </tr>
+          <tr>
+            <td>Dark Mode System</td>
+            <td><span class="status-badge error">Blocked</span></td>
+            <td>Design</td>
+            <td>31%</td>
+            <td>Jul 02</td>
+          </tr>
+          <tr>
+            <td>Analytics Pipeline</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td>Data</td>
+            <td>60%</td>
+            <td>Jul 10</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FORM CONTROLS SECTION -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Quick Settings</h2>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="project-name">Project Name</label>
+          <input type="text" id="project-name" class="form-input" placeholder="Enter project name…" value="Koi Analytics">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="team-select">Assign to Team</label>
+          <select id="team-select" class="form-select">
+            <option>Design</option>
+            <option selected>Engineering</option>
+            <option>Product</option>
+            <option>Data</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:0;">
+        <div class="form-group">
+          <label class="form-checkbox">
+            <input type="checkbox" checked>
+            Enable real-time updates
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-checkbox">
+            <input type="checkbox">
+            Send weekly digest email
+          </label>
+        </div>
+      </div>
+      <div style="margin-top:var(--space-lg);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);">
+        <p class="form-hint">Changes are saved automatically</p>
+        <div style="display:flex;gap:var(--space-sm);">
+          <button class="btn btn-ghost" style="height:var(--height-control);padding:0 var(--space-xl);font-size:0.9375rem;">Cancel</button>
+          <button class="btn btn-primary" style="height:var(--height-control);padding:0 var(--space-xl);font-size:0.9375rem;">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Generate chart bars
+const chart = document.getElementById('revenueChart');
+const data = [35,42,38,55,48,62,58,72,68,80,75,85,82,90,88,95,92,98,94,100,96,102,98,105,100,108,104,110,108,115];
+const max = Math.max(...data);
+data.forEach((val, i) => {
+  const bar = document.createElement('div');
+  bar.className = 'chart-bar ' + (i % 3 === 0 ? 'accent' : i % 3 === 1 ? 'green' : 'accent');
+  bar.style.height = (val / max * 100) + '%';
+  bar.style.opacity = 0.6 + (val / max) * 0.4;
+  chart.appendChild(bar);
+});
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

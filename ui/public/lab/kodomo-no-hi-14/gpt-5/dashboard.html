@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aonagi Field Dashboard</title>
+  <meta name="description" content="Aonagi Field dashboard for Kodomo no Hi festival readiness, koinobori installations, wind windows, crews, and public notices.">
+  <style>
+    :root {
+      --ar-white: #ffffff;
+      --ar-ink: #05070a;
+      --ar-ink-soft: #232a30;
+      --ar-paper: #f5fbf8;
+      --ar-snow: #f8fbff;
+      --ar-mist: #dbe8e7;
+      --ar-blue: #05a7ff;
+      --ar-blue-deep: #006ad8;
+      --ar-green: #28f26b;
+      --ar-green-deep: #00a83f;
+      --ar-coral: #ff3f67;
+      --ar-coral-deep: #b91238;
+      --ar-yellow: #fff45c;
+      --ar-shadow: 0 24px 70px rgba(5, 7, 10, 0.12);
+      --ar-shadow-tight: 0 12px 32px rgba(5, 7, 10, 0.10);
+      --font-display: "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", sans-serif;
+      --font-body: "Avenir Next", "Helvetica Neue", Helvetica, sans-serif;
+      --control-height: 48px;
+      --focus-ring: 0 0 0 3px var(--ar-white), 0 0 0 7px var(--ar-blue);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--ar-paper);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ar-ink);
+      background: var(--ar-paper);
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 276px minmax(0, 1fr);
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--ar-shadow-tight);
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: var(--control-height);
+      font-weight: 950;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 9999px;
+      background: var(--ar-ink);
+      box-shadow: inset 12px 0 0 var(--ar-blue), inset -9px 0 0 var(--ar-green);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      right: 6px;
+      top: 7px;
+      border-radius: 9999px;
+      background: var(--ar-white);
+    }
+
+    .nav-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-label {
+      margin: 14px 8px 4px;
+      color: rgba(5, 7, 10, 0.48);
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-link {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border-radius: 16px;
+      color: rgba(5, 7, 10, 0.7);
+      font-weight: 850;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .nav-link:hover {
+      background: var(--ar-paper);
+      color: var(--ar-ink);
+      transform: translateX(2px);
+    }
+
+    .nav-link[aria-current="page"] {
+      color: var(--ar-ink);
+      background: var(--ar-green);
+    }
+
+    .nav-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      background: currentColor;
+      opacity: 0.9;
+    }
+
+    .sidebar-card {
+      margin-top: auto;
+      padding: 18px;
+      border-radius: 24px;
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sidebar-card::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 26px;
+      right: -28px;
+      top: 28px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      transform: rotate(-14deg);
+      box-shadow: -36px 48px 0 var(--ar-green), -4px 88px 0 var(--ar-coral);
+    }
+
+    .sidebar-card strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ar-green);
+    }
+
+    .sidebar-card p {
+      position: relative;
+      z-index: 1;
+      margin-top: 8px;
+      color: rgba(255, 255, 255, 0.76);
+      font-weight: 700;
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--ar-shadow-tight);
+    }
+
+    .page-title {
+      min-width: 0;
+    }
+
+    .page-title span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .page-title h1 {
+      margin-top: 12px;
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 5.5vw, 6.2rem);
+      line-height: 0.86;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-weight: 950;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .button {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 18px;
+      background: var(--ar-green);
+      color: var(--ar-ink);
+      box-shadow: var(--ar-shadow-tight);
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, opacity 160ms ease;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 42px rgba(5, 7, 10, 0.16);
+      background: #39ff7a;
+    }
+
+    .button:focus-visible,
+    .field:focus-visible,
+    .select:focus-visible,
+    .textarea:focus-visible,
+    .nav-link:focus-visible,
+    .seg-button:focus-visible,
+    .toggle-input:focus-visible + .toggle-track,
+    .check-input:focus-visible + .check-mark,
+    .radio-input:focus-visible + .radio-mark,
+    .range:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .button:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 18px rgba(5, 7, 10, 0.12);
+    }
+
+    .button:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .button.secondary {
+      background: var(--ar-white);
+    }
+
+    .button.blue {
+      background: var(--ar-blue);
+    }
+
+    .button.coral {
+      background: var(--ar-coral);
+      color: var(--ar-white);
+    }
+
+    .field,
+    .select,
+    .textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: 16px;
+      background: var(--ar-white);
+      color: var(--ar-ink);
+      box-shadow: inset 0 0 0 2px rgba(5, 7, 10, 0.08);
+      padding: 0 16px;
+      font-weight: 760;
+      transition: box-shadow 160ms ease, background 160ms ease, opacity 160ms ease;
+    }
+
+    .field:hover,
+    .select:hover,
+    .textarea:hover {
+      box-shadow: inset 0 0 0 2px rgba(5, 167, 255, 0.38);
+    }
+
+    .field:disabled,
+    .select:disabled,
+    .textarea:disabled {
+      background: var(--ar-snow);
+      color: rgba(5, 7, 10, 0.42);
+      opacity: 0.72;
+      cursor: not-allowed;
+    }
+
+    .select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSI5IiB2aWV3Qm94PSIwIDAgMTQgOSIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTIgMkw3IDdMMTIgMiIgc3Ryb2tlPSIjMDUwNzBBIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==");
+      background-position: calc(100% - 16px) 21px;
+      background-size: 14px 9px;
+      background-repeat: no-repeat;
+      padding-right: 42px;
+    }
+
+    .textarea {
+      min-height: calc(var(--control-height) * 2.4);
+      resize: vertical;
+      padding: 14px 16px;
+      line-height: 1.38;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.2fr) minmax(170px, 0.8fr) minmax(150px, 0.7fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--ar-shadow-tight);
+    }
+
+    .field-group {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field-group label,
+    .control-label {
+      color: rgba(5, 7, 10, 0.56);
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      min-height: 180px;
+      padding: 22px;
+      border-radius: 24px;
+      background: var(--ar-white);
+      box-shadow: var(--ar-shadow-tight);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::after {
+      content: "";
+      position: absolute;
+      width: 92px;
+      height: 22px;
+      right: 18px;
+      bottom: 26px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      transform: rotate(-14deg);
+    }
+
+    .metric.green::after {
+      background: var(--ar-green);
+    }
+
+    .metric.coral::after {
+      background: var(--ar-coral);
+    }
+
+    .metric.yellow::after {
+      background: var(--ar-yellow);
+    }
+
+    .metric span {
+      color: rgba(5, 7, 10, 0.56);
+      font-size: 0.74rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 14px;
+      font-family: var(--font-display);
+      font-size: clamp(3.2rem, 5vw, 5.5rem);
+      line-height: 0.82;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .metric p {
+      margin-top: 12px;
+      max-width: 210px;
+      color: rgba(5, 7, 10, 0.64);
+      font-weight: 760;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--ar-shadow-tight);
+      overflow: hidden;
+    }
+
+    .panel-pad {
+      padding: 22px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 22px 0;
+    }
+
+    .panel-title span {
+      display: inline-flex;
+      min-height: 30px;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 9999px;
+      background: var(--ar-yellow);
+      font-size: 0.7rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel-title h2 {
+      margin-top: 10px;
+      font-family: var(--font-display);
+      font-size: clamp(2.1rem, 3.6vw, 4rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      font-weight: 950;
+    }
+
+    .site-map {
+      position: relative;
+      margin-top: 22px;
+      min-height: 560px;
+      background: var(--ar-snow);
+      overflow: hidden;
+    }
+
+    .site-map img {
+      width: 100%;
+      min-height: 560px;
+      object-fit: cover;
+    }
+
+    .map-callout {
+      position: absolute;
+      left: 22px;
+      bottom: 22px;
+      width: min(350px, calc(100% - 44px));
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--ar-shadow-tight);
+    }
+
+    .map-callout strong {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .map-callout p {
+      margin-top: 8px;
+      color: rgba(5, 7, 10, 0.66);
+      font-weight: 760;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .badge {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 0 10px;
+      background: var(--ar-paper);
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
+
+    .badge.blue {
+      background: var(--ar-blue);
+    }
+
+    .badge.green {
+      background: var(--ar-green);
+    }
+
+    .badge.coral {
+      background: var(--ar-coral);
+      color: var(--ar-white);
+    }
+
+    .segmented {
+      min-height: var(--control-height);
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 9999px;
+      background: var(--ar-white);
+      box-shadow: inset 0 0 0 2px rgba(5, 7, 10, 0.08);
+    }
+
+    .seg-button {
+      min-height: calc(var(--control-height) - 8px);
+      border: 0;
+      border-radius: 9999px;
+      padding: 0 14px;
+      background: transparent;
+      color: rgba(5, 7, 10, 0.64);
+      font-weight: 900;
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
+    }
+
+    .seg-button:hover {
+      background: var(--ar-paper);
+      color: var(--ar-ink);
+    }
+
+    .seg-button[aria-pressed="true"] {
+      background: var(--ar-ink);
+      color: var(--ar-white);
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .ops-photo {
+      min-height: 260px;
+      overflow: hidden;
+      border-radius: 24px;
+      background: var(--ar-paper);
+      box-shadow: var(--ar-shadow-tight);
+    }
+
+    .ops-photo img {
+      width: 100%;
+      min-height: 260px;
+      object-fit: cover;
+    }
+
+    .range-wrap {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 24px;
+      background: var(--ar-snow);
+    }
+
+    .range-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+    }
+
+    .range-value {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 9999px;
+      background: var(--ar-blue);
+      color: var(--ar-ink);
+      font-weight: 950;
+    }
+
+    .range {
+      width: 100%;
+      height: var(--control-height);
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .range::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 9999px;
+      background: var(--ar-mist);
+    }
+
+    .range::-webkit-slider-thumb {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      margin-top: -8px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--ar-white);
+      box-shadow: 0 0 0 8px var(--ar-green), 0 10px 24px rgba(5, 7, 10, 0.20);
+    }
+
+    .range::-moz-range-track {
+      height: 8px;
+      border-radius: 9999px;
+      background: var(--ar-mist);
+    }
+
+    .range::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--ar-white);
+      box-shadow: 0 0 0 8px var(--ar-green), 0 10px 24px rgba(5, 7, 10, 0.20);
+    }
+
+    .toggle-row,
+    .check-row,
+    .radio-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(5, 7, 10, 0.76);
+      font-weight: 800;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--control-height);
+      cursor: pointer;
+    }
+
+    .toggle-input,
+    .check-input,
+    .radio-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toggle-track {
+      width: 56px;
+      height: 32px;
+      border-radius: 9999px;
+      background: var(--ar-mist);
+      box-shadow: inset 0 0 0 2px rgba(5, 7, 10, 0.06);
+      transition: background 160ms ease, box-shadow 160ms ease;
+      position: relative;
+    }
+
+    .toggle-track::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      left: 4px;
+      top: 4px;
+      border-radius: 9999px;
+      background: var(--ar-white);
+      box-shadow: 0 6px 14px rgba(5, 7, 10, 0.18);
+      transition: transform 160ms ease;
+    }
+
+    .toggle-input:checked + .toggle-track {
+      background: var(--ar-green);
+    }
+
+    .toggle-input:checked + .toggle-track::after {
+      transform: translateX(24px);
+      background: var(--ar-ink);
+    }
+
+    .check-label,
+    .radio-label {
+      position: relative;
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      font-weight: 820;
+    }
+
+    .check-mark,
+    .radio-mark {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      background: var(--ar-white);
+      box-shadow: inset 0 0 0 2px rgba(5, 7, 10, 0.16);
+      transition: background 140ms ease, box-shadow 140ms ease;
+    }
+
+    .check-mark {
+      border-radius: 7px;
+    }
+
+    .radio-mark {
+      border-radius: 9999px;
+    }
+
+    .check-input:checked + .check-mark {
+      background: var(--ar-ink);
+      box-shadow: inset 0 0 0 2px var(--ar-ink);
+    }
+
+    .check-input:checked + .check-mark::after {
+      content: "";
+      display: block;
+      width: 10px;
+      height: 6px;
+      margin: 6px auto 0;
+      border-left: 3px solid var(--ar-white);
+      border-bottom: 3px solid var(--ar-white);
+      transform: rotate(-45deg);
+    }
+
+    .radio-input:checked + .radio-mark {
+      box-shadow: inset 0 0 0 7px var(--ar-white), inset 0 0 0 12px var(--ar-ink);
+      background: var(--ar-ink);
+    }
+
+    .check-input:disabled + .check-mark,
+    .radio-input:disabled + .radio-mark,
+    .toggle-input:disabled + .toggle-track {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      padding: 0 22px 22px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      min-width: 680px;
+    }
+
+    th {
+      height: 34px;
+      padding: 0 12px;
+      color: rgba(5, 7, 10, 0.56);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+
+    td {
+      min-height: 58px;
+      padding: 14px 12px;
+      background: var(--ar-paper);
+      color: rgba(5, 7, 10, 0.76);
+      font-size: 14.5px;
+      font-weight: 760;
+      vertical-align: middle;
+    }
+
+    td:first-child {
+      border-radius: 16px 0 0 16px;
+    }
+
+    td:last-child {
+      border-radius: 0 16px 16px 0;
+    }
+
+    .task-name {
+      color: var(--ar-ink);
+      font-weight: 950;
+    }
+
+    .status-chip {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 0 10px;
+      background: var(--ar-green);
+      color: var(--ar-ink);
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-chip.blue {
+      background: var(--ar-blue);
+    }
+
+    .status-chip.coral {
+      background: var(--ar-coral);
+      color: var(--ar-white);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border-radius: 20px;
+      background: var(--ar-paper);
+    }
+
+    .time {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      background: var(--ar-ink);
+      color: var(--ar-white);
+      font-weight: 950;
+    }
+
+    .timeline-item strong {
+      display: block;
+      font-weight: 950;
+      line-height: 1.15;
+    }
+
+    .timeline-item span {
+      display: block;
+      margin-top: 4px;
+      color: rgba(5, 7, 10, 0.62);
+      font-weight: 720;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .inline-options {
+      display: grid;
+      gap: 6px;
+      padding: 14px;
+      border-radius: 20px;
+      background: var(--ar-snow);
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .nav-group {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .sidebar-card {
+        margin-top: 0;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .topbar,
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        justify-content: start;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .nav-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .panel-header {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .sidebar,
+      .topbar,
+      .filter-grid,
+      .panel {
+        border-radius: 18px;
+      }
+
+      .nav-group,
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-title h1 {
+        font-size: clamp(3rem, 17vw, 4.4rem);
+      }
+
+      .toolbar,
+      .filter-grid {
+        gap: 8px;
+      }
+
+      .button,
+      .segmented {
+        width: 100%;
+      }
+
+      .site-map,
+      .site-map img {
+        min-height: 380px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+
+      .button:hover,
+      .nav-link:hover {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Operations navigation">
+      <a class="brand" href="landing.html" aria-label="Aonagi Field landing page">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Aonagi Field</span>
+      </a>
+
+      <nav class="nav-group" aria-label="Dashboard sections">
+        <span class="nav-label">Operate</span>
+        <a class="nav-link" aria-current="page" href="#"><span class="nav-dot"></span>Readiness</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Installations</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Crews</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Public notes</a>
+        <span class="nav-label">Monitor</span>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Wind lanes</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Vendor gates</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Inventory</a>
+        <a class="nav-link" href="#"><span class="nav-dot"></span>Closeout</a>
+      </nav>
+
+      <section class="sidebar-card" aria-label="Current priority">
+        <strong>Priority signal</strong>
+        <p>North schoolyard needs anchor recheck before the 10:30 family photo window.</p>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="topbar" aria-labelledby="page-title">
+        <div class="page-title">
+          <span>Aonagi Rise cockpit</span>
+          <h1 id="page-title">Kodomo no Hi readiness.</h1>
+        </div>
+        <div class="toolbar">
+          <a class="button secondary" href="landing.html">Landing</a>
+          <button class="button blue" type="button">Publish update</button>
+          <button class="button" type="button">Assign crew</button>
+        </div>
+      </section>
+
+      <section class="filter-grid" aria-label="Festival filters">
+        <div class="field-group">
+          <label for="search">Search site or task</label>
+          <input class="field" id="search" type="search" placeholder="Try River Gate or pole A12">
+        </div>
+        <div class="field-group">
+          <label for="site">Site</label>
+          <select class="select" id="site">
+            <option>Kasumigaura River - South Bank</option>
+            <option>Midori Schoolyard</option>
+            <option>Central Library Plaza</option>
+            <option>Harbor Footbridge</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="date">Festival day</label>
+          <input class="field" id="date" type="date" value="2026-05-05">
+        </div>
+        <button class="button coral" type="button">Rebalance</button>
+      </section>
+
+      <section class="status-grid" aria-label="Readiness metrics">
+        <article class="metric green">
+          <span>Pole readiness</span>
+          <strong>91%</strong>
+          <p>38 of 42 lift points inspected and signed.</p>
+        </article>
+        <article class="metric">
+          <span>Wind window</span>
+          <strong>2h</strong>
+          <p>Best lift period begins at 08:50 south bank.</p>
+        </article>
+        <article class="metric coral">
+          <span>Open blockers</span>
+          <strong>3</strong>
+          <p>Two anchor checks and one vendor access conflict.</p>
+        </article>
+        <article class="metric yellow">
+          <span>Crews active</span>
+          <strong>12</strong>
+          <p>Volunteer leads are distributed across four zones.</p>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="stack">
+          <article class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>Site field</span>
+                <h2>South bank lift map</h2>
+              </div>
+              <div class="segmented" role="group" aria-label="Map mode">
+                <button class="seg-button" type="button" aria-pressed="true">Live</button>
+                <button class="seg-button" type="button" aria-pressed="false">Crew</button>
+                <button class="seg-button" type="button" aria-pressed="false">Public</button>
+              </div>
+            </div>
+            <div class="site-map">
+              <img src="media/aonagi-rise-site-map.png" alt="Graphic operational site map for koinobori installation zones and wind corridors.">
+              <div class="map-callout">
+                <strong>Lift corridor clear</strong>
+                <p>Zone A can raise 16 streamers after one anchor recheck at A12. Gate 3 remains public-safe.</p>
+                <div class="badge-row">
+                  <span class="badge green">Ready</span>
+                  <span class="badge blue">8:50 lift</span>
+                  <span class="badge coral">A12 hold</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>Inspection queue</span>
+                <h2>Tasks before launch</h2>
+              </div>
+              <button class="button secondary" type="button">Export list</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Done</th>
+                    <th scope="col">Task</th>
+                    <th scope="col">Zone</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Due</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <label class="check-label">
+                        <input class="check-input" type="checkbox" checked>
+                        <span class="check-mark" aria-hidden="true"></span>
+                        <span class="sr-only">Complete</span>
+                      </label>
+                    </td>
+                    <td class="task-name">Confirm streamer inventory on cart 4</td>
+                    <td>River Gate</td>
+                    <td>Mina</td>
+                    <td><span class="status-chip">Ready</span></td>
+                    <td>08:10</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label class="check-label">
+                        <input class="check-input" type="checkbox">
+                        <span class="check-mark" aria-hidden="true"></span>
+                        <span class="sr-only">Complete</span>
+                      </label>
+                    </td>
+                    <td class="task-name">Recheck anchor line at pole A12</td>
+                    <td>South Bank</td>
+                    <td>Daichi</td>
+                    <td><span class="status-chip coral">Hold</span></td>
+                    <td>08:25</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label class="check-label">
+                        <input class="check-input" type="checkbox" checked>
+                        <span class="check-mark" aria-hidden="true"></span>
+                        <span class="sr-only">Complete</span>
+                      </label>
+                    </td>
+                    <td class="task-name">Set family photo queue markers</td>
+                    <td>Library Plaza</td>
+                    <td>Ari</td>
+                    <td><span class="status-chip blue">Staged</span></td>
+                    <td>09:00</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label class="check-label">
+                        <input class="check-input" type="checkbox">
+                        <span class="check-mark" aria-hidden="true"></span>
+                        <span class="sr-only">Complete</span>
+                      </label>
+                    </td>
+                    <td class="task-name">Move vendor cart outside wind lane B</td>
+                    <td>Food Walk</td>
+                    <td>Haru</td>
+                    <td><span class="status-chip coral">Needs move</span></td>
+                    <td>09:15</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <aside class="stack" aria-label="Controls and schedule">
+          <figure class="ops-photo">
+            <img src="media/aonagi-rise-ops-table.png" alt="Operations table with koinobori visible outside in bright early summer light.">
+          </figure>
+
+          <section class="panel panel-pad" aria-labelledby="wind-title">
+            <div class="panel-title">
+              <span>Wind cue</span>
+              <h2 id="wind-title">Lift threshold</h2>
+            </div>
+            <div class="range-wrap">
+              <div class="range-top">
+                <span>Max gust tolerance</span>
+                <output class="range-value" id="rangeValue" for="gust">8 m/s</output>
+              </div>
+              <input class="range" id="gust" type="range" min="4" max="12" value="8">
+              <label class="toggle-row" for="autoNotice">
+                <span class="toggle">
+                  <input class="toggle-input" id="autoNotice" type="checkbox" checked>
+                  <span class="toggle-track" aria-hidden="true"></span>
+                </span>
+                Auto-draft public delay note if gusts exceed threshold
+              </label>
+            </div>
+          </section>
+
+          <section class="panel panel-pad" aria-labelledby="broadcast-title">
+            <div class="panel-title">
+              <span>Broadcast</span>
+              <h2 id="broadcast-title">Public note</h2>
+            </div>
+            <form class="form-grid">
+              <div class="field-group">
+                <label for="audience">Audience</label>
+                <select class="select" id="audience">
+                  <option>All visitors</option>
+                  <option>Volunteer leads</option>
+                  <option>Vendor captains</option>
+                  <option>School partners</option>
+                </select>
+              </div>
+              <div class="inline-options" role="radiogroup" aria-label="Tone">
+                <span class="control-label">Tone</span>
+                <label class="radio-label">
+                  <input class="radio-input" type="radio" name="tone" checked>
+                  <span class="radio-mark" aria-hidden="true"></span>
+                  Calm and direct
+                </label>
+                <label class="radio-label">
+                  <input class="radio-input" type="radio" name="tone">
+                  <span class="radio-mark" aria-hidden="true"></span>
+                  Ceremonial
+                </label>
+              </div>
+              <div class="field-group">
+                <label for="note">Approved note</label>
+                <textarea class="textarea" id="note">South bank koinobori lift begins at 8:50. Please use River Gate 3 for the clearest viewing route while crews complete the A12 anchor recheck.</textarea>
+              </div>
+              <button class="button" type="button">Stage notice</button>
+              <button class="button secondary" type="button" disabled>Awaiting final wind pull</button>
+            </form>
+          </section>
+
+          <section class="panel panel-pad" aria-labelledby="timeline-title">
+            <div class="panel-title">
+              <span>Today</span>
+              <h2 id="timeline-title">Crew rhythm</h2>
+            </div>
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="time">08:10</span>
+                <div>
+                  <strong>Inventory close</strong>
+                  <span>Streamer carts sealed and staged at River Gate.</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="time">08:25</span>
+                <div>
+                  <strong>A12 anchor recheck</strong>
+                  <span>Two-person inspection before full south bank lift.</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="time">08:50</span>
+                <div>
+                  <strong>Lift window opens</strong>
+                  <span>Wind steady from east, public route clear.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const gust = document.querySelector("#gust");
+    const rangeValue = document.querySelector("#rangeValue");
+    const segmentButtons = document.querySelectorAll(".seg-button");
+
+    function updateGust() {
+      rangeValue.textContent = `${gust.value} m/s`;
+    }
+
+    gust.addEventListener("input", updateGust);
+    updateGust();
+
+    segmentButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        segmentButtons.forEach((item) => item.setAttribute("aria-pressed", "false"));
+        button.setAttribute("aria-pressed", "true");
+      });
+    });
+  </script>
+</body>
+</html>

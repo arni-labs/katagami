@@ -1,6 +1,6 @@
-// Static manifest for the unlisted /lab model bake-off.
+// Static manifest for the unlisted /lab model bake-off (published at /model-bake-off).
 // Artifacts are served from public/lab/<slug>/<model.dir>/{landing,dashboard,immersive}.html
-// One round shown (round 11 = "with rules"); round 12 ("no rules") rides along as a
+// One round shown (round 13 = "anti-slop rules"); round 14 ("no rules") rides along as a
 // per-model `variant` toggled in the UI (same 12 models, two generation conditions).
 // Prior rounds live in git history + experiments/model-bakeoff/bakeoff-results.json.
 
@@ -10,9 +10,9 @@ export interface LabModel {
   name: string; // revealed name
   dir: string; // folder under public/lab/<slug>/
   views?: LabView[]; // per-model available views; defaults to the comparison's views
-  tokens?: string; // thinking tokens, display string (e.g. "213K") — shown on reveal
-  cost?: string; // billed cost, display string (e.g. "$13.64") — shown on reveal
-  wall?: string; // wall-clock run time, display string (e.g. "24m 20s") — shown on reveal
+  tokens?: string; // thinking tokens, display string (e.g. "132K") — shown on reveal
+  cost?: string; // billed cost, display string (e.g. "$5.04") — shown on reveal
+  wall?: string; // wall-clock run time, display string (e.g. "25m 09s") — shown on reveal
   harness?: string; // the CLI/agent it ran in (claude-code, codex, grok-build) — shown on reveal
   imageModel?: string; // image model used (Grok Imagine, gpt-image, …) — shown on reveal
   note?: string; // small footnote shown on reveal
@@ -43,8 +43,8 @@ export interface LabComparison {
 
 export const COMPARISONS: LabComparison[] = [
   {
-    slug: "kodomo-no-hi-11",
-    tag: "R11",
+    slug: "kodomo-no-hi-13",
+    tag: "R13",
     title: "Kodomo no Hi",
     eyebrow: "",
     blurb: "",
@@ -52,51 +52,50 @@ export const COMPARISONS: LabComparison[] = [
       "CONCEPT\nA Kodomo no Hi (Japanese Children's Day) product, grounded in real, specific design precedent (fabricated references disqualify).\n\nAESTHETIC DIRECTION (bold, creative graphic design)\nBright, airy, hopeful early-summer Kodomo no Hi — clear light, fresh greenery, koinobori rising — pushed into confident GRAPHIC DESIGN. Lots of open white, then vivid, almost-neon accent colour used like highlighters (electric sky-blues, fresh greens, a hot pop), bright and clean, never muddy or washed-out pastel. Be creative and expressive — posters, editorial composition, strong type. Stay SLEEK, CLEAN, GROWN-UP — a product an adult would launch; not childish, not cluttered, not a toy. Commit to ONE strong aesthetic.",
     views: ["landing", "dashboard", "immersive"],
     blindOrder: [
-      "kimi",
-      "opus",
-      "grok-build",
       "minimax",
+      "opus",
+      "kimi",
       "gpt",
-      "fugu",
-      "glm",
-      "qwen37",
-      "composer",
       "fugu-ultra",
+      "glm",
+      "grok-build",
+      "qwen37",
       "deepseek",
+      "composer",
+      "fugu",
       "qwen36-or",
     ],
     models: {
-      "opus": { name: "Opus 4.8", dir: "opus-4.8", harness: "claude-code", imageModel: "Grok Imagine", tokens: "213K", cost: "$13.64", wall: "54m 28s" },
-      "gpt": { name: "GPT-5.5", dir: "gpt-5", harness: "codex", imageModel: "gpt-image", tokens: "342K", cost: "$2.68", wall: "44m 53s" },
-      "grok-build": { name: "Grok Build", dir: "grok-4.3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "96K", cost: "$0.10", wall: "6m 37s" },
-      "composer": { name: "Composer 2.5", dir: "composer", harness: "grok-build", imageModel: "Grok Imagine", tokens: "70K", cost: "$0.21", wall: "3m 27s" },
-      "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "619K", cost: "$1.40", wall: "25m 36s" },
-      "qwen36-or": { name: "Qwen 3.6 35B", dir: "qwen3.6-35b", harness: "grok-build", tokens: "59K", cost: "$0.03", wall: "2m 53s", views: [], note: "Failed under the rules — produced no surfaces. See the No-rules variant." },
-      "qwen37": { name: "Qwen 3.7 Max", dir: "qwen3.7-max", harness: "grok-build", imageModel: "Grok Imagine", tokens: "378K", cost: "$1.12", wall: "14m 49s" },
-      "deepseek": { name: "DeepSeek V4", dir: "deepseek-v4", harness: "grok-build", imageModel: "Grok Imagine", tokens: "219K", cost: "$0.12", wall: "11m 21s" },
-      "minimax": { name: "MiniMax M3", dir: "minimax-m3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "949K", cost: "$1.32", wall: "68m 39s" },
-      "kimi": { name: "Kimi K2.7", dir: "kimi-k2.7", harness: "grok-build", imageModel: "Grok Imagine", tokens: "3.15M", cost: "$3.69", wall: "40m 31s" },
-      "fugu": { name: "Fugu", dir: "fugu", harness: "grok-build", imageModel: "Grok Imagine", tokens: "415K", cost: "$2.79", wall: "13m 08s" },
-      "fugu-ultra": { name: "Fugu Ultra", dir: "fugu-ultra", harness: "grok-build", imageModel: "Grok Imagine", tokens: "1.44M", cost: "$24.29", wall: "55m 10s" },
+      "opus": { name: "Opus 4.8", dir: "opus-4.8", harness: "claude-code", imageModel: "Grok Imagine", tokens: "132K", cost: "$5.04", wall: "25m 09s" },
+      "gpt": { name: "GPT-5.5", dir: "gpt-5", harness: "codex", imageModel: "gpt-image", tokens: "132K", cost: "$0.65", wall: "13m 41s" },
+      "grok-build": { name: "Grok Build", dir: "grok-4.3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "68K", cost: "$0.42", wall: "5m 45s" },
+      "composer": { name: "Composer 2.5", dir: "composer", harness: "grok-build", imageModel: "Grok Imagine", tokens: "80K", cost: "$0.70", wall: "2m 52s" },
+      "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "837K", cost: "$1.91", wall: "33m 54s" },
+      "qwen36-or": { name: "Qwen 3.6 35B", dir: "qwen3.6-35b", harness: "grok-build", imageModel: "Grok Imagine", tokens: "170K", cost: "$0.23", wall: "5m 00s" },
+      "qwen37": { name: "Qwen 3.7 Max", dir: "qwen3.7-max", harness: "grok-build", imageModel: "Grok Imagine", tokens: "172K", cost: "$0.83", wall: "14m 56s" },
+      "deepseek": { name: "DeepSeek V4", dir: "deepseek-v4", harness: "grok-build", imageModel: "Grok Imagine", tokens: "160K", cost: "$0.09", wall: "9m 32s" },
+      "minimax": { name: "MiniMax M3", dir: "minimax-m3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "289K", cost: "$0.25", wall: "22m 31s" },
+      "kimi": { name: "Kimi K2.7", dir: "kimi-k2.7", harness: "grok-build", imageModel: "Grok Imagine", tokens: "600K", cost: "$1.20", wall: "15m 24s" },
+      "fugu": { name: "Fugu", dir: "fugu", harness: "grok-build", imageModel: "Grok Imagine", tokens: "134K", cost: "$1.39", wall: "11m 36s" },
+      "fugu-ultra": { name: "Fugu Ultra", dir: "fugu-ultra", harness: "grok-build", imageModel: "Grok Imagine", tokens: "589K", cost: "$9.88", wall: "39m 48s" },
     },
     variant: {
       label: "no rules",
       primaryLabel: "anti-slop rules",
-      slug: "kodomo-no-hi-12",
+      slug: "kodomo-no-hi-14",
       views: ["landing", "dashboard"],
       models: {
-        "opus": { name: "Opus 4.8", dir: "opus-4.8", harness: "claude-code", imageModel: "Grok Imagine", tokens: "99K", cost: "$2.87", wall: "24m 20s" },
-        "gpt": { name: "GPT-5.5", dir: "gpt-5", harness: "codex", imageModel: "gpt-image", tokens: "108K", cost: "$0.49", wall: "11m 20s" },
-        "grok-build": { name: "Grok Build", dir: "grok-4.3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "87K", cost: "$0.09", wall: "6m 27s" },
-        "composer": { name: "Composer 2.5", dir: "composer", harness: "grok-build", imageModel: "Grok Imagine", tokens: "52K", cost: "$0.16", wall: "3m 10s" },
-        "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "375K", cost: "$0.97", wall: "10m 21s" },
-        "qwen36-or": { name: "Qwen 3.6 35B", dir: "qwen3.6-35b", harness: "grok-build", imageModel: "Grok Imagine", tokens: "142K", cost: "$0.14", wall: "6m 38s" },
-        "qwen37": { name: "Qwen 3.7 Max", dir: "qwen3.7-max", harness: "grok-build", imageModel: "Grok Imagine", tokens: "253K", cost: "$0.84", wall: "12m 07s" },
-        "deepseek": { name: "DeepSeek V4", dir: "deepseek-v4", harness: "grok-build", imageModel: "Grok Imagine", tokens: "161K", cost: "$0.09", wall: "10m 20s" },
-        "minimax": { name: "MiniMax M3", dir: "minimax-m3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "521K", cost: "$1.11", wall: "31m 43s" },
-        "kimi": { name: "Kimi K2.7", dir: "kimi-k2.7", harness: "grok-build", imageModel: "Grok Imagine", tokens: "1.39M", cost: "$1.60", wall: "12m 13s" },
-        "fugu": { name: "Fugu", dir: "fugu", harness: "grok-build", imageModel: "Grok Imagine", tokens: "249K", cost: "$1.92", wall: "7m 45s" },
-        "fugu-ultra": { name: "Fugu Ultra", dir: "fugu-ultra", harness: "grok-build", imageModel: "Grok Imagine", tokens: "904K", cost: "$12.33", wall: "25m 36s" },
+        "gpt": { name: "GPT-5.5", dir: "gpt-5", harness: "codex", imageModel: "gpt-image", tokens: "131K", cost: "$0.53", wall: "11m 21s" },
+        "grok-build": { name: "Grok Build", dir: "grok-4.3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "72K", cost: "$0.46", wall: "4m 34s" },
+        "composer": { name: "Composer 2.5", dir: "composer", harness: "grok-build", imageModel: "Grok Imagine", tokens: "88K", cost: "$0.65", wall: "2m 23s" },
+        "glm": { name: "GLM 5.2", dir: "glm-5.2", harness: "grok-build", imageModel: "Grok Imagine", tokens: "508K", cost: "$0.82", wall: "14m 38s" },
+        "qwen36-or": { name: "Qwen 3.6 35B", dir: "qwen3.6-35b", harness: "grok-build", imageModel: "Grok Imagine", tokens: "122K", cost: "$0.10", wall: "8m 27s" },
+        "qwen37": { name: "Qwen 3.7 Max", dir: "qwen3.7-max", harness: "grok-build", imageModel: "Grok Imagine", tokens: "347K", cost: "$0.79", wall: "10m 57s" },
+        "deepseek": { name: "DeepSeek V4", dir: "deepseek-v4", harness: "grok-build", imageModel: "Grok Imagine", tokens: "111K", cost: "$0.07", wall: "10m 12s" },
+        "minimax": { name: "MiniMax M3", dir: "minimax-m3", harness: "grok-build", imageModel: "Grok Imagine", tokens: "215K", cost: "$0.18", wall: "6m 16s" },
+        "kimi": { name: "Kimi K2.7", dir: "kimi-k2.7", harness: "grok-build", imageModel: "Grok Imagine", tokens: "95K", cost: "$0.32", wall: "11m 13s" },
+        "fugu": { name: "Fugu", dir: "fugu", harness: "grok-build", imageModel: "Grok Imagine", tokens: "230K", cost: "$1.21", wall: "8m 53s" },
+        "fugu-ultra": { name: "Fugu Ultra", dir: "fugu-ultra", harness: "grok-build", imageModel: "Grok Imagine", tokens: "185K", cost: "$3.03", wall: "13m 29s" },
       },
     },
     judged: false,
