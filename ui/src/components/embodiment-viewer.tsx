@@ -59,7 +59,9 @@ export function EmbodimentViewer({
 
   return (
     <div className="relative">
-      <ScaledFrame html={fresh.html} title="Design language embodiment" />
+      {/* A fixed preview window (not the full page height) — shows the
+          composition top, scaled to fit width; "open full" shows the rest. */}
+      <ScaledFrame html={fresh.html} title="Design language embodiment" windowHeight={1180} />
       <a
         href={url}
         target="_blank"
