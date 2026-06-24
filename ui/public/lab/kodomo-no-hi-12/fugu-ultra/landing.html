@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Windscale — Kodomo no Hi planning in full sail</title>
+  <meta name="description" content="Windscale helps families, neighborhoods, and cultural teams plan Kodomo no Hi routes, carp streamer displays, volunteers, weather windows, and family moments in one bright festival workspace." />
+  <style>
+    :root {
+      --ws-ink: #071326;
+      --ws-ink-soft: #20314F;
+      --ws-indigo: #102D68;
+      --ws-indigo-2: #16468E;
+      --ws-paper: #FFFDF7;
+      --ws-cloud: #F5F8FB;
+      --ws-mist: #E8EEF4;
+      --ws-vermilion: #D83B18;
+      --ws-iris: #6346B8;
+      --ws-leaf: #218455;
+      --ws-gold: #D99A20;
+      --ws-danger: #B82116;
+      --ws-focus: #28A8FF;
+      --ws-disabled-bg: #E9EDF2;
+      --ws-disabled-text: #7B8797;
+      --ws-font-display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+      --ws-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ws-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --ws-size-xs: 0.78rem;
+      --ws-size-sm: 0.9rem;
+      --ws-size-md: 1rem;
+      --ws-size-lg: 1.15rem;
+      --ws-size-xl: clamp(1.5rem, 1.1rem + 1.4vw, 2.2rem);
+      --ws-size-2xl: clamp(2.4rem, 1.55rem + 3.1vw, 5.4rem);
+      --ws-size-3xl: clamp(3.6rem, 2.1rem + 5.5vw, 8rem);
+      --ws-leading-tight: 0.94;
+      --ws-leading-body: 1.58;
+      --ws-tracking-display: -0.045em;
+      --ws-tracking-label: 0.075em;
+      --ws-space-1: 4px;
+      --ws-space-2: 8px;
+      --ws-space-3: 12px;
+      --ws-space-4: 16px;
+      --ws-space-5: 24px;
+      --ws-space-6: 32px;
+      --ws-space-7: 48px;
+      --ws-space-8: 72px;
+      --ws-space-9: 104px;
+      --ws-radius-none: 0;
+      --ws-radius-sm: 16px;
+      --ws-radius-md: 24px;
+      --ws-radius-pill: 999px;
+      --ws-shadow-soft: 0 24px 80px rgba(7, 19, 38, 0.14);
+      --ws-shadow-tight: 0 12px 34px rgba(7, 19, 38, 0.18);
+      --ws-panel-glow: 0 0 0 1px rgba(255,255,255,0.12), 0 26px 70px rgba(7,19,38,0.28);
+      --ws-control-height: 48px;
+      --ws-focus-ring: 0 0 0 4px rgba(40, 168, 255, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--ws-paper);
+      color: var(--ws-ink);
+      font-family: var(--ws-font-body);
+      font-size: 17px;
+      line-height: var(--ws-leading-body);
+      text-rendering: optimizeLegibility;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    p { margin: 0; }
+    h1, h2, h3 { margin: 0; color: inherit; }
+    button, input, select, textarea { font: inherit; }
+    .page { overflow: hidden; background: var(--ws-paper); }
+    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar {
+      position: fixed;
+      z-index: 20;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(1180px, calc(100% - 36px));
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ws-space-4);
+      padding: 8px 8px 8px 18px;
+      border-radius: var(--ws-radius-pill);
+      background: rgba(255, 253, 247, 0.9);
+      box-shadow: var(--ws-shadow-soft);
+      backdrop-filter: blur(18px);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: var(--ws-control-height);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--ws-ink);
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-indigo);
+      position: relative;
+      box-shadow: inset -9px 0 0 var(--ws-vermilion), inset 9px 0 0 rgba(255,255,255,0.12);
+    }
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      top: 9px;
+      left: 9px;
+    }
+    .brand-mark::after {
+      width: 18px;
+      height: 4px;
+      top: 21px;
+      left: 8px;
+      background: var(--ws-leaf);
+      transform: skewX(-22deg);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: var(--ws-control-height);
+    }
+    .nav a {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--ws-radius-pill);
+      padding: 0 14px;
+      color: var(--ws-ink-soft);
+      font-size: var(--ws-size-sm);
+      font-weight: 800;
+      transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .nav a:hover { background: var(--ws-cloud); color: var(--ws-indigo); transform: translateY(-1px); }
+    .nav a:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring); background: var(--ws-paper); }
+    .hero {
+      min-height: 100svh;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 112px 0 var(--ws-space-8);
+      isolation: isolate;
+      color: var(--ws-paper);
+      background: var(--ws-indigo);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background-image: url("media/windscale-hero.png");
+      background-size: cover;
+      background-position: center;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(7,19,38,.92) 0%, rgba(7,19,38,.68) 43%, rgba(7,19,38,.24) 100%),
+        linear-gradient(0deg, rgba(7,19,38,.58) 0%, rgba(7,19,38,.06) 48%, rgba(7,19,38,.32) 100%);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(300px, .56fr);
+      gap: var(--ws-space-7);
+      align-items: end;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      border-radius: var(--ws-radius-pill);
+      padding: 0 14px;
+      background: rgba(255,253,247,.12);
+      color: var(--ws-paper);
+      font-size: var(--ws-size-xs);
+      font-weight: 900;
+      letter-spacing: var(--ws-tracking-label);
+      text-transform: uppercase;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+    }
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-vermilion);
+      box-shadow: 16px 0 0 var(--ws-iris), 32px 0 0 var(--ws-leaf);
+      margin-right: 28px;
+    }
+    h1 {
+      max-width: 900px;
+      margin-top: var(--ws-space-5);
+      font-family: var(--ws-font-display);
+      font-size: var(--ws-size-3xl);
+      line-height: var(--ws-leading-tight);
+      letter-spacing: var(--ws-tracking-display);
+    }
+    .hero-copy {
+      max-width: 660px;
+      margin-top: var(--ws-space-5);
+      color: rgba(255,253,247,.92);
+      font-size: clamp(1.08rem, .98rem + .45vw, 1.42rem);
+      line-height: 1.45;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: var(--ws-space-3); margin-top: var(--ws-space-6); }
+    .ws-button,
+    .ws-chip {
+      min-height: var(--ws-control-height);
+      border: 0;
+      border-radius: var(--ws-radius-pill);
+      padding: 0 22px;
+      font: 800 var(--ws-size-sm)/1 var(--ws-font-body);
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease, opacity .18s ease;
+    }
+    .ws-button.primary { background: var(--ws-paper); color: var(--ws-indigo); box-shadow: var(--ws-shadow-tight); }
+    .ws-button.primary:hover { background: #ffffff; transform: translateY(-1px); box-shadow: 0 16px 42px rgba(7,19,38,.28); }
+    .ws-button.secondary { background: rgba(255,253,247,.14); color: var(--ws-paper); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+    .ws-button.secondary:hover { background: rgba(255,253,247,.22); transform: translateY(-1px); }
+    .ws-button:focus-visible,
+    .ws-chip:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring), var(--ws-shadow-tight); }
+    .ws-button:active,
+    .ws-chip:active { transform: translateY(1px); box-shadow: none; }
+    .ws-button:disabled,
+    .ws-chip[aria-disabled="true"] { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); box-shadow: none; cursor: not-allowed; transform: none; }
+    .hero-card {
+      border-radius: var(--ws-radius-md);
+      background: rgba(255,253,247,.92);
+      color: var(--ws-ink);
+      padding: var(--ws-space-5);
+      box-shadow: var(--ws-panel-glow);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 72px;
+      right: -54px;
+      top: 24px;
+      background: var(--ws-vermilion);
+      transform: rotate(-14deg);
+      border-radius: var(--ws-radius-pill);
+      opacity: .13;
+    }
+    .hero-card h2 { font: 900 var(--ws-size-sm)/1 var(--ws-font-body); letter-spacing: var(--ws-tracking-label); text-transform: uppercase; color: var(--ws-indigo); }
+    .route-meter { margin-top: var(--ws-space-5); display: grid; gap: var(--ws-space-4); }
+    .meter-row { display: grid; grid-template-columns: 74px 1fr 44px; align-items: center; gap: var(--ws-space-3); font-size: var(--ws-size-sm); font-weight: 800; color: var(--ws-ink-soft); }
+    .bar { height: 14px; border-radius: var(--ws-radius-pill); background: var(--ws-mist); overflow: hidden; }
+    .bar span { display: block; height: 100%; border-radius: inherit; background: var(--ws-indigo); }
+    .bar .vermilion { background: var(--ws-vermilion); }
+    .bar .leaf { background: var(--ws-leaf); }
+    .festival-date {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ws-space-4);
+      margin-top: var(--ws-space-5);
+      padding-top: var(--ws-space-5);
+      box-shadow: inset 0 1px 0 rgba(16,45,104,.14);
+    }
+    .festival-date strong { font-family: var(--ws-font-display); font-size: 2.3rem; letter-spacing: -.04em; line-height: 1; }
+    .festival-date span { display: block; font-size: var(--ws-size-xs); text-transform: uppercase; letter-spacing: var(--ws-tracking-label); font-weight: 900; color: var(--ws-ink-soft); }
+    section { padding: var(--ws-space-9) 0; }
+    .section-head { display: grid; grid-template-columns: minmax(0, .8fr) minmax(280px, .52fr); gap: var(--ws-space-7); align-items: end; margin-bottom: var(--ws-space-7); }
+    .section-kicker { color: var(--ws-vermilion); font-size: var(--ws-size-xs); font-weight: 950; letter-spacing: var(--ws-tracking-label); text-transform: uppercase; margin-bottom: var(--ws-space-3); }
+    h2.section-title { font-family: var(--ws-font-display); font-size: var(--ws-size-2xl); line-height: 1; letter-spacing: var(--ws-tracking-display); color: var(--ws-ink); }
+    .section-copy { color: var(--ws-ink-soft); font-size: var(--ws-size-lg); }
+    .story-grid { display: grid; grid-template-columns: .95fr 1.05fr; gap: var(--ws-space-6); align-items: stretch; }
+    .image-card { border-radius: var(--ws-radius-md); overflow: hidden; min-height: 520px; box-shadow: var(--ws-shadow-soft); background: var(--ws-indigo); }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; }
+    .story-stack { display: grid; gap: var(--ws-space-4); }
+    .story-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--ws-radius-md);
+      background: var(--ws-cloud);
+      padding: var(--ws-space-6);
+      box-shadow: var(--ws-shadow-soft);
+    }
+    .story-card.dark { background: var(--ws-indigo); color: var(--ws-paper); }
+    .story-card::after {
+      content: "";
+      position: absolute;
+      width: 160px;
+      height: 44px;
+      right: -38px;
+      top: 30px;
+      border-radius: var(--ws-radius-pill);
+      transform: rotate(-18deg);
+      background: var(--ws-iris);
+      opacity: .13;
+    }
+    .story-card.dark::after { background: var(--ws-vermilion); opacity: .24; }
+    .story-card h3 { font-family: var(--ws-font-display); font-size: var(--ws-size-xl); letter-spacing: -.035em; line-height: 1.02; margin-bottom: var(--ws-space-3); }
+    .story-card p { color: inherit; opacity: .84; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ws-space-4); margin-top: var(--ws-space-5); }
+    .metric { min-height: 118px; border-radius: var(--ws-radius-sm); background: rgba(255,253,247,.12); padding: var(--ws-space-4); display: flex; flex-direction: column; justify-content: space-between; }
+    .metric strong { font-family: var(--ws-font-display); font-size: 2.35rem; line-height: .9; letter-spacing: -.05em; }
+    .metric span { font-size: var(--ws-size-xs); text-transform: uppercase; letter-spacing: var(--ws-tracking-label); font-weight: 900; opacity: .78; }
+    .windband {
+      background: var(--ws-indigo);
+      color: var(--ws-paper);
+      position: relative;
+      overflow: hidden;
+    }
+    .windband::before,
+    .windband::after {
+      content: "";
+      position: absolute;
+      width: 44vw;
+      height: 120px;
+      border-radius: var(--ws-radius-pill);
+      transform: rotate(-12deg);
+      opacity: .5;
+      pointer-events: none;
+    }
+    .windband::before { background: var(--ws-vermilion); left: -12vw; top: 64px; }
+    .windband::after { background: var(--ws-iris); right: -14vw; bottom: 48px; opacity: .32; }
+    .windband h2.section-title { color: var(--ws-paper); }
+    .windband .section-kicker { color: var(--ws-paper); }
+    .windband .section-copy { color: rgba(255,253,247,.82); }
+    .journey { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ws-space-4); }
+    .step {
+      border-radius: var(--ws-radius-md);
+      padding: var(--ws-space-5);
+      background: rgba(255,253,247,.1);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+      min-height: 260px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .step-num { width: 42px; height: 42px; border-radius: var(--ws-radius-pill); display: grid; place-items: center; background: var(--ws-paper); color: var(--ws-indigo); font-weight: 950; }
+    .step h3 { font: 900 1.12rem/1.1 var(--ws-font-body); margin-top: var(--ws-space-5); }
+    .step p { margin-top: var(--ws-space-3); color: rgba(255,253,247,.78); font-size: var(--ws-size-sm); }
+    .signup-wrap {
+      display: grid;
+      grid-template-columns: .82fr 1fr;
+      gap: var(--ws-space-7);
+      align-items: start;
+    }
+    .signup-card {
+      border-radius: var(--ws-radius-md);
+      background: var(--ws-cloud);
+      padding: var(--ws-space-6);
+      box-shadow: var(--ws-shadow-soft);
+    }
+    .signup-card h2 { font-family: var(--ws-font-display); font-size: var(--ws-size-2xl); letter-spacing: var(--ws-tracking-display); line-height: 1; margin-bottom: var(--ws-space-4); }
+    form { display: grid; gap: var(--ws-space-4); }
+    .field-group { display: grid; gap: var(--ws-space-2); }
+    label, .legend { font-size: var(--ws-size-xs); text-transform: uppercase; letter-spacing: var(--ws-tracking-label); color: var(--ws-ink-soft); font-weight: 950; }
+    .ws-field,
+    input[type="text"],
+    input[type="email"],
+    input[type="search"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      min-height: var(--ws-control-height);
+      width: 100%;
+      border: 0;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-cloud);
+      color: var(--ws-ink);
+      padding: 0 18px;
+      font: 700 var(--ws-size-sm)/1 var(--ws-font-body);
+      box-shadow: inset 0 0 0 1px rgba(16,45,104,.12);
+      transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+      appearance: none;
+    }
+    textarea { min-height: calc(var(--ws-control-height) * 2.25); border-radius: var(--ws-radius-md); padding: 15px 18px; line-height: 1.45; resize: vertical; }
+    select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--ws-indigo) 50%),
+        linear-gradient(135deg, var(--ws-indigo) 50%, transparent 50%);
+      background-position: calc(100% - 22px) 21px, calc(100% - 15px) 21px;
+      background-size: 7px 7px, 7px 7px;
+      background-repeat: no-repeat;
+      padding-right: 44px;
+    }
+    .ws-field:hover,
+    input:hover,
+    select:hover,
+    textarea:hover { background-color: #EEF4FA; box-shadow: inset 0 0 0 1px rgba(16,45,104,.22); }
+    .ws-field:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible { outline: 0; background: var(--ws-paper); box-shadow: var(--ws-focus-ring), inset 0 0 0 2px var(--ws-indigo-2); }
+    .ws-field:active,
+    input:active,
+    select:active,
+    textarea:active { transform: translateY(1px); }
+    .ws-field:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); cursor: not-allowed; box-shadow: none; transform: none; }
+    input::placeholder,
+    textarea::placeholder { color: #66758B; opacity: 1; }
+    .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ws-space-3); }
+    .choice,
+    .switch-row {
+      min-height: var(--ws-control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--ws-space-3);
+      border-radius: var(--ws-radius-pill);
+      padding: 0 14px;
+      background: var(--ws-paper);
+      color: var(--ws-ink);
+      box-shadow: inset 0 0 0 1px rgba(16,45,104,.12);
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease;
+      font-weight: 850;
+      font-size: var(--ws-size-sm);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .choice:hover,
+    .switch-row:hover { background: #EEF4FA; box-shadow: inset 0 0 0 1px rgba(16,45,104,.24); transform: translateY(-1px); }
+    .choice:has(input:focus-visible),
+    .switch-row:has(input:focus-visible) { box-shadow: var(--ws-focus-ring), inset 0 0 0 2px var(--ws-indigo-2); }
+    .choice:active,
+    .switch-row:active { transform: translateY(1px); }
+    .choice input[type="checkbox"],
+    .choice input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      margin: 0;
+      border-radius: 7px;
+      background: var(--ws-cloud);
+      box-shadow: inset 0 0 0 2px rgba(16,45,104,.3);
+      position: relative;
+      flex: 0 0 auto;
+      padding: 0;
+    }
+    .choice input[type="radio"] { border-radius: var(--ws-radius-pill); }
+    .choice input[type="checkbox"]:checked,
+    .choice input[type="radio"]:checked { background: var(--ws-indigo); box-shadow: inset 0 0 0 2px var(--ws-indigo); }
+    .choice input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 6px;
+      left: 6px;
+      top: 6px;
+      border-left: 2px solid var(--ws-paper);
+      border-bottom: 2px solid var(--ws-paper);
+      transform: rotate(-45deg);
+    }
+    .choice input[type="radio"]:checked::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      left: 7px;
+      top: 7px;
+    }
+    .choice:has(input:disabled),
+    .switch-row:has(input:disabled) { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); cursor: not-allowed; transform: none; box-shadow: none; }
+    .switch-row input[type="checkbox"] {
+      appearance: none;
+      width: 46px;
+      height: 26px;
+      min-height: 26px;
+      border-radius: var(--ws-radius-pill);
+      background: #8291A6;
+      margin: 0;
+      padding: 3px;
+      box-shadow: none;
+      transition: background .18s ease;
+      flex: 0 0 auto;
+    }
+    .switch-row input[type="checkbox"]::before {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 20px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      transition: transform .18s ease;
+      box-shadow: 0 2px 8px rgba(7,19,38,.22);
+    }
+    .switch-row input[type="checkbox"]:checked { background: var(--ws-leaf); }
+    .switch-row input[type="checkbox"]:checked::before { transform: translateX(20px); }
+    input[type="range"] {
+      min-height: var(--ws-control-height);
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+      border-radius: var(--ws-radius-pill);
+    }
+    input[type="range"]::-webkit-slider-runnable-track { height: 10px; border-radius: var(--ws-radius-pill); background: linear-gradient(90deg, var(--ws-indigo) 0 68%, var(--ws-mist) 68% 100%); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; border-radius: var(--ws-radius-pill); background: var(--ws-paper); box-shadow: 0 0 0 7px var(--ws-indigo), var(--ws-shadow-tight); margin-top: -7px; }
+    input[type="range"]::-moz-range-track { height: 10px; border-radius: var(--ws-radius-pill); background: var(--ws-mist); }
+    input[type="range"]::-moz-range-progress { height: 10px; border-radius: var(--ws-radius-pill); background: var(--ws-indigo); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border: 7px solid var(--ws-indigo); border-radius: var(--ws-radius-pill); background: var(--ws-paper); box-shadow: var(--ws-shadow-tight); }
+    input[type="range"]:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring); }
+    input[type="range"]:disabled { opacity: .55; cursor: not-allowed; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: var(--ws-space-3); align-items: center; }
+    .form-actions .ws-button.primary { background: var(--ws-indigo); color: var(--ws-paper); }
+    .form-actions .ws-button.secondary { background: var(--ws-paper); color: var(--ws-indigo); box-shadow: inset 0 0 0 1px rgba(16,45,104,.14); }
+    .quote-card {
+      border-radius: var(--ws-radius-md);
+      background: var(--ws-indigo);
+      color: var(--ws-paper);
+      padding: var(--ws-space-6);
+      box-shadow: var(--ws-panel-glow);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--ws-space-7);
+      position: relative;
+      overflow: hidden;
+    }
+    .quote-card::before { content: ""; position: absolute; width: 330px; height: 88px; right: -90px; bottom: 80px; background: var(--ws-leaf); border-radius: var(--ws-radius-pill); transform: rotate(-16deg); opacity: .32; }
+    .quote { font-family: var(--ws-font-display); font-size: clamp(2rem, 1.35rem + 2vw, 4.2rem); line-height: 1.02; letter-spacing: var(--ws-tracking-display); position: relative; }
+    .quote-by { color: rgba(255,253,247,.75); font-weight: 800; position: relative; }
+    .footer { background: var(--ws-ink); color: var(--ws-paper); padding: var(--ws-space-7) 0; }
+    .footer-inner { display: flex; justify-content: space-between; gap: var(--ws-space-5); flex-wrap: wrap; align-items: center; }
+    .footer a { min-height: var(--ws-control-height); display: inline-flex; align-items: center; border-radius: var(--ws-radius-pill); padding: 0 12px; color: rgba(255,253,247,.74); font-weight: 800; }
+    .footer a:hover { color: var(--ws-paper); background: rgba(255,255,255,.08); }
+    .footer a:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring); }
+
+    @media (max-width: 920px) {
+      .nav { display: none; }
+      .hero-grid,
+      .section-head,
+      .story-grid,
+      .signup-wrap { grid-template-columns: 1fr; }
+      .journey { grid-template-columns: repeat(2, 1fr); }
+      .hero { padding-top: 120px; }
+      .image-card { min-height: 360px; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 28px, 1180px); }
+      .topbar { top: 10px; width: calc(100% - 20px); }
+      h1 { font-size: clamp(3rem, 17vw, 5.2rem); }
+      section { padding: var(--ws-space-8) 0; }
+      .journey,
+      .metrics,
+      .choice-grid { grid-template-columns: 1fr; }
+      .hero-card { padding: var(--ws-space-4); }
+      .festival-date { align-items: flex-start; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" aria-label="Windscale navigation">
+      <a class="brand" href="#top" aria-label="Windscale home"><span class="brand-mark" aria-hidden="true"></span><span>Windscale</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#plan">Plan</a>
+        <a href="#routes">Routes</a>
+        <a href="#families">Families</a>
+        <a href="#reserve">Reserve</a>
+      </nav>
+      <a class="ws-button primary" href="dashboard.html">View dashboard</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-label="Windscale product introduction">
+        <div class="shell hero-grid">
+          <div>
+            <div class="eyebrow">Kodomo no Hi in full sail</div>
+            <h1>Plan the day the carp take the sky.</h1>
+            <p class="hero-copy">Windscale is the celebration workspace for families, neighborhood associations, schools, and cultural teams coordinating Koinobori routes, volunteer shifts, weather windows, and the small moments children remember.</p>
+            <div class="hero-actions">
+              <a class="ws-button primary" href="#reserve">Start a festival board</a>
+              <a class="ws-button secondary" href="#plan">See the flow</a>
+            </div>
+          </div>
+          <aside class="hero-card" aria-label="Festival readiness summary">
+            <h2>May 5 readiness</h2>
+            <div class="route-meter">
+              <div class="meter-row"><span>Routes</span><div class="bar"><span style="width: 86%"></span></div><span>86%</span></div>
+              <div class="meter-row"><span>Crews</span><div class="bar"><span class="leaf" style="width: 72%"></span></div><span>72%</span></div>
+              <div class="meter-row"><span>Wind</span><div class="bar"><span class="vermilion" style="width: 58%"></span></div><span>OK</span></div>
+            </div>
+            <div class="festival-date">
+              <div><span>Launch window</span><strong>06:40</strong></div>
+              <div><span>Family groups</span><strong>128</strong></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="plan">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">A real product world</div>
+              <h2 class="section-title">From porch poles to river bridges, every streamer has a place.</h2>
+            </div>
+            <p class="section-copy">Windscale turns a scattered spring ritual into one shared board: route permits, family dedications, safety notes, lift crews, and the order of the morning ceremony.</p>
+          </div>
+          <div class="story-grid">
+            <figure class="image-card" aria-label="Windscale planning imagery">
+              <img src="media/windscale-planning.png" alt="Layered Koinobori planning materials and a tablet arranged on a bright festival table" />
+            </figure>
+            <div class="story-stack">
+              <article class="story-card dark">
+                <h3>Shape the wind before the morning arrives.</h3>
+                <p>Map each carp streamer to a family, pole, bridge, schoolyard, or storefront. Windscale keeps the public route beautiful while surfacing the practical work underneath.</p>
+                <div class="metrics">
+                  <div class="metric"><strong>42</strong><span>display points</span></div>
+                  <div class="metric"><strong>5</strong><span>weather calls</span></div>
+                  <div class="metric"><strong>18</strong><span>crew leads</span></div>
+                </div>
+              </article>
+              <article class="story-card">
+                <h3>Family dedications without spreadsheet drift.</h3>
+                <p>Collect names, ages, donation notes, pickup needs, and photo permissions through one calm intake flow that feels ceremonial, not administrative.</p>
+              </article>
+              <article class="story-card">
+                <h3>Public pages and ops boards stay in sync.</h3>
+                <p>Publish the guest-facing program while the team dashboard keeps crew capacity, wind holds, and route changes current.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="routes" class="windband">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Festival operating rhythm</div>
+              <h2 class="section-title">One morning, four clean passes.</h2>
+            </div>
+            <p class="section-copy">The Windscale flow follows the way Kodomo no Hi is actually run: prepare the streamers, call the wind, guide families, and close the route with care.</p>
+          </div>
+          <div class="journey" aria-label="Windscale planning steps">
+            <article class="step"><div><span class="step-num">1</span><h3>Gather the carp</h3><p>Invite families, collect dedications, confirm display materials, and group streamers by neighborhood.</p></div></article>
+            <article class="step"><div><span class="step-num">2</span><h3>Read the wind</h3><p>Set weather thresholds, assign hold calls, and prepare alternate indoor moments without scrambling.</p></div></article>
+            <article class="step"><div><span class="step-num">3</span><h3>Lift the route</h3><p>Dispatch volunteers by segment with notes for ladders, ties, street access, and family arrivals.</p></div></article>
+            <article class="step"><div><span class="step-num">4</span><h3>Carry it home</h3><p>Track takedown, keepsake pickup, photo sharing, and next year's earliest commitments.</p></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="families">
+        <div class="shell signup-wrap">
+          <div class="quote-card">
+            <p class="quote">“It felt like the whole town knew where to stand, what to carry, and why it mattered.”</p>
+            <p class="quote-by">Mina Arai, neighborhood festival lead</p>
+          </div>
+          <div id="reserve" class="signup-card">
+            <h2>Reserve a Windscale board.</h2>
+            <form aria-label="Reserve a Windscale board">
+              <div class="field-group">
+                <label for="group-name">Group name</label>
+                <input id="group-name" name="group-name" type="text" placeholder="Midorikawa family council" />
+              </div>
+              <div class="field-group">
+                <label for="email">Coordinator email</label>
+                <input id="email" name="email" type="email" placeholder="lead@example.org" />
+              </div>
+              <div class="field-group">
+                <label for="route-type">Primary route type</label>
+                <select id="route-type" name="route-type">
+                  <option>River walk and bridge rail</option>
+                  <option>Schoolyard and community hall</option>
+                  <option>Shopping street and station plaza</option>
+                  <option>Home porches and garden poles</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <span class="legend">Planning support</span>
+                <div class="choice-grid">
+                  <label class="choice"><input type="checkbox" name="support" checked /> Family intake</label>
+                  <label class="choice"><input type="checkbox" name="support" /> Volunteer dispatch</label>
+                  <label class="choice"><input type="radio" name="scale" checked /> 50–150 families</label>
+                  <label class="choice"><input type="radio" name="scale" /> 150+ families</label>
+                </div>
+              </div>
+              <div class="field-group">
+                <label class="switch-row"><input type="checkbox" checked /> Include public route page</label>
+              </div>
+              <div class="field-group">
+                <label for="confidence">Wind-risk tolerance</label>
+                <input id="confidence" type="range" min="0" max="100" value="68" />
+              </div>
+              <div class="field-group">
+                <label for="notes">Festival note</label>
+                <textarea id="notes" name="notes" placeholder="Tell us about your route, display size, or ceremony timing."></textarea>
+              </div>
+              <div class="form-actions">
+                <button class="ws-button primary" type="submit">Request preview</button>
+                <button class="ws-button secondary" type="button">Download sample plan</button>
+                <button class="ws-button" type="button" disabled>Closed route</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-inner">
+        <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span><span>Windscale</span></a>
+        <div>
+          <a href="#plan">Planning</a>
+          <a href="#routes">Route flow</a>
+          <a href="dashboard.html">Dashboard</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

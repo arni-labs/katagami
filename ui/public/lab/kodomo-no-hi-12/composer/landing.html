@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koi Current — Carry your Children's Day traditions forward</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-ink: #0A1628;
+      --color-paper: #FAFBF7;
+      --color-mist: #E8EDF2;
+      --color-slate: #4A5E78;
+      --color-ghost: #8A9BB0;
+      --color-koi: #E63B2E;
+      --color-koi-hover: #CC2F24;
+      --color-koi-active: #B5281F;
+      --color-current: #1B6FD1;
+      --color-current-active: #1559A8;
+      --color-scale: #F4B942;
+      --color-success: #1A7F4E;
+      --color-warning: #C97A00;
+      --color-error: #C41E24;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "DM Sans", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --text-xs: 12px;
+      --text-sm: 14.5px;
+      --text-base: 17px;
+      --text-lg: 20px;
+      --text-xl: 24px;
+      --text-2xl: 32px;
+      --text-3xl: 48px;
+      --text-4xl: 64px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --radius-none: 0;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-pill: 9999px;
+      --control-height: 44px;
+      --max-width: 1200px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      color: var(--color-ink);
+      background: var(--color-paper);
+    }
+
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 2px solid var(--color-current);
+      outline-offset: 2px;
+    }
+
+    img { display: block; max-width: 100%; height: auto; }
+
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+
+    /* ——— Components ——— */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      height: var(--control-height);
+      padding: 0 var(--space-5);
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1;
+      border-radius: var(--radius-pill);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+      white-space: nowrap;
+    }
+
+    .btn--primary {
+      background: var(--color-koi);
+      color: var(--color-paper);
+    }
+    .btn--primary:hover { background: var(--color-koi-hover); }
+    .btn--primary:active { background: var(--color-koi-active); }
+    .btn--primary:disabled {
+      background: var(--color-mist);
+      color: var(--color-ghost);
+      cursor: not-allowed;
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--color-ink);
+      border: 1.5px solid var(--color-ink);
+    }
+    .btn--secondary:hover { background: var(--color-mist); }
+    .btn--secondary:active { background: #D5DCE6; }
+    .btn--secondary:disabled {
+      color: var(--color-ghost);
+      border-color: var(--color-mist);
+      cursor: not-allowed;
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--color-current);
+    }
+    .btn--ghost:hover { background: rgba(27, 111, 209, 0.08); }
+    .btn--ghost:active {
+      background: rgba(27, 111, 209, 0.14);
+      color: var(--color-current-active);
+    }
+    .btn--ghost:disabled {
+      color: var(--color-ghost);
+      cursor: not-allowed;
+    }
+
+    .input, .select, .textarea {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      border: 1.5px solid var(--color-mist);
+      border-radius: var(--radius-md);
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+    .input, .select {
+      height: var(--control-height);
+      padding: 0 14px;
+      width: 100%;
+    }
+    .input:hover, .select:hover, .textarea:hover { border-color: var(--color-slate); }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--color-current); }
+    .input:disabled, .select:disabled, .textarea:disabled {
+      background: var(--color-mist);
+      color: var(--color-ghost);
+      cursor: not-allowed;
+    }
+    .input::placeholder, .textarea::placeholder { color: var(--color-slate); }
+
+    .textarea {
+      min-height: 120px;
+      padding: 12px 14px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .select-wrap {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    .select {
+      appearance: none;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    .select-wrap::after {
+      content: "";
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%234A5E78' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .checkbox, .radio {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      color: var(--color-ink);
+    }
+    .checkbox input, .radio input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .checkbox__box {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--color-slate);
+      border-radius: 4px;
+      background: var(--color-paper);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .checkbox:hover .checkbox__box { border-color: var(--color-current); }
+    .checkbox input:checked + .checkbox__box {
+      background: var(--color-koi);
+      border-color: var(--color-koi);
+    }
+    .checkbox input:checked + .checkbox__box::after {
+      content: "";
+      width: 10px;
+      height: 6px;
+      border-left: 2px solid var(--color-paper);
+      border-bottom: 2px solid var(--color-paper);
+      transform: rotate(-45deg) translateY(-1px);
+    }
+    .checkbox input:disabled ~ span { color: var(--color-ghost); cursor: not-allowed; }
+    .checkbox input:disabled + .checkbox__box {
+      background: var(--color-mist);
+      border-color: var(--color-mist);
+    }
+
+    .radio__ring {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--color-slate);
+      border-radius: 50%;
+      background: var(--color-paper);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 150ms ease;
+    }
+    .radio:hover .radio__ring { border-color: var(--color-current); }
+    .radio input:checked + .radio__ring { border-color: var(--color-koi); }
+    .radio input:checked + .radio__ring::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-koi);
+    }
+    .radio input:disabled ~ span { color: var(--color-ghost); cursor: not-allowed; }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      font-size: var(--text-sm);
+    }
+    .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle__track {
+      width: 44px;
+      height: 24px;
+      border-radius: var(--radius-pill);
+      background: var(--color-mist);
+      position: relative;
+      transition: background 150ms ease;
+      flex-shrink: 0;
+    }
+    .toggle__thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--color-paper);
+      transition: transform 200ms ease;
+    }
+    .toggle:hover .toggle__track { background: #D5DCE6; }
+    .toggle input:checked + .toggle__track { background: var(--color-koi); }
+    .toggle input:checked + .toggle__track .toggle__thumb { transform: translateX(20px); }
+    .toggle input:checked:hover + .toggle__track { background: var(--color-koi-hover); }
+    .toggle input:disabled + .toggle__track { background: var(--color-mist); cursor: not-allowed; }
+    .toggle input:disabled + .toggle__track .toggle__thumb { background: var(--color-ghost); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge--koi { background: var(--color-koi); color: var(--color-paper); }
+    .badge--scale { background: var(--color-scale); color: var(--color-ink); }
+    .badge--current { background: var(--color-current); color: var(--color-paper); }
+
+    /* ——— Header ——— */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(250, 251, 247, 0.92);
+      backdrop-filter: blur(12px);
+    }
+    .header__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      text-decoration: none;
+      color: var(--color-ink);
+    }
+    .logo__mark {
+      width: 36px;
+      height: 36px;
+    }
+    .logo__text {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .logo__jp {
+      font-size: var(--text-xs);
+      color: var(--color-slate);
+      display: block;
+      font-family: var(--font-body);
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .nav__link {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-slate);
+      text-decoration: none;
+      transition: color 150ms ease;
+    }
+    .nav__link:hover { color: var(--color-ink); }
+    .nav__actions { display: flex; gap: var(--space-3); }
+    .nav__toggle { display: none; }
+
+    /* ——— Hero ——— */
+    .hero {
+      position: relative;
+      min-height: 92vh;
+      display: flex;
+      align-items: flex-end;
+      margin-top: 0;
+    }
+    .hero__image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero__scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(10, 22, 40, 0.88) 0%,
+        rgba(10, 22, 40, 0.45) 40%,
+        rgba(10, 22, 40, 0.1) 70%,
+        transparent 100%
+      );
+    }
+    .hero__blob {
+      position: absolute;
+      top: 12%;
+      right: -5%;
+      width: 420px;
+      height: 420px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .hero__content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: var(--space-9) var(--space-6) var(--space-8);
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .hero__badge { margin-bottom: var(--space-5); }
+    .hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 7vw, var(--text-4xl));
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--color-paper);
+      max-width: 14ch;
+      margin-bottom: var(--space-5);
+    }
+    .hero__lead {
+      font-size: var(--text-lg);
+      color: rgba(250, 251, 247, 0.85);
+      max-width: 52ch;
+      margin-bottom: var(--space-6);
+    }
+    .hero__cta { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+    /* ——— Sections ——— */
+    .section {
+      padding: var(--space-9) 0;
+    }
+    .section--mist { background: var(--color-mist); }
+    .section__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-koi);
+      margin-bottom: var(--space-4);
+    }
+    .section__title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, var(--text-3xl));
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-5);
+      max-width: 20ch;
+    }
+    .section__lead {
+      font-size: var(--text-lg);
+      color: var(--color-slate);
+      max-width: 58ch;
+      margin-bottom: var(--space-7);
+    }
+
+    /* ——— Stats strip ——— */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-5);
+      margin-top: var(--space-7);
+    }
+    .stat {
+      padding: var(--space-5);
+      background: var(--color-paper);
+      border-radius: var(--radius-lg);
+    }
+    .stat__value {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-koi);
+    }
+    .stat__label {
+      font-size: var(--text-sm);
+      color: var(--color-slate);
+      margin-top: var(--space-2);
+    }
+
+    /* ——— Feature blocks ——— */
+    .feature {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: var(--space-8);
+      align-items: center;
+      margin-bottom: var(--space-8);
+    }
+    .feature--reverse { direction: rtl; }
+    .feature--reverse > * { direction: ltr; }
+    .feature__image {
+      border-radius: var(--radius-lg);
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+    }
+    .feature__title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
+    }
+    .feature__text {
+      color: var(--color-slate);
+      margin-bottom: var(--space-5);
+    }
+    .feature__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .feature__list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+    }
+    .feature__list li::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--color-scale);
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    /* ——— Waitlist form ——— */
+    .waitlist {
+      background: var(--color-ink);
+      color: var(--color-paper);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+    .waitlist__title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
+    }
+    .waitlist__text {
+      color: rgba(250, 251, 247, 0.75);
+      font-size: var(--text-base);
+    }
+    .form-group { margin-bottom: var(--space-4); }
+    .form-label {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      margin-bottom: var(--space-2);
+      color: var(--color-paper);
+    }
+    .form-row {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: var(--space-4);
+    }
+    .form-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+    .waitlist .input, .waitlist .select {
+      background: rgba(250, 251, 247, 0.08);
+      border-color: rgba(250, 251, 247, 0.2);
+      color: var(--color-paper);
+    }
+    .waitlist .input::placeholder { color: rgba(250, 251, 247, 0.45); }
+    .waitlist .input:hover, .waitlist .select:hover {
+      border-color: rgba(250, 251, 247, 0.4);
+    }
+    .waitlist .input:focus, .waitlist .select:focus {
+      border-color: var(--color-current);
+      background: rgba(250, 251, 247, 0.12);
+    }
+
+    /* ——— Footer ——— */
+    .footer {
+      padding: var(--space-8) 0 var(--space-6);
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+    .footer__grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: var(--space-7);
+      margin-bottom: var(--space-7);
+    }
+    .footer__brand p {
+      color: rgba(250, 251, 247, 0.6);
+      font-size: var(--text-sm);
+      margin-top: var(--space-4);
+      max-width: 32ch;
+    }
+    .footer__heading {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-scale);
+      margin-bottom: var(--space-4);
+    }
+    .footer__link {
+      display: block;
+      color: rgba(250, 251, 247, 0.7);
+      text-decoration: none;
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-3);
+      transition: color 150ms ease;
+    }
+    .footer__link:hover { color: var(--color-paper); }
+    .footer__bottom {
+      padding-top: var(--space-5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-xs);
+      color: rgba(250, 251, 247, 0.45);
+    }
+
+    @media (max-width: 900px) {
+      .nav__links, .nav__actions { display: none; }
+      .nav__toggle { display: flex; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .feature, .feature--reverse { grid-template-columns: 1fr; direction: ltr; }
+      .waitlist { grid-template-columns: 1fr; }
+      .footer__grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: 1fr; }
+      .footer__grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header__inner">
+      <a href="#" class="logo">
+        <svg class="logo__mark" viewBox="0 0 36 36" aria-hidden="true">
+          <path d="M6 18c0-6 4-12 12-12s12 6 12 12-4 12-12 12" fill="none" stroke="#E63B2E" stroke-width="2.5"/>
+          <path d="M10 18c2-3 5-5 8-5s6 2 8 5" fill="none" stroke="#1B6FD1" stroke-width="2"/>
+          <circle cx="26" cy="14" r="3" fill="#F4B942"/>
+        </svg>
+        <span>
+          <span class="logo__text">Koi Current</span>
+          <span class="logo__jp">鯉流</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <div class="nav__links" style="display:flex;gap:24px;">
+          <a href="#traditions" class="nav__link">Traditions</a>
+          <a href="#features" class="nav__link">Features</a>
+          <a href="#community" class="nav__link">Community</a>
+        </div>
+        <div class="nav__actions">
+          <a href="dashboard.html" class="btn btn--ghost">Sign in</a>
+          <a href="#waitlist" class="btn btn--primary">Start free</a>
+        </div>
+        <button class="btn btn--secondary nav__toggle" aria-label="Open menu">Menu</button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <img class="hero__image" src="./media/hero.jpg" alt="Colorful koinobori carp streamers rising against a cerulean spring sky">
+    <div class="hero__scrim"></div>
+    <svg class="hero__blob" viewBox="0 0 200 200" aria-hidden="true">
+      <ellipse cx="100" cy="100" rx="90" ry="70" fill="#1B6FD1" transform="rotate(-15 100 100)"/>
+    </svg>
+    <div class="hero__content">
+      <span class="badge badge--scale hero__badge">Kodomo no Hi 2026</span>
+      <h1 class="hero__title">Every streamer tells a story</h1>
+      <p class="hero__lead">Koi Current helps families plan, document, and pass down Children's Day traditions — from the first koinobori to the kabuto on the shelf.</p>
+      <div class="hero__cta">
+        <a href="#waitlist" class="btn btn--primary">Begin your tradition log</a>
+        <a href="dashboard.html" class="btn btn--secondary" style="border-color:var(--color-paper);color:var(--color-paper);">View demo dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="traditions">
+    <div class="container">
+      <p class="section__eyebrow">Why Koi Current</p>
+      <h2 class="section__title">Traditions deserve more than a photo album</h2>
+      <p class="section__lead">Most families hang koinobori once a year and forget the details by next May. Koi Current captures the who, when, and why — so your children inherit the full current, not just the pictures.</p>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__value">12k+</div>
+          <div class="stat__label">Families documenting May 5th</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">48k</div>
+          <div class="stat__label">Koinobori displays logged</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">156</div>
+          <div class="stat__label">Prefectures represented</div>
+        </div>
+        <div class="stat">
+          <div class="stat__value">4.9</div>
+          <div class="stat__label">Average family rating</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--mist" id="features">
+    <div class="container">
+      <p class="section__eyebrow">Features</p>
+      <h2 class="section__title">Built for the whole household</h2>
+
+      <div class="feature">
+        <img class="feature__image" src="./media/feature-family.jpg" alt="Family hanging koinobori carp streamers on a balcony for Children's Day">
+        <div>
+          <h3 class="feature__title">Plan your display together</h3>
+          <p class="feature__text">Coordinate pole heights, streamer colors, and timing with grandparents across prefectures. Everyone sees the same plan before May 5th arrives.</p>
+          <ul class="feature__list">
+            <li>Shared family calendar with reminder cadence</li>
+            <li>Stream inventory tracker by child and year</li>
+            <li>Weather-aware hanging recommendations</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature feature--reverse">
+        <img class="feature__image" src="./media/feature-tradition.jpg" alt="Child's hand placing a golden kabuto helmet ornament beside miniature koinobori flags">
+        <div>
+          <h3 class="feature__title">Preserve the small rituals</h3>
+          <p class="feature__text">The kabuto placement. The chimaki recipe. The story of why black carp goes on top. Koi Current logs the details that photos alone cannot hold.</p>
+          <ul class="feature__list">
+            <li>Voice notes transcribed and searchable</li>
+            <li>Year-over-year milestone comparisons</li>
+            <li>Private archive exportable as a family book</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature">
+        <img class="feature__image" src="./media/feature-neighborhood.jpg" alt="Aerial view of a Japanese neighborhood street lined with colorful carp streamers during Kodomo no Hi">
+        <div>
+          <h3 class="feature__title">Connect with your neighborhood</h3>
+          <p class="feature__text">See how nearby families celebrate. Opt in to share your display map, discover local events, and find carp-streamer craftspeople in your ward.</p>
+          <ul class="feature__list">
+            <li>Opt-in neighborhood display map</li>
+            <li>Local event and workshop listings</li>
+            <li>Craftspeople directory by region</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="waitlist">
+    <div class="container">
+      <div class="waitlist" id="community">
+        <div>
+          <h2 class="waitlist__title">Join before this year's current rises</h2>
+          <p class="waitlist__text">Early families receive a printed tradition journal and priority access to the neighborhood map. Tell us how your household marks Kodomo no Hi.</p>
+        </div>
+        <form>
+          <div class="form-group">
+            <label class="form-label" for="email">Email address</label>
+            <input class="input" type="email" id="email" name="email" placeholder="you@family.jp" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="prefecture">Prefecture</label>
+            <div class="select-wrap">
+              <select class="select" id="prefecture" name="prefecture">
+                <option value="">Select prefecture</option>
+                <option value="tokyo">Tokyo</option>
+                <option value="osaka">Osaka</option>
+                <option value="kyoto">Kyoto</option>
+                <option value="kanagawa">Kanagawa</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="story">How does your family celebrate?</label>
+            <textarea class="textarea" id="story" name="story" placeholder="We hang five koinobori — one for each child and grandparent..."></textarea>
+          </div>
+          <div class="form-options">
+            <label class="checkbox">
+              <input type="checkbox" name="newsletter" checked>
+              <span class="checkbox__box"></span>
+              <span>Send me Kodomo no Hi planning reminders</span>
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" name="map">
+              <span class="checkbox__box"></span>
+              <span>Include my display on the neighborhood map</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" name="journal">
+              <span class="toggle__track"><span class="toggle__thumb"></span></span>
+              <span>Reserve a printed tradition journal</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <button type="submit" class="btn btn--primary">Join the waitlist</button>
+            <a href="dashboard.html" class="btn btn--ghost" style="color:var(--color-scale);">Explore demo</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div class="footer__brand">
+          <a href="#" class="logo">
+            <svg class="logo__mark" viewBox="0 0 36 36" aria-hidden="true">
+              <path d="M6 18c0-6 4-12 12-12s12 6 12 12-4 12-12 12" fill="none" stroke="#E63B2E" stroke-width="2.5"/>
+              <path d="M10 18c2-3 5-5 8-5s6 2 8 5" fill="none" stroke="#1B6FD1" stroke-width="2"/>
+              <circle cx="26" cy="14" r="3" fill="#F4B942"/>
+            </svg>
+            <span>
+              <span class="logo__text">Koi Current</span>
+              <span class="logo__jp">鯉流</span>
+            </span>
+          </a>
+          <p>Carry your Children's Day traditions forward — one generation, one streamer, one story at a time.</p>
+        </div>
+        <div>
+          <p class="footer__heading">Product</p>
+          <a href="#" class="footer__link">Features</a>
+          <a href="dashboard.html" class="footer__link">Dashboard</a>
+          <a href="#" class="footer__link">Pricing</a>
+        </div>
+        <div>
+          <p class="footer__heading">Learn</p>
+          <a href="#" class="footer__link">Kodomo no Hi guide</a>
+          <a href="#" class="footer__link">Koinobori history</a>
+          <a href="#" class="footer__link">Family stories</a>
+        </div>
+        <div>
+          <p class="footer__heading">Company</p>
+          <a href="#" class="footer__link">About</a>
+          <a href="#" class="footer__link">Privacy</a>
+          <a href="#" class="footer__link">Contact</a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>&copy; 2026 Koi Current. All rights reserved.</span>
+        <span>Made with care for Kodomo no Hi</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

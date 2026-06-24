@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tanaka family · Kogyo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ─────────────────────────────────────────────
+   KOGYO — Design Language tokens
+   Same token surface as landing.html.
+   ───────────────────────────────────────────── */
+:root{
+  --c-mago:#1B1F3A; --c-chichi:#D63A2F; --c-haha:#1F6F7A;
+  --c-kodomo-a:#3FA552; --c-kodomo-b:#E0A82E;
+  --c-paper:#FAF6EC; --c-paper-2:#F2EBD9; --c-fiber:#E5DCC2;
+  --c-ink:#16140F; --c-ink-soft:#5A5448;
+  --c-sky-top:#9EC9E0; --c-sky-bot:#F4D6B8;
+  --c-danger:#B73029; --c-warning:#C8841F;
+
+  --t-display-xl:88px; --t-display-lg:56px; --t-display-md:40px;
+  --t-h1:32px; --t-h2:24px; --t-h3:20px;
+  --t-body-lg:18px; --t-body:17px; --t-body-sm:15px;
+  --t-ui:16px; --t-ui-sm:14.5px; --t-mono-sm:13px;
+
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+
+  --r-0:0px; --r-2:16px; --r-pill:9999px;
+
+  --e-paper:0 1px 0 rgba(22,20,15,0.06), 0 6px 24px -16px rgba(22,20,15,0.10);
+  --e-lift:0 2px 0 rgba(22,20,15,0.08), 0 18px 48px -20px rgba(22,20,15,0.18);
+
+  --m-fast:120ms; --m-base:200ms; --m-slow:360ms;
+  --ease-ko:cubic-bezier(0.2,0.7,0.2,1);
+
+  --h-control:44px;
+  --h-pill:32px;
+
+  /* dashboard-specific */
+  --rail-w:240px;
+  --topbar-h:64px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:var(--t-body);
+  line-height:1.55;
+  color:var(--c-ink);
+  background:var(--c-paper);
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0;
+  pointer-events:none; z-index:0;
+  opacity:.3;
+  background-image:radial-gradient(rgba(22,20,15,.04) 1px, transparent 1.4px);
+  background-size:3px 3px;
+  mix-blend-mode:multiply;
+}
+.layout, .layout *{ position:relative; z-index:1}
+
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-0.02em;margin:0}
+h1{font-size:var(--t-h1); line-height:1.18}
+h2{font-size:var(--t-h2); line-height:1.28}
+h3{font-size:var(--t-h3); line-height:1.36}
+p{margin:0}
+
+a{color:inherit;text-decoration:none}
+
+/* ============================================================
+   APP LAYOUT — left rail + topbar + main
+   ============================================================ */
+.layout{
+  display:grid;
+  grid-template-columns:var(--rail-w) 1fr;
+  grid-template-rows:var(--topbar-h) 1fr;
+  min-height:100vh;
+}
+
+/* ─── RAIL ─── */
+.rail{
+  grid-row:1 / span 2;
+  background:var(--c-paper-2);
+  border-right:1.5px solid var(--c-fiber);
+  padding:var(--s-5) var(--s-4);
+  display:flex; flex-direction:column; gap:var(--s-5);
+}
+.rail__brand{
+  display:flex; align-items:center; gap:var(--s-3);
+  padding:0 var(--s-2);
+  font:600 var(--t-h3)/1 'Fraunces';
+  color:var(--c-mago);
+}
+.rail__brand .role-dot{
+  width:14px; height:14px; border-radius:9999px;
+  background:var(--c-chichi);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--c-chichi) 18%, transparent);
+}
+.rail__brand small{ display:block; font:400 12px/1 'Inter'; color:var(--c-ink-soft); margin-top:2px}
+
+.rail__section{
+  display:flex; flex-direction:column; gap:2px;
+}
+.rail__label{
+  font:600 11px/1 'Inter'; letter-spacing:0.18em; text-transform:uppercase;
+  color:var(--c-ink-soft); padding:var(--s-3) var(--s-3) var(--s-2);
+}
+.rail__item{
+  display:flex; align-items:center; gap:var(--s-3);
+  height:44px;
+  padding:0 var(--s-3);
+  border-radius:var(--r-2);
+  font:500 var(--t-ui)/1 'Inter';
+  color:var(--c-ink);
+  cursor:pointer;
+  position:relative;
+  transition:background var(--m-fast) var(--ease-ko);
+}
+.rail__item:hover{ background:color-mix(in srgb, var(--c-mago) 4%, var(--c-paper-2))}
+.rail__item.is-active{
+  background:color-mix(in srgb, var(--c-mago) 8%, var(--c-paper-2));
+  font-weight:600;
+}
+.rail__item.is-active::before{
+  content:""; position:absolute; left:-4px; top:10px; bottom:10px;
+  width:3px; border-radius:9999px; background:var(--c-mago);
+}
+.rail__item svg{ flex:0 0 18px; width:18px; height:18px; color:var(--c-ink-soft)}
+.rail__item.is-active svg{ color:var(--c-mago)}
+.rail__count{
+  margin-left:auto;
+  font:500 12px/1 'Inter'; color:var(--c-ink-soft);
+  background:var(--c-paper);
+  height:20px; padding:0 var(--s-2); border-radius:9999px;
+  display:inline-flex; align-items:center;
+}
+
+.rail__family{
+  margin-top:auto;
+  padding:var(--s-4);
+  background:var(--c-paper);
+  border-radius:var(--r-2);
+  display:flex; flex-direction:column; gap:var(--s-3);
+}
+.rail__family h4{ font:600 15px/1.2 'Fraunces'; color:var(--c-mago)}
+.rail__family p{ font:400 13px/1.4 'Inter'; color:var(--c-ink-soft)}
+.rail__avatars{ display:flex}
+.rail__avatar{
+  width:28px; height:28px; border-radius:9999px;
+  background:var(--avatar-color, var(--c-mago));
+  color:var(--c-paper);
+  font:600 12px/28px 'Inter'; text-align:center;
+  border:2px solid var(--c-paper);
+  margin-left:-6px;
+}
+.rail__avatar:first-child{ margin-left:0}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  grid-column:2;
+  height:var(--topbar-h);
+  padding:0 var(--s-6);
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--c-paper);
+  border-bottom:1.5px solid var(--c-fiber);
+}
+.topbar__crumbs{
+  display:flex; align-items:center; gap:var(--s-3);
+  font:500 var(--t-ui)/1 'Inter';
+}
+.topbar__crumbs a{ color:var(--c-ink-soft)}
+.topbar__crumbs a:hover{ color:var(--c-ink)}
+.topbar__crumbs svg{ color:var(--c-fiber); width:14px; height:14px}
+.topbar__crumbs strong{ color:var(--c-ink); font-weight:600}
+
+.topbar__actions{ display:flex; align-items:center; gap:var(--s-3)}
+.search{
+  display:flex; align-items:center; gap:var(--s-3);
+  height:var(--h-control); width:360px; max-width:40vw;
+  padding:0 var(--s-4);
+  background:var(--c-paper-2);
+  border-radius:var(--r-2);
+  transition:background var(--m-fast), box-shadow var(--m-base);
+}
+.search:focus-within{ background:var(--c-paper); box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 25%, transparent)}
+.search input{
+  border:0; background:transparent; flex:1;
+  font:400 var(--t-ui)/1 'Inter'; color:var(--c-ink); outline:0;
+}
+.search input::placeholder{ color:var(--c-ink-soft)}
+.search kbd{
+  font:500 12px/1 'Inter'; color:var(--c-ink-soft);
+  background:var(--c-paper); padding:3px 6px; border-radius:6px;
+  border:1.5px solid var(--c-fiber);
+}
+
+.icon-btn{
+  width:var(--h-control); height:var(--h-control);
+  background:transparent; border:0;
+  border-radius:var(--r-2);
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--c-ink);
+  cursor:pointer;
+  position:relative;
+  transition:background var(--m-fast), box-shadow var(--m-base);
+}
+.icon-btn:hover{ background:var(--c-paper-2)}
+.icon-btn:focus-visible{ outline:0; box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent)}
+.icon-btn__dot{
+  position:absolute; top:10px; right:10px;
+  width:8px; height:8px; border-radius:9999px;
+  background:var(--c-chichi);
+}
+
+.user-pill{
+  display:inline-flex; align-items:center; gap:var(--s-3);
+  height:var(--h-control); padding:0 var(--s-2) 0 var(--s-2);
+  background:transparent; border:0; cursor:pointer; border-radius:var(--r-2);
+}
+.user-pill:hover{ background:var(--c-paper-2)}
+.user-pill:focus-visible{ outline:0; box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent)}
+.user-pill__avatar{
+  width:32px; height:32px; border-radius:9999px;
+  background:var(--c-mago); color:var(--c-paper);
+  font:600 13px/32px 'Inter'; text-align:center;
+}
+.user-pill__name{ font:600 var(--t-ui)/1 'Inter'; text-align:left}
+.user-pill__role{ font:500 12px/1 'Inter'; color:var(--c-ink-soft); text-align:left}
+
+/* ─── MAIN ─── */
+.main{
+  grid-column:2;
+  padding:var(--s-7) var(--s-7);
+  display:flex; flex-direction:column; gap:var(--s-7);
+}
+.main__head{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:var(--s-5);
+}
+.main__title{ display:flex; flex-direction:column; gap:var(--s-2)}
+.main__title h1{ color:var(--c-mago)}
+.main__title p{ color:var(--c-ink-soft); font:400 var(--t-body-lg)/1.5 'Inter'}
+.main__head-actions{ display:flex; gap:var(--s-3); align-items:center}
+
+/* ============================================================
+   COMPONENTS — all reuse the same tokens
+   ============================================================ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:var(--h-control); padding:0 var(--s-5);
+  border-radius:var(--r-2); border:0; cursor:pointer;
+  font:600 var(--t-ui)/1 'Inter';
+  transition:background var(--m-fast) var(--ease-ko),
+             box-shadow var(--m-base) var(--ease-ko),
+             transform var(--m-fast) var(--ease-ko);
+  gap:var(--s-2); text-decoration:none; white-space:nowrap;
+}
+.btn--primary{ background:var(--c-chichi); color:var(--c-paper)}
+.btn--primary:hover{ background:color-mix(in srgb, var(--c-chichi) 92%, #000); transform:translateY(-1px); box-shadow:var(--e-paper)}
+.btn--secondary{ background:var(--c-mago); color:var(--c-paper)}
+.btn--secondary:hover{ background:color-mix(in srgb, var(--c-mago) 92%, #000)}
+.btn--soft{ background:var(--c-paper-2); color:var(--c-ink); box-shadow:inset 0 0 0 1.5px var(--c-fiber)}
+.btn--soft:hover{ background:#ECE3CB}
+.btn--ghost{ background:transparent; color:var(--c-ink); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--c-ink) 18%, transparent)}
+.btn:focus-visible{ outline:0; box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent), var(--e-paper)}
+.btn:active{ transform:translateY(1px); box-shadow:none}
+.btn[disabled], .btn[aria-disabled="true"]{ background:var(--c-fiber); color:var(--c-ink-soft); cursor:not-allowed; pointer-events:none; box-shadow:none}
+
+.pill{
+  display:inline-flex; align-items:center; gap:var(--s-2);
+  height:var(--h-pill); padding:0 var(--s-3);
+  border-radius:var(--r-pill);
+  font:600 var(--t-ui-sm)/1 'Inter';
+}
+.pill--mago   { background:color-mix(in srgb, var(--c-mago) 12%, var(--c-paper)); color:var(--c-mago)}
+.pill--chichi { background:color-mix(in srgb, var(--c-chichi) 12%, var(--c-paper)); color:var(--c-chichi)}
+.pill--haha   { background:color-mix(in srgb, var(--c-haha) 12%, var(--c-paper)); color:var(--c-haha)}
+.pill--k-a    { background:color-mix(in srgb, var(--c-kodomo-a) 16%, var(--c-paper)); color:#1F6F2C}
+.pill--k-b    { background:color-mix(in srgb, var(--c-kodomo-b) 22%, var(--c-paper)); color:#7E5A0D}
+
+.dot{ width:8px; height:8px; border-radius:9999px; display:inline-block}
+.dot--mago{ background:var(--c-mago)} .dot--chichi{ background:var(--c-chichi)}
+.dot--haha{ background:var(--c-haha)} .dot--k-a{ background:var(--c-kodomo-a)} .dot--k-b{ background:var(--c-kodomo-b)}
+
+/* Cards */
+.card{
+  background:var(--c-paper);
+  border-radius:var(--r-2);
+  padding:var(--s-5);
+  position:relative;
+  overflow:hidden;
+  display:flex; flex-direction:column; gap:var(--s-4);
+}
+.card--sheet{ background:var(--c-paper-2)}
+.card--paper{ box-shadow:var(--e-paper)}
+.card__stripe{ position:absolute; left:0; right:0; top:0; height:6px; background:var(--stripe, var(--c-mago)); border-radius:var(--r-2) var(--r-2) 0 0}
+.card__head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:var(--s-4);
+}
+.card__title{ font:600 var(--t-h3)/1.2 'Fraunces'; color:var(--c-mago)}
+.card__sub{ font:400 var(--t-body-sm)/1.5 'Inter'; color:var(--c-ink-soft)}
+
+/* Stat card */
+.stat{
+  font-family:'Fraunces',serif;
+  font-size:56px; line-height:1; letter-spacing:-0.03em;
+  color:var(--c-ink);
+}
+.stat small{ display:block; font:500 13px/1 'Inter'; color:var(--c-ink-soft); letter-spacing:0; margin-top:var(--s-2)}
+
+/* Stat row */
+.stats{
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:var(--s-4);
+}
+.stat-card{ padding:var(--s-5); gap:var(--s-3)}
+.stat-card__head{ display:flex; align-items:center; gap:var(--s-3); font:600 var(--t-ui-sm)/1 'Inter'; color:var(--c-ink-soft); text-transform:uppercase; letter-spacing:0.12em}
+.stat-card__delta{ font:600 12px/1 'Inter'; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:9999px; background:var(--c-paper); color:var(--c-kodomo-a)}
+.stat-card__delta--warn{ color:var(--c-warning)}
+
+/* Two-column wide row */
+.wide{
+  display:grid; grid-template-columns:1.4fr 1fr; gap:var(--s-5);
+}
+
+/* Table */
+.table-wrap{ overflow:auto}
+table.ko{
+  width:100%; border-collapse:separate; border-spacing:0;
+  font-size:var(--t-ui-sm); line-height:1.4;
+}
+table.ko thead th{
+  text-align:left; font:600 13px/1 'Inter'; color:var(--c-ink-soft);
+  letter-spacing:0.12em; text-transform:uppercase;
+  background:var(--c-paper-2);
+  padding:var(--s-3) var(--s-4);
+  border-bottom:1.5px solid var(--c-fiber);
+}
+table.ko tbody td{
+  padding:var(--s-4); border-bottom:1.5px solid var(--c-fiber);
+  background:var(--c-paper);
+  height:48px;
+}
+table.ko tbody tr:hover td{ background:color-mix(in srgb, var(--c-mago) 4%, var(--c-paper))}
+table.ko tbody tr:last-child td{ border-bottom:0}
+table.ko td.num{ font-variant-numeric:tabular-nums; font:600 var(--t-ui-sm)/1 'Inter'}
+table.ko td strong{ font:600 var(--t-ui-sm)/1 'Inter'; color:var(--c-ink)}
+
+/* Form controls — all on --h-control */
+.field{ display:flex; flex-direction:column; gap:var(--s-2)}
+.label{ font:600 14px/1 'Inter'; color:var(--c-ink)}
+.required{ color:var(--c-chichi); margin-left:2px}
+.helper{ font:400 var(--t-mono-sm)/1.4 'Inter'; color:var(--c-ink-soft)}
+.input,.select,.textarea{
+  height:var(--h-control); padding:0 var(--s-4);
+  border-radius:var(--r-2);
+  background:var(--c-paper);
+  border:1.5px solid var(--c-fiber);
+  font:400 var(--t-ui)/1 'Inter';
+  color:var(--c-ink);
+  width:100%;
+  transition:border-color var(--m-fast), box-shadow var(--m-base), background var(--m-fast);
+}
+.textarea{ height:auto; min-height:96px; padding:var(--s-3) var(--s-4); line-height:1.5; resize:vertical}
+.input::placeholder{ color:color-mix(in srgb, var(--c-ink-soft) 80%, transparent)}
+.input:hover,.select:hover,.textarea:hover{ border-color:color-mix(in srgb, var(--c-mago) 30%, var(--c-fiber))}
+.input:focus,.select:focus,.textarea:focus{
+  outline:0; border-color:var(--c-mago);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent);
+}
+.input[aria-invalid="true"],.select[aria-invalid="true"]{ border-color:var(--c-danger); box-shadow:0 0 0 3px color-mix(in srgb, var(--c-danger) 30%, transparent)}
+.input:disabled,.select:disabled,.textarea:disabled{ background:var(--c-paper-2); color:var(--c-ink-soft); cursor:not-allowed}
+
+.select-wrap{ position:relative}
+.select-wrap::after{
+  content:""; position:absolute; right:var(--s-4); top:50%;
+  width:10px; height:10px;
+  border-right:2px solid var(--c-ink-soft);
+  border-bottom:2px solid var(--c-ink-soft);
+  transform:translateY(-70%) rotate(45deg);
+  pointer-events:none;
+}
+.select{ appearance:none; padding-right:var(--s-7)}
+
+.check,.radio,.switch-row{ display:inline-flex; align-items:center; gap:var(--s-3); min-height:var(--h-control); cursor:pointer}
+.check input,.radio input,.switch-row input{ position:absolute; opacity:0; pointer-events:none; width:1px; height:1px}
+.check-box{
+  width:20px; height:20px; border:1.5px solid var(--c-fiber);
+  background:var(--c-paper); border-radius:6px;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:background var(--m-fast), border-color var(--m-fast), box-shadow var(--m-base);
+  flex:0 0 20px;
+}
+.check-box svg{ width:14px; height:14px; opacity:0; transition:opacity var(--m-fast)}
+.check:hover .check-box{ border-color:color-mix(in srgb, var(--c-mago) 60%, var(--c-fiber))}
+.check input:focus-visible ~ .check-box{ box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent); border-color:var(--c-mago)}
+.check input:checked ~ .check-box{ background:var(--c-mago); border-color:var(--c-mago)}
+.check input:checked ~ .check-box svg{ opacity:1}
+.check input:disabled ~ .check-box{ background:var(--c-fiber); opacity:.8}
+.radio-dot{
+  width:20px; height:20px; border-radius:9999px;
+  border:1.5px solid var(--c-fiber); background:var(--c-paper);
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:border-color var(--m-fast), box-shadow var(--m-base);
+  flex:0 0 20px;
+}
+.radio-dot::after{ content:""; width:10px; height:10px; border-radius:9999px; background:var(--c-mago); opacity:0; transition:opacity var(--m-fast)}
+.radio:hover .radio-dot{ border-color:color-mix(in srgb, var(--c-mago) 60%, var(--c-fiber))}
+.radio input:focus-visible ~ .radio-dot{ box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent); border-color:var(--c-mago)}
+.radio input:checked ~ .radio-dot{ border-color:var(--c-mago)}
+.radio input:checked ~ .radio-dot::after{ opacity:1}
+
+.switch-row{ gap:var(--s-4)}
+.switch{
+  position:relative; width:44px; height:24px;
+  background:var(--c-fiber); border-radius:var(--r-pill);
+  transition:background var(--m-base) var(--ease-ko);
+  flex:0 0 44px;
+}
+.switch::after{
+  content:""; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:9999px; background:var(--c-paper);
+  box-shadow:0 1px 2px rgba(22,20,15,.25);
+  transition:left var(--m-base) var(--ease-ko);
+}
+.switch-row input:checked ~ .switch{ background:var(--c-kodomo-a)}
+.switch-row input:checked ~ .switch::after{ left:23px}
+.switch-row input:focus-visible ~ .switch{ box-shadow:0 0 0 3px color-mix(in srgb, var(--c-mago) 35%, transparent)}
+.switch-row input:disabled ~ .switch{ opacity:.55}
+
+/* Inline alert */
+.alert{
+  display:flex; align-items:flex-start; gap:var(--s-3);
+  padding:var(--s-4); border-radius:var(--r-2);
+  background:var(--c-paper-2);
+  position:relative;
+}
+.alert::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:var(--r-2) 0 0 var(--r-2); background:var(--alert-color, var(--c-haha))}
+.alert--info{ --alert-color: var(--c-haha)}
+.alert--ok{ --alert-color: var(--c-kodomo-a)}
+.alert--warn{ --alert-color: var(--c-warning)}
+.alert--danger{ --alert-color: var(--c-danger)}
+.alert__body{ flex:1; display:flex; flex-direction:column; gap:var(--s-1)}
+.alert__title{ font:600 var(--t-ui)/1.4 'Inter'; color:var(--c-ink)}
+.alert__text{ font:400 var(--t-body-sm)/1.5 'Inter'; color:var(--c-ink-soft)}
+
+/* Timeline */
+.timeline-vert{ display:flex; flex-direction:column; gap:var(--s-3); position:relative}
+.timeline-vert::before{
+  content:""; position:absolute; left:11px; top:8px; bottom:8px;
+  width:2px; background:var(--c-fiber);
+}
+.t-row{ display:flex; gap:var(--s-4); align-items:flex-start; padding:var(--s-2) 0}
+.t-row__dot{
+  width:24px; height:24px; border-radius:9999px;
+  background:var(--c-paper-2); border:1.5px solid var(--c-fiber);
+  display:inline-flex; align-items:center; justify-content:center;
+  flex:0 0 24px; z-index:1;
+}
+.t-row--done .t-row__dot{ background:var(--c-kodomo-a); border-color:var(--c-kodomo-a); color:var(--c-paper)}
+.t-row--now .t-row__dot{ background:var(--c-chichi); border-color:var(--c-chichi); color:var(--c-paper); box-shadow:0 0 0 4px color-mix(in srgb, var(--c-chichi) 22%, transparent)}
+.t-row__time{ font:600 13px/1 'Inter'; color:var(--c-ink-soft); width:60px; flex:0 0 60px; padding-top:2px}
+.t-row__name{ font:600 var(--t-ui)/1.4 'Inter'; color:var(--c-ink)}
+.t-row__sub{ font:400 13px/1.4 'Inter'; color:var(--c-ink-soft)}
+
+/* Avatar stack */
+.avatars{ display:inline-flex}
+.av{
+  width:32px; height:32px; border-radius:9999px;
+  background:var(--av, var(--c-mago)); color:var(--c-paper);
+  font:600 12px/32px 'Inter'; text-align:center;
+  border:2px solid var(--c-paper); margin-left:-8px;
+}
+.av:first-child{ margin-left:0}
+.av--sm{ width:24px; height:24px; line-height:24px; font-size:11px}
+
+/* Role badge in tables */
+.role-dot-row{ display:inline-flex; align-items:center; gap:var(--s-2); font:500 var(--t-ui-sm)/1 'Inter'}
+
+/* Toast */
+.toast-stack{ position:fixed; right:var(--s-6); bottom:var(--s-6); display:flex; flex-direction:column; gap:var(--s-3); z-index:60}
+.toast{
+  background:var(--c-mago); color:var(--c-paper);
+  padding:var(--s-4) var(--s-5); border-radius:var(--r-2);
+  display:flex; align-items:center; gap:var(--s-3); min-width:320px; max-width:480px;
+  box-shadow:var(--e-lift);
+}
+.toast__icon{ width:24px; height:24px; border-radius:9999px; background:var(--c-kodomo-a); display:inline-flex; align-items:center; justify-content:center; color:var(--c-mago); flex:0 0 24px}
+.toast__body{ flex:1; display:flex; flex-direction:column; gap:2px}
+.toast__title{ font:600 var(--t-ui)/1.4 'Inter'; color:var(--c-paper)}
+.toast__text{ font:400 var(--t-body-sm)/1.5 'Inter'; color:color-mix(in srgb, var(--c-paper) 80%, transparent)}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .layout{ grid-template-columns:1fr; grid-template-rows:auto var(--topbar-h) 1fr}
+  .rail{ grid-row:1; grid-column:1; flex-direction:row; overflow-x:auto; padding:var(--s-3); gap:var(--s-3)}
+  .rail__brand{ flex:0 0 auto}
+  .rail__section{ flex-direction:row; flex:1; min-width:0}
+  .rail__label{ display:none}
+  .rail__item{ white-space:nowrap; padding:0 var(--s-4)}
+  .rail__family{ display:none}
+  .topbar{ grid-column:1; grid-row:2}
+  .main{ grid-column:1; grid-row:3; padding:var(--s-5)}
+  .stats{ grid-template-columns:repeat(2, 1fr)}
+  .wide{ grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ─── RAIL ─── -->
+  <aside class="rail" aria-label="Primary">
+    <div class="rail__brand">
+      <span class="role-dot" aria-hidden="true"></span>
+      <div>
+        Kogyo
+        <small>子魚 · Tanaka family</small>
+      </div>
+    </div>
+
+    <div class="rail__section">
+      <div class="rail__label">Plan</div>
+      <a class="rail__item is-active" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+        Overview
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Day-of timeline
+        <span class="rail__count">May 5</span>
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+        Invitations
+        <span class="rail__count">12</span>
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 8h14l-2 12H7z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/></svg>
+        Menu
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l9 9-9 9-9-9z"/></svg>
+        Gift registry
+        <span class="rail__count">7</span>
+      </a>
+    </div>
+
+    <div class="rail__section">
+      <div class="rail__label">Family</div>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M14 21a5 5 0 0 1 8 0"/></svg>
+        Roles
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        Archive
+      </a>
+      <a class="rail__item" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 1-.2 1.7l2 1.5-2 3.5-2.4-.9a7 7 0 0 1-3 1.7L13 22h-4l-.4-2.5a7 7 0 0 1-3-1.7l-2.4.9-2-3.5 2-1.5A7 7 0 0 1 3 12c0-.6.1-1.1.2-1.7l-2-1.5 2-3.5 2.4.9a7 7 0 0 1 3-1.7L9 2h4l.4 2.5a7 7 0 0 1 3 1.7l2.4-.9 2 3.5-2 1.5c.1.6.2 1.1.2 1.7z"/></svg>
+        Settings
+      </a>
+    </div>
+
+    <div class="rail__family">
+      <h4>Tanaka family</h4>
+      <p>5 roles · 12 guests · 24 days to May 5</p>
+      <div class="rail__avatars">
+        <span class="rail__avatar" style="--avatar-color:var(--c-mago)">T</span>
+        <span class="rail__avatar" style="--avatar-color:var(--c-chichi)">K</span>
+        <span class="rail__avatar" style="--avatar-color:var(--c-haha)">M</span>
+        <span class="rail__avatar" style="--avatar-color:var(--c-kodomo-a)">A</span>
+        <span class="rail__avatar" style="--avatar-color:var(--c-kodomo-b)">S</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── TOPBAR ─── -->
+  <header class="topbar">
+    <div class="topbar__crumbs">
+      <a href="#">Tanaka family</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 6l6 6-6 6"/></svg>
+      <a href="#">May 5 · Children's Day</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 6l6 6-6 6"/></svg>
+      <strong>Overview</strong>
+    </div>
+    <div class="topbar__actions">
+      <label class="search" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="search" placeholder="Search roles, guests, menu items…" />
+        <kbd>⌘K</kbd>
+      </label>
+      <button class="icon-btn" aria-label="Help">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4M12 17h.01"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 16v-5a6 6 0 1 0-12 0v5l-2 2h16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        <span class="icon-btn__dot" aria-hidden="true"></span>
+      </button>
+      <button class="user-pill" aria-label="Account">
+        <span class="user-pill__avatar">T</span>
+        <div>
+          <div class="user-pill__name">Toshiko Tanaka</div>
+          <div class="user-pill__role">Mother · Haha · 主</div>
+        </div>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+
+    <!-- head -->
+    <section class="main__head">
+      <div class="main__title">
+        <span class="pill pill--chichi">24 days to Kodomo no Hi</span>
+        <h1>Good morning, Toshiko.</h1>
+        <p>Three invitations still need a reply. Father's hoist checklist is ready. The carp are forecast to rise clean.</p>
+      </div>
+      <div class="main__head-actions">
+        <button class="btn btn--soft">Preview invites</button>
+        <button class="btn btn--primary">Open day-of timeline</button>
+      </div>
+    </section>
+
+    <!-- stat row -->
+    <section class="stats" aria-label="Family plan stats">
+      <article class="card stat-card" style="--stripe: var(--c-mago)">
+        <span class="card__stripe"></span>
+        <div class="stat-card__head"><span class="dot dot--mago"></span>Roles set</div>
+        <div class="stat">5<span style="font-size:32px;color:var(--c-ink-soft)"> / 5</span></div>
+        <small>All five family members assigned</small>
+      </article>
+
+      <article class="card stat-card" style="--stripe: var(--c-chichi)">
+        <span class="card__stripe"></span>
+        <div class="stat-card__head"><span class="dot dot--chichi"></span>Guests invited</div>
+        <div class="stat">12<span style="font-size:32px;color:var(--c-ink-soft)"> / 18</span></div>
+        <small>6 still awaiting reply <span class="stat-card__delta stat-card__delta--warn">3 due today</span></small>
+      </article>
+
+      <article class="card stat-card" style="--stripe: var(--c-haha)">
+        <span class="card__stripe"></span>
+        <div class="stat-card__head"><span class="dot dot--haha"></span>Menu items</div>
+        <div class="stat">14</div>
+        <small>3 dietary flags · 2 traditional · 1 kid-led</small>
+      </article>
+
+      <article class="card stat-card" style="--stripe: var(--c-kodomo-a)">
+        <span class="card__stripe"></span>
+        <div class="stat-card__head"><span class="dot dot--k-a"></span>Gifts sent</div>
+        <div class="stat">7</div>
+        <small>2 in transit · 5 delivered <span class="stat-card__delta">+3 vs 2025</span></small>
+      </article>
+
+      <article class="card stat-card" style="--stripe: var(--c-kodomo-b)">
+        <span class="card__stripe"></span>
+        <div class="stat-card__head"><span class="dot dot--k-b"></span>Pole ready</div>
+        <div class="stat">82<span style="font-size:24px;color:var(--c-ink-soft)">%</span></div>
+        <small>Hoist rehearsal booked · Sunday 9:00</small>
+      </article>
+    </section>
+
+    <!-- wide row -->
+    <section class="wide">
+
+      <!-- Timeline card -->
+      <article class="card card--sheet card--paper">
+        <div class="card__head">
+          <div>
+            <div class="card__title">Day-of timeline — May 5</div>
+            <div class="card__sub">Auto-shared with every role 24 hours before.</div>
+          </div>
+          <button class="btn btn--ghost">Edit timeline</button>
+        </div>
+        <div class="timeline-vert">
+          <div class="t-row t-row--done">
+            <div class="t-row__dot">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5 9-10"/></svg>
+            </div>
+            <div class="t-row__time">05:00</div>
+            <div>
+              <div class="t-row__name">Pre-dawn: carp streamer pole inspected</div>
+              <div class="t-row__sub">Father · Chichi · checked tension, weighted rope, ground stake dry.</div>
+            </div>
+          </div>
+          <div class="t-row t-row--done">
+            <div class="t-row__dot">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5 9-10"/></svg>
+            </div>
+            <div class="t-row__time">05:30</div>
+            <div>
+              <div class="t-row__name">Carp rise at dawn</div>
+              <div class="t-row__sub">Father + eldest hoist the bamboo. Five streamers unfurl.</div>
+            </div>
+          </div>
+          <div class="t-row t-row--now">
+            <div class="t-row__dot">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="t-row__time">07:00</div>
+            <div>
+              <div class="t-row__name">Bath &amp; kimono · kabuto fitting</div>
+              <div class="t-row__sub">Mother with both children. Youngest's first kabuto, photo for archive.</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <div class="t-row__dot"></div>
+            <div class="t-row__time">08:30</div>
+            <div>
+              <div class="t-row__name">Kashiwamochi &amp; prayer</div>
+              <div class="t-row__sub">Grandfather leads the toast. Sake for adults, amazake for the children.</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <div class="t-row__dot"></div>
+            <div class="t-row__time">10:00</div>
+            <div>
+              <div class="t-row__name">Guests arrive · gate receive</div>
+              <div class="t-row__sub">Mother at the gate. Grandfather at the head of the table.</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <div class="t-row__dot"></div>
+            <div class="t-row__time">12:30</div>
+            <div>
+              <div class="t-row__name">Lunch · calligraphy corner opens</div>
+              <div class="t-row__sub">Children write 勇気 on rice paper; ink and brushes set at the low table.</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <div class="t-row__dot"></div>
+            <div class="t-row__time">15:00</div>
+            <div>
+              <div class="t-row__name">Memory book portraits</div>
+              <div class="t-row__sub">Eldest + pole, youngest + kabuto, family + carp. Goes to printer next morning.</div>
+            </div>
+          </div>
+          <div class="t-row">
+            <div class="t-row__dot"></div>
+            <div class="t-row__time">18:30</div>
+            <div>
+              <div class="t-row__name">Sundown · carp lowered</div>
+              <div class="t-row__sub">All hands. Streamers folded in order. Grandfather's prayer closes the day.</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Side: alerts + new event form -->
+      <div style="display:flex; flex-direction:column; gap:var(--s-5)">
+        <div class="alert alert--info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div class="alert__body">
+            <div class="alert__title">Weather watch · Sunday</div>
+            <div class="alert__text">Light gusts forecast 14:00–16:00. Father has the secondary pole indoors if the carp need to come down.</div>
+          </div>
+        </div>
+
+        <div class="alert alert--ok">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12l5 5 9-10"/></svg>
+          <div class="alert__body">
+            <div class="alert__title">Invitations sent · 12 / 18</div>
+            <div class="alert__text">All 12 guests have received the printable invite. 3 confirmed, 6 pending reply.</div>
+          </div>
+        </div>
+
+        <article class="card card--sheet" style="padding:var(--s-5)">
+          <div class="card__head">
+            <div>
+              <div class="card__title">Add a guest</div>
+              <div class="card__sub">They'll receive an invite in your language and theirs.</div>
+            </div>
+          </div>
+          <form style="display:flex; flex-direction:column; gap:var(--s-4)" onsubmit="event.preventDefault(); this.querySelector('button[type=submit]').textContent='Guest added'; setTimeout(()=>this.reset(), 600)">
+            <div class="field">
+              <label class="label" for="g-name">Full name <span class="required">*</span></label>
+              <input id="g-name" class="input" type="text" placeholder="e.g. Watanabe-san" required />
+            </div>
+            <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:var(--s-3)">
+              <div class="field">
+                <label class="label" for="g-email">Email</label>
+                <input id="g-email" class="input" type="email" placeholder="hello@…" />
+              </div>
+              <div class="field">
+                <label class="label" for="g-rel">Relation</label>
+                <div class="select-wrap">
+                  <select id="g-rel" class="select">
+                    <option>Family</option>
+                    <option>Friend</option>
+                    <option>Neighbor</option>
+                    <option>School</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="g-note">Note (optional)</label>
+              <textarea id="g-note" class="textarea" placeholder="e.g. vegetarian; arrives with grandmother"></textarea>
+            </div>
+            <label class="check">
+              <input type="checkbox" />
+              <span class="check-box" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4"><path d="M5 12l5 5 9-10"/></svg>
+              </span>
+              <span style="font:500 var(--t-ui)/1.4 'Inter'">Send in Japanese &amp; English</span>
+            </label>
+            <div style="display:flex; gap:var(--s-3); justify-content:flex-end">
+              <button type="button" class="btn btn--ghost">Cancel</button>
+              <button type="submit" class="btn btn--primary">Add guest</button>
+            </div>
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <!-- Table + Switch settings row -->
+    <section class="wide">
+      <article class="card card--sheet card--paper">
+        <div class="card__head">
+          <div>
+            <div class="card__title">Roles for May 5</div>
+            <div class="card__sub">Each role has its own checklist, gift budget, and day-of slot.</div>
+          </div>
+          <div style="display:flex; gap:var(--s-2)">
+            <button class="btn btn--soft">Reorder</button>
+            <button class="btn btn--soft">+ Add role</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="ko">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Name</th>
+                <th>Checklist</th>
+                <th>Gift budget</th>
+                <th>Day-of slot</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="role-dot-row"><span class="dot dot--mago"></span> Mago · 祖父</span></td>
+                <td><strong>Eiichi Tanaka</strong> <span style="color:var(--c-ink-soft); margin-left:6px">82</span></td>
+                <td>Prayer list · 6 items</td>
+                <td class="num">¥12,000</td>
+                <td>08:30 · toast</td>
+                <td><span class="pill pill--mago">Ready</span></td>
+              </tr>
+              <tr>
+                <td><span class="role-dot-row"><span class="dot dot--chichi"></span> Chichi · 父</span></td>
+                <td><strong>Kenji Tanaka</strong> <span style="color:var(--c-ink-soft); margin-left:6px">46</span></td>
+                <td>Hoist · 12 items</td>
+                <td class="num">¥18,000</td>
+                <td>05:30 · carp rise</td>
+                <td><span class="pill pill--chichi">Rehearsal Sun</span></td>
+              </tr>
+              <tr>
+                <td><span class="role-dot-row"><span class="dot dot--haha"></span> Haha · 母</span></td>
+                <td><strong>Toshiko Tanaka</strong> <span style="color:var(--c-ink-soft); margin-left:6px">41</span></td>
+                <td>Table · 14 items</td>
+                <td class="num">¥24,000</td>
+                <td>10:00 · gate</td>
+                <td><span class="pill pill--haha">You</span></td>
+              </tr>
+              <tr>
+                <td><span class="role-dot-row"><span class="dot dot--k-a"></span> First child · 子</span></td>
+                <td><strong>Akira Tanaka</strong> <span style="color:var(--c-ink-soft); margin-left:6px">9</span></td>
+                <td>Calligraphy · 4 items</td>
+                <td class="num">¥4,000</td>
+                <td>12:30 · corner</td>
+                <td><span class="pill pill--k-a">Practising</span></td>
+              </tr>
+              <tr>
+                <td><span class="role-dot-row"><span class="dot dot--k-b"></span> Younger child</span></td>
+                <td><strong>Sora Tanaka</strong> <span style="color:var(--c-ink-soft); margin-left:6px">4</span></td>
+                <td>Kabuto fitting · 2 items</td>
+                <td class="num">¥2,000</td>
+                <td>07:00 · kimono</td>
+                <td><span class="pill pill--k-b">New this year</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card card--sheet card--paper">
+        <div class="card__head">
+          <div>
+            <div class="card__title">Notification preferences</div>
+            <div class="card__sub">What each role hears about, and when.</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:var(--s-4)">
+          <label class="switch-row">
+            <input type="checkbox" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <div style="display:flex; flex-direction:column">
+              <span style="font:600 var(--t-ui)/1.4 'Inter'">Day-of reminders</span>
+              <span style="font:400 var(--t-body-sm)/1.4 'Inter'; color:var(--c-ink-soft)">Push 15 min before each slot in their timeline.</span>
+            </div>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <div style="display:flex; flex-direction:column">
+              <span style="font:600 var(--t-ui)/1.4 'Inter'">Guest RSVP updates</span>
+              <span style="font:400 var(--t-body-sm)/1.4 'Inter'; color:var(--c-ink-soft)">Notify mother (you) when a reply lands; weekly digest for grandfather.</span>
+            </div>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" />
+            <span class="switch" aria-hidden="true"></span>
+            <div style="display:flex; flex-direction:column">
+              <span style="font:600 var(--t-ui)/1.4 'Inter'">Weather watch</span>
+              <span style="font:400 var(--t-body-sm)/1.4 'Inter'; color:var(--c-ink-soft)">Alert father (Chichi) if wind forecast crosses 6 m/s.</span>
+            </div>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" checked />
+            <span class="switch" aria-hidden="true"></span>
+            <div style="display:flex; flex-direction:column">
+              <span style="font:600 var(--t-ui)/1.4 'Inter'">Memory book ready</span>
+              <span style="font:400 var(--t-body-sm)/1.4 'Inter'; color:var(--c-ink-soft)">Email the printed keepsake PDF the week after May 5.</span>
+            </div>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" />
+            <span class="switch" aria-hidden="true"></span>
+            <div style="display:flex; flex-direction:column">
+              <span style="font:600 var(--t-ui)/1.4 'Inter'">Marketing</span>
+              <span style="font:400 var(--t-body-sm)/1.4 'Inter'; color:var(--c-ink-soft)">Festival tips, new rituals, and Kogyo announcements. Never shared.</span>
+            </div>
+          </label>
+        </div>
+      </article>
+    </section>
+
+    <!-- settings row -->
+    <section class="card card--sheet card--paper">
+      <div class="card__head">
+        <div>
+          <div class="card__title">Family details</div>
+          <div class="card__sub">Used on invites, the memory book, and the printable keepsake.</div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--s-4)">
+        <div class="field">
+          <label class="label" for="fam-name">Family name <span class="required">*</span></label>
+          <input id="fam-name" class="input" type="text" value="Tanaka" />
+        </div>
+        <div class="field">
+          <label class="label" for="fam-kanji">Kanji name</label>
+          <input id="fam-kanji" class="input" type="text" value="田中" />
+        </div>
+        <div class="field">
+          <label class="label" for="fam-moto">Household motto</label>
+          <input id="fam-moto" class="input" type="text" value="The current runs the other way." />
+        </div>
+        <div class="field">
+          <label class="label" for="date">Date <span class="required">*</span></label>
+          <input id="date" class="input" type="date" value="2026-05-05" />
+        </div>
+        <div class="field">
+          <label class="label" for="lang">Primary language</label>
+          <div class="select-wrap">
+            <select id="lang" class="select">
+              <option>日本語 · Japanese</option>
+              <option>English</option>
+              <option>Português · Brazilian</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="style">Visual style</label>
+          <div class="select-wrap">
+            <select id="style" class="select">
+              <option>Washi paper · 障子</option>
+              <option>Linen · リネン</option>
+              <option>Indigo block · 藍</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:var(--s-6); flex-wrap:wrap; padding-top:var(--s-3); border-top:1.5px solid var(--c-fiber)">
+        <label class="check">
+          <input type="checkbox" checked />
+          <span class="check-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4"><path d="M5 12l5 5 9-10"/></svg>
+          </span>
+          <span style="font:500 var(--t-ui)/1.4 'Inter'">Vertical invitation layout</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="venue" checked />
+          <span class="radio-dot" aria-hidden="true"></span>
+          <span style="font:500 var(--t-ui)/1.4 'Inter'">At home</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="venue" />
+          <span class="radio-dot" aria-hidden="true"></span>
+          <span style="font:500 var(--t-ui)/1.4 'Inter'">At grandfather's</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="venue" />
+          <span class="radio-dot" aria-hidden="true"></span>
+          <span style="font:500 var(--t-ui)/1.4 'Inter'">At a venue</span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:var(--s-3); padding-top:var(--s-3)">
+        <button class="btn btn--ghost">Discard changes</button>
+        <button class="btn btn--primary">Save family details</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast-stack" aria-live="polite">
+  <div class="toast">
+    <div class="toast__icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5 9-10"/></svg>
+    </div>
+    <div class="toast__body">
+      <div class="toast__title">Watanabe-san replied · yes</div>
+      <div class="toast__text">2 guests now confirmed. Headcount updated on the day-of timeline.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

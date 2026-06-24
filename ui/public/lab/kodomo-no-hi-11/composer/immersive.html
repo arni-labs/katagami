@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koi Stream — Fly Through | Koinobori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600&family=Zen+Old+Mincho:wght@700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+:root {
+  --bg: #FFFBF7;
+  --surface: #F5F0E8;
+  --text: #1A1512;
+  --muted: #5C534A;
+  --accent: #D62839;
+  --accent-indigo: #1D3557;
+  --accent-gold: #E9A319;
+  --control-height: 48px;
+  --radius-lg: 24px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 40px;
+  --space-xl: 64px;
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  font-size: 17px;
+  color: var(--text);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+#canvas-container {
+  position: fixed; inset: 0; z-index: 0;
+  width: 100%; height: 100%;
+}
+#canvas-container canvas { display: block; width: 100%; height: 100%; }
+
+#scroll-root {
+  position: relative; z-index: 1;
+  pointer-events: none;
+}
+.spacer { height: 600vh; }
+
+.overlay-panel {
+  position: fixed; left: 0; right: 0;
+  display: flex; justify-content: center;
+  padding: var(--space-md);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.01s;
+}
+.overlay-panel.active { opacity: 1; pointer-events: auto; }
+
+.glass {
+  max-width: 520px; width: 100%;
+  background: rgba(255, 251, 247, 0.88);
+  backdrop-filter: blur(14px);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-md);
+  box-shadow: 0 8px 32px rgba(26, 21, 18, 0.12);
+}
+.glass-dark {
+  background: rgba(26, 21, 18, 0.78);
+  color: #FFFFFF;
+}
+.glass-dark .muted { color: rgba(255,255,255,0.75); }
+
+.display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.1;
+  padding-top: var(--space-sm);
+}
+.jp {
+  font-family: 'Zen Old Mincho', serif;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  color: var(--accent-gold);
+  display: block; margin-top: var(--space-sm);
+}
+.glass-dark .jp { color: var(--accent-gold); }
+.lead { margin-top: var(--space-md); line-height: 1.55; max-width: 42ch; }
+.muted { color: var(--muted); font-size: 15px; margin-top: var(--space-sm); }
+.highlight { color: var(--accent-gold); font-weight: 600; }
+.highlight-scarlet { color: var(--accent); font-weight: 600; }
+
+.meta-row {
+  display: flex; gap: var(--space-sm); flex-wrap: wrap;
+  margin-top: var(--space-md);
+}
+.chip {
+  display: inline-flex; align-items: center;
+  height: var(--control-height); padding: 0 var(--space-md);
+  border-radius: 9999px; font-size: 14.5px; font-weight: 600;
+  background: rgba(26,21,18,0.08);
+}
+.glass-dark .chip { background: rgba(255,255,255,0.12); color: #fff; }
+
+.panel-top { top: 12vh; align-items: flex-start; }
+.panel-center { top: 50%; transform: translateY(-50%); }
+.panel-bottom { bottom: 10vh; align-items: flex-end; }
+
+.nav-fixed {
+  position: fixed; top: var(--space-sm); left: var(--space-md); z-index: 10;
+  pointer-events: auto;
+}
+.nav-fixed a {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600; color: #fff; text-decoration: none;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+  font-size: 1rem;
+}
+.nav-fixed a:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 4px; }
+
+.char { display: inline-block; opacity: 0; transform: translateY(12px); }
+
+#fallback {
+  display: none; position: fixed; inset: 0; z-index: 5;
+  background: var(--bg); overflow-y: auto;
+}
+#fallback .hero-fallback {
+  width: 100%; min-height: 100svh;
+  background: linear-gradient(180deg, #87CEEB 0%, #F4D58D 55%, #5C8A4E 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--space-xl) var(--space-md); text-align: center;
+}
+.fallback-scene {
+  width: min(90vw, 600px); height: 320px;
+  position: relative; margin-bottom: var(--space-lg);
+}
+.fallback-poly {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 200px solid transparent;
+  border-right: 200px solid transparent;
+  border-bottom: 120px solid #5C8A4E;
+}
+.fallback-river {
+  position: absolute; bottom: 30px; left: 10%; right: 10%; height: 40px;
+  background: #4A90B8; clip-path: polygon(0 50%, 100% 30%, 100% 70%, 0 80%);
+}
+.fallback-carp {
+  position: absolute; width: 60px; height: 24px;
+  background: var(--accent); clip-path: polygon(0 50%, 20% 0, 100% 50%, 20% 100%);
+}
+.fallback-carp:nth-child(3) { bottom: 140px; left: 30%; transform: rotate(-15deg); }
+.fallback-carp:nth-child(4) { bottom: 180px; left: 45%; background: var(--accent-indigo); transform: rotate(-10deg) scale(1.2); }
+.fallback-carp:nth-child(5) { bottom: 220px; left: 55%; transform: rotate(-5deg) scale(1.4); }
+.fallback-dragon {
+  position: absolute; bottom: 200px; right: 15%;
+  width: 80px; height: 80px; background: var(--accent-gold);
+  clip-path: polygon(50% 0%, 80% 30%, 100% 60%, 70% 100%, 30% 100%, 0% 60%, 20% 30%);
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-height); padding: 0 var(--space-md);
+  font: 600 17px/1 'Source Sans 3', sans-serif;
+  border: none; cursor: pointer; border-radius: 9999px;
+  background: var(--accent); color: #fff;
+  text-decoration: none; margin-top: var(--space-md);
+  pointer-events: auto;
+}
+.btn:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .glass { padding: var(--space-md); }
+}
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<nav class="nav-fixed" aria-label="Back">
+  <a href="landing.html">Koi Stream</a>
+</nav>
+
+<div id="scroll-root">
+  <div class="spacer" aria-hidden="true"></div>
+</div>
+
+<!-- Segment panels -->
+<div class="overlay-panel panel-top" id="panel-0" data-seg="0">
+  <div class="glass glass-dark">
+    <h1 class="display seg-title">The avenue rises<span class="jp">鯉のぼりの並木</span></h1>
+    <p class="lead muted">Scroll to fly through a morning festival world — carp climbing toward courage.</p>
+    <div class="meta-row">
+      <span class="chip">May 5 <span class="highlight">Kodomo no Hi</span></span>
+      <span class="chip">Ages <span class="highlight">3–12</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-panel panel-center" id="panel-1" data-seg="1">
+  <div class="glass">
+    <h2 class="display seg-title">Black, scarlet, indigo<span class="jp">四つの鯉</span></h2>
+    <p class="lead">Each streamer marks a child in your household. Tradition sets the order — Koi Stream keeps every pole aligned.</p>
+    <p class="muted">Household plan: <span class="highlight-scarlet">free</span> for up to 6 members</p>
+  </div>
+</div>
+
+<div class="overlay-panel panel-bottom" id="panel-2" data-seg="2">
+  <div class="glass glass-dark">
+    <h2 class="display seg-title">The river bends<span class="jp">川のせせらぎ</span></h2>
+    <p class="lead muted">Carp that swim upstream earn their transformation. Your family's courage journal tracks every brave act along the way.</p>
+  </div>
+</div>
+
+<div class="overlay-panel panel-top" id="panel-3" data-seg="3">
+  <div class="glass">
+    <h2 class="display seg-title">Against the falls<span class="jp">滝に向かって</span></h2>
+    <p class="lead">The waterfall tests every climber. Wind alerts warn when gusts threaten your fukinagashi before the final ascent.</p>
+    <div class="meta-row">
+      <span class="chip">Forecast <span class="highlight-scarlet">moderate</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-panel panel-center" id="panel-4" data-seg="4">
+  <div class="glass glass-dark">
+    <h2 class="display seg-title">Becomes the dragon<span class="jp">龍となる</span></h2>
+    <p class="lead muted">At the summit, courage transforms. Plan your household's May 5 with Koi Stream — <span class="highlight">free</span> to begin.</p>
+    <a href="landing.html" class="btn">Begin your stream</a>
+  </div>
+</div>
+
+<div id="fallback">
+  <div class="hero-fallback">
+    <div class="fallback-scene" aria-hidden="true">
+      <div class="fallback-poly"></div>
+      <div class="fallback-river"></div>
+      <div class="fallback-carp"></div>
+      <div class="fallback-carp"></div>
+      <div class="fallback-carp"></div>
+      <div class="fallback-dragon"></div>
+    </div>
+    <h1 class="display" style="color:var(--text)">こどもの日<span class="jp">鯉のぼりの旅</span></h1>
+    <p class="lead" style="color:var(--muted);max-width:50ch">A scroll-driven 3D journey through the koinobori avenue, river, and waterfall. Enable WebGL and motion for the full experience.</p>
+    <a href="landing.html" class="btn">Explore Koi Stream</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js"></script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let webglOk = true;
+
+try {
+  const testCanvas = document.createElement('canvas');
+  webglOk = !!(testCanvas.getContext('webgl2') || testCanvas.getContext('webgl'));
+} catch(e) { webglOk = false; }
+
+if (reducedMotion || !webglOk) {
+  document.getElementById('canvas-container').style.display = 'none';
+  document.getElementById('scroll-root').style.display = 'none';
+  document.querySelectorAll('.overlay-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('fallback').style.display = 'block';
+} else {
+  initWorld();
+}
+
+function initWorld() {
+  gsap.registerPlugin(ScrollTrigger, CustomEase);
+  CustomEase.create('cineIn', '0.42, 0, 0.08, 1');
+  CustomEase.create('cineOut', '0.22, 0.61, 0.36, 1');
+  CustomEase.create('cineSnap', '0.68, -0.2, 0.12, 1.2');
+  CustomEase.create('drift', '0.33, 0, 0.2, 1');
+
+  const container = document.getElementById('canvas-container');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const fogColor = new THREE.Color(0xB8D4E8);
+  scene.background = fogColor.clone();
+  scene.fog = new THREE.Fog(fogColor.getHex(), 40, 180);
+
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 300);
+
+  // Dual-ref rig
+  const camPos = new THREE.Vector3(0, 8, 35);
+  const camLook = new THREE.Vector3(0, 6, 0);
+  camera.position.copy(camPos);
+
+  // Lighting - time of day via uniforms
+  const ambient = new THREE.AmbientLight(0xFFE8D0, 0.55);
+  scene.add(ambient);
+  const sun = new THREE.DirectionalLight(0xFFF5E0, 1.2);
+  sun.position.set(60, 80, 40);
+  sun.castShadow = false;
+  scene.add(sun);
+  const fill = new THREE.PointLight(0x88BBDD, 0.4, 120);
+  fill.position.set(-30, 15, 20);
+  scene.add(fill);
+  const rim = new THREE.PointLight(0xFFAA66, 0.3, 100);
+  rim.position.set(40, 10, -30);
+  scene.add(rim);
+
+  const clock = new THREE.Clock();
+  let timeOfDay = 0; // 0=morning, 1=dusk
+
+  // Materials - flat low-poly
+  const matGround = new THREE.MeshLambertMaterial({ color: 0x5C8A4E, flatShading: true });
+  const matHill = new THREE.MeshLambertMaterial({ color: 0x4A7340, flatShading: true });
+  const matRock = new THREE.MeshLambertMaterial({ color: 0x7A8B7A, flatShading: true });
+  const matWater = new THREE.MeshLambertMaterial({ color: 0x4A90B8, flatShading: true, transparent: true, opacity: 0.85 });
+  const matPole = new THREE.MeshLambertMaterial({ color: 0x8B6914, flatShading: true });
+  const matTree = new THREE.MeshLambertMaterial({ color: 0x3D6B35, flatShading: true });
+  const matTreeTrunk = new THREE.MeshLambertMaterial({ color: 0x6B4423, flatShading: true });
+  const matMountain = new THREE.MeshLambertMaterial({ color: 0x6B8E9F, flatShading: true });
+  const matDragon = new THREE.MeshLambertMaterial({ color: 0xE9A319, flatShading: true });
+
+  // Terrain
+  const groundGeo = new THREE.PlaneGeometry(200, 200, 20, 20);
+  const pos = groundGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i);
+    const h = Math.sin(x * 0.08) * 2 + Math.cos(y * 0.06) * 1.5 + Math.random() * 0.3;
+    pos.setZ(i, h);
+  }
+  groundGeo.computeVertexNormals();
+  const ground = new THREE.Mesh(groundGeo, matGround);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.5;
+  scene.add(ground);
+
+  // Hills
+  for (let i = 0; i < 8; i++) {
+    const hill = new THREE.Mesh(
+      new THREE.ConeGeometry(8 + Math.random() * 6, 6 + Math.random() * 4, 5),
+      matHill
+    );
+    hill.position.set(-50 + i * 14 + Math.random() * 5, 2, -40 - Math.random() * 20);
+    scene.add(hill);
+  }
+
+  // Mountains distant
+  for (let i = 0; i < 6; i++) {
+    const mtn = new THREE.Mesh(
+      new THREE.ConeGeometry(20 + Math.random() * 15, 25 + Math.random() * 15, 4),
+      matMountain
+    );
+    mtn.position.set(-80 + i * 35, 8, -90 - Math.random() * 30);
+    scene.add(mtn);
+  }
+
+  // River
+  const riverGeo = new THREE.PlaneGeometry(12, 120, 4, 20);
+  const river = new THREE.Mesh(riverGeo, matWater);
+  river.rotation.x = -Math.PI / 2;
+  river.position.set(18, 0.15, -20);
+  scene.add(river);
+
+  // Waterfall cliff
+  const cliff = new THREE.Mesh(
+    new THREE.BoxGeometry(14, 22, 8, 2, 4, 2),
+    matRock
+  );
+  cliff.position.set(18, 10, -75);
+  scene.add(cliff);
+
+  const falls = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 18, 2, 6),
+    new THREE.MeshLambertMaterial({ color: 0xA8D8F0, flatShading: true, transparent: true, opacity: 0.7 })
+  );
+  falls.position.set(18, 12, -72);
+  scene.add(falls);
+
+  // Dragon at climax
+  const dragonGroup = new THREE.Group();
+  const dragonBody = new THREE.Mesh(new THREE.ConeGeometry(3, 12, 5), matDragon);
+  dragonBody.rotation.x = Math.PI / 2;
+  dragonBody.position.set(0, 0, 0);
+  dragonGroup.add(dragonBody);
+  const dragonHead = new THREE.Mesh(new THREE.OctahedronGeometry(2.5, 0), matDragon);
+  dragonHead.position.set(0, 2, 6);
+  dragonGroup.add(dragonHead);
+  const dragonWingL = new THREE.Mesh(new THREE.BufferGeometry(), matDragon);
+  const wingShape = new THREE.Shape();
+  wingShape.moveTo(0,0); wingShape.lineTo(6,3); wingShape.lineTo(4,-2); wingShape.lineTo(0,0);
+  dragonWingL.geometry = new THREE.ExtrudeGeometry(wingShape, { depth: 0.3, bevelEnabled: false });
+  dragonWingL.position.set(-2, 1, 2);
+  dragonWingL.rotation.y = 0.3;
+  dragonGroup.add(dragonWingL);
+  const dragonWingR = dragonWingL.clone();
+  dragonWingR.position.x = 2;
+  dragonWingR.rotation.y = -0.3;
+  dragonWingR.scale.x = -1;
+  dragonGroup.add(dragonWingR);
+  dragonGroup.position.set(18, 22, -68);
+  dragonGroup.scale.set(1.2, 1.2, 1.2);
+  scene.add(dragonGroup);
+
+  // Trees along avenue
+  for (let i = 0; i < 20; i++) {
+    const tree = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 3, 4), matTreeTrunk);
+    trunk.position.y = 1.5;
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(2.5, 5, 5), matTree);
+    crown.position.y = 5;
+    tree.add(trunk, crown);
+    const side = i % 2 === 0 ? -1 : 1;
+    tree.position.set(side * (10 + Math.random() * 3), 0, -5 - i * 5);
+    scene.add(tree);
+  }
+
+  // Cloth shader for koinobori
+  const clothVertexShader = `
+    uniform float uTime;
+    uniform float uWind;
+    uniform vec2 uWindDir;
+    varying vec2 vUv;
+    varying float vWave;
+    void main() {
+      vUv = uv;
+      vec3 pos = position;
+      float wave = sin(pos.y * 4.0 + uTime * 3.0) * 0.15 * uWind;
+      wave += sin(pos.y * 7.0 - uTime * 2.0 + pos.x * 2.0) * 0.08 * uWind;
+      float topFactor = smoothstep(0.0, 1.0, pos.y);
+      pos.x += wave * topFactor + uWindDir.x * topFactor * 0.2;
+      pos.z += sin(pos.y * 5.0 + uTime * 2.5) * 0.1 * uWind * topFactor + uWindDir.y * topFactor * 0.15;
+      vWave = wave;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `;
+  const clothFragmentShader = `
+    uniform vec3 uColor;
+    varying vec2 vUv;
+    varying float vWave;
+    void main() {
+      vec3 col = uColor;
+      col += vWave * 0.15;
+      float stripe = step(0.5, mod(vUv.y * 6.0, 1.0));
+      col = mix(col, col * 0.85, stripe * 0.3);
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  const carpColors = [0x1A1512, 0xD62839, 0x1D3557, 0xD62839];
+  const koinoboriCount = 24;
+  const poleGeo = new THREE.CylinderGeometry(0.12, 0.15, 14, 4);
+  const poleMesh = new THREE.InstancedMesh(poleGeo, matPole, koinoboriCount);
+  const carpGeo = new THREE.ConeGeometry(1.2, 3.5, 4);
+  carpGeo.translate(0, 1.75, 0);
+  const carpMaterials = carpColors.map(c => new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uWind: { value: 0.8 },
+      uWindDir: { value: new THREE.Vector2(1, 0.3) },
+      uColor: { value: new THREE.Color(c) }
+    },
+    vertexShader: clothVertexShader,
+    fragmentShader: clothFragmentShader,
+    side: THREE.DoubleSide
+  }));
+  const carpMeshes = carpColors.map((_, ci) => new THREE.InstancedMesh(carpGeo, carpMaterials[ci], Math.ceil(koinoboriCount / 4)));
+
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < koinoboriCount; i++) {
+    dummy.position.set(-6 + (i % 2) * 12, 7, -8 - i * 3.5);
+    dummy.rotation.set(0, (i % 2 === 0 ? 1 : -1) * 0.15, 0);
+    dummy.scale.set(1, 1, 1);
+    dummy.updateMatrix();
+    poleMesh.setMatrixAt(i, dummy.matrix);
+    const ci = i % 4;
+    const idx = Math.floor(i / 4);
+    const s = 0.8 + (i % 3) * 0.15;
+    dummy.scale.set(s, s, 1);
+    dummy.updateMatrix();
+    carpMeshes[ci].setMatrixAt(idx, dummy.matrix);
+  }
+  poleMesh.instanceMatrix.needsUpdate = true;
+  carpMeshes.forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); });
+  scene.add(poleMesh);
+
+  // Fukinagashi windsocks
+  const windsockGeo = new THREE.CylinderGeometry(0.6, 0.2, 2.5, 4, 3, true);
+  const windsockMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uWind: { value: 1.2 },
+      uWindDir: { value: new THREE.Vector2(0.8, 0.5) },
+      uColor: { value: new THREE.Color(0xFFFFFF) }
+    },
+    vertexShader: clothVertexShader,
+    fragmentShader: clothFragmentShader,
+    side: THREE.DoubleSide
+  });
+  const windsockCount = 12;
+  const windsockMesh = new THREE.InstancedMesh(windsockGeo, windsockMat, windsockCount);
+  for (let i = 0; i < windsockCount; i++) {
+    dummy.position.set(-5 + (i % 2) * 10, 12 + (i % 3), -10 - i * 4);
+    dummy.rotation.x = Math.PI / 2;
+    dummy.updateMatrix();
+    windsockMesh.setMatrixAt(i, dummy.matrix);
+  }
+  windsockMesh.instanceMatrix.needsUpdate = true;
+  scene.add(windsockMesh);
+
+  // Petal particles (instanced)
+  const petalCount = 200;
+  const petalGeo = new THREE.PlaneGeometry(0.25, 0.35);
+  const petalMat = new THREE.MeshBasicMaterial({ color: 0xFFB7C5, side: THREE.DoubleSide });
+  const petals = new THREE.InstancedMesh(petalGeo, petalMat, petalCount);
+  const petalData = [];
+  for (let i = 0; i < petalCount; i++) {
+    petalData.push({
+      x: (Math.random() - 0.5) * 80,
+      y: 3 + Math.random() * 20,
+      z: -10 - Math.random() * 80,
+      speed: 0.2 + Math.random() * 0.5,
+      rot: Math.random() * Math.PI
+    });
+    dummy.position.set(petalData[i].x, petalData[i].y, petalData[i].z);
+    dummy.rotation.set(0, petalData[i].rot, 0);
+    dummy.updateMatrix();
+    petals.setMatrixAt(i, dummy.matrix);
+  }
+  petals.instanceMatrix.needsUpdate = true;
+  scene.add(petals);
+
+  // Post-processing
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.35, 0.5, 0.85
+  );
+  composer.addPass(bloom);
+
+  // Camera animation targets
+  const segments = [
+    { pos: [0, 8, 35], look: [0, 6, 0], scroll: [0, 0.15], ease: 'cineIn', panel: 0 },
+    { pos: [-2, 10, 5], look: [0, 12, -25], scroll: [0.15, 0.35], ease: 'drift', panel: 1 },
+    { pos: [12, 6, -15], look: [18, 4, -35], scroll: [0.35, 0.55], ease: 'cineOut', panel: 2 },
+    { pos: [16, 14, -55], look: [18, 16, -72], scroll: [0.55, 0.78], ease: 'cineSnap', panel: 3 },
+    { pos: [14, 20, -62], look: [18, 24, -66], scroll: [0.78, 1.0], ease: 'cineIn', panel: 4 }
+  ];
+
+  const scrollProxy = { t: 0 };
+  const panels = document.querySelectorAll('.overlay-panel');
+
+  function updateCamera(t) {
+    let seg = segments[0];
+    for (const s of segments) {
+      if (t >= s.scroll[0] && t <= s.scroll[1]) { seg = s; break; }
+      if (t > s.scroll[1]) seg = s;
+    }
+    const localT = (t - seg.scroll[0]) / (seg.scroll[1] - seg.scroll[0] || 1);
+    const eased = gsap.parseEase(seg.ease)(Math.min(1, Math.max(0, localT)));
+
+    // Interpolate between segment boundaries
+    const segIdx = segments.indexOf(seg);
+    const nextSeg = segments[Math.min(segIdx + 1, segments.length - 1)];
+    const from = seg;
+    const to = segIdx < segments.length - 1 && localT > 0.5 ? nextSeg : seg;
+
+    const blend = segIdx < segments.length - 1
+      ? gsap.parseEase('power2.inOut')(localT) : eased;
+
+    const p0 = from.pos, p1 = to.pos;
+    const l0 = from.look, l1 = to.look;
+
+    camPos.set(
+      THREE.MathUtils.lerp(p0[0], p1[0], blend),
+      THREE.MathUtils.lerp(p0[1], p1[1], blend),
+      THREE.MathUtils.lerp(p0[2], p1[2], blend)
+    );
+    camLook.set(
+      THREE.MathUtils.lerp(l0[0], l1[0], blend),
+      THREE.MathUtils.lerp(l0[1], l1[1], blend),
+      THREE.MathUtils.lerp(l0[2], l1[2], blend)
+    );
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+
+    // Time of day
+    timeOfDay = t;
+    const morning = new THREE.Color(0xB8D4E8);
+    const dusk = new THREE.Color(0xE8A87C);
+    scene.background.lerpColors(morning, dusk, timeOfDay);
+    scene.fog.color.copy(scene.background);
+    sun.intensity = 1.2 - timeOfDay * 0.4;
+    ambient.intensity = 0.55 - timeOfDay * 0.15;
+    sun.color.setHSL(0.1 - timeOfDay * 0.05, 0.3, 0.95 - timeOfDay * 0.2);
+
+    // Panel visibility
+    panels.forEach((p, i) => {
+      const active = i === seg.panel;
+      p.classList.toggle('active', active);
+      if (active) {
+        const chars = p.querySelectorAll('.seg-title');
+        chars.forEach(el => {
+          if (!el.dataset.split) {
+            el.dataset.split = '1';
+            const text = el.childNodes[0].textContent;
+            el.childNodes[0].textContent = '';
+            text.split('').forEach((c, j) => {
+              const span = document.createElement('span');
+              span.className = 'char';
+              span.textContent = c;
+              span.style.transitionDelay = (j * 30) + 'ms';
+              el.insertBefore(span, el.querySelector('.jp'));
+            });
+          }
+          el.querySelectorAll('.char').forEach((c, j) => {
+            c.style.opacity = localT > 0.1 ? '1' : '0';
+            c.style.transform = localT > 0.1 ? 'none' : 'translateY(12px)';
+            c.style.transition = 'opacity 0.4s, transform 0.4s';
+            c.style.transitionDelay = (j * 25) + 'ms';
+          });
+        });
+      }
+    });
+  }
+
+  // GSAP ScrollTrigger timeline
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: '#scroll-root',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: true
+    }
+  });
+  tl.to(scrollProxy, { t: 1, duration: 1, ease: 'none' });
+
+  ScrollTrigger.create({
+    trigger: '#scroll-root',
+    start: 'top top',
+    end: 'bottom bottom',
+    onUpdate: (self) => { scrollProxy.t = self.progress; }
+  });
+
+  panels[0].classList.add('active');
+
+  let animating = true;
+  document.addEventListener('visibilitychange', () => {
+    animating = !document.hidden;
+  });
+
+  function animate() {
+    if (!animating) { requestAnimationFrame(animate); return; }
+    requestAnimationFrame(animate);
+    const elapsed = clock.getElapsedTime();
+
+    // Update shaders
+    carpMaterials.forEach(m => { m.uniforms.uTime.value = elapsed; });
+    windsockMat.uniforms.uTime.value = elapsed;
+
+    // Petals drift
+    for (let i = 0; i < petalCount; i++) {
+      petalData[i].y -= petalData[i].speed * 0.02;
+      petalData[i].x += Math.sin(elapsed + i) * 0.01;
+      if (petalData[i].y < 0) petalData[i].y = 15 + Math.random() * 10;
+      dummy.position.set(petalData[i].x, petalData[i].y, petalData[i].z);
+      dummy.rotation.set(Math.sin(elapsed * 0.5 + i) * 0.5, petalData[i].rot + elapsed * 0.2, 0);
+      dummy.updateMatrix();
+      petals.setMatrixAt(i, dummy.matrix);
+    }
+    petals.instanceMatrix.needsUpdate = true;
+
+    // Dragon subtle motion
+    dragonGroup.rotation.y = Math.sin(elapsed * 0.3) * 0.1;
+    dragonGroup.position.y = 22 + Math.sin(elapsed * 0.5) * 0.5;
+
+    updateCamera(scrollProxy.t);
+    composer.render();
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    bloom.resolution.set(window.innerWidth, window.innerHeight);
+  });
+}
+</script>
+</body>
+</html>

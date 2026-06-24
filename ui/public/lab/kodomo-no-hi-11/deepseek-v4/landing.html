@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Handcrafted Koinobori for Kodomo no Hi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800;9..144,900&family=Source+Sans+3:wght@400;600&family=Noto+Serif+JP:wght@700;900&family=Noto+Sans+JP:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F3EC;
+  --surface: #FFFFFF;
+  --text: #1C1A17;
+  --muted: #7A7368;
+  --border: #E0D9CE;
+  --accent: #D4453E;
+  --on-accent: #FFFFFF;
+  --accent-2: #3B5998;
+  --on-accent-2: #FFFFFF;
+  --success: #2D7A4F;
+  --warning: #D4943E;
+  --error: #D4453E;
+  --info: #3B7A9E;
+
+  --font-display: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Source Sans 3', 'Inter', system-ui, sans-serif;
+  --font-jp-display: 'Noto Serif JP', 'Hiragino Mincho Pro', serif;
+  --font-jp-body: 'Noto Sans JP', 'Hiragino Kaku Gothic Pro', sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.953rem;
+  --text-2xl: 2.441rem;
+  --text-3xl: 3.052rem;
+  --text-4xl: 3.815rem;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px; --space-20: 80px; --space-24: 96px; --space-32: 128px;
+
+  --radius-sm: 0; --radius-md: 16px; --radius-lg: 24px; --radius-full: 9999px;
+  --control-height: 44px;
+  --shadow-surface: 0 2px 16px rgba(28,26,23,0.08);
+  --shadow-modal: 0 8px 40px rgba(28,26,23,0.14);
+
+  --hero-image: url('media/hero.jpg');
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Nav */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: var(--space-4) var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 300ms ease, box-shadow 300ms ease;
+}
+.nav.scrolled {
+  background: rgba(247,243,236,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-surface);
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 900;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.nav-links {
+  display: flex;
+  gap: var(--space-8);
+  list-style: none;
+}
+.nav-links a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: color 150ms ease;
+}
+.nav-links a:hover { color: var(--accent); }
+.nav-cta {
+  height: var(--control-height);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-cta:hover { background: #C03D37; }
+
+/* Hero */
+.hero {
+  width: 100vw;
+  height: 100svh;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(28,26,23,0.05) 0%,
+    rgba(28,26,23,0.0) 40%,
+    rgba(28,26,23,0.35) 75%,
+    rgba(28,26,23,0.65) 100%
+  );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-16) var(--space-8) var(--space-12);
+  max-width: 720px;
+}
+.hero-eyebrow {
+  font-family: var(--font-jp-display);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--on-accent);
+  opacity: 0.9;
+  margin-bottom: var(--space-3);
+  letter-spacing: 0.04em;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-6);
+}
+.hero-subtitle {
+  font-size: var(--text-md);
+  color: rgba(255,255,255,0.85);
+  line-height: 1.5;
+  max-width: 540px;
+  margin-bottom: var(--space-8);
+}
+.hero-actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.btn {
+  height: var(--control-height);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  border: none;
+  line-height: 1;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: #C03D37; }
+.btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn-primary:active { background: #A83530; }
+.btn-secondary { background: rgba(255,255,255,0.15); color: #FFFFFF; backdrop-filter: blur(8px); }
+.btn-secondary:hover { background: rgba(255,255,255,0.25); }
+.btn-secondary:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+
+/* Sections */
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-8);
+}
+.section-label {
+  font-family: var(--font-jp-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-3);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-6);
+}
+.section-body {
+  font-size: var(--text-md);
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 640px;
+}
+
+/* Craft Section */
+.craft-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: center;
+  margin-top: var(--space-12);
+}
+.craft-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-md);
+  background-size: cover;
+  background-position: center;
+}
+.craft-text h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+.craft-text p {
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: 1.7;
+  margin-bottom: var(--space-4);
+}
+.craft-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+.craft-stat {
+  text-align: center;
+}
+.craft-stat-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: var(--space-1);
+}
+.craft-stat-label {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* Collection */
+.collection-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  margin-top: var(--space-12);
+}
+.collection-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.collection-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-surface);
+}
+.collection-card-image {
+  width: 100%;
+  aspect-ratio: 3/2;
+  background-size: cover;
+  background-position: center;
+}
+.collection-card-body {
+  padding: var(--space-6);
+}
+.collection-card-body h4 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+.collection-card-body p {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-4);
+}
+.collection-card-price {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* Testimonial */
+.testimonial {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16);
+  margin-top: var(--space-12);
+  text-align: center;
+}
+.testimonial-quote {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  font-style: italic;
+  max-width: 700px;
+  margin: 0 auto var(--space-6);
+}
+.testimonial-author {
+  font-weight: 600;
+  color: var(--text);
+}
+.testimonial-role {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* CTA Section */
+.cta-section {
+  background: var(--accent-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-20) var(--space-12);
+  text-align: center;
+  margin-top: var(--space-12);
+}
+.cta-section .section-title { color: var(--on-accent-2); }
+.cta-section .section-body { color: rgba(255,255,255,0.8); margin: 0 auto var(--space-8); }
+.cta-section .btn-primary { background: #FFFFFF; color: var(--accent-2); }
+.cta-section .btn-primary:hover { background: rgba(255,255,255,0.9); }
+
+/* Footer */
+.footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-8) var(--space-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 900;
+  color: var(--text);
+}
+.footer-links {
+  display: flex;
+  gap: var(--space-6);
+  list-style: none;
+}
+.footer-links a {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  transition: color 150ms ease;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-copy {
+  width: 100%;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  margin-top: var(--space-6);
+}
+
+/* Motion */
+@media (prefers-reduced-motion: no-preference) {
+  .anim .reveal {
+    opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 600ms ease-out, transform 600ms ease-out;
+  }
+  .anim .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hero-title { font-size: var(--text-2xl); }
+  .craft-grid { grid-template-columns: 1fr; }
+  .collection-grid { grid-template-columns: 1fr; }
+  .section { padding: var(--space-16) var(--space-6); }
+  .testimonial { padding: var(--space-8); }
+  .cta-section { padding: var(--space-12) var(--space-6); }
+  .footer { flex-direction: column; text-align: center; }
+}
+@media (min-width: 2560px) {
+  .section, .footer { max-width: 1400px; }
+}
+</style>
+</head>
+<body>
+<nav class="nav" id="nav">
+  <a href="#" class="nav-brand">Nobori</a>
+  <ul class="nav-links">
+    <li><a href="#craft">Craft</a></li>
+    <li><a href="#collection">Collection</a></li>
+    <li><a href="#story">Story</a></li>
+  </ul>
+  <button class="nav-cta">Shop Collection</button>
+</nav>
+
+<header class="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">こどもの日</p>
+    <h1 class="hero-title">The wind remembers every child it has lifted</h1>
+    <p class="hero-subtitle">Handcrafted koinobori streamers, made by artisans in Kyoto's Nishijin district. Each carp carries a wish into the May sky.</p>
+    <div class="hero-actions">
+      <a href="#collection" class="btn btn-primary">Explore the Collection</a>
+      <a href="#craft" class="btn btn-secondary">See How They're Made</a>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="craft">
+  <p class="section-label reveal">Our Craft</p>
+  <h2 class="section-title reveal">Silk, washi, and three generations of handwork</h2>
+  <p class="section-body reveal">Every Nobori streamer begins in our Nishijin workshop, where silk is stretched on hundred-year-old looms and painted by hand with natural mineral pigments. A single large koinobori takes eleven days from loom to sky.</p>
+  <div class="craft-grid">
+    <div class="craft-image reveal" style="background-image:url('media/workshop.jpg')"></div>
+    <div class="craft-text reveal">
+      <h3>The Nishijin workshop</h3>
+      <p>Our master dyer, Tanaka-sensei, has been painting carp scales for forty-seven years. He mixes his own vermillion from safflower and cinnabar, and his indigo from fermented sukumo leaves — the same recipes his grandfather used when the workshop opened in 1928.</p>
+      <p>Each streamer passes through twelve hands before it ships: the silk weaver, the pattern cutter, the dye master, the scale painter, the eye painter, the fin assembler, the pole fitter, and five quality inspectors who check every seam under morning light.</p>
+      <div class="craft-stats">
+        <div class="craft-stat">
+          <div class="craft-stat-value">11</div>
+          <div class="craft-stat-label">Days per streamer</div>
+        </div>
+        <div class="craft-stat">
+          <div class="craft-stat-value">12</div>
+          <div class="craft-stat-label">Artisan hands</div>
+        </div>
+        <div class="craft-stat">
+          <div class="craft-stat-value">1928</div>
+          <div class="craft-stat-label">Workshop founded</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="collection">
+  <p class="section-label reveal">Collection</p>
+  <h2 class="section-title reveal">Streamers for every family</h2>
+  <p class="section-body reveal">From the full five-carp household set to a single child's first koinobori, every piece is made to the same standard.</p>
+  <div class="collection-grid">
+    <div class="collection-card reveal">
+      <div class="collection-card-image" style="background-image:url('media/garden.jpg')"></div>
+      <div class="collection-card-body">
+        <h4>Household Set</h4>
+        <p>The complete five-carp set — father, mother, and three children — with fukinagashi windsock and 6-metre bamboo pole.</p>
+        <div class="collection-card-price">¥ 98,000</div>
+      </div>
+    </div>
+    <div class="collection-card reveal">
+      <div class="collection-card-image" style="background-image:url('media/hero.jpg');background-position:center 30%"></div>
+      <div class="collection-card-body">
+        <h4>First Koinobori</h4>
+        <p>A single child's carp in indigo silk, sized for a balcony pole. The traditional gift for a family's first Kodomo no Hi.</p>
+        <div class="collection-card-price">¥ 24,000</div>
+      </div>
+    </div>
+    <div class="collection-card reveal">
+      <div class="collection-card-image" style="background-image:url('media/workshop.jpg');background-position:center 60%"></div>
+      <div class="collection-card-body">
+        <h4>Dragon Climber</h4>
+        <p>Our signature piece — a golden dragon carp that transforms the waterfall myth into silk. For the child who dreams big.</p>
+        <div class="collection-card-price">¥ 45,000</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="story">
+  <p class="section-label reveal">The Story</p>
+  <h2 class="section-title reveal">Why the carp swims upstream</h2>
+  <p class="section-body reveal">Kodomo no Hi began as Tango no Sekku over a thousand years ago — a day when families prayed for their sons' strength and success. The koinobori tradition draws from a Chinese legend: a carp that swam up the Yellow River's Dragon Gate waterfall was transformed into a dragon. Fly a carp streamer, the saying goes, and your child will grow with the courage to climb any waterfall.</p>
+  <div class="testimonial reveal">
+    <p class="testimonial-quote">"We hung our Nobori streamer on the balcony of our Tokyo apartment — our daughter is two, and she points at it every morning saying 'sakana, sakana.' It's the first thing she learned to name."</p>
+    <p class="testimonial-author">Yuki Morimoto</p>
+    <p class="testimonial-role">Tokyo, first-time mother</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="cta-section reveal">
+    <h2 class="section-title">This May, fly something that matters</h2>
+    <p class="section-body">Orders for Kodomo no Hi close April 20th. Each streamer is made to order — we begin weaving the day you place it.</p>
+    <a href="#" class="btn btn-primary">Shop the Collection</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-brand">Nobori</div>
+  <ul class="footer-links">
+    <li><a href="#">Workshop</a></li>
+    <li><a href="#">Care Guide</a></li>
+    <li><a href="#">Shipping</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <p class="footer-copy">Nishijin, Kyoto &middot; Since 1928 &middot; Every streamer carries a wish</p>
+</footer>
+
+<script>
+(function(){
+  var nav = document.getElementById('nav');
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if(!ticking){
+      requestAnimationFrame(function(){
+        nav.classList.toggle('scrolled', window.scrollY > 40);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  if(window.matchMedia('(prefers-reduced-motion: no-preference)').matches){
+    document.documentElement.classList.add('anim');
+    var reveals = document.querySelectorAll('.reveal');
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach(function(el){ observer.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TomoTrail - Nobori Current Dashboard</title>
+  <style>
+    :root {
+      --rice: #fffaf0;
+      --paper: #f5ead8;
+      --paper-strong: #ead7b8;
+      --sumi: #11100d;
+      --sumi-soft: #39352e;
+      --river: #123e75;
+      --river-quiet: #dbe9f7;
+      --lacquer: #d52b1e;
+      --leaf: #247a55;
+      --marigold: #f0b72f;
+      --sky: #d7efff;
+      --mist: #f8f4ec;
+      --disabled-bg: #e8dfd0;
+      --disabled-fg: #8a8172;
+      --ring: #f0b72f;
+      --font-display: "Iowan Old Style", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+      --font-body: "Avenir Next", "Hiragino Sans", "Yu Gothic", Verdana, sans-serif;
+      --type-h1: clamp(2.65rem, 5.6vw, 5.7rem);
+      --type-h2: clamp(1.75rem, 3vw, 2.75rem);
+      --type-h3: clamp(1.25rem, 2vw, 1.75rem);
+      --type-body: 1.0625rem;
+      --type-small: 0.9rem;
+      --type-table: 0.94rem;
+      --type-micro: 0.78rem;
+      --tracking-display: -0.02em;
+      --tracking-label: 0.08em;
+      --leading-tight: 0.95;
+      --leading-body: 1.55;
+      --space-1: 0.375rem;
+      --space-2: 0.625rem;
+      --space-3: 1rem;
+      --space-4: 1.5rem;
+      --space-5: 2.25rem;
+      --space-6: 3.5rem;
+      --page-x: clamp(1rem, 3vw, 2.75rem);
+      --radius-0: 0;
+      --radius-1: 16px;
+      --radius-2: 24px;
+      --radius-pill: 999px;
+      --control-height: 48px;
+      --shadow-ink: 0 18px 50px rgba(17, 16, 13, 0.14);
+      --shadow-cloth: 0 10px 28px rgba(18, 62, 117, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--sumi);
+      background:
+        radial-gradient(circle at 4% 8%, rgba(240, 183, 47, 0.22) 0 10rem, transparent 10.1rem),
+        radial-gradient(circle at 90% 4%, rgba(36, 122, 85, 0.1) 0 12rem, transparent 12.1rem),
+        var(--rice);
+      font-family: var(--font-body);
+      font-size: var(--type-body);
+      line-height: var(--leading-body);
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; }
+    button,
+    input,
+    select,
+    textarea { font: inherit; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 276px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+      padding: var(--space-4);
+      color: var(--rice);
+      background: var(--sumi);
+      overflow-y: auto;
+    }
+
+    .brand {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--rice);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .mark {
+      inline-size: 36px;
+      block-size: 36px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 36% 36%, var(--rice) 0 4px, transparent 4.5px),
+        repeating-linear-gradient(135deg, var(--lacquer) 0 7px, var(--marigold) 7px 14px, var(--river) 14px 21px);
+      box-shadow: inset 0 0 0 2px rgba(255, 250, 240, 0.2);
+    }
+
+    .nav-group {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .nav-label {
+      margin: 0 0 var(--space-1);
+      color: rgba(255, 250, 240, 0.55);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      color: rgba(255, 250, 240, 0.82);
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      text-decoration: none;
+      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+
+    .nav-item svg { width: 20px; height: 20px; }
+    .nav-item:hover {
+      color: var(--rice);
+      background: rgba(255, 250, 240, 0.12);
+      transform: translateX(2px);
+    }
+    .nav-item.active {
+      color: var(--sumi);
+      background: var(--marigold);
+    }
+    .nav-item:focus-visible,
+    .brand:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    .side-card {
+      margin-top: auto;
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      color: var(--sumi);
+      background: var(--marigold);
+      border-radius: var(--radius-2);
+      box-shadow: 0 18px 32px rgba(0, 0, 0, 0.26);
+    }
+
+    .side-card strong {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      line-height: 1;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .main {
+      min-width: 0;
+      padding: var(--space-4) var(--page-x) var(--space-6);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-4);
+      align-items: start;
+      margin-bottom: var(--space-5);
+    }
+
+    .eyebrow,
+    label,
+    .table-label {
+      color: var(--sumi-soft);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1 {
+      max-width: 880px;
+      font-family: var(--font-display);
+      font-size: var(--type-h1);
+      letter-spacing: var(--tracking-display);
+      line-height: var(--leading-tight);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: var(--type-h2);
+      letter-spacing: var(--tracking-display);
+      line-height: 1;
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: var(--type-h3);
+      letter-spacing: var(--tracking-display);
+      line-height: 1.04;
+    }
+
+    .date-pill {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      white-space: nowrap;
+      color: var(--rice);
+      background: var(--river);
+      border-radius: var(--radius-pill);
+      font-weight: 850;
+      box-shadow: var(--shadow-cloth);
+    }
+
+    .toolbar,
+    .panel,
+    .stat,
+    .image-panel,
+    .route-card,
+    .note-panel {
+      border-radius: var(--radius-2);
+      background: rgba(255, 250, 240, 0.88);
+      box-shadow: var(--shadow-cloth);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr 0.8fr auto;
+      gap: var(--space-3);
+      align-items: end;
+      padding: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .field:focus-within label { color: var(--river); }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-1);
+      color: var(--sumi);
+      background: var(--rice);
+      padding: 0 var(--space-3);
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.16), 0 8px 18px rgba(17, 16, 13, 0.05);
+      transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    textarea {
+      min-height: calc(var(--control-height) * 2.4);
+      padding-block: var(--space-3);
+      resize: vertical;
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: #fffefd;
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.26), 0 12px 24px rgba(17, 16, 13, 0.08);
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    button:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+
+    input:active,
+    select:active,
+    textarea:active { transform: translateY(1px); }
+
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      color: var(--disabled-fg);
+      background: var(--disabled-bg);
+      box-shadow: none;
+      cursor: default;
+    }
+
+    button,
+    .btn {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--space-4);
+      color: var(--sumi);
+      background: var(--marigold);
+      font-weight: 850;
+      text-decoration: none;
+      box-shadow: 0 12px 22px rgba(17, 16, 13, 0.14);
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+    }
+
+    button:hover,
+    .btn:hover {
+      transform: translateY(-1px);
+      background: #f4c955;
+      box-shadow: 0 18px 30px rgba(17, 16, 13, 0.18);
+    }
+
+    button:active,
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 16px rgba(17, 16, 13, 0.14);
+    }
+
+    button:disabled,
+    .btn[aria-disabled="true"] {
+      color: var(--disabled-fg);
+      background: var(--disabled-bg);
+      box-shadow: none;
+      cursor: default;
+      transform: none;
+    }
+
+    .btn.river {
+      color: var(--rice);
+      background: var(--river);
+    }
+
+    .btn.river:hover { background: #174d8f; }
+
+    .segment {
+      min-height: var(--control-height);
+      display: inline-grid;
+      grid-auto-flow: column;
+      gap: var(--space-1);
+      padding: var(--space-1);
+      background: var(--paper);
+      border-radius: var(--radius-pill);
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.1);
+    }
+
+    .segment button {
+      min-height: calc(var(--control-height) - var(--space-1) * 2);
+      padding: 0 var(--space-3);
+      background: transparent;
+      box-shadow: none;
+      color: var(--sumi-soft);
+    }
+
+    .segment button:hover { background: rgba(255, 255, 255, 0.8); }
+    .segment button[aria-pressed="true"] {
+      color: var(--rice);
+      background: var(--river);
+      box-shadow: var(--shadow-cloth);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.9fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .stat {
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-3);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      right: -24px;
+      bottom: -20px;
+      inline-size: 112px;
+      block-size: 88px;
+      border-radius: 999px 999px 0 0;
+      background: var(--accent, var(--river));
+      opacity: 0.15;
+      transform: rotate(-12deg);
+    }
+
+    .stat strong {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      line-height: 0.9;
+      letter-spacing: var(--tracking-display);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat small {
+      color: var(--sumi-soft);
+      font-weight: 850;
+    }
+
+    .panel {
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      align-items: start;
+      margin-bottom: var(--space-4);
+    }
+
+    .status {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--space-2);
+      color: var(--rice);
+      background: var(--river);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status.good { background: var(--leaf); }
+    .status.warn { color: var(--sumi); background: var(--marigold); }
+    .status.risk { background: var(--lacquer); }
+    .status.quiet { color: var(--sumi-soft); background: var(--paper); }
+
+    .chart {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr) 54px;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: var(--control-height);
+      font-size: var(--type-small);
+      font-weight: 800;
+    }
+
+    .bar-track {
+      height: 16px;
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: var(--value);
+      border-radius: var(--radius-pill);
+      background: var(--accent, var(--river));
+    }
+
+    .route-list {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .route-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      padding: var(--space-3);
+    }
+
+    .route-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+
+    .pill {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--space-2);
+      color: var(--sumi-soft);
+      background: var(--mist);
+      border-radius: var(--radius-pill);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-1);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      font-size: var(--type-table);
+    }
+
+    th,
+    td {
+      min-height: 52px;
+      padding: var(--space-3);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--sumi-soft);
+      font-size: var(--type-micro);
+      font-weight: 900;
+      letter-spacing: var(--tracking-label);
+      text-transform: uppercase;
+      background: var(--paper);
+    }
+
+    tbody tr {
+      box-shadow: inset 0 -1px 0 rgba(17, 16, 13, 0.08);
+      transition: background 180ms ease;
+    }
+
+    tbody tr:hover { background: var(--river-quiet); }
+
+    .image-panel {
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .image-panel img {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+    }
+
+    .image-panel .caption {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-4);
+    }
+
+    .controls-panel {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .check-row,
+    .radio-row,
+    .switch-row,
+    .range-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-1);
+      background: var(--mist);
+      color: var(--sumi-soft);
+      font-size: var(--type-small);
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .check-row:hover,
+    .radio-row:hover,
+    .switch-row:hover,
+    .range-row:hover {
+      background: #fffefd;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      appearance: none;
+      flex: 0 0 auto;
+      inline-size: calc(var(--control-height) * 0.42);
+      block-size: calc(var(--control-height) * 0.42);
+      min-height: auto;
+      padding: 0;
+      border-radius: 6px;
+      background: var(--rice);
+      box-shadow: inset 0 0 0 2px var(--sumi);
+      cursor: pointer;
+    }
+
+    input[type="radio"] { border-radius: var(--radius-pill); }
+    input[type="checkbox"]:hover,
+    input[type="radio"]:hover {
+      box-shadow: inset 0 0 0 2px var(--sumi), 0 0 0 6px rgba(240, 183, 47, 0.2);
+    }
+    input[type="checkbox"]:active,
+    input[type="radio"]:active { transform: scale(0.96); }
+    input[type="checkbox"]:checked,
+    input[type="radio"]:checked {
+      background:
+        radial-gradient(circle at 50% 50%, var(--rice) 0 34%, transparent 36%),
+        var(--river);
+      box-shadow: inset 0 0 0 2px var(--river);
+    }
+    input[type="checkbox"]:disabled,
+    input[type="radio"]:disabled {
+      background: var(--disabled-bg);
+      box-shadow: inset 0 0 0 2px var(--disabled-fg);
+      cursor: default;
+    }
+
+    .switch-row input {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      opacity: 0;
+    }
+
+    .switch {
+      position: relative;
+      inline-size: calc(var(--control-height) * 1.72);
+      block-size: calc(var(--control-height) * 0.72);
+      border-radius: var(--radius-pill);
+      background: var(--paper-strong);
+      box-shadow: inset 0 0 0 1px rgba(17, 16, 13, 0.16);
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      inline-size: calc(var(--control-height) * 0.55);
+      block-size: calc(var(--control-height) * 0.55);
+      border-radius: 50%;
+      background: var(--rice);
+      box-shadow: var(--shadow-cloth);
+      transition: transform 180ms ease, width 180ms ease;
+    }
+
+    .switch-row:hover .switch { background: #f2dfbd; }
+    .switch-row input:checked + .switch { background: var(--river); }
+    .switch-row input:checked + .switch::after { transform: translateX(calc(var(--control-height) * 0.98)); }
+    .switch-row input:focus-visible + .switch {
+      outline: 3px solid var(--ring);
+      outline-offset: 3px;
+    }
+    .switch-row:active .switch::after { width: calc(var(--control-height) * 0.68); }
+    .switch-row input:disabled + .switch {
+      background: var(--disabled-bg);
+      box-shadow: none;
+    }
+
+    input[type="range"] {
+      appearance: none;
+      min-height: var(--control-height);
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--river) 0 62%, var(--paper-strong) 62% 100%);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      inline-size: 26px;
+      block-size: 26px;
+      margin-top: -7px;
+      border-radius: 50%;
+      background: var(--lacquer);
+      box-shadow: 0 5px 14px rgba(17, 16, 13, 0.26);
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.08); }
+    input[type="range"]:active::-webkit-slider-thumb { background: var(--sumi); }
+    input[type="range"]:disabled::-webkit-slider-runnable-track { background: var(--disabled-bg); }
+    input[type="range"]:disabled::-webkit-slider-thumb { background: var(--disabled-fg); }
+
+    input[type="range"]::-moz-range-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--paper-strong);
+    }
+
+    input[type="range"]::-moz-range-progress {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--river);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      inline-size: 26px;
+      block-size: 26px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--lacquer);
+      box-shadow: 0 5px 14px rgba(17, 16, 13, 0.26);
+    }
+
+    .note-panel {
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+        animation: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .nav-group { grid-auto-flow: column; overflow-x: auto; }
+      .nav-label,
+      .side-card { display: none; }
+      .dashboard-grid,
+      .toolbar { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      :root { --control-height: 46px; }
+      .main { padding-top: var(--space-3); }
+      .topbar,
+      .panel-head,
+      .route-card {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .stats { grid-template-columns: 1fr; }
+      .nav-item span { display: none; }
+      .brand { width: 100%; }
+      .segment { width: 100%; grid-auto-flow: row; }
+      .segment button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Dashboard navigation">
+      <a class="brand" href="landing.html">
+        <span class="mark" aria-hidden="true"></span>
+        <span>TomoTrail</span>
+      </a>
+      <nav class="nav-group" aria-label="Main sections">
+        <p class="nav-label">Festival ops</p>
+        <a class="nav-item active" href="#">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 13c4-6 12-6 16 0-4 6-12 6-16 0Z" fill="currentColor"></path><circle cx="9" cy="13" r="1.6" fill="#11100d"></circle></svg>
+          <span>Current</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5h14v14H5z" fill="currentColor"></path><path d="M8 10h8M8 14h5" stroke="#11100d" stroke-width="2" stroke-linecap="round"></path></svg>
+          <span>Kits</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3c5 3 8 7 8 12a8 8 0 1 1-16 0c0-5 3-9 8-12Z" fill="currentColor"></path></svg>
+          <span>Routes</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 17h18v3H3zM6 4h12v13H6z" fill="currentColor"></path></svg>
+          <span>Volunteers</span>
+        </a>
+      </nav>
+      <div class="side-card">
+        <strong>Nobori Current</strong>
+        <p>Wind-forward clarity for May festival operations.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Setagaya ward run - Kodomo no Hi</span>
+          <h1>Morning route control.</h1>
+        </div>
+        <div class="date-pill" aria-label="Current operating date">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 6h14v14H5zM8 3v5M16 3v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+          May 5, 2027
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="Dashboard filters">
+        <div class="field">
+          <label for="search">Search family, stop, or volunteer</label>
+          <input id="search" type="search" placeholder="Kit 18, Aobadai, Sato team">
+        </div>
+        <div class="field">
+          <label for="ward">Ward</label>
+          <select id="ward">
+            <option>Setagaya North</option>
+            <option>Setagaya South</option>
+            <option>Meguro River</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ops-date">Ops date</label>
+          <input id="ops-date" type="date" value="2027-05-05">
+        </div>
+        <div class="field">
+          <label>View</label>
+          <div class="segment" role="group" aria-label="View mode">
+            <button type="button" aria-pressed="true">Live</button>
+            <button type="button" aria-pressed="false">Risk</button>
+            <button type="button" aria-pressed="false">Kits</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Operating metrics">
+        <article class="stat" style="--accent: var(--river);">
+          <span class="table-label">Families</span>
+          <strong>247</strong>
+          <small>219 confirmed, 28 awaiting pickup</small>
+        </article>
+        <article class="stat" style="--accent: var(--leaf);">
+          <span class="table-label">Kit readiness</span>
+          <strong>92%</strong>
+          <small>All school boxes sealed</small>
+        </article>
+        <article class="stat" style="--accent: var(--marigold);">
+          <span class="table-label">Wind buffer</span>
+          <strong>38m</strong>
+          <small>Before river gust advisory</small>
+        </article>
+        <article class="stat" style="--accent: var(--lacquer);">
+          <span class="table-label">Open risks</span>
+          <strong>7</strong>
+          <small>2 need coordinator review</small>
+        </article>
+      </section>
+
+      <div class="dashboard-grid">
+        <div>
+          <section class="panel" aria-labelledby="coverage-title">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Route coverage</span>
+                <h2 id="coverage-title">Teams by corridor</h2>
+              </div>
+              <span class="status good">On plan</span>
+            </div>
+            <div class="chart" aria-label="Coverage chart">
+              <div class="bar-row">
+                <span>Riverside</span>
+                <div class="bar-track"><div class="bar" style="--value: 86%; --accent: var(--river);"></div></div>
+                <strong>86%</strong>
+              </div>
+              <div class="bar-row">
+                <span>School hill</span>
+                <div class="bar-track"><div class="bar" style="--value: 74%; --accent: var(--leaf);"></div></div>
+                <strong>74%</strong>
+              </div>
+              <div class="bar-row">
+                <span>Market lane</span>
+                <div class="bar-track"><div class="bar" style="--value: 61%; --accent: var(--marigold);"></div></div>
+                <strong>61%</strong>
+              </div>
+              <div class="bar-row">
+                <span>Rooftop east</span>
+                <div class="bar-track"><div class="bar" style="--value: 49%; --accent: var(--lacquer);"></div></div>
+                <strong>49%</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="routes-title">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Next 90 minutes</span>
+                <h2 id="routes-title">Route queue</h2>
+              </div>
+              <button type="button" class="btn river">Assign next team</button>
+            </div>
+            <div class="route-list">
+              <article class="route-card">
+                <div>
+                  <h3>Aobadai rooftop line</h3>
+                  <p>Team Sato starts at kit stop 18, then school gate B. Needs two tall-pole clips.</p>
+                  <div class="route-meta">
+                    <span class="pill">12 families</span>
+                    <span class="pill">22 min</span>
+                    <span class="status warn">Wind watch</span>
+                  </div>
+                </div>
+                <button type="button">Open</button>
+              </article>
+              <article class="route-card">
+                <div>
+                  <h3>Hanegi craft relay</h3>
+                  <p>Workshop supplies staged in van 3. Volunteer badges missing for two helpers.</p>
+                  <div class="route-meta">
+                    <span class="pill">3 classrooms</span>
+                    <span class="pill">41 kits</span>
+                    <span class="status quiet">Waiting</span>
+                  </div>
+                </div>
+                <button type="button">Open</button>
+              </article>
+              <article class="route-card">
+                <div>
+                  <h3>Riverbank photo window</h3>
+                  <p>Families requested a shared lift at 10:40. Gusts are acceptable until 11:18.</p>
+                  <div class="route-meta">
+                    <span class="pill">31 families</span>
+                    <span class="pill">38 min</span>
+                    <span class="status good">Ready</span>
+                  </div>
+                </div>
+                <button type="button" disabled>Locked</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="kits-title">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Family kit queue</span>
+                <h2 id="kits-title">Exceptions needing touch</h2>
+              </div>
+              <span class="status risk">7 open</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Family</th>
+                    <th>Stop</th>
+                    <th>Issue</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Mori</td>
+                    <td>18</td>
+                    <td>Needs balcony clamp</td>
+                    <td>Sato team</td>
+                    <td><span class="status warn">Packing</span></td>
+                  </tr>
+                  <tr>
+                    <td>Ikeda</td>
+                    <td>24</td>
+                    <td>Allergy card update</td>
+                    <td>School desk</td>
+                    <td><span class="status quiet">Review</span></td>
+                  </tr>
+                  <tr>
+                    <td>Ogawa</td>
+                    <td>31</td>
+                    <td>Late pickup request</td>
+                    <td>Volunteer 7</td>
+                    <td><span class="status good">Confirmed</span></td>
+                  </tr>
+                  <tr>
+                    <td>Nakamura</td>
+                    <td>39</td>
+                    <td>Missing medium streamer</td>
+                    <td>Depot north</td>
+                    <td><span class="status risk">Blocked</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside>
+          <section class="image-panel" aria-labelledby="ops-image-title">
+            <img src="media/dashboard-ops.png" alt="Organized Kodomo no Hi operations workspace with crates, route markers, and koinobori materials">
+            <div class="caption">
+              <span class="eyebrow">Material view</span>
+              <h2 id="ops-image-title">The depot is 92% packed.</h2>
+              <p>Three red crates remain open: clamps, badge cards, and spare tails for the riverbank lift.</p>
+            </div>
+          </section>
+
+          <section class="panel controls-panel" aria-labelledby="control-title">
+            <div>
+              <span class="eyebrow">Dispatch controls</span>
+              <h2 id="control-title">Keep the current calm</h2>
+            </div>
+            <label class="switch-row">
+              <input type="checkbox" checked>
+              <span class="switch" aria-hidden="true"></span>
+              <span>Auto-assign ready teams</span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" checked>
+              <span>Show weather risk on route cards</span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox">
+              <span>Hold late pickups at depot</span>
+            </label>
+            <label class="radio-row">
+              <input type="radio" name="dispatch-mode" checked>
+              <span>Prioritize family wait time</span>
+            </label>
+            <label class="radio-row">
+              <input type="radio" name="dispatch-mode">
+              <span>Prioritize wind-safe corridors</span>
+            </label>
+            <div class="field range-row">
+              <label for="wind-buffer">Wind buffer minutes</label>
+              <input id="wind-buffer" type="range" min="10" max="60" value="38">
+            </div>
+            <div class="field">
+              <label for="broadcast">Coordinator note</label>
+              <textarea id="broadcast">Riverbank families: photo lift remains on schedule. Please arrive with kit tag visible.</textarea>
+            </div>
+            <button type="button">Send route update</button>
+          </section>
+
+          <section class="note-panel" aria-labelledby="notes-title">
+            <span class="eyebrow">Live notes</span>
+            <h2 id="notes-title">Quiet alerts</h2>
+            <p><strong>09:42</strong> Van 2 has extra clamps after Hanegi delivery.</p>
+            <p><strong>09:51</strong> School gate B opens late; route moved by eight minutes.</p>
+            <p><strong>10:02</strong> Family Mori confirmed balcony dimensions.</p>
+            <button type="button" class="btn river">Add note</button>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll(".segment button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const group = button.closest(".segment");
+        group.querySelectorAll("button").forEach((item) => item.setAttribute("aria-pressed", "false"));
+        button.setAttribute("aria-pressed", "true");
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaze Dashboard — Celebrations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;1,14..32,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ── Kaze Design Language Tokens ── */
+:root {
+  --kaze-indigo: #1a1a3e;
+  --kaze-vermillion: #d4453b;
+  --kaze-gold: #e8a838;
+  --kaze-sky: #7eb8da;
+  --kaze-cream: #faf7f2;
+  --kaze-charcoal: #2d2d35;
+  --kaze-stone: #6b6b76;
+  --kaze-mist: #e8e4dd;
+  --kaze-white: #ffffff;
+  --kaze-error: #c0392b;
+  --kaze-success: #2d7d46;
+
+  --text-display-xl: 400 64px/1.1 'DM Serif Display', serif;
+  --text-display-lg: 400 48px/1.15 'DM Serif Display', serif;
+  --text-display-md: 400 36px/1.2 'DM Serif Display', serif;
+  --text-heading: 600 24px/1.3 'Inter', sans-serif;
+  --text-subheading: 500 20px/1.35 'Inter', sans-serif;
+  --text-body: 400 17px/1.55 'Inter', sans-serif;
+  --text-body-sm: 400 15px/1.5 'Inter', sans-serif;
+  --text-label: 500 14px/1.4 'Inter', sans-serif;
+  --text-caption: 400 13px/1.4 'Inter', sans-serif;
+  --text-mono: 400 14px/1.5 'JetBrains Mono', monospace;
+
+  --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px;
+  --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px; --space-4xl: 80px; --space-5xl: 120px;
+
+  --radius-none: 0; --radius-md: 16px; --radius-lg: 24px; --radius-full: 9999px;
+
+  --control-height: 44px;
+
+  --shadow-card: 0 2px 16px rgba(26,26,62,0.06);
+  --shadow-elevated: 0 8px 32px rgba(26,26,62,0.10);
+  --shadow-focus: 0 0 0 3px rgba(212,69,59,0.35);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms; --duration-normal: 250ms; --duration-slow: 400ms;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 100%; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { font: var(--text-body); color: var(--kaze-charcoal); background: var(--kaze-cream); }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+table { border-collapse: collapse; width: 100%; }
+
+/* ── Dashboard Layout ── */
+.dashboard { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px; background: var(--kaze-white); border-right: 1px solid var(--kaze-mist);
+  display: flex; flex-direction: column; padding: var(--space-lg); position: sticky; top: 0; height: 100vh;
+}
+.sidebar-brand { font: 400 24px/1 'DM Serif Display', serif; color: var(--kaze-indigo); padding: var(--space-sm) 0 var(--space-xl); }
+.sidebar-nav { display: flex; flex-direction: column; gap: var(--space-xs); flex: 1; }
+.sidebar-item {
+  display: flex; align-items: center; gap: var(--space-md); height: var(--control-height);
+  padding: 0 var(--space-md); font: var(--text-body-sm); color: var(--kaze-stone);
+  border-radius: var(--radius-full); transition: all var(--duration-fast) var(--ease-out); cursor: pointer;
+}
+.sidebar-item:hover { background: rgba(26,26,62,0.04); color: var(--kaze-charcoal); }
+.sidebar-item:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.sidebar-item.active { background: var(--kaze-indigo); color: #fff; }
+.sidebar-item .icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sidebar-section { font: var(--text-caption); color: var(--kaze-stone); text-transform: uppercase; letter-spacing: 0.05em; padding: var(--space-lg) var(--space-md) var(--space-sm); }
+.sidebar-footer { border-top: 1px solid var(--kaze-mist); padding-top: var(--space-md); }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-lg);
+  height: 72px; padding: 0 var(--space-xl); background: var(--kaze-white);
+  border-bottom: 1px solid var(--kaze-mist); position: sticky; top: 0; z-index: 10;
+}
+.topbar-left { display: flex; align-items: center; gap: var(--space-lg); }
+.topbar-right { display: flex; align-items: center; gap: var(--space-md); }
+.page-title { font: var(--text-heading); letter-spacing: -0.005em; }
+
+/* ── Content ── */
+.content { padding: var(--space-xl); display: flex; flex-direction: column; gap: var(--space-xl); }
+
+/* ── Metric Cards ── */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+.metric-card { padding: var(--space-lg); }
+.metric-label { font: var(--text-caption); color: var(--kaze-stone); margin-bottom: var(--space-xs); }
+.metric-value { font: 600 32px/1.2 'Inter', sans-serif; color: var(--kaze-charcoal); }
+.metric-change { font: var(--text-caption); margin-top: var(--space-xs); }
+.metric-change.up { color: var(--kaze-success); }
+.metric-change.down { color: var(--kaze-error); }
+
+/* ── Two-column layout ── */
+.content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+
+/* ── Card header ── */
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); }
+.card-header h3 { font: var(--text-heading); letter-spacing: -0.005em; }
+
+/* ── Button ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  height: var(--control-height); padding: 0 var(--space-lg);
+  font-family: Inter, sans-serif; font-size: 15px; font-weight: 500;
+  border-radius: var(--radius-full); border: none; cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  text-decoration: none; white-space: nowrap;
+}
+.btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.btn-primary { background: var(--kaze-vermillion); color: #fff; }
+.btn-primary:hover { background: #c03a32; }
+.btn-primary:active { background: #a83029; }
+.btn-primary:disabled { background: var(--kaze-mist); color: #9a9aa4; cursor: not-allowed; }
+
+.btn-secondary { background: transparent; color: var(--kaze-indigo); box-shadow: inset 0 0 0 1.5px var(--kaze-indigo); }
+.btn-secondary:hover { background: var(--kaze-indigo); color: #fff; }
+.btn-secondary:active { background: #141430; color: #fff; }
+.btn-secondary:disabled { color: #9a9aa4; box-shadow: inset 0 0 0 1.5px #d0ccc6; cursor: not-allowed; }
+
+.btn-ghost { background: transparent; color: var(--kaze-indigo); }
+.btn-ghost:hover { background: rgba(26,26,62,0.06); }
+.btn-ghost:active { background: rgba(26,26,62,0.10); }
+.btn-ghost:disabled { color: #9a9aa4; cursor: not-allowed; }
+
+.btn-sm { padding: 0 var(--space-md); font-size: 13px; }
+
+/* ── Input ── */
+.input {
+  height: var(--control-height); padding: 0 var(--space-md);
+  font-family: Inter, sans-serif; font-size: 15px; color: var(--kaze-charcoal);
+  background: var(--kaze-white); border-radius: var(--radius-full);
+  border: 1.5px solid var(--kaze-mist);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  outline: none; width: 100%;
+}
+.input::placeholder { color: #b0aca5; }
+.input:hover { border-color: #c5bfb5; }
+.input:focus { border-color: var(--kaze-vermillion); box-shadow: var(--shadow-focus); }
+.input:disabled { background: #f5f3ef; color: #9a9aa4; cursor: not-allowed; border-color: var(--kaze-mist); }
+
+/* ── Select ── */
+.select {
+  height: var(--control-height); padding: 0 40px 0 var(--space-md);
+  font-family: Inter, sans-serif; font-size: 15px; color: var(--kaze-charcoal);
+  background: var(--kaze-white); border-radius: var(--radius-full);
+  border: 1.5px solid var(--kaze-mist); appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b6b76' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  outline: none; cursor: pointer;
+}
+.select:hover { border-color: #c5bfb5; }
+.select:focus { border-color: var(--kaze-vermillion); box-shadow: var(--shadow-focus); }
+.select:disabled { background: #f5f3ef; color: #9a9aa4; cursor: not-allowed; border-color: var(--kaze-mist); }
+
+/* ── Textarea ── */
+.textarea {
+  min-height: calc(var(--control-height) * 2.5); padding: var(--space-md);
+  font-family: Inter, sans-serif; font-size: 15px; color: var(--kaze-charcoal);
+  background: var(--kaze-white); border-radius: var(--radius-md);
+  border: 1.5px solid var(--kaze-mist); resize: vertical; outline: none; width: 100%;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.textarea::placeholder { color: #b0aca5; }
+.textarea:hover { border-color: #c5bfb5; }
+.textarea:focus { border-color: var(--kaze-vermillion); box-shadow: var(--shadow-focus); }
+.textarea:disabled { background: #f5f3ef; color: #9a9aa4; cursor: not-allowed; border-color: var(--kaze-mist); }
+
+/* ── Checkbox ── */
+.checkbox-wrapper { display: inline-flex; align-items: center; gap: var(--space-sm); cursor: pointer; height: var(--control-height); }
+.checkbox-wrapper input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.checkbox-control {
+  width: 20px; height: 20px; border-radius: 0; border: 1.5px solid var(--kaze-mist);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out); background: var(--kaze-white);
+}
+.checkbox-wrapper input:checked + .checkbox-control { background: var(--kaze-vermillion); border-color: var(--kaze-vermillion); }
+.checkbox-wrapper input:checked + .checkbox-control::after {
+  content: ''; width: 6px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg); margin-top: -2px;
+}
+.checkbox-wrapper:hover .checkbox-control { border-color: #c5bfb5; }
+.checkbox-wrapper input:checked:hover + .checkbox-control { border-color: #c03a32; background: #c03a32; }
+.checkbox-wrapper input:focus-visible + .checkbox-control { box-shadow: var(--shadow-focus); }
+.checkbox-wrapper input:disabled + .checkbox-control { opacity: 0.4; cursor: not-allowed; }
+.checkbox-label { font: var(--text-body-sm); }
+
+/* ── Toggle ── */
+.toggle-wrapper { display: inline-flex; align-items: center; gap: var(--space-sm); cursor: pointer; height: var(--control-height); }
+.toggle-wrapper input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  width: 44px; height: 24px; border-radius: var(--radius-full); background: var(--kaze-mist);
+  position: relative; transition: background var(--duration-fast) var(--ease-out); flex-shrink: 0;
+}
+.toggle-track::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+  border-radius: var(--radius-full); background: #fff; transition: transform var(--duration-fast) var(--ease-out);
+}
+.toggle-wrapper input:checked + .toggle-track { background: var(--kaze-vermillion); }
+.toggle-wrapper input:checked + .toggle-track::after { transform: translateX(20px); }
+.toggle-wrapper input:focus-visible + .toggle-track { box-shadow: var(--shadow-focus); }
+.toggle-wrapper input:disabled + .toggle-track { opacity: 0.4; cursor: not-allowed; }
+.toggle-label { font: var(--text-body-sm); }
+
+/* ── Badge ── */
+.badge {
+  display: inline-flex; align-items: center; height: 28px;
+  padding: 0 var(--space-md); font-family: Inter, sans-serif; font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-full); white-space: nowrap;
+}
+.badge-gold { background: rgba(232,168,56,0.15); color: #8b6914; }
+.badge-sky { background: rgba(126,184,218,0.15); color: #3a6d8a; }
+.badge-vermillion { background: rgba(212,69,59,0.12); color: var(--kaze-vermillion); }
+.badge-success { background: rgba(45,125,70,0.12); color: var(--kaze-success); }
+
+/* ── Card ── */
+.card {
+  background: var(--kaze-white); border-radius: var(--radius-md);
+  padding: var(--space-lg); box-shadow: var(--shadow-card);
+}
+
+/* ── Table ── */
+.table-wrapper { overflow-x: auto; }
+table th {
+  font: var(--text-label); letter-spacing: 0.01em; color: var(--kaze-stone);
+  text-align: left; padding: var(--space-md); text-transform: uppercase;
+  border-bottom: 1px solid var(--kaze-mist);
+}
+table td {
+  font: var(--text-body-sm); padding: var(--space-md);
+  border-bottom: 1px solid var(--kaze-mist); height: 48px; vertical-align: middle;
+}
+table tbody tr:hover { background: rgba(26,26,62,0.03); }
+table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Bar chart (CSS) ── */
+.bar-chart { display: flex; flex-direction: column; gap: var(--space-md); }
+.bar-row { display: flex; align-items: center; gap: var(--space-md); }
+.bar-label { font: var(--text-caption); color: var(--kaze-stone); width: 100px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 24px; background: var(--kaze-mist); border-radius: var(--radius-full); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: var(--radius-full); transition: width var(--duration-slow) var(--ease-out); }
+.bar-fill.indigo { background: var(--kaze-indigo); }
+.bar-fill.vermillion { background: var(--kaze-vermillion); }
+.bar-fill.gold { background: var(--kaze-gold); }
+.bar-fill.sky { background: var(--kaze-sky); }
+.bar-value { font: var(--text-mono); color: var(--kaze-charcoal); width: 56px; text-align: right; flex-shrink: 0; }
+
+/* ── Form layout ── */
+.form-group { display: flex; flex-direction: column; gap: var(--space-sm); }
+.form-group label { font: var(--text-label); letter-spacing: 0.01em; color: var(--kaze-charcoal); }
+.form-group .required::after { content: ' *'; color: var(--kaze-vermillion); }
+.form-row { display: flex; gap: var(--space-md); }
+.form-row > * { flex: 1; }
+.form-error { font: var(--text-caption); color: var(--kaze-error); margin-top: var(--space-xs); }
+
+/* ── Avatar group ── */
+.avatar-stack { display: flex; }
+.avatar-stack .avatar {
+  width: 32px; height: 32px; border-radius: var(--radius-full); border: 2px solid var(--kaze-white);
+  margin-left: -8px; display: flex; align-items: center; justify-content: center;
+  font: 500 12px/1 'Inter', sans-serif; color: #fff;
+}
+.avatar-stack .avatar:first-child { margin-left: 0; }
+.avatar-indigo { background: var(--kaze-indigo); }
+.avatar-vermillion { background: var(--kaze-vermillion); }
+.avatar-gold { background: var(--kaze-gold); }
+.avatar-sky { background: var(--kaze-sky); }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .content-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .topbar { padding: 0 var(--space-md); }
+  .content { padding: var(--space-md); }
+  .form-row { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a href="#" class="sidebar-brand">Kaze</a>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Main</div>
+    <a href="#" class="sidebar-item active">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.5"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.5"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.5"/></svg></span>
+      Dashboard
+    </a>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      Celebrations
+    </a>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      Guests
+    </a>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 8l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Tasks
+    </a>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      Timeline
+    </a>
+    <div class="sidebar-section">Archive</div>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg></span>
+      Memories
+    </a>
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 17V5a2 2 0 012-2h8a2 2 0 012 2v12l-6-3-6 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Recipes
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="#" class="sidebar-item">
+      <span class="icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M17 10c0 3.87-3.13 7-7 7s-7-3.13-7-7 3.13-7 7-7c1.4 0 2.72.41 3.82 1.12L17 10z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      Settings
+    </a>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+<!-- Top Bar -->
+<header class="topbar">
+  <div class="topbar-left">
+    <h1 class="page-title">Dashboard</h1>
+    <span class="badge badge-sky">Tanaka Family</span>
+  </div>
+  <div class="topbar-right">
+    <input type="search" class="input" placeholder="Search celebrations, guests..." style="width:260px" aria-label="Search">
+    <button class="btn btn-secondary btn-sm" disabled>Export</button>
+    <button class="btn btn-primary btn-sm">+ New Celebration</button>
+  </div>
+</header>
+
+<!-- Content -->
+<div class="content">
+
+<!-- Metrics -->
+<div class="metrics-grid">
+  <div class="card metric-card">
+    <p class="metric-label">Upcoming Celebrations</p>
+    <p class="metric-value">4</p>
+    <p class="metric-change up">+2 from last month</p>
+  </div>
+  <div class="card metric-card">
+    <p class="metric-label">Total Guests</p>
+    <p class="metric-value">187</p>
+    <p class="metric-change up">+34 this quarter</p>
+  </div>
+  <div class="card metric-card">
+    <p class="metric-label">Open Tasks</p>
+    <p class="metric-value">23</p>
+    <p class="metric-change down">8 overdue</p>
+  </div>
+  <div class="card metric-card">
+    <p class="metric-label">Memories Saved</p>
+    <p class="metric-value">1,204</p>
+    <p class="metric-change up">+56 this month</p>
+  </div>
+</div>
+
+<!-- Two column -->
+<div class="content-grid">
+
+  <!-- Upcoming Celebrations Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Upcoming Celebrations</h3>
+      <select class="select" style="width:160px" aria-label="Filter by type">
+        <option>All types</option>
+        <option>Kodomo no Hi</option>
+        <option>Shichi-Go-San</option>
+        <option>Seijin Shiki</option>
+        <option>Oshogatsu</option>
+      </select>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Celebration</th>
+            <th>Date</th>
+            <th>Guests</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500">Kodomo no Hi 2026</td>
+            <td>May 5, 2026</td>
+            <td>
+              <div class="avatar-stack">
+                <span class="avatar avatar-indigo">RT</span>
+                <span class="avatar avatar-vermillion">MK</span>
+                <span class="avatar avatar-gold">ST</span>
+                <span class="avatar avatar-sky">+12</span>
+              </div>
+            </td>
+            <td><span class="badge badge-gold">In planning</span></td>
+            <td><button class="btn btn-ghost btn-sm">View</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">Grandma's 80th</td>
+            <td>Jun 14, 2026</td>
+            <td>
+              <div class="avatar-stack">
+                <span class="avatar avatar-indigo">RT</span>
+                <span class="avatar avatar-vermillion">MK</span>
+                <span class="avatar avatar-sky">+28</span>
+              </div>
+            </td>
+            <td><span class="badge badge-vermillion">Urgent</span></td>
+            <td><button class="btn btn-ghost btn-sm">View</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">Summer Matsuri</td>
+            <td>Jul 22, 2026</td>
+            <td>
+              <div class="avatar-stack">
+                <span class="avatar avatar-indigo">RT</span>
+                <span class="avatar avatar-sky">+45</span>
+              </div>
+            </td>
+            <td><span class="badge badge-sky">Confirmed</span></td>
+            <td><button class="btn btn-ghost btn-sm">View</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">Shichi-Go-San</td>
+            <td>Nov 15, 2026</td>
+            <td>
+              <div class="avatar-stack">
+                <span class="avatar avatar-indigo">RT</span>
+                <span class="avatar avatar-vermillion">MK</span>
+                <span class="avatar avatar-gold">+8</span>
+              </div>
+            </td>
+            <td><span class="badge badge-success">Ready</span></td>
+            <td><button class="btn btn-ghost btn-sm">View</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Budget Overview -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Budget Overview</h3>
+      <select class="select" style="width:140px" aria-label="Filter by period">
+        <option>This year</option>
+        <option>This quarter</option>
+        <option>This month</option>
+      </select>
+    </div>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-label">Kodomo no Hi</span>
+        <div class="bar-track"><div class="bar-fill indigo" style="width:78%"></div></div>
+        <span class="bar-value">$3,900</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Grandma's 80th</span>
+        <div class="bar-track"><div class="bar-fill vermillion" style="width:62%"></div></div>
+        <span class="bar-value">$3,100</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Summer Matsuri</span>
+        <div class="bar-track"><div class="bar-fill gold" style="width:45%"></div></div>
+        <span class="bar-value">$2,250</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Shichi-Go-San</span>
+        <div class="bar-track"><div class="bar-fill sky" style="width:30%"></div></div>
+        <span class="bar-value">$1,500</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Quick Actions + Settings -->
+<div class="content-grid">
+
+  <!-- New Celebration Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Quick Create</h3>
+    </div>
+    <form onsubmit="event.preventDefault()" style="display:flex;flex-direction:column;gap:var(--space-lg)">
+      <div class="form-group">
+        <label for="celebration-name" class="required">Celebration name</label>
+        <input id="celebration-name" type="text" class="input" placeholder="e.g. Kodomo no Hi 2026" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="celebration-date" class="required">Date</label>
+          <input id="celebration-date" type="date" class="input" required>
+        </div>
+        <div class="form-group">
+          <label for="celebration-type">Type</label>
+          <select id="celebration-type" class="select">
+            <option>Kodomo no Hi</option>
+            <option>Shichi-Go-San</option>
+            <option>Seijin Shiki</option>
+            <option>Oshogatsu</option>
+            <option>Birthday</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="celebration-notes">Notes</label>
+        <textarea id="celebration-notes" class="textarea" placeholder="Any special requests, themes, or ideas..." rows="3"></textarea>
+      </div>
+      <div style="display:flex;gap:var(--space-lg);align-items:center">
+        <label class="toggle-wrapper">
+          <input type="checkbox" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-label">Send invites</span>
+        </label>
+        <label class="checkbox-wrapper">
+          <input type="checkbox" id="reminder" checked>
+          <span class="checkbox-control"></span>
+          <span class="checkbox-label">Set reminders</span>
+        </label>
+      </div>
+      <div style="display:flex;gap:var(--space-md)">
+        <button type="submit" class="btn btn-primary">Create Celebration</button>
+        <button type="reset" class="btn btn-secondary">Clear</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Preferences -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Preferences</h3>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:var(--space-lg)">
+      <label class="toggle-wrapper">
+        <input type="checkbox" checked>
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Email notifications for new RSVPs</span>
+      </label>
+      <label class="toggle-wrapper">
+        <input type="checkbox" checked>
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Weekly planning digest</span>
+      </label>
+      <label class="toggle-wrapper">
+        <input type="checkbox">
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Share memories with family group</span>
+      </label>
+      <label class="toggle-wrapper">
+        <input type="checkbox" disabled>
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Vendor recommendations (coming soon)</span>
+      </label>
+      <div style="margin-top:var(--space-md)">
+        <label class="checkbox-wrapper">
+          <input type="checkbox" checked>
+          <span class="checkbox-control"></span>
+          <span class="checkbox-label">Include dietary preferences in guest profiles</span>
+        </label>
+      </div>
+      <div style="margin-top:var(--space-sm)">
+        <label class="checkbox-wrapper">
+          <input type="checkbox">
+          <span class="checkbox-control"></span>
+          <span class="checkbox-label">Auto-generate thank-you notes after events</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /content -->
+
+</main>
+</div><!-- /dashboard -->
+
+</body>
+</html>

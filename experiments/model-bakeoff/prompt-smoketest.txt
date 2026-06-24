@@ -1,0 +1,12 @@
+ISOLATION SMOKE TEST — you are in a sandboxed working directory. Run these checks and write a
+SHORT report to ./iso-check.md inside the output folder named at the end. Do NOT generate images.
+
+1. Print your current working directory (pwd).
+2. List everything visible under it: run  find . -maxdepth 3
+3. Rulebook check: does  katagami-curation/knowledge/rules/design-language.md  exist and is it
+   readable from here? Read and quote its FIRST line.
+4. Leak check: from here, can you see ANY prior bake-off output folder (named like
+   <model>_<YYYY-MM-DD>_<HHmm>) or the wider katagami repo? You should NOT.
+
+Write iso-check.md with exactly: cwd; the find output; "rules readable: yes/no" + the first line;
+"prior examples visible: yes/no". Keep it under 20 lines.

@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Windscale Dashboard — Kodomo no Hi operations</title>
+  <meta name="description" content="A Windscale operations dashboard for coordinating Kodomo no Hi Koinobori routes, volunteers, families, weather, and display readiness." />
+  <style>
+    :root {
+      --ws-ink: #071326;
+      --ws-ink-soft: #20314F;
+      --ws-indigo: #102D68;
+      --ws-indigo-2: #16468E;
+      --ws-paper: #FFFDF7;
+      --ws-cloud: #F5F8FB;
+      --ws-mist: #E8EEF4;
+      --ws-vermilion: #D83B18;
+      --ws-iris: #6346B8;
+      --ws-leaf: #218455;
+      --ws-gold: #D99A20;
+      --ws-danger: #B82116;
+      --ws-focus: #28A8FF;
+      --ws-disabled-bg: #E9EDF2;
+      --ws-disabled-text: #7B8797;
+      --ws-font-display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+      --ws-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ws-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --ws-size-xs: 0.78rem;
+      --ws-size-sm: 0.9rem;
+      --ws-size-md: 1rem;
+      --ws-size-lg: 1.15rem;
+      --ws-size-xl: clamp(1.5rem, 1.1rem + 1.4vw, 2.2rem);
+      --ws-size-2xl: clamp(2.4rem, 1.55rem + 3.1vw, 5.4rem);
+      --ws-size-3xl: clamp(3.6rem, 2.1rem + 5.5vw, 8rem);
+      --ws-leading-tight: 0.94;
+      --ws-leading-body: 1.58;
+      --ws-tracking-display: -0.045em;
+      --ws-tracking-label: 0.075em;
+      --ws-space-1: 4px;
+      --ws-space-2: 8px;
+      --ws-space-3: 12px;
+      --ws-space-4: 16px;
+      --ws-space-5: 24px;
+      --ws-space-6: 32px;
+      --ws-space-7: 48px;
+      --ws-space-8: 72px;
+      --ws-space-9: 104px;
+      --ws-radius-none: 0;
+      --ws-radius-sm: 16px;
+      --ws-radius-md: 24px;
+      --ws-radius-pill: 999px;
+      --ws-shadow-soft: 0 24px 80px rgba(7, 19, 38, 0.14);
+      --ws-shadow-tight: 0 12px 34px rgba(7, 19, 38, 0.18);
+      --ws-panel-glow: 0 0 0 1px rgba(255,255,255,0.12), 0 26px 70px rgba(7,19,38,0.28);
+      --ws-control-height: 48px;
+      --ws-focus-ring: 0 0 0 4px rgba(40, 168, 255, 0.38);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ws-paper);
+      color: var(--ws-ink);
+      font-family: var(--ws-font-body);
+      font-size: 17px;
+      line-height: var(--ws-leading-body);
+      text-rendering: optimizeLegibility;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    p, h1, h2, h3 { margin: 0; }
+    button, input, select, textarea { font: inherit; }
+    .app {
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(216,59,24,.11), transparent 24%),
+        radial-gradient(circle at 92% 18%, rgba(99,70,184,.12), transparent 28%),
+        var(--ws-paper);
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      padding: var(--ws-space-5);
+      background: var(--ws-indigo);
+      color: var(--ws-paper);
+      display: flex;
+      flex-direction: column;
+      gap: var(--ws-space-6);
+      overflow: auto;
+    }
+    .brand {
+      min-height: var(--ws-control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 950;
+      letter-spacing: -0.03em;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      position: relative;
+      box-shadow: inset -9px 0 0 var(--ws-vermilion), inset 9px 0 0 rgba(16,45,104,.18);
+      flex: 0 0 auto;
+    }
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-indigo);
+      top: 9px;
+      left: 9px;
+    }
+    .brand-mark::after {
+      width: 18px;
+      height: 4px;
+      top: 21px;
+      left: 8px;
+      background: var(--ws-leaf);
+      transform: skewX(-22deg);
+    }
+    .festival-card {
+      border-radius: var(--ws-radius-md);
+      background: rgba(255,253,247,.1);
+      padding: var(--ws-space-5);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.11);
+      overflow: hidden;
+      position: relative;
+    }
+    .festival-card::after {
+      content: "";
+      position: absolute;
+      width: 170px;
+      height: 44px;
+      right: -54px;
+      bottom: 34px;
+      background: var(--ws-vermilion);
+      border-radius: var(--ws-radius-pill);
+      transform: rotate(-16deg);
+      opacity: .46;
+    }
+    .label {
+      display: block;
+      font-size: var(--ws-size-xs);
+      text-transform: uppercase;
+      letter-spacing: var(--ws-tracking-label);
+      color: rgba(255,253,247,.68);
+      font-weight: 950;
+    }
+    .festival-card strong {
+      display: block;
+      margin-top: var(--ws-space-2);
+      font-family: var(--ws-font-display);
+      font-size: 2.55rem;
+      line-height: .92;
+      letter-spacing: var(--ws-tracking-display);
+      position: relative;
+      z-index: 1;
+    }
+    .side-nav { display: grid; gap: var(--ws-space-2); }
+    .side-nav a {
+      min-height: var(--ws-control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--ws-space-3);
+      border-radius: var(--ws-radius-pill);
+      padding: 0 16px;
+      color: rgba(255,253,247,.76);
+      font-weight: 850;
+      transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .side-nav a span:first-child { width: 10px; height: 10px; border-radius: var(--ws-radius-pill); background: currentColor; opacity: .7; }
+    .side-nav a:hover { background: rgba(255,253,247,.1); color: var(--ws-paper); transform: translateY(-1px); }
+    .side-nav a.active { background: var(--ws-paper); color: var(--ws-indigo); }
+    .side-nav a:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring); }
+    .main { min-width: 0; padding: var(--ws-space-5) var(--ws-space-6) var(--ws-space-7); }
+    .topline {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ws-space-4);
+      margin-bottom: var(--ws-space-5);
+    }
+    .title-wrap h1 {
+      font-family: var(--ws-font-display);
+      font-size: clamp(2.4rem, 1.6rem + 2.3vw, 4.8rem);
+      line-height: .96;
+      letter-spacing: var(--ws-tracking-display);
+      color: var(--ws-ink);
+    }
+    .title-wrap p { color: var(--ws-ink-soft); font-weight: 750; margin-top: var(--ws-space-2); }
+    .top-actions { display: flex; align-items: center; gap: var(--ws-space-3); flex-wrap: wrap; }
+    .ws-button,
+    .ws-chip {
+      min-height: var(--ws-control-height);
+      border: 0;
+      border-radius: var(--ws-radius-pill);
+      padding: 0 22px;
+      font: 800 var(--ws-size-sm)/1 var(--ws-font-body);
+      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease, opacity .18s ease;
+    }
+    .ws-button.primary { background: var(--ws-indigo); color: var(--ws-paper); box-shadow: var(--ws-shadow-tight); }
+    .ws-button.primary:hover { background: var(--ws-indigo-2); transform: translateY(-1px); box-shadow: 0 16px 42px rgba(7,19,38,.25); }
+    .ws-button.secondary { background: var(--ws-cloud); color: var(--ws-indigo); box-shadow: inset 0 0 0 1px rgba(16,45,104,.12); }
+    .ws-button.secondary:hover { background: #EEF4FA; transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(16,45,104,.22); }
+    .ws-button.danger { background: var(--ws-danger); color: var(--ws-paper); }
+    .ws-button:focus-visible,
+    .ws-chip:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring), var(--ws-shadow-tight); }
+    .ws-button:active,
+    .ws-chip:active { transform: translateY(1px); box-shadow: none; }
+    .ws-button:disabled,
+    .ws-chip[aria-disabled="true"] { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); box-shadow: none; cursor: not-allowed; transform: none; }
+    .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--ws-space-5); align-items: stretch; }
+    .panel {
+      border-radius: var(--ws-radius-md);
+      background: rgba(255,253,247,.9);
+      box-shadow: var(--ws-shadow-soft);
+      padding: var(--ws-space-5);
+      position: relative;
+      overflow: hidden;
+    }
+    .panel.dark { background: var(--ws-indigo); color: var(--ws-paper); box-shadow: var(--ws-panel-glow); }
+    .panel.cloud { background: var(--ws-cloud); }
+    .panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 7px;
+      background: linear-gradient(90deg, var(--ws-vermilion), var(--ws-iris), var(--ws-leaf));
+    }
+    .panel.dark::before { opacity: .95; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .panel-head { display: flex; align-items: start; justify-content: space-between; gap: var(--ws-space-4); margin-bottom: var(--ws-space-5); position: relative; z-index: 1; }
+    .panel h2 { font-family: var(--ws-font-display); font-size: var(--ws-size-xl); line-height: 1; letter-spacing: -.04em; }
+    .panel .sub { color: var(--ws-ink-soft); font-size: var(--ws-size-sm); font-weight: 750; }
+    .panel.dark .sub { color: rgba(255,253,247,.74); }
+    .stat {
+      min-height: 184px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .stat-value {
+      font-family: var(--ws-font-display);
+      font-size: clamp(3rem, 2rem + 3vw, 6.1rem);
+      line-height: .86;
+      letter-spacing: var(--ws-tracking-display);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--ws-space-3); color: var(--ws-ink-soft); font-weight: 850; font-size: var(--ws-size-sm); }
+    .panel.dark .stat-foot { color: rgba(255,253,247,.72); }
+    .pill { min-height: 34px; border-radius: var(--ws-radius-pill); padding: 0 12px; display: inline-flex; align-items: center; font-size: var(--ws-size-xs); font-weight: 950; letter-spacing: var(--ws-tracking-label); text-transform: uppercase; background: var(--ws-mist); color: var(--ws-indigo); }
+    .pill.leaf { background: rgba(33,132,85,.16); color: #0D653D; }
+    .pill.red { background: rgba(216,59,24,.14); color: var(--ws-danger); }
+    .pill.iris { background: rgba(99,70,184,.14); color: var(--ws-iris); }
+    .panel.dark .pill,
+    .overlay .pill { background: rgba(255,253,247,.92); color: var(--ws-indigo); }
+    .panel.dark .pill.leaf,
+    .overlay .pill.leaf { background: var(--ws-leaf); color: var(--ws-paper); }
+    .panel.dark .pill.red,
+    .overlay .pill.red { background: var(--ws-vermilion); color: var(--ws-paper); }
+    .panel.dark .pill.iris,
+    .overlay .pill.iris { background: var(--ws-iris); color: var(--ws-paper); }
+    .ops-image { padding: 0; min-height: 420px; }
+    .ops-image img { width: 100%; height: 100%; object-fit: cover; }
+    .ops-image .overlay {
+      position: absolute;
+      left: var(--ws-space-5);
+      right: var(--ws-space-5);
+      bottom: var(--ws-space-5);
+      border-radius: var(--ws-radius-md);
+      padding: var(--ws-space-5);
+      background: rgba(7,19,38,.78);
+      color: var(--ws-paper);
+      backdrop-filter: blur(12px);
+    }
+    .overlay h2 { color: var(--ws-paper); }
+    .timeline { display: grid; gap: var(--ws-space-3); position: relative; z-index: 1; }
+    .event {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: var(--ws-space-4);
+      align-items: center;
+      min-height: 72px;
+      border-radius: var(--ws-radius-sm);
+      background: var(--ws-cloud);
+      padding: 12px 14px;
+    }
+    .event strong { font-variant-numeric: tabular-nums; color: var(--ws-indigo); }
+    .event p { font-weight: 850; line-height: 1.25; }
+    .event small { display: block; margin-top: 3px; color: var(--ws-ink-soft); font-weight: 700; }
+    .route-list { display: grid; gap: var(--ws-space-3); }
+    .route {
+      min-height: 96px;
+      border-radius: var(--ws-radius-sm);
+      background: rgba(255,253,247,.1);
+      padding: var(--ws-space-4);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--ws-space-4);
+      align-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+    }
+    .route h3 { font-size: 1rem; line-height: 1.15; }
+    .route p { color: rgba(255,253,247,.7); font-size: var(--ws-size-sm); margin-top: 5px; }
+    .progress-ring {
+      width: 58px;
+      height: 58px;
+      border-radius: var(--ws-radius-pill);
+      background: conic-gradient(var(--ws-leaf) var(--value), rgba(255,253,247,.16) 0);
+      display: grid;
+      place-items: center;
+      font-size: var(--ws-size-xs);
+      font-weight: 950;
+      color: var(--ws-paper);
+    }
+    .progress-ring::before { content: attr(data-label); width: 42px; height: 42px; border-radius: var(--ws-radius-pill); background: var(--ws-indigo); display: grid; place-items: center; }
+    .ws-field,
+    input[type="text"],
+    input[type="email"],
+    input[type="search"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      min-height: var(--ws-control-height);
+      width: 100%;
+      border: 0;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-cloud);
+      color: var(--ws-ink);
+      padding: 0 18px;
+      font: 700 var(--ws-size-sm)/1 var(--ws-font-body);
+      box-shadow: inset 0 0 0 1px rgba(16,45,104,.12);
+      transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+      appearance: none;
+    }
+    textarea { min-height: calc(var(--ws-control-height) * 2.25); border-radius: var(--ws-radius-md); padding: 15px 18px; line-height: 1.45; resize: vertical; }
+    select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--ws-indigo) 50%),
+        linear-gradient(135deg, var(--ws-indigo) 50%, transparent 50%);
+      background-position: calc(100% - 22px) 21px, calc(100% - 15px) 21px;
+      background-size: 7px 7px, 7px 7px;
+      background-repeat: no-repeat;
+      padding-right: 44px;
+    }
+    .ws-field:hover,
+    input:hover,
+    select:hover,
+    textarea:hover { background-color: #EEF4FA; box-shadow: inset 0 0 0 1px rgba(16,45,104,.22); }
+    .ws-field:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible { outline: 0; background: var(--ws-paper); box-shadow: var(--ws-focus-ring), inset 0 0 0 2px var(--ws-indigo-2); }
+    .ws-field:active,
+    input:active,
+    select:active,
+    textarea:active { transform: translateY(1px); }
+    .ws-field:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); cursor: not-allowed; box-shadow: none; transform: none; }
+    input::placeholder,
+    textarea::placeholder { color: #66758B; opacity: 1; }
+    .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ws-space-4); }
+    .field-group { display: grid; gap: var(--ws-space-2); }
+    label, .legend { font-size: var(--ws-size-xs); text-transform: uppercase; letter-spacing: var(--ws-tracking-label); color: var(--ws-ink-soft); font-weight: 950; }
+    .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ws-space-3); }
+    .choice,
+    .switch-row {
+      min-height: var(--ws-control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--ws-space-3);
+      border-radius: var(--ws-radius-pill);
+      padding: 0 14px;
+      background: var(--ws-paper);
+      color: var(--ws-ink);
+      box-shadow: inset 0 0 0 1px rgba(16,45,104,.12);
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease, box-shadow .18s ease, color .18s ease;
+      font-weight: 850;
+      font-size: var(--ws-size-sm);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .choice:hover,
+    .switch-row:hover { background: #EEF4FA; box-shadow: inset 0 0 0 1px rgba(16,45,104,.24); transform: translateY(-1px); }
+    .choice:has(input:focus-visible),
+    .switch-row:has(input:focus-visible) { box-shadow: var(--ws-focus-ring), inset 0 0 0 2px var(--ws-indigo-2); }
+    .choice:active,
+    .switch-row:active { transform: translateY(1px); }
+    .choice input[type="checkbox"],
+    .choice input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      margin: 0;
+      border-radius: 7px;
+      background: var(--ws-cloud);
+      box-shadow: inset 0 0 0 2px rgba(16,45,104,.3);
+      position: relative;
+      flex: 0 0 auto;
+      padding: 0;
+    }
+    .choice input[type="radio"] { border-radius: var(--ws-radius-pill); }
+    .choice input[type="checkbox"]:checked,
+    .choice input[type="radio"]:checked { background: var(--ws-indigo); box-shadow: inset 0 0 0 2px var(--ws-indigo); }
+    .choice input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 6px;
+      left: 6px;
+      top: 6px;
+      border-left: 2px solid var(--ws-paper);
+      border-bottom: 2px solid var(--ws-paper);
+      transform: rotate(-45deg);
+    }
+    .choice input[type="radio"]:checked::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      left: 7px;
+      top: 7px;
+    }
+    .choice:has(input:disabled),
+    .switch-row:has(input:disabled) { background: var(--ws-disabled-bg); color: var(--ws-disabled-text); cursor: not-allowed; transform: none; box-shadow: none; }
+    .switch-row input[type="checkbox"] {
+      appearance: none;
+      width: 46px;
+      height: 26px;
+      min-height: 26px;
+      border-radius: var(--ws-radius-pill);
+      background: #8291A6;
+      margin: 0;
+      padding: 3px;
+      box-shadow: none;
+      transition: background .18s ease;
+      flex: 0 0 auto;
+    }
+    .switch-row input[type="checkbox"]::before {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 20px;
+      border-radius: var(--ws-radius-pill);
+      background: var(--ws-paper);
+      transition: transform .18s ease;
+      box-shadow: 0 2px 8px rgba(7,19,38,.22);
+    }
+    .switch-row input[type="checkbox"]:checked { background: var(--ws-leaf); }
+    .switch-row input[type="checkbox"]:checked::before { transform: translateX(20px); }
+    input[type="range"] {
+      min-height: var(--ws-control-height);
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+      border-radius: var(--ws-radius-pill);
+    }
+    input[type="range"]::-webkit-slider-runnable-track { height: 10px; border-radius: var(--ws-radius-pill); background: linear-gradient(90deg, var(--ws-indigo) 0 58%, var(--ws-mist) 58% 100%); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; border-radius: var(--ws-radius-pill); background: var(--ws-paper); box-shadow: 0 0 0 7px var(--ws-indigo), var(--ws-shadow-tight); margin-top: -7px; }
+    input[type="range"]::-moz-range-track { height: 10px; border-radius: var(--ws-radius-pill); background: var(--ws-mist); }
+    input[type="range"]::-moz-range-progress { height: 10px; border-radius: var(--ws-radius-pill); background: var(--ws-indigo); }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border: 7px solid var(--ws-indigo); border-radius: var(--ws-radius-pill); background: var(--ws-paper); box-shadow: var(--ws-shadow-tight); }
+    input[type="range"]:focus-visible { outline: 0; box-shadow: var(--ws-focus-ring); }
+    input[type="range"]:disabled { opacity: .55; cursor: not-allowed; }
+    .table-wrap { overflow-x: auto; position: relative; z-index: 1; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0 10px; min-width: 680px; }
+    th { text-align: left; padding: 0 14px; color: var(--ws-ink-soft); font-size: var(--ws-size-xs); text-transform: uppercase; letter-spacing: var(--ws-tracking-label); font-weight: 950; }
+    td { background: var(--ws-cloud); padding: 16px 14px; font-size: .94rem; font-weight: 760; }
+    td:first-child { border-radius: var(--ws-radius-sm) 0 0 var(--ws-radius-sm); }
+    td:last-child { border-radius: 0 var(--ws-radius-sm) var(--ws-radius-sm) 0; }
+    .crew { display: flex; align-items: center; gap: var(--ws-space-3); }
+    .avatar { width: 34px; height: 34px; border-radius: var(--ws-radius-pill); background: var(--ws-indigo); color: var(--ws-paper); display: grid; place-items: center; font-size: var(--ws-size-xs); font-weight: 950; }
+    .status-dot { width: 10px; height: 10px; border-radius: var(--ws-radius-pill); background: var(--ws-leaf); display: inline-block; margin-right: 8px; }
+    .status-dot.red { background: var(--ws-vermilion); }
+    .status-dot.iris { background: var(--ws-iris); }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; }
+      .side-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 820px) {
+      .main { padding: var(--ws-space-4); }
+      .topline { align-items: flex-start; flex-direction: column; }
+      .span-3, .span-4, .span-5, .span-7, .span-8, .span-12 { grid-column: 1 / -1; }
+      .control-grid, .choice-grid { grid-template-columns: 1fr; }
+      .side-nav { grid-template-columns: 1fr; }
+      .ops-image { min-height: 360px; }
+      .event { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Windscale workspace navigation">
+      <a class="brand" href="landing.html" aria-label="Windscale landing page"><span class="brand-mark" aria-hidden="true"></span><span>Windscale</span></a>
+      <div class="festival-card">
+        <span class="label">Active festival</span>
+        <strong>Midori River Kodomo no Hi</strong>
+      </div>
+      <nav class="side-nav" aria-label="Dashboard sections">
+        <a class="active" href="#overview"><span></span>Overview</a>
+        <a href="#routes"><span></span>Routes</a>
+        <a href="#families"><span></span>Families</a>
+        <a href="#crews"><span></span>Crews</a>
+        <a href="#weather"><span></span>Weather</a>
+        <a href="#settings"><span></span>Settings</a>
+      </nav>
+    </aside>
+
+    <main class="main" id="overview">
+      <div class="topline">
+        <div class="title-wrap">
+          <h1>Morning lift board</h1>
+          <p>May 5 route health, family arrivals, crews, and wind calls.</p>
+        </div>
+        <div class="top-actions">
+          <a class="ws-button secondary" href="landing.html">Landing page</a>
+          <button class="ws-button primary" type="button">Publish update</button>
+        </div>
+      </div>
+
+      <section class="grid" aria-label="Festival dashboard panels">
+        <article class="panel stat dark span-3">
+          <div class="panel-head"><div><span class="label">Streamer points</span></div><span class="pill leaf">Ready</span></div>
+          <div class="stat-value">42</div>
+          <div class="stat-foot"><span>36 lifted</span><span>6 queued</span></div>
+        </article>
+        <article class="panel stat span-3">
+          <div class="panel-head"><div><span class="label" style="color: var(--ws-ink-soft)">Families checked</span></div><span class="pill iris">live</span></div>
+          <div class="stat-value">128</div>
+          <div class="stat-foot"><span>31 arriving</span><span>12 photos pending</span></div>
+        </article>
+        <article class="panel stat span-3">
+          <div class="panel-head"><div><span class="label" style="color: var(--ws-ink-soft)">Volunteer coverage</span></div><span class="pill leaf">72%</span></div>
+          <div class="stat-value">54</div>
+          <div class="stat-foot"><span>8 gaps</span><span>3 standby</span></div>
+        </article>
+        <article class="panel stat span-3">
+          <div class="panel-head"><div><span class="label" style="color: var(--ws-ink-soft)">Wind hold risk</span></div><span class="pill red">watch</span></div>
+          <div class="stat-value">18%</div>
+          <div class="stat-foot"><span>Gusts 14 km/h</span><span>next call 06:10</span></div>
+        </article>
+
+        <article class="panel ops-image span-7">
+          <img src="media/windscale-ops.png" alt="Abstract aerial festival operations map with Koinobori routes and colored crew paths" />
+          <div class="overlay">
+            <div class="panel-head" style="margin-bottom: 12px"><div><h2>River bridge segment opens next.</h2><p class="sub">Two crew leads confirmed; family dedication line begins at south stair.</p></div><span class="pill leaf">on time</span></div>
+          </div>
+        </article>
+
+        <article class="panel span-5" id="routes">
+          <div class="panel-head"><div><h2>Route timeline</h2><p class="sub">Live sequence for morning lift and guest flow.</p></div><button class="ws-button secondary" type="button">Edit</button></div>
+          <div class="timeline">
+            <div class="event"><strong>05:40</strong><div><p>Bridge rail safety check</p><small>North and south ladder teams</small></div><span class="pill leaf">done</span></div>
+            <div class="event"><strong>06:10</strong><div><p>Wind call with route captains</p><small>Hold threshold: 22 km/h gusts</small></div><span class="pill red">watch</span></div>
+            <div class="event"><strong>06:40</strong><div><p>Main streamer lift</p><small>Families gather at iris gate</small></div><span class="pill iris">next</span></div>
+            <div class="event"><strong>08:15</strong><div><p>Children's photo window</p><small>Quiet route, no carts</small></div><span class="pill">planned</span></div>
+          </div>
+        </article>
+
+        <article class="panel dark span-4">
+          <div class="panel-head"><div><h2>Segment health</h2><p class="sub">Capacity by display corridor.</p></div></div>
+          <div class="route-list">
+            <div class="route"><div><h3>River bridge</h3><p>16 carp, 5 crews, 2 police escorts</p></div><div class="progress-ring" style="--value: 88%" data-label="88"></div></div>
+            <div class="route"><div><h3>Schoolyard poles</h3><p>10 carp, 3 crews, ceremony stage</p></div><div class="progress-ring" style="--value: 74%" data-label="74"></div></div>
+            <div class="route"><div><h3>Station plaza</h3><p>8 carp, 2 crews, vendor queue</p></div><div class="progress-ring" style="--value: 61%" data-label="61"></div></div>
+          </div>
+        </article>
+
+        <article class="panel span-8" id="families">
+          <div class="panel-head"><div><h2>Family intake</h2><p class="sub">Dedications and arrival needs that changed in the last hour.</p></div><button class="ws-button primary" type="button">Add family</button></div>
+          <div class="table-wrap">
+            <table aria-label="Family intake changes">
+              <thead><tr><th>Family</th><th>Streamer</th><th>Arrival</th><th>Need</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><div class="crew"><span class="avatar">AA</span>Arai / age 7</div></td><td>Vermilion long carp</td><td>06:25</td><td>Quiet photo spot</td><td><span class="status-dot"></span>Ready</td></tr>
+                <tr><td><div class="crew"><span class="avatar" style="background: var(--ws-iris)">KM</span>Kobayashi / age 4</div></td><td>Indigo father carp</td><td>06:50</td><td>Grandparent seating</td><td><span class="status-dot iris"></span>Seating</td></tr>
+                <tr><td><div class="crew"><span class="avatar" style="background: var(--ws-vermilion)">ST</span>Sato twins</div></td><td>Green sibling pair</td><td>07:05</td><td>Pickup after parade</td><td><span class="status-dot red"></span>Confirm</td></tr>
+                <tr><td><div class="crew"><span class="avatar" style="background: var(--ws-leaf)">YN</span>Yamada / age 9</div></td><td>Iris scale carp</td><td>06:30</td><td>Photo permission</td><td><span class="status-dot"></span>Ready</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel cloud span-5" id="settings">
+          <div class="panel-head"><div><h2>Dispatch controls</h2><p class="sub">Update public route behavior and crew thresholds.</p></div></div>
+          <form class="control-grid" aria-label="Dispatch controls">
+            <div class="field-group">
+              <label for="route-search">Search route</label>
+              <input id="route-search" type="search" placeholder="Bridge, schoolyard, family" />
+            </div>
+            <div class="field-group">
+              <label for="date">Festival date</label>
+              <input id="date" type="date" value="2026-05-05" />
+            </div>
+            <div class="field-group">
+              <label for="crew-count">Crew target</label>
+              <input id="crew-count" type="number" min="0" value="62" />
+            </div>
+            <div class="field-group">
+              <label for="mode">Public mode</label>
+              <select id="mode"><option>Show route updates</option><option>Quiet family-only mode</option><option>Weather hold page</option></select>
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1">
+              <span class="legend">Route permissions</span>
+              <div class="choice-grid">
+                <label class="choice"><input type="checkbox" checked /> Publish delays</label>
+                <label class="choice"><input type="checkbox" /> Hide family names</label>
+                <label class="choice"><input type="radio" name="dispatch" checked /> Auto-assign crews</label>
+                <label class="choice"><input type="radio" name="dispatch" /> Manual dispatch</label>
+              </div>
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1">
+              <label class="switch-row"><input type="checkbox" checked /> Notify families when a streamer is lifted</label>
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1">
+              <label for="gust">Wind hold threshold</label>
+              <input id="gust" type="range" min="0" max="40" value="22" />
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1">
+              <label for="ops-note">Ops note</label>
+              <textarea id="ops-note" placeholder="Add a note for bridge, schoolyard, or route captains.">If gusts cross threshold before 06:10, shift the schoolyard lift before the bridge rail.</textarea>
+            </div>
+            <div class="top-actions" style="grid-column: 1 / -1">
+              <button class="ws-button primary" type="submit">Save controls</button>
+              <button class="ws-button secondary" type="button">Preview public page</button>
+              <button class="ws-button danger" type="button">Start weather hold</button>
+              <button class="ws-button" type="button" disabled>Archive closed</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="panel span-7" id="crews">
+          <div class="panel-head"><div><h2>Crew board</h2><p class="sub">Assignments by lead, corridor, and current constraint.</p></div><span class="pill leaf">54 active</span></div>
+          <div class="table-wrap">
+            <table aria-label="Crew assignments">
+              <thead><tr><th>Lead</th><th>Corridor</th><th>Shift</th><th>Constraint</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td><div class="crew"><span class="avatar">NA</span>Nori A.</div></td><td>North bridge</td><td>05:20–08:40</td><td>Ladder lock</td><td><button class="ws-button secondary" type="button">Message</button></td></tr>
+                <tr><td><div class="crew"><span class="avatar" style="background: var(--ws-iris)">HT</span>Hana T.</div></td><td>Iris gate</td><td>06:00–09:00</td><td>Family queue</td><td><button class="ws-button secondary" type="button">Message</button></td></tr>
+                <tr><td><div class="crew"><span class="avatar" style="background: var(--ws-leaf)">RK</span>Ren K.</div></td><td>Schoolyard</td><td>05:50–10:30</td><td>Stage access</td><td><button class="ws-button secondary" type="button">Message</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

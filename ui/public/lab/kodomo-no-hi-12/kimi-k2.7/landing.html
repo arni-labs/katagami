@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sora — Celebrate Kodomo no Hi Together</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sk-ink: #0B1220;
+      --sk-cloud: #FFFFFF;
+      --sk-sky-50: #F7FAFF;
+      --sk-sky-100: #E8F0FF;
+      --sk-sky-200: #D0E0FF;
+      --sk-sky-500: #6B8CFF;
+      --sk-sky-700: #3B5BDB;
+      --sk-sky-900: #1A2B6B;
+      --sk-carp-red: #E8462B;
+      --sk-carp-blue: #2B5CE8;
+      --sk-carp-black: #1A1A1A;
+      --sk-sun-gold: #F5B800;
+      --sk-wind-mint: #7EE8C7;
+      --sk-success: #2E9D6A;
+      --sk-warning: #F59E0B;
+      --sk-error: #DC2626;
+      --control-height: 48px;
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --shadow-sm: 0 1px 2px rgba(11,18,32,0.06);
+      --shadow-md: 0 8px 24px rgba(11,18,32,0.08);
+      --shadow-lg: 0 24px 64px rgba(11,18,32,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--sk-ink);
+      background: var(--sk-cloud);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+
+    img { max-width: 100%; display: block; }
+
+    a { color: inherit; text-decoration: none; }
+
+    .container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    @media (min-width: 768px) {
+      .container { padding: 0 48px; }
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--sk-sky-200);
+      z-index: 100;
+    }
+
+    .nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      color: var(--sk-ink);
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-pill);
+      background: var(--sk-carp-red);
+      display: grid;
+      place-items: center;
+    }
+
+    .logo-mark svg {
+      width: 18px;
+      height: 18px;
+      color: var(--sk-cloud);
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 32px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    @media (min-width: 768px) {
+      .nav-links { display: flex; }
+    }
+
+    .nav-links a {
+      color: var(--sk-ink);
+      padding: 8px 0;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover { color: var(--sk-carp-red); }
+
+    .nav-links a:focus {
+      outline: none;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 0 3px var(--sk-sky-200);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: var(--control-height);
+      padding: 0 24px;
+      border: none;
+      border-radius: var(--radius-pill);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--sk-sky-200), 0 0 0 5px var(--sk-cloud);
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: var(--sk-carp-red);
+      color: var(--sk-cloud);
+    }
+
+    .btn-primary:hover { background: #D13D24; }
+
+    .btn-primary:active { background: #B8341E; }
+
+    .btn-secondary {
+      background: var(--sk-sky-100);
+      color: var(--sk-sky-900);
+    }
+
+    .btn-secondary:hover { background: var(--sk-sky-200); }
+
+    .btn-secondary:active { background: rgba(107,140,255,0.2); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--sk-ink);
+    }
+
+    .btn-ghost:hover { background: var(--sk-sky-50); }
+
+    .btn-ghost:active { background: var(--sk-sky-100); }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 120px 0 96px;
+      overflow: hidden;
+      background: var(--sk-sky-50);
+    }
+
+    .hero-media {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(11,18,32,0.72) 0%, rgba(11,18,32,0.25) 45%, rgba(11,18,32,0.05) 100%);
+      z-index: 1;
+    }
+
+    .hero .container {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 28px;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      background: var(--sk-sun-gold);
+      color: var(--sk-carp-black);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(48px, 9vw, 80px);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--sk-cloud);
+      max-width: 900px;
+      margin-bottom: 24px;
+    }
+
+    .hero p {
+      font-size: clamp(18px, 2.5vw, 24px);
+      line-height: 1.4;
+      color: rgba(255,255,255,0.92);
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    /* Sections */
+    .section {
+      padding: 96px 0;
+    }
+
+    @media (min-width: 768px) {
+      .section { padding: 128px 0; }
+    }
+
+    .section-title {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(40px, 5vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--sk-ink);
+      margin-bottom: 24px;
+    }
+
+    .section-lead {
+      font-size: 20px;
+      line-height: 1.4;
+      color: var(--sk-sky-900);
+      max-width: 640px;
+    }
+
+    /* Features */
+    .features {
+      background: var(--sk-cloud);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-top: 64px;
+    }
+
+    @media (min-width: 768px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+      }
+    }
+
+    .feature-card {
+      background: var(--sk-cloud);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .feature-card img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+    }
+
+    .feature-card h3 {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 32px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: var(--sk-ink);
+    }
+
+    .feature-card p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--sk-sky-900);
+    }
+
+    /* Stats */
+    .stats {
+      background: var(--sk-sky-900);
+      color: var(--sk-cloud);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
+
+    @media (min-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-number {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--sk-sun-gold);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* CTA */
+    .cta {
+      background: var(--sk-sky-50);
+      text-align: center;
+    }
+
+    .cta-box {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .cta h2 {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: clamp(40px, 5vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--sk-ink);
+      margin-bottom: 24px;
+    }
+
+    .cta p {
+      font-size: 20px;
+      line-height: 1.4;
+      color: var(--sk-sky-900);
+      margin-bottom: 40px;
+    }
+
+    .cta-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 640px) {
+      .cta-form {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .input {
+      width: 100%;
+      height: var(--control-height);
+      padding: 0 16px;
+      border: 2px solid var(--sk-sky-200);
+      border-radius: var(--radius-sm);
+      background: var(--sk-cloud);
+      color: var(--sk-ink);
+      font-family: inherit;
+      font-size: 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input::placeholder { color: rgba(11,18,32,0.45); }
+
+    .input:hover { border-color: var(--sk-sky-500); }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--sk-sky-700);
+      box-shadow: 0 0 0 3px var(--sk-sky-200);
+    }
+
+    .input:disabled {
+      background: var(--sk-sky-50);
+      color: rgba(11,18,32,0.5);
+    }
+
+    /* Footer */
+    .footer {
+      padding: 64px 0;
+      background: var(--sk-ink);
+      color: var(--sk-cloud);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    @media (min-width: 768px) {
+      .footer-grid { grid-template-columns: 2fr repeat(3, 1fr); }
+    }
+
+    .footer-brand {
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .footer-copy {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      max-width: 280px;
+    }
+
+    .footer h4 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--sk-sun-gold);
+      margin-bottom: 16px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover { color: var(--sk-cloud); }
+
+    .footer-links a:focus {
+      outline: none;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 0 3px var(--sk-sky-200);
+    }
+  </style>
+</head>
+<body>
+  <header class="nav" role="banner">
+    <div class="container">
+      <a href="#" class="logo" aria-label="Sora home">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 14c2-3 6-6 10-6s6 3 8 6"/>
+            <path d="M8 18c2-2 4-3 6-3s4 1 6 3"/>
+            <circle cx="12" cy="8" r="2"/>
+          </svg>
+        </span>
+        Sora
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#stories">Stories</a>
+        <a href="#pricing">Pricing</a>
+        <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="Hero">
+      <div class="hero-media">
+        <img src="media/landing-hero.jpg" alt="Colorful koinobori carp streamers swimming through a bright sky">
+      </div>
+      <div class="hero-overlay"></div>
+      <div class="container">
+        <span class="hero-eyebrow">Kodomo no Hi, made digital</span>
+        <h1>Celebrate the children in your life with Sora.</h1>
+        <p>Create flying carp wishes, share family stories, and build traditions that rise with every Children's Day.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button">Start a celebration</button>
+          <button class="btn btn-ghost" type="button" style="color:#fff;border:1px solid rgba(255,255,255,0.4);">See how it works</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section features" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <h2 class="section-title" id="features-title">A tradition that grows each year.</h2>
+        <p class="section-lead">Sora turns Kodomo no Hi into a living family archive. Capture wishes, photos, and milestones as koinobori that swim through the sky.</p>
+        <div class="features-grid">
+          <article class="feature-card">
+            <img src="media/landing-feature-1.jpg" alt="Children looking up at koinobori streamers">
+            <h3>Family wishes</h3>
+            <p>Every child records a wish for the year. Watch them collect into a stream of memories you can revisit together.</p>
+          </article>
+          <article class="feature-card">
+            <img src="media/landing-feature-2.jpg" alt="A red koinobori carp streamer rippling in the wind">
+            <h3>Living streamers</h3>
+            <p>Each milestone becomes a carp that swims higher. The more you share, the fuller your family's sky becomes.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section stats" aria-label="By the numbers">
+      <div class="container">
+        <div class="stats-grid">
+          <div>
+            <div class="stat-number">120k</div>
+            <div class="stat-label">Wishes flown</div>
+          </div>
+          <div>
+            <div class="stat-number">48k</div>
+            <div class="stat-label">Families</div>
+          </div>
+          <div>
+            <div class="stat-number">14</div>
+            <div class="stat-label">Countries</div>
+          </div>
+          <div>
+            <div class="stat-number">99%</div>
+            <div class="stat-label">Smiles reported</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-box">
+          <h2 id="cta-title">Ready to let your wishes rise?</h2>
+          <p>Join thousands of families turning Children's Day into a tradition that lasts.</p>
+          <form class="cta-form" onsubmit="event.preventDefault();">
+            <input class="input" type="email" placeholder="Enter your email" aria-label="Email address">
+            <button class="btn btn-primary" type="submit">Get early access</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">Sora</div>
+          <p class="footer-copy">Family celebrations, inspired by the wind and sky of Kodomo no Hi.</p>
+        </div>
+        <div>
+          <h4>Product</h4>
+          <div class="footer-links">
+            <a href="#">Features</a>
+            <a href="#">Pricing</a>
+            <a href="dashboard.html">Dashboard</a>
+          </div>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Careers</a>
+            <a href="#">Press</a>
+          </div>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <div class="footer-links">
+            <a href="#">Help center</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

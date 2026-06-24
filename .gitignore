@@ -20,3 +20,8 @@ node_modules/
 
 # Local agent config
 .claude/
+
+# model-bakeoff: keep tooling + the published round artifacts, exclude heavy logs/raw/venv
+experiments/model-bakeoff/runs/
+experiments/model-bakeoff/datadog-proxy/.venv/
+experiments/model-bakeoff/rounds/

@@ -1,0 +1,1108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Takinobori Landing</title>
+  <style>
+    :root {
+      --bg: #fff;
+      --surface: #f5f7f3;
+      --surface-strong: #e9efe5;
+      --surface-ink: #000;
+      --text: #000;
+      --muted: #4b5149;
+      --border: transparent;
+      --accent: #e63b1e;
+      --accent-blue: #2657d9;
+      --accent-green: #23a455;
+      --on-accent: #fff;
+      --success: #23a455;
+      --warning: #e63b1e;
+      --error: #e63b1e;
+      --info: #2657d9;
+      --ring: #2657d9;
+      --font-display: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif CJK JP", Georgia, serif;
+      --font-body: "Avenir Next", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      --font-kanji: "Yuji Syuku", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 72px;
+      --space-7: 112px;
+      --space-8: 160px;
+      --radius-none: 0;
+      --radius-s: 16px;
+      --radius-m: 24px;
+      --radius-pill: 9999px;
+      --control-h: 56px;
+      --hero-image: url("./media/landing-hero.png");
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 18px;
+      line-height: 1.65;
+      text-rendering: geometricPrecision;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    .button,
+    input,
+    select,
+    textarea {
+      border: 0;
+      outline: none;
+    }
+
+    button,
+    .button {
+      min-height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform .18s ease, background-color .18s ease, color .18s ease, opacity .18s ease;
+    }
+
+    .button.primary,
+    button.primary {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .button.quiet,
+    button.quiet {
+      background: var(--surface-strong);
+      color: var(--text);
+    }
+
+    button:hover,
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.primary:hover,
+    button.primary:hover {
+      background: color-mix(in oklab, var(--accent) 88%, var(--text));
+    }
+
+    .button.quiet:hover,
+    button.quiet:hover {
+      background: color-mix(in oklab, var(--surface-strong) 86%, var(--accent-green));
+    }
+
+    button:active,
+    .button:active {
+      transform: translateY(0);
+    }
+
+    button:focus-visible,
+    .button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .check:focus-within,
+    .radio:focus-within {
+      box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ring);
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      background: var(--surface-strong);
+      color: color-mix(in oklab, var(--muted) 74%, var(--bg));
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .mast {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-5);
+      background: rgba(255, 255, 255, .84);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-display);
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-pill);
+      background: var(--text);
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 9px 7px auto;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      transform: rotate(-12deg);
+    }
+
+    .brand-mark::after {
+      top: 23px;
+      background: var(--accent-blue);
+      transform: rotate(11deg);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .nav-links a {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--space-1);
+    }
+
+    .nav-links a:hover {
+      box-shadow: inset 0 -10px 0 rgba(230, 59, 30, .18);
+    }
+
+    .hero {
+      min-height: 100svh;
+      width: 100vw;
+      position: relative;
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 58%;
+      background: rgba(255, 255, 255, .88);
+      clip-path: polygon(0 0, 88% 0, 72% 100%, 0 100%);
+      z-index: -1;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 14px;
+      background: var(--accent);
+      box-shadow: 0 -16px 0 var(--accent-blue), 0 -32px 0 var(--accent-green);
+      z-index: -1;
+    }
+
+    .hero-inner {
+      width: min(1160px, calc(100% - 48px));
+      margin: 0 auto;
+      padding-top: var(--space-7);
+    }
+
+    .hero-copy {
+      max-width: 610px;
+    }
+
+    .date-line {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 42px;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: var(--space-4);
+    }
+
+    .date-line span {
+      color: var(--accent);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-display);
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    h1 {
+      font-size: 80px;
+      line-height: .92;
+      max-width: 720px;
+      margin-bottom: var(--space-4);
+    }
+
+    .kanji {
+      font-family: var(--font-kanji);
+      font-weight: 900;
+    }
+
+    .hero p {
+      max-width: 570px;
+      color: var(--text);
+      font-size: 21px;
+      line-height: 1.55;
+      font-weight: 650;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      background: var(--bg);
+    }
+
+    .section {
+      padding: var(--space-8) var(--space-3);
+    }
+
+    .section.alt {
+      background: var(--surface);
+    }
+
+    .wrap {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+      gap: var(--space-6);
+      align-items: end;
+      margin-bottom: var(--space-6);
+    }
+
+    .section-kicker {
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: var(--space-2);
+    }
+
+    h2 {
+      font-size: 42px;
+      line-height: 1.02;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.6;
+      font-weight: 650;
+    }
+
+    .wind-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+      align-items: stretch;
+    }
+
+    .rung {
+      min-width: 0;
+      background: var(--surface);
+      border-radius: var(--radius-m);
+      padding: var(--space-4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rung::before {
+      content: "";
+      display: block;
+      width: 64px;
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      margin-bottom: var(--space-5);
+    }
+
+    .rung.blue::before { background: var(--accent-blue); }
+    .rung.green::before { background: var(--accent-green); }
+
+    .rung h3 {
+      font-size: 28px;
+      line-height: 1.1;
+      margin-bottom: var(--space-3);
+    }
+
+    .rung p {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .product-band {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+      gap: var(--space-5);
+      align-items: center;
+      background: var(--surface-strong);
+      border-radius: var(--radius-m);
+      padding: var(--space-5);
+    }
+
+    .feature-image {
+      min-height: 520px;
+      border-radius: var(--radius-m);
+      background-image: url("./media/landing-feature.png");
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-image::after {
+      content: "";
+      position: absolute;
+      left: var(--space-4);
+      bottom: var(--space-4);
+      width: 146px;
+      height: 146px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, .84);
+      box-shadow: inset 0 0 0 18px var(--accent-blue), inset 0 0 0 42px rgba(255, 255, 255, .84), inset 0 0 0 58px var(--accent);
+    }
+
+    .product-copy {
+      padding: var(--space-4);
+    }
+
+    .product-copy h2 {
+      margin-bottom: var(--space-4);
+    }
+
+    .product-copy p {
+      color: var(--muted);
+      font-weight: 650;
+      margin-bottom: var(--space-4);
+    }
+
+    .route-list {
+      display: grid;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+    }
+
+    .route-row {
+      display: grid;
+      grid-template-columns: 100px minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: center;
+      min-height: 84px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-s);
+      background: var(--bg);
+    }
+
+    .route-row:nth-child(2n) {
+      background: rgba(255, 255, 255, .56);
+    }
+
+    .route-time {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--accent-blue);
+    }
+
+    .route-title {
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .route-note {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .pill {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+      padding: 0 var(--space-2);
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .story-lanes {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .lane {
+      background: var(--surface);
+      border-radius: var(--radius-m);
+      padding: var(--space-5);
+    }
+
+    .lane.dark {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .lane.dark h2,
+    .lane.dark h3 {
+      color: var(--bg);
+    }
+
+    .lane.dark p {
+      color: color-mix(in oklab, var(--surface-strong) 88%, var(--bg));
+    }
+
+    .lane h3 {
+      font-size: 32px;
+      margin-bottom: var(--space-3);
+    }
+
+    .lane p + p {
+      margin-top: var(--space-3);
+    }
+
+    .lane-list {
+      display: grid;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+
+    .lane-item {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: var(--space-2);
+      align-items: start;
+      font-weight: 750;
+    }
+
+    .dot {
+      width: 18px;
+      height: 18px;
+      border-radius: var(--radius-pill);
+      margin-top: 5px;
+      background: var(--accent);
+    }
+
+    .dot.blue { background: var(--accent-blue); }
+    .dot.green { background: var(--accent-green); }
+
+    .signup {
+      display: grid;
+      grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+      gap: var(--space-5);
+      align-items: start;
+    }
+
+    .form-panel {
+      background: var(--surface);
+      border-radius: var(--radius-m);
+      padding: var(--space-5);
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-1);
+      min-width: 0;
+    }
+
+    label,
+    .field-label {
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--control-h);
+      border-radius: var(--radius-s);
+      background: var(--bg);
+      color: var(--text);
+      padding: 0 var(--space-3);
+      box-shadow: inset 0 -3px 0 rgba(38, 87, 217, .16);
+      transition: background-color .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    input,
+    select {
+      height: var(--control-h);
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: color-mix(in oklab, var(--bg) 94%, var(--surface-strong));
+      box-shadow: inset 0 -4px 0 rgba(38, 87, 217, .24);
+    }
+
+    textarea {
+      height: auto;
+      min-height: calc(var(--control-h) * 2);
+      padding-top: var(--space-2);
+      resize: vertical;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 7.2h10L9 12.3 4 7.2z' fill='%23000'/%3E%3C/svg%3E");
+      background-position: calc(100% - 18px) center;
+      background-size: 18px 18px;
+      background-repeat: no-repeat;
+      padding-right: var(--space-5);
+    }
+
+    .check-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: var(--space-3) 0;
+    }
+
+    .check,
+    .radio {
+      min-height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      padding: 0 var(--space-3);
+      font-weight: 850;
+      cursor: pointer;
+      transition: background-color .18s ease, transform .18s ease;
+    }
+
+    .check:hover,
+    .radio:hover {
+      background: color-mix(in oklab, var(--bg) 94%, var(--surface-strong));
+      transform: translateY(-1px);
+    }
+
+    .check input,
+    .radio input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .check span:first-of-type,
+    .radio span:first-of-type {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-s);
+      background: var(--surface-strong);
+      display: inline-grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .08);
+    }
+
+    .radio span:first-of-type {
+      border-radius: var(--radius-pill);
+    }
+
+    .check input:checked + span,
+    .radio input:checked + span {
+      background: var(--accent-green);
+      box-shadow: inset 0 0 0 6px var(--bg);
+    }
+
+    .range-wrap {
+      margin-top: var(--space-2);
+    }
+
+    input[type="range"] {
+      appearance: none;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      min-height: var(--control-h);
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      margin-top: -9px;
+      box-shadow: 0 0 0 7px var(--bg);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      box-shadow: 0 0 0 7px var(--bg);
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .footer {
+      padding: var(--space-6) var(--space-3);
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .footer-inner {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    .footer .brand-mark {
+      background: var(--bg);
+    }
+
+    .footer .brand-mark::before { background: var(--accent); }
+    .footer .brand-mark::after { background: var(--accent-blue); }
+
+    .anim .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .anim .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *,
+      *::before,
+      *::after {
+        transition-duration: .001ms !important;
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+      }
+      .anim .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @media (max-width: 940px) {
+      .mast {
+        padding: var(--space-2) var(--space-3);
+      }
+
+      .nav-links a:not(.button) {
+        display: none;
+      }
+
+      .hero::before {
+        width: 100%;
+        clip-path: none;
+        background: rgba(255, 255, 255, .82);
+      }
+
+      .hero-inner {
+        width: min(100% - 32px, 720px);
+      }
+
+      h1 {
+        font-size: 56px;
+      }
+
+      .hero p {
+        font-size: 18px;
+      }
+
+      .section {
+        padding: var(--space-7) var(--space-3);
+      }
+
+      .section-head,
+      .product-band,
+      .story-lanes,
+      .signup {
+        grid-template-columns: 1fr;
+      }
+
+      .wind-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature-image {
+        min-height: 380px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      body { font-size: 17px; }
+      .mast {
+        gap: var(--space-2);
+      }
+
+      .brand {
+        font-size: 19px;
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+      }
+
+      .nav-links .button {
+        min-height: 46px;
+        padding: 0 var(--space-2);
+        font-size: 14px;
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      h2 {
+        font-size: 34px;
+      }
+
+      .hero-inner {
+        padding-top: var(--space-6);
+      }
+
+      .wind-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .route-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .route-row .pill {
+        width: fit-content;
+      }
+
+      .product-band,
+      .lane,
+      .form-panel {
+        padding: var(--space-3);
+      }
+
+      .footer-inner {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="mast" aria-label="Takinobori navigation">
+    <a class="brand" href="#top" aria-label="Takinobori home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Takinobori</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#route">Route</a>
+      <a href="#kits">Kits</a>
+      <a href="#crew">Crew</a>
+      <a href="#plan" class="button primary">Plan May 5</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="top" aria-label="Kodomo no Hi product world">
+    <div class="hero-inner">
+      <div class="hero-copy reveal">
+        <div class="date-line"><span>May 5</span> Family festival operations</div>
+        <h1><span class="kanji">鯉のぼり</span> routes that lift every family.</h1>
+        <p>Takinobori coordinates check-in, craft kits, riverfront parade timing, and volunteer handoffs for Kodomo no Hi events that feel calm, generous, and alive.</p>
+        <div class="hero-actions">
+          <a href="#plan" class="button primary">Build the route</a>
+          <a href="immersive.html" class="button quiet">Fly the world</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section" id="route">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="section-kicker">こどもの日 cadence</p>
+            <h2>The day moves in clean rungs, not crowded queues.</h2>
+          </div>
+          <p class="lead">Families arrive by wristband wave, collect age-safe kits, join the carp-streamer walk, then gather at the river bend for the waterfall story. Every handoff has an owner before the first gate opens.</p>
+        </div>
+        <div class="wind-grid">
+          <article class="rung reveal">
+            <h3>Gate wave</h3>
+            <p>Timed family entry, stroller lanes, and late-arrival recovery without a clipboard scramble.</p>
+          </article>
+          <article class="rung blue reveal">
+            <h3>Craft lift</h3>
+            <p>Kit counts follow age bands, allergies, drying time, and pickup shelves in one live route.</p>
+          </article>
+          <article class="rung green reveal">
+            <h3>River march</h3>
+            <p>Volunteer posts, photo pauses, and shade stops keep the koinobori avenue moving.</p>
+          </article>
+          <article class="rung reveal">
+            <h3>Safe close</h3>
+            <p>Reunion windows, lost-item notes, and crew debriefs finish before the lanterns come down.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="kits">
+      <div class="wrap">
+        <div class="product-band reveal">
+          <div class="feature-image" role="img" aria-label="Tactile festival planning table with koinobori materials and digital tools"></div>
+          <div class="product-copy">
+            <p class="section-kicker">Festival kits</p>
+            <h2>Paper, cloth, and product flow in the same handoff.</h2>
+            <p>Build kit batches by age, route them to the correct table, and attach pickup notes to the family pass. Takinobori keeps tactile festival work from becoming invisible operational debt.</p>
+            <div class="route-list" aria-label="Sample festival route">
+              <div class="route-row">
+                <div class="route-time">08:30</div>
+                <div>
+                  <div class="route-title">Crew mast call</div>
+                  <div class="route-note">Radios, shade map, wristband trays</div>
+                </div>
+                <span class="pill">Ready</span>
+              </div>
+              <div class="route-row">
+                <div class="route-time">10:00</div>
+                <div>
+                  <div class="route-title">Family craft wave</div>
+                  <div class="route-note">Ages 4 to 7 at cedar tables</div>
+                </div>
+                <span class="pill">Open</span>
+              </div>
+              <div class="route-row">
+                <div class="route-time">13:20</div>
+                <div>
+                  <div class="route-title">River streamer walk</div>
+                  <div class="route-note">Three pause points, two shade tents</div>
+                </div>
+                <span class="pill">Queued</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="crew">
+      <div class="wrap">
+        <div class="story-lanes">
+          <article class="lane dark reveal">
+            <p class="section-kicker">Crew board</p>
+            <h2>Every volunteer sees the next useful move.</h2>
+            <p>Morning leads get the full route. Table captains see kit pressure and family waves. Runners see only the next pickup, radio call, and gate note.</p>
+            <div class="lane-list">
+              <div class="lane-item"><span class="dot"></span><span>Assign a craft table without exposing private family notes.</span></div>
+              <div class="lane-item"><span class="dot blue"></span><span>Shift river pauses when wind changes the streamer poles.</span></div>
+              <div class="lane-item"><span class="dot green"></span><span>Close every lost-item and reunion note before cleanup.</span></div>
+            </div>
+          </article>
+          <article class="lane reveal">
+            <h3><span class="kanji">こどもの日</span> feels light when the backstage is exact.</h3>
+            <p>Parents meet a quiet check-in lane. Children see the fabric, the river, the fish, the story. Staff see the whole day as a route they can trust.</p>
+            <p>That is the Takinobori promise: ceremony in front, disciplined product flow behind it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="plan">
+      <div class="wrap signup">
+        <div class="reveal">
+          <p class="section-kicker">Start a route</p>
+          <h2>Sketch the May 5 plan before the poles go up.</h2>
+          <p class="lead">Tell Takinobori how many families, which craft waves, and where the river walk begins. The first schedule comes back as a staffed route, not a blank calendar.</p>
+        </div>
+        <form class="form-panel reveal" aria-label="Festival route request">
+          <div class="field-grid">
+            <div class="field">
+              <label for="org">Host name</label>
+              <input id="org" name="org" type="text" value="Riverbank Commons">
+            </div>
+            <div class="field">
+              <label for="families">Expected families</label>
+              <input id="families" name="families" type="number" min="20" max="800" value="180">
+            </div>
+            <div class="field">
+              <label for="routeType">Route shape</label>
+              <select id="routeType" name="routeType">
+                <option>River bend and craft hall</option>
+                <option>Schoolyard and shrine path</option>
+                <option>Library plaza and park loop</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="arrival">First arrival wave</label>
+              <input id="arrival" name="arrival" type="time" value="09:30">
+            </div>
+            <div class="field full">
+              <span class="field-label">Age bands</span>
+              <div class="check-row">
+                <label class="check"><input type="checkbox" checked><span></span><span>3 to 5</span></label>
+                <label class="check"><input type="checkbox" checked><span></span><span>6 to 8</span></label>
+                <label class="check"><input type="checkbox"><span></span><span>9 to 12</span></label>
+              </div>
+            </div>
+            <div class="field full">
+              <span class="field-label">Primary day shape</span>
+              <div class="check-row">
+                <label class="radio"><input type="radio" name="shape" checked><span></span><span>Craft first</span></label>
+                <label class="radio"><input type="radio" name="shape"><span></span><span>Parade first</span></label>
+              </div>
+            </div>
+            <div class="field full range-wrap">
+              <label for="wind">Wind readiness</label>
+              <input id="wind" type="range" min="0" max="100" value="74">
+            </div>
+            <div class="field full">
+              <label for="notes">Route notes</label>
+              <textarea id="notes" name="notes">Need shade at the second bridge and a quiet pickup shelf for finished streamers.</textarea>
+            </div>
+            <div class="field full">
+              <button class="primary" type="button">Draft the family route</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Takinobori</span>
+      </div>
+      <p>Built for real Kodomo no Hi operations: route, craft, crew, and closing notes.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) return;
+      document.documentElement.classList.add("anim");
+      var items = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.18 });
+      items.forEach(function (item, index) {
+        item.style.transitionDelay = Math.min(index * 60, 420) + "ms";
+        observer.observe(item);
+      });
+    })();
+  </script>
+</body>
+</html>

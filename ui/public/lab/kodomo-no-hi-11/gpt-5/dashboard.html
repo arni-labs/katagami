@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Takinobori Dashboard</title>
+  <style>
+    :root {
+      --bg: #fff;
+      --surface: #f5f7f3;
+      --surface-strong: #e9efe5;
+      --surface-ink: #000;
+      --text: #000;
+      --muted: #4b5149;
+      --border: transparent;
+      --accent: #e63b1e;
+      --accent-blue: #2657d9;
+      --accent-green: #23a455;
+      --on-accent: #fff;
+      --success: #23a455;
+      --warning: #e63b1e;
+      --error: #e63b1e;
+      --info: #2657d9;
+      --ring: #2657d9;
+      --font-display: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif CJK JP", Georgia, serif;
+      --font-body: "Avenir Next", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      --font-kanji: "Yuji Syuku", "Hiragino Mincho ProN", "Yu Mincho", serif;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 72px;
+      --radius-none: 0;
+      --radius-s: 16px;
+      --radius-m: 24px;
+      --radius-pill: 9999px;
+      --control-h: 56px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.55;
+      text-rendering: geometricPrecision;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-display);
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      border: 0;
+      outline: none;
+    }
+
+    button {
+      min-height: var(--control-h);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      padding: 0 var(--space-3);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .18s ease, background-color .18s ease, color .18s ease, opacity .18s ease;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .quiet {
+      background: var(--surface-strong);
+      color: var(--text);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary:hover {
+      background: color-mix(in oklab, var(--accent) 88%, var(--text));
+    }
+
+    .quiet:hover {
+      background: color-mix(in oklab, var(--surface-strong) 86%, var(--accent-green));
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .toggle:focus-within,
+    .check:focus-within,
+    .radio:focus-within {
+      box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ring);
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      background: var(--surface-strong);
+      color: color-mix(in oklab, var(--muted) 74%, var(--bg));
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--control-h);
+      border-radius: var(--radius-s);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0 var(--space-3);
+      font-weight: 750;
+      box-shadow: inset 0 -3px 0 rgba(38, 87, 217, .16);
+      transition: background-color .18s ease, box-shadow .18s ease;
+    }
+
+    input,
+    select {
+      height: var(--control-h);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: color-mix(in oklab, var(--surface) 76%, var(--bg));
+      box-shadow: inset 0 -4px 0 rgba(38, 87, 217, .24);
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 18 18' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 7.2h10L9 12.3 4 7.2z' fill='%23000'/%3E%3C/svg%3E");
+      background-position: calc(100% - 18px) center;
+      background-size: 18px 18px;
+      background-repeat: no-repeat;
+      padding-right: var(--space-5);
+    }
+
+    textarea {
+      height: auto;
+      min-height: calc(var(--control-h) * 2);
+      padding-top: var(--space-2);
+      resize: vertical;
+    }
+
+    input[type="range"] {
+      appearance: none;
+      min-height: var(--control-h);
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      margin-top: -9px;
+      box-shadow: 0 0 0 7px var(--bg);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      box-shadow: 0 0 0 7px var(--bg);
+    }
+
+    .app {
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: 292px minmax(0, 1fr);
+      background: var(--surface);
+    }
+
+    .sidebar {
+      background: var(--text);
+      color: var(--bg);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--bg);
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      left: 7px;
+      right: 7px;
+      top: 10px;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      transform: rotate(-12deg);
+    }
+
+    .brand-mark::after {
+      top: 25px;
+      background: var(--accent-blue);
+      transform: rotate(12deg);
+    }
+
+    .side-section {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .side-label {
+      color: color-mix(in oklab, var(--bg) 70%, var(--accent-green));
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .side-nav a {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      padding: 0 var(--space-2);
+      border-radius: var(--radius-pill);
+      color: var(--bg);
+      text-decoration: none;
+      font-weight: 850;
+    }
+
+    .side-nav a.active {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .side-nav a:not(.active):hover {
+      background: rgba(255, 255, 255, .12);
+    }
+
+    .side-note {
+      margin-top: auto;
+      display: grid;
+      gap: var(--space-2);
+      background: rgba(255, 255, 255, .12);
+      border-radius: var(--radius-m);
+      padding: var(--space-3);
+    }
+
+    .side-note strong {
+      font-family: var(--font-display);
+      font-size: 26px;
+      line-height: 1.05;
+    }
+
+    .side-note p {
+      color: color-mix(in oklab, var(--bg) 78%, var(--surface-strong));
+      font-weight: 650;
+    }
+
+    .main {
+      min-width: 0;
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: center;
+      background: var(--bg);
+      border-radius: var(--radius-m);
+      padding: var(--space-4);
+    }
+
+    .topbar h1 {
+      font-size: 42px;
+      line-height: 1.02;
+    }
+
+    .topbar p {
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: var(--space-1);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      justify-content: flex-end;
+    }
+
+    .overview {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(360px, .75fr);
+      gap: var(--space-4);
+      align-items: stretch;
+    }
+
+    .media-panel {
+      min-height: 370px;
+      border-radius: var(--radius-m);
+      background-image: url("./media/dashboard-overview.png");
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .media-panel::after {
+      content: "";
+      position: absolute;
+      right: var(--space-4);
+      bottom: var(--space-4);
+      width: 156px;
+      height: 156px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, .86);
+      box-shadow: inset 0 0 0 18px var(--accent), inset 0 0 0 42px rgba(255, 255, 255, .86), inset 0 0 0 58px var(--accent-blue);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .metric {
+      min-width: 0;
+      min-height: 174px;
+      background: var(--bg);
+      border-radius: var(--radius-m);
+      padding: var(--space-4);
+      display: grid;
+      align-content: space-between;
+      gap: var(--space-3);
+    }
+
+    .metric span {
+      width: 58px;
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+
+    .metric.blue span { background: var(--accent-blue); }
+    .metric.green span { background: var(--accent-green); }
+
+    .metric strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 52px;
+      line-height: .92;
+      letter-spacing: 0;
+    }
+
+    .metric small {
+      display: block;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.3;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--bg);
+      border-radius: var(--radius-m);
+      padding: var(--space-4);
+    }
+
+    .panel.surface {
+      background: var(--surface-strong);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .panel-head h2 {
+      font-size: 30px;
+      line-height: 1.05;
+    }
+
+    .panel-head p {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 750;
+      margin-top: var(--space-1);
+    }
+
+    .status-pill {
+      min-height: 38px;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 var(--space-2);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .rows {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .schedule-row {
+      min-height: 76px;
+      border-radius: var(--radius-s);
+      background: var(--surface);
+      padding: var(--space-2) var(--space-3);
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr) 112px;
+      gap: var(--space-3);
+      align-items: center;
+    }
+
+    .schedule-row:nth-child(2n) {
+      background: var(--surface-strong);
+    }
+
+    .time {
+      color: var(--accent-blue);
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .title {
+      font-weight: 950;
+      line-height: 1.25;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .status {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      font-size: 14px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .status.hot {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .status.live {
+      background: var(--accent-green);
+      color: var(--on-accent);
+    }
+
+    .kit-image {
+      height: 230px;
+      border-radius: var(--radius-m);
+      background-image: url("./media/dashboard-feature.png");
+      background-size: cover;
+      background-position: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .kit-grid {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .kit-row {
+      min-height: 62px;
+      border-radius: var(--radius-s);
+      background: var(--bg);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 88px;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+    }
+
+    .bar {
+      height: 14px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+      overflow: hidden;
+      margin-top: var(--space-1);
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+
+    .bar.blue span { background: var(--accent-blue); }
+    .bar.green span { background: var(--accent-green); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+      background: var(--bg);
+      border-radius: var(--radius-m);
+      padding: var(--space-4);
+    }
+
+    .field {
+      min-width: 0;
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    label,
+    .field-label {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 950;
+      line-height: 1.1;
+    }
+
+    .check-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      margin-top: var(--space-2);
+    }
+
+    .check,
+    .radio,
+    .toggle {
+      min-height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      padding: 0 var(--space-3);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .check:hover,
+    .radio:hover,
+    .toggle:hover {
+      background: color-mix(in oklab, var(--surface) 78%, var(--bg));
+    }
+
+    .check input,
+    .radio input,
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .mark {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-s);
+      background: var(--surface-strong);
+      box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .08);
+      flex: 0 0 auto;
+    }
+
+    .radio .mark,
+    .toggle .mark {
+      border-radius: var(--radius-pill);
+    }
+
+    .toggle .mark {
+      width: 42px;
+      height: 24px;
+      position: relative;
+    }
+
+    .toggle .mark::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      top: 3px;
+      left: 3px;
+      transition: transform .18s ease;
+    }
+
+    .check input:checked + .mark,
+    .radio input:checked + .mark {
+      background: var(--accent-green);
+      box-shadow: inset 0 0 0 6px var(--bg);
+    }
+
+    .toggle input:checked + .mark {
+      background: var(--accent-green);
+    }
+
+    .toggle input:checked + .mark::after {
+      transform: translateX(18px);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 var(--space-1);
+      min-width: 720px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: var(--space-2);
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 750;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 950;
+    }
+
+    td {
+      background: var(--surface);
+    }
+
+    tr td:first-child {
+      border-radius: var(--radius-s) 0 0 var(--radius-s);
+    }
+
+    tr td:last-child {
+      border-radius: 0 var(--radius-s) var(--radius-s) 0;
+    }
+
+    .message-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, .62fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .dispatch {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .dispatch-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .signal-list {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .signal {
+      min-height: 74px;
+      border-radius: var(--radius-s);
+      background: var(--surface);
+      padding: var(--space-2) var(--space-3);
+      display: grid;
+      align-content: center;
+      gap: 2px;
+    }
+
+    .signal strong {
+      font-weight: 950;
+    }
+
+    .signal small {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .side-nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .side-note {
+        margin-top: 0;
+      }
+
+      .overview,
+      .grid,
+      .message-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      body { font-size: 17px; }
+
+      .sidebar,
+      .main {
+        padding: var(--space-3);
+      }
+
+      .side-nav {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar h1 {
+        font-size: 34px;
+      }
+
+      .toolbar {
+        justify-content: stretch;
+      }
+
+      .toolbar button {
+        flex: 1 1 180px;
+      }
+
+      .overview {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .metrics,
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .media-panel {
+        min-height: 260px;
+      }
+
+      .schedule-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .status {
+        width: fit-content;
+        padding: 0 var(--space-2);
+      }
+
+      .panel,
+      .topbar {
+        padding: var(--space-3);
+      }
+
+      .optional {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Takinobori workspace">
+      <a class="brand" href="landing.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Takinobori</span>
+      </a>
+      <div class="side-section">
+        <div class="side-label">Kodomo no Hi</div>
+        <nav class="side-nav" aria-label="Dashboard sections">
+          <a class="active" href="#overview">Overview</a>
+          <a href="#route">Route</a>
+          <a href="#kits">Kits</a>
+          <a href="#families">Families</a>
+        </nav>
+      </div>
+      <div class="side-section">
+        <div class="side-label">Live festival</div>
+        <nav class="side-nav" aria-label="Crew views">
+          <a href="#crew">Crew</a>
+          <a href="#safety">Safety</a>
+          <a href="#messages">Dispatch</a>
+          <a href="immersive.html">3D World</a>
+        </nav>
+      </div>
+      <div class="side-note">
+        <strong><span class="kanji">鯉</span> wave 2 is ready.</strong>
+        <p>Four family check-ins remain before the craft hall opens the west tables.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar" id="overview">
+        <div>
+          <h1>Riverbank Commons operations</h1>
+          <p>May 5 festival route, family waves, kit pressure, and crew readiness.</p>
+        </div>
+        <div class="toolbar">
+          <button class="quiet" type="button">Export brief</button>
+          <button class="primary" type="button">Open live route</button>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Festival filters">
+        <div class="field">
+          <label for="search">Find family or crew</label>
+          <input id="search" type="search" placeholder="Name, wristband, station">
+        </div>
+        <div class="field">
+          <label for="wave">Wave</label>
+          <select id="wave">
+            <option>All waves</option>
+            <option>Wave 1, 09:30</option>
+            <option>Wave 2, 10:15</option>
+            <option>Wave 3, 11:00</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="station">Station</label>
+          <select id="station">
+            <option>All stations</option>
+            <option>Gate A</option>
+            <option>Craft hall</option>
+            <option>River bend</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="wind">Wind readiness</label>
+          <input id="wind" type="range" min="0" max="100" value="74">
+        </div>
+      </section>
+
+      <section class="overview" aria-label="Overview metrics">
+        <div class="media-panel" role="img" aria-label="Festival operations table with maps and koinobori materials"></div>
+        <div class="metrics">
+          <div class="metric">
+            <span></span>
+            <div><strong>642</strong><small>Family passes printed</small></div>
+          </div>
+          <div class="metric blue">
+            <span></span>
+            <div><strong>18</strong><small>Volunteer posts staffed</small></div>
+          </div>
+          <div class="metric green">
+            <span></span>
+            <div><strong>97%</strong><small>Craft kits packed</small></div>
+          </div>
+          <div class="metric">
+            <span></span>
+            <div><strong>06</strong><small>Open safety notes</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel" id="route">
+          <div class="panel-head">
+            <div>
+              <h2>Route cadence</h2>
+              <p>Director view for gate, craft, river, and close.</p>
+            </div>
+            <span class="status-pill">Live</span>
+          </div>
+          <div class="rows">
+            <div class="schedule-row">
+              <div class="time">09:30</div>
+              <div><div class="title">Wave 1 family check-in</div><div class="sub">Gate A, stroller lane open</div></div>
+              <span class="status live">Moving</span>
+            </div>
+            <div class="schedule-row">
+              <div class="time">10:15</div>
+              <div><div class="title">Wave 2 craft hall release</div><div class="sub">Ages 3 to 5, cedar tables</div></div>
+              <span class="status hot">Next</span>
+            </div>
+            <div class="schedule-row">
+              <div class="time">11:40</div>
+              <div><div class="title">Streamer avenue reset</div><div class="sub">Wind check, pole crew, photo pause</div></div>
+              <span class="status">Queued</span>
+            </div>
+            <div class="schedule-row">
+              <div class="time">13:20</div>
+              <div><div class="title">River bend story circle</div><div class="sub">Waterfall tale, reunion shelf open</div></div>
+              <span class="status">Planned</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel surface" id="kits">
+          <div class="kit-image" role="img" aria-label="Dashboard kit planning materials and safety markers"></div>
+          <div class="panel-head">
+            <div>
+              <h2>Kit pressure</h2>
+              <p>Counts update from check-in and craft captains.</p>
+            </div>
+          </div>
+          <div class="kit-grid">
+            <div class="kit-row">
+              <div><div class="title">Dragon scale packets</div><div class="bar"><span style="width: 92%"></span></div></div>
+              <div class="sub">414 ready</div>
+            </div>
+            <div class="kit-row">
+              <div><div class="title">Fabric tail ribbons</div><div class="bar blue"><span style="width: 78%"></span></div></div>
+              <div class="sub">286 ready</div>
+            </div>
+            <div class="kit-row">
+              <div><div class="title">Quiet table supplies</div><div class="bar green"><span style="width: 86%"></span></div></div>
+              <div class="sub">64 ready</div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="panel" id="families">
+          <div class="panel-head">
+            <div>
+              <h2>Family waves</h2>
+              <p>Visible to gate leads and craft hall captains.</p>
+            </div>
+            <button class="quiet" type="button">Assign table</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Wave</th>
+                  <th>Group</th>
+                  <th>Passes</th>
+                  <th class="optional">Kit band</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>09:30</td>
+                  <td>North school families</td>
+                  <td>184</td>
+                  <td class="optional">Ages 3 to 5</td>
+                  <td>Checked in</td>
+                </tr>
+                <tr>
+                  <td>10:15</td>
+                  <td>Library plaza guests</td>
+                  <td>158</td>
+                  <td class="optional">Ages 6 to 8</td>
+                  <td>Boarding</td>
+                </tr>
+                <tr>
+                  <td>11:00</td>
+                  <td>River walk visitors</td>
+                  <td>126</td>
+                  <td class="optional">Mixed</td>
+                  <td>Printing</td>
+                </tr>
+                <tr>
+                  <td>12:30</td>
+                  <td>Quiet craft session</td>
+                  <td>42</td>
+                  <td class="optional">Ages 4 to 7</td>
+                  <td>Ready</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel" id="crew">
+          <div class="panel-head">
+            <div>
+              <h2>Crew switches</h2>
+              <p>Keep public mode calm while leads see route changes.</p>
+            </div>
+          </div>
+          <div class="check-line">
+            <label class="toggle"><input type="checkbox" checked><span class="mark"></span><span>Gate radio</span></label>
+            <label class="toggle"><input type="checkbox" checked><span class="mark"></span><span>Shade alert</span></label>
+            <label class="toggle"><input type="checkbox"><span class="mark"></span><span>Rain tent</span></label>
+          </div>
+          <div class="check-line">
+            <label class="check"><input type="checkbox" checked><span class="mark"></span><span>Lost-item shelf</span></label>
+            <label class="check"><input type="checkbox"><span class="mark"></span><span>Extra wristbands</span></label>
+          </div>
+          <div class="check-line">
+            <label class="radio"><input type="radio" name="mode" checked><span class="mark"></span><span>Family mode</span></label>
+            <label class="radio"><input type="radio" name="mode"><span class="mark"></span><span>Crew mode</span></label>
+          </div>
+        </article>
+      </section>
+
+      <section class="message-grid" id="messages">
+        <article class="panel dispatch">
+          <div class="panel-head">
+            <div>
+              <h2>Dispatch note</h2>
+              <p>Send one precise update to table captains.</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="dispatch">Message</label>
+            <textarea id="dispatch">Wave 2 starts at the west doors. Keep dragon scale packets on the low shelf and send completed streamers to the blue drying line.</textarea>
+          </div>
+          <div class="dispatch-actions">
+            <button class="primary" type="button">Send to captains</button>
+            <button class="quiet" type="button">Save draft</button>
+            <button class="quiet" type="button" disabled>Queued</button>
+          </div>
+        </article>
+
+        <article class="panel surface" id="safety">
+          <div class="panel-head">
+            <div>
+              <h2>Safety signals</h2>
+              <p>Small list, high attention.</p>
+            </div>
+          </div>
+          <div class="signal-list">
+            <div class="signal"><strong>Bridge shade is full</strong><small>Move pause point to cedar grove.</small></div>
+            <div class="signal"><strong>Two allergy kits opened</strong><small>Craft hall lead confirmed cleanup.</small></div>
+            <div class="signal"><strong>Wind lifted at river bend</strong><small>Pole crew adds lower ties.</small></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

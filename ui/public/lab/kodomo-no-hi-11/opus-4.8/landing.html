@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nobori — celebrate every child's climb</title>
+<meta name="description" content="Nobori is the family app for Kodomo no Hi and every day after — raise a streamer for each child and watch their milestones rise like carp up the pole." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================== NOBORI — tokens ============================== */
+:root{
+  --bg:#FFFFFF; --surface:#F7F2E9; --surface-sunk:#EFE7D8;
+  --text:#1A1410; --muted:#6A6052; --border:rgba(26,20,16,.08);
+
+  --accent:#D93A22; --accent-2:#1F6FB2; --accent-3:#2F7D3E; --on-accent:#FFFFFF;
+  --accent-bright:#F0512F; --accent-2-bright:#2C8AD6; --accent-3-bright:#46A957; --gold:#E0A12B;
+  --accent-wash:#FCEAE6; --accent-2-wash:#E9F1F8; --accent-3-wash:#E8F3EA; --gold-wash:#FBF1DC;
+  --success:#2F7D3E; --success-wash:#E8F3EA; --info:#1F6FB2; --info-wash:#E9F1F8;
+  --warning:#B07A14; --warning-wash:#FBF1DC; --error:#B3261E; --error-wash:#FBE6E4;
+
+  --font-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+  --font-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
+  --fs-display:clamp(2.7rem,6.2vw,5.25rem); --fs-h1:clamp(2rem,3.6vw,3rem);
+  --fs-h2:clamp(1.5rem,2.4vw,2.1rem); --fs-h3:1.3125rem; --fs-body:1.0625rem;
+  --fs-lead:1.1875rem; --fs-ui:1rem; --fs-small:.9375rem;
+  --lh-tight:1.08; --lh-body:1.62; --ls-display:-.02em;
+
+  --r-sm:16px; --r-lg:24px; --r-full:9999px;
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px;
+  --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+  --shadow-1:0 1px 2px rgba(26,20,16,.05),0 2px 10px rgba(26,20,16,.045);
+  --shadow-2:0 10px 30px rgba(26,20,16,.09); --shadow-pop:0 22px 60px rgba(26,20,16,.14);
+  --container:1200px; --container-wide:1440px;
+  --control-h:48px; --control-pad-x:20px;
+  --ring:0 0 0 3px var(--bg),0 0 0 6px rgba(217,58,34,.5);
+  --hero-image:url('./media/hero.jpg');
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+h1,h2,h3{font-family:var(--font-display);letter-spacing:var(--ls-display);line-height:var(--lh-tight);font-weight:900}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:none;box-shadow:var(--ring);border-radius:var(--r-sm)}
+.wrap{width:100%;max-width:var(--container);margin-inline:auto;padding-inline:var(--s-5)}
+.wrap-wide{max-width:var(--container-wide)}
+
+/* ============================== components ============================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);
+  height:var(--control-h);padding-inline:var(--control-pad-x);border:none;cursor:pointer;
+  font-family:var(--font-body);font-size:var(--fs-ui);font-weight:700;letter-spacing:.005em;
+  border-radius:var(--r-full);transition:transform .18s ease,background .18s ease,box-shadow .18s ease;
+  white-space:nowrap}
+.btn--primary{background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-1)}
+.btn--primary:hover{background:#BF3019;transform:translateY(-1px);box-shadow:var(--shadow-2)}
+.btn--primary:active{background:#A52914;transform:translateY(0);box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
+.btn--secondary{background:var(--surface);color:var(--text);box-shadow:var(--shadow-1)}
+.btn--secondary:hover{background:var(--surface-sunk);transform:translateY(-1px)}
+.btn--secondary:active{background:#E7DECF;transform:translateY(0)}
+.btn--ghost{background:transparent;color:var(--accent-2);box-shadow:none}
+.btn--ghost:hover{background:var(--accent-2-wash)}
+.btn--ghost:active{background:#DCE9F4}
+.btn--on-dark{background:rgba(255,253,248,.16);color:#fff;backdrop-filter:blur(6px)}
+.btn--on-dark:hover{background:rgba(255,253,248,.28);transform:translateY(-1px)}
+.btn[disabled]{background:#EAE3D6;color:#A89E8E;box-shadow:none;cursor:not-allowed;transform:none}
+.btn--lg{font-size:1.0625rem;padding-inline:30px}
+
+.card{background:var(--surface);border-radius:var(--r-lg);padding:var(--s-6);box-shadow:var(--shadow-1)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding-inline:14px;border-radius:var(--r-full);
+  font-size:var(--fs-small);font-weight:700;letter-spacing:.01em}
+.chip--v{background:var(--accent-wash);color:#A52914}
+.chip--b{background:var(--accent-2-wash);color:#155488}
+.chip--g{background:var(--accent-3-wash);color:#23612F}
+.eyebrow{font-weight:700;color:var(--accent);font-size:var(--fs-small);letter-spacing:.08em;text-transform:uppercase}
+
+/* medama eye-dot */
+.medama{width:14px;height:14px;border-radius:var(--r-full);background:var(--bg);
+  box-shadow:0 0 0 3px var(--dot,var(--accent));display:inline-block;flex:none}
+
+/* uroko scale band (signature mechanic) */
+.uroko{height:18px;width:100%;
+  --c1:var(--accent);--c2:var(--accent-2);--c3:var(--accent-3);
+  background:
+    radial-gradient(circle at 10px -2px, transparent 11px, var(--c1) 12px 13px, transparent 14px),
+    radial-gradient(circle at 30px -2px, transparent 11px, var(--c2) 12px 13px, transparent 14px),
+    radial-gradient(circle at 50px -2px, transparent 11px, var(--c3) 12px 13px, transparent 14px);
+  background-size:60px 18px;background-repeat:repeat-x;opacity:.9}
+
+/* ascent meter — uroko fill */
+.ascent{display:flex;gap:6px;align-items:center}
+.ascent .scale{width:18px;height:22px;border-radius:0 0 50% 50%/0 0 100% 100%;
+  background:var(--surface-sunk);transition:background .5s ease}
+.ascent .scale.on{background:var(--meter,var(--accent))}
+
+/* ============================== nav ============================== */
+.nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s-5);padding:14px clamp(16px,4vw,40px);
+  background:rgba(255,253,248,.72);backdrop-filter:saturate(140%) blur(14px);
+  transition:box-shadow .3s ease,background .3s ease}
+.nav.scrolled{box-shadow:var(--shadow-1);background:rgba(255,253,248,.92)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:900;font-size:1.3rem;letter-spacing:-.01em}
+.brand svg{width:42px;height:auto}
+.nav-links{display:flex;align-items:center;gap:var(--s-6)}
+.nav-links a{font-size:.98rem;font-weight:500;color:var(--text);transition:color .15s}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{display:flex;align-items:center;gap:var(--s-3)}
+
+/* ============================== hero ============================== */
+.hero{position:relative;min-height:100svh;width:100vw;
+  background-image:linear-gradient(90deg,rgba(20,15,11,.04),transparent 60%),var(--hero-image);
+  background-size:cover;background-position:center 38%;display:flex;align-items:flex-end}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:34%;
+  background:linear-gradient(transparent,rgba(255,253,248,.0));pointer-events:none}
+.hero-inner{position:relative;z-index:2;width:100%;max-width:var(--container-wide);
+  margin-inline:auto;padding:0 clamp(16px,4vw,40px) clamp(40px,7vh,90px)}
+.hero-panel{max-width:660px;background:rgba(255,253,248,.9);backdrop-filter:blur(10px);
+  border-radius:var(--r-lg);padding:clamp(28px,4vw,48px);box-shadow:var(--shadow-pop)}
+.hero-koirow{display:flex;align-items:center;gap:18px;margin-bottom:var(--s-5);flex-wrap:wrap}
+.hero-koi{display:flex;gap:6px}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:var(--r-full);
+  background:var(--accent-wash);color:#A52914;font-weight:700;font-size:var(--fs-small)}
+.hero-tag .jp{font-family:var(--font-display);font-weight:900}
+.hero-koi svg{width:64px;height:auto;animation:swim 4s ease-in-out infinite}
+.hero-koi svg:nth-child(2){animation-delay:.5s}
+.hero-koi svg:nth-child(3){animation-delay:1s}
+@keyframes swim{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1.5deg)}}
+.hero h1{font-size:var(--fs-display);margin:0 0 var(--s-4)}
+.hero h1 .jp{display:block;font-size:.32em;font-weight:700;color:var(--accent);letter-spacing:.04em;margin-bottom:.4em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{font-size:var(--fs-lead);color:var(--muted);max-width:48ch;margin-bottom:var(--s-6)}
+.hero-actions{display:flex;flex-wrap:wrap;gap:var(--s-3);align-items:center}
+.hero-note{margin-top:var(--s-5);display:flex;align-items:center;gap:10px;color:var(--muted);font-size:var(--fs-small)}
+
+/* ============================== sections ============================== */
+section{padding-block:clamp(64px,9vw,128px)}
+.section-head{max-width:62ch;margin-bottom:var(--s-8)}
+.section-head h2{font-size:var(--fs-h2);margin:var(--s-3) 0 var(--s-4)}
+.section-head p{font-size:var(--fs-lead);color:var(--muted)}
+.tone{background:var(--surface)}
+.tone-sunk{background:var(--surface-sunk)}
+
+/* value row */
+.value-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-6)}
+.value{display:flex;flex-direction:column;gap:var(--s-3)}
+.value .ic{width:56px;height:56px;border-radius:var(--r-full);display:grid;place-items:center;box-shadow:var(--shadow-1)}
+.value .ic svg{width:30px;height:30px}
+.value h3{font-size:var(--fs-h3);font-weight:700}
+.value p{color:var(--muted)}
+
+/* split story */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(32px,5vw,80px);align-items:center}
+.split .media{border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2);aspect-ratio:3/2;
+  background-size:cover;background-position:center}
+.split h2{font-size:var(--fs-h2);margin:var(--s-3) 0 var(--s-5)}
+.split p{color:var(--muted);font-size:var(--fs-lead);margin-bottom:var(--s-4)}
+.checklist{list-style:none;display:flex;flex-direction:column;gap:var(--s-4);margin-top:var(--s-5)}
+.checklist li{display:flex;gap:var(--s-3);align-items:flex-start}
+.checklist .tick{width:28px;height:28px;border-radius:var(--r-full);background:var(--accent-3-wash);
+  display:grid;place-items:center;flex:none;margin-top:2px}
+.checklist .tick svg{width:16px;height:16px}
+.checklist strong{font-weight:700}
+.checklist span{color:var(--muted);font-size:var(--fs-body);display:block}
+
+/* features */
+.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-6)}
+.feature{position:relative;display:flex;flex-direction:column;gap:var(--s-4)}
+.feature .badge{width:48px;height:48px;border-radius:var(--r-sm);display:grid;place-items:center}
+.feature h3{font-size:var(--fs-h3);font-weight:700}
+.feature p{color:var(--muted)}
+
+/* ascent showcase */
+.ascent-card{display:grid;grid-template-columns:1.1fr .9fr;gap:var(--s-8);align-items:center}
+.kid-row{display:flex;align-items:center;gap:var(--s-4);padding:var(--s-4) 0}
+.kid-row+.kid-row{box-shadow:0 -1px 0 var(--border)}
+.kid-av{width:48px;height:48px;border-radius:var(--r-full);display:grid;place-items:center;
+  color:#fff;font-family:var(--font-display);font-weight:900;flex:none}
+.kid-meta{flex:1;min-width:0}
+.kid-meta b{font-weight:700}
+.kid-meta small{display:block;color:var(--muted)}
+
+/* pricing */
+.price-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-6);align-items:start}
+.price{display:flex;flex-direction:column;gap:var(--s-4);height:100%}
+.price.featured{background:linear-gradient(180deg,#fff,var(--surface));box-shadow:var(--shadow-2);position:relative}
+.price .amt{font-family:var(--font-display);font-weight:900;font-size:2.6rem;letter-spacing:-.02em}
+.price .amt span{font-size:1rem;font-weight:500;color:var(--muted);font-family:var(--font-body)}
+.price ul{list-style:none;display:flex;flex-direction:column;gap:var(--s-3);margin:var(--s-3) 0 var(--s-5)}
+.price li{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.price li svg{width:18px;height:18px;flex:none}
+.price .btn{width:100%}
+
+/* cta band */
+.cta{position:relative;overflow:hidden;border-radius:var(--r-lg);
+  background:linear-gradient(120deg,#1F6FB2,#2C8AD6);color:#fff;
+  padding:clamp(40px,6vw,80px);text-align:center;box-shadow:var(--shadow-2)}
+.cta h2{font-size:var(--fs-h1);margin-bottom:var(--s-4)}
+.cta p{font-size:var(--fs-lead);opacity:.92;max-width:50ch;margin:0 auto var(--s-6)}
+.cta .uroko{position:absolute;left:0;bottom:0;opacity:.5;height:24px;background-size:60px 24px}
+.cta-form{display:flex;gap:var(--s-3);justify-content:center;flex-wrap:wrap;max-width:520px;margin-inline:auto}
+
+/* form controls */
+.field{display:flex;flex-direction:column;gap:8px;text-align:left}
+.field label{font-weight:700;font-size:var(--fs-small)}
+.input{height:var(--control-h);padding:0 var(--control-pad-x);width:100%;
+  font-family:var(--font-body);font-size:var(--fs-body);color:var(--text);
+  background:#FBF8F2;border:none;border-radius:var(--r-sm);
+  box-shadow:inset 0 0 0 1.5px rgba(26,20,16,.07),inset 0 2px 4px rgba(26,20,16,.04);
+  transition:box-shadow .16s ease,background .16s ease}
+.input::placeholder{color:var(--muted)}
+.input:hover{background:#fff}
+.input:focus-visible{outline:none;background:#fff;box-shadow:var(--ring)}
+.input[disabled]{background:#F0EADF;color:var(--muted);cursor:not-allowed}
+.cta-form .input{flex:1;min-width:220px;background:rgba(255,255,255,.95);box-shadow:none}
+.cta-form .input:focus-visible{box-shadow:0 0 0 3px #1F6FB2,0 0 0 6px rgba(255,255,255,.7)}
+
+/* footer */
+footer{background:var(--surface);padding-block:var(--s-9) var(--s-7)}
+.foot-grid{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:var(--s-7)}
+.foot-grid h4{font-family:var(--font-body);font-weight:700;font-size:.95rem;margin-bottom:var(--s-4)}
+.foot-grid a{display:block;color:var(--muted);font-size:.95rem;padding:5px 0;transition:color .15s}
+.foot-grid a:hover{color:var(--accent)}
+.foot-brand p{color:var(--muted);margin-top:var(--s-3);max-width:34ch}
+.foot-bottom{margin-top:var(--s-8);padding-top:var(--s-5);box-shadow:0 -1px 0 var(--border);
+  display:flex;justify-content:space-between;gap:var(--s-4);flex-wrap:wrap;color:var(--muted);font-size:var(--fs-small)}
+
+/* reveal motion */
+.reveal{opacity:0;transform:translateY(22px)}
+.anim .reveal{transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+.anim .reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1!important;transform:none!important}
+  .hero-koi svg{animation:none}
+}
+
+/* responsive */
+@media (max-width:920px){
+  .nav-links{display:none}
+  .value-grid,.feature-grid,.price-grid{grid-template-columns:1fr}
+  .split,.ascent-card{grid-template-columns:1fr}
+  .split .media{order:-1}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .foot-grid{grid-template-columns:1fr}
+  .hero-actions{flex-direction:column;align-items:stretch}
+  .hero-actions .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- reusable koi streamer symbol (signature mechanic) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="koi" viewBox="0 0 300 132">
+    <path d="M34 36 C92 22 168 22 226 50 L292 26 Q252 66 292 106 L226 82 C168 110 92 110 34 96 Q20 66 34 36 Z" fill="currentColor"/>
+    <g fill="#FFFFFF" fill-opacity=".16" stroke="#FFFFFF" stroke-opacity=".28" stroke-width="2">
+      <path d="M86 50 q16 18 32 0" fill="none"/><path d="M118 50 q16 18 32 0" fill="none"/>
+      <path d="M150 50 q16 18 32 0" fill="none"/><path d="M182 50 q16 18 32 0" fill="none"/>
+      <path d="M86 72 q16 18 32 0" fill="none"/><path d="M118 72 q16 18 32 0" fill="none"/>
+      <path d="M150 72 q16 18 32 0" fill="none"/><path d="M182 72 q16 18 32 0" fill="none"/>
+    </g>
+    <circle cx="70" cy="54" r="15" fill="#FFFFFF"/><circle cx="70" cy="54" r="7.5" fill="#1A1410"/>
+  </symbol>
+</svg>
+
+<!-- ===================== nav ===================== -->
+<nav class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="Nobori home">
+    <svg viewBox="0 0 300 132" aria-hidden="true"><use href="#koi" style="color:var(--accent)"/></svg>
+    Nobori
+  </a>
+  <div class="nav-links">
+    <a href="#story">The climb</a>
+    <a href="#features">Features</a>
+    <a href="#pole">The Pole</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="nav-cta">
+    <a class="btn btn--ghost" href="#pricing">Sign in</a>
+    <a class="btn btn--primary" href="#get">Raise a streamer</a>
+  </div>
+</nav>
+
+<!-- ===================== hero ===================== -->
+<header class="hero" id="top">
+  <div class="hero-inner">
+    <div class="hero-panel reveal">
+      <div class="hero-koirow">
+        <div class="hero-koi" aria-hidden="true">
+          <svg viewBox="0 0 300 132"><use href="#koi" style="color:var(--accent)"/></svg>
+          <svg viewBox="0 0 300 132"><use href="#koi" style="color:var(--accent-2)"/></svg>
+          <svg viewBox="0 0 300 132"><use href="#koi" style="color:var(--accent-3)"/></svg>
+        </div>
+        <span class="hero-tag"><span class="jp">こどもの日</span> Children's Day · May 5</span>
+      </div>
+      <h1>Raise a streamer for every child you love, and watch them <em>rise</em>.</h1>
+      <p class="lead">Nobori turns Kodomo no Hi into an all-year ritual. Give each child their own carp on the pole, and every first, every brave step, every milestone climbs the river toward the Dragon Gate.</p>
+      <div class="hero-actions">
+        <a class="btn btn--primary btn--lg" href="#get">Start your pole — free</a>
+        <a class="btn btn--secondary btn--lg" href="#story">See how it works</a>
+      </div>
+      <div class="hero-note"><span class="medama" style="--dot:var(--accent-3)"></span> Free for families · no ads · a streamer for every child</div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== value ===================== -->
+<section id="story">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">The old story, made daily</span>
+      <h2>A carp that climbs the waterfall becomes a dragon. Your children are already climbing.</h2>
+      <p>The legend behind koinobori is about courage and growth. Nobori keeps that story close — three simple parts, one for each child, every day of the year.</p>
+    </div>
+    <div class="value-grid">
+      <div class="value reveal">
+        <div class="ic" style="background:var(--accent-wash)"><svg viewBox="0 0 300 132"><use href="#koi" style="color:var(--accent)"/></svg></div>
+        <h3>A streamer each</h3>
+        <p>Every child gets their own carp on the family pole — their colour, their name, their river. Add a new streamer the day they arrive.</p>
+      </div>
+      <div class="value reveal">
+        <div class="ic" style="background:var(--accent-2-wash)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M4 17c4-7 12-7 16 0" stroke="#1F6FB2" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7" r="3.4" fill="#1F6FB2"/></svg></div>
+        <h3>Milestones rise</h3>
+        <p>Log a first word, a lost tooth, a brave climb. Each one fills the next scale on their ascent — a living record that grows with them.</p>
+      </div>
+      <div class="value reveal">
+        <div class="ic" style="background:var(--accent-3-wash)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.4 5 5.6.6-4 3.8 1 5.6L12 21l-5 2.6 1-5.6-4-3.8 5.6-.6z" fill="#2F7D3E"/></svg></div>
+        <h3>Reach the Gate</h3>
+        <p>Set a year's goals together. When the streamers reach the Dragon Gate, the whole family celebrates the climb — on Kodomo no Hi and every day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== split story ===================== -->
+<section class="tone" id="raise">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <span class="chip chip--v">For the whole family</span>
+        <h2>Raise the pole together, the way you always have.</h2>
+        <p>Kodomo no Hi is a morning of fresh air, green leaves and streamers snapping in the wind. Nobori keeps that feeling on your phone — calm, bright, and shared by everyone who loves your kids.</p>
+        <ul class="checklist">
+          <li><span class="tick"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>Invite grandparents and godparents</strong><span>Everyone sees the climb and cheers a milestone with a tap.</span></div></li>
+          <li><span class="tick"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>Private by default</strong><span>Your family's pole is yours. No ads, no feed, no strangers.</span></div></li>
+          <li><span class="tick"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><strong>A keepsake at the end of the year</strong><span>Each child's ascent prints as a streamer you can hang for real.</span></div></li>
+        </ul>
+      </div>
+      <div class="media" style="background-image:url('./media/story.jpg')" role="img" aria-label="A family raising a vermilion carp streamer up a bamboo pole in a spring garden"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== features ===================== -->
+<section id="features">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">What's on the pole</span>
+      <h2>Built from three shapes: the eye, the scales, the streaming tail.</h2>
+      <p>Every part of Nobori comes from the koinobori itself, so the app feels like the festival — never like a spreadsheet.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="card feature reveal">
+        <div class="badge" style="background:var(--accent-wash)"><span class="medama" style="--dot:var(--accent);width:18px;height:18px"></span></div>
+        <h3>The eye — moments</h3>
+        <p>Drop a photo, a note, a height mark. The eye remembers the small things you'll want back in twenty years.</p>
+        <span class="chip chip--v">Moments</span>
+      </div>
+      <div class="card feature reveal">
+        <div class="badge" style="background:var(--accent-2-wash)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 16c3-5 6-5 9 0s6 5 9 0" stroke="#1F6FB2" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        <h3>The scales — ascents</h3>
+        <p>Milestones fill an ascent meter, scale by scale. Watch a year of growth become one clear, beautiful climb.</p>
+        <span class="chip chip--b">Ascents</span>
+      </div>
+      <div class="card feature reveal">
+        <div class="badge" style="background:var(--accent-3-wash)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h10l6 6-6 6H4z" fill="#2F7D3E"/></svg></div>
+        <h3>The tail — the year</h3>
+        <p>Set spring goals together, then let them stream out behind each carp as the family works toward the Gate.</p>
+        <span class="chip chip--g">Goals</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ascent showcase (the Pole) ===================== -->
+<section class="tone-sunk" id="pole">
+  <div class="wrap">
+    <div class="card ascent-card reveal" style="background:#fff">
+      <div>
+        <span class="eyebrow">The Pole</span>
+        <h2 style="font-size:var(--fs-h2);margin:var(--s-3) 0 var(--s-4)">One pole. Every child climbing their own river.</h2>
+        <p style="color:var(--muted);margin-bottom:var(--s-5)">See the whole family at a glance. Each carp shows this year's ascent — how many milestones they've reached toward the Dragon Gate.</p>
+        <div>
+          <div class="kid-row">
+            <div class="kid-av" style="background:var(--accent)">H</div>
+            <div class="kid-meta"><b>Haru</b><small>6 years · "the brave one"</small></div>
+            <div class="ascent" style="--meter:var(--accent)" aria-label="Haru: 5 of 6 milestones">
+              <i class="scale on"></i><i class="scale on"></i><i class="scale on"></i><i class="scale on"></i><i class="scale on"></i><i class="scale"></i>
+            </div>
+          </div>
+          <div class="kid-row">
+            <div class="kid-av" style="background:var(--accent-2)">M</div>
+            <div class="kid-meta"><b>Mei</b><small>3 years · "the curious one"</small></div>
+            <div class="ascent" style="--meter:var(--accent-2)" aria-label="Mei: 3 of 6 milestones">
+              <i class="scale on"></i><i class="scale on"></i><i class="scale on"></i><i class="scale"></i><i class="scale"></i><i class="scale"></i>
+            </div>
+          </div>
+          <div class="kid-row">
+            <div class="kid-av" style="background:var(--accent-3)">R</div>
+            <div class="kid-meta"><b>Ren</b><small>9 months · "the new one"</small></div>
+            <div class="ascent" style="--meter:var(--accent-3)" aria-label="Ren: 2 of 6 milestones">
+              <i class="scale on"></i><i class="scale on"></i><i class="scale"></i><i class="scale"></i><i class="scale"></i><i class="scale"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="media" style="border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2);aspect-ratio:3/2;background-size:cover;background-position:center;background-image:url('./media/streamer.jpg')" role="img" aria-label="A single vermilion and indigo carp streamer rippling in the wind"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== pricing ===================== -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-head reveal" style="text-align:center;margin-inline:auto">
+      <span class="eyebrow">Pricing</span>
+      <h2>Children's Day is free. So is Nobori, for every family.</h2>
+      <p>Start with the whole pole at no cost. Add the keepsake print and cloud archive whenever you're ready.</p>
+    </div>
+    <div class="price-grid">
+      <div class="card price reveal">
+        <h3 style="font-family:var(--font-display)">Family</h3>
+        <div class="amt">Free</div>
+        <p style="color:var(--muted)">Everything a family needs to raise the pole, all year.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to 6 streamers</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlimited moments &amp; ascents</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Invite the whole family</li>
+        </ul>
+        <a class="btn btn--secondary" href="#get">Start free</a>
+      </div>
+      <div class="card price featured reveal">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 style="font-family:var(--font-display)">Keepsake</h3>
+          <span class="chip chip--v">Most loved</span>
+        </div>
+        <div class="amt">¥480<span> / month</span></div>
+        <p style="color:var(--muted)">For families who want the climb to last a lifetime.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Everything in Family</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Printed streamer each spring</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Full-resolution cloud archive</li>
+        </ul>
+        <a class="btn btn--primary" href="#get">Choose Keepsake</a>
+      </div>
+      <div class="card price reveal">
+        <h3 style="font-family:var(--font-display)">Kumiai</h3>
+        <div class="amt">¥1,200<span> / month</span></div>
+        <p style="color:var(--muted)">For preschools and community groups raising many poles.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to 60 streamers</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Class poles &amp; shared events</li>
+          <li><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-10" stroke="#2F7D3E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Caregiver roles &amp; export</li>
+        </ul>
+        <a class="btn btn--secondary" href="#get">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== cta ===================== -->
+<section id="get">
+  <div class="wrap">
+    <div class="cta reveal">
+      <h2>Raise your first streamer this spring.</h2>
+      <p>Join the families already climbing toward the Gate. Get the Kodomo no Hi setup guide and your free pole.</p>
+      <form class="cta-form" onsubmit="return false">
+        <label class="field" style="flex:1;min-width:220px">
+          <span class="sr-only" style="position:absolute;left:-9999px">Email address</span>
+          <input class="input" type="email" placeholder="you@family.jp" aria-label="Email address" />
+        </label>
+        <button class="btn btn--primary btn--lg" type="submit">Get my free pole</button>
+      </form>
+      <div class="uroko" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== footer ===================== -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top"><svg viewBox="0 0 300 132" style="width:42px"><use href="#koi" style="color:var(--accent)"/></svg> Nobori</a>
+        <p>A family app for Kodomo no Hi and every day after. Raise a streamer, log the climb, reach the Gate together.</p>
+      </div>
+      <div><h4>Product</h4><a href="#features">Features</a><a href="#pole">The Pole</a><a href="#pricing">Pricing</a><a href="#get">Get started</a></div>
+      <div><h4>The festival</h4><a href="#story">Kodomo no Hi</a><a href="#story">The carp legend</a><a href="#raise">Raising the pole</a></div>
+      <div><h4>Family</h4><a href="#">Privacy</a><a href="#">Help center</a><a href="#">Contact</a></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Nobori · Made for the climb</span>
+      <span>緋 · 縹 · 萌黄 — vermilion, koi-blue, leaf-green</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  document.body.classList.add('anim');
+  var nav=document.getElementById('nav');
+  var onScroll=function(){nav.classList.toggle('scrolled',window.scrollY>20)};
+  onScroll();window.addEventListener('scroll',onScroll,{passive:true});
+  var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var items=[].slice.call(document.querySelectorAll('.reveal'));
+  if(reduce||!('IntersectionObserver'in window)){items.forEach(function(n){n.classList.add('in')});return;}
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  items.forEach(function(n){io.observe(n)});
+})();
+</script>
+</body>
+</html>

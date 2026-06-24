@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aizora — raise them like carp in the wind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   AIZORA — design tokens (identical across landing + dashboard)
+   ============================================================ */
+:root{
+  /* indigo — ground & brand */
+  --indigo-900:#0E1E40; --indigo-800:#12244C; --indigo-700:#1C3A72;
+  --indigo-600:#27488C; --indigo-500:#3C63A6; --indigo-400:#6286C0;
+  --indigo-200:#AEC4E6; --indigo-100:#E5EDF8; --indigo-50:#F0F4FB;
+  /* cream — light neutral */
+  --paper:#F7F1E3; --paper-2:#EFE6D2; --cloth:#FFFFFF;
+  /* accents */
+  --carp:#E5532A; --carp-btn:#D23F18; --carp-press:#B8350F; --carp-tint:#FBE7DD;
+  --gold:#CFA13C; --gold-deep:#8F6C1F; --gold-tint:#F6ECCF;
+  --moss:#3E9466; --moss-deep:#2C7A50; --moss-tint:#DCEFE2;
+  /* text */
+  --ink:#16213C; --ink-2:#46557A; --ink-3:#5E6B8A;
+  --on-indigo:#F4EEE0; --on-indigo-2:#B7C7E4;
+  --danger:#C23C18;
+  /* type */
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-ui:'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+  --font-mono:'Spline Sans Mono',ui-monospace,SFMono-Regular,monospace;
+  --fs-display:clamp(2.75rem,6vw,5rem);
+  --fs-h1:clamp(2rem,4vw,3.05rem);
+  --fs-h2:1.9rem; --fs-h3:1.375rem;
+  --fs-body-lg:1.1875rem; --fs-body:1.0625rem; --fs-sm:.9375rem;
+  --fs-eyebrow:.8125rem; --fs-table:.95rem;
+  /* spacing */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+  --sp-7:48px; --sp-8:64px; --sp-9:96px; --sp-10:128px;
+  /* radius */
+  --r-0:0; --r-xs:8px; --r-sm:12px; --r-md:16px; --r-lg:24px; --r-xl:32px; --r-pill:9999px;
+  /* elevation (indigo-tinted) */
+  --shadow-sm:0 1px 2px rgba(14,30,64,.06),0 1px 3px rgba(14,30,64,.05);
+  --shadow-md:0 8px 22px -10px rgba(14,30,64,.20),0 2px 6px rgba(14,30,64,.06);
+  --shadow-lg:0 30px 60px -22px rgba(14,30,64,.34),0 6px 16px rgba(14,30,64,.10);
+  /* control */
+  --control-h:48px;
+  --focus:0 0 0 3px #FFFFFF,0 0 0 6px #B8350F;
+  --maxw:1180px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; font-family:var(--font-ui); font-size:var(--fs-body);
+  line-height:1.6; color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+img{display:block; max-width:100%}
+a{color:inherit; text-decoration:none}
+h1,h2,h3,p{margin:0}
+::selection{background:var(--carp-tint); color:var(--carp-press)}
+
+/* ---------- shared type helpers ---------- */
+.eyebrow{
+  font-size:var(--fs-eyebrow); font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; line-height:1.2;
+}
+.display{font-family:var(--font-display); font-weight:600; letter-spacing:-.02em; line-height:1.04}
+.serif{font-family:var(--font-display); font-weight:600; letter-spacing:-.02em}
+.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+
+/* ---------- buttons (one control height, full states) ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2);
+  height:var(--control-h); padding:0 var(--sp-6); border:none; cursor:pointer;
+  font-family:var(--font-ui); font-size:var(--fs-body); font-weight:600;
+  border-radius:var(--r-pill); white-space:nowrap;
+  transition:background .18s ease,color .18s ease,transform .12s ease,box-shadow .18s ease;
+}
+.btn:focus-visible{outline:none; box-shadow:var(--focus)}
+.btn--primary{background:var(--carp-btn); color:#fff}
+.btn--primary:hover{background:var(--carp); transform:translateY(-1px)}
+.btn--primary:active{background:var(--carp-press); transform:translateY(1px)}
+.btn--secondary{background:var(--indigo-100); color:var(--indigo-800)}
+.btn--secondary:hover{background:#D9E4F5; transform:translateY(-1px)}
+.btn--secondary:active{background:var(--indigo-200); transform:translateY(1px)}
+.btn--ghost{background:transparent; color:var(--indigo-800)}
+.btn--ghost:hover{background:var(--indigo-50)}
+.btn--on-indigo{background:var(--on-indigo); color:var(--indigo-900)}
+.btn--on-indigo:hover{background:#fff; transform:translateY(-1px)}
+.btn--on-indigo:active{background:#ECE3CE; transform:translateY(1px)}
+.btn--outline-indigo{background:transparent; color:var(--on-indigo); box-shadow:inset 0 0 0 1.5px var(--indigo-400)}
+.btn--outline-indigo:hover{background:rgba(255,255,255,.08)}
+.btn[disabled]{opacity:.45; cursor:not-allowed; transform:none!important}
+.btn--lg{height:56px; padding:0 var(--sp-7); font-size:var(--fs-body-lg)}
+
+/* streamer pill / badge */
+.pill{
+  display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 14px;
+  border-radius:var(--r-pill); font-size:var(--fs-eyebrow); font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+}
+.pill--carp{background:var(--carp-tint); color:var(--carp-press)}
+.pill--gold{background:var(--gold-tint); color:var(--gold-deep)}
+.pill--moss{background:var(--moss-tint); color:var(--moss-deep)}
+.pill--indigo{background:var(--indigo-100); color:var(--indigo-700)}
+.pill--ghost-indigo{background:rgba(244,238,224,.12); color:var(--on-indigo)}
+
+/* ============================================================
+   LANDING layout
+   ============================================================ */
+.shell{width:100%; max-width:var(--maxw); margin:0 auto; padding-inline:var(--sp-6)}
+
+/* ---- top nav ---- */
+.nav{
+  position:absolute; inset:0 0 auto 0; z-index:20;
+  display:flex; align-items:center; justify-content:space-between;
+  max-width:var(--maxw); margin:0 auto; padding:var(--sp-5) var(--sp-6);
+}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display);
+  font-weight:600; font-size:1.4rem; letter-spacing:-.02em; color:var(--on-indigo)}
+.brand .mark{width:34px; height:34px; flex:0 0 auto}
+.nav-links{display:flex; align-items:center; gap:var(--sp-6)}
+.nav-links a{color:var(--on-indigo-2); font-weight:500; font-size:var(--fs-sm); transition:color .15s}
+.nav-links a:hover{color:var(--on-indigo)}
+.nav-links a:focus-visible{outline:none; box-shadow:var(--focus); border-radius:var(--r-xs)}
+.nav-cta{display:flex; align-items:center; gap:var(--sp-3)}
+.nav-burger{display:none}
+
+/* ---- hero ---- */
+.hero{position:relative; min-height:760px; display:flex; align-items:center;
+  color:var(--on-indigo); overflow:hidden; background:var(--indigo-900)}
+.hero-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:65% 50%}
+.hero-scrim{position:absolute; inset:0;
+  background:
+    linear-gradient(95deg, rgba(8,18,42,.94) 0%, rgba(8,18,42,.80) 34%, rgba(8,18,42,.28) 64%, rgba(8,18,42,.10) 100%),
+    linear-gradient(0deg, rgba(8,18,42,.55) 0%, rgba(8,18,42,0) 36%);
+}
+.hero-inner{position:relative; z-index:5; padding-block:var(--sp-10) var(--sp-9)}
+.hero h1{font-family:var(--font-display); font-weight:600; font-size:var(--fs-display);
+  letter-spacing:-.025em; line-height:1.02; max-width:14ch; margin-top:var(--sp-5)}
+.hero h1 em{font-style:italic; color:var(--gold)}
+.hero .lede{margin-top:var(--sp-5); font-size:var(--fs-body-lg); color:var(--on-indigo);
+  max-width:48ch; line-height:1.55}
+.hero-actions{display:flex; flex-wrap:wrap; gap:var(--sp-3); margin-top:var(--sp-7)}
+.hero-trust{display:flex; align-items:center; gap:var(--sp-4); margin-top:var(--sp-6);
+  color:var(--on-indigo-2); font-size:var(--fs-sm)}
+.hero-trust .avatars{display:flex}
+.hero-trust .av{width:34px; height:34px; border-radius:var(--r-pill); margin-left:-10px;
+  box-shadow:0 0 0 3px var(--indigo-900); display:grid; place-items:center;
+  font-family:var(--font-display); font-weight:600; font-size:.85rem; color:#fff}
+.hero-trust .av:first-child{margin-left:0}
+
+/* wave divider */
+.wave{display:block; width:100%; height:auto; color:var(--paper)}
+.wave--flip{transform:rotate(180deg)}
+
+/* ---- generic section ---- */
+.section{padding-block:var(--sp-9)}
+.section--alt{background:var(--paper-2)}
+.section-head{max-width:62ch}
+.section-head .eyebrow{color:var(--carp-press)}
+.section-head h2{font-family:var(--font-display); font-weight:600; font-size:var(--fs-h2);
+  letter-spacing:-.02em; line-height:1.12; margin-top:var(--sp-3); color:var(--ink)}
+.section-head p{margin-top:var(--sp-4); font-size:var(--fs-body-lg); color:var(--ink-2)}
+
+/* ---- split feature ---- */
+.split{display:grid; grid-template-columns:1.05fr 1fr; gap:var(--sp-8); align-items:center}
+.split--rev .split-media{order:2}
+.split-media{position:relative; border-radius:var(--r-xl); overflow:hidden;
+  box-shadow:var(--shadow-lg); background:var(--indigo-800)}
+.split-media img{width:100%; height:100%; object-fit:cover; aspect-ratio:3/2}
+.split-media .tag{position:absolute; left:var(--sp-5); bottom:var(--sp-5)}
+.split-copy h3{font-family:var(--font-display); font-weight:600; font-size:1.7rem;
+  letter-spacing:-.02em; line-height:1.14; margin-top:var(--sp-3); color:var(--ink)}
+.split-copy p{margin-top:var(--sp-4); font-size:var(--fs-body-lg); color:var(--ink-2)}
+.featlist{list-style:none; margin:var(--sp-5) 0 0; padding:0; display:grid; gap:var(--sp-3)}
+.featlist li{display:flex; gap:var(--sp-3); align-items:flex-start; font-size:var(--fs-body); color:var(--ink)}
+.tick{flex:0 0 auto; width:26px; height:26px; border-radius:var(--r-pill);
+  background:var(--moss-tint); color:var(--moss-deep); display:grid; place-items:center; margin-top:1px}
+
+/* ---- 3-up feature cards ---- */
+.cards3{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-5); margin-top:var(--sp-7)}
+.fcard{background:var(--cloth); border-radius:var(--r-lg); box-shadow:var(--shadow-md);
+  padding:var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-3)}
+.fcard .ico{width:52px; height:52px; border-radius:var(--r-md); display:grid; place-items:center; margin-bottom:var(--sp-2)}
+.ico--carp{background:var(--carp-tint); color:var(--carp-press)}
+.ico--gold{background:var(--gold-tint); color:var(--gold-deep)}
+.ico--moss{background:var(--moss-tint); color:var(--moss-deep)}
+.fcard h3{font-size:var(--fs-h3); font-weight:700; letter-spacing:-.01em; color:var(--ink)}
+.fcard p{font-size:var(--fs-body); color:var(--ink-2)}
+
+/* ---- showcase band (indigo) ---- */
+.showcase{background:var(--indigo-800); color:var(--on-indigo); position:relative; overflow:hidden}
+.showcase .blob{position:absolute; border-radius:var(--r-pill); filter:blur(60px); opacity:.5; pointer-events:none}
+.showcase .b1{width:420px; height:420px; background:#3a2a73; top:-120px; right:-80px}
+.showcase .b2{width:360px; height:360px; background:#23406f; bottom:-140px; left:-90px}
+.showcase-grid{position:relative; z-index:2; display:grid; grid-template-columns:1fr 1fr;
+  gap:var(--sp-8); align-items:center}
+.showcase h2{font-family:var(--font-display); font-weight:600; font-size:var(--fs-h2);
+  letter-spacing:-.02em; line-height:1.12; margin-top:var(--sp-3)}
+.showcase h2 em{font-style:italic; color:var(--gold)}
+.showcase p{margin-top:var(--sp-4); font-size:var(--fs-body-lg); color:var(--on-indigo-2)}
+.showcase .section-head .eyebrow{color:var(--gold)}
+.showcase-media{border-radius:var(--r-xl); overflow:hidden; box-shadow:var(--shadow-lg)}
+.showcase-media img{width:100%; aspect-ratio:3/2; object-fit:cover}
+.mini-stats{display:flex; gap:var(--sp-7); margin-top:var(--sp-6); flex-wrap:wrap}
+.mini-stats .n{font-family:var(--font-display); font-weight:600; font-size:2.1rem; color:#fff; line-height:1}
+.mini-stats .l{font-size:var(--fs-sm); color:var(--on-indigo-2); margin-top:6px}
+
+/* ---- stats strip ---- */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp-5)}
+.stat{background:var(--cloth); border-radius:var(--r-lg); box-shadow:var(--shadow-md); padding:var(--sp-6)}
+.stat .n{font-family:var(--font-mono); font-weight:600; font-size:2.4rem; color:var(--carp-press); letter-spacing:-.02em; line-height:1}
+.stat .l{margin-top:var(--sp-2); font-size:var(--fs-sm); color:var(--ink-2)}
+
+/* ---- testimonial ---- */
+.quote{max-width:54ch; margin:0 auto; text-align:center}
+.quote blockquote{font-family:var(--font-display); font-weight:500; font-size:clamp(1.5rem,3vw,2.1rem);
+  line-height:1.3; letter-spacing:-.01em; color:var(--ink); margin:var(--sp-5) 0 0}
+.quote .who{display:flex; align-items:center; justify-content:center; gap:var(--sp-3); margin-top:var(--sp-6)}
+.quote .who .av{width:46px; height:46px; border-radius:var(--r-pill); display:grid; place-items:center;
+  font-family:var(--font-display); font-weight:600; color:#fff}
+.quote .who .meta{text-align:left}
+.quote .who .meta b{font-weight:700; color:var(--ink)}
+.quote .who .meta span{display:block; font-size:var(--fs-sm); color:var(--ink-3)}
+
+/* ---- pricing / final CTA ---- */
+.cta-band{position:relative; overflow:hidden; background:var(--indigo-900); color:var(--on-indigo); text-align:center}
+.cta-band .blob{position:absolute; border-radius:var(--r-pill); filter:blur(70px); opacity:.5}
+.cta-band .cb1{width:380px;height:380px;background:#7a2f1c;top:-120px;left:8%}
+.cta-band .cb2{width:340px;height:340px;background:#234071;bottom:-120px;right:8%}
+.cta-inner{position:relative; z-index:2; max-width:46ch; margin:0 auto}
+.cta-inner h2{font-family:var(--font-display); font-weight:600; font-size:clamp(2.1rem,4.5vw,3.2rem);
+  letter-spacing:-.02em; line-height:1.06; margin-top:var(--sp-4)}
+.cta-inner h2 em{font-style:italic; color:var(--gold)}
+.cta-inner p{margin-top:var(--sp-4); font-size:var(--fs-body-lg); color:var(--on-indigo-2)}
+.cta-actions{display:flex; gap:var(--sp-3); justify-content:center; flex-wrap:wrap; margin-top:var(--sp-7)}
+.cta-note{margin-top:var(--sp-5); font-size:var(--fs-sm); color:var(--on-indigo-2)}
+
+/* ---- footer ---- */
+.footer{background:var(--indigo-900); color:var(--on-indigo-2); padding-block:var(--sp-8) var(--sp-7)}
+.footer-top{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:var(--sp-6)}
+.footer .brand{color:var(--on-indigo)}
+.footer-col h4{font-size:var(--fs-eyebrow); font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--on-indigo); margin:0 0 var(--sp-3)}
+.footer-col a{display:block; padding:6px 0; color:var(--on-indigo-2); font-size:var(--fs-sm)}
+.footer-col a:hover{color:var(--on-indigo)}
+.footer-col a:focus-visible{outline:none; box-shadow:var(--focus); border-radius:var(--r-xs)}
+.footer-blurb{font-size:var(--fs-sm); color:var(--on-indigo-2); margin-top:var(--sp-4); max-width:34ch}
+.footer-bottom{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-4);
+  margin-top:var(--sp-8); padding-top:var(--sp-5); border-top:1px solid rgba(174,196,230,.16);
+  font-size:var(--fs-sm)}
+
+/* ---- reveal animation ---- */
+.reveal{opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease}
+.reveal.in{opacity:1; transform:none}
+
+/* ---- responsive ---- */
+@media (max-width:960px){
+  .split,.showcase-grid{grid-template-columns:1fr; gap:var(--sp-6)}
+  .split--rev .split-media{order:0}
+  .cards3{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+}
+@media (max-width:560px){
+  .nav{padding:var(--sp-4)}
+  .hero{min-height:660px}
+  .hero-actions .btn{width:100%}
+  .stats{grid-template-columns:1fr 1fr}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .footer-col.brandcol{grid-column:1 / -1}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1; transform:none; transition:none}
+  *{animation-duration:.001ms!important; animation-iteration-count:1!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============== NAV ============== -->
+<nav class="nav" aria-label="Primary">
+  <a class="brand" href="#top" aria-label="Aizora home">
+    <svg class="mark" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+      <circle cx="18" cy="18" r="18" fill="#E5532A"/>
+      <path d="M9 18c3.4-5.2 8.2-7.8 14.4-7.8 1.9 0 3.2.5 3.9 1.4.6.8.7 1.9.2 3.2-.4 1.1-.4 2 .1 2.8.5.8.5 1.7-.1 2.7-.7 1-2 1.5-3.9 1.5C16.9 25.6 12.2 23 9 18Z" fill="#F4EEE0"/>
+      <circle cx="14.3" cy="16.6" r="1.7" fill="#12244C"/>
+      <path d="M9 18c1.5-.3 3-.3 4.6 0-1.6.3-3.1.3-4.6 0Z" fill="#12244C" opacity=".5"/>
+      <path d="M27.6 14.6c1.4.6 2.4 1.8 3 3.4-1.6-.3-2.8-1-3.6-2.1l.6-1.3ZM27.6 21.4c1.4-.6 2.4-1.8 3-3.4-1.6.3-2.8 1-3.6 2.1l.6 1.3Z" fill="#CFA13C"/>
+    </svg>
+    Aizora
+  </a>
+  <div class="nav-links">
+    <a href="#story">Our story</a>
+    <a href="#features">Features</a>
+    <a href="#rise">How it works</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="nav-cta">
+    <a class="btn btn--outline-indigo" href="#" style="height:44px;padding:0 22px">Sign in</a>
+    <a class="btn btn--on-indigo" href="#pricing" style="height:44px;padding:0 22px">Start your sky</a>
+  </div>
+</nav>
+
+<!-- ============== HERO ============== -->
+<header class="hero" id="top">
+  <img class="hero-img" src="./media/hero.png" alt="A deep indigo sky filled with koinobori carp streamers riding the wind, one bold persimmon carp leading the ascent, in a flat woodblock-print style">
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="shell hero-inner">
+    <span class="pill pill--ghost-indigo">こどもの日 · Children's Day</span>
+    <h1 class="display">Raise them like <em>carp</em> in the wind.</h1>
+    <p class="lede">Aizora is the family journal where every child swims up their own indigo sky — first words, growing inches, the small ordinary days. Hang a carp for each one and watch the year fill out.</p>
+    <div class="hero-actions">
+      <a class="btn btn--primary btn--lg" href="#pricing">Start your sky — free</a>
+      <a class="btn btn--on-indigo btn--lg" href="#rise">See a family demo</a>
+    </div>
+    <div class="hero-trust">
+      <div class="avatars" aria-hidden="true">
+        <span class="av" style="background:#E5532A">H</span>
+        <span class="av" style="background:#CFA13C">S</span>
+        <span class="av" style="background:#3E9466">M</span>
+        <span class="av" style="background:#3C63A6">K</span>
+      </div>
+      <span>Loved by <b style="color:var(--on-indigo)">38,000+</b> families across 24 countries</span>
+    </div>
+  </div>
+</header>
+
+<!-- wave divider into cream -->
+<svg class="wave" viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0,40 C120,8 240,8 360,28 C480,48 600,48 720,32 C840,16 960,16 1080,32 C1200,48 1320,48 1440,28 L1440,64 L0,64 Z" fill="#F7F1E3"/>
+</svg>
+
+<!-- ============== STORY / SPLIT 1 ============== -->
+<section class="section" id="story">
+  <div class="shell">
+    <div class="split reveal">
+      <div class="split-media">
+        <img src="./media/feature-streamer.jpg" alt="Close-up of a single persimmon carp streamer with cream stencil scales, undulating against an indigo sky">
+        <span class="pill pill--carp tag">A carp for each child</span>
+      </div>
+      <div class="split-copy">
+        <span class="eyebrow" style="color:var(--carp-press)">The idea</span>
+        <h3 class="serif">One streamer, one child, one sky that fills out over a lifetime.</h3>
+        <p>On Children's Day, a family flies one koinobori for every child — sized eldest to youngest, swimming together on a single line. Aizora makes that the shape of the whole app. Each child gets a carp; each carp carries their journal.</p>
+        <ul class="featlist">
+          <li><span class="tick" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5 5.5 10.5 11.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Private by default — your family, no one else.</li>
+          <li><span class="tick" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5 5.5 10.5 11.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Invite grandparents to watch, not to edit.</li>
+          <li><span class="tick" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5 5.5 10.5 11.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Export the whole sky to a printed book any time.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FEATURES 3-UP ============== -->
+<section class="section section--alt" id="features">
+  <div class="shell">
+    <div class="section-head reveal">
+      <span class="eyebrow">What's inside</span>
+      <h2>Everything a year of growing leaves behind.</h2>
+      <p>Three quiet tools that turn scattered photos and half-remembered firsts into a record you'll actually keep.</p>
+    </div>
+    <div class="cards3 reveal">
+      <article class="fcard">
+        <div class="ico ico--carp" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 7h11l4 5-4 5H4l3-5-3-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 12h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Milestones that matter</h3>
+        <p>Log a first step, a lost tooth, a bike without training wheels. Tag the ones that count and they rise to the top of the streamer.</p>
+      </article>
+      <article class="fcard">
+        <div class="ico ico--moss" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 15l4-4 3 2 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Growth, gently tracked</h3>
+        <p>Height, weight, shoe size, words spoken. Add a number when you have one; Aizora draws the curve so you can see them climbing.</p>
+      </article>
+      <article class="fcard">
+        <div class="ico ico--gold" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2L12 15.7 7.4 17.4l.9-5.2L4.5 8.5l5.2-.8L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>A family sky</h3>
+        <p>All your carp on one line. Switch between children, compare the same age side by side, and share a single view with the people who love them.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============== SHOWCASE / RISE (indigo) ============== -->
+<section class="section showcase" id="rise">
+  <span class="blob b1" aria-hidden="true"></span>
+  <span class="blob b2" aria-hidden="true"></span>
+  <div class="shell">
+    <div class="showcase-grid reveal">
+      <div class="showcase-media">
+        <img src="./media/feature-ascend.jpg" alt="A bold persimmon carp leaping up a current of indigo water and cream wave-foam, the carp ascending the dragon gate">
+      </div>
+      <div class="section-head" style="max-width:46ch">
+        <span class="eyebrow">How it works</span>
+        <h2>Add a moment in ten seconds. <em>Watch them rise</em> for years.</h2>
+        <p>There's an old story: a carp that swims all the way up the falls becomes a dragon. Aizora is built on the small version of that — a moment a day, kept simply, until the climb is plain to see.</p>
+        <div class="mini-stats">
+          <div><div class="n mono">3</div><div class="l">taps to log a milestone</div></div>
+          <div><div class="n mono">12</div><div class="l">growth metrics, your pick</div></div>
+          <div><div class="n mono">∞</div><div class="l">photos &amp; notes per child</div></div>
+        </div>
+        <div class="hero-actions" style="margin-top:var(--sp-7)">
+          <a class="btn btn--primary" href="#pricing">Hang your first carp</a>
+          <a class="btn btn--outline-indigo" href="#pricing">View a sample journal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- wave divider -->
+<svg class="wave wave--flip" viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0,40 C120,8 240,8 360,28 C480,48 600,48 720,32 C840,16 960,16 1080,32 C1200,48 1320,48 1440,28 L1440,64 L0,64 Z" fill="#12244C"/>
+</svg>
+
+<!-- ============== SPLIT 2 (family) ============== -->
+<section class="section">
+  <div class="shell">
+    <div class="split split--rev reveal">
+      <div class="split-media">
+        <img src="./media/feature-family.jpg" alt="A bamboo pole flying a family of koinobori carp streamers arranged by size, crowned with a spinning arrow wheel, against a calm indigo sky">
+        <span class="pill pill--gold tag">One line, the whole family</span>
+      </div>
+      <div class="split-copy">
+        <span class="eyebrow" style="color:var(--gold-deep)">For the whole family</span>
+        <h3 class="serif">Grandparents in Osaka. Cousins in Lisbon. One sky they all look up at.</h3>
+        <p>Invite the people who matter with a single link. They see the carp rise in real time, leave a note, react to a photo — and never touch your private records. When the year ends, turn the whole sky into a hardcover book in two clicks.</p>
+        <div class="hero-actions" style="margin-top:var(--sp-6)">
+          <a class="btn btn--primary" href="#pricing">Invite your family</a>
+          <a class="btn btn--ghost" href="#story">See how sharing works</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== STATS STRIP ============== -->
+<section class="section section--alt">
+  <div class="shell">
+    <div class="section-head reveal" style="text-align:center; margin-inline:auto">
+      <span class="eyebrow" style="display:block; text-align:center">By the numbers</span>
+      <h2 style="text-align:center">A record families come back to.</h2>
+    </div>
+    <div class="stats reveal" style="margin-top:var(--sp-7)">
+      <div class="stat"><div class="n mono">38k</div><div class="l">families flying their sky</div></div>
+      <div class="stat"><div class="n mono">2.4M</div><div class="l">milestones logged</div></div>
+      <div class="stat"><div class="n mono">11M</div><div class="l">photos &amp; notes kept</div></div>
+      <div class="stat"><div class="n mono">4.9★</div><div class="l">average parent rating</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TESTIMONIAL ============== -->
+<section class="section">
+  <div class="shell">
+    <div class="quote reveal">
+      <span class="pill pill--carp" style="margin-inline:auto">Why parents stay</span>
+      <blockquote>"I started Aizora the week our second was born. Two years later I scrolled the whole sky in one sitting and cried. It's the only app I've never let lapse."</blockquote>
+      <div class="who">
+        <span class="av" style="background:var(--carp)">M</span>
+        <div class="meta"><b>Mei Tanaka</b><span>Mother of two · Fukuoka</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA / PRICING ============== -->
+<section class="section cta-band" id="pricing">
+  <span class="blob cb1" aria-hidden="true"></span>
+  <span class="blob cb2" aria-hidden="true"></span>
+  <div class="shell">
+    <div class="cta-inner reveal">
+      <span class="pill pill--ghost-indigo" style="margin-inline:auto">Free to start · no card</span>
+      <h2>Hang your first carp <em>today</em>.</h2>
+      <p>Begin with one child, free forever. Add the whole family and the printed book whenever you're ready — from ¥600 / month.</p>
+      <div class="cta-actions">
+        <a class="btn btn--primary btn--lg" href="#">Start your sky — free</a>
+        <a class="btn btn--outline-indigo btn--lg" href="#">Compare plans</a>
+      </div>
+      <p class="cta-note">Cancel anytime · Export your data anytime · Built for Children's Day, kept all year.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="footer">
+  <div class="shell">
+    <div class="footer-top">
+      <div class="footer-col brandcol">
+        <a class="brand" href="#top">
+          <svg class="mark" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <circle cx="18" cy="18" r="18" fill="#E5532A"/>
+            <path d="M9 18c3.4-5.2 8.2-7.8 14.4-7.8 1.9 0 3.2.5 3.9 1.4.6.8.7 1.9.2 3.2-.4 1.1-.4 2 .1 2.8.5.8.5 1.7-.1 2.7-.7 1-2 1.5-3.9 1.5C16.9 25.6 12.2 23 9 18Z" fill="#F4EEE0"/>
+            <circle cx="14.3" cy="16.6" r="1.7" fill="#12244C"/>
+          </svg>
+          Aizora
+        </a>
+        <p class="footer-blurb">The family journal for Children's Day, kept all year. Made with care in Fukuoka.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#rise">How it works</a><a href="#">Printed books</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#story">Our story</a><a href="#">Careers</a><a href="#">Press</a><a href="#">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Trust</h4>
+        <a href="#">Privacy</a><a href="#">Security</a><a href="#">Terms</a><a href="#">Data export</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Aizora. こどもの日に。</span>
+      <span class="mono" style="color:var(--on-indigo-2)">藍空 · indigo sky</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // gentle scroll reveal — respects reduced motion via CSS
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){ els.forEach(function(e){e.classList.add('in')}); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {threshold:.12, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+  })();
+</script>
+</body>
+</html>
