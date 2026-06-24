@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Where teams rise together</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink-900: #0B0F1A;
+  --ink-700: #1E293B;
+  --ink-500: #64748B;
+  --ink-300: #CBD5E1;
+  --ink-200: #E2E8F0;
+  --ink-100: #F1F5F9;
+  --ink-50: #F8FAFC;
+  --white: #FFFFFF;
+
+  --sky: #0052FF;
+  --sky-light: #E8F0FE;
+  --sky-dark: #003ECB;
+  --leaf: #00C853;
+  --leaf-light: #E8F8EF;
+  --leaf-dark: #009E3F;
+  --pop: #FF3366;
+  --pop-light: #FFF0F3;
+  --pop-dark: #D41A50;
+
+  --shadow-sm: 0 1px 2px rgba(11,15,26,0.04);
+  --shadow-md: 0 4px 12px rgba(11,15,26,0.06);
+  --shadow-lg: 0 12px 32px rgba(11,15,26,0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-full: 9999px;
+
+  --control-h: 48px;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px; --space-20: 80px; --space-24: 96px;
+  --space-32: 128px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-700);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV ─── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 72px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ink-200);
+  display: flex; align-items: center;
+}
+.nav-inner {
+  max-width: 1200px; width: 100%; margin: 0 auto;
+  padding: 0 var(--space-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 20px; font-weight: 800; color: var(--ink-900);
+  text-decoration: none; letter-spacing: -0.015em;
+}
+.nav-logo span { color: var(--sky); }
+.nav-links { display: flex; align-items: center; gap: var(--space-8); }
+.nav-link {
+  font-size: 15px; font-weight: 500; color: var(--ink-700);
+  text-decoration: none; transition: color 150ms ease;
+}
+.nav-link:hover { color: var(--ink-900); }
+.nav-link:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; border-radius: 4px; }
+.nav-link.active { color: var(--sky); }
+
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); padding: 0 var(--space-6);
+  border-radius: var(--radius-sm); font-size: 15px; font-weight: 600;
+  text-decoration: none; cursor: pointer; border: none;
+  transition: all 150ms ease; font-family: inherit;
+}
+.btn:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled, .btn.disabled {
+  background: var(--ink-200); color: var(--ink-300);
+  cursor: not-allowed; transform: none;
+}
+
+.btn-primary { background: var(--sky); color: var(--white); }
+.btn-primary:hover { background: var(--sky-dark); }
+.btn-primary:active { background: var(--sky-dark); }
+
+.btn-pop { background: var(--pop); color: var(--white); }
+.btn-pop:hover { background: var(--pop-dark); }
+.btn-pop:active { background: var(--pop-dark); }
+
+.btn-secondary {
+  background: transparent; color: var(--ink-900);
+  border: 1.5px solid var(--ink-200);
+}
+.btn-secondary:hover { border-color: var(--ink-900); background: var(--ink-50); }
+.btn-secondary:active { background: var(--ink-100); }
+
+.btn-light {
+  background: transparent; color: var(--white);
+  border: 1.5px solid rgba(255,255,255,0.3);
+}
+.btn-light:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); }
+.btn-light:active { background: rgba(255,255,255,0.15); }
+.btn-light:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+
+.btn-ghost { background: transparent; color: var(--ink-700); }
+.btn-ghost:hover { background: var(--ink-100); }
+.btn-ghost:active { background: var(--ink-200); }
+
+.btn-sm { height: 40px; padding: 0 var(--space-5); font-size: 13px; }
+.btn-lg { height: 56px; padding: 0 var(--space-8); font-size: 17px; }
+
+/* ─── HERO ─── */
+.hero {
+  position: relative; min-height: 100vh; display: flex; align-items: flex-end;
+  overflow: hidden;
+}
+.hero-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center 30%;
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(11,15,26,0.85) 0%, rgba(11,15,26,0.3) 40%, rgba(11,15,26,0.05) 70%, transparent 100%);
+}
+.hero-content {
+  position: relative; z-index: 2;
+  max-width: 1200px; width: 100%; margin: 0 auto;
+  padding: var(--space-32) var(--space-6) var(--space-20);
+}
+.hero-overline {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.7);
+  margin-bottom: var(--space-5);
+}
+.hero-title {
+  font-size: clamp(40px, 6vw, 72px); font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1.05; color: var(--white);
+  max-width: 720px; margin-bottom: var(--space-6);
+}
+.hero-title em {
+  font-style: normal; color: #5CB8FF;
+}
+.hero-sub {
+  font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.8);
+  max-width: 520px; margin-bottom: var(--space-10);
+}
+.hero-actions { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+
+/* ─── SECTIONS ─── */
+.section {
+  padding: var(--space-32) var(--space-6);
+}
+.section-inner {
+  max-width: 1200px; margin: 0 auto;
+}
+.section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--sky);
+  margin-bottom: var(--space-4);
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 48px); font-weight: 700;
+  letter-spacing: -0.025em; line-height: 1.1; color: var(--ink-900);
+  margin-bottom: var(--space-5);
+}
+.section-body {
+  font-size: 17px; line-height: 1.6; color: var(--ink-500);
+  max-width: 560px;
+}
+
+/* ─── FEATURE SPLIT ─── */
+.feature-split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--space-16); align-items: center;
+}
+.feature-split.reverse { direction: rtl; }
+.feature-split.reverse > * { direction: ltr; }
+.feature-img-wrap {
+  border-radius: var(--radius-md); overflow: hidden;
+  aspect-ratio: 1;
+}
+.feature-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* ─── METRICS BAR ─── */
+.metrics {
+  background: var(--ink-50);
+  padding: var(--space-20) var(--space-6);
+}
+.metrics-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-8);
+}
+.metric { text-align: center; }
+.metric-value {
+  font-size: clamp(32px, 4vw, 48px); font-weight: 800;
+  letter-spacing: -0.025em; color: var(--ink-900);
+  line-height: 1.1;
+}
+.metric-value span { color: var(--sky); }
+.metric-label {
+  font-size: 13px; color: var(--ink-500); margin-top: var(--space-2);
+  font-weight: 500;
+}
+
+/* ─── FEATURE GRID ─── */
+.feature-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-8);
+}
+.feature-card {
+  background: var(--white); border-radius: var(--radius-md);
+  padding: var(--space-8); box-shadow: var(--shadow-md);
+  transition: all 200ms ease;
+}
+.feature-card:hover {
+  box-shadow: var(--shadow-lg); transform: translateY(-2px);
+}
+.feature-icon {
+  width: 48px; height: 48px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-5); font-size: 20px;
+}
+.feature-icon.sky { background: var(--sky-light); color: var(--sky); }
+.feature-icon.leaf { background: var(--leaf-light); color: var(--leaf); }
+.feature-icon.pop { background: var(--pop-light); color: var(--pop); }
+.feature-card h3 {
+  font-size: 20px; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--ink-900); margin-bottom: var(--space-3);
+}
+.feature-card p {
+  font-size: 15px; color: var(--ink-500); line-height: 1.6;
+}
+
+/* ─── TESTIMONIAL ─── */
+.testimonial-section {
+  background: var(--ink-900); color: var(--white);
+  padding: var(--space-32) var(--space-6);
+}
+.testimonial-inner {
+  max-width: 800px; margin: 0 auto; text-align: center;
+}
+.testimonial-quote {
+  font-size: clamp(24px, 3vw, 32px); font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.3;
+  margin-bottom: var(--space-8);
+}
+.testimonial-author {
+  font-size: 15px; color: rgba(255,255,255,0.6);
+}
+.testimonial-author strong { color: rgba(255,255,255,0.9); font-weight: 600; }
+
+/* ─── CTA ─── */
+.cta-section {
+  padding: var(--space-32) var(--space-6);
+  text-align: center;
+}
+.cta-inner {
+  max-width: 640px; margin: 0 auto;
+}
+.cta-section .section-title { margin-bottom: var(--space-4); }
+.cta-section .section-body {
+  margin: 0 auto var(--space-10); text-align: center;
+}
+.cta-actions { display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap; }
+
+/* ─── FORM DEMO ─── */
+.form-row {
+  display: flex; gap: var(--space-4); align-items: flex-start;
+  margin-bottom: var(--space-6); flex-wrap: wrap;
+}
+.input-group { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; min-width: 200px; }
+.input-label {
+  font-size: 13px; font-weight: 600; color: var(--ink-900);
+  letter-spacing: 0.01em;
+}
+.input {
+  height: var(--control-h); padding: 0 var(--space-4);
+  border: 1.5px solid var(--ink-200); border-radius: var(--radius-sm);
+  background: var(--white); font-size: 15px; color: var(--ink-900);
+  font-family: inherit; transition: all 150ms ease;
+}
+.input::placeholder { color: var(--ink-300); }
+.input:hover { border-color: var(--ink-500); }
+.input:focus { border-color: var(--sky); outline: 2px solid var(--sky); outline-offset: -2px; }
+.input:disabled { background: var(--ink-100); color: var(--ink-300); cursor: not-allowed; }
+
+.select {
+  height: var(--control-h); padding: 0 var(--space-10) 0 var(--space-4);
+  border: 1.5px solid var(--ink-200); border-radius: var(--radius-sm);
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+  font-size: 15px; color: var(--ink-900); font-family: inherit;
+  appearance: none; cursor: pointer; transition: all 150ms ease;
+}
+.select:hover { border-color: var(--ink-500); }
+.select:focus { border-color: var(--sky); outline: 2px solid var(--sky); outline-offset: -2px; }
+
+/* ─── FOOTER ─── */
+.footer {
+  border-top: 1px solid var(--ink-200);
+  padding: var(--space-16) var(--space-6);
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr repeat(3, 1fr);
+  gap: var(--space-12);
+}
+.footer-brand p {
+  font-size: 13px; color: var(--ink-500); margin-top: var(--space-3);
+  max-width: 280px; line-height: 1.5;
+}
+.footer-col h4 {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-500);
+  margin-bottom: var(--space-4);
+}
+.footer-col a {
+  display: block; font-size: 14px; color: var(--ink-700);
+  text-decoration: none; padding: var(--space-1) 0;
+  transition: color 150ms ease;
+}
+.footer-col a:hover { color: var(--sky); }
+.footer-col a:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; border-radius: 4px; }
+.footer-bottom {
+  max-width: 1200px; margin: var(--space-10) auto 0;
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--ink-200);
+  font-size: 13px; color: var(--ink-500);
+}
+
+/* ─── BADGE ─── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.badge-sky { background: var(--sky-light); color: var(--sky); }
+.badge-leaf { background: var(--leaf-light); color: var(--leaf-dark); }
+.badge-pop { background: var(--pop-light); color: var(--pop-dark); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .feature-split { grid-template-columns: 1fr; gap: var(--space-10); }
+  .feature-split.reverse { direction: ltr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .metrics-inner { grid-template-columns: repeat(2, 1fr); }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .nav-links { gap: var(--space-4); }
+  .nav-links .btn { display: none; }
+}
+@media (max-width: 600px) {
+  .metrics-inner { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .hero-content { padding: var(--space-20) var(--space-6) var(--space-12); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">nobori<span>.</span></a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#how" class="nav-link">How it works</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="#" class="nav-link">Docs</a>
+      <a href="#" class="btn btn-primary btn-sm">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <img class="hero-img" src="./media/hero.jpg" alt="Koinobori carp streamers rising against a brilliant blue sky">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <p class="hero-overline">Introducing Nobori 2.0</p>
+    <h1 class="hero-title">Where teams <em>rise together</em></h1>
+    <p class="hero-sub">The modern workspace for teams that move upward. Plan, track, and ship — with the clarity and momentum your best work demands.</p>
+    <div class="hero-actions">
+      <a href="#" class="btn btn-pop btn-lg">Start free trial</a>
+      <a href="#" class="btn btn-light btn-lg">Watch demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section class="metrics">
+  <div class="metrics-inner">
+    <div class="metric">
+      <div class="metric-value">12<span>k+</span></div>
+      <div class="metric-label">Teams shipping faster</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">3.2<span>x</span></div>
+      <div class="metric-label">Faster cycle times</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">98<span>%</span></div>
+      <div class="metric-label">On-time delivery rate</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value">4.9<span>/5</span></div>
+      <div class="metric-label">Average team rating</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 1 -->
+<section class="section" id="features">
+  <div class="section-inner">
+    <div class="feature-split">
+      <div>
+        <p class="section-label">Workflow engine</p>
+        <h2 class="section-title">Momentum, built in</h2>
+        <p class="section-body">Every task flows through a clear pipeline. No more guessing where work stands. Nobori's workflow engine keeps your team moving with the rhythm of a carp swimming upstream — steady, purposeful, unstoppable.</p>
+        <div style="margin-top: var(--space-8); display: flex; gap: var(--space-4); flex-wrap: wrap;">
+          <a href="#" class="btn btn-primary">Explore workflows</a>
+          <a href="#" class="btn btn-ghost">Learn more &rarr;</a>
+        </div>
+      </div>
+      <div class="feature-img-wrap">
+        <img src="./media/feature-flow.jpg" alt="Abstract flowing ribbons in blue and green">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 2 -->
+<section class="section" style="background: var(--ink-50);">
+  <div class="section-inner">
+    <div class="feature-split reverse">
+      <div>
+        <p class="section-label" style="color: var(--pop);">Precision tracking</p>
+        <h2 class="section-title">Every detail, considered</h2>
+        <p class="section-body">Like the careful fold of an origami carp, Nobori treats every data point with intention. Custom fields, smart filters, and real-time dashboards give you the full picture without the noise.</p>
+        <div style="margin-top: var(--space-8); display: flex; gap: var(--space-4); flex-wrap: wrap;">
+          <a href="#" class="btn btn-pop">See it in action</a>
+          <a href="#" class="btn btn-secondary">View dashboard</a>
+        </div>
+      </div>
+      <div class="feature-img-wrap">
+        <img src="./media/feature-carp.jpg" alt="Origami carp on white surface">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 3 -->
+<section class="section">
+  <div class="section-inner">
+    <div class="feature-split">
+      <div>
+        <p class="section-label" style="color: var(--leaf);">Team garden</p>
+        <h2 class="section-title">Grow your practice</h2>
+        <p class="section-body">Nobori's team garden is where knowledge compounds. Retrospectives, playbooks, and shared rituals — all rooted in the belief that the best teams tend their culture as carefully as a Japanese garden.</p>
+        <div style="margin-top: var(--space-8); display: flex; gap: var(--space-4); flex-wrap: wrap;">
+          <a href="#" class="btn btn-primary" style="background: var(--leaf);">Start growing</a>
+          <a href="#" class="btn btn-ghost">Read the guide &rarr;</a>
+        </div>
+      </div>
+      <div class="feature-img-wrap">
+        <img src="./media/feature-garden.jpg" alt="Aerial view of a Japanese garden">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE GRID -->
+<section class="section" style="background: var(--ink-50);" id="how">
+  <div class="section-inner">
+    <div style="text-align: center; margin-bottom: var(--space-16);">
+      <p class="section-label">Everything you need</p>
+      <h2 class="section-title" style="max-width: 600px; margin-left: auto; margin-right: auto;">Built for teams that ship</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon sky">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
+        </div>
+        <h3>Smart pipelines</h3>
+        <p>Automated workflows that adapt to your team's rhythm. Drag, drop, done.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon leaf">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        </div>
+        <h3>Live dashboards</h3>
+        <p>Real-time metrics that matter. No vanity numbers, just signal.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon pop">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>Goal tracking</h3>
+        <p>OKRs, milestones, and weekly targets — all connected to the work.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon sky">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </div>
+        <h3>Team profiles</h3>
+        <p>Skills, capacity, and focus areas. Know who can take what, when.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon leaf">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16v16H4z"/><path d="M4 10h16M10 4v16"/></svg>
+        </div>
+        <h3>Integrations</h3>
+        <p>GitHub, Slack, Figma, Linear — your tools, one workspace.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon pop">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+        </div>
+        <h3>Retrospectives</h3>
+        <p>Built-in retro boards with AI-powered insights and action items.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial-section">
+  <div class="testimonial-inner">
+    <p class="testimonial-quote">"Nobori replaced three tools for us. Our cycle time dropped 40% in the first month. It's the first workspace that actually feels like it was designed for how we work."</p>
+    <p class="testimonial-author"><strong>Yuki Tanaka</strong> &middot; Engineering Lead, Streamline</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="pricing">
+  <div class="cta-inner">
+    <p class="section-label">Get started</p>
+    <h2 class="section-title">Ready to rise?</h2>
+    <p class="section-body">Free for teams up to 10. No credit card required. Set up in under two minutes.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn btn-pop btn-lg">Start free trial</a>
+      <a href="#" class="btn btn-secondary btn-lg">Talk to sales</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo">nobori<span>.</span></a>
+      <p>The modern workspace for teams that move upward. Plan, track, and ship with clarity.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Integrations</a>
+      <a href="#">Changelog</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="#">Documentation</a>
+      <a href="#">API reference</a>
+      <a href="#">Community</a>
+      <a href="#">Status</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 Nobori, Inc. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>

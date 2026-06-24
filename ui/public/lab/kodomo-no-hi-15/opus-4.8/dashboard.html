@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yaguruma — Organizer Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800;900&family=Inter:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#F4F7FC; --surface-sunken:#ECF1FA;
+  --text:#0B1020; --muted:#5A627A; --border:#E5EAF3;
+  --accent:#1B4DFF; --accent-2:#00BE68; --accent-3:#FF3A24; --on-accent:#FFFFFF;
+  --success:#07A35A; --warning:#F2A200; --error:#FF3A24; --info:#1B4DFF;
+  --font-display:"Archivo",system-ui,sans-serif;
+  --font-body:"Inter",system-ui,sans-serif;
+  --font-kanji:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;
+  --r-card:24px; --r-control:16px; --r-pill:9999px;
+  --control-h:48px;
+  --ring:0 0 0 3px color-mix(in srgb, var(--accent) 38%, transparent);
+  --shadow-sm:0 1px 2px rgba(11,16,32,.06),0 4px 14px rgba(11,16,32,.05);
+  --shadow-md:0 10px 34px rgba(11,16,32,.09);
+  --shadow-lg:0 24px 64px rgba(11,16,32,.13);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font-body);color:var(--text);background:var(--surface-sunken);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);letter-spacing:-0.02em;margin:0;font-weight:900;line-height:1.05}
+p{margin:0}
+.kanji{font-family:var(--font-kanji);font-weight:900}
+button{font-family:inherit}
+
+/* ---- arrow-wheel ---- */
+.sp{fill:none;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+.sp.a{stroke:var(--accent)} .sp.b{stroke:var(--accent-2)}
+.rim{fill:none;stroke:var(--text);stroke-width:2.4}
+.hub{fill:var(--accent-3)}
+.spin{transform-box:fill-box;transform-origin:center}
+.motion .spin{animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.motion .spin{animation:none}}
+
+/* ---- buttons ---- */
+.btn{font-family:var(--font-display);font-weight:800;font-size:15.5px;letter-spacing:-0.01em;height:var(--control-h);
+  padding:0 22px;border-radius:var(--r-control);border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .12s,box-shadow .18s,background .18s,filter .18s;white-space:nowrap}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{filter:brightness(1.07);box-shadow:var(--shadow-md)}
+.btn-primary:active{filter:brightness(.94);transform:translateY(1px)}
+.btn-secondary{background:var(--bg);color:var(--text);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{box-shadow:var(--shadow-md)}
+.btn-secondary:active{transform:translateY(1px)}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;filter:none;box-shadow:none}
+.btn-sm{padding:0 16px;font-size:14px}   /* same 48px height token; compact via padding only */
+.btn-icon{width:var(--control-h);padding:0}
+
+/* ---- layout shell ---- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--bg);padding:24px 18px;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:-0.02em;padding:6px 8px 22px}
+.navi{display:flex;flex-direction:column;gap:4px}
+.navi a{display:flex;align-items:center;gap:13px;height:46px;padding:0 14px;border-radius:var(--r-control);color:var(--muted);font-weight:600;font-size:15.5px;transition:background .15s,color .15s;text-decoration:none}
+.navi a svg{width:20px;height:20px;flex:0 0 auto}
+.navi a:hover{background:var(--surface);color:var(--text)}
+.navi a.active{background:color-mix(in srgb,var(--accent) 12%,#fff);color:var(--accent)}
+.navi a:focus-visible{outline:none;box-shadow:var(--ring)}
+.side-foot{margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px;border-radius:var(--r-control)}
+.avatar{width:40px;height:40px;border-radius:var(--r-pill);background:var(--accent-2);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;flex:0 0 auto}
+.side-foot .who{min-width:0}
+.side-foot .who b{display:block;font-size:15px}
+.side-foot .who span{display:block;font-size:13.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(244,247,252,.86);backdrop-filter:blur(12px);display:flex;align-items:center;gap:16px;padding:18px 32px}
+.search{position:relative;flex:1;max-width:420px;min-width:0}
+.search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:var(--muted)}
+.search input{width:100%;height:var(--control-h);border:0;border-radius:var(--r-control);background:var(--bg);box-shadow:var(--shadow-sm);
+  padding:0 16px 0 44px;font-family:var(--font-body);font-size:16px;color:var(--text)}
+.search input::placeholder{color:#8a92a8}
+.search input:focus-visible{outline:none;box-shadow:var(--ring)}
+.topbar .spacer{flex:1}
+
+.content{padding:14px 32px 56px;max-width:1480px;width:100%;margin:0 auto}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:18px;margin-bottom:30px}
+.page-head .ttl h1{font-size:34px}
+.page-head .ttl .sub{color:var(--muted);margin-top:8px;font-size:17px;display:flex;align-items:center;gap:10px}
+.dot{width:8px;height:8px;border-radius:var(--r-pill);background:var(--accent-2);display:inline-block}
+
+/* ---- KPI cards ---- */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-bottom:24px}
+.kpi{background:var(--bg);border-radius:var(--r-card);padding:24px 24px 22px;box-shadow:var(--shadow-sm)}
+.kpi .lab{color:var(--muted);font-weight:600;font-size:14.5px;letter-spacing:.02em}
+.kpi .val{font-family:var(--font-display);font-weight:900;font-size:42px;letter-spacing:-0.03em;margin-top:10px;line-height:1}
+.kpi .delta{margin-top:12px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.delta.up{color:var(--success)} .delta.down{color:var(--error)} .delta.flat{color:var(--muted)}
+.spark{margin-top:14px}
+
+/* ---- grid panels ---- */
+.grid-2{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;margin-bottom:24px}
+.grid-2b{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;margin-bottom:24px}
+.panel{background:var(--bg);border-radius:var(--r-card);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel-pad{padding:24px 26px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:22px 26px 6px}
+.panel-head h3{font-size:20px}
+.panel-head .hint{color:var(--muted);font-size:14.5px}
+
+/* ---- wind gauge (signature mechanic, live) ---- */
+.gauge{display:flex;flex-direction:column;align-items:center;padding:20px 26px 28px}
+.gauge .wheelwrap{position:relative;width:208px;height:208px}
+.gauge .reading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.gauge .reading .mps{font-family:var(--font-display);font-weight:900;font-size:40px;letter-spacing:-0.03em;line-height:1}
+.gauge .reading .unit{color:var(--muted);font-weight:600;font-size:13.5px;margin-top:2px}
+.gauge .status{margin-top:18px;display:inline-flex;align-items:center;gap:10px;height:40px;padding:0 18px;border-radius:var(--r-pill);
+  background:color-mix(in srgb,var(--accent-2) 15%,#fff);color:var(--success);font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:.02em}
+.gauge .status .led{width:9px;height:9px;border-radius:var(--r-pill);background:var(--accent-2)}
+.gauge .meta{margin-top:16px;color:var(--muted);font-size:14.5px;text-align:center}
+
+/* ---- table ---- */
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:14px 18px}
+thead th button{background:none;border:0;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:0;letter-spacing:.06em}
+thead th button:focus-visible{outline:none;box-shadow:var(--ring);border-radius:16px}
+tbody td{padding:15px 18px;font-size:15px;vertical-align:middle}
+tbody tr{transition:background .12s}
+tbody tr:nth-child(odd){background:var(--surface)}
+tbody tr:hover{background:color-mix(in srgb,var(--accent) 6%,#fff)}
+.cellname{font-weight:600}
+.cellsub{color:var(--muted);font-size:13.5px;margin-top:2px}
+.statuschip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 13px;border-radius:var(--r-pill);font-family:var(--font-display);font-weight:800;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+.statuschip .d{width:7px;height:7px;border-radius:var(--r-pill)}
+.s-open{background:color-mix(in srgb,var(--accent-2) 15%,#fff);color:var(--success)} .s-open .d{background:var(--accent-2)}
+.s-full{background:color-mix(in srgb,var(--accent) 13%,#fff);color:var(--accent)} .s-full .d{background:var(--accent)}
+.s-hold{background:color-mix(in srgb,var(--warning) 20%,#fff);color:#9a6800} .s-hold .d{background:var(--warning)}
+.s-draft{background:var(--surface-sunken);color:var(--muted)} .s-draft .d{background:var(--muted)}
+.capbar{width:120px;height:8px;border-radius:var(--r-pill);background:var(--surface-sunken);overflow:hidden}
+.capbar i{display:block;height:100%;border-radius:var(--r-pill);background:var(--accent)}
+.rowact{display:flex;gap:6px;justify-content:flex-end}
+
+/* ---- toolbar (filters) ---- */
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0 26px 18px}
+.select{position:relative}
+.select select{appearance:none;-webkit-appearance:none;height:var(--control-h);border:0;border-radius:var(--r-control);background:var(--surface);
+  color:var(--text);font-family:var(--font-body);font-size:15px;padding:0 42px 0 16px;cursor:pointer;min-width:160px}
+.select select:focus-visible{outline:none;box-shadow:var(--ring)}
+.select::after{content:"";position:absolute;right:16px;top:50%;width:11px;height:11px;transform:translateY(-65%) rotate(45deg);
+  border-right:2.4px solid var(--muted);border-bottom:2.4px solid var(--muted);pointer-events:none}
+.seg{display:inline-flex;background:var(--surface);border-radius:var(--r-control);padding:5px;gap:4px}
+.seg button{height:38px;padding:0 16px;border:0;background:transparent;border-radius:16px;color:var(--muted);font-family:var(--font-display);font-weight:800;font-size:13.5px;cursor:pointer}
+.seg button.on{background:var(--bg);color:var(--text);box-shadow:var(--shadow-sm)}
+.seg button:focus-visible{outline:none;box-shadow:var(--ring)}
+
+/* ---- chart ---- */
+.chart{padding:8px 26px 26px}
+.bars{display:flex;align-items:flex-end;gap:14px;height:200px;padding-top:10px}
+.barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+.bar{width:100%;max-width:40px;border-radius:16px 16px 0 0;background:var(--accent);transition:filter .15s}
+.barcol:hover .bar{filter:brightness(1.08)}
+.barcol.today .bar{background:var(--accent-2)}
+.barcol .xl{font-size:13px;color:var(--muted);font-weight:600}
+.chart .legend{display:flex;gap:20px;margin-top:16px;font-size:14px;color:var(--muted)}
+.chart .legend i{width:11px;height:11px;border-radius:16px;display:inline-block;margin-right:7px;vertical-align:-1px}
+
+/* ---- featured raising w/ image ---- */
+.feature{display:grid;grid-template-columns:200px minmax(0,1fr);gap:0}
+.feature .ph{background-image:url('media/dashboard-banner.jpg');background-size:cover;background-position:center;min-height:170px}
+.feature .fbody{padding:22px 24px}
+.feature .fbody h3{font-size:20px;margin-bottom:8px}
+.feature .fbody p{color:var(--muted);font-size:14.5px;margin-bottom:16px}
+
+/* ---- form ---- */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px}
+.field-l{display:block;font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.inp,.ta{width:100%;height:var(--control-h);border:0;border-radius:var(--r-control);background:var(--surface);color:var(--text);
+  font-family:var(--font-body);font-size:16px;padding:0 16px}
+.ta{height:auto;padding:14px 16px;resize:vertical;min-height:104px;line-height:1.5}
+.inp::placeholder,.ta::placeholder{color:#8a92a8}
+.inp:focus-visible,.ta:focus-visible{outline:none;box-shadow:var(--ring);background:#fff}
+.full{grid-column:1/-1}
+input[type=date].inp{padding-right:14px}
+input[type=date].inp::-webkit-calendar-picker-indicator{filter:invert(.3);cursor:pointer}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none}
+
+/* custom checkbox & radio */
+.check{display:flex;align-items:center;gap:11px;cursor:pointer;font-size:15.5px;font-weight:500}
+.check input{position:absolute;opacity:0;width:0;height:0}
+.box{width:24px;height:24px;border-radius:16px;background:var(--surface-sunken);display:grid;place-items:center;flex:0 0 auto;transition:background .15s}
+.box svg{width:15px;height:15px;opacity:0;transform:scale(.6);transition:.15s}
+.check input:checked+.box{background:var(--accent)}
+.check input:checked+.box svg{opacity:1;transform:scale(1)}
+.check input:focus-visible+.box{box-shadow:var(--ring)}
+.radio .box{border-radius:var(--r-pill)}
+.radio .box i{width:10px;height:10px;border-radius:var(--r-pill);background:#fff;opacity:0;transform:scale(.4);transition:.15s}
+.radio input:checked+.box{background:var(--accent)} .radio input:checked+.box i{opacity:1;transform:scale(1)}
+.radio input:focus-visible+.box{box-shadow:var(--ring)}
+.radgroup{display:flex;gap:22px;flex-wrap:wrap}
+
+/* switch */
+.switch{display:inline-flex;align-items:center;gap:12px;cursor:pointer;font-size:15.5px;font-weight:500}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.track{width:52px;height:30px;border-radius:var(--r-pill);background:var(--surface-sunken);position:relative;transition:background .18s;flex:0 0 auto}
+.track .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:var(--r-pill);background:#fff;box-shadow:0 2px 5px rgba(11,16,32,.25);transition:left .18s}
+.switch input:checked+.track{background:var(--accent-2)}
+.switch input:checked+.track .knob{left:25px}
+.switch input:focus-visible+.track{box-shadow:var(--ring)}
+.form-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
+
+/* responsive */
+@media(max-width:1180px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-2,.grid-2b{grid-template-columns:1fr}
+}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;overflow-x:auto;padding:14px}
+  .side .brand{padding:0 6px 0 4px}
+  .navi{flex-direction:row}
+  .navi a span{display:none}
+  .side-foot{margin:0 0 0 auto}
+  .side-foot .who{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .feature{grid-template-columns:1fr}
+  .colhide{display:none}
+}
+@media(max-width:560px){
+  .kpis{grid-template-columns:1fr}
+  .content,.topbar{padding-left:16px;padding-right:16px}
+  .colhide2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- sidebar -->
+  <aside class="side">
+    <div class="brand">
+      <span aria-hidden="true"><svg width="30" height="30" viewBox="-50 -50 100 100"><g class="spin">
+        <circle class="rim" r="46"/>
+        <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+        <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(45)"/>
+        <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+        <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(135)"/>
+        <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+        <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(225)"/>
+        <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+        <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(315)"/>
+      </g><circle class="hub" r="8.5"/></svg></span>
+      Yaguruma
+    </div>
+    <nav class="navi" aria-label="Sections">
+      <a class="active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Overview</span></a>
+      <a href="#raisings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4l9 3-9 3"/><path d="M5 21h14"/></svg><span>Raisings</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 6a3 3 0 010 6"/></svg><span>Volunteers</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M4 7l3-3h10l3 3"/><path d="M9 12h6"/></svg><span>Inventory</span></a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg><span>Wind</span></a>
+    </nav>
+    <div class="side-foot">
+      <span class="avatar">HM</span>
+      <span class="who"><b>Hana Mori</b><span>Sumida riverside lead</span></span>
+    </div>
+  </aside>
+
+  <!-- main -->
+  <div class="main">
+    <div class="topbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input type="search" placeholder="Search raisings, volunteers, poles…" aria-label="Search" />
+      </label>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost btn-icon" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 004 0"/></svg></button>
+      <button class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New raising</button>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div class="ttl">
+          <h1>Spring Riverside <span class="kanji" style="color:var(--accent-3);font-size:26px">鯉のぼり</span></h1>
+          <div class="sub"><span class="dot"></span> Sumida-gawa · season runs Apr 20 – May 5, 2026 · 12 raisings live</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-secondary">Export season</button>
+          <button class="btn btn-secondary"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Share page</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="lab">Families registered</div>
+          <div class="val">3,612</div>
+          <div class="delta up"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>14% vs last week</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Poles ready to raise</div>
+          <div class="val">486</div>
+          <div class="delta up"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>38 prepared today</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Volunteers confirmed</div>
+          <div class="val">209</div>
+          <div class="delta flat">Holding steady</div>
+        </div>
+        <div class="kpi">
+          <div class="lab">Seats filled</div>
+          <div class="val">92%</div>
+          <div class="delta up"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>6 raisings now full</div>
+        </div>
+      </div>
+
+      <!-- gauge + chart -->
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><h3>Wind gauge</h3><span class="hint">live · Sumida</span></div>
+          <div class="gauge">
+            <div class="wheelwrap">
+              <svg width="208" height="208" viewBox="-50 -50 100 100" aria-hidden="true">
+                <!-- gauge track + fill arc -->
+                <circle cx="0" cy="0" r="48" fill="none" stroke="var(--surface-sunken)" stroke-width="5"/>
+                <circle cx="0" cy="0" r="48" fill="none" stroke="var(--accent-2)" stroke-width="5" stroke-linecap="round"
+                  stroke-dasharray="301.6" stroke-dashoffset="180" transform="rotate(-90)"/>
+                <g class="spin">
+                  <circle class="rim" r="38"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(0)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(30)"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(60)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(90)"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(120)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(150)"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(180)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(210)"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(240)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(270)"/>
+                  <path class="sp a" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(300)"/>
+                  <path class="sp b" d="M0,-11 L0,-32 M-5,-27 L0,-34 L5,-27" transform="rotate(330)"/>
+                </g>
+                <circle class="hub" r="7"/>
+              </svg>
+              <div class="reading"><div class="mps">4.2</div><div class="unit">m/s · NNW</div></div>
+            </div>
+            <div class="status"><span class="led"></span> Raise window open</div>
+            <p class="meta">Ideal lift is 3–6 m/s. The gauge turns amber above 8 and holds the poles above 11.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>RSVPs this week</h3><span class="hint">families reserving a free spot</span></div>
+          <div class="chart">
+            <div class="bars" role="img" aria-label="RSVPs Monday to Sunday, peaking Saturday">
+              <div class="barcol"><div class="bar" style="height:34%"></div><div class="xl">Mon</div></div>
+              <div class="barcol"><div class="bar" style="height:48%"></div><div class="xl">Tue</div></div>
+              <div class="barcol"><div class="bar" style="height:41%"></div><div class="xl">Wed</div></div>
+              <div class="barcol"><div class="bar" style="height:62%"></div><div class="xl">Thu</div></div>
+              <div class="barcol"><div class="bar" style="height:78%"></div><div class="xl">Fri</div></div>
+              <div class="barcol today"><div class="bar" style="height:100%"></div><div class="xl">Sat</div></div>
+              <div class="barcol"><div class="bar" style="height:70%"></div><div class="xl">Sun</div></div>
+            </div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Daily RSVPs</span><span><i style="background:var(--accent-2)"></i>Today (peak 642)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- raisings table -->
+      <div class="panel" id="raisings" style="margin-bottom:24px">
+        <div class="panel-head"><h3>Raisings</h3><span class="hint">12 in this season</span></div>
+        <div class="toolbar">
+          <div class="select">
+            <select aria-label="Filter by status">
+              <option>All statuses</option><option>Open</option><option>Full</option><option>Holding</option><option>Draft</option>
+            </select>
+          </div>
+          <div class="select">
+            <select aria-label="Filter by ward">
+              <option>All wards</option><option>Sumida</option><option>Kōtō</option><option>Taitō</option>
+            </select>
+          </div>
+          <div class="seg" role="tablist" aria-label="View">
+            <button class="on" role="tab" aria-selected="true">Upcoming</button>
+            <button role="tab" aria-selected="false">Past</button>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="margin-left:auto">Filters</button>
+        </div>
+        <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th><button>Raising <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5l3-3 3 3M3 7l3 3 3-3"/></svg></button></th>
+              <th class="colhide">Date</th>
+              <th class="colhide2">Ward</th>
+              <th>Capacity</th>
+              <th>Wind</th>
+              <th>Status</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="cellname">Sakurabashi Bank</div><div class="cellsub">42 poles · 06:30 raise</div></td>
+              <td class="colhide">May 5</td><td class="colhide2">Sumida</td>
+              <td><div class="capbar"><i style="width:100%"></i></div><div class="cellsub">320 / 320</div></td>
+              <td>4.2 m/s</td>
+              <td><span class="statuschip s-full"><span class="d"></span>Full</span></td>
+              <td><div class="rowact"><button class="btn btn-ghost btn-sm">Open</button><button class="btn btn-secondary btn-sm">Manage</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cellname">Kinshi Park Green</div><div class="cellsub">18 poles · 09:00 raise</div></td>
+              <td class="colhide">May 4</td><td class="colhide2">Sumida</td>
+              <td><div class="capbar"><i style="width:74%"></i></div><div class="cellsub">148 / 200</div></td>
+              <td>3.6 m/s</td>
+              <td><span class="statuschip s-open"><span class="d"></span>Open</span></td>
+              <td><div class="rowact"><button class="btn btn-ghost btn-sm">Open</button><button class="btn btn-secondary btn-sm">Manage</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cellname">Ryōgoku Riverside</div><div class="cellsub">36 poles · 07:00 raise</div></td>
+              <td class="colhide">May 5</td><td class="colhide2">Sumida</td>
+              <td><div class="capbar"><i style="width:55%"></i></div><div class="cellsub">165 / 300</div></td>
+              <td>9.1 m/s</td>
+              <td><span class="statuschip s-hold"><span class="d"></span>Holding</span></td>
+              <td><div class="rowact"><button class="btn btn-ghost btn-sm">Open</button><button class="btn btn-secondary btn-sm">Manage</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cellname">Kiyosumi Schoolyard</div><div class="cellsub">12 poles · 10:00 raise</div></td>
+              <td class="colhide">May 3</td><td class="colhide2">Kōtō</td>
+              <td><div class="capbar"><i style="width:88%"></i></div><div class="cellsub">141 / 160</div></td>
+              <td>2.9 m/s</td>
+              <td><span class="statuschip s-open"><span class="d"></span>Open</span></td>
+              <td><div class="rowact"><button class="btn btn-ghost btn-sm">Open</button><button class="btn btn-secondary btn-sm">Manage</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="cellname">Asakusa Embankment</div><div class="cellsub">draft · time TBC</div></td>
+              <td class="colhide">May 5</td><td class="colhide2">Taitō</td>
+              <td><div class="capbar"><i style="width:0%"></i></div><div class="cellsub">not opened</div></td>
+              <td>—</td>
+              <td><span class="statuschip s-draft"><span class="d"></span>Draft</span></td>
+              <td><div class="rowact"><button class="btn btn-ghost btn-sm">Edit</button><button class="btn btn-secondary btn-sm">Publish</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- feature + create form -->
+      <div class="grid-2b">
+        <div class="panel">
+          <div class="panel-head"><h3>Create a raising</h3><span class="hint">opens a free public page</span></div>
+          <div class="panel-pad">
+            <form onsubmit="return false">
+              <div class="form-grid">
+                <div class="full">
+                  <label class="field-l" for="rname">Raising name</label>
+                  <input class="inp" id="rname" type="text" placeholder="e.g. Sakurabashi Bank" />
+                </div>
+                <div>
+                  <label class="field-l" for="rward">Ward</label>
+                  <div class="select"><select id="rward"><option>Sumida</option><option>Kōtō</option><option>Taitō</option><option>Chūō</option></select></div>
+                </div>
+                <div>
+                  <label class="field-l" for="rdate">Raise date</label>
+                  <input class="inp" id="rdate" type="date" value="2026-05-05" />
+                </div>
+                <div>
+                  <label class="field-l" for="rpoles">Poles</label>
+                  <input class="inp" id="rpoles" type="number" min="1" value="24" />
+                </div>
+                <div>
+                  <label class="field-l" for="rcap">Family seats</label>
+                  <input class="inp" id="rcap" type="number" min="0" value="200" />
+                </div>
+                <div class="full">
+                  <label class="field-l" for="rnote">Welcome note</label>
+                  <textarea class="ta" id="rnote" placeholder="Tell families what to bring and where to meet…">Meet at the cherry gate by 06:15. Bring your own carp if you have one — we lend the rest. Free tea on the bank.</textarea>
+                </div>
+                <div class="full">
+                  <label class="field-l">Pole sizes offered</label>
+                  <div class="radgroup">
+                    <label class="check radio"><input type="radio" name="psize" checked /><span class="box"><i></i></span>Mixed</label>
+                    <label class="check radio"><input type="radio" name="psize" /><span class="box"><i></i></span>Tall only</label>
+                    <label class="check radio"><input type="radio" name="psize" /><span class="box"><i></i></span>Family-height</label>
+                  </div>
+                </div>
+                <div class="full" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+                  <label class="check"><input type="checkbox" checked /><span class="box"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></span>Lend spare windsocks</label>
+                  <label class="switch"><input type="checkbox" checked /><span class="track"><span class="knob"></span></span>Hold poles automatically on high wind</label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-ghost">Save draft</button>
+                <button type="submit" class="btn btn-primary">Open the raising</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel feature" aria-label="Featured raising">
+          <div class="ph" role="img" aria-label="A vermilion and azure koinobori rippling against a clear blue sky"></div>
+          <div class="fbody">
+            <span class="statuschip s-open" style="margin-bottom:12px"><span class="d"></span>Featured</span>
+            <h3>Sakurabashi Bank</h3>
+            <p>The season's headline raising — 42 poles along the cherry-lined embankment at dawn. Reached full capacity in 31 hours.</p>
+            <button class="btn btn-secondary btn-sm">View public page</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('motion');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aonami Launch OS — Kodomo no Hi activation platform</title>
+  <meta name="description" content="Aonami Launch OS coordinates seasonal launches, route teams, sponsor inventory, and live audience signals for Kodomo no Hi activations.">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #ffffff;
+      --paper-warm: #fbfff7;
+      --ink: #06151c;
+      --ink-soft: #243840;
+      --ink-muted: #5a7178;
+      --line-air: rgba(6, 21, 28, 0.11);
+      --veil-blue: rgba(0, 168, 255, 0.10);
+      --veil-green: rgba(0, 230, 110, 0.12);
+      --veil-hot: rgba(255, 61, 53, 0.12);
+      --sky: #00a8ff;
+      --leaf: #00e66e;
+      --koi: #ff3d35;
+      --shadow-lift: 0 24px 80px rgba(6, 21, 28, 0.14);
+      --shadow-cut: 0 12px 36px rgba(0, 168, 255, 0.18);
+      --font-display: "Arial Narrow", "Avenir Next Condensed", "Helvetica Neue", Arial, sans-serif;
+      --font-body: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif;
+      --type-hero: clamp(4.6rem, 12vw, 12.5rem);
+      --type-title: clamp(3rem, 7vw, 7.2rem);
+      --type-section: clamp(2rem, 4.5vw, 4.8rem);
+      --type-card: clamp(1.35rem, 2vw, 2rem);
+      --type-body: 1.0625rem;
+      --type-small: 0.875rem;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4rem;
+      --space-9: 6rem;
+      --space-10: 9rem;
+      --radius-none: 0;
+      --radius-card: 16px;
+      --radius-panel: 24px;
+      --radius-pill: 999px;
+      --control-h: 52px;
+      --focus-ring: 0 0 0 3px #ffffff, 0 0 0 7px rgba(0, 168, 255, 0.82);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: var(--type-body);
+      line-height: 1.55;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    img { max-width: 100%; display: block; }
+
+    a { color: inherit; text-decoration: none; }
+
+    ::selection { background: var(--leaf); color: var(--ink); }
+
+    .page {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(0, 230, 110, 0.15), transparent 24rem),
+        radial-gradient(circle at 92% 18%, rgba(0, 168, 255, 0.14), transparent 26rem),
+        var(--paper);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 18px 20px auto;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: var(--control-h);
+      padding: 8px 8px 8px 18px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 18px 56px rgba(6, 21, 28, 0.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 36px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background:
+        linear-gradient(135deg, var(--sky) 0 36%, transparent 36% 45%, var(--leaf) 45% 69%, transparent 69% 78%, var(--koi) 78% 100%);
+      box-shadow: 0 10px 28px rgba(0, 168, 255, 0.26);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: var(--radius-pill);
+      color: var(--ink-soft);
+      font-size: var(--type-small);
+      font-weight: 800;
+      transition: background .18s ease, transform .18s ease, color .18s ease;
+    }
+
+    .nav a:hover {
+      background: var(--veil-blue);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+
+    .nav a:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .nav .active {
+      background: var(--leaf);
+      color: var(--ink);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100svh;
+      isolation: isolate;
+      display: grid;
+      align-items: end;
+      padding: 128px 0 var(--space-8);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background: var(--paper-warm);
+    }
+
+    .hero-image {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: saturate(1.16) contrast(1.04);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.82) 42%, rgba(255,255,255,0.08) 78%),
+        linear-gradient(0deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.00) 46%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(280px, .72fr);
+      gap: var(--space-7);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgba(6, 21, 28, 0.10);
+      color: var(--ink-soft);
+      font-size: var(--type-small);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--koi);
+      box-shadow: 14px 0 0 var(--sky), 28px 0 0 var(--leaf);
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin: 20px 0 22px;
+      max-width: 830px;
+      font-family: var(--font-display);
+      font-size: var(--type-hero);
+      line-height: .82;
+      letter-spacing: -0.072em;
+      text-transform: uppercase;
+    }
+
+    h1 .lift {
+      display: inline-block;
+      color: var(--sky);
+      text-shadow: 0.07em 0.05em 0 var(--leaf);
+    }
+
+    .hero-copy {
+      max-width: 610px;
+      color: var(--ink-soft);
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      font-weight: 650;
+    }
+
+    .hero-actions,
+    .section-actions,
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: var(--space-6);
+    }
+
+    button,
+    .btn,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+      appearance: none;
+      min-height: var(--control-h);
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--ink);
+      color: var(--paper);
+      font: 900 0.96rem/1 var(--font-body);
+      letter-spacing: -0.015em;
+      cursor: pointer;
+      box-shadow: var(--shadow-cut);
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after,
+    .btn::after,
+    input[type="button"]::after,
+    input[type="submit"]::after,
+    input[type="reset"]::after {
+      content: "";
+      width: 34px;
+      height: 10px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      transform: skewX(-24deg);
+      box-shadow: 12px 0 0 var(--leaf), 24px 0 0 var(--koi);
+    }
+
+    button:hover,
+    .btn:hover,
+    input[type="button"]:hover,
+    input[type="submit"]:hover,
+    input[type="reset"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 44px rgba(0, 168, 255, 0.26);
+      background: #000f15;
+    }
+
+    button:focus-visible,
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    button:active,
+    .btn:active,
+    input[type="button"]:active,
+    input[type="submit"]:active,
+    input[type="reset"]:active {
+      transform: translateY(0) scale(.985);
+      box-shadow: 0 8px 24px rgba(0, 168, 255, 0.18);
+    }
+
+    button:disabled,
+    .btn[aria-disabled="true"],
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+      transform: none;
+      filter: grayscale(.4);
+    }
+
+    .btn-quiet {
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 0 14px 42px rgba(6, 21, 28, 0.10);
+    }
+
+    .btn-quiet::after { background: var(--leaf); box-shadow: 12px 0 0 var(--sky), 24px 0 0 var(--koi); }
+    .btn-quiet:hover { background: var(--paper-warm); }
+
+    .hero-card {
+      position: relative;
+      padding: var(--space-6);
+      border-radius: var(--radius-panel);
+      background: rgba(255,255,255,0.9);
+      box-shadow: var(--shadow-lift);
+      backdrop-filter: blur(20px);
+      transform: rotate(-2deg);
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      left: var(--space-6);
+      right: var(--space-6);
+      top: -16px;
+      height: 26px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf) 62%, var(--koi));
+      transform: rotate(-4deg);
+    }
+
+    .hero-card strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5vw, 5.2rem);
+      line-height: .88;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-card span {
+      display: block;
+      margin-top: 10px;
+      color: var(--ink-muted);
+      font-weight: 750;
+    }
+
+    .card-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: var(--space-5);
+    }
+
+    .metric-pill {
+      min-height: 78px;
+      padding: 12px;
+      border-radius: var(--radius-card);
+      background: var(--paper-warm);
+    }
+
+    .metric-pill b {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      line-height: 1;
+      letter-spacing: -0.055em;
+    }
+
+    .metric-pill small {
+      display: block;
+      color: var(--ink-muted);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    section { padding: var(--space-10) 0; }
+
+    .section-kicker {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+      color: var(--ink-soft);
+      font-size: var(--type-small);
+      font-weight: 950;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .section-kicker::before {
+      content: "";
+      width: 72px;
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      box-shadow: 28px 0 0 var(--leaf), 56px 0 0 var(--koi);
+      transform: skewX(-28deg);
+    }
+
+    .section-title {
+      max-width: 900px;
+      margin-bottom: var(--space-6);
+      font-family: var(--font-display);
+      font-size: var(--type-title);
+      line-height: .88;
+      letter-spacing: -0.066em;
+      text-transform: uppercase;
+    }
+
+    .section-title .hot { color: var(--koi); }
+    .section-title .green { color: var(--leaf); text-shadow: .05em .04em 0 var(--ink); }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(360px, 1.05fr);
+      gap: var(--space-8);
+      align-items: center;
+    }
+
+    .feature-image-wrap {
+      position: relative;
+      border-radius: var(--radius-panel);
+      overflow: hidden;
+      box-shadow: var(--shadow-lift);
+      background: var(--paper-warm);
+    }
+
+    .feature-image-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 18px auto auto 18px;
+      width: 46%;
+      height: 18px;
+      z-index: 2;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf), var(--koi));
+      transform: rotate(-6deg);
+    }
+
+    .feature-image-wrap img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      filter: saturate(1.14) contrast(1.03);
+    }
+
+    .copy-large {
+      max-width: 610px;
+      color: var(--ink-soft);
+      font-size: clamp(1.1rem, 2.2vw, 1.42rem);
+      font-weight: 650;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 14px;
+      margin: var(--space-6) 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 16px;
+      align-items: start;
+      padding: 18px;
+      border-radius: var(--radius-card);
+      background: var(--paper);
+      box-shadow: 0 12px 34px rgba(6, 21, 28, 0.08);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .feature-list li:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lift);
+    }
+
+    .feature-list i {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      font-style: normal;
+      font-weight: 950;
+      box-shadow: 8px 8px 0 var(--leaf);
+    }
+
+    .feature-list h3 {
+      margin-bottom: 3px;
+      font-size: 1.12rem;
+      letter-spacing: -0.03em;
+    }
+
+    .feature-list p { margin-bottom: 0; color: var(--ink-muted); }
+
+    .ribbon-stage {
+      position: relative;
+      padding: var(--space-8) 0;
+      background: var(--ink);
+      color: var(--paper);
+      isolation: isolate;
+    }
+
+    .ribbon-stage::before,
+    .ribbon-stage::after {
+      content: "";
+      position: absolute;
+      left: -8vw;
+      right: -8vw;
+      height: 76px;
+      border-radius: var(--radius-pill);
+      transform: rotate(-4deg);
+      z-index: -1;
+    }
+
+    .ribbon-stage::before { top: 34px; background: var(--sky); }
+    .ribbon-stage::after { bottom: 48px; background: var(--leaf); opacity: .9; }
+
+    .ribbon-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: var(--space-7);
+      align-items: center;
+    }
+
+    .ribbon-stage h2 {
+      margin-bottom: 22px;
+      font-family: var(--font-display);
+      font-size: var(--type-section);
+      line-height: .9;
+      letter-spacing: -0.062em;
+      text-transform: uppercase;
+    }
+
+    .ribbon-stage p { color: rgba(255,255,255,.82); font-weight: 650; }
+
+    .signal-board {
+      display: grid;
+      gap: 12px;
+      padding: var(--space-5);
+      border-radius: var(--radius-panel);
+      background: rgba(255,255,255,.94);
+      color: var(--ink);
+      box-shadow: var(--shadow-lift);
+    }
+
+    .signal-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 70px;
+      min-height: 52px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: var(--radius-card);
+      background: var(--paper-warm);
+      font-weight: 850;
+    }
+
+    .bar {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(6, 21, 28, .08);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--sky), var(--leaf));
+    }
+
+    .launch-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+    }
+
+    .launch-card {
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-6);
+      border-radius: var(--radius-panel);
+      background: var(--paper);
+      box-shadow: 0 20px 60px rgba(6,21,28,.10);
+      transition: transform .18s ease, box-shadow .18s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .launch-card:hover,
+    .launch-card:focus-within {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lift);
+    }
+
+    .launch-card:focus-within { box-shadow: var(--focus-ring), var(--shadow-lift); }
+
+    .launch-card::before {
+      content: "";
+      position: absolute;
+      right: -44px;
+      top: 28px;
+      width: 180px;
+      height: 30px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      transform: rotate(-12deg);
+      box-shadow: 0 48px 0 var(--leaf), 0 96px 0 var(--koi);
+      opacity: .92;
+    }
+
+    .launch-card:nth-child(2)::before { background: var(--leaf); box-shadow: 0 48px 0 var(--koi), 0 96px 0 var(--sky); }
+    .launch-card:nth-child(3)::before { background: var(--koi); box-shadow: 0 48px 0 var(--sky), 0 96px 0 var(--leaf); }
+
+    .launch-card h3 {
+      max-width: 250px;
+      margin-bottom: 14px;
+      font-family: var(--font-display);
+      font-size: var(--type-card);
+      line-height: .96;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+    }
+
+    .launch-card p { max-width: 270px; color: var(--ink-muted); font-weight: 600; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      background: var(--leaf);
+      color: var(--ink);
+      font-size: var(--type-small);
+      font-weight: 950;
+      letter-spacing: .02em;
+    }
+
+    .tag.hot { background: var(--koi); }
+    .tag.sky { background: var(--sky); }
+
+    .brief {
+      background:
+        radial-gradient(circle at 82% 8%, var(--veil-blue), transparent 24rem),
+        radial-gradient(circle at 12% 70%, var(--veil-green), transparent 24rem),
+        var(--paper-warm);
+    }
+
+    .brief-card {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(340px, 1.05fr);
+      gap: var(--space-7);
+      align-items: start;
+      padding: clamp(24px, 5vw, 64px);
+      border-radius: var(--radius-panel);
+      background: rgba(255,255,255,.86);
+      box-shadow: var(--shadow-lift);
+    }
+
+    form { display: grid; gap: 16px; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    label,
+    legend {
+      color: var(--ink-soft);
+      font-size: var(--type-small);
+      font-weight: 950;
+      letter-spacing: .03em;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    input[type="month"],
+    input[type="week"],
+    select,
+    textarea {
+      appearance: none;
+      width: 100%;
+      min-height: var(--control-h);
+      border: 0;
+      border-radius: var(--radius-card);
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--line-air);
+      padding: 0 16px;
+      font: 750 1rem/1.2 var(--font-body);
+      transition: box-shadow .18s ease, background .18s ease, transform .18s ease, opacity .18s ease;
+    }
+
+    select {
+      padding-right: 42px;
+      background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position: calc(100% - 22px) 23px, calc(100% - 16px) 23px;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    textarea {
+      min-height: calc(var(--control-h) * 2);
+      resize: vertical;
+      padding-block: 15px;
+      line-height: 1.45;
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: var(--paper-warm);
+      box-shadow: inset 0 0 0 1px rgba(0, 168, 255, .32);
+    }
+
+    input:active,
+    select:active,
+    textarea:active {
+      transform: scale(.995);
+    }
+
+    .choice-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .choice {
+      min-height: var(--control-h);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-card);
+      background: var(--paper);
+      box-shadow: inset 0 0 0 1px var(--line-air);
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .choice:hover { background: var(--paper-warm); box-shadow: inset 0 0 0 1px rgba(0,168,255,.32); }
+    .choice:focus-within { box-shadow: var(--focus-ring); }
+    .choice:active { transform: scale(.995); }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      margin: 0;
+      border: 0;
+      border-radius: 6px;
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px rgba(6,21,28,.22);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    input[type="radio"] { border-radius: 50%; }
+
+    input[type="checkbox"]::after,
+    input[type="radio"]::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: var(--ink);
+      transform: scale(0);
+      transition: transform .14s ease;
+    }
+
+    input[type="radio"]::after { border-radius: 50%; }
+
+    input[type="checkbox"]:checked,
+    input[type="radio"]:checked {
+      background: var(--sky);
+      box-shadow: inset 0 0 0 2px var(--sky);
+    }
+
+    input[type="checkbox"]:checked::after,
+    input[type="radio"]:checked::after { transform: scale(1); }
+
+    input[type="range"] {
+      appearance: none;
+      width: 100%;
+      height: var(--control-h);
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf));
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--sky), var(--leaf));
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      margin-top: -8px;
+      border-radius: 50%;
+      background: var(--ink);
+      box-shadow: 0 0 0 5px var(--paper), 0 8px 22px rgba(6,21,28,.24);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--ink);
+      box-shadow: 0 0 0 5px var(--paper), 0 8px 22px rgba(6,21,28,.24);
+      cursor: pointer;
+    }
+
+    .switch {
+      min-height: var(--control-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 8px 8px 8px 16px;
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      box-shadow: inset 0 0 0 1px var(--line-air);
+      cursor: pointer;
+    }
+
+    .switch:focus-within { box-shadow: var(--focus-ring); }
+
+    .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+    .switch .track {
+      width: 76px;
+      height: 36px;
+      padding: 5px;
+      border-radius: var(--radius-pill);
+      background: rgba(6,21,28,.12);
+      transition: background .18s ease;
+    }
+
+    .switch .thumb {
+      display: block;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--paper);
+      box-shadow: 0 6px 14px rgba(6,21,28,.18);
+      transition: transform .18s ease;
+    }
+
+    .switch input:checked + .track { background: var(--leaf); }
+    .switch input:checked + .track .thumb { transform: translateX(40px); background: var(--ink); }
+
+    .footer {
+      padding: var(--space-8) 0;
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .footer-grid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      flex-wrap: wrap;
+    }
+
+    .footer strong {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .footer p { color: rgba(255,255,255,.72); margin-bottom: 0; }
+
+    @media (max-width: 920px) {
+      .topbar { position: absolute; inset: 14px 14px auto; border-radius: var(--radius-panel); }
+      .nav a:not(.active) { display: none; }
+      .hero-grid,
+      .split,
+      .ribbon-grid,
+      .brief-card { grid-template-columns: 1fr; }
+      .hero { min-height: auto; padding-top: 120px; }
+      .hero-card { transform: none; }
+      .launch-cards { grid-template-columns: 1fr; }
+      .field-grid,
+      .choice-row { grid-template-columns: 1fr; }
+      section { padding: var(--space-8) 0; }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 28px, 1180px); }
+      .topbar { padding-left: 12px; }
+      .brand span { max-width: 112px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      h1 { font-size: clamp(4rem, 21vw, 7rem); }
+      .hero-actions, .section-actions, .form-actions { align-items: stretch; flex-direction: column; }
+      .btn, button { width: 100%; }
+      .card-metrics { grid-template-columns: 1fr; }
+      .signal-row { grid-template-columns: 1fr; }
+      .brief-card { padding: 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="Aonami Launch OS home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Aonami Launch OS</span>
+      </a>
+      <nav class="nav" aria-label="Landing sections">
+        <a class="active" href="#top">Season</a>
+        <a href="#system">System</a>
+        <a href="#operations">Operations</a>
+        <a href="#brief">Brief</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <img class="hero-image" src="media/aonami-hero.webp" alt="Bright early-summer rooftop scene with koinobori rising into a clear sky">
+        <div class="shell hero-grid">
+          <div>
+            <span class="eyebrow">Kodomo no Hi launch platform</span>
+            <h1 id="hero-title">Make the city <span class="lift">rise</span>.</h1>
+            <p class="hero-copy">Aonami Launch OS turns seasonal activations into clear field plans: routes, crews, sponsor moments, live audience signals, and the high-bright visual system that keeps everything moving upward.</p>
+            <div class="hero-actions">
+              <a class="btn" href="#brief">Plan a launch</a>
+              <a class="btn btn-quiet" href="#operations">See live ops</a>
+            </div>
+          </div>
+          <aside class="hero-card" aria-label="Current launch momentum">
+            <strong>May 05<br>ready</strong>
+            <span>42 routes confirmed, 18 sponsor marks reserved, and field crews synced to sunrise load-in.</span>
+            <div class="card-metrics" aria-label="Launch metrics">
+              <div class="metric-pill"><b>92%</b><small>route readiness</small></div>
+              <div class="metric-pill"><b>18</b><small>sponsor flights</small></div>
+              <div class="metric-pill"><b>06:10</b><small>first lift</small></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="system" aria-labelledby="system-title">
+        <div class="shell split">
+          <div>
+            <div class="section-kicker">One seasonal command layer</div>
+            <h2 class="section-title" id="system-title">From breeze to broadcast without the clutter.</h2>
+            <p class="copy-large">Built for teams who need a public launch to feel effortless: city partners, retail districts, festival producers, mobility crews, and sponsor teams working from the same bright operating picture.</p>
+            <ul class="feature-list" aria-label="Platform features">
+              <li>
+                <i>01</i>
+                <div>
+                  <h3>Route choreography</h3>
+                  <p>Plan streamer corridors, audience entry points, load-in windows, and crew movements in one live route board.</p>
+                </div>
+              </li>
+              <li>
+                <i>02</i>
+                <div>
+                  <h3>Signal capture</h3>
+                  <p>Track scans, crowd pulses, sponsor redemptions, and content moments while the day is still unfolding.</p>
+                </div>
+              </li>
+              <li>
+                <i>03</i>
+                <div>
+                  <h3>Field-ready briefs</h3>
+                  <p>Convert launch plans into short, readable crew cards with the context people need on the street.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <figure class="feature-image-wrap">
+            <img src="media/aonami-feature.webp" alt="Abstract koinobori-like data ribbons in electric blue, green, and vermilion over white space">
+          </figure>
+        </div>
+      </section>
+
+      <section class="ribbon-stage" id="operations" aria-labelledby="ops-title">
+        <div class="shell ribbon-grid">
+          <div>
+            <h2 id="ops-title">Live enough for the street. Calm enough for the team.</h2>
+            <p>Aonami Rise keeps the interface open, high-contrast, and directional. Every accent is a signal: blue for movement, green for readiness, koi vermilion for the moments that need a human now.</p>
+          </div>
+          <aside class="signal-board" aria-label="Live launch signal board">
+            <div class="signal-row">
+              <span>North Gate</span>
+              <div class="bar" aria-hidden="true"><span style="width: 88%"></span></div>
+              <span>88%</span>
+            </div>
+            <div class="signal-row">
+              <span>River Walk</span>
+              <div class="bar" aria-hidden="true"><span style="width: 74%; background: linear-gradient(90deg, var(--leaf), var(--sky));"></span></div>
+              <span>74%</span>
+            </div>
+            <div class="signal-row">
+              <span>Market Roof</span>
+              <div class="bar" aria-hidden="true"><span style="width: 61%; background: linear-gradient(90deg, var(--koi), var(--sky));"></span></div>
+              <span>61%</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section aria-labelledby="teams-title">
+        <div class="shell">
+          <div class="section-kicker">For launch teams</div>
+          <h2 class="section-title" id="teams-title">A public day with grown-up control.</h2>
+          <div class="launch-cards">
+            <article class="launch-card">
+              <div>
+                <span class="tag sky">City partners</span>
+                <h3>Permit timing and route confidence</h3>
+              </div>
+              <p>Keep municipal windows, crowd guidance, and setup dependencies visible before small delays become public confusion.</p>
+            </article>
+            <article class="launch-card">
+              <div>
+                <span class="tag">Retail districts</span>
+                <h3>Sponsor inventory that moves with footfall</h3>
+              </div>
+              <p>Assign activations to real audience zones, track redemptions, and rebalance staff while traffic is still rising.</p>
+            </article>
+            <article class="launch-card">
+              <div>
+                <span class="tag hot">Field crews</span>
+                <h3>Short briefs for high-bright days</h3>
+              </div>
+              <p>Every task card is readable outdoors, connected to route status, and focused on the next useful action.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="brief" id="brief" aria-labelledby="brief-title">
+        <div class="shell brief-card">
+          <div>
+            <div class="section-kicker">Build the May route</div>
+            <h2 class="section-title" id="brief-title">Send a launch brief.</h2>
+            <p class="copy-large">Share the activation shape. Aonami returns a first route map, staffing rhythm, sponsor inventory model, and live dashboard configuration.</p>
+          </div>
+          <form action="#" method="post" aria-label="Launch brief request form">
+            <div class="field-grid">
+              <div class="field">
+                <label for="name">Lead name</label>
+                <input id="name" name="name" type="text" autocomplete="name" placeholder="Mika Tanaka">
+              </div>
+              <div class="field">
+                <label for="email">Work email</label>
+                <input id="email" name="email" type="email" autocomplete="email" placeholder="mika@example.com">
+              </div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="date">Launch date</label>
+                <input id="date" name="date" type="date" value="2026-05-05">
+              </div>
+              <div class="field">
+                <label for="scale">Activation scale</label>
+                <select id="scale" name="scale">
+                  <option>District festival</option>
+                  <option>Retail corridor</option>
+                  <option>Campus launch</option>
+                  <option>Citywide program</option>
+                </select>
+              </div>
+            </div>
+            <fieldset class="field" style="border:0; padding:0; margin:0;">
+              <legend>Priority signal</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="priority" checked> Audience flow</label>
+                <label class="choice"><input type="radio" name="priority"> Sponsor lift</label>
+              </div>
+            </fieldset>
+            <label class="switch">
+              <span>Include morning field huddle</span>
+              <input type="checkbox" name="huddle" checked>
+              <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+            </label>
+            <div class="field">
+              <label for="brightness">Public signal intensity</label>
+              <input id="brightness" name="brightness" type="range" min="1" max="10" value="8">
+            </div>
+            <div class="field">
+              <label for="notes">Activation notes</label>
+              <textarea id="notes" name="notes" placeholder="Tell us about routes, partners, crew constraints, and the moment that needs to feel unforgettable."></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="submit">Request route plan</button>
+              <button class="btn-quiet" type="button" disabled>June waitlist closed</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-grid">
+        <div>
+          <strong>Aonami Rise</strong>
+          <p>One bright language for public launches that need lift, clarity, and operational calm.</p>
+        </div>
+        <a class="btn btn-quiet" href="#top">Back to top</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

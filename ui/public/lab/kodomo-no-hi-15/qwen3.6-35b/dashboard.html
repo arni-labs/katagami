@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seiran — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: "Inter", "Noto Sans JP", system-ui, sans-serif; color: #0A1520; background: #FFFFFF; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea { font: inherit; }
+table { border-collapse: collapse; width: 100%; }
+
+/* ===== THEME ===== */
+:root {
+  --accent: #00A0E0;
+  --accent-secondary: #22D95E;
+  --accent-hot: #FF3366;
+  --bg: #FFFFFF;
+  --surface: #F6F9FA;
+  --surface-dark: #0A1520;
+  --text: #0A1520;
+  --muted: #5B7A8C;
+  --on-accent: #FFFFFF;
+  --on-surface-dark: #E8F1F5;
+  --success: #22D95E;
+  --warning: #FFB833;
+  --error: #FF3366;
+  --info: #00A0E0;
+  --font-display: 700 3.5rem/1.1 "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-headline: 600 2.25rem/1.15 "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-title: 600 1.5rem/1.3 "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-body: 400 1.0625rem/1.65 "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-caption: 400 0.8125rem/1.5 "Inter", system-ui, sans-serif;
+  --font-mono: 400 0.875rem/1.5 "JetBrains Mono", "Fira Code", monospace;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --radius-none: 0;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  --control-height: 44px;
+  --container: 1200px;
+}
+
+.display { font: var(--font-display); letter-spacing: -0.02em; }
+.headline { font: var(--font-headline); letter-spacing: -0.02em; }
+.title { font: var(--font-title); letter-spacing: -0.02em; }
+.body { font: var(--font-body); }
+.caption { font: var(--font-caption); }
+.mono { font: var(--font-mono); }
+
+/* ===== LAYOUT ===== */
+.dashboard { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+@media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  background: var(--surface-dark); color: var(--on-surface-dark);
+  padding: var(--space-xl) 0; display: flex; flex-direction: column;
+}
+.sidebar-brand {
+  padding: 0 var(--space-lg); margin-bottom: var(--space-2xl);
+  font: 700 1.25rem/1 "Inter", "Noto Sans JP", system-ui, sans-serif;
+  letter-spacing: -0.02em; color: var(--on-surface-dark);
+}
+.sidebar-brand span { color: var(--accent); }
+.sidebar-nav { flex: 1; }
+.sidebar-nav a {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg); font-size: 0.9375rem;
+  color: var(--muted); transition: color 0.2s, background 0.2s;
+}
+.sidebar-nav a:hover { color: var(--on-surface-dark); background: rgba(255,255,255,0.04); }
+.sidebar-nav a.active { color: var(--accent); background: rgba(0,160,224,0.08); }
+.sidebar-nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-section-label {
+  padding: var(--space-lg) var(--space-lg) var(--space-sm);
+  font: var(--font-caption); font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted);
+}
+.sidebar-footer { padding: 0 var(--space-lg); }
+.sidebar-user {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+.sidebar-avatar {
+  width: 32px; height: 32px; border-radius: var(--radius-full);
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 0.8125rem; color: #fff;
+}
+
+/* ===== MAIN ===== */
+.main { padding: var(--space-xl) var(--space-2xl); overflow-y: auto; }
+@media (max-width: 768px) { .main { padding: var(--space-md) var(--space-lg); } }
+
+/* ===== TOP BAR ===== */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-xl); flex-wrap: wrap; gap: var(--space-md);
+}
+.topbar h1 { font: var(--font-headline); }
+.topbar-actions { display: flex; gap: var(--space-sm); align-items: center; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-height); padding: 0 1.5rem;
+  border-radius: var(--radius-full); font-weight: 600; font-size: 0.875rem;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { transform: scale(1.03); }
+.btn:active { transform: scale(0.98); }
+.btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 2px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent) 85%, white); }
+.btn-secondary { background: var(--surface); color: var(--text); }
+.btn-destructive { background: var(--error); color: var(--on-accent); }
+
+/* ===== STAT CARDS ===== */
+.stats-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg); margin-bottom: var(--space-xl);
+}
+.stat-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.stat-card .stat-label { font: var(--font-caption); color: var(--muted); margin-bottom: var(--space-xs); }
+.stat-card .stat-value { font: var(--font-headline); letter-spacing: -0.02em; }
+.stat-card .stat-value.blue { color: var(--accent); }
+.stat-card .stat-value.green { color: var(--accent-secondary); }
+.stat-card .stat-value.hot { color: var(--accent-hot); }
+.stat-card .stat-change { font: var(--font-caption); margin-top: var(--space-xs); }
+.stat-card .stat-change.up { color: var(--accent-secondary); }
+.stat-card .stat-change.down { color: var(--accent-hot); }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.card-header {
+  padding: var(--space-lg) var(--space-xl) var(--space-md);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-header h3 { font: var(--font-title); letter-spacing: -0.02em; }
+.card-body { padding: 0 var(--space-xl) var(--space-xl); }
+
+/* ===== GRID LAYOUTS ===== */
+.dashboard-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+@media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+.full-width { grid-column: 1 / -1; }
+
+/* ===== TABLE ===== */
+.data-table { width: 100%; }
+.data-table th {
+  text-align: left; padding: var(--space-sm) var(--space-md);
+  font: var(--font-caption); font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--surface);
+}
+.data-table td {
+  padding: var(--space-md); font-size: 0.9375rem;
+  border-bottom: 1px solid var(--surface);
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: color-mix(in srgb, var(--accent) 3%, transparent); }
+
+/* ===== STATUS BADGES ===== */
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  border-radius: var(--radius-full); font: var(--font-caption); font-weight: 600;
+}
+.badge-active { background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--success); }
+.badge-progress { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.badge-review { background: color-mix(in srgb, var(--warning) 15%, transparent); color: var(--warning); }
+.badge-blocked { background: color-mix(in srgb, var(--error) 12%, transparent); color: var(--error); }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar {
+  height: 6px; background: var(--surface); border-radius: var(--radius-full); overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%; border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+.progress-bar .fill.blue { background: var(--accent); }
+.progress-bar .fill.green { background: var(--accent-secondary); }
+.progress-bar .fill.hot { background: var(--accent-hot); }
+
+/* ===== FORM CONTROLS ===== */
+input[type="text"], input[type="email"], select, textarea {
+  height: var(--control-height); width: 100%;
+  background: var(--surface); color: var(--text);
+  border-radius: var(--radius-md); padding: 0 1rem;
+  border: none; outline: none;
+  transition: outline 0.2s, background 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--bg);
+}
+textarea { min-height: var(--control-height); padding: var(--space-sm) 1rem; resize: vertical; }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235B7A8C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+
+/* ===== SEARCH ===== */
+.search-input {
+  height: var(--control-height); width: 260px;
+  background: var(--surface); color: var(--text);
+  border-radius: var(--radius-full); padding: 0 1rem 0 2.5rem;
+  border: none; outline: none;
+  transition: outline 0.2s, background 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B7A8C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 0.85rem center;
+}
+.search-input:focus { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); background-color: var(--bg); }
+@media (max-width: 600px) { .search-input { width: 100%; } }
+
+/* ===== CHART PLACEHOLDER ===== */
+.chart-area {
+  height: 200px; background: var(--surface); border-radius: var(--radius-md);
+  display: flex; align-items: flex-end; padding: var(--space-lg) var(--space-md) var(--space-md);
+  gap: 4px;
+}
+.chart-bar {
+  flex: 1; border-radius: 4px 4px 0 0; min-height: 8px;
+  transition: height 0.6s ease;
+}
+
+/* ===== ACTIVITY FEED ===== */
+.activity-item {
+  display: flex; gap: var(--space-md); padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--surface);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+  width: 8px; height: 8px; border-radius: var(--radius-full);
+  margin-top: 6px; flex-shrink: 0;
+}
+.activity-dot.blue { background: var(--accent); }
+.activity-dot.green { background: var(--accent-secondary); }
+.activity-dot.hot { background: var(--accent-hot); }
+.activity-text { font-size: 0.9375rem; }
+.activity-text strong { font-weight: 600; }
+.activity-time { font: var(--font-caption); color: var(--muted); margin-top: 2px; }
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+  display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;
+}
+.filter-bar select { height: var(--control-height); width: auto; min-width: 140px; }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">清蘭 <span>Seiran</span></div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Main</div>
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Projects
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Tasks
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Team
+      </a>
+      <div class="sidebar-section-label">Analytics</div>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Reports
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">MT</div>
+        <div>
+          <div class="caption" style="color:var(--on-surface-dark);font-weight:600;">Mika T.</div>
+          <div class="caption" style="color:var(--muted);font-size:0.75rem;">Engineering Lead</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <h1>Dashboard</h1>
+      <div class="topbar-actions">
+        <input type="text" class="search-input" placeholder="Search tasks...">
+        <button class="btn btn-primary">+ New Task</button>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" style="margin-bottom:var(--space-xl);">
+      <select>
+        <option>All Projects</option>
+        <option>Koinobori Redesign</option>
+        <option>Summer Launch</option>
+        <option>API v3</option>
+      </select>
+      <select>
+        <option>All Status</option>
+        <option>Active</option>
+        <option>In Progress</option>
+        <option>Review</option>
+        <option>Blocked</option>
+      </select>
+      <select>
+        <option>This Sprint</option>
+        <option>Next Sprint</option>
+        <option>Backlog</option>
+      </select>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Active Tasks</div>
+        <div class="stat-value blue">47</div>
+        <div class="stat-change up">↑ 12% from last week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed This Sprint</div>
+        <div class="stat-value green">23</div>
+        <div class="stat-change up">↑ 8% from last week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Blocked Items</div>
+        <div class="stat-value hot">3</div>
+        <div class="stat-change down">↑ 2 from yesterday</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Team Velocity</div>
+        <div class="stat-value">89<span class="caption" style="font-size:0.875rem;color:var(--muted);">pts</span></div>
+        <div class="stat-change up">↑ 15% from last week</div>
+      </div>
+    </div>
+
+    <!-- GRID: SPRINT BURNDOWN + RECENT ACTIVITY -->
+    <div class="dashboard-grid">
+      <!-- Sprint Burndown -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Sprint Burndown</h3>
+          <span class="caption" style="color:var(--muted);">Sprint 14 of 24</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-area" id="burndown-chart">
+            <!-- Bars generated by JS -->
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:var(--space-sm);">
+            <span class="caption" style="color:var(--muted);">Mon</span>
+            <span class="caption" style="color:var(--muted);">Wed</span>
+            <span class="caption" style="color:var(--muted);">Fri</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Activity</h3>
+          <button class="btn btn-secondary" style="height:32px;padding:0 1rem;font-size:0.8125rem;">View all</button>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div class="activity-item">
+            <div class="activity-dot green"></div>
+            <div>
+              <div class="activity-text"><strong>Mika T.</strong> completed <strong>Implement auth middleware</strong></div>
+              <div class="activity-time">12 minutes ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot blue"></div>
+            <div>
+              <div class="activity-text"><strong>Kenji S.</strong> started <strong>Dashboard redesign</strong></div>
+              <div class="activity-time">34 minutes ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot hot"></div>
+            <div>
+              <div class="activity-text"><strong>Aiko M.</strong> flagged <strong>Payment webhook timeout</strong> as blocked</div>
+              <div class="activity-time">1 hour ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot blue"></div>
+            <div>
+              <div class="activity-text"><strong>Tomoya R.</strong> commented on <strong>API rate limiting</strong></div>
+              <div class="activity-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot green"></div>
+            <div>
+              <div class="activity-text"><strong>Sara K.</strong> merged <strong>Feature: task templates</strong></div>
+              <div class="activity-time">3 hours ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASK TABLE -->
+    <div class="card full-width" style="margin-bottom:var(--space-xl);">
+      <div class="card-header">
+        <h3>Active Tasks</h3>
+        <button class="btn btn-primary" style="height:36px;padding:0 1.25rem;font-size:0.8125rem;">+ Add task</button>
+      </div>
+      <div class="card-body" style="padding-top:0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40%;">Task</th>
+              <th>Status</th>
+              <th>Assignee</th>
+              <th>Due</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Implement auth middleware</strong></td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td>Mika T.</td>
+              <td class="caption">Jun 28</td>
+              <td style="width:20%;">
+                <div class="progress-bar"><div class="fill green" style="width:100%;"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Dashboard redesign</strong></td>
+              <td><span class="badge badge-progress">In Progress</span></td>
+              <td>Kenji S.</td>
+              <td class="caption">Jul 2</td>
+              <td>
+                <div class="progress-bar"><div class="fill blue" style="width:65%;"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>API rate limiting</strong></td>
+              <td><span class="badge badge-review">Review</span></td>
+              <td>Tomoya R.</td>
+              <td class="caption">Jun 26</td>
+              <td>
+                <div class="progress-bar"><div class="fill blue" style="width:90%;"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Payment webhook timeout</strong></td>
+              <td><span class="badge badge-blocked">Blocked</span></td>
+              <td>Aiko M.</td>
+              <td class="caption">Jun 25</td>
+              <td>
+                <div class="progress-bar"><div class="fill hot" style="width:40%;"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Task templates feature</strong></td>
+              <td><span class="badge badge-progress">In Progress</span></td>
+              <td>Sara K.</td>
+              <td class="caption">Jul 5</td>
+              <td>
+                <div class="progress-bar"><div class="fill green" style="width:50%;"></div></div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Mobile responsive layout</strong></td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td>Yuki H.</td>
+              <td class="caption">Jul 8</td>
+              <td>
+                <div class="progress-bar"><div class="fill blue" style="width:20%;"></div></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PROJECT PROGRESS -->
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3>Project Progress</h3>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div style="margin-bottom:var(--space-lg);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+              <span class="body" style="font-size:0.9375rem;">Koinobori Redesign</span>
+              <span class="caption" style="color:var(--muted);">78%</span>
+            </div>
+            <div class="progress-bar"><div class="fill blue" style="width:78%;"></div></div>
+          </div>
+          <div style="margin-bottom:var(--space-lg);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+              <span class="body" style="font-size:0.9375rem;">Summer Launch</span>
+              <span class="caption" style="color:var(--muted);">45%</span>
+            </div>
+            <div class="progress-bar"><div class="fill green" style="width:45%;"></div></div>
+          </div>
+          <div style="margin-bottom:var(--space-lg);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+              <span class="body" style="font-size:0.9375rem;">API v3 Migration</span>
+              <span class="caption" style="color:var(--muted);">22%</span>
+            </div>
+            <div class="progress-bar"><div class="fill hot" style="width:22%;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+              <span class="body" style="font-size:0.9375rem;">Team Onboarding</span>
+              <span class="caption" style="color:var(--muted);">91%</span>
+            </div>
+            <div class="progress-bar"><div class="fill green" style="width:91%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Workload -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Team Workload</h3>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div style="margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+            <div class="sidebar-avatar" style="width:36px;height:36px;font-size:0.75rem;flex-shrink:0;">MT</div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+                <span class="body" style="font-size:0.9375rem;">Mika T.</span>
+                <span class="caption" style="color:var(--muted);">8 tasks</span>
+              </div>
+              <div class="progress-bar"><div class="fill blue" style="width:80%;"></div></div>
+            </div>
+          </div>
+          <div style="margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+            <div class="sidebar-avatar" style="width:36px;height:36px;font-size:0.75rem;background:var(--accent-secondary);flex-shrink:0;">KS</div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+                <span class="body" style="font-size:0.9375rem;">Kenji S.</span>
+                <span class="caption" style="color:var(--muted);">5 tasks</span>
+              </div>
+              <div class="progress-bar"><div class="fill green" style="width:50%;"></div></div>
+            </div>
+          </div>
+          <div style="margin-bottom:var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+            <div class="sidebar-avatar" style="width:36px;height:36px;font-size:0.75rem;background:var(--accent-hot);flex-shrink:0;">AM</div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+                <span class="body" style="font-size:0.9375rem;">Aiko M.</span>
+                <span class="caption" style="color:var(--muted);">6 tasks</span>
+              </div>
+              <div class="progress-bar"><div class="fill hot" style="width:60%;"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--space-md);">
+            <div class="sidebar-avatar" style="width:36px;height:36px;font-size:0.75rem;background:var(--warning);flex-shrink:0;">TR</div>
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-xs);">
+                <span class="body" style="font-size:0.9375rem;">Tomoya R.</span>
+                <span class="caption" style="color:var(--muted);">3 tasks</span>
+              </div>
+              <div class="progress-bar"><div class="fill blue" style="width:30%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Burndown chart
+const chart = document.getElementById('burndown-chart');
+const data = [65, 58, 48, 42, 35, 28, 22, 18, 14, 10, 7, 4, 2, 0];
+const maxVal = Math.max(...data);
+data.forEach((val, i) => {
+  const bar = document.createElement('div');
+  bar.className = 'chart-bar';
+  const heightPct = (val / maxVal) * 100;
+  bar.style.height = heightPct + '%';
+  // Color gradient: green → blue → hot
+  if (val > 50) bar.style.background = 'var(--accent-secondary)';
+  else if (val > 20) bar.style.background = 'var(--accent)';
+  else bar.style.background = 'var(--accent-hot)';
+  chart.appendChild(bar);
+});
+</script>
+</body>
+</html>

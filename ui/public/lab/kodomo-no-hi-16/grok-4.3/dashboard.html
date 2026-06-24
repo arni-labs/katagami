@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KODORI — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+
+    :root {
+      --bg: #FFFEF8;
+      --surface: #FFFFFF;
+      --surface-subtle: #F7F8F6;
+      --ink: #0C1118;
+      --ink-muted: #475569;
+      --sky: #00BFFF;
+      --leaf: #00D68A;
+      --pop: #FF2759;
+      --border: #E5E8E5;
+      --focus: #00BFFF;
+      --r: 10px;
+      --r-sm: 6px;
+      --r-lg: 16px;
+      --control-h: 48px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .h1 { font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.015em; }
+    .h2 { font-size: 20px; line-height: 1.2; font-weight: 600; }
+    .h3 { font-size: 16px; line-height: 1.3; font-weight: 600; }
+    .body { font-size: 15px; line-height: 1.6; }
+    .body-sm { font-size: 13px; line-height: 1.5; }
+    .label { font-size: 12px; font-weight: 600; letter-spacing: 0.015em; text-transform: uppercase; color: var(--ink-muted); }
+
+    .container-dash { max-width: 1440px; margin: 0 auto; padding: 0 40px; }
+
+    /* Top bar */
+    .topbar {
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      height: calc(100vh - 64px);
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 16px; border-radius: var(--r);
+      font-weight: 500; font-size: 14.5px; color: var(--ink-muted);
+      transition: all 80ms ease;
+    }
+    .nav-item:hover { color: var(--ink); background: var(--surface-subtle); }
+    .nav-item.active { color: var(--ink); background: var(--surface-subtle); font-weight: 600; }
+    .nav-item .fa-fw { width: 18px; }
+
+    /* Cards */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+    }
+
+    /* KPI */
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px 22px;
+    }
+    .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--ink-muted); margin-top: 4px; }
+
+    /* Buttons — 48px single control height */
+    .btn {
+      height: var(--control-h);
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0 22px; font-weight: 600; font-size: 14px; border-radius: var(--r);
+      transition: all 120ms ease; cursor: pointer; border: none; text-decoration: none; white-space: nowrap;
+    }
+    .btn:focus-visible { box-shadow: 0 0 0 3px rgba(0,191,255,0.18); outline: none; }
+    .btn:active { transform: translateY(0.5px); }
+
+    .btn-primary { background: var(--pop); color: #fff; }
+    .btn-primary:hover { background: #E51E4A; }
+    .btn-sky { background: var(--sky); color: #fff; }
+    .btn-sky:hover { background: #00A6D9; }
+    .btn-leaf { background: var(--leaf); color: var(--ink); }
+    .btn-leaf:hover { background: #00B86F; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--ink); color: var(--ink); }
+    .btn-outline:hover { background: var(--surface-subtle); }
+    .btn-ghost { background: transparent; color: var(--ink-muted); }
+    .btn-ghost:hover { background: var(--surface-subtle); color: var(--ink); }
+    .btn-sm { height: 36px; padding: 0 16px; font-size: 13px; }
+
+    /* Form controls — EXPLICIT, 48px */
+    .input, .select, textarea {
+      height: var(--control-h);
+      width: 100%;
+      padding: 0 15px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      background: var(--surface);
+      font-size: 15px;
+      color: var(--ink);
+    }
+    .input:hover, .select:hover { border-color: #CBD2CC; }
+    .input:focus, .select:focus, textarea:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(0,191,255,0.13);
+      outline: none;
+    }
+    .input:disabled, .select:disabled { background: var(--surface-subtle); color: #94A3B8; border-color: var(--border); }
+
+    textarea { min-height: 96px; padding: 13px 15px; height: auto; }
+
+    .select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='15' height='15' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23475569' stroke-width='2.5'/%3E%3C/svg%3E");
+      background-position: right 14px center; background-repeat: no-repeat; padding-right: 38px;
+    }
+
+    .chk {
+      width: 18px; height: 18px;
+      accent-color: var(--sky);
+    }
+    .radio { accent-color: var(--leaf); }
+
+    .toggle {
+      width: 44px; height: 26px; background: var(--border); border-radius: 999px; position: relative; cursor: pointer;
+    }
+    .toggle::after {
+      content: ''; position: absolute; top: 2.5px; left: 2.5px; width: 21px; height: 21px;
+      background: #fff; border-radius: 999px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      transition: 140ms cubic-bezier(0.23,1,0.32,1);
+    }
+    .toggle.on { background: var(--leaf); }
+    .toggle.on::after { transform: translateX(18px); }
+
+    /* Table */
+    .dash-table th {
+      font-size: 12px; font-weight: 600; color: var(--ink-muted);
+      padding: 13px 16px; text-align: left; border-bottom: 1px solid var(--border);
+      background: var(--surface-subtle);
+    }
+    .dash-table td {
+      padding: 14px 16px; font-size: 14.5px; border-bottom: 1px solid #F0F2EE;
+    }
+    .dash-table tr:hover td { background: #F9FAF8; }
+
+    /* Streamer preview */
+    .streamer-preview {
+      background: linear-gradient(180deg, #E8F6FF 0%, #F4F9F6 100%);
+      border-radius: var(--r-lg);
+      padding: 28px 32px;
+      position: relative;
+      overflow: hidden;
+      min-height: 236px;
+    }
+    .koinobori {
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 18px;
+      height: 148px;
+    }
+    .carp {
+      flex: 1; max-width: 92px; height: 100%;
+      position: relative;
+      transition: all 180ms ease;
+    }
+    .carp-body {
+      width: 100%; height: 100%;
+      border-radius: 999px 40px 40px 999px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .carp::after {
+      content: ''; position: absolute; right: 10px; top: 30%; width: 18px; height: 18px;
+      background: rgba(255,255,255,0.55); border-radius: 999px;
+    }
+
+    /* Badge */
+    .badge {
+      height: 26px; padding: 0 11px; font-size: 11px; font-weight: 700;
+      border-radius: 999px; display: inline-flex; align-items: center;
+    }
+    .badge-sky { background:#D7F0FF; color:#006A8A; }
+    .badge-leaf { background:#D6F4E6; color:#006B3E; }
+    .badge-pop { background:#FFD9DF; color:#8F0E2A; }
+
+    .metric-change {
+      font-size: 12px; font-weight: 600;
+    }
+
+    .focus-ring-demo {
+      outline: none;
+    }
+    .focus-ring-demo:focus-visible {
+      box-shadow: 0 0 0 3px rgba(0,191,255,0.18);
+    }
+  </style>
+</head>
+<body>
+  <!-- TOP BAR -->
+  <div class="topbar sticky top-0 z-50 flex items-center justify-between px-8">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-full bg-[#0C1118] flex items-center justify-center">
+          <span class="text-white text-[17px] font-bold tracking-[-1.5px]">K</span>
+        </div>
+        <span class="font-semibold tracking-[-0.025em] text-[22px]">KODORI</span>
+      </div>
+      <div class="ml-4 hidden md:block">
+        <div class="px-3 py-1 rounded-full bg-[#F7F8F6] text-xs font-semibold text-[#475569]">SPRING 2026</div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Search -->
+      <div class="relative w-72 hidden md:block">
+        <input type="text" placeholder="Search rituals, entries, or family..." 
+               class="input pl-10 text-sm h-10 rounded-full border-[#E5E8E5]">
+        <i class="fa-solid fa-search absolute left-4 top-3 text-[#94A3B8] text-sm"></i>
+      </div>
+
+      <button onclick="showAddModal()" class="btn btn-sky text-sm hidden md:flex items-center gap-2">
+        <i class="fa-solid fa-plus"></i>
+        <span>New entry</span>
+      </button>
+
+      <div class="flex items-center gap-2 pl-3 border-l border-[#E5E8E5]">
+        <div class="text-right text-sm leading-none hidden md:block">
+          <div class="font-semibold">Akira Sato</div>
+          <div class="text-[10px] text-[#94A3B8]">Kyoto • Parent</div>
+        </div>
+        <div class="w-8 h-8 bg-[#E0F7FF] rounded-full flex items-center justify-center ring-1 ring-white">
+          <span class="font-bold text-xs text-[#006A8A]">AS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex">
+    <!-- SIDEBAR -->
+    <div class="sidebar hidden lg:flex flex-col pt-6 px-3 flex-shrink-0">
+      <div class="px-3 mb-3">
+        <div class="label mb-2 px-3">Workspace</div>
+      </div>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item active mb-0.5"><i class="fa-solid fa-home fa-fw"></i> <span>Overview</span></a>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item mb-0.5"><i class="fa-solid fa-stream fa-fw"></i> <span>Rituals</span></a>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item mb-0.5"><i class="fa-solid fa-wind fa-fw"></i> <span>Streamers</span></a>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item mb-0.5"><i class="fa-solid fa-clock-rotate-left fa-fw"></i> <span>Timeline</span></a>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item mb-0.5"><i class="fa-solid fa-users fa-fw"></i> <span>Family</span></a>
+      <a href="#" onclick="setActiveNav(this)" class="nav-item mb-0.5"><i class="fa-solid fa-print fa-fw"></i> <span>Prints</span></a>
+
+      <div class="flex-1"></div>
+
+      <div class="px-3 pb-6">
+        <div class="border-t border-[#E5E8E5] pt-4">
+          <a href="#" onclick="setActiveNav(this)" class="nav-item"><i class="fa-solid fa-cog fa-fw"></i> <span>Settings</span></a>
+          <div class="px-3 mt-4 text-[11px] text-[#94A3B8]">KODORI v4.2 • 1,284 entries</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="flex-1 min-w-0">
+      <div class="container-dash pt-8 pb-16">
+
+        <!-- HEADER -->
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <div class="text-sm font-semibold tracking-widest text-[#475569]">GOOD MORNING, AKIRA</div>
+            <div class="h1 mt-1 tracking-[-0.015em]">Kodomo no Hi 2026 is in <span class="text-[#FF2759]">11 days</span>.</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="showAddModal()" class="btn btn-primary text-sm md:hidden"><i class="fa-solid fa-plus mr-2"></i>New entry</button>
+            <button onclick="simulatePublish()" class="btn btn-outline text-sm">Publish family update</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-9">
+          <div class="kpi">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="kpi-value">14</div>
+                <div class="kpi-label">Rituals this year</div>
+              </div>
+              <div class="text-right">
+                <span class="metric-change text-[#00D68A]">+4</span>
+              </div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="kpi-value">3</div>
+                <div class="kpi-label">Streamers in flight</div>
+              </div>
+              <div class="text-right">
+                <span class="badge badge-sky">ACTIVE</span>
+              </div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="kpi-value">87</div>
+                <div class="kpi-label">Journal entries</div>
+              </div>
+              <div class="text-right">
+                <span class="metric-change text-[#00BFFF]">+12</span>
+              </div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="kpi-value">5</div>
+                <div class="kpi-label">Prints ordered</div>
+              </div>
+              <div class="text-right">
+                <span class="badge badge-leaf">2 ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+          <!-- UPCOMING -->
+          <div class="xl:col-span-5 panel p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="h2">Upcoming</div>
+              <button onclick="showRitualModal()" class="btn btn-sm btn-ghost">View all</button>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex gap-4 items-center border border-[#E5E8E5] rounded-xl px-5 py-4 hover:bg-[#F7F8F6]">
+                <div class="w-10 h-10 rounded-lg bg-[#E0F7FF] flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-wind text-[#00BFFF]"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold">Kodomo no Hi 2026 • Main ritual</div>
+                  <div class="text-xs text-[#475569]">May 5 • 4 children • 3 streamers</div>
+                </div>
+                <div>
+                  <span class="badge badge-pop">11 DAYS</span>
+                </div>
+              </div>
+
+              <div class="flex gap-4 items-center border border-[#E5E8E5] rounded-xl px-5 py-4 hover:bg-[#F7F8F6]">
+                <div class="w-10 h-10 rounded-lg bg-[#D6F4E6] flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-seedling text-[#00D68A]"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold">Yuna’s first lost tooth</div>
+                  <div class="text-xs text-[#475569]">Feb 19 • Private ritual • 1 keepsake</div>
+                </div>
+                <div><span class="badge badge-leaf">DONE</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STREAMER STUDIO -->
+          <div class="xl:col-span-7 panel p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <div class="h2">Your Koinobori</div>
+                <div class="text-xs text-[#475569]">Live preview — edits update the print order</div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="randomizeStreamer()" class="btn btn-sm btn-ghost"><i class="fa-solid fa-dice mr-1.5"></i>Random</button>
+                <button onclick="saveStreamer()" class="btn btn-sm btn-primary">Save to ritual</button>
+              </div>
+            </div>
+
+            <!-- LIVE STREAMER PREVIEW -->
+            <div class="streamer-preview mb-5" id="streamer-preview">
+              <div class="koinobori" id="koinobori">
+                <!-- 3 dynamic carps -->
+                <div class="carp" id="carp1"><div class="carp-body" style="background:#00BFFF"></div></div>
+                <div class="carp" id="carp2"><div class="carp-body" style="background:#00D68A"></div></div>
+                <div class="carp" id="carp3"><div class="carp-body" style="background:#FF2759"></div></div>
+              </div>
+              <div class="absolute bottom-5 right-6 text-right">
+                <div id="streamer-wish" class="font-semibold text-[#0C1118] tracking-tight text-lg">For every wind that carries us forward</div>
+                <div class="text-xs text-[#475569]">— Sato family, 2026</div>
+              </div>
+            </div>
+
+            <!-- CONTROLS — all 48px, explicit states -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div class="label mb-1.5">Carp 1 — Sky</div>
+                <div class="flex gap-2">
+                  <button onclick="setCarpColor(1, '#00BFFF')" class="flex-1 h-11 rounded-lg border border-[#00BFFF] bg-[#00BFFF] text-white text-xs font-semibold">Electric</button>
+                  <button onclick="setCarpColor(1, '#5CC5F0')" class="flex-1 h-11 rounded-lg border border-[#5CC5F0] bg-[#5CC5F0] text-white text-xs font-semibold">Soft</button>
+                  <button onclick="setCarpColor(1, '#0088B3')" class="flex-1 h-11 rounded-lg border border-[#0088B3] bg-[#0088B3] text-white text-xs font-semibold">Deep</button>
+                </div>
+              </div>
+              <div>
+                <div class="label mb-1.5">Carp 2 — Leaf</div>
+                <div class="flex gap-2">
+                  <button onclick="setCarpColor(2, '#00D68A')" class="flex-1 h-11 rounded-lg border border-[#00D68A] bg-[#00D68A] text-xs font-semibold">Fresh</button>
+                  <button onclick="setCarpColor(2, '#38C97B')" class="flex-1 h-11 rounded-lg border border-[#38C97B] bg-[#38C97B] text-xs font-semibold">Moss</button>
+                  <button onclick="setCarpColor(2, '#00A05F')" class="flex-1 h-11 rounded-lg border border-[#00A05F] bg-[#00A05F] text-white text-xs font-semibold">Forest</button>
+                </div>
+              </div>
+              <div>
+                <div class="label mb-1.5">Carp 3 — Pop</div>
+                <div class="flex gap-2">
+                  <button onclick="setCarpColor(3, '#FF2759')" class="flex-1 h-11 rounded-lg border border-[#FF2759] bg-[#FF2759] text-white text-xs font-semibold">Hot</button>
+                  <button onclick="setCarpColor(3, '#FF5C7F')" class="flex-1 h-11 rounded-lg border border-[#FF5C7F] bg-[#FF5C7F] text-xs font-semibold">Coral</button>
+                  <button onclick="setCarpColor(3, '#B91C40')" class="flex-1 h-11 rounded-lg border border-[#B91C40] bg-[#B91C40] text-white text-xs font-semibold">Deep red</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="label mb-1.5">Wish on the tail</div>
+              <input id="wish-input" type="text" class="input text-sm" value="For every wind that carries us forward"
+                     oninput="updateWish(this.value)">
+            </div>
+          </div>
+
+          <!-- TIMELINE / RECENT -->
+          <div class="xl:col-span-7 panel p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div class="h2">Recent journal</div>
+              <button onclick="showAddModal()" class="btn btn-sm btn-ghost">+ Add entry</button>
+            </div>
+
+            <table class="w-full dash-table">
+              <thead>
+                <tr>
+                  <th class="w-2/5">Entry</th>
+                  <th>Date</th>
+                  <th>Children</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="journal-body">
+                <tr>
+                  <td class="font-medium">Koinobori design locked for May 5</td>
+                  <td class="text-[#475569]">Jan 29</td>
+                  <td><span class="badge badge-sky">All</span></td>
+                  <td><span class="text-[#00D68A] font-semibold">Published</span></td>
+                </tr>
+                <tr>
+                  <td class="font-medium">Yuna first day of grade 1 photos</td>
+                  <td class="text-[#475569]">Jan 12</td>
+                  <td><span class="badge badge-leaf">Yuna</span></td>
+                  <td><span class="text-[#00D68A] font-semibold">Printed</span></td>
+                </tr>
+                <tr>
+                  <td class="font-medium">Family wish for 2026</td>
+                  <td class="text-[#475569]">Dec 30</td>
+                  <td><span class="badge badge-neutral">All</span></td>
+                  <td><span class="text-[#00D68A] font-semibold">Archived</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- QUICK FORM / CONTROLS SHOWCASE -->
+          <div class="xl:col-span-5 panel p-6">
+            <div class="h2 mb-4">Quick milestone</div>
+
+            <form id="quick-form" onsubmit="addQuickEntry(event)">
+              <div class="space-y-4">
+                <div>
+                  <label class="label mb-1">Title</label>
+                  <input id="q-title" type="text" class="input" value="First time riding a bike" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="label mb-1">Date</label>
+                    <input type="date" class="input" value="2026-03-18" required>
+                  </div>
+                  <div>
+                    <label class="label mb-1">Child</label>
+                    <select class="select" required>
+                      <option>Yuna (4)</option>
+                      <option selected>Haru (7)</option>
+                      <option>Sora (9)</option>
+                      <option>All three</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="label mb-1">Notes (optional)</label>
+                  <textarea class="input text-sm" placeholder="He kept asking for another lap around the block..."></textarea>
+                </div>
+
+                <div class="flex items-center gap-5 pt-1">
+                  <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" class="chk" checked> Add to family timeline
+                  </label>
+                  <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" class="chk chk-pop"> Order print
+                  </label>
+                </div>
+
+                <!-- Explicit disabled state -->
+                <div>
+                  <label class="label mb-1">Visibility (disabled example)</label>
+                  <select class="select" disabled>
+                    <option>Private (family only)</option>
+                  </select>
+                </div>
+
+                <div class="pt-2">
+                  <button type="submit" class="btn btn-leaf w-full">Save milestone</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- PRINT PREVIEW / FEATURE IMAGE -->
+        <div class="mt-7 panel p-7">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="h2">Latest print ready</div>
+              <div class="text-xs text-[#475569]">Archival giclée • 420 × 594 mm • Matte cotton rag</div>
+            </div>
+            <button onclick="simulatePrintOrder()" class="btn btn-outline btn-sm">Reorder • ¥8,400</button>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-[#E5E8E5] max-w-[460px]">
+            <img src="media/keepsake.jpg" alt="" class="w-full">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD ENTRY MODAL — full form controls demo -->
+  <dialog id="add-modal" class="rounded-2xl w-full max-w-lg border border-[#E5E8E5] p-0 overflow-hidden">
+    <div class="px-7 pt-7 pb-8">
+      <div class="flex items-start justify-between">
+        <div class="h2 tracking-tight">New journal entry</div>
+        <button onclick="closeAddModal()" class="text-[#475569] text-2xl leading-none">×</button>
+      </div>
+
+      <form onsubmit="submitFullEntry(event)" class="mt-6 space-y-5">
+        <div>
+          <label class="label block mb-1.5">Title</label>
+          <input type="text" id="m-title" class="input" value="Haru learned to swim today" required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="label block mb-1.5">Date</label>
+            <input type="date" class="input" value="2026-02-14" required>
+          </div>
+          <div>
+            <label class="label block mb-1.5">Type</label>
+            <select id="m-type" class="select">
+              <option>Milestone</option>
+              <option selected>Ritual moment</option>
+              <option>Photo memory</option>
+              <option>Family note</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="label block mb-1.5">Which children?</label>
+          <div class="flex flex-wrap gap-4 pt-1">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="chk" checked> Haru</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="chk" checked> Yuna</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="chk"> Sora</label>
+          </div>
+        </div>
+
+        <div>
+          <label class="label block mb-1.5">Private reflection</label>
+          <textarea class="input text-sm" placeholder="He was so proud. We took photos with the new koinobori in the background..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <div class="flex items-center gap-2 text-sm">
+            <div class="toggle" onclick="this.classList.toggle('on')" id="toggle-print"></div>
+            <span class="text-sm text-[#475569]">Include in next print batch</span>
+          </div>
+        </div>
+
+        <div class="pt-3 flex gap-3">
+          <button type="submit" class="btn btn-primary flex-1">Save entry</button>
+          <button type="button" onclick="closeAddModal()" class="btn btn-outline">Cancel</button>
+        </div>
+      </form>
+
+      <!-- State examples row -->
+      <div class="mt-8 pt-6 border-t border-[#E5E8E5]">
+        <div class="label mb-2">Control states (demo)</div>
+        <div class="flex gap-3 flex-wrap">
+          <button class="btn btn-sm btn-primary" disabled>Disabled primary</button>
+          <input type="text" class="input w-44 text-sm" placeholder="Focus me" value="Focus state">
+          <select class="select w-36 text-sm" disabled><option>Disabled select</option></select>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    // Tailwind config + root vars
+    function initDesignSystem() {
+      const root = document.documentElement;
+      root.style.setProperty('--bg', '#FFFEF8');
+      root.style.setProperty('--surface', '#FFFFFF');
+      root.style.setProperty('--ink', '#0C1118');
+      root.style.setProperty('--sky', '#00BFFF');
+      root.style.setProperty('--leaf', '#00D68A');
+      root.style.setProperty('--pop', '#FF2759');
+      root.style.setProperty('--control-h', '48px');
+    }
+
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // STREAMER DYNAMIC
+    let carpColors = {1: '#00BFFF', 2: '#00D68A', 3: '#FF2759'};
+
+    function setCarpColor(num, color) {
+      const carp = document.getElementById('carp' + num);
+      if (!carp) return;
+      const body = carp.querySelector('.carp-body');
+      body.style.background = color;
+      carpColors[num] = color;
+    }
+
+    function updateWish(val) {
+      document.getElementById('streamer-wish').textContent = val || 'For every wind that carries us forward';
+    }
+
+    function randomizeStreamer() {
+      const palette = ['#00BFFF', '#5CC5F0', '#0088B3', '#00D68A', '#38C97B', '#00A05F', '#FF2759', '#FF5C7F', '#B91C40'];
+      for (let i = 1; i <= 3; i++) {
+        const c = palette[Math.floor(Math.random() * palette.length)];
+        setCarpColor(i, c);
+      }
+      const wishes = [
+        "For every wind that carries us forward",
+        "Grow tall. Stay kind.",
+        "We rise together.",
+        "May your colors always fly."
+      ];
+      const w = wishes[Math.floor(Math.random() * wishes.length)];
+      document.getElementById('wish-input').value = w;
+      document.getElementById('streamer-wish').textContent = w;
+    }
+
+    function saveStreamer() {
+      const btns = event.currentTarget;
+      const toast = createToast("Koinobori saved to Kodomo no Hi 2026 ritual.");
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'all 180ms';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.parentNode && toast.parentNode.removeChild(toast), 120);
+      }, 2100);
+    }
+
+    function createToast(msg) {
+      const d = document.createElement('div');
+      d.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#0C1118] text-white text-sm px-6 h-11 flex items-center rounded-full shadow-2xl';
+      d.textContent = msg;
+      return d;
+    }
+
+    // JOURNAL ADD
+    function addQuickEntry(e) {
+      e.preventDefault();
+      const title = document.getElementById('q-title').value || 'New milestone';
+      const tbody = document.getElementById('journal-body');
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="font-medium">${title}</td>
+        <td class="text-[#475569]">Today</td>
+        <td><span class="badge badge-leaf">Haru</span></td>
+        <td><span class="text-[#00D68A] font-semibold">Saved</span></td>
+      `;
+      tbody.prepend(tr);
+
+      // reset
+      document.getElementById('quick-form').reset();
+      document.getElementById('q-title').value = 'First time riding a bike';
+      
+      const t = createToast("Milestone saved to timeline.");
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.transition='all 180ms'; t.style.opacity='0'; setTimeout(()=>t.remove(),100); }, 1700);
+    }
+
+    let addModal;
+
+    function showAddModal() {
+      addModal = document.getElementById('add-modal');
+      addModal.showModal();
+    }
+    function closeAddModal() {
+      if (addModal) addModal.close();
+    }
+
+    function submitFullEntry(e) {
+      e.preventDefault();
+      const title = document.getElementById('m-title').value;
+      const tbody = document.getElementById('journal-body');
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="font-medium">${title}</td>
+        <td class="text-[#475569]">Feb 14</td>
+        <td><span class="badge badge-sky">Haru, Yuna</span></td>
+        <td><span class="text-[#00D68A] font-semibold">Saved</span></td>
+      `;
+      tbody.prepend(tr);
+      
+      closeAddModal();
+      const t = createToast("Entry added to journal.");
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 100); }, 1400);
+    }
+
+    function showRitualModal() {
+      const modal = document.createElement('dialog');
+      modal.className = 'rounded-2xl max-w-md w-full p-7 border border-[#E5E8E5]';
+      modal.innerHTML = `
+        <div class="flex justify-between">
+          <div class="h2">All rituals</div>
+          <button class="text-xl text-[#475569]" onclick="this.closest('dialog').close()">×</button>
+        </div>
+        <div class="mt-6 space-y-3 text-sm">
+          <div class="flex justify-between py-3 border-b"><div>Kodomo no Hi 2026</div><div class="text-[#FF2759]">11 days</div></div>
+          <div class="flex justify-between py-3 border-b"><div>Spring equinox family walk</div><div class="text-[#00D68A]">Done</div></div>
+          <div class="flex justify-between py-3"><div>Haru’s 8th birthday</div><div class="text-[#00BFFF]">Planned</div></div>
+        </div>
+        <div class="pt-4">
+          <button onclick="this.closest('dialog').close()" class="btn btn-primary w-full">Close</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.showModal();
+      modal.addEventListener('close', () => modal.remove());
+    }
+
+    function simulatePublish() {
+      const t = createToast("Family update published. All members notified.");
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.transition = 'all 160ms'; t.style.opacity = '0'; setTimeout(() => t.remove(), 80); }, 1850);
+    }
+
+    function simulatePrintOrder() {
+      const t = createToast("Reorder placed. Ships in 5–7 days.");
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.transition = 'all 160ms'; t.style.opacity = '0'; setTimeout(() => t.remove(), 80); }, 1850);
+    }
+
+    function updateWishInputListener() {
+      const input = document.getElementById('wish-input');
+      if (input) {
+        input.addEventListener('input', () => updateWish(input.value));
+      }
+    }
+
+    // Keyboard support + focus demo hint
+    function initKeyboard() {
+      document.addEventListener('keydown', function(e) {
+        if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+          e.preventDefault();
+          const s = document.querySelector('.input[placeholder*="Search"]');
+          if (s) s.focus();
+        }
+      });
+
+      // Make sure focus rings are visible on interactive demo elements
+      const demoInput = document.querySelector('#add-modal input');
+      if (demoInput) demoInput.classList.add('focus-ring-demo');
+    }
+
+    function initStreamer() {
+      // Initial colors already set in HTML
+      // Make sure wish syncs
+      const w = document.getElementById('wish-input');
+      if (w) {
+        document.getElementById('streamer-wish').textContent = w.value;
+      }
+    }
+
+    function initToggles() {
+      // Any pre-existing toggles
+      document.querySelectorAll('.toggle').forEach(t => {
+        t.addEventListener('click', () => t.classList.toggle('on'));
+      });
+    }
+
+    // Boot
+    function bootDashboard() {
+      initDesignSystem();
+      updateWishInputListener();
+      initStreamer();
+      initToggles();
+      initKeyboard();
+
+      // Ensure first nav active
+      const firstNav = document.querySelector('.nav-item');
+      if (firstNav) firstNav.classList.add('active');
+
+      // Seed one more row occasionally if needed (noop for cleanliness)
+
+      console.log('%c[KODORI] dashboard.html — single control height (48px), all states, tokens applied.', 'color:#94A3B8');
+    }
+
+    window.onload = bootDashboard;
+  </script>
+</body>
+</html>

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yaguruma — fly the valley of carp</title>
+<meta name="description" content="A real-time low-poly flight up the river of koinobori to the falls where the carp becomes a dragon." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Inter:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --accent:#1B4DFF; --accent-2:#00BE68; --accent-3:#FF3A24;
+  --ink:#0B1020; --on:#FFFFFF;
+  --font-display:"Archivo",system-ui,sans-serif;
+  --font-body:"Inter",system-ui,sans-serif;
+  --font-kanji:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;
+  --r-card:24px; --r-pill:9999px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{background:#bfe3ff}
+body{font-family:var(--font-body);color:var(--on);overflow-x:hidden}
+
+/* fixed full-screen canvas behind everything */
+#scene{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block}
+
+/* scroll driver */
+#scroller{position:relative;z-index:2;width:100%}
+.seg-anchor{height:100vh}
+
+/* overlay layer for content panels */
+#overlay{position:fixed;inset:0;z-index:3;pointer-events:none}
+.panel{position:absolute;inset:0;display:flex;padding:7vh 7vw;opacity:0;transition:opacity .8s ease;will-change:opacity}
+.panel.show{opacity:1}
+.panel.pos-bl{align-items:flex-end;justify-content:flex-start}
+.panel.pos-br{align-items:flex-end;justify-content:flex-end;text-align:right}
+.panel.pos-tl{align-items:flex-start;justify-content:flex-start}
+.panel.pos-c{align-items:center;justify-content:center;text-align:center}
+.glass{
+  background:rgba(8,12,26,.40);backdrop-filter:blur(14px) saturate(1.15);
+  border-radius:var(--r-card);padding:34px 40px;max-width:620px;
+  box-shadow:0 30px 80px rgba(8,12,26,.4);
+}
+.eyebrow{display:inline-flex;align-items:center;gap:12px;font-family:var(--font-display);font-weight:800;
+  font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#fff;opacity:.92;margin-bottom:16px}
+.eyebrow .k{font-family:var(--font-kanji);font-weight:900;font-size:19px;letter-spacing:.04em;text-transform:none}
+.eyebrow .k.azu{color:#7fb0ff}.eyebrow .k.grn{color:#5fe6a6}.eyebrow .k.ver{color:#ff8a78}
+.panel h2{font-family:var(--font-display);font-weight:900;letter-spacing:-0.02em;line-height:1.02;
+  font-size:clamp(2.2rem,5.6vw,4.6rem);margin:0 0 18px;text-shadow:0 6px 36px rgba(8,12,26,.55)}
+.panel .big-k{font-family:var(--font-kanji);font-weight:900;display:block;
+  font-size:clamp(2.6rem,7vw,5.4rem);line-height:1;margin-bottom:10px;text-shadow:0 8px 40px rgba(8,12,26,.6)}
+.panel p{font-size:clamp(1.02rem,1.5vw,1.3rem);line-height:1.6;color:rgba(255,255,255,.94);max-width:48ch;margin:0;font-weight:500;
+  text-shadow:0 2px 18px rgba(8,12,26,.5)}
+.panel.pos-br p{margin-left:auto}
+.hl{color:#fff;background:linear-gradient(transparent 62%, color-mix(in srgb,var(--accent) 70%, transparent) 0);padding:0 .12em;border-radius:16px}
+.hl.grn{background:linear-gradient(transparent 62%, color-mix(in srgb,var(--accent-2) 75%, transparent) 0)}
+.hl.ver{background:linear-gradient(transparent 62%, color-mix(in srgb,var(--accent-3) 80%, transparent) 0)}
+.factrow{display:flex;gap:26px;flex-wrap:wrap;margin-top:24px}
+.fact{display:flex;flex-direction:column;gap:2px}
+.fact b{font-family:var(--font-display);font-weight:900;font-size:30px;letter-spacing:-0.03em}
+.fact b.azu{color:#86b2ff}.fact b.grn{color:#5fe6a6}.fact b.ver{color:#ff8a78}
+.fact span{font-size:13.5px;color:rgba(255,255,255,.82);font-weight:600;letter-spacing:.02em}
+.ch{display:inline-block;opacity:0;transform:translateY(0.5em);transition:opacity .5s ease, transform .5s ease}
+.show .ch{opacity:1;transform:none}
+
+/* fixed brand mark + progress */
+.hud{position:fixed;z-index:6;pointer-events:none}
+.hud.tl{top:26px;left:30px;display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:-0.02em;color:#fff;text-shadow:0 2px 14px rgba(8,12,26,.5)}
+.hud.br{right:30px;bottom:26px;font-family:var(--font-kanji);font-weight:900;font-size:15px;letter-spacing:.18em;color:rgba(255,255,255,.85);text-shadow:0 2px 14px rgba(8,12,26,.5)}
+.spin3{animation:spin 16s linear infinite;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin3{animation:none}}
+
+/* progress rail */
+.rail{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:6;display:flex;flex-direction:column;gap:12px;pointer-events:none}
+.rail i{width:8px;height:8px;border-radius:var(--r-pill);background:rgba(255,255,255,.45);transition:background .3s,transform .3s}
+.rail i.on{background:#fff;transform:scale(1.5)}
+
+/* no-webgl fallback */
+#fallback{position:fixed;inset:0;z-index:10;display:none;
+  background:linear-gradient(180deg,#7fc0ff 0%,#bfe3ff 45%,#eafaf0 100%);overflow:hidden}
+#fallback.on{display:flex;align-items:flex-end}
+#fallback .fk{position:absolute;right:6vw;top:8vh;font-family:var(--font-kanji);font-weight:900;font-size:clamp(3rem,10vw,8rem);color:rgba(255,255,255,.75);writing-mode:vertical-rl}
+#fallback .fb{position:relative;z-index:2;margin:0 0 8vh 7vw;max-width:640px;color:var(--ink)}
+#fallback h1{font-family:var(--font-display);font-weight:900;font-size:clamp(2.4rem,7vw,5rem);letter-spacing:-0.02em;line-height:1.02;margin:0 0 16px}
+#fallback p{font-size:19px;line-height:1.6;color:#1c2540;max-width:46ch}
+.carp-svg{position:absolute;left:0;bottom:0;width:100%;height:60%;z-index:1}
+</style>
+</head>
+<body>
+
+<!-- the one persistent 3D canvas, behind everything -->
+<canvas id="scene" aria-label="Real-time low-poly world: a river of koinobori rising to a waterfall"></canvas>
+
+<!-- brand HUD -->
+<div class="hud tl" aria-hidden="true">
+  <svg class="spin3" width="30" height="30" viewBox="-50 -50 100 100">
+    <circle r="46" fill="none" stroke="#fff" stroke-width="2.4"/>
+    <g>
+      <path fill="none" stroke="#86b2ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+      <path fill="none" stroke="#5fe6a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(45)"/>
+      <path fill="none" stroke="#86b2ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+      <path fill="none" stroke="#5fe6a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(135)"/>
+      <path fill="none" stroke="#86b2ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+      <path fill="none" stroke="#5fe6a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(225)"/>
+      <path fill="none" stroke="#86b2ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+      <path fill="none" stroke="#5fe6a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(315)"/>
+    </g>
+    <circle r="8.5" fill="#FF3A24"/>
+  </svg>
+  Yaguruma
+</div>
+<div class="hud br" aria-hidden="true">こどもの日 · 鯉のぼり</div>
+<div class="rail" id="rail" aria-hidden="true"></div>
+
+<!-- content panels over the world -->
+<div id="overlay">
+  <section class="panel pos-bl show" data-s="0.00" data-e="0.16">
+    <div class="glass">
+      <span class="eyebrow"><span class="k azu">こどもの日</span> May 5 · Children's Day</span>
+      <h2 data-split>The valley wakes.</h2>
+      <p>Dawn comes up the river. A thousand koinobori catch the first wind and lift — the whole avenue turns toward the light at once.</p>
+      <div class="factrow">
+        <div class="fact"><b class="azu">May 5</b><span>every spring</span></div>
+        <div class="fact"><b class="grn">Free</b><span>for every child</span></div>
+        <div class="fact"><b class="ver">All ages</b><span>0 to 100</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel pos-br" data-s="0.18" data-e="0.36">
+    <div class="glass">
+      <span class="eyebrow"><span class="k azu">鯉のぼり</span> The avenue of carp</span>
+      <h2 data-split>One streamer<br/>for each year.</h2>
+      <p>Black carp for the father, red for the mother, a new bright carp for every child — added one spring at a time until the pole runs out of sky.</p>
+    </div>
+  </section>
+
+  <section class="panel pos-tl" data-s="0.40" data-e="0.58">
+    <div class="glass">
+      <span class="eyebrow"><span class="k grn">川</span> Follow the water</span>
+      <h2 data-split>The river bends<br/>toward the falls.</h2>
+      <p>Every carp is swimming the same way — upstream, against the current, toward the white roar at the head of the valley.</p>
+    </div>
+  </section>
+
+  <section class="panel pos-bl" data-s="0.62" data-e="0.80">
+    <div class="glass">
+      <span class="eyebrow"><span class="k azu">滝</span> The Dragon Gate</span>
+      <h2 data-split>Climb the white water.</h2>
+      <p>The legend says the carp that fights its way to the top of the falls is changed. Courage carries it up the last impossible stretch.</p>
+    </div>
+  </section>
+
+  <section class="panel pos-c" data-s="0.84" data-e="1.0">
+    <div class="glass" style="background:rgba(8,12,26,.32)">
+      <span class="big-k">登竜門</span>
+      <h2 data-split>It becomes a dragon.</h2>
+      <p>Raise a koinobori this <span class="hl ver">fifth of May</span>. Every pole says the same wish over a child: <span class="hl">keep climbing — all the way up.</span></p>
+    </div>
+  </section>
+</div>
+
+<!-- tall scroll driver: each anchor = one camera segment -->
+<div id="scroller">
+  <div class="seg-anchor"></div><div class="seg-anchor"></div><div class="seg-anchor"></div>
+  <div class="seg-anchor"></div><div class="seg-anchor"></div><div class="seg-anchor"></div>
+</div>
+
+<!-- no-webgl fallback: a static low-poly hero still of the same world -->
+<div id="fallback" aria-hidden="true">
+  <svg class="carp-svg" viewBox="0 0 1200 480" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <polygon points="0,480 0,360 220,300 480,350 760,290 1000,340 1200,300 1200,480" fill="#27a36a"/>
+    <polygon points="0,480 0,420 300,380 620,410 920,370 1200,400 1200,480" fill="#0d7d4c"/>
+    <g stroke="#6a4a2a" stroke-width="8"><line x1="240" y1="420" x2="240" y2="150"/><line x1="600" y1="430" x2="600" y2="120"/><line x1="960" y1="420" x2="960" y2="160"/></g>
+    <g>
+      <polygon points="240,170 320,150 360,168 320,186" fill="#1B4DFF"/>
+      <polygon points="240,200 316,184 352,200 316,216" fill="#FF3A24"/>
+      <polygon points="600,140 690,118 735,138 690,158" fill="#FF3A24"/>
+      <polygon points="600,172 682,154 722,172 682,190" fill="#1B4DFF"/>
+      <polygon points="600,204 676,188 712,204 676,220" fill="#00BE68"/>
+      <polygon points="960,178 1040,158 1080,176 1040,194" fill="#00BE68"/>
+      <polygon points="960,208 1034,192 1070,208 1034,224" fill="#1B4DFF"/>
+    </g>
+  </svg>
+  <div class="fk" aria-hidden="true">鯉のぼり</div>
+  <div class="fb">
+    <h1>The valley of carp.</h1>
+    <p>This page flies a live 3D world from the river of koinobori up to the Dragon Gate falls. Your browser can't open WebGL, so here is the view from the riverbank. May 5 — free for every child.</p>
+  </div>
+</div>
+
+<!-- GSAP + ScrollTrigger + CustomEase (UMD) -->
+<script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/gsap@3.12.5/dist/CustomEase.min.js"></script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- WebGL capability check ---------- */
+function webglOK(){
+  try{ const c=document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl2')||c.getContext('webgl'))); }
+  catch(e){ return false; }
+}
+if(!webglOK()){
+  document.getElementById('fallback').classList.add('on');
+  document.getElementById('scroller').style.height='100vh';
+} else {
+  boot();
+}
+
+/* ===================================================================== */
+function boot(){
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xcfe7ff, 120, 940);
+scene.background = new THREE.Color(0xcfe7ff);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.5, 4000);
+
+/* ---------- post ---------- */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.62, 0.85, 0.82);
+composer.addPass(bloom);
+
+/* ---------- world geometry helpers ---------- */
+const meander = z => Math.sin(z*0.009)*26 + Math.sin(z*0.021)*10;
+const FALLS_Z = 612, FALLS_TOP = 78, RIVER_Y = 0.7;
+
+/* shared wind uniforms for the cloth/flag shader */
+const wind = {
+  uTime:   { value: 0 },
+  uWindStr:{ value: 1.0 },
+  uWindDir:{ value: new THREE.Vector2(1, 0.18) }
+};
+/* inject a traveling-sine cloth shader into a standard material's vertex stage */
+function clothify(mat, len, amp, freq, speed){
+  mat.onBeforeCompile = (sh)=>{
+    sh.uniforms.uTime = wind.uTime; sh.uniforms.uWindStr = wind.uWindStr; sh.uniforms.uWindDir = wind.uWindDir;
+    sh.vertexShader = 'uniform float uTime; uniform float uWindStr; uniform vec2 uWindDir; attribute float aPhase;\n' + sh.vertexShader;
+    sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      float L = ${len.toFixed(2)};
+      float tt = clamp(position.x / L, 0.0, 1.0);        // 0 at head, 1 at tail
+      float ph = aPhase;
+      float a = (0.45 + uWindStr) * tt * ${amp.toFixed(2)};
+      float w = sin(position.x * ${freq.toFixed(3)} - uTime * ${speed.toFixed(2)} + ph);
+      transformed.z += w * a * uWindDir.x;
+      transformed.y += sin(position.x * ${(freq*0.7).toFixed(3)} - uTime * ${(speed*0.85).toFixed(2)} + ph) * a * 0.45;
+      transformed.x += (cos(position.x * ${freq.toFixed(3)} - uTime * ${speed.toFixed(2)} + ph)) * a * 0.12 * tt;
+    `);
+  };
+  mat.customProgramCacheKey = ()=> 'cloth'+len+'_'+freq+'_'+speed;
+  return mat;
+}
+
+/* ---------- sky dome ---------- */
+const skyUniforms = { top:{value:new THREE.Color(0x4c9bff)}, bottom:{value:new THREE.Color(0xeaf6ff)} };
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(2400, 24, 16),
+  new THREE.ShaderMaterial({
+    side:THREE.BackSide, depthWrite:false, fog:false,
+    uniforms: skyUniforms,
+    vertexShader:`varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:`varying vec3 vP; uniform vec3 top; uniform vec3 bottom;
+      void main(){ float h=normalize(vP).y*0.5+0.5; vec3 c=mix(bottom,top,smoothstep(-0.02,0.62,h)); gl_FragColor=vec4(c,1.0);}`
+  })
+);
+scene.add(skyDome);
+
+/* ---------- lights ---------- */
+const hemi = new THREE.HemisphereLight(0xdcefff, 0x2e6b3f, 0.85);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xfff1d8, 2.1);
+key.position.set(-220, 240, -120);
+scene.add(key);
+const fillFalls = new THREE.PointLight(0x9fd8ff, 0.0, 620, 2.0);
+fillFalls.position.set(meander(FALLS_Z+10), 38, FALLS_Z);
+scene.add(fillFalls);
+const dragonGlow = new THREE.PointLight(0xffd070, 0.0, 520, 2.0);
+dragonGlow.position.set(meander(FALLS_Z+8), FALLS_TOP+20, FALLS_Z+8);
+scene.add(dragonGlow);
+
+/* sun disc (bloom catches it) */
+const sun = new THREE.Mesh(new THREE.SphereGeometry(34, 20, 16),
+  new THREE.MeshBasicMaterial({color:0xfff0cf, fog:false}));
+scene.add(sun);
+
+/* ---------- terrain ---------- */
+function heightAt(x,z){
+  const d = Math.abs(x - meander(z));
+  let hills = (Math.sin(x*0.018)*Math.cos(z*0.012) + Math.sin(z*0.03)*0.6) * 9.0;
+  hills += Math.sin(x*0.06 + z*0.04)*2.2;
+  const valley = THREE.MathUtils.smoothstep(d, 12, 70);   // 0 in river, 1 on hills
+  // the valley floor stays low all the way to the falls; the cliff wall is its own mesh
+  let h = (1.2 + hills) * valley;
+  // gentle shoulders rising on the far sides for depth
+  h += THREE.MathUtils.smoothstep(d, 150, 250) * 26.0;
+  return h;
+}
+{
+  const W=520, D=1500, sx=120, sz=180;
+  const g = new THREE.PlaneGeometry(W, D, sx, sz);
+  g.rotateX(-Math.PI/2);
+  const pos = g.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), z=pos.getZ(i)+ (D/2-260); // shift so most terrain is in +z
+    pos.setY(i, heightAt(x, z));
+    pos.setZ(i, z);
+  }
+  g.computeVertexNormals();
+  const m = new THREE.MeshStandardMaterial({color:0x39b06a, roughness:0.95, metalness:0.0, flatShading:true});
+  const terrain = new THREE.Mesh(g, m);
+  scene.add(terrain);
+}
+
+/* ---------- river ribbon ---------- */
+{
+  const zA=-160, zB=FALLS_Z+2, segs=120, half=17;
+  const verts=[], cols=[], idx=[];
+  const cDeep=new THREE.Color(0x1d6fe0), cLite=new THREE.Color(0x6fc4ff);
+  for(let i=0;i<=segs;i++){
+    const t=i/segs, z=zA+(zB-zA)*t, cx=meander(z);
+    const y=RIVER_Y + THREE.MathUtils.smoothstep(z,-160,zB)*2.2;   // valley floor, stays low to the falls base
+    verts.push(cx-half, y, z,  cx+half, y, z);
+    const c = i%2? cDeep : cLite;
+    cols.push(c.r,c.g,c.b, c.r,c.g,c.b);
+  }
+  for(let i=0;i<segs;i++){ const a=i*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
+  const rg=new THREE.BufferGeometry();
+  rg.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+  rg.setAttribute('color', new THREE.Float32BufferAttribute(cols,3));
+  rg.setIndex(idx); rg.computeVertexNormals();
+  const rmat=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.18, metalness:0.55, flatShading:true,
+    emissive:0x10406e, emissiveIntensity:0.35, transparent:true, opacity:0.92});
+  rmat.onBeforeCompile=(sh)=>{
+    sh.uniforms.uTime=wind.uTime;
+    sh.vertexShader='uniform float uTime;\n'+sh.vertexShader;
+    sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      transformed.y += sin(position.z*0.25 + uTime*1.6)*0.16 + cos(position.x*0.4 + uTime*1.2)*0.10;`);
+  };
+  rmat.customProgramCacheKey=()=> 'river';
+  scene.add(new THREE.Mesh(rg, rmat));
+}
+
+/* ---------- cliff + waterfall ---------- */
+{
+  const cliffH = FALLS_TOP + 46;
+  const cliff = new THREE.Mesh(
+    new THREE.BoxGeometry(260, cliffH, 150, 5, 4, 3),
+    new THREE.MeshStandardMaterial({color:0x4a5a52, roughness:1.0, flatShading:true})
+  );
+  cliff.position.set(meander(FALLS_Z+115), cliffH/2 - 10, FALLS_Z+115);  // wall well behind the falls (front face ≈ FALLS_Z+40)
+  scene.add(cliff);
+  // flanking rock shoulders framing the Dragon Gate
+  const rockMat=new THREE.MeshStandardMaterial({color:0x556659, roughness:1, flatShading:true});
+  [-1,1].forEach(s=>{ const r=new THREE.Mesh(new THREE.DodecahedronGeometry(26,0), rockMat);
+    r.position.set(meander(FALLS_Z)+s*46, 16, FALLS_Z+12); r.scale.set(1,1.5,1); scene.add(r); });
+
+  const wfMat = new THREE.ShaderMaterial({
+    transparent:true, fog:true,
+    uniforms:{ uTime:wind.uTime, fogColor:{value:scene.fog.color}, fogNear:{value:scene.fog.near}, fogFar:{value:scene.fog.far} },
+    vertexShader:`varying vec2 vU; varying float vFog; uniform float uTime;
+      void main(){ vU=uv; vec3 p=position; p.x += sin(uv.y*26.0 + uTime*5.0)*0.5*(1.0-uv.y);
+        vec4 mv=modelViewMatrix*vec4(p,1.0); vFog=-mv.z; gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`varying vec2 vU; varying float vFog; uniform float uTime;
+      uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
+      void main(){
+        float bands = fract(vU.y*7.0 - uTime*1.3);
+        float foam = smoothstep(0.35,0.62,bands)*0.5 + 0.5;
+        vec3 deep=vec3(0.30,0.62,0.95); vec3 white=vec3(0.93,0.98,1.0);
+        vec3 c=mix(deep,white,foam);
+        float edge=smoothstep(0.0,0.12,vU.x)*smoothstep(0.0,0.12,1.0-vU.x);
+        float a=(0.82)*edge;
+        float f=smoothstep(fogNear,fogFar,vFog); c=mix(c,fogColor,f);
+        gl_FragColor=vec4(c, a);
+      }`
+  });
+  const wfH = FALLS_TOP + 4;
+  const wf = new THREE.Mesh(new THREE.PlaneGeometry(64, wfH, 8, 30), wfMat);
+  wf.position.set(meander(FALLS_Z+10), wfH/2 - 2, FALLS_Z+16);   // just in front of the cliff face
+  scene.add(wf);
+  window.__wf = wfMat;
+
+  // mist particles at the base of the falls
+  const mistN=90, mg=new THREE.BufferGeometry(), mp=[];
+  for(let i=0;i<mistN;i++){ mp.push(meander(FALLS_Z+10)+(Math.random()-0.5)*64, Math.random()*24, FALLS_Z+14+(Math.random()-0.5)*22); }
+  mg.setAttribute('position', new THREE.Float32BufferAttribute(mp,3));
+  const mist=new THREE.Points(mg, new THREE.PointsMaterial({color:0xeaf7ff, size:2.2, transparent:true, opacity:0.5, depthWrite:false}));
+  scene.add(mist); window.__mist=mist;
+}
+
+/* ---------- distant mountains with LOD ---------- */
+function mountain(r, h, col){
+  const lod=new THREE.LOD();
+  const hi=new THREE.Mesh(new THREE.ConeGeometry(r,h,7,1), new THREE.MeshStandardMaterial({color:col,flatShading:true,roughness:1}));
+  const lo=new THREE.Mesh(new THREE.ConeGeometry(r,h,4,1), new THREE.MeshStandardMaterial({color:col,flatShading:true,roughness:1}));
+  lod.addLevel(hi,0); lod.addLevel(lo,600);
+  return lod;
+}
+{
+  const ring=[
+    [-360,120,-220,0x6f8fb8],[ -280,90,700,0x789ec2],[420,150,820,0x5f82ad],
+    [520,110,200,0x789ec2],[-470,170,520,0x60809f],[260,80,-260,0x82a4c8],
+    [-160,200,1050,0x547399],[600,180,560,0x6889b0]
+  ];
+  ring.forEach(([x,h,z,c])=>{ const m=mountain(h*0.9,h,c); m.position.set(x, h/2 - 6, z); scene.add(m); });
+}
+
+/* ---------- low-poly pines with LOD ---------- */
+function pine(){
+  const lod=new THREE.LOD();
+  const mk=(seg)=>{ const g=new THREE.Group();
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.8,4,5), new THREE.MeshStandardMaterial({color:0x6b4a2c,flatShading:true,roughness:1}));
+    trunk.position.y=2; g.add(trunk);
+    const fol=new THREE.Mesh(new THREE.ConeGeometry(3.2,9,seg,1), new THREE.MeshStandardMaterial({color:0x2f8f54,flatShading:true,roughness:1}));
+    fol.position.y=8; g.add(fol);
+    return g; };
+  lod.addLevel(mk(7),0); lod.addLevel(mk(4),420);
+  return lod;
+}
+{
+  for(let i=0;i<46;i++){
+    const z=-120 + Math.random()*760;
+    const side=Math.random()<0.5?-1:1;
+    const x=meander(z) + side*(46 + Math.random()*150);
+    const p=pine(); const s=0.7+Math.random()*1.1; p.scale.setScalar(s);
+    p.position.set(x, heightAt(x,z)-0.5, z);
+    scene.add(p);
+  }
+}
+
+/* ---------- poles (instanced) ---------- */
+const poles=[];
+for(let z=-70; z<=560; z+=42){
+  for(const side of [-1,1]){
+    for(const row of [0,1]){
+      const x=meander(z) + side*(30 + row*16);
+      const h=30 + Math.random()*16 + (z>360? (z-360)*0.05:0);
+      poles.push({x, z, h, baseY:heightAt(x,z)});
+    }
+  }
+}
+{
+  const poleGeo=new THREE.CylinderGeometry(0.32,0.42,1,6,1);
+  const poleMat=new THREE.MeshStandardMaterial({color:0x3a2c1d, roughness:0.9, flatShading:true});
+  const pim=new THREE.InstancedMesh(poleGeo, poleMat, poles.length);
+  const capGeo=new THREE.SphereGeometry(0.9, 8, 6);
+  const capMat=new THREE.MeshStandardMaterial({color:0xffcf5a, emissive:0xffb020, emissiveIntensity:0.9, roughness:0.4, flatShading:true});
+  const cim=new THREE.InstancedMesh(capGeo, capMat, poles.length); // yaguruma gold caps
+  const m=new THREE.Matrix4();
+  poles.forEach((p,i)=>{
+    m.makeTranslation(p.x, p.baseY + p.h/2, p.z); m.scale(new THREE.Vector3(1,p.h,1)); pim.setMatrixAt(i,m);
+    m.makeTranslation(p.x, p.baseY + p.h + 1.1, p.z); cim.setMatrixAt(i, m);
+  });
+  pim.instanceMatrix.needsUpdate=true; cim.instanceMatrix.needsUpdate=true;
+  scene.add(pim); scene.add(cim);
+}
+
+/* ---------- koinobori carp (instanced + cloth shader) ---------- */
+{
+  const L=14;
+  const carpGeo=new THREE.CylinderGeometry(0.2, 2.6, L, 8, 14, true); // tail thin, mouth wide
+  carpGeo.rotateZ(-Math.PI/2);           // axis along X
+  carpGeo.translate(L/2, 0, 0);          // x in [0, L], head(mouth) at x=0
+  const carpMat=clothify(new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.55, metalness:0.05, flatShading:true, side:THREE.DoubleSide}), L, 3.0, 0.55, 2.4);
+
+  const palette=[0x12203a, 0xFF3A24, 0x1B4DFF, 0x00BE68, 0xFFB020]; // magoi, higoi, child blue, green, gold
+  const per=[]; // build carp list: 2-3 per pole, descending
+  poles.forEach(p=>{
+    const n = 2 + (Math.random()<0.6?1:0);
+    for(let k=0;k<n;k++){
+      const y = p.baseY + p.h - 2.4 - k*4.0;
+      per.push({x:p.x+1.0, y, z:p.z, col: palette[ k===0?0 : (1+(Math.floor(Math.random()*4))) ], scale: 1.05 - k*0.16});
+    }
+  });
+  const carp=new THREE.InstancedMesh(carpGeo, carpMat, per.length);
+  const phases=new Float32Array(per.length);
+  const m=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(), pos=new THREE.Vector3();
+  const col=new THREE.Color();
+  per.forEach((c,i)=>{
+    pos.set(c.x, c.y, c.z); s.set(c.scale, c.scale, c.scale);
+    q.setFromEuler(new THREE.Euler(0, 0, 0));
+    m.compose(pos, q, s); carp.setMatrixAt(i, m);
+    carp.setColorAt(i, col.setHex(c.col));
+    phases[i]=Math.random()*Math.PI*2;
+  });
+  carp.instanceMatrix.needsUpdate=true; if(carp.instanceColor) carp.instanceColor.needsUpdate=true;
+  carpGeo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases,1));
+  scene.add(carp);
+}
+
+/* ---------- fukinagashi windsocks (instanced, banded, cloth shader) ---------- */
+{
+  const L=18;
+  const g=new THREE.CylinderGeometry(1.1, 1.6, L, 8, 16, true);
+  g.rotateZ(-Math.PI/2); g.translate(L/2, 0, 0);
+  // 5-colour bands along x (goshiki, biased to the language palette)
+  const bands=[0x1B4DFF,0x00BE68,0xFFB020,0xFF3A24,0x12203a];
+  const cAttr=[]; const p=g.attributes.position; const cc=new THREE.Color();
+  for(let i=0;i<p.count;i++){ const t=THREE.MathUtils.clamp(p.getX(i)/L,0,1); const bi=Math.min(4,Math.floor(t*5)); cc.setHex(bands[bi]); cAttr.push(cc.r,cc.g,cc.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cAttr,3));
+  const mat=clothify(new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.5, flatShading:true, side:THREE.DoubleSide}), L, 3.6, 0.5, 2.1);
+  const socks=poles.filter((_,i)=> i%2===0);
+  const im=new THREE.InstancedMesh(g, mat, socks.length);
+  const phases=new Float32Array(socks.length);
+  const m=new THREE.Matrix4();
+  socks.forEach((pl,i)=>{ m.makeTranslation(pl.x+1.0, pl.baseY+pl.h-0.4, pl.z); im.setMatrixAt(i,m); phases[i]=Math.random()*6.28; });
+  im.instanceMatrix.needsUpdate=true;
+  g.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases,1));
+  scene.add(im);
+}
+
+/* ---------- drifting petals (instanced + shader) ---------- */
+{
+  const N=520, g=new THREE.PlaneGeometry(0.9,0.9);
+  const mat=new THREE.MeshStandardMaterial({color:0xffd6e8, emissive:0xff9ec4, emissiveIntensity:0.35, roughness:0.7, side:THREE.DoubleSide, transparent:true, opacity:0.92, flatShading:true});
+  const seeds=new Float32Array(N);
+  mat.onBeforeCompile=(sh)=>{
+    sh.uniforms.uTime=wind.uTime; sh.uniforms.uWindDir=wind.uWindDir;
+    sh.vertexShader='uniform float uTime; uniform vec2 uWindDir; attribute float aSeed;\n'+sh.vertexShader;
+    sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      float sd=aSeed; float t=uTime*0.35 + sd*40.0;
+      transformed.x += sin(t*1.3 + sd)*2.2 + uWindDir.x*sin(t)*1.5;
+      transformed.y += -mod(t*6.0, 90.0) + 60.0;
+      transformed.z += cos(t*1.1 + sd*2.0)*2.0;
+      transformed.xy = mat2(cos(t),-sin(t),sin(t),cos(t))*transformed.xy;`);
+  };
+  mat.customProgramCacheKey=()=> 'petal';
+  const im=new THREE.InstancedMesh(g, mat, N); const m=new THREE.Matrix4();
+  for(let i=0;i<N;i++){ const z=-120+Math.random()*740; const x=meander(z)+(Math.random()-0.5)*220;
+    m.makeTranslation(x, 6+Math.random()*70, z); im.setMatrixAt(i,m); seeds[i]=Math.random(); }
+  im.instanceMatrix.needsUpdate=true;
+  g.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seeds,1));
+  im.frustumCulled=false;
+  scene.add(im);
+}
+
+/* ---------- the dragon at the falls (revealed at climax) ---------- */
+const dragon=new THREE.Group();
+{
+  const segN=22, body=[];
+  const mat=new THREE.MeshStandardMaterial({color:0xffd86a, emissive:0xffae2a, emissiveIntensity:0.7, roughness:0.4, metalness:0.2, flatShading:true});
+  const sph=new THREE.IcosahedronGeometry(1,0);
+  for(let i=0;i<segN;i++){
+    const mh=new THREE.Mesh(sph, mat); const r=2.6*(1.0 - i/segN*0.55);
+    mh.scale.setScalar(r); dragon.add(mh); body.push(mh);
+  }
+  // head
+  const head=new THREE.Mesh(new THREE.ConeGeometry(3.0, 6.5, 6), mat);
+  dragon.add(head);
+  const hornG=new THREE.ConeGeometry(0.5,3,5), hornM=new THREE.MeshStandardMaterial({color:0xfff0c0,emissive:0xffcf70,emissiveIntensity:0.5,flatShading:true});
+  const h1=new THREE.Mesh(hornG,hornM), h2=new THREE.Mesh(hornG,hornM);
+  dragon.__body=body; dragon.__head=head; dragon.__horns=[h1,h2]; dragon.add(h1); dragon.add(h2);
+  dragon.position.set(meander(FALLS_Z+8), FALLS_TOP+16, FALLS_Z+8);
+  dragon.scale.setScalar(0.001);
+  scene.add(dragon);
+}
+function poseDragon(t){
+  const body=dragon.__body, head=dragon.__head, horns=dragon.__horns, n=body.length;
+  for(let i=0;i<n;i++){
+    const u=i/n, ang=u*Math.PI*2.2 + t*0.6;
+    const rad=10 - u*5;
+    body[i].position.set(Math.cos(ang)*rad, u*26 - 4 + Math.sin(t*1.5+u*6)*1.2, Math.sin(ang)*rad*0.6 + Math.sin(t+u*4)*1.5);
+  }
+  const hp=body[n-1].position;
+  head.position.set(hp.x, hp.y+3.4, hp.z); head.rotation.z=Math.sin(t)*0.2 + 0.5; head.rotation.y=t*0.6;
+  horns[0].position.set(hp.x-1.1, hp.y+6, hp.z); horns[1].position.set(hp.x+1.1, hp.y+6, hp.z);
+  horns[0].rotation.z=0.4; horns[1].rotation.z=-0.4;
+}
+
+/* ===================== camera rig (dual-ref) ===================== */
+const rig = { px:meander(-95), py:7, pz:-95, lx:meander(120), ly:11, lz:150 };
+const sky = { t:0, dragon:0, falls:0 };
+const lookV = new THREE.Vector3();
+
+// time-of-day colour stops: [skyTop, skyHorizon/fog, sunCol, keyCol, keyI, ambI, sunY]
+const STOPS = [
+  {p:0.00, top:0x4f93e6, hor:0xe6f3ff, sun:0xffe4b8, keyc:0xffe9cf, ki:1.7, ai:0.8, sx:-260, sy:90,  sz:-160, bloom:0.5},
+  {p:0.45, top:0x3f86ff, hor:0xd6ecff, sun:0xfff4da, keyc:0xfff3df, ki:2.2, ai:0.95,sx:-120, sy:300, sz:60,   bloom:0.55},
+  {p:0.78, top:0x315fd6, hor:0xffd9b0, sun:0xffce86, keyc:0xffcf90, ki:2.0, ai:0.75,sx:180,  sy:120, sz:520,  bloom:0.8},
+  {p:1.00, top:0x222a66, hor:0xff9e6b, sun:0xffb35e, keyc:0xff9d57, ki:1.5, ai:0.55,sx:240,  sy:60,  sz:640,  bloom:1.25}
+];
+const _cA=new THREE.Color(), _cB=new THREE.Color(), _cO=new THREE.Color();
+function lc(a,b,t){ _cA.setHex(a); _cB.setHex(b); return _cO.copy(_cA).lerp(_cB,t); }
+function applySky(t){
+  let i=0; while(i<STOPS.length-1 && t>STOPS[i+1].p) i++;
+  const a=STOPS[i], b=STOPS[Math.min(i+1,STOPS.length-1)];
+  const span=Math.max(1e-4, b.p-a.p), k=THREE.MathUtils.clamp((t-a.p)/span,0,1);
+  skyUniforms.top.value.copy(lc(a.top,b.top,k));
+  const hor=lc(a.hor,b.hor,k).clone();
+  skyUniforms.bottom.value.copy(hor);
+  scene.fog.color.copy(hor); scene.background.copy(hor);
+  if(window.__wf){ window.__wf.uniforms.fogColor.value.copy(hor); }
+  key.color.copy(lc(a.keyc,b.keyc,k)); key.intensity=THREE.MathUtils.lerp(a.ki,b.ki,k);
+  hemi.intensity=THREE.MathUtils.lerp(a.ai,b.ai,k);
+  sun.material.color.copy(lc(a.sun,b.sun,k));
+  const sx=THREE.MathUtils.lerp(a.sx,b.sx,k), sy=THREE.MathUtils.lerp(a.sy,b.sy,k), sz=THREE.MathUtils.lerp(a.sz,b.sz,k);
+  sun.position.set(sx,sy,sz); key.position.set(sx,sy,sz);
+  bloom.strength=THREE.MathUtils.lerp(a.bloom,b.bloom,k);
+  // reveal falls fill + dragon glow late
+  fillFalls.intensity = THREE.MathUtils.smoothstep(t,0.55,0.8)*1.6;
+  dragonGlow.intensity = sky.dragon*2.4;
+}
+
+/* ===================== scroll-driven GSAP timeline ===================== */
+const panels=[...document.querySelectorAll('.panel')].map(el=>({el, s:parseFloat(el.dataset.s), e:parseFloat(el.dataset.e)}));
+const rail=document.getElementById('rail');
+panels.forEach((_,i)=>{ const d=document.createElement('i'); if(i===0)d.classList.add('on'); rail.appendChild(d); });
+const railDots=[...rail.children];
+
+function setPanels(p){
+  panels.forEach((pn,i)=>{
+    const on = p>=pn.s-0.005 && p<=pn.e+0.02;
+    if(on!==pn.el.classList.contains('show')) pn.el.classList.toggle('show', on);
+    railDots[i].classList.toggle('on', on);
+  });
+}
+// split headlines into per-character spans for staggered reveal
+document.querySelectorAll('[data-split]').forEach(h=>{
+  const html=h.innerHTML; const parts=html.split(/(<br\s*\/?>)/i); let out=''; let ci=0;
+  parts.forEach(seg=>{
+    if(/<br/i.test(seg)){ out+=seg; return; }
+    for(const ch of seg){ if(ch===' '){ out+=' '; } else { out+=`<span class="ch" style="transition-delay:${(ci*0.03).toFixed(2)}s">${ch}</span>`; ci++; } }
+  });
+  h.innerHTML=out;
+});
+
+if(window.gsap && window.ScrollTrigger && !REDUCED){
+  const hasCE = !!window.CustomEase;
+  gsap.registerPlugin(ScrollTrigger);
+  if(hasCE) gsap.registerPlugin(CustomEase);
+  const mk=(name,path,fb)=> hasCE ? CustomEase.create(name,path) : fb;
+  const eAvenue = mk('eAvenue','M0,0 C0.42,0 0.2,1 1,1','power2.inOut');
+  const eBend   = mk('eBend','M0,0 C0.6,0 0.3,1 1,1','power3.inOut');
+  const eApproach=mk('eApproach','M0,0 C0.3,0 0.1,1 1,1','power2.in');
+  const eRise   = mk('eRise','M0,0 C0.5,0 0.15,1 1,1','power3.out');
+  const eClimax = mk('eClimax','M0,0 C0.25,0 0,1 1,1','power4.out');
+
+  const tl = gsap.timeline({
+    defaults:{ease:'none'},
+    scrollTrigger:{ trigger:'#scroller', start:'top top', end:'bottom bottom', scrub: 1.1,
+      onUpdate:(self)=> setPanels(self.progress) }
+  });
+  // K1 — glide the avenue of carp
+  tl.to(rig,{px:meander(120),py:9,pz:118, lx:meander(310),ly:13,lz:330, duration:1.5, ease:eAvenue})
+    .to(sky,{t:0.20, duration:1.5},'<')
+  // K2 — bank to follow the river bend
+    .to(rig,{px:meander(285)+34,py:15,pz:288, lx:meander(372),ly:7,lz:392, duration:1.25, ease:eBend})
+    .to(sky,{t:0.42, duration:1.25},'<')
+  // K3 — approach, tilt up to reveal the falls
+    .to(rig,{px:meander(470),py:22,pz:474, lx:meander(FALLS_Z),ly:54,lz:FALLS_Z+8, duration:1.15, ease:eApproach})
+    .to(sky,{t:0.66, duration:1.15},'<')
+  // K4 — rise up the white water
+    .to(rig,{px:meander(560),py:60,pz:540, lx:meander(FALLS_Z+18),ly:FALLS_TOP+6,lz:FALLS_Z+16, duration:1.05, ease:eRise})
+    .to(sky,{t:0.84, duration:1.05},'<')
+    .to(sky,{falls:1, duration:0.6},'<')
+  // K5 — the Dragon Gate climax
+    .to(rig,{px:meander(602),py:FALLS_TOP+20,pz:560, lx:meander(FALLS_Z+20),ly:FALLS_TOP+20,lz:FALLS_Z+18, duration:1.35, ease:eClimax})
+    .to(sky,{t:1.0, duration:1.35},'<')
+    .to(sky,{dragon:1, duration:1.0},'<0.25');
+}
+
+/* ===================== render loop ===================== */
+const clock=new THREE.Clock();
+let elapsed=0, running=true;
+function frame(){
+  if(!running) return;
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),0.05); elapsed+=dt;
+  wind.uTime.value=elapsed;
+  wind.uWindStr.value=1.0 + Math.sin(elapsed*0.3)*0.45;
+  if(window.__wf) window.__wf.uniforms.uTime.value=elapsed;
+  if(window.__mist){ const a=window.__mist.geometry.attributes.position; for(let i=1;i<a.count*3;i+=3){ a.array[i]+=dt*5; if(a.array[i]>24)a.array[i]=0; } a.needsUpdate=true; }
+  // dragon reveal + undulation
+  const ds=THREE.MathUtils.clamp(sky.dragon,0,1);
+  dragon.scale.setScalar(Math.max(0.001, ds*1.0));
+  dragon.visible = ds>0.01;
+  if(dragon.visible) poseDragon(elapsed);
+  // camera from the dual-ref rig
+  camera.position.set(rig.px, rig.py, rig.pz);
+  lookV.set(rig.lx, rig.ly, rig.lz);
+  camera.lookAt(lookV);
+  skyDome.position.copy(camera.position);
+  applySky(sky.t);
+  composer.render();
+}
+
+/* reduced-motion: render ONE composed still of the real world, no scroll camera */
+if(REDUCED){
+  document.getElementById('scroller').style.height='100vh';
+  rig.px=meander(150)-90; rig.py=46; rig.pz=120; rig.lx=meander(FALLS_Z); rig.ly=40; rig.lz=FALLS_Z;
+  sky.t=0.5; sky.dragon=0.6; setPanels(0.0);
+  camera.position.set(rig.px,rig.py,rig.pz); camera.lookAt(rig.lx,rig.ly,rig.lz);
+  skyDome.position.copy(camera.position); dragon.scale.setScalar(0.6); dragon.visible=true; poseDragon(0.6);
+  applySky(sky.t); composer.render();
+} else {
+  frame();
+}
+
+/* resize + visibility */
+addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ running=false; }
+  else if(!REDUCED && !running){ running=true; clock.getDelta(); frame(); }
+});
+}
+</script>
+</body>
+</html>

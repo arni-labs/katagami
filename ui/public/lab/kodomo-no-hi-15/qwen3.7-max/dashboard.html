@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koinobori — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FFFFFF;--surface:#F4F7FB;--surface-alt:#EAF1FA;
+  --text:#0B1120;--muted:#5F6B80;--border:#DDE3ED;
+  --accent:#0077FF;--accent-2:#10B981;--accent-3:#FF2D55;
+  --on-accent:#FFFFFF;--success:#10B981;--warning:#F59E0B;--error:#EF4444;--info:#0077FF;
+  --control-h:48px;
+  --radius-card:24px;--radius-pill:9999px;--radius-img:16px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-jp:'Noto Sans JP',sans-serif;
+  --sidebar-w:260px;
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);font-size:17px;line-height:1.6;
+  color:var(--text);background:var(--surface);
+  display:flex;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* === SIDEBAR === */
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;
+  background:var(--bg);
+  padding:32px 20px;
+  display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;
+  z-index:50;
+  transition:transform 0.3s ease;
+}
+.sidebar-brand{
+  font-weight:900;font-size:20px;letter-spacing:-0.02em;
+  color:var(--text);display:flex;align-items:center;gap:10px;
+  margin-bottom:40px;padding:0 8px;
+}
+.sidebar-brand svg{width:24px;height:24px}
+.sidebar-nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.sidebar-link{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 16px;border-radius:16px;
+  font-size:15px;font-weight:500;color:var(--muted);
+  text-decoration:none;transition:all 0.15s;
+  border:none;background:none;cursor:pointer;
+  font-family:var(--font-sans);
+  height:44px;
+}
+.sidebar-link:hover{background:var(--surface);color:var(--text)}
+.sidebar-link:focus{outline:3px solid var(--accent);outline-offset:2px}
+.sidebar-link:active{background:var(--surface-alt)}
+.sidebar-link.active{background:var(--surface-alt);color:var(--accent);font-weight:600}
+.sidebar-link svg{width:20px;height:20px;flex-shrink:0}
+.sidebar-section{
+  font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.08em;
+  padding:24px 16px 8px;
+}
+.sidebar-user{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 8px;margin-top:auto;
+}
+.sidebar-avatar{
+  width:36px;height:36px;border-radius:9999px;
+  background:var(--accent);color:var(--on-accent);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;
+}
+.sidebar-user-info{display:flex;flex-direction:column}
+.sidebar-user-name{font-size:14px;font-weight:600;color:var(--text)}
+.sidebar-user-role{font-size:12px;color:var(--muted)}
+
+/* === MAIN === */
+.main{
+  margin-left:var(--sidebar-w);flex:1;
+  padding:32px 40px;min-height:100vh;
+}
+
+/* === WELCOME BANNER === */
+.welcome-banner{
+  position:relative;border-radius:var(--radius-card);
+  overflow:hidden;margin-bottom:32px;
+  height:160px;display:flex;align-items:flex-end;
+}
+.welcome-bg{
+  position:absolute;inset:0;
+  background-image:url('./media/dashboard-hero.jpg');
+  background-size:cover;background-position:center;
+}
+.welcome-bg::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(11,17,32,0.1) 0%,rgba(11,17,32,0.7) 100%);
+}
+.welcome-content{
+  position:relative;z-index:1;padding:28px 32px;
+}
+.welcome-title{
+  font-weight:800;font-size:28px;letter-spacing:-0.02em;
+  color:#FFFFFF;margin-bottom:4px;
+}
+.welcome-sub{font-size:15px;color:rgba(255,255,255,0.85);font-weight:500}
+
+/* === HEADER === */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:32px;gap:24px;flex-wrap:wrap;
+}
+.header-title{
+  font-weight:800;font-size:28px;letter-spacing:-0.02em;line-height:1.2;
+}
+.header-actions{display:flex;gap:12px;align-items:center}
+.search-input{
+  height:var(--control-h);width:280px;padding:0 20px 0 44px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--border);border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:15px;
+  transition:border-color 0.2s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235F6B80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:16px center;
+}
+.search-input:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent),transparent 80%);
+}
+.search-input::placeholder{color:var(--muted)}
+.btn-primary{
+  height:var(--control-h);padding:0 24px;
+  background:var(--accent);color:var(--on-accent);
+  border:none;border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:15px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary:hover{background:color-mix(in srgb,var(--accent),#000 8%);transform:translateY(-1px)}
+.btn-primary:focus{outline:3px solid var(--accent);outline-offset:3px}
+.btn-primary:active{transform:translateY(1px);background:color-mix(in srgb,var(--accent),#000 15%)}
+.btn-primary:disabled{opacity:0.4;pointer-events:none}
+.btn-ghost{
+  height:var(--control-h);padding:0 16px;
+  background:transparent;color:var(--muted);
+  border:none;border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:15px;font-weight:500;
+  cursor:pointer;transition:all 0.15s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-ghost:hover{background:var(--surface);color:var(--text)}
+.btn-ghost:focus{outline:3px solid var(--accent);outline-offset:3px}
+.btn-ghost:active{background:var(--surface-alt)}
+.btn-ghost:disabled{opacity:0.4;pointer-events:none}
+
+/* === METRICS === */
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));
+  gap:16px;margin-bottom:32px;
+}
+@media(min-width:900px){.metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.metric-card{
+  background:var(--bg);border-radius:var(--radius-card);
+  padding:24px 28px;
+}
+.metric-label{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:8px}
+.metric-value{
+  font-weight:800;font-size:32px;letter-spacing:-0.02em;line-height:1;
+  margin-bottom:6px;
+}
+.metric-value--blue{color:var(--accent)}
+.metric-value--green{color:var(--accent-2)}
+.metric-value--coral{color:var(--accent-3)}
+.metric-change{font-size:13px;font-weight:600}
+.metric-change--up{color:var(--success)}
+.metric-change--down{color:var(--error)}
+
+/* === CONTENT GRID === */
+.content-grid{
+  display:grid;grid-template-columns:1fr;gap:24px;
+  margin-bottom:32px;
+}
+@media(min-width:1024px){.content-grid{grid-template-columns:2fr 1fr}}
+
+/* === CHART CARD === */
+.card{
+  background:var(--bg);border-radius:var(--radius-card);
+  padding:28px 32px;min-width:0;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;gap:16px;
+}
+.card-title{font-weight:700;font-size:18px;letter-spacing:-0.01em}
+.card-subtitle{font-size:14px;color:var(--muted);font-weight:500}
+
+/* === CHART (SVG) === */
+.chart-area{width:100%;height:220px;position:relative}
+.chart-area svg{width:100%;height:100%}
+
+/* === TASK LIST === */
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:16px;
+  transition:background 0.15s;
+}
+.task-item:hover{background:var(--surface)}
+.task-check{
+  width:20px;height:20px;border-radius:0;
+  border:2px solid var(--border);background:var(--bg);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;flex-shrink:0;
+  appearance:none;-webkit-appearance:none;
+  font-family:var(--font-sans);
+}
+.task-check:checked{
+  background:var(--accent);border-color:var(--accent);
+}
+.task-check:checked::after{
+  content:'';display:block;width:6px;height:10px;
+  border:solid var(--on-accent);border-width:0 2px 2px 0;
+  transform:rotate(45deg);margin-top:-2px;
+}
+.task-check:focus{outline:3px solid var(--accent);outline-offset:2px}
+.task-check:disabled{opacity:0.4;pointer-events:none}
+.task-text{font-size:15px;font-weight:500;flex:1;min-width:0}
+.task-text--done{text-decoration:line-through;color:var(--muted)}
+.task-badge{
+  padding:3px 10px;border-radius:var(--radius-pill);
+  font-size:12px;font-weight:600;
+}
+.task-badge--blue{background:var(--surface-alt);color:var(--accent)}
+.task-badge--green{background:color-mix(in srgb,var(--accent-2),transparent 88%);color:var(--accent-2)}
+.task-badge--coral{background:color-mix(in srgb,var(--accent-3),transparent 88%);color:var(--accent-3)}
+
+/* === ACTIVITY === */
+.activity-list{display:flex;flex-direction:column;gap:16px}
+.activity-item{display:flex;gap:12px;align-items:flex-start}
+.activity-dot{
+  width:10px;height:10px;border-radius:9999px;
+  margin-top:6px;flex-shrink:0;
+}
+.activity-dot--blue{background:var(--accent)}
+.activity-dot--green{background:var(--accent-2)}
+.activity-dot--coral{background:var(--accent-3)}
+.activity-text{font-size:14px;color:var(--text);line-height:1.5}
+.activity-text strong{font-weight:600}
+.activity-time{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* === TEAM TABLE === */
+.table-wrap{overflow-x:auto;min-width:0}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;font-size:12px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.06em;
+  padding:12px 16px;
+}
+td{
+  padding:14px 16px;font-size:15px;font-weight:500;
+  border-top:1px solid var(--surface);
+}
+tr:hover td{background:var(--surface)}
+.team-avatar{
+  width:32px;height:32px;border-radius:9999px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--on-accent);
+  margin-right:10px;vertical-align:middle;
+}
+.status-dot{
+  display:inline-block;width:8px;height:8px;border-radius:9999px;
+  margin-right:6px;
+}
+.status-dot--active{background:var(--success)}
+.status-dot--away{background:var(--warning)}
+.status-dot--offline{background:var(--border)}
+
+/* === SELECT === */
+.select-wrap{position:relative;display:inline-block}
+.select{
+  height:var(--control-h);padding:0 40px 0 16px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--border);border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:14px;font-weight:500;
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  transition:border-color 0.2s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235F6B80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:calc(100% - 14px) center;
+}
+.select:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent),transparent 80%);
+}
+.select:disabled{opacity:0.4;pointer-events:none}
+
+/* === PROGRESS BAR === */
+.progress-bar{
+  height:8px;border-radius:9999px;background:var(--surface-alt);
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;border-radius:9999px;
+  transition:width 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.progress-fill--blue{background:var(--accent)}
+.progress-fill--green{background:var(--accent-2)}
+.progress-fill--coral{background:var(--accent-3)}
+
+/* === MOBILE === */
+.mobile-toggle{
+  display:none;position:fixed;top:16px;left:16px;z-index:60;
+  width:var(--control-h);height:var(--control-h);
+  background:var(--bg);border:none;border-radius:16px;
+  cursor:pointer;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+.mobile-toggle svg{width:20px;height:20px;color:var(--text)}
+.mobile-toggle:focus{outline:3px solid var(--accent);outline-offset:2px}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:24px 16px;padding-top:72px}
+  .mobile-toggle{display:flex}
+  .search-input{width:100%}
+  .header{flex-direction:column;align-items:flex-start}
+  .header-actions{width:100%;flex-wrap:wrap}
+}
+@media(min-width:769px){
+  .mobile-toggle{display:none}
+}
+
+/* === RESPONSIVE ULTRA-WIDE === */
+@media(min-width:2560px){
+  .main{max-width:1600px;margin-left:calc(var(--sidebar-w) + (100% - var(--sidebar-w) - 1600px) / 2)}
+}
+</style>
+</head>
+<body>
+
+<!-- MOBILE TOGGLE -->
+<button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+</button>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2C8 2 4 7 4 12c0 4 2 7 5 9l5 5 5-5c3-2 5-5 5-9 0-5-4-10-10-10z" fill="var(--accent)" opacity="0.15"/>
+      <path d="M9 11c0-3 2.5-6 5-6s5 3 5 6c0 2.5-2 4.5-5 7-3-2.5-5-4.5-5-7z" fill="var(--accent)"/>
+      <circle cx="12" cy="10" r="1.2" fill="var(--on-accent)"/>
+    </svg>
+    Koinobori
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+      Projects
+    </a>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Tasks
+    </a>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Team
+    </a>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Messages
+    </a>
+
+    <p class="sidebar-section">Workspace</p>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </a>
+    <a href="#" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      Help
+    </a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar">MT</div>
+    <div class="sidebar-user-info">
+      <span class="sidebar-user-name">Mika Tanaka</span>
+      <span class="sidebar-user-role">Product Lead</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <!-- WELCOME BANNER -->
+  <div class="welcome-banner">
+    <div class="welcome-bg"></div>
+    <div class="welcome-content">
+      <h1 class="welcome-title">Good morning, Mika</h1>
+      <p class="welcome-sub">3 tasks due today, 2 team members active. Your sprint is 78% complete.</p>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1 class="header-title">Dashboard</h1>
+    <div class="header-actions">
+      <input type="text" class="search-input" placeholder="Search projects, tasks..." aria-label="Search">
+      <div class="select-wrap">
+        <select class="select" aria-label="Time range">
+          <option>This week</option>
+          <option>This month</option>
+          <option>This quarter</option>
+        </select>
+      </div>
+      <button class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New task
+      </button>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <p class="metric-label">Active projects</p>
+      <p class="metric-value metric-value--blue">14</p>
+      <p class="metric-change metric-change--up">+3 this month</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Tasks completed</p>
+      <p class="metric-value metric-value--green">247</p>
+      <p class="metric-change metric-change--up">+18% vs last week</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Team velocity</p>
+      <p class="metric-value metric-value--coral">92</p>
+      <p class="metric-change metric-change--up">+7 points</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Open blockers</p>
+      <p class="metric-value">3</p>
+      <p class="metric-change metric-change--down">+1 since yesterday</p>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-grid">
+    <!-- CHART -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <p class="card-title">Sprint velocity</p>
+          <p class="card-subtitle">Points completed per sprint</p>
+        </div>
+        <div class="select-wrap">
+          <select class="select" aria-label="Chart range">
+            <option>Last 8 sprints</option>
+            <option>Last 12 sprints</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-area">
+        <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+          <!-- Grid lines -->
+          <line x1="0" y1="50" x2="600" y2="50" stroke="var(--surface-alt)" stroke-width="1"/>
+          <line x1="0" y1="100" x2="600" y2="100" stroke="var(--surface-alt)" stroke-width="1"/>
+          <line x1="0" y1="150" x2="600" y2="150" stroke="var(--surface-alt)" stroke-width="1"/>
+          <!-- Area fill -->
+          <path d="M0,160 L75,130 L150,110 L225,95 L300,80 L375,60 L450,45 L525,35 L600,25 L600,200 L0,200 Z" fill="var(--accent)" opacity="0.08"/>
+          <!-- Line -->
+          <polyline points="0,160 75,130 150,110 225,95 300,80 375,60 450,45 525,35 600,25" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Dots -->
+          <circle cx="0" cy="160" r="5" fill="var(--accent)"/>
+          <circle cx="75" cy="130" r="5" fill="var(--accent)"/>
+          <circle cx="150" cy="110" r="5" fill="var(--accent)"/>
+          <circle cx="225" cy="95" r="5" fill="var(--accent)"/>
+          <circle cx="300" cy="80" r="5" fill="var(--accent)"/>
+          <circle cx="375" cy="60" r="5" fill="var(--accent)"/>
+          <circle cx="450" cy="45" r="5" fill="var(--accent)"/>
+          <circle cx="525" cy="35" r="5" fill="var(--accent)"/>
+          <circle cx="600" cy="25" r="5" fill="var(--accent)"/>
+          <!-- Second line (green) -->
+          <path d="M0,180 L75,165 L150,155 L225,140 L300,130 L375,115 L450,100 L525,90 L600,80" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ACTIVITY -->
+    <div class="card">
+      <div class="card-header">
+        <p class="card-title">Activity</p>
+        <button class="btn-ghost">View all</button>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="activity-dot activity-dot--blue"></div>
+          <div>
+            <p class="activity-text"><strong>Yuki Sato</strong> completed the hero animation for the landing page redesign</p>
+            <p class="activity-time">12 minutes ago</p>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot activity-dot--green"></div>
+          <div>
+            <p class="activity-text"><strong>Aiko Nakamura</strong> merged PR #342 — design token migration</p>
+            <p class="activity-time">1 hour ago</p>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot activity-dot--coral"></div>
+          <div>
+            <p class="activity-text"><strong>Ken Watanabe</strong> flagged a blocker on the API integration</p>
+            <p class="activity-time">2 hours ago</p>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot activity-dot--blue"></div>
+          <div>
+            <p class="activity-text"><strong>Mika Tanaka</strong> created the Q3 roadmap document</p>
+            <p class="activity-time">4 hours ago</p>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot activity-dot--green"></div>
+          <div>
+            <p class="activity-text"><strong>Rin Kobayashi</strong> shipped v2.4.1 to production</p>
+            <p class="activity-time">Yesterday</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS + TEAM -->
+  <div class="content-grid">
+    <!-- TASKS -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <p class="card-title">My tasks</p>
+          <p class="card-subtitle">8 tasks across 3 projects</p>
+        </div>
+        <div class="select-wrap">
+          <select class="select" aria-label="Filter tasks">
+            <option>All tasks</option>
+            <option>In progress</option>
+            <option>Blocked</option>
+            <option>Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="task-list">
+        <div class="task-item">
+          <input type="checkbox" class="task-check" aria-label="Mark complete">
+          <span class="task-text">Finalize dashboard component library</span>
+          <span class="task-badge task-badge--coral">Urgent</span>
+        </div>
+        <div class="task-item">
+          <input type="checkbox" class="task-check" aria-label="Mark complete">
+          <span class="task-text">Review koinobori animation timing</span>
+          <span class="task-badge task-badge--blue">Design</span>
+        </div>
+        <div class="task-item">
+          <input type="checkbox" class="task-check" checked aria-label="Mark complete">
+          <span class="task-text task-text--done">Update color tokens for spring palette</span>
+          <span class="task-badge task-badge--green">Done</span>
+        </div>
+        <div class="task-item">
+          <input type="checkbox" class="task-check" aria-label="Mark complete">
+          <span class="task-text">Write API documentation for v2 endpoints</span>
+          <span class="task-badge task-badge--blue">Engineering</span>
+        </div>
+        <div class="task-item">
+          <input type="checkbox" class="task-check" aria-label="Mark complete">
+          <span class="task-text">Schedule user interviews for onboarding flow</span>
+          <span class="task-badge task-badge--blue">Research</span>
+        </div>
+        <div class="task-item">
+          <input type="checkbox" class="task-check" checked aria-label="Mark complete">
+          <span class="task-text task-text--done">Deploy staging environment for QA</span>
+          <span class="task-badge task-badge--green">Done</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM -->
+    <div class="card">
+      <div class="card-header">
+        <p class="card-title">Team</p>
+        <button class="btn-ghost">Manage</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Status</th>
+              <th>Tasks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span class="team-avatar" style="background:var(--accent)">YS</span>
+                Yuki Sato
+              </td>
+              <td><span class="status-dot status-dot--active"></span>Active</td>
+              <td>12</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="team-avatar" style="background:var(--accent-2)">AN</span>
+                Aiko Nakamura
+              </td>
+              <td><span class="status-dot status-dot--active"></span>Active</td>
+              <td>9</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="team-avatar" style="background:var(--accent-3)">KW</span>
+                Ken Watanabe
+              </td>
+              <td><span class="status-dot status-dot--away"></span>Away</td>
+              <td>7</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="team-avatar" style="background:var(--accent)">RK</span>
+                Rin Kobayashi
+              </td>
+              <td><span class="status-dot status-dot--active"></span>Active</td>
+              <td>11</td>
+            </tr>
+            <tr>
+              <td>
+                <span class="team-avatar" style="background:var(--accent-2)">MT</span>
+                Mika Tanaka
+              </td>
+              <td><span class="status-dot status-dot--active"></span>Active</td>
+              <td>8</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT PROGRESS -->
+  <div class="card" style="margin-bottom:32px">
+    <div class="card-header">
+      <p class="card-title">Project progress</p>
+      <button class="btn-ghost">View all projects</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:15px;font-weight:600">Landing page redesign</span>
+          <span style="font-size:14px;font-weight:600;color:var(--accent)">78%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill progress-fill--blue" style="width:78%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:15px;font-weight:600">API v2 migration</span>
+          <span style="font-size:14px;font-weight:600;color:var(--accent-2)">92%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill progress-fill--green" style="width:92%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:15px;font-weight:600">Mobile app launch</span>
+          <span style="font-size:14px;font-weight:600;color:var(--accent-3)">45%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill progress-fill--coral" style="width:45%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:15px;font-weight:600">Design system v3</span>
+          <span style="font-size:14px;font-weight:600;color:var(--accent)">61%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill progress-fill--blue" style="width:61%"></div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Mobile sidebar toggle
+document.getElementById('mobile-toggle').addEventListener('click', function() {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Close sidebar on outside click (mobile)
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('mobile-toggle');
+  if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

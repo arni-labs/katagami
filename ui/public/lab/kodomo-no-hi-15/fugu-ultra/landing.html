@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori — Kodomo no Hi festival operations</title>
+  <meta name="description" content="Nobori helps civic teams launch Kodomo no Hi festivals with registration, volunteer routing, sponsor reporting, and live day operations.">
+  <style>
+    :root {
+      --bg: #fffdf7;
+      --surface: #eefcf5;
+      --surface-strong: #ffffff;
+      --surface-sky: #e9fbff;
+      --text: #071315;
+      --muted: #526468;
+      --border: #d9eee7;
+      --accent: #00a7ff;
+      --on-accent: #001014;
+      --success: #21e66a;
+      --warning: #ff3d6e;
+      --error: #ff3d6e;
+      --info: #00a7ff;
+      --hero-image: url("media/landing-hero.jpg");
+      --font-display: "Arial Black", "Avenir Next Condensed", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-jp: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+      --tracking-display: -0.02em;
+      --body-size: 17px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 72px;
+      --space-9: 96px;
+      --space-10: 128px;
+      --radius-none: 0;
+      --radius-panel: 24px;
+      --radius-control: 9999px;
+      --control-h: 52px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    p, h1, h2, h3 { margin: 0; }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: var(--text);
+      border: 0;
+      border-radius: var(--radius-control);
+      min-width: 0;
+    }
+    button,
+    input,
+    select { min-height: var(--control-h); }
+    textarea {
+      min-height: calc(var(--control-h) * 2.4);
+      border-radius: var(--radius-panel);
+      resize: vertical;
+    }
+    button { cursor: pointer; }
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      cursor: not-allowed;
+      color: #7d8c8f;
+      background: #edf2f0;
+      box-shadow: none;
+      transform: none;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .button {
+      min-height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 24px;
+      border-radius: var(--radius-control);
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      text-align: center;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+      box-shadow: 0 14px 30px rgba(0, 167, 255, .18);
+    }
+    .button.primary { background: var(--accent); color: var(--on-accent); }
+    .button.primary:hover { background: #0093e6; transform: translateY(-1px); }
+    .button.primary:active { transform: translateY(1px); box-shadow: 0 8px 18px rgba(0, 167, 255, .14); }
+    .button.secondary { background: rgba(255,255,255,.9); color: var(--text); box-shadow: 0 12px 28px rgba(7,19,21,.08); }
+    .button.secondary:hover { background: var(--surface-sky); transform: translateY(-1px); }
+    .button.secondary:active { transform: translateY(1px); box-shadow: 0 8px 18px rgba(7,19,21,.06); }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="search"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--surface-strong);
+      padding: 0 20px;
+      box-shadow: 0 14px 34px rgba(7,19,21,.07);
+      appearance: none;
+      transition: background .18s ease, box-shadow .18s ease;
+    }
+    textarea { padding: 16px 20px; }
+    input:hover,
+    select:hover,
+    textarea:hover { background: var(--surface-sky); }
+    input:active,
+    select:active,
+    textarea:active { background: #dcf8ff; }
+    select {
+      background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+      background-position: calc(100% - 22px) 23px, calc(100% - 16px) 23px;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 48px;
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      min-height: 24px;
+      display: inline-grid;
+      place-items: center;
+      background: var(--surface-strong);
+      box-shadow: 0 8px 22px rgba(7,19,21,.12);
+      margin: 0;
+      flex: 0 0 auto;
+    }
+    input[type="radio"] { border-radius: var(--radius-control); }
+    input[type="checkbox"] { border-radius: 16px; }
+    input[type="checkbox"]::after,
+    input[type="radio"]::after {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-control);
+      transform: scale(0);
+      background: var(--accent);
+      transition: transform .16s ease;
+    }
+    input[type="checkbox"]:checked::after,
+    input[type="radio"]:checked::after { transform: scale(1); }
+    input[type="range"] {
+      appearance: none;
+      width: 100%;
+      height: var(--control-h);
+      background: transparent;
+      padding: 0;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 14px;
+      border-radius: var(--radius-control);
+      background: linear-gradient(90deg, var(--accent), var(--success));
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      margin-top: -7px;
+      border-radius: var(--radius-control);
+      background: var(--surface-strong);
+      box-shadow: 0 8px 20px rgba(7,19,21,.18);
+    }
+
+    .site-nav {
+      position: absolute;
+      inset: 0 0 auto 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      padding: 28px clamp(20px, 5vw, 72px);
+      color: var(--text);
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: .85;
+      letter-spacing: var(--tracking-display);
+    }
+    .brand .jp { font-family: var(--font-jp); font-size: .55em; display: block; letter-spacing: -0.04em; margin-top: 4px; }
+    .nav-links { display: flex; align-items: center; gap: clamp(18px, 2.2vw, 36px); font-weight: 800; }
+    .nav-links a { padding: 8px 0; }
+
+    .hero {
+      min-height: 100svh;
+      width: 100vw;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      display: grid;
+      align-items: end;
+      padding: clamp(120px, 16vh, 180px) clamp(20px, 5vw, 72px) clamp(32px, 7vh, 80px);
+      isolation: isolate;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 84% 18%, rgba(33,230,106,.28), transparent 26%),
+        radial-gradient(circle at 8% 82%, rgba(0,167,255,.24), transparent 24%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .hero-layout {
+      width: min(100%, 1500px);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(280px, .55fr);
+      gap: clamp(24px, 5vw, 72px);
+      align-items: end;
+    }
+    .hero-panel {
+      background: rgba(255, 253, 247, .93);
+      border-radius: var(--radius-panel);
+      padding: clamp(28px, 5vw, 64px);
+      box-shadow: 0 24px 80px rgba(7,19,21,.16);
+      backdrop-filter: blur(18px);
+    }
+    .launch-line {
+      font-weight: 950;
+      font-size: clamp(18px, 2vw, 28px);
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-5);
+      color: var(--text);
+    }
+    .launch-line strong { color: var(--warning); }
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(64px, 11vw, 176px);
+      line-height: .84;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+      max-width: 8ch;
+    }
+    .hero-copy {
+      max-width: 680px;
+      margin-top: var(--space-5);
+      font-size: clamp(18px, 2vw, 23px);
+      color: #26383b;
+    }
+    .action-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+    .hero-stat {
+      background: rgba(7,19,21,.88);
+      color: #fffdf7;
+      border-radius: var(--radius-panel);
+      padding: clamp(24px, 3vw, 36px);
+      box-shadow: 0 18px 60px rgba(7,19,21,.18);
+    }
+    .hero-stat .number {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 7vw, 92px);
+      line-height: .82;
+      letter-spacing: var(--tracking-display);
+      color: var(--success);
+    }
+    .hero-stat p { margin-top: var(--space-3); color: rgba(255,253,247,.86); }
+
+    .section {
+      padding: var(--space-10) clamp(20px, 5vw, 72px);
+    }
+    .section-inner {
+      width: min(100%, 1440px);
+      margin: 0 auto;
+    }
+    .section-title {
+      padding-top: var(--space-4);
+      font-family: var(--font-display);
+      font-size: clamp(42px, 6vw, 96px);
+      line-height: .9;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+      max-width: 900px;
+    }
+    .section-intro {
+      max-width: 760px;
+      margin-top: var(--space-5);
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+    }
+    .climb-grid {
+      margin-top: var(--space-8);
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: var(--space-5);
+      align-items: stretch;
+    }
+    .tonal-panel {
+      border-radius: var(--radius-panel);
+      background: var(--surface);
+      padding: clamp(28px, 4vw, 54px);
+      box-shadow: 0 24px 80px rgba(7,19,21,.07);
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .tonal-panel.sky { background: var(--surface-sky); }
+    .tonal-panel.white { background: var(--surface-strong); }
+    .tonal-panel.ink { background: var(--text); color: var(--bg); }
+    .tonal-panel::before {
+      content: "";
+      position: absolute;
+      width: 34%;
+      height: 120%;
+      right: -14%;
+      top: -10%;
+      background: var(--accent);
+      opacity: .14;
+      transform: rotate(12deg);
+      border-radius: var(--radius-panel);
+    }
+    .panel-content { position: relative; z-index: 1; }
+    .product-heading {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 58px);
+      line-height: .94;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+      max-width: 720px;
+    }
+    .product-heading .jp { font-family: var(--font-jp); }
+    .feature-list { list-style: none; padding: 0; margin: var(--space-6) 0 0; display: grid; gap: var(--space-4); }
+    .feature-list li {
+      background: rgba(255,255,255,.72);
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      box-shadow: 0 14px 36px rgba(7,19,21,.06);
+    }
+    .feature-list strong { display: block; font-size: 20px; margin-bottom: 6px; }
+    .feature-list span { color: var(--muted); }
+    .image-card {
+      min-height: 560px;
+      border-radius: var(--radius-panel);
+      background: url("media/feature-fabric.png") center / cover;
+      box-shadow: 0 24px 80px rgba(7,19,21,.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .image-card .caption {
+      position: absolute;
+      left: var(--space-5);
+      right: var(--space-5);
+      bottom: var(--space-5);
+      background: rgba(255,253,247,.9);
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      backdrop-filter: blur(16px);
+      color: var(--text);
+      box-shadow: 0 12px 40px rgba(7,19,21,.14);
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+      margin-top: var(--space-7);
+    }
+    .metric {
+      padding: var(--space-6);
+      border-radius: var(--radius-panel);
+      background: var(--surface-strong);
+      box-shadow: 0 18px 54px rgba(7,19,21,.07);
+      min-width: 0;
+    }
+    .metric strong {
+      display: inline-block;
+      position: relative;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: clamp(42px, 5vw, 76px);
+      line-height: .86;
+      letter-spacing: var(--tracking-display);
+      padding-bottom: 12px;
+    }
+    .metric strong::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      bottom: 0;
+      height: 12px;
+      border-radius: var(--radius-control);
+      background: var(--accent);
+    }
+    .metric .green::after { background: var(--success); }
+    .metric .coral::after { background: var(--warning); }
+    .metric p { margin-top: var(--space-3); color: var(--muted); }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-8);
+    }
+    .phase {
+      min-height: 320px;
+      border-radius: var(--radius-panel);
+      padding: var(--space-5);
+      background: var(--surface-strong);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 18px 46px rgba(7,19,21,.07);
+      overflow: hidden;
+      position: relative;
+    }
+    .phase::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      right: -60px;
+      top: -30px;
+      border-radius: var(--radius-control);
+      opacity: .18;
+      background: var(--accent);
+    }
+    .phase:nth-child(2)::before { background: var(--success); }
+    .phase:nth-child(3)::before { background: var(--warning); }
+    .phase:nth-child(4)::before { background: var(--accent); }
+    .phase h3 { position: relative; font-size: 24px; line-height: 1.05; letter-spacing: -0.02em; max-width: 220px; }
+    .phase p { position: relative; color: var(--muted); margin-top: var(--space-5); }
+    .phase .day {
+      position: relative;
+      font-family: var(--font-display);
+      font-size: 48px;
+      line-height: .9;
+      letter-spacing: var(--tracking-display);
+    }
+
+    .signup {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+      gap: var(--space-6);
+      align-items: start;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-panel);
+      padding: clamp(28px, 5vw, 72px);
+      box-shadow: 0 28px 90px rgba(7,19,21,.16);
+    }
+    .signup .section-title { color: var(--bg); padding-top: 0; }
+    .signup p { color: rgba(255,253,247,.78); margin-top: var(--space-5); }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+    .form-grid .full { grid-column: 1 / -1; }
+    label { display: grid; gap: var(--space-2); font-weight: 850; }
+    label span { color: inherit; }
+    .checkline {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      font-weight: 700;
+      color: rgba(255,253,247,.84);
+    }
+    .checkline input { margin-top: 2px; }
+
+    footer {
+      padding: var(--space-8) clamp(20px, 5vw, 72px);
+      color: var(--muted);
+    }
+    .footer-inner { width: min(100%, 1440px); margin: 0 auto; display: flex; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; }
+
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .js .reveal.in { opacity: 1; transform: translateY(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .js .reveal { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 920px) {
+      .nav-links a:not(.button) { display: none; }
+      .hero-layout,
+      .climb-grid,
+      .signup { grid-template-columns: 1fr; }
+      .hero-stat { max-width: 420px; }
+      .image-card { min-height: 420px; }
+      .metric-grid,
+      .timeline { grid-template-columns: 1fr; }
+      .phase { min-height: 240px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .site-nav { padding: 20px; }
+      .nav-links .button { display: none; }
+      .hero { padding-left: 16px; padding-right: 16px; }
+      .section { padding: 72px 16px; }
+      h1 { font-size: clamp(54px, 19vw, 86px); }
+      .hero-panel, .tonal-panel, .signup { padding: 24px; }
+      .action-row .button { width: 100%; }
+      .footer-inner { display: grid; }
+    }
+  </style>
+  <script>document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <nav class="site-nav" aria-label="Primary">
+    <a href="#top" class="brand" aria-label="Nobori home">Nobori<span class="jp">鯉のぼり</span></a>
+    <div class="nav-links">
+      <a href="#route">Route</a>
+      <a href="#week">Festival week</a>
+      <a href="#signup" class="button secondary">Book a launch desk</a>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero" aria-label="Nobori Kodomo no Hi launch hero">
+      <div class="hero-layout">
+        <div class="hero-panel reveal">
+          <p class="launch-line">Kodomo no Hi opens May <strong>5</strong>. Nobori gets the route, families, volunteers, and sponsors ready before the first streamer rises.</p>
+          <h1>Nobori lifts the whole festival.</h1>
+          <p class="hero-copy">A grown-up operations suite for koinobori routes, family registration, staff posts, ceremony timing, and sponsor reporting across one bright civic day.</p>
+          <div class="action-row" aria-label="Landing actions">
+            <a class="button primary" href="#signup">Plan the May route</a>
+            <a class="button secondary" href="#route">See field flow</a>
+          </div>
+        </div>
+        <aside class="hero-stat reveal" aria-label="Festival readiness">
+          <div class="number">18k</div>
+          <p>family check-ins, volunteer shifts, ribbon stations, and river-viewing zones reconciled in one launch runbook.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="route">
+      <div class="section-inner">
+        <h2 class="section-title reveal">A clear route from first banner to final report.</h2>
+        <p class="section-intro reveal">Nobori turns a scattered festival plan into one operating picture: who is arriving, where they stand, which crew owns each gate, and when the river procession moves.</p>
+        <div class="climb-grid">
+          <article class="tonal-panel sky reveal">
+            <div class="panel-content">
+              <h3 class="product-heading"><span class="jp">こどもの日</span> control without the clutter.</h3>
+              <ul class="feature-list">
+                <li><strong>Family registration that respects the day.</strong><span>Age bands, accessibility needs, guardian contacts, and workshop choices are captured in one calm form.</span></li>
+                <li><strong>Route boards for real people.</strong><span>Teams see gate posts, riverside zones, ceremony steps, and water-safety calls without digging through spreadsheets.</span></li>
+                <li><strong>Sponsor proof as the festival happens.</strong><span>Brand placements, banner counts, booth visits, and thank-you assets are gathered before teardown.</span></li>
+              </ul>
+            </div>
+          </article>
+          <aside class="image-card reveal" aria-label="Nobori editorial product image">
+            <div class="caption"><strong>Field kit, not mood board.</strong><br>Printed wristbands, route cards, volunteer briefs, and fabric markers all follow the same Nobori signal system.</div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-label="Festival metrics">
+      <div class="section-inner">
+        <h2 class="section-title reveal">The bright parts stay bright. The risky parts get marked.</h2>
+        <div class="metric-grid">
+          <article class="metric reveal"><strong class="blue">42</strong><p>riverside posts mapped with crew owners, accessibility notes, and live status.</p></article>
+          <article class="metric reveal"><strong class="green">96%</strong><p>volunteer shifts confirmed before the family craft tents open.</p></article>
+          <article class="metric reveal"><strong class="coral">11</strong><p>time-sensitive safety calls highlighted without turning the whole page into alarm red.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="week">
+      <div class="section-inner">
+        <h2 class="section-title reveal">One week, four operating rhythms.</h2>
+        <div class="timeline">
+          <article class="phase reveal"><h3>Open family registration</h3><p>Collect guardian details, workshop preferences, and care notes in forms tuned for quick completion.</p><div class="day">Day 1</div></article>
+          <article class="phase reveal"><h3>Assign the field teams</h3><p>Publish clear posts for river stewards, stage crew, craft leads, interpreters, and first aid staff.</p><div class="day">Day 3</div></article>
+          <article class="phase reveal"><h3>Run the May route</h3><p>Track check-ins, ceremony pacing, lost item calls, and weather decisions from a single dashboard.</p><div class="day">May 5</div></article>
+          <article class="phase reveal"><h3>Close sponsor proof</h3><p>Package attendance counts, placement photos, acknowledgements, and booth notes before the team leaves.</p><div class="day">Day 7</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="signup">
+      <div class="section-inner signup reveal">
+        <div>
+          <h2 class="section-title">Launch a cleaner Kodomo no Hi desk.</h2>
+          <p>Tell us the city, route size, and team structure. Nobori returns a field-ready operating map for your next planning meeting.</p>
+        </div>
+        <form class="form-grid" action="#" method="post">
+          <label><span>Festival city</span><input type="text" name="city" value="Saitama river park"></label>
+          <label><span>Team email</span><input type="email" name="email" value="ops@nobori.example"></label>
+          <label><span>Expected families</span><select name="families"><option>Under 500</option><option selected>500 to 2,000</option><option>2,000 to 8,000</option><option>More than 8,000</option></select></label>
+          <label><span>Launch date</span><input type="date" name="date" value="2026-05-05"></label>
+          <label class="full"><span>Route pressure</span><input type="range" name="pressure" min="0" max="100" value="68"></label>
+          <label class="full"><span>Planning note</span><textarea name="note">We need one shared map for riverside posts, craft tents, sponsor placements, and family check-in.</textarea></label>
+          <label class="checkline full"><input type="checkbox" checked><span>Include volunteer assignment, registration, and sponsor proof in the launch desk.</span></label>
+          <button class="button primary full" type="submit">Build the Nobori launch desk</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <strong>Nobori</strong>
+      <span>Bright festival operations for Kodomo no Hi.</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || !('IntersectionObserver' in window)) {
+        document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
+        return;
+      }
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.16 });
+      document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    })();
+  </script>
+</body>
+</html>
