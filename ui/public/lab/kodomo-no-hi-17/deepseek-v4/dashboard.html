@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Festival Companion — Kodomo no Hi · Nobori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== Nobori Design Language — Tokens ===== */
+:root {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --text: #1A1A1A;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --accent: #0099FF;
+  --accent-2: #00CC44;
+  --accent-3: #FF2D55;
+  --on-accent: #FFFFFF;
+  --success: #00CC44;
+  --warning: #FF9500;
+  --error: #FF2D55;
+  --info: #0099FF;
+  --ctrl-h: 44px;
+  --radius-sm: 0px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 9999px;
+  --font-display: 'DM Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+/* ===== Reset ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Motion gate ===== */
+html.motion-ready .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+html.motion-ready .reveal.visible {
+  animation: lift 500ms ease-out forwards;
+}
+@keyframes lift {
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.motion-ready .reveal { opacity: 1; transform: none; }
+  html.motion-ready .reveal.visible { animation: none; }
+}
+
+/* ===== Typography ===== */
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.15;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1.2;
+}
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.body-lg {
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.small { font-size: 0.875rem; line-height: 1.5; }
+.caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* ===== Controls ===== */
+.btn, button, input[type="submit"], input[type="button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ctrl-h);
+  padding: 0 24px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn:active, button:active { transform: scale(0.985); }
+.btn:disabled, button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover { background: #0088E6; }
+.btn-primary:active { background: #0077CC; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn-secondary:hover { background: rgba(0,153,255,0.06); }
+.btn-secondary:active { background: rgba(0,153,255,0.12); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+.btn-ghost:hover { background: var(--bg); }
+.btn-ghost:active { background: var(--border); }
+
+/* ===== Form controls ===== */
+input[type="text"],
+input[type="email"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  height: var(--ctrl-h);
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+  width: 100%;
+}
+select { appearance: none; padding-right: 36px; cursor: pointer; }
+textarea { height: auto; min-height: var(--ctrl-h); padding: 12px 16px; resize: vertical; }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,153,255,0.12);
+}
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.4; }
+
+input[type="checkbox"], input[type="radio"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+input[type="checkbox"] { border-radius: 4px; }
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input[type="checkbox"]:checked::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+}
+input[type="radio"]:checked {
+  border-color: var(--accent);
+  border-width: 5px;
+}
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+input:disabled, select:disabled, textarea:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== Layout ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.section { padding: 96px 0; }
+
+/* ===== Nav ===== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 20px 0;
+  background: rgba(250,250,250,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.nav-links a:hover { color: var(--accent); }
+
+/* ===== Page header ===== */
+.page-header {
+  padding: 140px 0 64px;
+  background: var(--surface);
+}
+.page-header .container { max-width: 800px; }
+.page-header .caption { color: var(--accent); margin-bottom: 12px; }
+.page-header h1 { margin-bottom: 16px; }
+.page-header .body-lg { max-width: 600px; }
+
+/* ===== Section labels ===== */
+.section-label {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+.section-title { margin-bottom: 24px; max-width: 700px; }
+.section-lead {
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 620px;
+  margin-bottom: 48px;
+}
+
+/* ===== Schedule table ===== */
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 0;
+}
+.schedule-table thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0 0 16px;
+  border-bottom: 1.5px solid var(--border);
+}
+.schedule-table tbody td {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9375rem;
+  vertical-align: top;
+}
+.schedule-table .time {
+  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  white-space: nowrap;
+  width: 120px;
+  color: var(--accent);
+}
+.schedule-table .event-name {
+  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+.schedule-table .event-desc {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-top: 2px;
+}
+.schedule-table .event-loc {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.tag-blue { background: rgba(0,153,255,0.1); color: var(--accent); }
+.tag-green { background: rgba(0,204,68,0.1); color: var(--accent-2); }
+.tag-red { background: rgba(255,45,85,0.1); color: var(--accent-3); }
+
+/* ===== Guide cards ===== */
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  min-width: 0;
+}
+.guide-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  min-width: 0;
+}
+.guide-card .guide-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.guide-card .guide-icon.blue { background: rgba(0,153,255,0.1); color: var(--accent); }
+.guide-card .guide-icon.green { background: rgba(0,204,68,0.1); color: var(--accent-2); }
+.guide-card .guide-icon.red { background: rgba(255,45,85,0.1); color: var(--accent-3); }
+.guide-card h3 { margin-bottom: 8px; }
+.guide-card p { color: var(--muted); font-size: 0.9375rem; }
+
+/* ===== Map placeholder ===== */
+.map-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-width: 0;
+}
+.map-image {
+  width: 100%;
+  aspect-ratio: 21/9;
+  background: url('media/family-park.jpg') center/cover no-repeat;
+  position: relative;
+}
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,153,255,0.15) 0%, rgba(0,204,68,0.08) 100%);
+}
+.map-pin {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-3);
+  box-shadow: 0 0 0 6px rgba(255,45,85,0.2);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+.map-pin:hover { transform: translate(-50%, -50%) scale(1.4); }
+.map-pin::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--on-accent);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+.map-pin:hover::after { opacity: 1; }
+
+/* ===== Album grid ===== */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+.album-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  min-width: 0;
+}
+.album-item:nth-child(1) { background-image: url('media/hero-koinobori.jpg'); }
+.album-item:nth-child(2) { background-image: url('media/origami.jpg'); }
+.album-item:nth-child(3) { background-image: url('media/food.jpg'); }
+.album-item:nth-child(4) { background-image: url('media/abstract-carp.jpg'); }
+
+/* ===== Newsletter ===== */
+.newsletter-form {
+  display: flex;
+  gap: 12px;
+  max-width: 500px;
+}
+.newsletter-form input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.25);
+  color: #FFFFFF;
+}
+.newsletter-form input:focus {
+  border-color: var(--on-accent);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
+}
+.newsletter-form input::placeholder { color: rgba(255,255,255,0.5); opacity: 1; }
+
+/* ===== Footer ===== */
+.footer {
+  padding: 48px 0;
+  border-top: 1.5px solid var(--border);
+}
+.footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { color: var(--muted); text-decoration: none; font-size: 0.875rem; }
+.footer-links a:hover { color: var(--text); }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .nav-links .hide-mobile { display: none; }
+  .guide-grid { grid-template-columns: 1fr; }
+  .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .schedule-table .event-loc { display: none; }
+  .schedule-table .time { width: 90px; font-size: 0.875rem; }
+  .section { padding: 64px 0; }
+  .page-header { padding: 120px 0 48px; }
+  .footer .container { flex-direction: column; gap: 16px; text-align: center; }
+  .newsletter-form { flex-direction: column; }
+}
+@media (max-width: 600px) {
+  .container { padding: 0 20px; }
+  .section { padding: 48px 0; }
+  .page-header { padding: 100px 0 40px; }
+  .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .guide-card { padding: 24px; }
+  .schedule-table .time { width: 70px; font-size: 0.8125rem; }
+  .schedule-table .event-name { font-size: 0.875rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <a href="landing.html" class="nav-brand">Nobori</a>
+    <ul class="nav-links">
+      <li class="hide-mobile"><a href="#schedule">Schedule</a></li>
+      <li class="hide-mobile"><a href="#guide">Guide</a></li>
+      <li class="hide-mobile"><a href="#map">Map</a></li>
+      <li><a href="landing.html" class="btn btn-ghost" style="height:38px;padding:0 20px;font-size:0.875rem;">Festival Home</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="container">
+    <div class="caption reveal">Festival Companion</div>
+    <h1 class="reveal">Your day at Kodomo no Hi</h1>
+    <p class="body-lg reveal">Everything you need for the celebration — the schedule, the customs, the map, and a place to save your own memories. The carp rise at dawn; plan your day so you don't miss a moment.</p>
+  </div>
+</header>
+
+<!-- SCHEDULE -->
+<section class="section" id="schedule">
+  <div class="container">
+    <div class="section-label reveal">Programme</div>
+    <h2 class="section-title reveal">The Day's Events</h2>
+    <p class="section-lead reveal">From the morning raising of the streamers to the evening fireworks, every hour of Kodomo no Hi carries its own ritual.</p>
+
+    <div class="reveal" style="overflow-x:auto">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Location</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time">06:30</td>
+            <td>
+              <div class="event-name">Koinobori Raising</div>
+              <div class="event-desc">Families raise the carp streamers on poles. The largest streamers go up first — magoi, then higoi, then the children's.</div>
+            </td>
+            <td class="event-loc">Household Gardens</td>
+            <td><span class="tag tag-blue">Tradition</span></td>
+          </tr>
+          <tr>
+            <td class="time">08:00</td>
+            <td>
+              <div class="event-name">Shōbu-yu Bath</div>
+              <div class="event-desc">Iris leaves steeped in hot water — the traditional bath believed to cleanse and protect children for the year ahead.</div>
+            </td>
+            <td class="event-loc">At Home</td>
+            <td><span class="tag tag-green">Wellness</span></td>
+          </tr>
+          <tr>
+            <td class="time">10:00</td>
+            <td>
+              <div class="event-name">Kabuto Display & Blessing</div>
+              <div class="event-desc">The samurai armour is arranged in the tokonoma. Elders offer blessings for strength, health, and a honourable life.</div>
+            </td>
+            <td class="event-loc">Family Altar</td>
+            <td><span class="tag tag-blue">Tradition</span></td>
+          </tr>
+          <tr>
+            <td class="time">11:30</td>
+            <td>
+              <div class="event-name">Community Koinobori Parade</div>
+              <div class="event-desc">The neighbourhood gathers at the river crossing. Hundreds of streamers fly from the bridge — a river of carp in the sky.</div>
+            </td>
+            <td class="event-loc">Riverside Bridge</td>
+            <td><span class="tag tag-red">Community</span></td>
+          </tr>
+          <tr>
+            <td class="time">12:30</td>
+            <td>
+              <div class="event-name">Festival Picnic</div>
+              <div class="event-desc">Families spread blankets in the park. Kashiwa mochi, chimaki, and bento boxes shared under the streamers.</div>
+            </td>
+            <td class="event-loc">Central Park</td>
+            <td><span class="tag tag-green">Food</span></td>
+          </tr>
+          <tr>
+            <td class="time">14:00</td>
+            <td>
+              <div class="event-name">Children's Games & Origami</div>
+              <div class="event-desc">Paper kabuto folding, koinobori crafts, and traditional games. Prizes for the best origami samurai helmet.</div>
+            </td>
+            <td class="event-loc">Community Hall</td>
+            <td><span class="tag tag-blue">Activity</span></td>
+          </tr>
+          <tr>
+            <td class="time">16:00</td>
+            <td>
+              <div class="event-name">Taiko Drum Performance</div>
+              <div class="event-desc">The local taiko ensemble performs — the drums echo across the park, a heartbeat for the festival.</div>
+            </td>
+            <td class="event-loc">Main Stage</td>
+            <td><span class="tag tag-red">Performance</span></td>
+          </tr>
+          <tr>
+            <td class="time">18:30</td>
+            <td>
+              <div class="event-name">Evening Lantern Release</div>
+              <div class="event-desc">Paper lanterns inscribed with wishes float down the river as dusk settles. Each light a hope for the children.</div>
+            </td>
+            <td class="event-loc">Riverbank</td>
+            <td><span class="tag tag-blue">Ceremony</span></td>
+          </tr>
+          <tr>
+            <td class="time">20:00</td>
+            <td>
+              <div class="event-name">Hanabi — Fireworks Finale</div>
+              <div class="event-desc">The day closes with a fireworks display over the water. Carp-shaped bursts in the night sky — the streamers returned as light.</div>
+            </td>
+            <td class="event-loc">Riverside</td>
+            <td><span class="tag tag-red">Finale</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section class="section" id="guide" style="background:var(--surface)">
+  <div class="container">
+    <div class="section-label reveal">Visitor's Guide</div>
+    <h2 class="section-title reveal">What to bring, what to know</h2>
+    <p class="section-lead reveal">Whether you are hosting at home or joining a community celebration, a little preparation makes the day seamless.</p>
+
+    <div class="guide-grid">
+      <div class="guide-card reveal">
+        <div class="guide-icon blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Dress for the Weather</h3>
+        <p>Early May in Japan is mild — 18–24°C. Light layers, comfortable shoes for park walking. Many families wear traditional attire: children in jinbei, parents in casual kimono or yukata.</p>
+      </div>
+
+      <div class="guide-card reveal" style="animation-delay:60ms">
+        <div class="guide-icon green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Arrive Early</h3>
+        <p>The koinobori raising at dawn is the day's most photogenic moment — the morning light through the fabric streamers is unforgettable. Community events fill up by mid-morning.</p>
+      </div>
+
+      <div class="guide-card reveal" style="animation-delay:120ms">
+        <div class="guide-icon red">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        </div>
+        <h3>Bring a Picnic</h3>
+        <p>Kashiwa mochi and chimaki are the traditional foods, but any shared meal works. A blanket, bento boxes, and a thermos of green tea. The park picnic is the heart of the day.</p>
+      </div>
+
+      <div class="guide-card reveal" style="animation-delay:180ms">
+        <div class="guide-icon blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <h3>Learn the Greeting</h3>
+        <p>"Kodomo no Hi omedetō" — congratulations on Children's Day. A simple phrase that connects you to the families around you. The festival is warm and welcoming to visitors.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="section" id="map">
+  <div class="container">
+    <div class="section-label reveal">Festival Grounds</div>
+    <h2 class="section-title reveal">Where everything happens</h2>
+    <p class="section-lead reveal">The celebration centres on the riverside park, with events spreading across the bridge, the community hall, and the main stage.</p>
+
+    <div class="map-section reveal">
+      <div class="map-image">
+        <div class="map-overlay"></div>
+        <div class="map-pin" style="top:30%;left:25%" data-label="Riverside Bridge"></div>
+        <div class="map-pin" style="top:55%;left:40%" data-label="Central Park"></div>
+        <div class="map-pin" style="top:40%;left:60%" data-label="Community Hall"></div>
+        <div class="map-pin" style="top:65%;left:70%" data-label="Main Stage"></div>
+        <div class="map-pin" style="top:75%;left:30%" data-label="Riverbank"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:24px;font-size:0.875rem;color:var(--muted)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:12px;height:12px;border-radius:50%;background:var(--accent-3);display:inline-block"></span>
+        Festival venues
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block"></span>
+        Parking & access
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:12px;height:12px;border-radius:50%;background:var(--accent-2);display:inline-block"></span>
+        Rest areas
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ALBUM -->
+<section class="section" id="album" style="background:var(--surface)">
+  <div class="container">
+    <div class="section-label reveal">Family Album</div>
+    <h2 class="section-title reveal">Moments from the festival</h2>
+    <p class="section-lead reveal">A collection of scenes from Kodomo no Hi celebrations — the streamers, the food, the crafts, the light.</p>
+
+    <div class="album-grid reveal">
+      <div class="album-item"></div>
+      <div class="album-item"></div>
+      <div class="album-item"></div>
+      <div class="album-item"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STAY UPDATED -->
+<section class="section" style="background:var(--accent);color:var(--on-accent)">
+  <div class="container" style="max-width:700px;text-align:center">
+    <h2 class="reveal" style="color:var(--on-accent)">Stay updated on festival events</h2>
+    <p class="reveal body-lg" style="color:rgba(255,255,255,0.8);margin:16px 0 32px">Get the schedule, weather updates, and community announcements delivered as the day approaches.</p>
+    <form class="newsletter-form reveal" style="margin:0 auto" onsubmit="event.preventDefault();this.querySelector('input').value='';">
+      <input type="email" placeholder="Your email address" required>
+      <button type="submit" class="btn btn-primary" style="background:var(--on-accent);color:var(--accent);white-space:nowrap">Subscribe</button>
+    </form>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <span class="footer-brand">Nobori</span>
+    <div class="footer-links">
+      <a href="landing.html">Festival Home</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#guide">Guide</a>
+      <a href="#map">Map</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var html = document.documentElement;
+  html.classList.add('motion-ready');
+
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
+})();
+</script>
+</body>
+</html>

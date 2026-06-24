@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koinobori — Kodomo no Hi 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ── */
+:root {
+  --bg: #FFFFFF;
+  --surface: #F5F7FA;
+  --text: #0B0D12;
+  --muted: #64748B;
+  --border: #E2E8F0;
+  --accent: #0066FF;
+  --on-accent: #FFFFFF;
+  --accent-2: #00C853;
+  --accent-3: #FF2D55;
+  --success: #00C853;
+  --warning: #FFAB00;
+  --error: #FF2D55;
+  --info: #0066FF;
+
+  --text-display-xl: 800 72px/80px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-display: 800 56px/64px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-h1: 700 40px/48px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-h2: 700 32px/40px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-h3: 600 24px/32px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-body: 400 17px/28px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-body-strong: 600 17px/28px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-small: 400 14px/20px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-caption: 500 12px/16px 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --space-4xl: 128px;
+
+  --radius-none: 0;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --control-h: 48px;
+
+  --hero-image: url('./media/hero-koinobori.jpg');
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font: var(--text-body);
+  color: var(--text);
+  background: var(--bg);
+  letter-spacing: -0.01em;
+  overflow-x: hidden;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Motion gate ── */
+html.has-motion .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+html.has-motion .reveal.is-visible { opacity: 1; transform: translateY(0); }
+html.has-motion .reveal-delay-1 { transition-delay: 0.15s; }
+html.has-motion .reveal-delay-2 { transition-delay: 0.3s; }
+html.has-motion .reveal-delay-3 { transition-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.has-motion .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ── Layout ── */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+/* ── Navigation ── */
+.nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: var(--space-lg) 0;
+}
+.nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font: var(--text-h3);
+  color: var(--on-accent);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+}
+.nav-links {
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+}
+.nav-links a {
+  font: var(--text-small);
+  font-weight: 600;
+  color: var(--on-accent);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.nav-links a:hover { opacity: 0.8; text-decoration: none; }
+.nav-links a:focus-visible {
+  outline: 3px solid var(--on-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-none);
+}
+
+@media (max-width: 767px) {
+  .nav-links { display: none; }
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  min-height: 600px;
+  display: flex;
+  align-items: flex-end;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(11, 13, 18, 0.7) 0%,
+    rgba(11, 13, 18, 0.2) 40%,
+    rgba(11, 13, 18, 0.0) 60%
+  );
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-3xl) 0;
+  width: 100%;
+}
+.hero-content .container {
+  max-width: 1200px;
+}
+.hero-eyebrow {
+  font: var(--text-caption);
+  font-weight: 600;
+  color: var(--on-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: var(--space-md);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.hero-headline {
+  font: var(--text-display-xl);
+  color: var(--on-accent);
+  letter-spacing: -0.03em;
+  max-width: 800px;
+  margin-bottom: var(--space-lg);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.hero-sub {
+  font: var(--text-body);
+  color: rgba(255,255,255,0.9);
+  max-width: 560px;
+  margin-bottom: var(--space-xl);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 var(--space-xl);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: var(--text-body-strong);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.15s, transform 0.15s;
+}
+.hero-cta:hover { filter: brightness(0.88); transform: translateY(-1px); text-decoration: none; }
+.hero-cta:focus-visible { outline: 3px solid var(--on-accent); outline-offset: 3px; }
+.hero-cta:active { filter: brightness(0.82); transform: translateY(0); }
+
+@media (max-width: 767px) {
+  .hero-headline { font-size: 40px; line-height: 48px; }
+  .hero-sub { font-size: 17px; }
+  .hero-content { padding: var(--space-2xl) 0; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hero-headline { font-size: 56px; line-height: 64px; }
+}
+
+/* ── Sections ── */
+.section {
+  padding: var(--space-3xl) 0;
+}
+.section--surface {
+  background: var(--surface);
+}
+.section-eyebrow {
+  font: var(--text-caption);
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: var(--space-sm);
+}
+.section-title {
+  font: var(--text-h1);
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-lg);
+  color: var(--text);
+}
+.section-lead {
+  font: var(--text-body);
+  color: var(--muted);
+  max-width: 640px;
+  margin-bottom: var(--space-2xl);
+}
+
+/* ── Two-column with image ── */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2xl);
+  align-items: center;
+}
+.split--reverse { direction: rtl; }
+.split--reverse > * { direction: ltr; }
+.split-image {
+  width: 100%;
+  aspect-ratio: 3/2;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+.split-text { max-width: 520px; }
+.split-text h3 {
+  font: var(--text-h2);
+  letter-spacing: -0.03em;
+  margin-bottom: var(--space-md);
+}
+.split-text p {
+  color: var(--muted);
+  margin-bottom: var(--space-md);
+}
+.split-text p:last-child { margin-bottom: 0; }
+
+@media (max-width: 767px) {
+  .split { grid-template-columns: 1fr; gap: var(--space-xl); }
+  .split--reverse { direction: ltr; }
+}
+
+/* ── Feature cards grid ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(11, 13, 18, 0.08);
+}
+.card-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.card-icon svg { width: 24px; height: 24px; }
+.card h3 {
+  font: var(--text-h3);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-sm);
+}
+.card p {
+  font: var(--text-small);
+  color: var(--muted);
+}
+
+@media (max-width: 767px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Rising accent line ── */
+.rising-line {
+  width: 3px;
+  height: 64px;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-lg);
+}
+.rising-line--green { background: var(--accent-2); }
+.rising-line--coral { background: var(--accent-3); }
+
+/* ── Quote / pull-quote ── */
+.pull-quote {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  padding: var(--space-2xl) 0;
+}
+.pull-quote blockquote {
+  font: var(--text-display);
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: var(--space-lg);
+}
+.pull-quote cite {
+  font: var(--text-small);
+  color: var(--muted);
+  font-style: normal;
+}
+
+@media (max-width: 767px) {
+  .pull-quote blockquote { font-size: 32px; line-height: 40px; }
+}
+
+/* ── Highlight bar ── */
+.highlight-bar {
+  display: flex;
+  gap: var(--space-xl);
+  padding: var(--space-xl) 0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.highlight-stat {
+  text-align: center;
+  min-width: 140px;
+}
+.highlight-stat .number {
+  font: var(--text-display);
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  display: block;
+}
+.highlight-stat .number--green { color: var(--accent-2); }
+.highlight-stat .number--coral { color: var(--accent-3); }
+.highlight-stat .label {
+  font: var(--text-small);
+  color: var(--muted);
+  margin-top: var(--space-xs);
+  display: block;
+}
+
+/* ── Full-width image band ── */
+.image-band {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 767px) {
+  .image-band { height: 240px; }
+}
+
+/* ── Footer ── */
+.footer {
+  padding: var(--space-2xl) 0;
+  background: var(--surface);
+}
+.footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+.footer-brand {
+  font: var(--text-h3);
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+.footer-links {
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+}
+.footer-links a {
+  font: var(--text-small);
+  color: var(--muted);
+  text-decoration: none;
+}
+.footer-links a:hover { color: var(--text); text-decoration: none; }
+.footer-links a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.footer-copy {
+  font: var(--text-small);
+  color: var(--muted);
+  width: 100%;
+  text-align: center;
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 767px) {
+  .footer .container { flex-direction: column; text-align: center; }
+  .footer-links { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container">
+    <a href="#" class="nav-brand">Koinobori</a>
+    <ul class="nav-links">
+      <li><a href="#streamers">The Streamers</a></li>
+      <li><a href="#customs">Customs</a></li>
+      <li><a href="#table">Festival Table</a></li>
+      <li><a href="#celebration">The Day</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="container">
+      <p class="hero-eyebrow reveal">5 May 2026 — Kodomo no Hi</p>
+      <h1 class="hero-headline reveal reveal-delay-1">Let every child<br>rise like the carp</h1>
+      <p class="hero-sub reveal reveal-delay-2">A day of streamers and sunlight, of oak-leaf rice cakes and iris baths. Kodomo no Hi celebrates the strength and spirit of every child — and the families who raise them.</p>
+      <a href="#streamers" class="hero-cta reveal reveal-delay-3">Explore the festival</a>
+    </div>
+  </div>
+</header>
+
+<!-- ── Section: The Streamers Rise ── -->
+<section class="section" id="streamers">
+  <div class="container">
+    <div class="split reveal">
+      <div class="split-text">
+        <div class="rising-line"></div>
+        <p class="section-eyebrow">Koinobori</p>
+        <h2 class="section-title">The streamers rise</h2>
+        <p>Across Japan, rivers and rooftops come alive with koinobori — carp-shaped wind socks that swim and pull against the May breeze. Each streamer on the pole carries meaning: the black carp for the father, the red for the mother, and a new colour for every child in the family.</p>
+        <p>The carp was chosen because it swims upstream against the strongest current. On this day, every child is a carp — rising, determined, unstoppable.</p>
+      </div>
+      <div>
+        <img class="split-image" src="./media/hero-koinobori.jpg" alt="Koinobori carp streamers rising against a clear blue sky above fresh green trees">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Highlight stats ── -->
+<section class="section section--surface">
+  <div class="container">
+    <div class="highlight-bar reveal">
+      <div class="highlight-stat">
+        <span class="number">1,400</span>
+        <span class="label">Years of tradition</span>
+      </div>
+      <div class="highlight-stat">
+        <span class="number number--green">5 May</span>
+        <span class="label">The fifth day of the fifth month</span>
+      </div>
+      <div class="highlight-stat">
+        <span class="number number--coral">1948</span>
+        <span class="label">Year it became a national holiday</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section: Customs ── -->
+<section class="section" id="customs">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">Traditions of the day</p>
+      <h2 class="section-title">Customs of Kodomo no Hi</h2>
+      <p class="section-lead">The day weaves together ancient ritual and family joy. Every custom carries a wish: for strength, for health, for a future that rises.</p>
+    </div>
+
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>Kabuto display</h3>
+        <p>Families set out samurai helmets and warrior dolls — not for war, but as a wish for courage and resilience in every child who sees them.</p>
+      </div>
+
+      <div class="card reveal reveal-delay-1">
+        <div class="card-icon" style="background: color-mix(in srgb, var(--accent-2) 10%, transparent);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12l2 2 4-4"/></svg>
+        </div>
+        <h3>Shobu-yu bath</h3>
+        <p>An iris-leaf bath on the eve of the festival. The sword-shaped leaves were believed to ward off illness and invite good health through the coming year.</p>
+      </div>
+
+      <div class="card reveal reveal-delay-2">
+        <div class="card-icon" style="background: color-mix(in srgb, var(--accent-3) 10%, transparent);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
+        <h3>Koinobori raising</h3>
+        <p>The tallest pole goes up first. Families raise their streamers together — each carp a member of the household, swimming as one against the wind.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Full-width image band ── -->
+<div class="image-band" style="background-image: url('./media/festival-aerial.jpg');" role="img" aria-label="Aerial view of koinobori streamers flying over a riverside park during the festival"></div>
+
+<!-- ── Section: Festival Table ── -->
+<section class="section" id="table">
+  <div class="container">
+    <div class="split split--reverse reveal">
+      <div class="split-text">
+        <div class="rising-line rising-line--green"></div>
+        <p class="section-eyebrow">Festival table</p>
+        <h2 class="section-title">Kashiwa-mochi and chimaki</h2>
+        <p>No Kodomo no Hi is complete without its foods. Kashiwa-mochi — sweet rice cakes wrapped in oak leaves — symbolise family continuity, because oak trees never shed old leaves before new ones grow.</p>
+        <p>Chimaki, bamboo-leaf wrapped rice dumplings, carry a different wish: protection from harm. Together they make the festival's table — simple, seasonal, full of meaning.</p>
+      </div>
+      <div>
+        <img class="split-image" src="./media/festival-food.jpg" alt="Kashiwa-mochi rice cakes wrapped in oak leaves and chimaki dumplings arranged on a clean white surface">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pull quote ── -->
+<section class="section section--surface">
+  <div class="container">
+    <div class="pull-quote reveal">
+      <blockquote>The carp swims upstream. The child grows strong. The family rises together.</blockquote>
+      <cite>A wish spoken every fifth of May</cite>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section: The Celebration ── -->
+<section class="section" id="celebration">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">A day for every child</p>
+      <h2 class="section-title">The feeling of the festival</h2>
+      <p class="section-lead">Kodomo no Hi is not a performance. It is a day when families pause, look up at their streamers, and remember what matters: that every child deserves the chance to rise.</p>
+    </div>
+
+    <div class="card-grid">
+      <div class="card reveal">
+        <div class="rising-line"></div>
+        <h3>Morning: raise the streamers</h3>
+        <p>The day begins with the pole. Families gather to hoist their koinobori — the tallest carp first, then each smaller one in order. By mid-morning, entire neighbourhoods are alive with colour.</p>
+      </div>
+
+      <div class="card reveal reveal-delay-1">
+        <div class="rising-line rising-line--green"></div>
+        <h3>Midday: share the table</h3>
+        <p>Kashiwa-mochi and chimaki, green tea, and time together. Some families visit shrines; others picnic beneath the streamers. The food is simple. The company is the point.</p>
+      </div>
+
+      <div class="card reveal reveal-delay-2">
+        <div class="rising-line rising-line--coral"></div>
+        <h3>Evening: the iris bath</h3>
+        <p>As the day winds down, the shobu-yu bath closes the circle. Sword-shaped iris leaves float in warm water — an ancient wish for health, carried into the modern evening.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="footer">
+  <div class="container">
+    <span class="footer-brand">Koinobori</span>
+    <ul class="footer-links">
+      <li><a href="#streamers">Streamers</a></li>
+      <li><a href="#customs">Customs</a></li>
+      <li><a href="#table">Festival Table</a></li>
+      <li><a href="#celebration">The Day</a></li>
+    </ul>
+    <p class="footer-copy">Koinobori — Kodomo no Hi 2026. A celebration of every child's strength and spirit.</p>
+  </div>
+</footer>
+
+<!-- ── Motion script ── -->
+<script>
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('has-motion');
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(function(el) {
+    observer.observe(el);
+  });
+})();
+</script>
+
+</body>
+</html>

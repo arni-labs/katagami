@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori — Kodomo no Hi</title>
+  <style>
+    :root {
+      --bg: #fbfff7;
+      --surface: #ffffff;
+      --text: #07140f;
+      --muted: #476057;
+      --border: #d7eadf;
+      --accent: #13a8ff;
+      --on-accent: #ffffff;
+      --success: #35ee72;
+      --warning: #ff4f7b;
+      --error: #ff4f7b;
+      --info: #13a8ff;
+      --hero-image: url("./media/landing-hero.webp");
+      --feature-image: url("./media/landing-customs.webp");
+      --font-display: "Arial Narrow", "Avenir Next Condensed", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+      --font-body: "Avenir Next", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", "Roboto Mono", Consolas, monospace;
+      --step-0: 17px;
+      --step-1: 19px;
+      --step-2: 24px;
+      --step-3: 34px;
+      --step-4: clamp(44px, 8vw, 112px);
+      --step-label: 13px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 18px;
+      --space-4: 28px;
+      --space-5: 44px;
+      --space-6: 72px;
+      --space-7: 112px;
+      --section-pad: clamp(72px, 10vw, 148px);
+      --radius-none: 0;
+      --radius-sm: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --control-height: 52px;
+      --control-pad-x: 22px;
+      --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 34%, transparent);
+      --soft-shadow: 0 22px 70px color-mix(in srgb, var(--text) 12%, transparent);
+      --lift-shadow: 0 28px 88px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      font-size: var(--step-0);
+      line-height: 1.65;
+      background:
+        radial-gradient(circle at 6% 14%, color-mix(in srgb, var(--success) 22%, transparent) 0 130px, transparent 132px),
+        radial-gradient(circle at 94% 30%, color-mix(in srgb, var(--accent) 18%, transparent) 0 170px, transparent 172px),
+        var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img, svg { max-width: 100%; display: block; }
+    p { margin: 0; }
+    h1, h2, h3 { margin: 0; font-family: var(--font-display); letter-spacing: -0.035em; color: var(--text); }
+    h1 { font-size: var(--step-4); line-height: 0.88; text-transform: uppercase; max-width: 11ch; }
+    h2 { font-size: clamp(42px, 6vw, 82px); line-height: 0.92; text-transform: uppercase; max-width: 12ch; }
+    h3 { font-size: var(--step-3); line-height: 1.02; text-transform: uppercase; }
+
+    .skip-link {
+      position: fixed;
+      left: var(--space-3);
+      top: var(--space-3);
+      z-index: 20;
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      background: var(--text);
+      color: var(--surface);
+      transform: translateY(-140%);
+    }
+    .skip-link:focus-visible { transform: translateY(0); box-shadow: var(--focus-ring); outline: none; }
+
+    .site-nav {
+      position: absolute;
+      inset: 0 0 auto 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: clamp(22px, 4vw, 52px);
+      color: var(--text);
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, 46px);
+      line-height: 0.9;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+      background: var(--surface);
+      padding: 10px 14px 12px;
+      box-shadow: var(--soft-shadow);
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      font-size: var(--step-label);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .nav-links a {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      color: var(--text);
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-pill); padding: 0 var(--space-2); }
+
+    .hero {
+      width: 100vw;
+      min-height: 100svh;
+      position: relative;
+      display: grid;
+      align-items: end;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--surface) 92%, transparent) 0 38%, transparent 38% 100%),
+        radial-gradient(circle at 76% 18%, color-mix(in srgb, var(--accent) 45%, transparent) 0 96px, transparent 98px),
+        radial-gradient(circle at 86% 30%, color-mix(in srgb, var(--success) 38%, transparent) 0 56px, transparent 58px);
+      z-index: -1;
+    }
+    .hero-copy {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: clamp(130px, 18vh, 220px) clamp(24px, 5vw, 72px) clamp(40px, 7vh, 96px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+      gap: var(--space-5);
+      align-items: end;
+    }
+    .hero-panel {
+      background: var(--surface);
+      border-radius: var(--radius-none);
+      padding: clamp(28px, 5vw, 64px);
+      box-shadow: var(--soft-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      right: -12%;
+      top: 18%;
+      width: 42%;
+      height: 16%;
+      background: var(--warning);
+      border-radius: var(--radius-lg);
+      transform: skewY(-7deg);
+      opacity: 0.96;
+    }
+    .hero-kicker, .section-kicker, .label {
+      font-size: var(--step-label);
+      line-height: 1;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--muted);
+      margin-bottom: var(--space-3);
+    }
+    .hero-lead {
+      font-size: clamp(19px, 2vw, 27px);
+      line-height: 1.45;
+      max-width: 34rem;
+      margin-top: var(--space-4);
+      position: relative;
+      z-index: 1;
+    }
+    .hero-card {
+      background: color-mix(in srgb, var(--surface) 94%, var(--accent));
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      box-shadow: var(--soft-shadow);
+    }
+    .date-mark {
+      font-family: var(--font-display);
+      font-size: clamp(54px, 8vw, 96px);
+      line-height: 0.9;
+      letter-spacing: -0.045em;
+      text-transform: uppercase;
+    }
+    .hero-card p { color: var(--muted); font-size: var(--step-1); margin-top: var(--space-3); }
+
+    main { background: var(--bg); }
+    .section {
+      padding: var(--section-pad) clamp(24px, 5vw, 72px);
+      position: relative;
+    }
+    .contained { width: min(1440px, 100%); margin: 0 auto; }
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.7fr);
+      gap: var(--space-6);
+      align-items: end;
+      margin-bottom: var(--space-6);
+      padding-top: var(--space-4);
+    }
+    .section-head p { font-size: var(--step-1); color: var(--muted); max-width: 42rem; }
+
+    .wind-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--space-4);
+      align-items: stretch;
+    }
+    .image-field {
+      min-height: 560px;
+      border-radius: var(--radius-lg);
+      background-image: var(--feature-image);
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--soft-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .image-field::before {
+      content: "";
+      position: absolute;
+      inset: auto 7% 8% 7%;
+      height: 18%;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      border-radius: var(--radius-lg);
+    }
+    .story-stack {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .story-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(24px, 4vw, 44px);
+      box-shadow: var(--soft-shadow);
+      min-width: 0;
+    }
+    .story-card.sky { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
+    .story-card.leaf { background: color-mix(in srgb, var(--success) 20%, var(--surface)); }
+    .story-card.coral { background: var(--warning); color: var(--on-accent); }
+    .story-card.coral h3, .story-card.coral p, .story-card.coral .label { color: var(--on-accent); }
+    .story-card p { margin-top: var(--space-3); color: var(--muted); }
+    .story-card.coral p { color: color-mix(in srgb, var(--on-accent) 88%, transparent); }
+
+    .customs {
+      background: var(--surface);
+    }
+    .custom-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+    .custom-tile {
+      min-height: 300px;
+      padding: var(--space-4);
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+    .custom-tile::before {
+      content: "";
+      width: 120px;
+      height: 120px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--accent) 30%, transparent);
+      position: absolute;
+      right: -28px;
+      top: -28px;
+    }
+    .custom-tile:nth-child(2)::before { background: color-mix(in srgb, var(--success) 34%, transparent); }
+    .custom-tile:nth-child(3)::before { background: color-mix(in srgb, var(--warning) 34%, transparent); }
+    .custom-tile:nth-child(4)::before { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+    .custom-tile h3, .custom-tile p { position: relative; z-index: 1; }
+    .custom-tile p { color: var(--muted); margin-top: var(--space-3); }
+
+    .route-section {
+      background: color-mix(in srgb, var(--success) 12%, var(--bg));
+    }
+    .route-board {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: var(--space-4);
+      align-items: stretch;
+    }
+    .route-note {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      box-shadow: var(--soft-shadow);
+    }
+    .route-note p { color: var(--muted); font-size: var(--step-1); margin-top: var(--space-4); }
+    .lane-list {
+      display: grid;
+      gap: var(--space-3);
+      align-content: center;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      box-shadow: var(--soft-shadow);
+    }
+    .lane {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) 120px;
+      gap: var(--space-3);
+      align-items: center;
+      min-width: 0;
+    }
+    .lane span { font-size: var(--step-label); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 900; color: var(--muted); }
+    .track {
+      height: 38px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+      overflow: hidden;
+      display: flex;
+      min-width: 0;
+    }
+    .track b { display: block; height: 100%; border-radius: var(--radius-pill); }
+    .track .sky { background: var(--accent); width: 38%; }
+    .track .leaf { background: var(--success); width: 34%; }
+    .track .coral { background: var(--warning); width: 18%; }
+
+    .gathering {
+      background: var(--text);
+      color: var(--surface);
+    }
+    .gathering h2, .gathering h3 { color: var(--surface); }
+    .gathering .section-kicker, .gathering p { color: color-mix(in srgb, var(--surface) 74%, transparent); }
+    .gather-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+    .gather-card {
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      min-height: 280px;
+      background: color-mix(in srgb, var(--surface) 9%, var(--text));
+    }
+    .gather-card:nth-child(2) { background: color-mix(in srgb, var(--accent) 34%, var(--text)); }
+    .gather-card:nth-child(3) { background: color-mix(in srgb, var(--success) 24%, var(--text)); }
+    .gather-card p { margin-top: var(--space-3); }
+
+    .join {
+      background: var(--bg);
+    }
+    .join-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.8fr);
+      gap: var(--space-5);
+      align-items: start;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(28px, 6vw, 72px);
+      box-shadow: var(--soft-shadow);
+      overflow: hidden;
+      position: relative;
+    }
+    .join-panel::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 96px;
+      right: -70px;
+      bottom: 48px;
+      background: var(--accent);
+      border-radius: var(--radius-lg);
+      transform: skewY(-7deg);
+      opacity: 0.86;
+    }
+    .join-panel > * { position: relative; z-index: 1; }
+
+    form { display: grid; gap: var(--space-3); }
+    label { display: grid; gap: var(--space-1); font-size: var(--step-label); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 900; color: var(--muted); }
+    input, select, textarea, button {
+      font: inherit;
+      color: var(--text);
+    }
+    input, select {
+      width: 100%;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent), 0 10px 30px color-mix(in srgb, var(--text) 7%, transparent);
+      padding: 0 var(--control-pad-x);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M4 7 L9 12 L14 7' fill='none' stroke='%2307140f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 20px center;
+      padding-right: 52px;
+    }
+    textarea {
+      width: 100%;
+      min-height: calc(var(--control-height) * 2.3);
+      border: 0;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent), 0 10px 30px color-mix(in srgb, var(--text) 7%, transparent);
+      padding: 16px var(--control-pad-x);
+      resize: vertical;
+      outline: none;
+    }
+    input:hover, select:hover, textarea:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: var(--focus-ring), inset 0 0 0 1px var(--accent); }
+    input:disabled, select:disabled, textarea:disabled {
+      background: color-mix(in srgb, var(--muted) 10%, var(--surface));
+      color: var(--muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    ::placeholder { color: color-mix(in srgb, var(--muted) 72%, var(--surface)); opacity: 1; }
+    .choice-row {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: var(--space-2);
+      align-items: center;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--control-pad-x);
+      background: color-mix(in srgb, var(--success) 13%, var(--surface));
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: var(--step-0);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 22%, transparent);
+    }
+    .choice-row input[type="checkbox"], .choice-row input[type="radio"] {
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 2px var(--text);
+      appearance: none;
+    }
+    .choice-row input[type="radio"] { border-radius: var(--radius-pill); }
+    .choice-row input:checked { background: var(--success); box-shadow: inset 0 0 0 6px var(--surface), inset 0 0 0 11px var(--success); }
+    .choice-row:hover { background: color-mix(in srgb, var(--success) 24%, var(--surface)); }
+    .choice-row:focus-within { box-shadow: var(--focus-ring); }
+    .choice-row:active { transform: translateY(1px); }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+    button, .button {
+      min-height: var(--control-height);
+      height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--control-pad-x);
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: var(--step-label);
+      cursor: pointer;
+      box-shadow: 0 12px 34px color-mix(in srgb, var(--text) 10%, transparent);
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      text-align: center;
+    }
+    button.primary, .button.primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--lift-shadow); }
+    button:hover, .button:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+    button.primary:hover, .button.primary:hover { background: color-mix(in srgb, var(--accent) 82%, var(--text)); color: var(--on-accent); }
+    button:focus-visible, .button:focus-visible { outline: none; box-shadow: var(--focus-ring), var(--lift-shadow); }
+    button:active, .button:active { transform: translateY(1px); box-shadow: 0 8px 18px color-mix(in srgb, var(--text) 12%, transparent); }
+    button:disabled, .button[aria-disabled="true"] { background: color-mix(in srgb, var(--muted) 14%, var(--surface)); color: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
+
+    footer {
+      padding: var(--space-6) clamp(24px, 5vw, 72px);
+      background: var(--surface);
+      color: var(--muted);
+    }
+    .footer-inner { width: min(1440px, 100%); margin: 0 auto; display: flex; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+
+    .js .reveal { opacity: 0; transform: translateY(22px); transition: opacity 650ms ease, transform 650ms ease; }
+    .js .reveal.in { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+      .js .reveal { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 920px) {
+      .nav-links a:nth-child(n+3) { display: none; }
+      .hero::before { background: color-mix(in srgb, var(--surface) 82%, transparent); }
+      .hero-copy, .section-head, .wind-grid, .route-board, .join-panel { grid-template-columns: 1fr; }
+      .custom-grid, .gather-grid { grid-template-columns: 1fr 1fr; }
+      .image-field { min-height: 420px; }
+    }
+    @media (max-width: 620px) {
+      .site-nav { padding: 18px; align-items: flex-start; }
+      .nav-links { gap: var(--space-2); }
+      .brand { font-size: 28px; }
+      .hero-copy { padding: 120px 18px 34px; }
+      .hero-panel, .hero-card, .story-card, .route-note, .lane-list, .join-panel { padding: 22px; }
+      .custom-grid, .gather-grid { grid-template-columns: 1fr; }
+      .lane { grid-template-columns: 1fr; gap: var(--space-1); }
+      h1 { font-size: clamp(56px, 18vw, 88px); }
+      h2 { font-size: clamp(42px, 14vw, 64px); }
+      .button-row { flex-direction: column; }
+      .button-row > * { width: 100%; }
+    }
+  </style>
+  <script>
+    document.documentElement.classList.add('js');
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to festival story</a>
+  <nav class="site-nav" aria-label="Festival navigation">
+    <a class="brand" href="#top" aria-label="Nobori home">Nobori</a>
+    <div class="nav-links">
+      <a href="#rise">The rising</a>
+      <a href="#customs">Customs</a>
+      <a href="#route">River walk</a>
+      <a href="#join">Plan a visit</a>
+    </div>
+  </nav>
+
+  <header id="top" class="hero">
+    <div class="hero-copy">
+      <div class="hero-panel reveal">
+        <div class="hero-kicker">Kodomo no Hi on the riverbank</div>
+        <h1>Carp rise. The day opens.</h1>
+        <p class="hero-lead">A bright Children's Day gathering for koinobori overhead, iris leaves at the stalls, taiko at noon, and families moving through the first clear heat of May.</p>
+        <div class="button-row">
+          <a class="button primary" href="dashboard.html">Open the companion</a>
+          <a class="button" href="#customs">Read the customs</a>
+        </div>
+      </div>
+      <aside class="hero-card reveal" aria-label="Festival date">
+        <div class="label">Public festival</div>
+        <div class="date-mark">May 5</div>
+        <p>Morning streamers, midday performances, late afternoon food tables, and a green river walk built for families and friends.</p>
+      </aside>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="rise" class="section">
+      <div class="contained">
+        <div class="section-head reveal">
+          <div>
+            <div class="section-kicker">The rising</div>
+            <h2>Koinobori catch the clean wind.</h2>
+          </div>
+          <p>The day begins with poles along the water. Carp-streamers lift in lanes of blue, green, and coral above the tents, making the riverbank feel taller than the city around it.</p>
+        </div>
+        <div class="wind-grid">
+          <div class="image-field reveal" role="img" aria-label="Koinobori streamers over a bright Kodomo no Hi festival"></div>
+          <div class="story-stack">
+            <article class="story-card sky reveal">
+              <div class="label">Morning</div>
+              <h3>Raise the poles</h3>
+              <p>Volunteers pull the streamers into place before the first families arrive. The route stays wide, white, and open so people can look up without stopping the flow.</p>
+            </article>
+            <article class="story-card leaf reveal">
+              <div class="label">Midday</div>
+              <h3>Green shade</h3>
+              <p>Iris bundles, bamboo leaves, and picnic cloths make the middle of the festival fresh instead of crowded. The brightest colour is kept for wayfinding and special moments.</p>
+            </article>
+            <article class="story-card coral reveal">
+              <div class="label">Evening</div>
+              <h3>One hot mark</h3>
+              <p>Coral marks the shared toast, the final taiko piece, and the family photograph hour. It appears rarely, so it lands with confidence.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="customs" class="section customs">
+      <div class="contained">
+        <div class="section-head reveal">
+          <div>
+            <div class="section-kicker">Customs in public</div>
+            <h2>The old day stays specific.</h2>
+          </div>
+          <p>Nobori keeps the celebration concrete: food you can hold, leaves you can smell, songs you can hear, and streamers you can watch from the grass.</p>
+        </div>
+        <div class="custom-grid">
+          <article class="custom-tile reveal">
+            <div>
+              <div class="label">Koinobori</div>
+              <h3>Carp for strength</h3>
+            </div>
+            <p>Each streamer is hung high enough to move freely, with open ground below for viewing and photographs.</p>
+          </article>
+          <article class="custom-tile reveal">
+            <div>
+              <div class="label">Iris leaves</div>
+              <h3>Fresh bundles</h3>
+            </div>
+            <p>Green stalls prepare iris bundles for the bath ritual and for the festival's scent table.</p>
+          </article>
+          <article class="custom-tile reveal">
+            <div>
+              <div class="label">Mochi table</div>
+              <h3>Kashiwa and chimaki</h3>
+            </div>
+            <p>The food line is treated like a calm counter, not a queue crush, with clear pickup windows.</p>
+          </article>
+          <article class="custom-tile reveal">
+            <div>
+              <div class="label">Wish cards</div>
+              <h3>Names in the wind</h3>
+            </div>
+            <p>Families write wishes and fasten them near the poles before the afternoon performance.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="route" class="section route-section">
+      <div class="contained">
+        <div class="section-head reveal">
+          <div>
+            <div class="section-kicker">River walk</div>
+            <h2>A route that breathes.</h2>
+          </div>
+          <p>The celebration is arranged as lanes, not boxes: look up at the streamers, step sideways for food, then return to the green path for workshops and performances.</p>
+        </div>
+        <div class="route-board">
+          <article class="route-note reveal">
+            <div class="label">Festival rhythm</div>
+            <h3>Clear arrivals, slow middle, bright finish.</h3>
+            <p>The companion keeps live details dense, but the welcome page stays generous. Both surfaces use the same wind-band logic and the same three accents.</p>
+          </article>
+          <div class="lane-list reveal" aria-label="Festival route lanes">
+            <div class="lane"><span>Gate</span><div class="track"><b class="sky"></b><b class="leaf"></b><b class="coral"></b></div><span>Poles</span></div>
+            <div class="lane"><span>Food</span><div class="track"><b class="leaf"></b><b class="sky"></b><b class="coral"></b></div><span>Stage</span></div>
+            <div class="lane"><span>Workshop</span><div class="track"><b class="coral"></b><b class="sky"></b><b class="leaf"></b></div><span>Grass</span></div>
+            <div class="lane"><span>Album</span><div class="track"><b class="sky"></b><b class="coral"></b><b class="leaf"></b></div><span>Lanterns</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section gathering">
+      <div class="contained">
+        <div class="section-head reveal">
+          <div>
+            <div class="section-kicker">The feeling</div>
+            <h2>Not a party theme. A day people enter.</h2>
+          </div>
+          <p>Adults can make it, host it, and be proud of it. Children are honoured without turning the page into a toy box.</p>
+        </div>
+        <div class="gather-grid">
+          <article class="gather-card reveal">
+            <div class="label">Civic</div>
+            <h3>Public, not private</h3>
+            <p>Wide lanes, real programme times, resting grass, and clear meeting points make the day usable for a crowd.</p>
+          </article>
+          <article class="gather-card reveal">
+            <div class="label">Graphic</div>
+            <h3>Poster energy</h3>
+            <p>Big type, hard crops, and highlighter fields give the festival a confident masthead from arrival to closing.</p>
+          </article>
+          <article class="gather-card reveal">
+            <div class="label">Fresh</div>
+            <h3>Green air</h3>
+            <p>The ground stays bright and light. Accents cut through like clear daylight, not pastel decoration.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="join" class="section join">
+      <div class="contained">
+        <div class="join-panel reveal">
+          <div>
+            <div class="section-kicker">Plan a visit</div>
+            <h2>Meet under the first streamer lane.</h2>
+            <p class="hero-lead">Use the companion for programme times, food stall notes, workshop capacity, riverbank zones, and the family album desk.</p>
+          </div>
+          <form aria-label="Festival reminder form">
+            <label>Family name
+              <input name="family" autocomplete="name" placeholder="Tanaka group">
+            </label>
+            <label>Arrival window
+              <select name="arrival">
+                <option>Morning streamer raise</option>
+                <option>Midday stage programme</option>
+                <option>Afternoon food and workshops</option>
+              </select>
+            </label>
+            <label>Note for the wish table
+              <textarea name="note" placeholder="We are bringing two wish cards and meeting grandparents at the iris stall."></textarea>
+            </label>
+            <label class="choice-row"><input type="checkbox" name="album"> Add this group to the album desk list</label>
+            <div class="button-row">
+              <button class="primary" type="button">Save reminder</button>
+              <button type="button">Print route</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <strong>Nobori</strong>
+      <span>Kodomo no Hi festival language for a bright public celebration.</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+      if (reduce || !('IntersectionObserver' in window)) {
+        nodes.forEach(function (node) { node.classList.add('in'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.16 });
+      nodes.forEach(function (node, index) {
+        node.style.transitionDelay = Math.min(index % 4, 3) * 80 + 'ms';
+        observer.observe(node);
+      });
+    }());
+  </script>
+</body>
+</html>
