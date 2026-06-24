@@ -777,10 +777,18 @@ function normalizeLaneFields(
 ): Record<string, string | undefined> {
   const fields: Record<string, string | undefined> = {};
   for (const [key, value] of Object.entries(raw)) {
-    if (typeof value !== "string") continue;
-    fields[key] = value;
+    // The backend returns JSON fields (reference_assets, reference_image_file_ids,
+    // proof_shots, signature, tags, …) as NATIVE arrays/objects. Don't drop them —
+    // stringify so downstream parseJson() can read them (the page got no reference
+    // images and fell back to the thumbnail because they were silently dropped).
+    let v: string | undefined;
+    if (typeof value === "string") v = value;
+    else if (value == null) v = undefined;
+    else v = JSON.stringify(value);
+    if (v === undefined) continue;
+    fields[key] = v;
     const snake = snakeCaseFieldName(key);
-    if (!fields[snake]) fields[snake] = value;
+    if (!fields[snake]) fields[snake] = v;
   }
   return fields;
 }
