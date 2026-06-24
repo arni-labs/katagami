@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aozora Signal — Festival operations dashboard</title>
+  <meta name="description" content="Aozora Signal dashboard for operating a Kodomo no Hi koinobori festival launch." />
+  <style>
+    :root {
+      --ink: #07110f;
+      --ink-soft: #33423e;
+      --muted: #66736f;
+      --paper: #ffffff;
+      --paper-cool: #f7fbff;
+      --sky: #00a8ff;
+      --sky-deep: #006dff;
+      --leaf: #28e66a;
+      --hot: #ff3d6e;
+      --sun: #ffe84a;
+      --line: rgba(7, 17, 15, 0.10);
+      --shadow: 0 24px 70px rgba(0, 109, 255, 0.16);
+      --s1: 8px;
+      --s2: 16px;
+      --s3: 24px;
+      --s4: 32px;
+      --s5: 48px;
+      --s6: 72px;
+      --s7: 104px;
+      --s8: 144px;
+      --r0: 0;
+      --r1: 16px;
+      --r2: 24px;
+      --pill: 999px;
+      --control-h: 48px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper-cool);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; color: var(--ink); background: radial-gradient(circle at 86% -4%, rgba(0,168,255,.18), transparent 30%), radial-gradient(circle at -8% 34%, rgba(40,230,106,.18), transparent 24%), var(--paper-cool); }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    h1, h2, h3, p { margin: 0; }
+    ::selection { background: var(--sun); color: var(--ink); }
+
+    button, .button, input, select, textarea { font: inherit; }
+    button, .button {
+      min-height: var(--control-h);
+      height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: var(--pill);
+      font-weight: 780;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease), color .18s var(--ease), opacity .18s var(--ease);
+      white-space: nowrap;
+    }
+    .button-primary { background: var(--ink); color: #fff; box-shadow: 0 14px 34px rgba(7,17,15,.20); }
+    .button-secondary { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+    .button-signal { background: var(--sky); color: var(--ink); box-shadow: 0 14px 34px rgba(0,168,255,.26); }
+    button:hover, .button:hover { transform: translateY(-2px); box-shadow: 0 20px 46px rgba(0,109,255,.18); }
+    .button-secondary:hover { background: rgba(0,168,255,.08); }
+    button:active, .button:active { transform: translateY(0) scale(.985); }
+    .button-signal:active { background: var(--sky-deep); color: #fff; }
+    button:focus-visible, .button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .toggle:focus-within, .check:focus-within, .segment:focus-within {
+      outline: 3px solid var(--sun);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 7px rgba(0,168,255,.18), 0 18px 46px rgba(0,109,255,.16);
+    }
+    button:disabled, .button[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: var(--control-h);
+      border: 0;
+      border-radius: var(--r1);
+      background: #fff;
+      color: var(--ink);
+      padding: 0 16px;
+      box-shadow: inset 0 0 0 1px var(--line);
+      transition: box-shadow .18s var(--ease), background .18s var(--ease), opacity .18s var(--ease);
+    }
+    input::placeholder, textarea::placeholder { color: rgba(102,115,111,.78); }
+    input:hover, select:hover, textarea:hover { box-shadow: inset 0 0 0 1px rgba(0,168,255,.45); }
+    input:disabled, select:disabled, textarea:disabled { background: var(--paper-cool); color: var(--muted); opacity: .55; cursor: not-allowed; }
+    input:not([type="range"]), select { height: var(--control-h); }
+    textarea { min-height: calc(var(--control-h) * 2.4); padding-top: 14px; resize: vertical; }
+    select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 20px) 20px, calc(100% - 14px) 20px; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; }
+
+    input[type="checkbox"], input[type="radio"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .check {
+      min-height: var(--control-h);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border-radius: var(--r1);
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--line);
+      cursor: pointer;
+      transition: background .18s var(--ease), box-shadow .18s var(--ease), opacity .18s var(--ease);
+    }
+    .check:hover { box-shadow: inset 0 0 0 1px rgba(0,168,255,.45); }
+    .box {
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      background: var(--paper-cool);
+      box-shadow: inset 0 0 0 1px var(--line);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .box::after { content: ""; width: 10px; height: 6px; border-left: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: rotate(-45deg) scale(0); transition: transform .14s var(--ease); }
+    .check input:checked + .box { background: var(--leaf); box-shadow: none; }
+    .check input:checked + .box::after { transform: rotate(-45deg) scale(1); }
+    .check input:disabled ~ span, .check:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+
+    .toggle {
+      min-height: var(--control-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px 0 16px;
+      border-radius: var(--r1);
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--line);
+      cursor: pointer;
+    }
+    .switch { width: 48px; height: 28px; border-radius: var(--pill); background: rgba(7,17,15,.16); padding: 4px; transition: background .18s var(--ease); }
+    .knob { width: 20px; height: 20px; border-radius: var(--pill); background: #fff; box-shadow: 0 4px 10px rgba(7,17,15,.16); transition: transform .18s var(--ease); }
+    .toggle input:checked + .switch { background: var(--sky); }
+    .toggle input:checked + .switch .knob { transform: translateX(20px); }
+
+    input[type="range"] { padding: 0; height: var(--control-h); box-shadow: none; background: transparent; accent-color: var(--sky); }
+    input[type="range"]::-webkit-slider-runnable-track { height: 10px; border-radius: var(--pill); background: linear-gradient(90deg, var(--sky), var(--leaf)); }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 26px; height: 26px; margin-top: -8px; border-radius: var(--pill); background: var(--ink); box-shadow: 0 0 0 5px var(--sun); }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: var(--s3);
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(18px);
+      display: flex;
+      flex-direction: column;
+      gap: var(--s4);
+      box-shadow: inset -1px 0 0 rgba(7,17,15,.06);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 850; letter-spacing: -.04em; }
+    .brand-mark { width: 38px; height: 38px; border-radius: var(--pill); background: var(--ink); display: grid; place-items: center; box-shadow: inset 0 0 0 8px var(--sky); }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .workspace { padding: var(--s3); border-radius: var(--r2); background: var(--ink); color: #fff; overflow: hidden; position: relative; }
+    .workspace::after { content: ""; position: absolute; right: -28px; bottom: -20px; width: 112px; height: 36px; border-radius: var(--pill); background: var(--hot); box-shadow: -48px -32px 0 var(--sky), -96px 8px 0 var(--leaf); transform: rotate(-18deg); }
+    .workspace small { color: rgba(255,255,255,.68); text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
+    .workspace strong { display: block; margin-top: 10px; font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; font-size: 2.1rem; line-height: .92; letter-spacing: -.055em; text-transform: uppercase; max-width: 160px; }
+
+    .menu { display: grid; gap: 6px; }
+    .menu a { min-height: var(--control-h); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-radius: var(--pill); color: var(--ink-soft); transition: background .18s var(--ease), color .18s var(--ease); }
+    .menu a:hover { background: rgba(0,168,255,.10); color: var(--ink); }
+    .menu a.active { background: var(--sky); color: var(--ink); font-weight: 800; }
+    .menu i { width: 10px; height: 10px; border-radius: var(--pill); background: currentColor; opacity: .5; }
+
+    .rail-footer { margin-top: auto; display: grid; gap: 10px; }
+    .team-chip { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--pill); background: var(--paper-cool); }
+    .avatar { width: 34px; height: 34px; border-radius: var(--pill); background: linear-gradient(135deg, var(--sky), var(--leaf)); }
+    .team-chip span { display: block; font-size: .85rem; color: var(--muted); }
+
+    .main { padding: var(--s4); min-width: 0; }
+    .topline { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s4); }
+    .title h1 { font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; font-size: clamp(3rem, 6vw, 6.6rem); line-height: .85; letter-spacing: -.055em; text-transform: uppercase; }
+    .title p { margin-top: 12px; color: var(--ink-soft); font-size: 1.05rem; line-height: 1.5; max-width: 640px; }
+    .top-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) 190px 190px auto;
+      gap: 10px;
+      margin-bottom: var(--s4);
+      align-items: center;
+    }
+
+    .grid { display: grid; grid-template-columns: minmax(0, 1.36fr) minmax(360px, .64fr); gap: var(--s4); align-items: start; }
+    .card { background: rgba(255,255,255,.92); border-radius: var(--r2); padding: var(--s4); box-shadow: 0 18px 54px rgba(7,17,15,.07), inset 0 0 0 1px rgba(7,17,15,.06); }
+    .card-title { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
+    .card-title h2, .card-title h3 { font-size: 1.35rem; line-height: 1.1; letter-spacing: -.04em; }
+    .label { font-size: .74rem; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: var(--s4); }
+    .stat { min-height: 148px; padding: var(--s3); border-radius: var(--r2); background: #fff; box-shadow: 0 16px 48px rgba(7,17,15,.06); position: relative; overflow: hidden; }
+    .stat::after { content: ""; position: absolute; right: -22px; top: 18px; width: 82px; height: 18px; border-radius: var(--pill); transform: rotate(-16deg); background: var(--sky); }
+    .stat:nth-child(2)::after { background: var(--leaf); }
+    .stat:nth-child(3)::after { background: var(--hot); }
+    .stat:nth-child(4) { background: var(--ink); color: #fff; }
+    .stat:nth-child(4) .label, .stat:nth-child(4) p { color: rgba(255,255,255,.68); }
+    .stat b { display: block; margin-top: 18px; font-family: "IBM Plex Mono", SFMono-Regular, Menlo, monospace; font-size: clamp(1.9rem, 3vw, 2.7rem); letter-spacing: -.08em; }
+    .stat p { margin-top: 8px; color: var(--muted); line-height: 1.35; }
+
+    .map-card { padding: 0; overflow: hidden; }
+    .map-media { position: relative; min-height: 470px; background: #fff; }
+    .map-media img { width: 100%; height: 100%; min-height: 470px; object-fit: cover; }
+    .map-overlay { position: absolute; inset: var(--s3); display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+    .map-badge { max-width: 280px; padding: var(--s3); border-radius: var(--r2); background: rgba(255,255,255,.90); box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+    .map-badge strong { display: block; font-family: "Arial Narrow", Arial, sans-serif; font-size: 2.15rem; line-height: .9; letter-spacing: -.055em; text-transform: uppercase; }
+    .map-badge span { display: block; margin-top: 10px; color: var(--ink-soft); line-height: 1.45; }
+    .wind { width: 188px; height: 56px; border-radius: var(--pill); background: var(--hot); box-shadow: -58px -42px 0 var(--sky), -112px 10px 0 var(--leaf); transform: rotate(-17deg); }
+
+    .ops-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); margin-top: var(--s4); }
+    .timeline { display: grid; gap: 14px; }
+    .event { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center; padding: 14px; border-radius: var(--r1); background: var(--paper-cool); }
+    .time { font-family: "IBM Plex Mono", SFMono-Regular, Menlo, monospace; font-weight: 800; color: var(--sky-deep); }
+    .event strong { display: block; letter-spacing: -.02em; }
+    .event span { display: block; margin-top: 4px; color: var(--muted); font-size: .88rem; }
+    .status { min-height: 30px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: var(--pill); font-size: .76rem; font-weight: 850; text-transform: uppercase; letter-spacing: .09em; background: #fff; color: var(--ink); }
+    .status.live { background: var(--leaf); }
+    .status.watch { background: var(--sun); }
+    .status.hot { background: var(--hot); color: #fff; }
+
+    .bar-list { display: grid; gap: 18px; }
+    .bar-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--ink-soft); }
+    .bar-head b { font-family: "IBM Plex Mono", SFMono-Regular, Menlo, monospace; color: var(--ink); }
+    .track { height: 12px; border-radius: var(--pill); background: rgba(7,17,15,.08); overflow: hidden; }
+    .fill { display: block; height: 100%; border-radius: var(--pill); background: var(--sky); }
+    .fill.leaf { background: var(--leaf); }
+    .fill.hot { background: var(--hot); }
+
+    .side { display: grid; gap: var(--s4); }
+    .brief-form { display: grid; gap: 14px; }
+    .field label { display: block; margin-bottom: 8px; font-size: .76rem; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+    .segment { min-height: var(--control-h); display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: var(--pill); background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+    .segment button { height: calc(var(--control-h) - 8px); min-height: calc(var(--control-h) - 8px); border-radius: var(--pill); background: transparent; box-shadow: none; color: var(--ink-soft); padding: 0 10px; }
+    .segment button[aria-pressed="true"] { background: var(--sky); color: var(--ink); }
+
+    table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+    th { text-align: left; padding: 0 12px 12px; color: var(--muted); font-size: .73rem; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; }
+    td { padding: 16px 12px; background: #fff; box-shadow: inset 0 -1px 0 rgba(7,17,15,.06); }
+    tr:hover td { background: rgba(0,168,255,.08); }
+    td:first-child { border-radius: var(--r1) 0 0 var(--r1); font-weight: 750; }
+    td:last-child { border-radius: 0 var(--r1) var(--r1) 0; }
+    .mono { font-family: "IBM Plex Mono", SFMono-Regular, Menlo, monospace; font-weight: 780; }
+
+    .alert { display: grid; gap: 14px; }
+    .alert-item { padding: var(--s3); border-radius: var(--r2); background: var(--ink); color: #fff; position: relative; overflow: hidden; }
+    .alert-item::after { content: ""; position: absolute; top: 18px; right: -20px; width: 86px; height: 20px; border-radius: var(--pill); background: var(--hot); transform: rotate(-16deg); }
+    .alert-item p { margin-top: 8px; color: rgba(255,255,255,.74); line-height: 1.45; }
+    .alert-item .button { margin-top: var(--s3); background: #fff; color: var(--ink); }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .rail { position: relative; height: auto; flex-direction: row; align-items: center; flex-wrap: wrap; }
+      .workspace { display: none; }
+      .menu { grid-template-columns: repeat(4, minmax(120px, 1fr)); flex: 1; }
+      .rail-footer { margin-top: 0; }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .main { padding: var(--s3) 14px; }
+      .topline { flex-direction: column; align-items: flex-start; }
+      .top-actions { justify-content: flex-start; }
+      .toolbar { grid-template-columns: 1fr; }
+      .stat-grid, .ops-row { grid-template-columns: 1fr 1fr; }
+      .menu { grid-template-columns: 1fr 1fr; }
+      .rail { padding: 14px; }
+    }
+
+    @media (max-width: 620px) {
+      .stat-grid, .ops-row, .menu { grid-template-columns: 1fr; }
+      .event { grid-template-columns: 1fr; }
+      .map-overlay { align-items: flex-start; }
+      .wind { display: none; }
+      .top-actions .button-secondary { display: none; }
+      table { min-width: 620px; }
+      .table-scroll { overflow-x: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+      button:hover, .button:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="Aozora Signal navigation">
+      <a class="brand" href="landing.html" aria-label="Aozora Signal landing page">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 13.2C8 7.1 14.3 5.4 20 7.2c-2.2 5.4-7.9 9.2-15.8 9.8L8 13.7 4 13.2Z" fill="#fff"/><circle cx="15.5" cy="8.8" r="1.4" fill="#28E66A"/></svg>
+        </span>
+        Aozora Signal
+      </a>
+      <section class="workspace" aria-label="Workspace">
+        <small>Workspace</small>
+        <strong>Minato East May 5</strong>
+      </section>
+      <nav class="menu" aria-label="Dashboard sections">
+        <a class="active" href="#overview">Overview <i aria-hidden="true"></i></a>
+        <a href="#routes">Routes <i aria-hidden="true"></i></a>
+        <a href="#partners">Partners <i aria-hidden="true"></i></a>
+        <a href="#brief">Brief <i aria-hidden="true"></i></a>
+      </nav>
+      <div class="rail-footer">
+        <label class="toggle">
+          <span>Live signal</span>
+          <input type="checkbox" checked aria-label="Live signal enabled" />
+          <span class="switch" aria-hidden="true"><span class="knob"></span></span>
+        </label>
+        <div class="team-chip">
+          <span class="avatar" aria-hidden="true"></span>
+          <div><strong>Ops desk</strong><span>8 people online</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topline">
+        <div class="title">
+          <h1>Festival flight deck.</h1>
+          <p>Live route readiness, partner coverage, visitor flow, and weather response for the Kodomo no Hi koinobori trail.</p>
+        </div>
+        <div class="top-actions">
+          <a class="button button-secondary" href="landing.html">Landing page</a>
+          <button class="button-signal" type="button">Publish update</button>
+          <button class="button-primary" type="button">Open command</button>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="Operational filters">
+        <label>
+          <span class="label" style="position:absolute;left:-9999px;">Search routes or partners</span>
+          <input type="search" placeholder="Search route, school, partner" />
+        </label>
+        <label>
+          <span class="label" style="position:absolute;left:-9999px;">Zone</span>
+          <select aria-label="Zone filter">
+            <option>All zones</option>
+            <option>Riverside trail</option>
+            <option>Station windows</option>
+            <option>School yards</option>
+          </select>
+        </label>
+        <label>
+          <span class="label" style="position:absolute;left:-9999px;">Status</span>
+          <select aria-label="Status filter">
+            <option>Live statuses</option>
+            <option>Needs action</option>
+            <option>Ready</option>
+            <option>Watching wind</option>
+          </select>
+        </label>
+        <button class="button-secondary" type="button">Reset</button>
+      </section>
+
+      <section class="stat-grid" aria-label="Festival status summary">
+        <article class="stat"><span class="label">Trail ready</span><b>87%</b><p>38 of 44 mapped stops are public-ready.</p></article>
+        <article class="stat"><span class="label">Partner kits</span><b>112</b><p>Leaf-green: delivered and confirmed.</p></article>
+        <article class="stat"><span class="label">Attention</span><b>06</b><p>Hot items need a decision before noon.</p></article>
+        <article class="stat"><span class="label">Visitors forecast</span><b>18.4k</b><p>Peak window: 13:20–15:10.</p></article>
+      </section>
+
+      <div class="grid">
+        <div>
+          <section class="card map-card" id="routes" aria-label="Live route map">
+            <div class="map-media">
+              <img src="media/aozora-dashboard.webp" alt="Abstract festival operations map with bright koinobori wind paths" />
+              <div class="map-overlay">
+                <div class="map-badge">
+                  <strong>Wind lane A is open.</strong>
+                  <span>Shift riverfront families through Hatchobori steps while the school-yard raise completes.</span>
+                </div>
+                <div class="wind" aria-hidden="true"></div>
+              </div>
+            </div>
+          </section>
+
+          <div class="ops-row">
+            <section class="card" aria-label="Today timeline">
+              <div class="card-title">
+                <div><span class="label">Today</span><h2>Launch timeline</h2></div>
+              </div>
+              <div class="timeline">
+                <article class="event"><span class="time">09:30</span><div><strong>Streamer raise begins</strong><span>Riverside pier, school crews checked in</span></div><span class="status live">Live</span></article>
+                <article class="event"><span class="time">11:45</span><div><strong>Station window reveal</strong><span>Retail partners need final caption approval</span></div><span class="status watch">Watch</span></article>
+                <article class="event"><span class="time">14:10</span><div><strong>Family route pulse</strong><span>Push stroller-friendly detour to map</span></div><span class="status hot">Action</span></article>
+                <article class="event"><span class="time">17:30</span><div><strong>Golden-hour photo lane</strong><span>Volunteer coverage confirmed</span></div><span class="status live">Ready</span></article>
+              </div>
+            </section>
+
+            <section class="card" aria-label="Readiness bars">
+              <div class="card-title">
+                <div><span class="label">Readiness</span><h2>Signal bars</h2></div>
+              </div>
+              <div class="bar-list">
+                <div><div class="bar-head"><span>Route signage</span><b>91%</b></div><div class="track"><span class="fill" style="width:91%"></span></div></div>
+                <div><div class="bar-head"><span>School packets</span><b>96%</b></div><div class="track"><span class="fill leaf" style="width:96%"></span></div></div>
+                <div><div class="bar-head"><span>Weather comms</span><b>68%</b></div><div class="track"><span class="fill hot" style="width:68%"></span></div></div>
+                <div class="field">
+                  <label for="windThreshold">Wind sensitivity</label>
+                  <input id="windThreshold" type="range" min="1" max="10" value="7" />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="card" id="partners" style="margin-top: var(--s4);" aria-label="Partner table">
+            <div class="card-title">
+              <div><span class="label">Partners</span><h2>Venue signal board</h2></div>
+              <button class="button-secondary" type="button">Export CSV</button>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Partner</th><th>Zone</th><th>Kit</th><th>Flow</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Higashi School</td><td>Yard raise</td><td class="mono">96%</td><td class="mono">1.8k</td><td><span class="status live">Ready</span></td></tr>
+                  <tr><td>Kawa Pier</td><td>River lane</td><td class="mono">88%</td><td class="mono">4.2k</td><td><span class="status watch">Wind</span></td></tr>
+                  <tr><td>Minato Station</td><td>Window route</td><td class="mono">74%</td><td class="mono">6.1k</td><td><span class="status hot">Copy</span></td></tr>
+                  <tr><td>Green Loop Cafe</td><td>Rest stop</td><td class="mono">100%</td><td class="mono">920</td><td><span class="status live">Ready</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="side" id="brief">
+          <section class="card" aria-label="Publish brief form">
+            <div class="card-title">
+              <div><span class="label">Public update</span><h3>Send a clean signal</h3></div>
+            </div>
+            <form class="brief-form">
+              <div class="field">
+                <label for="updateTitle">Headline</label>
+                <input id="updateTitle" type="text" value="Riverfront koinobori lane opens at 10" />
+              </div>
+              <div class="field">
+                <label for="audience">Audience</label>
+                <select id="audience">
+                  <option>Families and visitors</option>
+                  <option>Venue partners</option>
+                  <option>School coordinators</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Urgency</label>
+                <div class="segment" role="group" aria-label="Urgency selection">
+                  <button type="button" aria-pressed="false">Low</button>
+                  <button type="button" aria-pressed="true">Live</button>
+                  <button type="button" aria-pressed="false">Hot</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="message">Message</label>
+                <textarea id="message">Follow the blue route markers from Minato Station. Volunteers will guide stroller access at the east bridge.</textarea>
+              </div>
+              <label class="check">
+                <input type="checkbox" checked />
+                <span class="box" aria-hidden="true"></span>
+                <span>Mirror to partner kits</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" />
+                <span class="box" aria-hidden="true"></span>
+                <span>Pin to public map</span>
+              </label>
+              <button class="button-primary" type="submit">Publish signal</button>
+            </form>
+          </section>
+
+          <section class="card alert" aria-label="Attention queue">
+            <div class="card-title">
+              <div><span class="label">Attention</span><h3>Hot queue</h3></div>
+            </div>
+            <article class="alert-item">
+              <strong>Vermilion sponsor flag conflicts with school photo zone.</strong>
+              <p>Approve the alternate placement before printer cutoff at 12:40.</p>
+              <button class="button" type="button">Resolve placement</button>
+            </article>
+            <article class="alert-item" style="background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);">
+              <strong>Wind gust watch for pier lane.</strong>
+              <p style="color:var(--ink-soft);">If the gust line rises above threshold, route families through the green loop.</p>
+              <button class="button-signal" type="button">Prepare detour</button>
+            </article>
+          </section>
+
+          <section class="card" aria-label="Disabled state sample as real permission control">
+            <div class="card-title">
+              <div><span class="label">Permissions</span><h3>Print lock</h3></div>
+            </div>
+            <div class="brief-form">
+              <input type="text" value="Final poster batch locked by city office" disabled aria-label="Locked poster batch" />
+              <button class="button-secondary" type="button" disabled>Unlock batch</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

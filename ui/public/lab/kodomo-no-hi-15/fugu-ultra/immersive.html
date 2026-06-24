@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori — Koinobori River Flight</title>
+  <meta name="description" content="A pure real-time low-poly Nobori world for Kodomo no Hi, flown by native scroll through koinobori, river, waterfall, and dragon climax.">
+  <style>
+    :root {
+      --bg: #fffdf7;
+      --surface: #eefcf5;
+      --surface-strong: #ffffff;
+      --surface-sky: #e9fbff;
+      --text: #071315;
+      --muted: #526468;
+      --border: #d9eee7;
+      --accent: #00a7ff;
+      --on-accent: #001014;
+      --success: #21e66a;
+      --warning: #ff3d6e;
+      --error: #ff3d6e;
+      --info: #00a7ff;
+      --font-display: "Arial Black", "Avenir Next Condensed", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-jp: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+      --tracking-display: -0.02em;
+      --body-size: 17px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 72px;
+      --space-9: 96px;
+      --space-10: 128px;
+      --radius-none: 0;
+      --radius-panel: 24px;
+      --radius-control: 9999px;
+      --control-h: 52px;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--text); }
+    body {
+      margin: 0;
+      min-width: 0;
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.55;
+      color: var(--text);
+      background: #d9f8ff;
+      overflow-x: hidden;
+    }
+    p, h1, h2, h3 { margin: 0; }
+    a { color: inherit; text-decoration: none; }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: var(--text);
+      border: 0;
+      border-radius: var(--radius-control);
+      min-width: 0;
+    }
+    button,
+    input,
+    select { min-height: var(--control-h); }
+    textarea { min-height: calc(var(--control-h) * 2.4); border-radius: var(--radius-panel); resize: vertical; }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .button {
+      min-height: var(--control-h);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
+      border-radius: var(--radius-control);
+      background: var(--accent);
+      color: var(--on-accent);
+      font-weight: 950;
+      letter-spacing: -0.01em;
+      box-shadow: 0 14px 34px rgba(0,167,255,.22);
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    .button:hover { background: #0093e6; transform: translateY(-1px); }
+    .button:active { transform: translateY(1px); box-shadow: 0 8px 18px rgba(0,167,255,.16); }
+    .button.secondary { background: rgba(255,253,247,.92); color: var(--text); box-shadow: 0 12px 30px rgba(7,19,21,.12); }
+    .button.secondary:hover { background: var(--surface-sky); }
+    button:disabled { cursor: not-allowed; color: #7d8c8f; background: #edf2f0; box-shadow: none; transform: none; }
+
+    #world {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100svh;
+      z-index: 0;
+      display: none;
+      background: #d9f8ff;
+    }
+    .webgl-ready #world { display: block; }
+
+    .fallback-world {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: linear-gradient(#d9f8ff 0%, #eefcf5 58%, #fffdf7 100%);
+    }
+    .webgl-ready .fallback-world { display: none; }
+    .fallback-sun,
+    .fallback-mountain,
+    .fallback-ground,
+    .fallback-river,
+    .fallback-falls,
+    .fallback-carp,
+    .fallback-dragon,
+    .fallback-petal { position: absolute; display: block; }
+    .fallback-sun { width: 18vw; height: 18vw; border-radius: 9999px; right: 12vw; top: 12vh; background: rgba(255,61,110,.34); }
+    .fallback-mountain { bottom: 28vh; width: 0; height: 0; border-left: 20vw solid transparent; border-right: 20vw solid transparent; border-bottom: 34vh solid #9decc5; filter: drop-shadow(0 18px 24px rgba(7,19,21,.06)); }
+    .fallback-mountain.one { left: -6vw; }
+    .fallback-mountain.two { right: -8vw; border-bottom-color: #aeeaf7; transform: scale(.86); }
+    .fallback-ground { inset: auto -8vw 0 -8vw; height: 42vh; background: #dff8e8; clip-path: polygon(0 38%, 18% 25%, 37% 44%, 58% 24%, 76% 36%, 100% 18%, 100% 100%, 0 100%); }
+    .fallback-river { left: 34vw; bottom: -6vh; width: 26vw; height: 72vh; background: #00a7ff; opacity: .72; clip-path: polygon(38% 0, 66% 0, 82% 100%, 4% 100%); }
+    .fallback-falls { left: 48vw; top: 28vh; width: 12vw; height: 34vh; background: rgba(255,255,255,.82); clip-path: polygon(28% 0, 100% 0, 74% 100%, 0 100%); }
+    .fallback-carp { width: 20vw; height: 6vw; border-radius: 9999px 9999px 9999px 9999px; background: var(--accent); left: 12vw; top: 38vh; transform: rotate(-9deg); box-shadow: 18vw 8vh 0 var(--success), 36vw -5vh 0 var(--warning); opacity: .92; }
+    .fallback-dragon { right: 14vw; top: 33vh; width: 24vw; height: 12vw; border-radius: 9999px; background: var(--success); transform: rotate(-18deg); box-shadow: -5vw 6vw 0 var(--accent), 6vw -5vw 0 var(--warning); opacity: .78; }
+    .fallback-petal { width: 9px; height: 9px; border-radius: 9999px; background: var(--warning); opacity: .5; }
+    .fallback-petal.a { left: 18vw; top: 22vh; }
+    .fallback-petal.b { left: 72vw; top: 52vh; }
+    .fallback-petal.c { left: 48vw; top: 16vh; }
+
+    .site-nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      padding: 26px clamp(20px, 5vw, 72px);
+      pointer-events: none;
+      color: var(--text);
+    }
+    .site-nav a { pointer-events: auto; }
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: .85;
+      letter-spacing: var(--tracking-display);
+      text-shadow: 0 2px 18px rgba(255,253,247,.72);
+    }
+    .brand span { display: block; font-family: var(--font-jp); font-size: .56em; letter-spacing: -0.04em; margin-top: 4px; }
+    .nav-actions { display: flex; gap: var(--space-3); align-items: center; }
+
+    .readability-scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 16% 52%, rgba(255,253,247,.78), transparent 30%),
+        radial-gradient(circle at 84% 42%, rgba(7,19,21,.20), transparent 32%);
+      mix-blend-mode: normal;
+    }
+    .scroll-space { position: relative; z-index: 2; min-height: 760vh; }
+    .cue {
+      min-height: 100svh;
+      display: grid;
+      align-items: center;
+      padding: 112px clamp(20px, 5vw, 72px) 72px;
+    }
+    .cue.camera-only { pointer-events: none; }
+    .cue.right { justify-items: end; }
+    .cue.center { justify-items: center; text-align: center; }
+    .copy-panel {
+      width: min(100%, 680px);
+      padding: clamp(26px, 4vw, 52px);
+      border-radius: var(--radius-panel);
+      background: rgba(255,253,247,.88);
+      color: var(--text);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 28px 90px rgba(7,19,21,.18);
+      pointer-events: auto;
+    }
+    .copy-panel.dark {
+      background: rgba(7,19,21,.86);
+      color: #fffdf7;
+      box-shadow: 0 28px 90px rgba(7,19,21,.28);
+    }
+    .copy-panel.dark p { color: rgba(255,253,247,.82); }
+    .copy-panel.compact { width: min(100%, 520px); }
+    .scene-kicker {
+      font-weight: 950;
+      font-size: clamp(18px, 2vw, 25px);
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-4);
+    }
+    .scene-kicker strong { color: var(--warning); }
+    h1,
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(58px, 10vw, 150px);
+      line-height: .84;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+    h2 { font-size: clamp(42px, 7vw, 104px); line-height: .88; }
+    .jp-title {
+      display: block;
+      font-family: var(--font-jp);
+      font-size: .38em;
+      line-height: 1;
+      letter-spacing: -0.08em;
+      margin-top: var(--space-3);
+    }
+    .copy-panel p {
+      margin-top: var(--space-5);
+      color: #2f4245;
+      font-size: clamp(18px, 2vw, 22px);
+    }
+    .accent-line {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+      font-weight: 950;
+    }
+    .accent-line span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: var(--radius-control);
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+    .accent-line span:nth-child(2) { background: var(--success); }
+    .accent-line span:nth-child(3) { background: var(--warning); color: var(--on-accent); }
+    .stagger span { display: inline-block; }
+
+    .progress-rail {
+      position: fixed;
+      left: clamp(20px, 4vw, 56px);
+      bottom: 28px;
+      width: min(360px, calc(100vw - 40px));
+      height: 12px;
+      border-radius: var(--radius-control);
+      background: rgba(255,253,247,.74);
+      z-index: 18;
+      box-shadow: 0 12px 34px rgba(7,19,21,.12);
+      overflow: hidden;
+    }
+    .progress-fill { width: 0; height: 100%; background: linear-gradient(90deg, var(--accent), var(--success), var(--warning)); border-radius: inherit; }
+
+    .reduced-note {
+      position: fixed;
+      left: clamp(20px, 5vw, 72px);
+      right: clamp(20px, 5vw, 72px);
+      bottom: 54px;
+      z-index: 30;
+      display: none;
+      padding: var(--space-5);
+      border-radius: var(--radius-panel);
+      background: rgba(255,253,247,.92);
+      box-shadow: 0 18px 56px rgba(7,19,21,.14);
+      color: var(--text);
+    }
+    .reduced-motion .reduced-note,
+    .no-webgl .reduced-note { display: block; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .scroll-space { min-height: auto; }
+      .cue { min-height: auto; padding-top: 96px; padding-bottom: 32px; }
+      .cue.camera-only { display: none; }
+    }
+
+    @media (max-width: 820px) {
+      .nav-actions .button.secondary { display: none; }
+      .cue,
+      .cue.right,
+      .cue.center { justify-items: start; text-align: left; }
+      .copy-panel { width: min(100%, 620px); }
+      .readability-scrim { background: radial-gradient(circle at 50% 52%, rgba(255,253,247,.82), transparent 42%); }
+    }
+
+    @media (max-width: 520px) {
+      .site-nav { padding: 20px; }
+      .nav-actions { display: none; }
+      .cue { padding-left: 16px; padding-right: 16px; }
+      .copy-panel { padding: 24px; }
+      h1 { font-size: clamp(52px, 18vw, 78px); }
+      h2 { font-size: clamp(42px, 15vw, 68px); }
+    }
+  </style>
+  <script>document.documentElement.classList.remove('no-js');document.documentElement.classList.add('js');</script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js"></script>
+</head>
+<body>
+  <canvas id="world" aria-hidden="true"></canvas>
+  <div class="fallback-world" aria-hidden="true">
+    <span class="fallback-sun"></span>
+    <span class="fallback-mountain one"></span>
+    <span class="fallback-mountain two"></span>
+    <span class="fallback-ground"></span>
+    <span class="fallback-river"></span>
+    <span class="fallback-falls"></span>
+    <span class="fallback-carp"></span>
+    <span class="fallback-dragon"></span>
+    <span class="fallback-petal a"></span>
+    <span class="fallback-petal b"></span>
+    <span class="fallback-petal c"></span>
+  </div>
+  <div class="readability-scrim" aria-hidden="true"></div>
+
+  <nav class="site-nav" aria-label="Immersive primary">
+    <a class="brand" href="#top">Nobori<span>こどもの日</span></a>
+    <div class="nav-actions">
+      <a class="button secondary" href="landing.html">Product page</a>
+      <a class="button" href="dashboard.html">Ops desk</a>
+    </div>
+  </nav>
+
+  <main id="top" class="scroll-space" aria-label="Nobori low-poly river flight">
+    <section class="cue center is-copy" data-scene="0">
+      <div class="copy-panel">
+        <p class="scene-kicker">May <strong>5</strong>, first light on the river.</p>
+        <h1 class="stagger">Nobori rises.<span class="jp-title">鯉のぼり</span></h1>
+        <p>Fly the festival route as koinobori catch the wind, families gather along the water, and the whole day climbs toward courage.</p>
+        <div class="accent-line" aria-label="Key festival facts"><span>May 5</span><span>all ages</span><span>free entry</span></div>
+      </div>
+    </section>
+    <section class="cue camera-only" aria-hidden="true"></section>
+    <section class="cue is-copy" data-scene="1">
+      <div class="copy-panel compact">
+        <p class="scene-kicker">The avenue of carp.</p>
+        <h2 class="stagger">Wind becomes a map.</h2>
+        <p>Poles, fukinagashi, petals, and route markers line the ground. The camera does not trail the path; it looks ahead, then reveals the field.</p>
+      </div>
+    </section>
+    <section class="cue camera-only" aria-hidden="true"></section>
+    <section class="cue right is-copy" data-scene="2">
+      <div class="copy-panel dark">
+        <p class="scene-kicker">The river bends upward.</p>
+        <h2 class="stagger">Follow the blue climb.</h2>
+        <p>The world deepens with fog, distance, and fill light. Water carries the procession toward the falls while the banners keep their clean Nobori signal.</p>
+      </div>
+    </section>
+    <section class="cue camera-only" aria-hidden="true"></section>
+    <section class="cue center is-copy" data-scene="3">
+      <div class="copy-panel dark">
+        <p class="scene-kicker">Courage at dusk.</p>
+        <h2 class="stagger">The carp becomes dragon.<span class="jp-title">こどもの日</span></h2>
+        <p>At the waterfall, the route opens into a final glowing basin: not a video, not a parallax trick, just one living low-poly world and a real camera flight.</p>
+        <div class="accent-line" aria-label="World elements"><span>river</span><span>waterfall</span><span>dragon</span></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="progress-rail" aria-hidden="true"><div class="progress-fill"></div></div>
+  <div class="reduced-note" role="status">Reduced motion or WebGL fallback is active. Nobori presents a static low-poly river scene with the same story content.</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvas = document.getElementById('world');
+
+    function hasWebGL() {
+      try {
+        const probe = document.createElement('canvas');
+        return Boolean(window.WebGLRenderingContext && (probe.getContext('webgl2') || probe.getContext('webgl')));
+      } catch (error) {
+        return false;
+      }
+    }
+
+    if (reducedMotion || !hasWebGL()) {
+      document.body.classList.add(reducedMotion ? 'reduced-motion' : 'no-webgl');
+    } else {
+      document.body.classList.add('webgl-ready');
+      bootWorld();
+    }
+
+    function bootWorld() {
+      gsap.registerPlugin(ScrollTrigger, CustomEase);
+      CustomEase.create('noboriLift', 'M0,0 C0.12,0.02 0.18,0.82 1,1');
+      CustomEase.create('riverBend', 'M0,0 C0.08,0.42 0.35,0.98 1,1');
+      CustomEase.create('dragonReveal', 'M0,0 C0.2,0 0.1,1 1,1');
+
+      const colors = {
+        bg: new THREE.Color('#fffdf7'),
+        text: new THREE.Color('#071315'),
+        blue: new THREE.Color('#00a7ff'),
+        green: new THREE.Color('#21e66a'),
+        coral: new THREE.Color('#ff3d6e'),
+        grass: new THREE.Color('#b9f2c9'),
+        grassDark: new THREE.Color('#73d391'),
+        stone: new THREE.Color('#a9d9cf'),
+        skyMorning: new THREE.Color('#d9f8ff'),
+        skyNoon: new THREE.Color('#e9fbff'),
+        skyDusk: new THREE.Color('#ffccd8'),
+        fogMorning: new THREE.Color('#d9f8ff'),
+        fogDusk: new THREE.Color('#ffd6e1'),
+        water: new THREE.Color('#00a7ff')
+      };
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const scene = new THREE.Scene();
+      scene.background = colors.skyMorning.clone();
+      scene.fog = new THREE.Fog(colors.fogMorning.clone(), 44, 168);
+
+      const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 420);
+      const cameraTarget = new THREE.Vector3();
+      const desiredPosition = new THREE.Vector3(-12, 12, -88);
+      const desiredLookAt = new THREE.Vector3(0, 3, -46);
+      camera.position.copy(desiredPosition);
+      camera.lookAt(desiredLookAt);
+
+      const renderPass = new RenderPass(scene, camera);
+      const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.62, 0.78);
+      const composer = new EffectComposer(renderer);
+      composer.addPass(renderPass);
+      composer.addPass(bloomPass);
+
+      const ambient = new THREE.AmbientLight('#dff8ff', 1.25);
+      scene.add(ambient);
+      const key = new THREE.DirectionalLight('#fffdf7', 3.2);
+      key.position.set(-38, 58, -34);
+      key.castShadow = true;
+      key.shadow.camera.near = 1;
+      key.shadow.camera.far = 160;
+      key.shadow.camera.left = -80;
+      key.shadow.camera.right = 80;
+      key.shadow.camera.top = 80;
+      key.shadow.camera.bottom = -80;
+      scene.add(key);
+      const fill = new THREE.PointLight('#00a7ff', 2.1, 92, 1.4);
+      fill.position.set(18, 16, -20);
+      scene.add(fill);
+      const fallsGlow = new THREE.PointLight('#21e66a', 2.8, 78, 1.25);
+      fallsGlow.position.set(0, 21, 104);
+      scene.add(fallsGlow);
+      const dragonGlow = new THREE.PointLight('#ff3d6e', 2.4, 72, 1.2);
+      dragonGlow.position.set(10, 28, 116);
+      scene.add(dragonGlow);
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      const flat = (color, options = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.02, flatShading: true, ...options });
+      const basic = (color, options = {}) => new THREE.MeshBasicMaterial({ color, ...options });
+
+      function riverCenter(z) {
+        return Math.sin((z + 48) * 0.035) * 8 + Math.sin((z - 20) * 0.08) * 2.5;
+      }
+      function terrainHeight(x, z) {
+        const river = riverCenter(z);
+        const riverDist = Math.abs(x - river);
+        const rise = (z + 120) * 0.042;
+        const hills = Math.sin(x * 0.12 + z * 0.045) * 1.2 + Math.cos(z * 0.06) * 1.4;
+        const bank = Math.max(0, 1 - riverDist / 18) * -2.1;
+        const cliff = z > 94 ? (z - 94) * 0.24 : 0;
+        return rise + hills + bank + cliff;
+      }
+
+      function makeTerrain() {
+        const width = 190;
+        const depth = 250;
+        const cols = 54;
+        const rows = 76;
+        const vertices = [];
+        const indices = [];
+        const colorsAttr = [];
+        for (let iz = 0; iz <= rows; iz++) {
+          const z = -120 + depth * (iz / rows);
+          for (let ix = 0; ix <= cols; ix++) {
+            const x = -width / 2 + width * (ix / cols);
+            const y = terrainHeight(x, z);
+            vertices.push(x, y, z);
+            const riverDist = Math.abs(x - riverCenter(z));
+            const c = riverDist < 15 ? colors.grass.clone().lerp(colors.stone, 0.35) : colors.grass.clone().lerp(colors.grassDark, Math.min(1, Math.max(0, (y + 2) / 12)) * 0.45);
+            colorsAttr.push(c.r, c.g, c.b);
+          }
+        }
+        for (let iz = 0; iz < rows; iz++) {
+          for (let ix = 0; ix < cols; ix++) {
+            const a = iz * (cols + 1) + ix;
+            const b = a + 1;
+            const c = a + cols + 1;
+            const d = c + 1;
+            if ((ix + iz) % 2 === 0) indices.push(a, c, b, b, c, d);
+            else indices.push(a, c, d, a, d, b);
+          }
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colorsAttr, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0, flatShading: true });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
+        world.add(mesh);
+      }
+
+      function makeRiver() {
+        const segments = 120;
+        const vertices = [];
+        const indices = [];
+        const widths = [];
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const z = -116 + t * 222;
+          const center = riverCenter(z);
+          const width = 7 + Math.sin(t * Math.PI) * 4 + (z > 74 ? (z - 74) * .06 : 0);
+          widths.push(width);
+          const y = terrainHeight(center, z) + 0.16;
+          vertices.push(center - width, y, z, center + width, y + 0.02, z);
+        }
+        for (let i = 0; i < segments; i++) {
+          const a = i * 2;
+          indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({ color: colors.water, emissive: colors.blue, emissiveIntensity: 0.13, roughness: 0.42, metalness: 0, flatShading: true, transparent: true, opacity: 0.82 });
+        const river = new THREE.Mesh(geometry, material);
+        river.receiveShadow = true;
+        world.add(river);
+
+        const rapidMaterial = new THREE.MeshBasicMaterial({ color: '#fffdf7', transparent: true, opacity: 0.56, side: THREE.DoubleSide });
+        const rapidGeo = new THREE.PlaneGeometry(5.5, .38, 1, 1);
+        for (let i = 0; i < 46; i++) {
+          const z = -104 + i * 4.5;
+          const x = riverCenter(z) + (i % 3 - 1) * 2.1;
+          const y = terrainHeight(x, z) + 0.36;
+          const rapid = new THREE.Mesh(rapidGeo, rapidMaterial);
+          rapid.position.set(x, y, z);
+          rapid.rotation.set(-Math.PI / 2, 0, Math.sin(i) * .55);
+          rapid.scale.set(0.65 + (i % 4) * .12, 1, 1);
+          world.add(rapid);
+        }
+      }
+
+      function makeWaterfall() {
+        const cliffGeo = new THREE.ConeGeometry(34, 46, 6, 1, false);
+        const cliff = new THREE.Mesh(cliffGeo, flat(colors.stone));
+        cliff.position.set(0, 8, 120);
+        cliff.scale.set(1.6, .9, .75);
+        cliff.rotation.y = Math.PI / 6;
+        cliff.castShadow = true;
+        cliff.receiveShadow = true;
+        world.add(cliff);
+
+        const fallGroup = new THREE.Group();
+        const fallMat = new THREE.MeshStandardMaterial({ color: '#f4fffd', emissive: colors.blue, emissiveIntensity: .18, roughness: .2, metalness: 0, flatShading: true, transparent: true, opacity: .82, side: THREE.DoubleSide });
+        for (let i = 0; i < 7; i++) {
+          const geo = new THREE.PlaneGeometry(3.8 + i * .35, 34 + (i % 3) * 5, 2, 6);
+          const mesh = new THREE.Mesh(geo, fallMat);
+          mesh.position.set(-8 + i * 2.7, 15 + (i % 2) * 1.4, 100 + Math.sin(i) * 1.6);
+          mesh.rotation.set(0, Math.sin(i * 1.7) * .15, Math.sin(i) * .05);
+          fallGroup.add(mesh);
+        }
+        world.add(fallGroup);
+
+        const mistGeo = new THREE.IcosahedronGeometry(1, 0);
+        const mistMat = basic('#fffdf7', { transparent: true, opacity: .28 });
+        const mist = new THREE.InstancedMesh(mistGeo, mistMat, 90);
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < 90; i++) {
+          dummy.position.set((Math.random() - .5) * 28, 1 + Math.random() * 12, 96 + Math.random() * 16);
+          const s = .28 + Math.random() * 1.6;
+          dummy.scale.set(s, s, s);
+          dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+          dummy.updateMatrix();
+          mist.setMatrixAt(i, dummy.matrix);
+        }
+        world.add(mist);
+      }
+
+      function makeMountainsAndScenery() {
+        const mountainMatA = flat('#9decc5');
+        const mountainMatB = flat('#aeeaf7');
+        const mountainMatC = flat('#f4d7dd');
+        for (let i = 0; i < 18; i++) {
+          const geo = new THREE.ConeGeometry(15 + (i % 5) * 4, 28 + (i % 6) * 7, 5 + (i % 3), 1, false);
+          const mesh = new THREE.Mesh(geo, i % 3 === 0 ? mountainMatB : i % 4 === 0 ? mountainMatC : mountainMatA);
+          const side = i % 2 === 0 ? -1 : 1;
+          mesh.position.set(side * (46 + (i % 6) * 8), 7 + (i % 4) * 2, -78 + i * 13);
+          mesh.rotation.y = Math.random() * Math.PI;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          world.add(mesh);
+        }
+
+        const treeTrunk = new THREE.CylinderGeometry(.22, .32, 2.8, 5);
+        const treeCrown = new THREE.ConeGeometry(1.8, 4.2, 6);
+        const trunkMat = flat('#315f4e');
+        const crownMat = flat('#21e66a');
+        const trunkInst = new THREE.InstancedMesh(treeTrunk, trunkMat, 180);
+        const crownInst = new THREE.InstancedMesh(treeCrown, crownMat, 180);
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < 180; i++) {
+          const z = -110 + Math.random() * 220;
+          const center = riverCenter(z);
+          const side = Math.random() < .5 ? -1 : 1;
+          const x = center + side * (14 + Math.random() * 52);
+          const y = terrainHeight(x, z);
+          const s = .7 + Math.random() * 1.4;
+          dummy.position.set(x, y + 1.4 * s, z);
+          dummy.scale.set(s, s, s);
+          dummy.rotation.y = Math.random() * Math.PI;
+          dummy.updateMatrix();
+          trunkInst.setMatrixAt(i, dummy.matrix);
+          dummy.position.y = y + 4.2 * s;
+          dummy.updateMatrix();
+          crownInst.setMatrixAt(i, dummy.matrix);
+        }
+        trunkInst.castShadow = true;
+        crownInst.castShadow = true;
+        trunkInst.receiveShadow = true;
+        crownInst.receiveShadow = true;
+        world.add(trunkInst, crownInst);
+
+        const lod = new THREE.LOD();
+        const nearGeo = new THREE.DodecahedronGeometry(4.8, 0);
+        const farGeo = new THREE.ConeGeometry(5.4, 8, 5);
+        const nearCluster = new THREE.Group();
+        for (let i = 0; i < 7; i++) {
+          const m = new THREE.Mesh(nearGeo, flat(i % 2 ? '#b9f2c9' : '#aeeaf7'));
+          m.position.set((i - 3) * 3.7, i % 2, Math.sin(i) * 2.8);
+          m.scale.set(1, .55 + (i % 3) * .16, 1);
+          nearCluster.add(m);
+        }
+        const farCluster = new THREE.Mesh(farGeo, flat('#aeeaf7'));
+        lod.addLevel(nearCluster, 0);
+        lod.addLevel(farCluster, 82);
+        lod.position.set(36, 17, 96);
+        world.add(lod);
+      }
+
+      function makeSunAndSkyForms() {
+        const sun = new THREE.Mesh(new THREE.CircleGeometry(13, 24), basic(colors.coral, { transparent: true, opacity: .58, side: THREE.DoubleSide }));
+        sun.position.set(62, 48, 70);
+        sun.rotation.y = -Math.PI / 5;
+        scene.add(sun);
+
+        const cloudGeo = new THREE.DodecahedronGeometry(1, 0);
+        const cloudMat = basic('#fffdf7', { transparent: true, opacity: .62 });
+        const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, 54);
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < 54; i++) {
+          dummy.position.set(-90 + Math.random() * 180, 26 + Math.random() * 28, -110 + Math.random() * 205);
+          dummy.scale.set(4 + Math.random() * 7, 1.4 + Math.random() * 2.6, 2.2 + Math.random() * 4);
+          dummy.rotation.set(Math.random() * .3, Math.random() * Math.PI, Math.random() * .2);
+          dummy.updateMatrix();
+          cloudInst.setMatrixAt(i, dummy.matrix);
+        }
+        scene.add(cloudInst);
+      }
+
+      const flagUniforms = {
+        uTime: { value: 0 },
+        uStrength: { value: 0.38 },
+        uWind: { value: new THREE.Vector2(1.0, 0.22) },
+        uColor: { value: new THREE.Color('#00a7ff') },
+        uStripe: { value: new THREE.Color('#fffdf7') },
+        uHot: { value: new THREE.Color('#ff3d6e') }
+      };
+
+      function makeFlagMaterial(color) {
+        return new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: flagUniforms.uTime,
+            uStrength: flagUniforms.uStrength,
+            uWind: flagUniforms.uWind,
+            uColor: { value: new THREE.Color(color) },
+            uStripe: flagUniforms.uStripe,
+            uHot: flagUniforms.uHot
+          },
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          vertexShader: `
+            uniform float uTime;
+            uniform float uStrength;
+            uniform vec2 uWind;
+            varying vec2 vUv;
+            varying float vWave;
+            void main() {
+              vUv = uv;
+              vec3 p = position;
+              float traveling = sin(uv.x * 12.0 - uTime * 2.6 + uv.y * 3.0);
+              float billow = sin(uv.x * 5.0 - uTime * 1.25);
+              p.z += traveling * uStrength * uv.x;
+              p.y += billow * 0.09 * uv.x + uWind.y * 0.05 * uv.x;
+              p.x += uWind.x * 0.05 * sin(uTime + uv.x * 4.0) * uv.x;
+              vWave = traveling;
+              gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 uColor;
+            uniform vec3 uStripe;
+            uniform vec3 uHot;
+            varying vec2 vUv;
+            varying float vWave;
+            void main() {
+              float width = mix(0.44, 0.22, vUv.x) + sin(vUv.x * 3.14159) * 0.12;
+              float body = step(abs(vUv.y - 0.5), width);
+              float tailCut = step(0.90, vUv.x) * step(abs(vUv.y - 0.5), 0.085);
+              float mouthCut = (1.0 - smoothstep(0.0, 0.08, vUv.x)) * step(abs(vUv.y - 0.5), 0.18);
+              float alpha = body * (1.0 - tailCut * 0.75) * (1.0 - mouthCut * 0.35);
+              if (alpha < 0.12) discard;
+              float stripe = step(0.56, sin(vUv.x * 38.0));
+              float scaleBand = smoothstep(0.18, 0.26, vUv.x) * (1.0 - smoothstep(0.78, 0.9, vUv.x));
+              vec3 color = mix(uColor, uStripe, stripe * 0.22 * scaleBand);
+              float eye = smoothstep(0.065, 0.045, distance(vUv, vec2(0.14, 0.61)));
+              color = mix(color, vec3(0.02, 0.06, 0.07), eye);
+              float fin = smoothstep(0.18, 0.0, abs(vUv.y - (0.25 + vUv.x * 0.16))) * smoothstep(0.25, 0.4, vUv.x) * (1.0 - smoothstep(0.56, 0.72, vUv.x));
+              color = mix(color, uHot, fin * 0.48);
+              color += vWave * 0.035;
+              gl_FragColor = vec4(color, alpha * 0.96);
+            }
+          `
+        });
+      }
+
+      function makeStreamerMaterial(color) {
+        return new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: flagUniforms.uTime,
+            uStrength: { value: .52 },
+            uWind: flagUniforms.uWind,
+            uColor: { value: new THREE.Color(color) }
+          },
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          vertexShader: `
+            uniform float uTime;
+            uniform float uStrength;
+            uniform vec2 uWind;
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              vec3 p = position;
+              float wave = sin(uv.x * 14.0 - uTime * 3.0 + uv.y * 6.0);
+              p.z += wave * uStrength * uv.x;
+              p.y += sin(uv.x * 8.0 - uTime * 2.0) * 0.08 * uv.x;
+              p.x += uWind.x * .08 * uv.x;
+              gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 uColor;
+            varying vec2 vUv;
+            void main() {
+              float taper = smoothstep(1.0, 0.0, vUv.x) * .26 + .74;
+              gl_FragColor = vec4(uColor, taper * .86);
+            }
+          `
+        });
+      }
+
+      function makeKoinoboriField() {
+        const poleGeo = new THREE.CylinderGeometry(.08, .11, 8.8, 6);
+        const poleMat = flat('#173d3c');
+        const poleCount = 78;
+        const poles = new THREE.InstancedMesh(poleGeo, poleMat, poleCount);
+        const dummy = new THREE.Object3D();
+        const flagGeo = new THREE.PlaneGeometry(3.6, .92, 18, 2);
+        flagGeo.translate(1.8, 0, 0);
+        const streamerGeo = new THREE.PlaneGeometry(3.9, .24, 18, 1);
+        streamerGeo.translate(1.95, 0, 0);
+        const blueFlags = new THREE.InstancedMesh(flagGeo, makeFlagMaterial('#00a7ff'), poleCount);
+        const greenFlags = new THREE.InstancedMesh(flagGeo, makeFlagMaterial('#21e66a'), poleCount);
+        const coralFlags = new THREE.InstancedMesh(flagGeo, makeFlagMaterial('#ff3d6e'), poleCount);
+        const streamersBlue = new THREE.InstancedMesh(streamerGeo, makeStreamerMaterial('#00a7ff'), poleCount);
+        const streamersGreen = new THREE.InstancedMesh(streamerGeo, makeStreamerMaterial('#21e66a'), poleCount);
+        const streamersCoral = new THREE.InstancedMesh(streamerGeo, makeStreamerMaterial('#ff3d6e'), poleCount);
+        const flagMeshes = [blueFlags, greenFlags, coralFlags, streamersBlue, streamersGreen, streamersCoral];
+
+        for (let i = 0; i < poleCount; i++) {
+          const z = -98 + i * 2.75;
+          const avenue = i < 38;
+          const side = i % 2 === 0 ? -1 : 1;
+          const center = avenue ? Math.sin(i * .34) * 4 : riverCenter(z);
+          const x = center + side * (avenue ? 13 + (i % 5) * .45 : 12 + (i % 4) * 1.1);
+          const y = terrainHeight(x, z);
+          const angle = side > 0 ? Math.PI * .04 : Math.PI - Math.PI * .04;
+          const scale = .88 + (i % 6) * .045;
+
+          dummy.position.set(x, y + 4.4 * scale, z);
+          dummy.scale.set(scale, scale, scale);
+          dummy.rotation.set(0, 0, 0);
+          dummy.updateMatrix();
+          poles.setMatrixAt(i, dummy.matrix);
+
+          const heights = [7.25, 6.1, 5.05];
+          const offsets = [0, .24, -.18];
+          for (let j = 0; j < 3; j++) {
+            dummy.position.set(x, y + heights[j] * scale, z + offsets[j]);
+            dummy.scale.set(scale * (.9 - j * .08), scale * (.9 - j * .08), scale * (.9 - j * .08));
+            dummy.rotation.set(0, angle + Math.sin(i + j) * .18, 0);
+            dummy.updateMatrix();
+            flagMeshes[j].setMatrixAt(i, dummy.matrix);
+          }
+          for (let j = 0; j < 3; j++) {
+            dummy.position.set(x, y + (8.45 - j * .24) * scale, z + (j - 1) * .18);
+            dummy.scale.set(scale * .78, scale, scale);
+            dummy.rotation.set(0, angle + (j - 1) * .11, 0);
+            dummy.updateMatrix();
+            flagMeshes[3 + j].setMatrixAt(i, dummy.matrix);
+          }
+        }
+        poles.castShadow = true;
+        poles.receiveShadow = true;
+        world.add(poles, ...flagMeshes);
+      }
+
+      const petalData = [];
+      let petals;
+      function makePetals() {
+        const petalGeo = new THREE.CircleGeometry(.16, 5);
+        const petalMat = basic('#ff3d6e', { transparent: true, opacity: .74, side: THREE.DoubleSide });
+        petals = new THREE.InstancedMesh(petalGeo, petalMat, 620);
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < 620; i++) {
+          const data = {
+            baseX: -62 + Math.random() * 124,
+            baseY: 4 + Math.random() * 34,
+            baseZ: -112 + Math.random() * 226,
+            speed: .16 + Math.random() * .55,
+            phase: Math.random() * Math.PI * 2,
+            size: .55 + Math.random() * 1.8
+          };
+          petalData.push(data);
+          dummy.position.set(data.baseX, data.baseY, data.baseZ);
+          dummy.scale.setScalar(data.size);
+          dummy.updateMatrix();
+          petals.setMatrixAt(i, dummy.matrix);
+        }
+        world.add(petals);
+      }
+
+      function makeFestivalMarkers() {
+        const geo = new THREE.BoxGeometry(2.2, .18, 6.8);
+        const matBlue = flat(colors.blue, { emissive: colors.blue, emissiveIntensity: .08 });
+        const matGreen = flat(colors.green, { emissive: colors.green, emissiveIntensity: .08 });
+        const matCoral = flat(colors.coral, { emissive: colors.coral, emissiveIntensity: .1 });
+        for (let i = 0; i < 32; i++) {
+          const z = -92 + i * 6.1;
+          const center = riverCenter(z);
+          const side = i % 2 === 0 ? -1 : 1;
+          const x = center + side * (21 + (i % 5));
+          const y = terrainHeight(x, z) + .12;
+          const marker = new THREE.Mesh(geo, i % 5 === 0 ? matCoral : i % 3 === 0 ? matGreen : matBlue);
+          marker.position.set(x, y, z);
+          marker.rotation.set(-Math.PI / 2, 0, side * .22 + Math.sin(i) * .16);
+          marker.castShadow = true;
+          marker.receiveShadow = true;
+          world.add(marker);
+        }
+      }
+
+      function makeDragon() {
+        const dragon = new THREE.Group();
+        const bodyMat = flat(colors.green, { emissive: colors.green, emissiveIntensity: .13 });
+        const bellyMat = flat(colors.blue, { emissive: colors.blue, emissiveIntensity: .12 });
+        const finMat = flat(colors.coral, { emissive: colors.coral, emissiveIntensity: .22 });
+        const bodyGeo = new THREE.DodecahedronGeometry(2.5, 0);
+        for (let i = 0; i < 18; i++) {
+          const t = i / 17;
+          const body = new THREE.Mesh(bodyGeo, i % 3 === 0 ? bellyMat : bodyMat);
+          body.position.set(Math.sin(t * Math.PI * 2.2) * 9, 4 + t * 18 + Math.sin(t * Math.PI * 4) * 1.8, 4 + t * 6);
+          body.scale.set(1.25 - t * .42, .78, 1.05 - t * .32);
+          body.rotation.set(t * Math.PI, t * Math.PI * 1.3, Math.sin(t * 8) * .6);
+          body.castShadow = true;
+          dragon.add(body);
+          if (i % 2 === 0) {
+            const fin = new THREE.Mesh(new THREE.ConeGeometry(.8, 2.8, 3), finMat);
+            fin.position.copy(body.position).add(new THREE.Vector3(0, 1.6, 0));
+            fin.rotation.set(Math.PI / 2, 0, t * Math.PI * 2);
+            dragon.add(fin);
+          }
+        }
+        const head = new THREE.Mesh(new THREE.IcosahedronGeometry(3.5, 0), bodyMat);
+        head.position.set(1, 24, 11);
+        head.scale.set(1.45, .92, 1.1);
+        head.castShadow = true;
+        dragon.add(head);
+        const hornGeo = new THREE.ConeGeometry(.45, 4.2, 4);
+        for (let side of [-1, 1]) {
+          const horn = new THREE.Mesh(hornGeo, flat('#fffdf7', { emissive: colors.bg, emissiveIntensity: .12 }));
+          horn.position.set(1 + side * 1.4, 27, 10.2);
+          horn.rotation.set(.4, 0, side * .3);
+          dragon.add(horn);
+          const whisker = new THREE.Mesh(new THREE.BoxGeometry(.16, .16, 7), finMat);
+          whisker.position.set(1 + side * 2.4, 23.8, 12);
+          whisker.rotation.set(.2, side * .8, side * .35);
+          dragon.add(whisker);
+        }
+        dragon.position.set(7, 10, 104);
+        dragon.rotation.y = -.55;
+        world.add(dragon);
+        return dragon;
+      }
+
+      makeTerrain();
+      makeRiver();
+      makeWaterfall();
+      makeMountainsAndScenery();
+      makeSunAndSkyForms();
+      makeKoinoboriField();
+      makePetals();
+      makeFestivalMarkers();
+      const dragon = makeDragon();
+
+      const rig = { px: -12, py: 12, pz: -88, lx: 0, ly: 3, lz: -46, tod: 0 };
+      const SEGMENTS = [
+        { id: 'dawn-gate', range: [0.00, 0.13], duration: 1.05, ease: 'noboriLift', camera: [-12, 12, -88], look: [0, 3, -46], note: 'First full view across ground, sky, and carp avenue.' },
+        { id: 'avenue-reveal', range: [0.13, 0.31], duration: 1.55, ease: 'riverBend', camera: [-20, 9, -42], look: [5, 8, -18], note: 'Camera anticipates banners before crossing the avenue.' },
+        { id: 'river-bend', range: [0.31, 0.52], duration: 1.2, ease: 'noboriLift', camera: [19, 12, 8], look: [0, 4, 42], note: 'Blue river climb becomes the director cue.' },
+        { id: 'falls-approach', range: [0.52, 0.74], duration: 1.8, ease: 'riverBend', camera: [-25, 18, 58], look: [0, 15, 102], note: 'Fog, cliff, and waterfall reveal depth.' },
+        { id: 'dragon-climax', range: [0.74, 1.00], duration: 1.35, ease: 'dragonReveal', camera: [18, 31, 119], look: [8, 26, 112], note: 'Dusk light catches the dragon above the falls.' }
+      ];
+
+      const timeline = gsap.timeline({
+        defaults: { overwrite: true },
+        scrollTrigger: {
+          trigger: '.scroll-space',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: true,
+          onUpdate: (self) => {
+            gsap.set('.progress-fill', { width: `${self.progress * 100}%` });
+          }
+        }
+      });
+
+      SEGMENTS.forEach((segment, index) => {
+        timeline.to(rig, {
+          px: segment.camera[0], py: segment.camera[1], pz: segment.camera[2],
+          lx: segment.look[0], ly: segment.look[1], lz: segment.look[2],
+          tod: index / (SEGMENTS.length - 1),
+          duration: segment.duration,
+          ease: segment.ease
+        }, index === 0 ? 0 : '>');
+      });
+
+      document.querySelectorAll('.stagger').forEach((el) => {
+        const nodes = Array.from(el.childNodes);
+        el.innerHTML = '';
+        nodes.forEach((node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            node.textContent.split('').forEach((char) => {
+              const span = document.createElement('span');
+              span.textContent = char === ' ' ? '\u00a0' : char;
+              el.appendChild(span);
+            });
+          } else {
+            el.appendChild(node);
+          }
+        });
+      });
+
+      document.querySelectorAll('.cue.is-copy').forEach((section) => {
+        const panel = section.querySelector('.copy-panel');
+        const chars = section.querySelectorAll('.stagger > span');
+        gsap.fromTo(panel,
+          { autoAlpha: 0, y: 24, pointerEvents: 'none' },
+          { autoAlpha: 1, y: 0, pointerEvents: 'auto', ease: 'noboriLift',
+            scrollTrigger: { trigger: section, start: 'top 70%', end: 'center 45%', scrub: true } }
+        );
+        gsap.to(panel, {
+          autoAlpha: 0,
+          y: -20,
+          pointerEvents: 'none',
+          ease: 'power1.inOut',
+          scrollTrigger: { trigger: section, start: 'center 24%', end: 'bottom 15%', scrub: true }
+        });
+        if (chars.length) {
+          gsap.fromTo(chars,
+            { yPercent: 22, autoAlpha: 0 },
+            { yPercent: 0, autoAlpha: 1, stagger: .018, ease: 'noboriLift',
+              scrollTrigger: { trigger: section, start: 'top 68%', end: 'center 50%', scrub: true } }
+          );
+        }
+      });
+
+      const clock = new THREE.Clock();
+      const dummy = new THREE.Object3D();
+      let running = true;
+
+      document.addEventListener('visibilitychange', () => {
+        running = document.visibilityState === 'visible';
+        if (running) {
+          clock.getDelta();
+          requestAnimationFrame(renderLoop);
+        }
+      });
+
+      function updateTimeOfDay(t) {
+        const sky = colors.skyMorning.clone().lerp(colors.skyNoon, Math.min(t * 1.5, 1));
+        if (t > .55) sky.lerp(colors.skyDusk, (t - .55) / .45);
+        const fog = colors.fogMorning.clone().lerp(colors.fogDusk, Math.max(0, (t - .48) / .52));
+        scene.background.copy(sky);
+        scene.fog.color.copy(fog);
+        scene.fog.near = THREE.MathUtils.lerp(36, 24, t);
+        scene.fog.far = THREE.MathUtils.lerp(172, 126, t);
+        ambient.intensity = THREE.MathUtils.lerp(1.25, .82, t);
+        key.intensity = THREE.MathUtils.lerp(3.2, 1.55, t);
+        key.position.set(THREE.MathUtils.lerp(-38, 24, t), THREE.MathUtils.lerp(58, 34, t), THREE.MathUtils.lerp(-34, 60, t));
+        fill.intensity = THREE.MathUtils.lerp(2.1, 2.9, t);
+        fallsGlow.intensity = THREE.MathUtils.lerp(2.1, 3.7, t);
+        dragonGlow.intensity = THREE.MathUtils.lerp(1.2, 3.2, t);
+        bloomPass.strength = THREE.MathUtils.lerp(.36, .72, t);
+      }
+
+      function updatePetals(time) {
+        if (!petals) return;
+        for (let i = 0; i < petalData.length; i++) {
+          const p = petalData[i];
+          const drift = time * p.speed + p.phase;
+          let z = p.baseZ + ((time * 5.5 * p.speed) % 228);
+          if (z > 116) z -= 228;
+          dummy.position.set(
+            p.baseX + Math.sin(drift * 1.7) * 5.2,
+            p.baseY + Math.sin(drift * 2.1) * 1.6,
+            z
+          );
+          const s = p.size * (0.72 + Math.sin(drift) * .18);
+          dummy.scale.set(s, s * .58, s);
+          dummy.rotation.set(drift, drift * .7, drift * 1.4);
+          dummy.updateMatrix();
+          petals.setMatrixAt(i, dummy.matrix);
+        }
+        petals.instanceMatrix.needsUpdate = true;
+      }
+
+      function renderLoop() {
+        if (!running) return;
+        const dt = clock.getDelta();
+        const time = clock.elapsedTime;
+        flagUniforms.uTime.value = time;
+        flagUniforms.uStrength.value = 0.31 + Math.sin(time * .52) * .06;
+        dragon.rotation.y = -.55 + Math.sin(time * .42) * .08;
+        dragon.position.y = 10 + Math.sin(time * .66) * .45;
+        updatePetals(time);
+        updateTimeOfDay(rig.tod);
+
+        desiredPosition.set(rig.px, rig.py, rig.pz);
+        desiredLookAt.set(rig.lx, rig.ly, rig.lz);
+        camera.position.lerp(desiredPosition, Math.min(1, dt * 3.2));
+        cameraTarget.lerp(desiredLookAt, Math.min(1, dt * 3.6));
+        camera.lookAt(cameraTarget);
+        composer.render();
+        requestAnimationFrame(renderLoop);
+      }
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height, false);
+        composer.setSize(width, height);
+        bloomPass.resolution.set(width, height);
+      }
+      window.addEventListener('resize', resize, { passive: true });
+      requestAnimationFrame(renderLoop);
+    }
+  </script>
+</body>
+</html>

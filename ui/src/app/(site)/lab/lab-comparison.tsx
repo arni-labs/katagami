@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { COMPARISONS } from "./comparisons";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -598,11 +600,13 @@ function DetailsGrid({
 }) {
   const order = active.blindOrder;
   const n = order.length;
+  // only the immersive view pages (WebGL is heavy); landing/dashboard show everything at once
+  const paged = view === "immersive";
   const [perPage, setPerPage] = useState(1);
   const [start, setStart] = useState(0);
   const maxStart = Math.max(0, n - perPage);
   const clamped = Math.min(start, maxStart);
-  const pageKeys = order.slice(clamped, clamped + perPage);
+  const pageKeys = paged ? order.slice(clamped, clamped + perPage) : order;
   const atStart = clamped <= 0;
   const atEnd = clamped + perPage >= n;
 
@@ -682,14 +686,16 @@ function DetailsGrid({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        {nav}
-        <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.16em] tabular-nums text-muted-foreground">
-          {pos}
-        </span>
-      </div>
+      {paged && (
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          {nav}
+          <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.16em] tabular-nums text-muted-foreground">
+            {pos}
+          </span>
+        </div>
+      )}
 
-      <div className={`mt-6 grid gap-7 ${perPage === 2 ? "md:grid-cols-2" : "mx-auto max-w-3xl grid-cols-1"}`}>
+      <div className={`mt-6 grid gap-7 ${paged && perPage === 1 ? "mx-auto max-w-3xl grid-cols-1" : "md:grid-cols-2"}`}>
         {pageKeys.map((key) => {
           const i = order.indexOf(key);
           const m = active.models[key];
@@ -697,7 +703,7 @@ function DetailsGrid({
           const base = `/lab/${active.slug}/${m.dir}`;
           const hasView = (m.views ?? active.views).includes(view);
           const guessed = answers[key];
-          const aspect = perPage === 1 ? "aspect-[16/10]" : "aspect-[4/3]";
+          const aspect = paged && perPage === 1 ? "aspect-[16/10]" : "aspect-[4/3]";
           return (
             <div
               key={key}
@@ -788,7 +794,7 @@ function DetailsGrid({
         })}
       </div>
 
-      <div className="mt-8">{nav}</div>
+      {paged && <div className="mt-8">{nav}</div>}
     </>
   );
 }
@@ -801,6 +807,7 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
     c.views.includes("landing") ? "landing" : c.views[0],
   );
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [variantMode, setVariantMode] = useState<"primary" | "variant">("primary");
 
   const primarySet: SurfaceSet = {
@@ -868,6 +875,32 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         Guess which model made each design.
       </p>
 
+      {/* round switcher — browse every round */}
+      {COMPARISONS.length > 1 && (
+        <nav className="mt-4 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Rounds
+          </span>
+          {COMPARISONS.map((r) => {
+            const active = r.slug === c.slug;
+            return (
+              <Link
+                key={r.slug}
+                href={`/lab/${r.slug}`}
+                aria-current={active ? "page" : undefined}
+                className={`px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.1em] shadow-[0_1px_0_#1e232d1f] transition-all hover:-translate-y-[1px] ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {r.tag}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
       {/* the prompt — hidden by default, compact, code-style */}
       {c.prompt && (
         <div className="mt-5">
@@ -910,6 +943,42 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
                 &rdquo;
               </span>
             </figure>
+          )}
+        </div>
+      )}
+
+      {/* the anti-slop rulebook — hidden by default, clean styled collapsible */}
+      {c.rules && (
+        <div className="mt-3">
+          <button
+            onClick={() => setShowRules((s) => !s)}
+            className={`${STICKER} bg-card text-foreground`}
+          >
+            {showRules ? "Hide the rules" : "See the anti-slop rules"}
+          </button>
+          {showRules && (
+            <div className="mt-4 max-h-[65vh] max-w-2xl space-y-4 overflow-y-auto rounded-[16px] bg-card/60 p-5">
+              {c.rules.split("\n\n").map((section, i) => {
+                const lines = section.split("\n");
+                const head = lines[0];
+                const body = lines.slice(1);
+                return (
+                  <div key={i}>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
+                      <span className="text-foreground/30">// </span>
+                      {head}
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {body.map((line, j) => (
+                        <li key={j} className="text-[13px] leading-relaxed text-foreground/75">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

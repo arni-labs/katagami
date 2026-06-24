@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Dashboard</title>
+  <meta name="description" content="Nobori route, crew, weather, and family operations dashboard for Kodomo no Hi programs.">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f4f8f0;
+      --surface-strong: #eaf3e6;
+      --text: #050505;
+      --muted: #4b5a54;
+      --border: #dce7d8;
+      --accent: #00a8ff;
+      --accent-leaf: #35f866;
+      --accent-pop: #ff2e7e;
+      --on-accent: #050505;
+      --success: #35f866;
+      --warning: #ff2e7e;
+      --error: #ff2e7e;
+      --info: #00a8ff;
+      --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-display: "Arial Black", "Hiragino Sans", "Yu Gothic", Meiryo, ui-sans-serif, system-ui, sans-serif;
+      --font-jp: "Hiragino Sans", "Yu Gothic", Meiryo, ui-sans-serif, system-ui, sans-serif;
+      --control-height: 52px;
+      --radius-control: 16px;
+      --radius-panel: 24px;
+      --radius-pill: 9999px;
+      --focus-ring: 0 0 0 4px rgba(0, 168, 255, 0.28);
+      --shadow-soft: 0 24px 70px rgba(5, 5, 5, 0.12);
+      --hero-image: url("./media/dashboard-banner.png");
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-control);
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--surface-strong); transform: translateY(-1px); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+      box-shadow: var(--focus-ring);
+    }
+    button:active { transform: translateY(1px); box-shadow: none; }
+    button:disabled, input:disabled, select:disabled, textarea:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .primary {
+      background: var(--accent);
+      color: var(--on-accent);
+      box-shadow: 0 16px 34px rgba(0, 168, 255, 0.24);
+    }
+    .primary:hover { background: var(--accent-leaf); }
+    label {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      color: var(--text);
+      font-weight: 820;
+    }
+    input, select, textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-control);
+      background: var(--bg);
+      padding: 0 16px;
+      box-shadow: inset 0 0 0 1px rgba(5, 5, 5, 0.07);
+    }
+    input:hover, select:hover, textarea:hover { background: var(--surface); }
+    input:focus, select:focus, textarea:focus { caret-color: var(--accent); }
+    textarea {
+      min-height: 132px;
+      padding: 16px;
+      resize: vertical;
+    }
+    select {
+      appearance: none;
+      padding-right: 44px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 8l5 5 5-5' stroke='%23050505' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 18px;
+    }
+    input[type="checkbox"], input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      background: var(--bg);
+      box-shadow: inset 0 0 0 2px var(--text);
+      vertical-align: middle;
+    }
+    input[type="radio"] { border-radius: var(--radius-pill); }
+    input[type="checkbox"]:checked, input[type="radio"]:checked { background: var(--accent); }
+    input[type="checkbox"]:checked::after {
+      content: "";
+      width: 10px;
+      height: 6px;
+      border-left: 2px solid var(--text);
+      border-bottom: 2px solid var(--text);
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+    input[type="radio"]:checked::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--text);
+    }
+    input[type="range"] {
+      appearance: none;
+      height: var(--control-height);
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+      box-shadow: inset 0 0 0 1px rgba(5, 5, 5, 0.06);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      margin-top: -8px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      box-shadow: 0 8px 18px rgba(0, 168, 255, 0.26);
+    }
+    input[type="range"]::-moz-range-track {
+      height: 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+
+    .app {
+      min-height: 100svh;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+    }
+    .sidebar {
+      padding: 34px 24px;
+      background: var(--text);
+      color: var(--bg);
+      display: grid;
+      align-content: start;
+      gap: 36px;
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .jp {
+      font-family: var(--font-jp);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .side-nav {
+      display: grid;
+      gap: 8px;
+    }
+    .side-nav a {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border-radius: var(--radius-control);
+      color: rgba(255, 255, 255, 0.78);
+      font-weight: 850;
+    }
+    .side-nav a.active {
+      background: var(--accent);
+      color: var(--text);
+    }
+    .operator {
+      margin-top: 20px;
+      padding: 22px;
+      border-radius: var(--radius-panel);
+      background: rgba(255, 255, 255, 0.1);
+      display: grid;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.82);
+    }
+    .operator strong { color: var(--bg); }
+    .main {
+      min-width: 0;
+      padding: 28px clamp(20px, 4vw, 48px) 56px;
+      display: grid;
+      gap: 24px;
+      align-content: start;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-width: 0;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 5.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .banner {
+      min-height: 310px;
+      border-radius: var(--radius-panel);
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+    .banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.78);
+      clip-path: polygon(0 0, 56% 0, 46% 100%, 0 100%);
+    }
+    .banner-copy {
+      position: relative;
+      z-index: 1;
+      width: min(540px, 100%);
+      padding: clamp(24px, 4vw, 42px);
+      display: grid;
+      gap: 16px;
+    }
+    .banner-copy h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 4.6rem);
+      line-height: 0.94;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+    .banner-copy p { margin: 0; color: var(--muted); font-weight: 720; }
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .stat {
+      min-width: 0;
+      padding: 24px;
+      border-radius: var(--radius-panel);
+      background: var(--surface);
+      display: grid;
+      gap: 12px;
+    }
+    .stat .ribbon {
+      width: 86px;
+      height: 16px;
+      clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+      background: var(--accent);
+    }
+    .stat:nth-child(2) .ribbon { background: var(--accent-leaf); }
+    .stat:nth-child(3) .ribbon { background: var(--accent-pop); }
+    .stat strong {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 3.2vw, 4rem);
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+    }
+    .stat span {
+      color: var(--muted);
+      font-weight: 780;
+    }
+    .workgrid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.34fr) minmax(340px, 0.66fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      min-width: 0;
+      border-radius: var(--radius-panel);
+      background: var(--surface);
+      padding: clamp(22px, 3vw, 34px);
+      display: grid;
+      gap: 22px;
+    }
+    .panel.white { background: var(--bg); box-shadow: 0 18px 48px rgba(5, 5, 5, 0.08); }
+    .panel h2, .panel h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+    .panel h2 { font-size: clamp(1.8rem, 3vw, 3.6rem); }
+    .panel h3 { font-size: clamp(1.5rem, 2vw, 2.35rem); }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+    .table-wrap { overflow-x: auto; min-width: 0; }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+      min-width: 760px;
+      font-size: 15px;
+    }
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 900;
+      padding: 0 14px 6px;
+    }
+    td {
+      padding: 16px 14px;
+      background: var(--bg);
+      vertical-align: middle;
+      font-weight: 720;
+    }
+    tr td:first-child {
+      border-radius: var(--radius-control) 0 0 var(--radius-control);
+    }
+    tr td:last-child {
+      border-radius: 0 var(--radius-control) var(--radius-control) 0;
+    }
+    .badge {
+      display: inline-flex;
+      min-height: 32px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .badge.green { background: var(--accent-leaf); }
+    .badge.pop { background: var(--accent-pop); color: var(--bg); }
+    .crew-list {
+      display: grid;
+      gap: 12px;
+    }
+    .crew {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border-radius: var(--radius-control);
+      background: var(--bg);
+    }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+    }
+    .crew:nth-child(2) .avatar { background: var(--accent-leaf); }
+    .crew:nth-child(3) .avatar { background: var(--accent-pop); color: var(--bg); }
+    .crew strong, .crew span {
+      display: block;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .crew span { color: var(--muted); font-size: 0.93rem; }
+    .media-card {
+      min-height: 280px;
+      border-radius: var(--radius-panel);
+      background-image: url("./media/dashboard-feature.png");
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--shadow-soft);
+    }
+    .settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-radius: var(--radius-control);
+      background: var(--bg);
+      font-weight: 820;
+    }
+    .switch input {
+      appearance: none;
+      width: 58px;
+      min-width: 58px;
+      height: 32px;
+      min-height: 32px;
+      padding: 0;
+      border-radius: var(--radius-pill);
+      background: var(--surface-strong);
+      box-shadow: inset 0 0 0 1px rgba(5, 5, 5, 0.08);
+      position: relative;
+      cursor: pointer;
+    }
+    .switch input::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      box-shadow: 0 5px 12px rgba(5, 5, 5, 0.14);
+      transition: transform 180ms ease;
+    }
+    .switch input:checked { background: var(--accent); }
+    .switch input:checked::after { transform: translateX(26px); }
+    .note-box {
+      display: grid;
+      gap: 14px;
+    }
+    .checkline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 820;
+    }
+
+    @media (max-width: 1040px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        padding: 20px;
+      }
+      .side-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        justify-content: flex-end;
+      }
+      .operator { display: none; }
+      .workgrid { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .status-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .sidebar { grid-template-columns: 1fr; }
+      .side-nav a:nth-child(n+4) { display: none; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .top-actions, .top-actions button { width: 100%; }
+      .banner { min-height: 420px; }
+      .banner::before { clip-path: none; background: rgba(255, 255, 255, 0.86); }
+      .status-row, .filters, .settings { grid-template-columns: 1fr; }
+      table { min-width: 560px; }
+      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+      .crew { grid-template-columns: 48px minmax(0, 1fr); }
+      .crew .badge { justify-self: start; grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Nobori workspace navigation">
+      <a class="brand" href="landing.html">Nobori</a>
+      <nav class="side-nav" aria-label="Dashboard">
+        <a class="active" href="#overview">Overview</a>
+        <a href="#routes">Routes</a>
+        <a href="#crew">Crew</a>
+        <a href="#weather">Weather</a>
+        <a href="immersive.html">3D world</a>
+      </nav>
+      <div class="operator">
+        <strong class="jp">鯉のぼり</strong>
+        <span>Riverside Children's Day program, May 5 readiness desk.</span>
+      </div>
+    </aside>
+
+    <main class="main" id="overview">
+      <header class="topbar">
+        <div>
+          <h1>Launch desk</h1>
+        </div>
+        <div class="top-actions">
+          <button type="button">Export brief</button>
+          <button class="primary" type="button">Publish update</button>
+        </div>
+      </header>
+
+      <section class="banner" aria-label="Nobori dashboard campaign image">
+        <div class="banner-copy">
+          <p class="jp">こどもの日 operations</p>
+          <h2>River route opens in 11 days.</h2>
+          <p>Wind holds are clear, family arrivals are paced, and three crew calls need confirmation before the public notice goes live.</p>
+        </div>
+      </section>
+
+      <section class="status-row" aria-label="Program health">
+        <article class="stat">
+          <div class="ribbon"></div>
+          <strong>87%</strong>
+          <span>route readiness</span>
+        </article>
+        <article class="stat">
+          <div class="ribbon"></div>
+          <strong>624</strong>
+          <span>families scheduled</span>
+        </article>
+        <article class="stat">
+          <div class="ribbon"></div>
+          <strong>3</strong>
+          <span>weather holds</span>
+        </article>
+        <article class="stat">
+          <div class="ribbon"></div>
+          <strong>42</strong>
+          <span>stewards assigned</span>
+        </article>
+      </section>
+
+      <div class="workgrid">
+        <section class="panel white" id="routes">
+          <h2>Route board</h2>
+          <form class="filters">
+            <label>
+              Zone
+              <select>
+                <option>All zones</option>
+                <option>River east</option>
+                <option>Bridge plaza</option>
+                <option>School avenue</option>
+              </select>
+            </label>
+            <label>
+              Date
+              <input type="date" value="2026-05-05">
+            </label>
+            <label>
+              Search route
+              <input type="search" value="Aozora">
+            </label>
+            <button class="primary" type="button">Apply filters</button>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Window</th>
+                  <th>Status</th>
+                  <th>Steward</th>
+                  <th>Families</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Aozora river bend</td>
+                  <td>08:30</td>
+                  <td><span class="badge green">Ready</span></td>
+                  <td>Mori crew</td>
+                  <td>186</td>
+                  <td><button type="button">Open</button></td>
+                </tr>
+                <tr>
+                  <td>Bridge plaza poles</td>
+                  <td>10:00</td>
+                  <td><span class="badge pop">Hold</span></td>
+                  <td>Sato crew</td>
+                  <td>122</td>
+                  <td><button type="button">Review</button></td>
+                </tr>
+                <tr>
+                  <td>School avenue</td>
+                  <td>13:15</td>
+                  <td><span class="badge">Pacing</span></td>
+                  <td>Ishida crew</td>
+                  <td>204</td>
+                  <td><button type="button">Open</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="panel" id="crew">
+          <h3>Crew calls</h3>
+          <div class="crew-list">
+            <article class="crew">
+              <div class="avatar">M</div>
+              <div>
+                <strong>Mori team</strong>
+                <span>River bend setup at 06:40</span>
+              </div>
+              <span class="badge green">Set</span>
+            </article>
+            <article class="crew">
+              <div class="avatar">S</div>
+              <div>
+                <strong>Sato team</strong>
+                <span>Wind check at bridge plaza</span>
+              </div>
+              <span class="badge pop">Call</span>
+            </article>
+            <article class="crew">
+              <div class="avatar">I</div>
+              <div>
+                <strong>Ishida team</strong>
+                <span>Family desk coverage</span>
+              </div>
+              <span class="badge">Pace</span>
+            </article>
+          </div>
+          <div class="media-card" role="img" aria-label="Clean operations table for Kodomo no Hi route planning"></div>
+        </aside>
+      </div>
+
+      <div class="workgrid" id="weather">
+        <section class="panel">
+          <h2>Weather policy</h2>
+          <div class="settings">
+            <label>
+              Wind limit
+              <input type="range" min="8" max="22" value="16">
+            </label>
+            <label>
+              Public notice time
+              <input type="time" value="07:30">
+            </label>
+            <label class="switch">
+              Rain hold automation
+              <input type="checkbox" checked>
+            </label>
+            <label class="switch">
+              Sponsor copy review
+              <input type="checkbox">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel white">
+          <h3>Family message</h3>
+          <div class="note-box">
+            <label>
+              Arrival note
+              <textarea>Arrive during your assigned 20 minute window. Stewards will guide families from the riverside gate to the koinobori route.</textarea>
+            </label>
+            <label class="checkline">
+              <input type="checkbox" checked>
+              Include accessible route details
+            </label>
+            <label class="checkline">
+              <input type="radio" name="message-tone" checked>
+              Calm notice tone
+            </label>
+            <button class="primary" type="button">Save message</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

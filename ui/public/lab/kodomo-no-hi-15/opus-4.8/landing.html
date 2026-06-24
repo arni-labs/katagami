@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yaguruma — the season's Children's Day, organized</title>
+<meta name="description" content="Find a koinobori raising near you, run your own, and watch your family rise. Free on the fifth of May." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800;900&family=Inter:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* colour — roles */
+  --bg:#FFFFFF; --surface:#F4F7FC; --surface-sunken:#ECF1FA;
+  --text:#0B1020; --muted:#5A627A; --border:#E5EAF3;
+  --accent:#1B4DFF; --accent-2:#00BE68; --accent-3:#FF3A24; --on-accent:#FFFFFF;
+  --success:#07A35A; --warning:#F2A200; --error:#FF3A24; --info:#1B4DFF;
+  /* type */
+  --font-display:"Archivo",system-ui,-apple-system,sans-serif;
+  --font-body:"Inter",system-ui,-apple-system,sans-serif;
+  --font-kanji:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;
+  /* geometry */
+  --r-card:24px; --r-control:16px; --r-pill:9999px;
+  --control-h:48px;
+  --ring:0 0 0 3px color-mix(in srgb, var(--accent) 38%, transparent);
+  --shadow-sm:0 1px 2px rgba(11,16,32,.06),0 4px 14px rgba(11,16,32,.05);
+  --shadow-md:0 10px 34px rgba(11,16,32,.09);
+  --shadow-lg:0 24px 64px rgba(11,16,32,.13);
+  --maxw:1240px;
+  --hero-image:url("media/hero.jpg");
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body); color:var(--text); background:var(--bg);
+  font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{color:var(--accent);text-decoration:none}
+h1,h2,h3{font-family:var(--font-display);letter-spacing:-0.02em;line-height:1.04;margin:0;font-weight:900}
+p{margin:0}
+.kanji{font-family:var(--font-kanji);font-weight:900}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;width:100%}
+.eyebrow{font-family:var(--font-display);font-weight:800;font-size:14.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+
+/* ---------- arrow-wheel (signature mechanic) ---------- */
+.yw{display:inline-block;line-height:0}
+.yw svg{display:block;overflow:visible}
+.sp{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.sp.a{stroke:var(--accent)} .sp.b{stroke:var(--accent-2)}
+.yw .rim{fill:none;stroke:var(--text);stroke-width:2.4}
+.yw .hub{fill:var(--accent-3)}
+.motion .wheel-rot{transform-box:fill-box;transform-origin:center;animation:spin 16s linear infinite}
+.motion .wheel-rot.fast{animation-duration:9s}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:-0.01em;
+  height:var(--control-h);padding:0 26px;border-radius:var(--r-control);border:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  transition:transform .12s ease,box-shadow .18s ease,background .18s ease,filter .18s ease;
+  white-space:nowrap;
+}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{filter:brightness(1.07);box-shadow:var(--shadow-md)}
+.btn-primary:active{filter:brightness(.94);transform:translateY(1px)}
+.btn-secondary{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{background:#fff;box-shadow:var(--shadow-md)}
+.btn-secondary:active{transform:translateY(1px)}
+.btn-ghost{background:transparent;color:var(--accent)}
+.btn-ghost:hover{background:var(--surface)}
+.btn[disabled]{opacity:.55;cursor:not-allowed;filter:none;box-shadow:none;transform:none}
+.btn-lg{padding:0 34px;font-size:18px}   /* same 48px height token, more presence via padding + size */
+.btn-onfill{background:var(--bg);color:var(--accent)}
+.btn-onfill:hover{filter:brightness(.97);box-shadow:var(--shadow-md)}
+
+/* ---------- header ---------- */
+.site-head{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.82);backdrop-filter:blur(14px) saturate(1.2)}
+.head-row{display:flex;align-items:center;gap:28px;height:74px}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:-0.02em;color:var(--text)}
+.nav{display:flex;align-items:center;gap:30px;margin-left:auto}
+.nav a.navlink{color:var(--muted);font-weight:600;font-size:16px;padding:6px 2px;border-radius:var(--r-pill);transition:color .15s}
+.nav a.navlink:hover{color:var(--text)}
+.nav a.navlink:focus-visible{outline:none;box-shadow:var(--ring)}
+.head-cta{display:flex;align-items:center;gap:12px;margin-left:8px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;width:100vw;left:50%;margin-left:-50vw;min-height:100svh;display:flex;align-items:flex-end;
+  background-image:var(--hero-image);background-size:cover;background-position:center 38%;}
+.hero-inner{position:relative;z-index:2;width:100%;max-width:var(--maxw);margin:0 auto;padding:0 28px 64px}
+.hero-plate{
+  background:rgba(255,255,255,.78);backdrop-filter:blur(20px) saturate(1.2);
+  border-radius:var(--r-card);box-shadow:var(--shadow-lg);
+  padding:40px 44px;max-width:760px;
+}
+.hero-tag{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.hero-tag .yw{flex:0 0 auto}
+.hero-tag .k{font-family:var(--font-kanji);font-weight:900;font-size:21px;color:var(--accent-3);letter-spacing:.04em}
+.hero-tag .sub{font-family:var(--font-display);font-weight:800;font-size:14.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.hero h1{font-size:clamp(2.75rem,8.5vw,6.4rem);margin:0 0 18px}
+.hero h1 .hl{color:var(--accent)}
+.hero p.lead{font-size:clamp(1.05rem,1.6vw,1.35rem);color:#222a3d;max-width:54ch;margin-bottom:30px;font-weight:500}
+.hero-actions{display:flex;flex-wrap:wrap;gap:14px}
+.hero-side-k{position:absolute;right:5vw;top:14vh;z-index:2;font-family:var(--font-kanji);font-weight:900;
+  font-size:clamp(2.4rem,7vw,6rem);color:rgba(255,255,255,.9);writing-mode:vertical-rl;letter-spacing:.1em;
+  text-shadow:0 6px 30px rgba(11,16,32,.35)}
+
+/* ---------- section scaffold ---------- */
+section{position:relative}
+.band{padding:clamp(64px,9vw,120px) 0}
+.sec-head{max-width:760px;margin-bottom:48px}
+.sec-head .eyebrow{margin-bottom:18px;display:inline-flex;align-items:center;gap:12px}
+.sec-head h2{font-size:clamp(2rem,4.6vw,3.4rem);margin-bottom:18px}
+.sec-head p{color:var(--muted);font-size:20px;max-width:60ch}
+
+/* stat marquee */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;align-items:end}
+.stat .n{font-family:var(--font-display);font-weight:900;font-size:clamp(3rem,7vw,5.6rem);letter-spacing:-0.04em;line-height:.9}
+.stat .n.azu{color:var(--accent)} .stat .n.grn{color:var(--accent-2)} .stat .n.ver{color:var(--accent-3)}
+.stat .l{margin-top:14px;color:var(--muted);font-weight:600;font-size:17px}
+.rule{height:2px;background:var(--border);border:0;margin:0}
+
+/* split */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(32px,5vw,76px);align-items:center}
+.split.rev .media{order:2}
+.media{border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow-lg);background:var(--surface)}
+.media img{width:100%;height:100%;object-fit:cover;aspect-ratio:4/3}
+.split .copy h2{font-size:clamp(1.9rem,3.8vw,3rem);margin-bottom:20px}
+.split .copy p{color:var(--muted);font-size:19px;margin-bottom:18px}
+.ticklist{list-style:none;padding:0;margin:24px 0 30px;display:grid;gap:14px}
+.ticklist li{display:flex;gap:14px;align-items:flex-start;font-weight:500;color:var(--text)}
+.tick{flex:0 0 auto;width:26px;height:26px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--accent-2) 16%,#fff);display:grid;place-items:center;margin-top:1px}
+.tick svg{width:15px;height:15px}
+
+/* card grid */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px}
+.card{background:var(--surface);border-radius:var(--r-card);padding:34px 30px 32px;box-shadow:var(--shadow-sm);
+  transition:transform .2s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.chip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 15px;border-radius:var(--r-pill);
+  font-family:var(--font-display);font-weight:800;font-size:13.5px;letter-spacing:.04em;text-transform:uppercase}
+.chip.azu{background:color-mix(in srgb,var(--accent) 13%,#fff);color:var(--accent)}
+.chip.grn{background:color-mix(in srgb,var(--accent-2) 15%,#fff);color:var(--success)}
+.chip.ver{background:color-mix(in srgb,var(--accent-3) 13%,#fff);color:var(--accent-3)}
+.card h3{font-size:24px;margin:22px 0 12px}
+.card p{color:var(--muted);font-size:17px}
+
+/* full-bleed poster */
+.poster{position:relative;width:100vw;left:50%;margin-left:-50vw;min-height:74svh;display:flex;align-items:center;
+  background-size:cover;background-position:center 42%}
+.poster::after{content:"";position:absolute;inset:0;background:radial-gradient(110% 90% at 80% 50%,rgba(11,16,32,.42),transparent 62%)}
+.poster .pcopy{position:relative;z-index:2;max-width:var(--maxw);margin:0 auto;padding:0 28px;width:100%}
+.poster .plate{background:rgba(11,16,32,.5);backdrop-filter:blur(8px);border-radius:var(--r-card);padding:40px 44px;max-width:620px}
+.poster h2{color:#fff;font-size:clamp(2.2rem,5vw,4rem);margin-bottom:16px}
+.poster p{color:rgba(255,255,255,.92);font-size:20px;font-weight:500}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;counter-reset:s}
+.step{position:relative;padding-top:18px}
+.step .num{font-family:var(--font-display);font-weight:900;font-size:48px;letter-spacing:-0.04em;color:var(--accent);line-height:1}
+.step.g .num{color:var(--accent-2)} .step.v .num{color:var(--accent-3)}
+.step h3{font-size:21px;margin:16px 0 10px}
+.step p{color:var(--muted);font-size:16.5px}
+
+/* cta band */
+.cta{position:relative;width:100vw;left:50%;margin-left:-50vw;background:var(--accent);color:var(--on-accent);
+  padding:clamp(56px,8vw,104px) 0;overflow:hidden}
+.cta .deco{position:absolute;right:-40px;top:50%;transform:translateY(-50%);opacity:.22;color:#fff}
+.cta-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.cta h2{color:#fff;font-size:clamp(2.1rem,4.6vw,3.4rem);margin-bottom:14px}
+.cta p{color:rgba(255,255,255,.9);font-size:19px;max-width:46ch}
+.signup{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:var(--r-card);padding:30px}
+.signup label{display:block;font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:10px}
+.field-row{display:flex;gap:12px}
+.field{flex:1;min-width:0;height:var(--control-h);border-radius:var(--r-control);border:0;background:rgba(255,255,255,.95);
+  color:var(--text);font-family:var(--font-body);font-size:16px;padding:0 16px}
+.field::placeholder{color:#7c869b}
+.field:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,.7)}
+.signup .fine{margin-top:14px;font-size:14.5px;color:rgba(255,255,255,.82)}
+
+/* footer */
+.foot{background:var(--surface);padding:64px 0 40px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px}
+.foot h4{font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 16px}
+.foot a{display:block;color:var(--text);font-weight:500;padding:7px 0}
+.foot a:hover{color:var(--accent)}
+.foot .brand{margin-bottom:16px}
+.foot .blurb{color:var(--muted);max-width:34ch}
+.foot-base{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-top:48px;padding-top:26px;border-top:2px solid var(--border);color:var(--muted);font-size:15px}
+
+/* reveal motion */
+.motion .reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}
+.motion .reveal.is-in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.motion .wheel-rot{animation:none}}
+
+/* responsive */
+@media(max-width:980px){
+  .stats{grid-template-columns:1fr;gap:36px}
+  .cards{grid-template-columns:1fr}
+  .split,.split.rev{grid-template-columns:1fr}
+  .split.rev .media{order:0}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:30px}
+  .cta-grid{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .hero-side-k{display:none}
+}
+@media(max-width:640px){
+  .wrap,.hero-inner,.poster .pcopy{padding-left:20px;padding-right:20px}
+  .nav .navlink{display:none}
+  .hero-plate{padding:28px 24px}
+  .steps{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .head-row{gap:12px}
+}
+@media(min-width:1700px){ :root{--maxw:1400px} }
+</style>
+</head>
+<body>
+
+<!-- ===== header ===== -->
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="brand" href="#top" aria-label="Yaguruma home">
+      <span class="yw" aria-hidden="true">
+        <svg width="34" height="34" viewBox="-50 -50 100 100"><g class="wheel-rot">
+          <circle class="rim" r="46"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(30)"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(60)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(120)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(150)"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(210)"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(240)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+          <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(300)"/>
+          <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(330)"/>
+        </g><circle class="hub" r="8.5"/></svg>
+      </span>
+      Yaguruma
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a class="navlink" href="#find">Festivals</a>
+      <a class="navlink" href="#raise">Raise a pole</a>
+      <a class="navlink" href="#organizers">For organizers</a>
+      <a class="navlink" href="#fifth">The fifth</a>
+    </nav>
+    <div class="head-cta">
+      <a class="btn btn-ghost" href="#find">Sign in</a>
+      <a class="btn btn-primary" href="#fifth">Open the season</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== hero ===== -->
+<main id="top">
+<section class="hero" aria-label="Yaguruma — the season's Children's Day">
+  <div class="hero-side-k kanji" aria-hidden="true">鯉のぼり</div>
+  <div class="hero-inner">
+    <div class="hero-plate reveal">
+      <div class="hero-tag">
+        <span class="yw" aria-hidden="true">
+          <svg width="40" height="40" viewBox="-50 -50 100 100"><g class="wheel-rot fast">
+            <circle class="rim" r="46"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(30)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(60)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(120)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(150)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(210)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(240)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(300)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(330)"/>
+          </g><circle class="hub" r="8.5"/></svg>
+        </span>
+        <span class="k kanji">こどもの日</span>
+      </div>
+      <h1>The whole sky<br/>turns on the <span class="hl">fifth.</span></h1>
+      <p class="lead">Find a koinobori raising near you, run your own, and watch your children rise — one streamer a year. <b style="color:var(--accent-3)">Free for every family, every May 5.</b></p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#find">Find a raising</a>
+        <a class="btn btn-secondary btn-lg" href="#raise">Raise your own pole</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== stat marquee ===== -->
+<section class="band" aria-label="By the numbers">
+  <div class="wrap">
+    <div class="sec-head reveal" style="margin-bottom:40px">
+      <span class="eyebrow">This May across the country</span>
+    </div>
+    <div class="stats reveal">
+      <div class="stat"><div class="n azu">1,284</div><div class="l">poles raised on community greens last season</div></div>
+      <div class="stat"><div class="n grn">38</div><div class="l">cities running a Yaguruma riverside this year</div></div>
+      <div class="stat"><div class="n ver">¥0</div><div class="l">to attend any raising — every child, every pole, free</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== split: find ===== -->
+<section id="find" class="band" style="background:var(--surface)">
+  <div class="wrap split">
+    <div class="media reveal"><img src="media/feature-river.jpg" alt="A long avenue of koinobori carp streamers strung over a clear river on a bright early-summer day" /></div>
+    <div class="copy reveal">
+      <span class="eyebrow">Find a raising</span>
+      <h2 style="margin-top:16px">Every river, every green — on one map.</h2>
+      <p>Search by your town and the morning you're free. Yaguruma shows the riverside installations, neighbourhood pole-raisings, and kabuto workshops happening near you, with the wind forecast for each one.</p>
+      <ul class="ticklist">
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> 480 raisings listed, sorted by distance and wind</li>
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Reserve a free family spot in two taps</li>
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> A reminder the night before, with parking and the closest station</li>
+      </ul>
+      <a class="btn btn-primary" href="#fifth">Browse near me</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== card grid ===== -->
+<section id="raise" class="band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Three ways to rise</span>
+      <h2>Bring the season to your own street.</h2>
+      <p>Whether it's one pole in the garden or forty over the river, Yaguruma carries the planning so the day stays about the children.</p>
+    </div>
+    <div class="cards">
+      <article class="card reveal">
+        <span class="chip azu">Raise a pole</span>
+        <h3>Your garden, your carp</h3>
+        <p>Order a magoi-higoi set, pick a date, and we'll send the raising guide and a windsock sized to your pole. One streamer added for each child, each year.</p>
+      </article>
+      <article class="card reveal">
+        <span class="chip grn">The growth wall</span>
+        <h3>Watch them climb</h3>
+        <p>Log a height, a photo, a first word on every fifth of May. The growth wall stacks the years into one quiet timeline you'll want to keep.</p>
+      </article>
+      <article class="card reveal">
+        <span class="chip ver">Riverside</span>
+        <h3>Forty poles over the water</h3>
+        <p>Running a community installation? Invite volunteers, track streamer inventory, and read the wind gauge live from the bank. Free for residents, always.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== full-bleed poster ===== -->
+<section class="poster" style="background-image:url('media/feature-family.jpg')" aria-label="Up, always up">
+  <div class="pcopy">
+    <div class="plate reveal">
+      <span class="kanji" style="color:#fff;font-size:22px;display:block;margin-bottom:12px">天まで昇れ</span>
+      <h2>Up. Always up.</h2>
+      <p>The carp swims against the current to the top of the falls and turns into a dragon. Every koinobori you raise says the same wish over your child: keep climbing.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== steps ===== -->
+<section class="band" style="background:var(--surface)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">How a raising works</span>
+      <h2>From empty pole to full sky in four steps.</h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step"><div class="num">01</div><h3>Claim a green</h3><p>Pick a park, riverbank or schoolyard. Yaguruma checks the date against the wind record.</p></div>
+      <div class="step g"><div class="num">02</div><h3>Gather poles</h3><p>List what you have and what you need; nearby families lend the rest from their own stores.</p></div>
+      <div class="step v"><div class="num">03</div><h3>Open the day</h3><p>Share one link. Families reserve a free spot and get the morning's running order.</p></div>
+      <div class="step"><div class="num">04</div><h3>Raise them</h3><p>When the gauge turns, the poles go up together — and the whole street looks up at once.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== split: workshops ===== -->
+<section id="organizers" class="band">
+  <div class="wrap split rev">
+    <div class="media reveal"><img src="media/feature-craft.jpg" alt="Hands folding crisp paper into a samurai kabuto helmet beside a small paper carp on a pale oak table" /></div>
+    <div class="copy reveal">
+      <span class="eyebrow">For organizers</span>
+      <h2 style="margin-top:16px">Run the whole season from one console.</h2>
+      <p>Workshops, volunteers, streamer inventory and the live wind gauge sit in a single organizer dashboard. Spin up a kabuto-folding table, cap the seats, and let families book themselves in.</p>
+      <ul class="ticklist">
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Attendance, RSVPs and capacity in real time</li>
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> The wind gauge tells you when it's safe to raise</li>
+        <li><span class="tick"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#07A35A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span> One free public page per festival, no ticketing fees</li>
+      </ul>
+      <a class="btn btn-secondary" href="#fifth">See the organizer console</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== cta band ===== -->
+<section id="fifth" class="cta" aria-label="Open the season">
+  <div class="deco" aria-hidden="true">
+    <svg width="420" height="420" viewBox="-50 -50 100 100"><g class="wheel-rot">
+      <circle class="rim" r="46" style="stroke:#fff"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(30)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(60)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(120)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(150)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(210)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(240)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(300)"/>
+      <path class="sp" style="stroke:#fff" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(330)"/>
+    </g><circle class="hub" style="fill:#fff" r="8.5"/></svg>
+  </div>
+  <div class="wrap cta-grid">
+    <div class="reveal">
+      <h2>The fifth is coming.<br/>Open your season.</h2>
+      <p>Create a free family account, find your first raising, and add this year's streamer to the wall.</p>
+    </div>
+    <form class="signup reveal" onsubmit="return false">
+      <label for="em">Get the season open</label>
+      <div class="field-row">
+        <input class="field" id="em" type="email" placeholder="you@family.jp" autocomplete="email" />
+        <button class="btn btn-onfill" type="submit">Open</button>
+      </div>
+      <p class="fine">Free forever for families. We email once before the fifth — never more.</p>
+    </form>
+  </div>
+</section>
+</main>
+
+<!-- ===== footer ===== -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand"><span class="yw" aria-hidden="true">
+          <svg width="30" height="30" viewBox="-50 -50 100 100"><g class="wheel-rot">
+            <circle class="rim" r="46"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(0)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(45)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(90)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(135)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(180)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(225)"/>
+            <path class="sp a" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(270)"/>
+            <path class="sp b" d="M0,-13 L0,-39 M-6,-33 L0,-41 L6,-33" transform="rotate(315)"/>
+          </g><circle class="hub" r="8.5"/></svg>
+        </span> Yaguruma</div>
+        <p class="blurb">The season's Children's Day, organized — find a raising, run your own, watch them rise.</p>
+      </div>
+      <div><h4>Families</h4><a href="#find">Find a raising</a><a href="#raise">Raise a pole</a><a href="#raise">The growth wall</a></div>
+      <div><h4>Organizers</h4><a href="#organizers">Run a festival</a><a href="#organizers">Volunteers</a><a href="#organizers">Wind gauge</a></div>
+      <div><h4>Season</h4><a href="#fifth">May 5 — free</a><a href="#find">Cities</a><a href="#top">The tradition</a></div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Yaguruma — a design language for Kodomo no Hi.</span>
+      <span class="kanji" style="font-size:18px;color:var(--muted)">こどもの日 · 鯉のぼり</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* motion gate — settled state renders with no JS; this only adds reveals + spin */
+(function(){
+  var d=document.documentElement;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  d.classList.add('motion');
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-in'); io.unobserve(e.target);} });
+  },{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
+})();
+</script>
+</body>
+</html>

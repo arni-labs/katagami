@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koinobori — Where creative teams rise together</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FFFFFF;
+  --surface:#F4F7FB;
+  --surface-alt:#EAF1FA;
+  --text:#0B1120;
+  --muted:#5F6B80;
+  --border:#DDE3ED;
+  --accent:#0077FF;
+  --accent-2:#10B981;
+  --accent-3:#FF2D55;
+  --on-accent:#FFFFFF;
+  --success:#10B981;
+  --warning:#F59E0B;
+  --error:#EF4444;
+  --info:#0077FF;
+  --control-h:48px;
+  --radius-card:24px;
+  --radius-pill:9999px;
+  --radius-img:16px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-jp:'Noto Sans JP',sans-serif;
+  --hero-image:url('./media/hero-landing.jpg');
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  font-size:17px;
+  line-height:1.6;
+  color:var(--text);
+  background:var(--bg);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* === NAV === */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:16px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,0.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.nav-brand{
+  font-weight:900;font-size:22px;letter-spacing:-0.02em;
+  color:var(--text);text-decoration:none;
+  display:flex;align-items:center;gap:10px;
+}
+.nav-brand svg{width:28px;height:28px}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{
+  font-size:15px;font-weight:500;color:var(--muted);
+  text-decoration:none;transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{
+  height:var(--control-h);padding:0 24px;
+  background:var(--accent);color:var(--on-accent);
+  border:none;border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:15px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.nav-cta:hover{background:color-mix(in srgb,var(--accent),#000 8%);transform:translateY(-1px)}
+.nav-cta:focus{outline:3px solid var(--accent);outline-offset:3px}
+.nav-cta:active{transform:translateY(1px);background:color-mix(in srgb,var(--accent),#000 15%)}
+
+/* === HERO === */
+.hero{
+  position:relative;width:100vw;height:100svh;min-height:600px;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background-image:var(--hero-image);
+  background-size:cover;background-position:center;
+  z-index:0;
+}
+.hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,0.3) 0%,rgba(255,255,255,0.7) 50%,rgba(255,255,255,0.95) 100%);
+  z-index:1;
+}
+.hero-content{
+  position:relative;z-index:2;
+  text-align:center;max-width:900px;padding:0 24px;
+}
+.hero-kanji{
+  font-family:var(--font-jp);font-weight:900;
+  font-size:clamp(2rem,5vw,4rem);
+  color:var(--accent);letter-spacing:0.05em;
+  margin-bottom:16px;
+  opacity:0;transform:translateY(30px);
+}
+.hero-title{
+  font-weight:900;font-size:clamp(2.5rem,6vw,5rem);
+  line-height:1.05;letter-spacing:-0.03em;
+  color:var(--text);margin-bottom:24px;
+  opacity:0;transform:translateY(30px);
+}
+.hero-title em{
+  font-style:normal;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  font-size:clamp(1.05rem,2vw,1.35rem);
+  color:var(--muted);max-width:600px;margin:0 auto 40px;
+  line-height:1.5;
+  opacity:0;transform:translateY(30px);
+}
+.hero-actions{
+  display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+  opacity:0;transform:translateY(30px);
+}
+.btn-primary{
+  height:var(--control-h);padding:0 36px;
+  background:var(--accent);color:var(--on-accent);
+  border:none;border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:17px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.btn-primary:hover{background:color-mix(in srgb,var(--accent),#000 8%);transform:translateY(-1px)}
+.btn-primary:focus{outline:3px solid var(--accent);outline-offset:3px}
+.btn-primary:active{transform:translateY(1px);background:color-mix(in srgb,var(--accent),#000 15%)}
+.btn-primary:disabled{opacity:0.4;pointer-events:none}
+.btn-secondary{
+  height:var(--control-h);padding:0 36px;
+  background:transparent;color:var(--accent);
+  border:2px solid var(--accent);border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:17px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.btn-secondary:hover{background:color-mix(in srgb,var(--accent),transparent 92%)}
+.btn-secondary:focus{outline:3px solid var(--accent);outline-offset:3px}
+.btn-secondary:active{transform:translateY(1px)}
+.btn-secondary:disabled{opacity:0.4;pointer-events:none}
+
+/* === SECTIONS === */
+.section{padding:96px 48px;max-width:1280px;margin:0 auto}
+.section-surface{background:var(--surface)}
+.section-full{max-width:none;padding-left:0;padding-right:0}
+.section-label{
+  font-size:14px;font-weight:600;color:var(--accent);
+  text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;
+}
+.section-title{
+  font-weight:800;font-size:clamp(2rem,4vw,3.5rem);
+  line-height:1.1;letter-spacing:-0.02em;
+  margin-bottom:20px;
+}
+.section-desc{
+  font-size:18px;color:var(--muted);max-width:640px;line-height:1.6;
+  margin-bottom:48px;
+}
+
+/* === FEATURES GRID === */
+.features-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(0,1fr));
+  gap:24px;
+}
+@media(min-width:768px){.features-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.feature-card{
+  background:var(--surface);
+  border-radius:var(--radius-card);
+  padding:40px 32px;
+  transition:transform 0.2s;
+}
+.feature-card:hover{transform:translateY(-4px)}
+.feature-icon{
+  width:56px;height:56px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+}
+.feature-icon svg{width:28px;height:28px}
+.feature-icon--blue{background:var(--surface-alt);color:var(--accent)}
+.feature-icon--green{background:color-mix(in srgb,var(--accent-2),transparent 88%);color:var(--accent-2)}
+.feature-icon--coral{background:color-mix(in srgb,var(--accent-3),transparent 88%);color:var(--accent-3)}
+.feature-card h3{
+  font-weight:700;font-size:22px;line-height:1.25;
+  letter-spacing:-0.01em;margin-bottom:12px;
+}
+.feature-card p{font-size:17px;color:var(--muted);line-height:1.6}
+
+/* === SHOWCASE === */
+.showcase{
+  display:grid;grid-template-columns:1fr;gap:48px;align-items:center;
+}
+@media(min-width:900px){.showcase{grid-template-columns:1fr 1fr}}
+.showcase-img{
+  width:100%;aspect-ratio:3/2;
+  border-radius:var(--radius-img);
+  background-image:url('./media/feature-landing.jpg');
+  background-size:cover;background-position:center;
+}
+.showcase-text h3{
+  font-weight:800;font-size:clamp(1.5rem,3vw,2.5rem);
+  line-height:1.15;letter-spacing:-0.02em;margin-bottom:16px;
+}
+.showcase-text p{font-size:17px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.showcase-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.showcase-list li{
+  display:flex;align-items:center;gap:12px;
+  font-size:17px;font-weight:500;
+}
+.showcase-list li svg{width:20px;height:20px;color:var(--accent-2);flex-shrink:0}
+
+/* === STATS === */
+.stats-row{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));
+  gap:32px;text-align:center;
+}
+@media(min-width:640px){.stats-row{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stat-number{
+  font-weight:900;font-size:clamp(2rem,4vw,3.5rem);
+  letter-spacing:-0.03em;line-height:1;
+  margin-bottom:8px;
+}
+.stat-number--blue{color:var(--accent)}
+.stat-number--green{color:var(--accent-2)}
+.stat-number--coral{color:var(--accent-3)}
+.stat-label{font-size:15px;color:var(--muted);font-weight:500}
+
+/* === TESTIMONIAL === */
+.testimonial{
+  background:var(--surface-alt);
+  border-radius:var(--radius-card);
+  padding:64px 48px;text-align:center;
+  max-width:800px;margin:0 auto;
+}
+.testimonial blockquote{
+  font-size:clamp(1.15rem,2.5vw,1.5rem);
+  font-weight:500;line-height:1.5;
+  color:var(--text);margin-bottom:24px;
+  font-style:normal;
+}
+.testimonial cite{
+  font-style:normal;font-size:15px;color:var(--muted);font-weight:600;
+}
+
+/* === CTA === */
+.cta-section{
+  text-align:center;
+  padding:128px 48px;
+  background:var(--surface);
+}
+.cta-section .section-title{margin-bottom:16px}
+.cta-section .section-desc{margin:0 auto 40px;text-align:center}
+
+/* === FORM === */
+.signup-form{
+  display:flex;gap:12px;max-width:480px;margin:0 auto;
+  flex-wrap:wrap;justify-content:center;
+}
+.signup-input{
+  height:var(--control-h);padding:0 20px;
+  background:var(--bg);color:var(--text);
+  border:2px solid var(--border);border-radius:var(--radius-pill);
+  font-family:var(--font-sans);font-size:17px;
+  flex:1;min-width:200px;
+  transition:border-color 0.2s;
+}
+.signup-input:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent),transparent 80%);
+}
+.signup-input::placeholder{color:var(--muted)}
+
+/* === FOOTER === */
+.footer{
+  padding:48px;max-width:1280px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:24px;
+}
+.footer-brand{font-weight:800;font-size:18px;color:var(--text)}
+.footer-links{display:flex;gap:24px;flex-wrap:wrap}
+.footer-links a{font-size:14px;color:var(--muted);text-decoration:none;font-weight:500}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:14px;color:var(--muted);width:100%;text-align:center;margin-top:24px}
+
+/* === RESPONSIVE === */
+@media(max-width:768px){
+  .nav{padding:12px 20px}
+  .nav-links{display:none}
+  .section{padding:64px 20px}
+  .hero-content{padding:0 20px}
+  .testimonial{padding:40px 24px}
+  .cta-section{padding:80px 20px}
+  .footer{padding:32px 20px}
+}
+
+/* === MOTION === */
+html.js-ready .reveal{opacity:0;transform:translateY(40px);transition:opacity 0.7s cubic-bezier(0.16,1,0.3,1),transform 0.7s cubic-bezier(0.16,1,0.3,1)}
+html.js-ready .reveal.visible{opacity:1;transform:translateY(0)}
+html.js-ready .reveal-delay-1{transition-delay:0.1s}
+html.js-ready .reveal-delay-2{transition-delay:0.2s}
+html.js-ready .reveal-delay-3{transition-delay:0.3s}
+html.js-ready .hero-kanji.visible,
+html.js-ready .hero-title.visible,
+html.js-ready .hero-sub.visible,
+html.js-ready .hero-actions.visible{opacity:1;transform:translateY(0);transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1),transform 0.8s cubic-bezier(0.16,1,0.3,1)}
+html.js-ready .hero-title.visible{transition-delay:0.15s}
+html.js-ready .hero-sub.visible{transition-delay:0.3s}
+html.js-ready .hero-actions.visible{transition-delay:0.45s}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+  html.js-ready .reveal,
+  html.js-ready .hero-kanji,
+  html.js-ready .hero-title,
+  html.js-ready .hero-sub,
+  html.js-ready .hero-actions{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-brand">
+    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2C8 2 4 7 4 12c0 4 2 7 5 9l5 5 5-5c3-2 5-5 5-9 0-5-4-10-10-10z" fill="var(--accent)" opacity="0.15"/>
+      <path d="M9 11c0-3 2.5-6 5-6s5 3 5 6c0 2.5-2 4.5-5 7-3-2.5-5-4.5-5-7z" fill="var(--accent)"/>
+      <circle cx="12" cy="10" r="1.2" fill="var(--on-accent)"/>
+    </svg>
+    Koinobori
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#showcase">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#" class="nav-cta">Start free</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <p class="hero-kanji" lang="ja">鯉のぼり</p>
+    <h1 class="hero-title">Creative teams<br>that <em>rise together</em></h1>
+    <p class="hero-sub">Koinobori is the workspace where design, engineering, and product align — no handoffs, no lost context, no waiting. Ship faster, stay honest, grow bolder.</p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary">Start free</a>
+      <a href="#showcase" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="reveal">
+    <p class="section-label">Built for momentum</p>
+    <h2 class="section-title">Everything your team needs<br>to keep climbing</h2>
+    <p class="section-desc">Three pillars that turn scattered tools into one current — pulling your team upward, together.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card reveal reveal-delay-1">
+      <div class="feature-icon feature-icon--blue">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="22" height="22" rx="4"/>
+          <path d="M9 14l3 3 7-7"/>
+        </svg>
+      </div>
+      <h3>Unified canvas</h3>
+      <p>Designs, specs, and tasks live on one surface. No more switching between six apps to find what changed yesterday.</p>
+    </div>
+    <div class="feature-card reveal reveal-delay-2">
+      <div class="feature-icon feature-icon--green">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="14" cy="14" r="11"/>
+          <path d="M14 8v6l4 2"/>
+        </svg>
+      </div>
+      <h3>Live sync</h3>
+      <p>Every edit propagates instantly. Your designer sees the engineer's commit; your PM sees the latest mockup. Zero lag.</p>
+    </div>
+    <div class="feature-card reveal reveal-delay-3">
+      <div class="feature-icon feature-icon--coral">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 20l6-6 4 4 10-10"/>
+          <path d="M18 8h6v6"/>
+        </svg>
+      </div>
+      <h3>Growth metrics</h3>
+      <p>Track velocity, quality, and team health in real time. Know when your team is accelerating and when it needs air.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="section section-surface section-full">
+  <div style="max-width:1280px;margin:0 auto">
+    <div class="stats-row reveal">
+      <div>
+        <p class="stat-number stat-number--blue">2,400+</p>
+        <p class="stat-label">Teams shipping weekly</p>
+      </div>
+      <div>
+        <p class="stat-number stat-number--green">3.1x</p>
+        <p class="stat-label">Faster design-to-deploy</p>
+      </div>
+      <div>
+        <p class="stat-number stat-number--coral">94%</p>
+        <p class="stat-label">Team satisfaction score</p>
+      </div>
+      <div>
+        <p class="stat-number stat-number--blue">12 min</p>
+        <p class="stat-label">Average onboarding time</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section class="section" id="showcase">
+  <div class="showcase reveal">
+    <div class="showcase-img"></div>
+    <div class="showcase-text">
+      <p class="section-label">How it works</p>
+      <h3>One workspace. Every discipline. Zero friction.</h3>
+      <p>Koinobori replaces the tangle of Slack threads, Figma links, and Jira tickets with a single living surface. Your whole team sees the same truth, updated in real time.</p>
+      <ul class="showcase-list">
+        <li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          Designers annotate directly on live components
+        </li>
+        <li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          Engineers link PRs to the exact spec they implement
+        </li>
+        <li>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          PMs track progress without asking for status updates
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="section">
+  <div class="testimonial reveal">
+    <blockquote>"We cut our design-review cycle from three days to two hours. Koinobori didn't just speed us up — it changed how we think about shipping."</blockquote>
+    <cite>Mika Tanaka, Head of Product at Arcline</cite>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="pricing">
+  <div class="reveal">
+    <p class="section-label">Free for teams up to 10</p>
+    <h2 class="section-title">Ready to rise?</h2>
+    <p class="section-desc">Start building on Koinobori today. No credit card, no setup calls — just your team and a cleaner way to ship.</p>
+    <form class="signup-form" onsubmit="return false">
+      <input type="email" class="signup-input" placeholder="you@company.com" aria-label="Email address">
+      <button type="submit" class="btn-primary">Get started</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">Koinobori</div>
+  <div class="footer-links">
+    <a href="#">Product</a>
+    <a href="#">Pricing</a>
+    <a href="#">Docs</a>
+    <a href="#">Changelog</a>
+    <a href="#">Privacy</a>
+  </div>
+  <p class="footer-copy">Koinobori, Inc. Built for teams that climb.</p>
+</footer>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js-ready');
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(prefersReduced){
+    document.querySelectorAll('.reveal,.hero-kanji,.hero-title,.hero-sub,.hero-actions').forEach(function(el){
+      el.classList.add('visible');
+    });
+    return;
+  }
+  // Hero entrance
+  requestAnimationFrame(function(){
+    setTimeout(function(){
+      document.querySelector('.hero-kanji').classList.add('visible');
+      document.querySelector('.hero-title').classList.add('visible');
+      document.querySelector('.hero-sub').classList.add('visible');
+      document.querySelector('.hero-actions').classList.add('visible');
+    },200);
+  });
+  // Scroll reveals
+  var reveals = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}
+      });
+    },{threshold:0.15,rootMargin:'0px 0px -40px 0px'});
+    reveals.forEach(function(el){io.observe(el)});
+  } else {
+    reveals.forEach(function(el){el.classList.add('visible')});
+  }
+})();
+</script>
+</body>
+</html>

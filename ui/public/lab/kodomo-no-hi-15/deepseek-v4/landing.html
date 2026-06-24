@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soramatsu — Festival planning, beautifully simple</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Inter+Tight:ital,wght@0,700;1,700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F4F6FA;
+  --surface: #FFFFFF;
+  --text: #1A1D24;
+  --muted: #636E82;
+  --border: transparent;
+  --accent: #00B4F0;
+  --on-accent: #FFFFFF;
+  --accent-green: #00D68F;
+  --accent-hot: #FF3B73;
+  --success: #00D68F;
+  --warning: #FFB800;
+  --error: #FF3B73;
+  --info: #00B4F0;
+  --control-height: 44px;
+  --radius-card: 24px;
+  --radius-btn: 9999px;
+  --radius-input: 16px;
+  --hero-image: url('./media/hero.jpg');
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: 'Inter Tight', 'Inter', sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+h1 { font-size: 72px; line-height: 1.05; }
+h2 { font-size: 40px; line-height: 1.15; }
+h3 { font-size: 24px; line-height: 1.25; }
+
+.jp { font-family: 'Noto Serif JP', serif; font-weight: 700; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-height); padding: 0 28px;
+  font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 600;
+  border: none; border-radius: var(--radius-btn); cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+  text-decoration: none; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-secondary { background: var(--bg); color: var(--muted); }
+.btn:hover { filter: brightness(1.08); transform: scale(1.02); }
+.btn:active { filter: brightness(0.94); transform: scale(0.98); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+/* Hero */
+.hero {
+  position: relative;
+  width: 100vw; height: 100svh;
+  background-image: var(--hero-image);
+  background-size: cover; background-position: center;
+  display: flex; align-items: flex-end;
+}
+.hero-press {
+  background: var(--text);
+  color: var(--on-accent);
+  padding: 40px 48px;
+  margin: 0 0 64px 64px;
+  max-width: 680px;
+}
+.hero-press h1 { font-size: 56px; color: var(--on-accent); margin-bottom: 16px; }
+.hero-press p { font-size: 20px; color: #B0B8C4; line-height: 1.5; }
+.hero-press .btn { margin-top: 24px; }
+
+/* Nav — overlaid on hero */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 64px;
+  transition: background 0.3s;
+}
+.nav.scrolled { background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); }
+.nav-logo { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 20px; color: var(--surface); letter-spacing: -0.02em; }
+.nav.scrolled .nav-logo { color: var(--text); }
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a { color: var(--surface); text-decoration: none; font-size: 15px; font-weight: 500; transition: color 0.15s; }
+.nav.scrolled .nav-links a { color: var(--text); }
+.nav-links a:hover { color: var(--accent); }
+
+/* Sections */
+section { padding: 96px 0; }
+section:nth-child(odd) { background: var(--surface); }
+section:nth-child(even) { background: var(--bg); }
+
+.section-header { margin-bottom: 64px; }
+.section-header h2 { margin-bottom: 12px; }
+.section-header p { color: var(--muted); font-size: 17px; max-width: 560px; }
+
+/* Feature grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+.feature-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 40px 32px;
+  transition: transform 0.2s;
+}
+.feature-card:hover { transform: translateY(-4px); }
+.feature-card h3 { margin-top: 24px; margin-bottom: 8px; font-size: 20px; }
+.feature-card p { color: var(--muted); font-size: 15px; }
+.feature-icon {
+  width: 48px; height: 48px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.feature-icon.sky { background: var(--accent); }
+.feature-icon.green { background: var(--accent-green); }
+.feature-icon.hot { background: var(--accent-hot); }
+
+/* Stats */
+.stats-bar {
+  display: flex; gap: 64px; justify-content: center;
+  padding: 48px 0;
+}
+.stat { text-align: center; }
+.stat-number {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 56px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.stat-label { color: var(--muted); font-size: 15px; margin-top: 4px; }
+
+/* Feature split */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px; align-items: center;
+}
+.split-image {
+  width: 100%; aspect-ratio: 4/3;
+  background: var(--bg);
+  border-radius: var(--radius-card);
+  background-size: cover; background-position: center;
+}
+.split-image.feature-1 { background-image: url('./media/feature-1.jpg'); }
+.split-content h2 { margin-bottom: 16px; }
+.split-content p { color: var(--muted); margin-bottom: 24px; }
+
+/* Pricing */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+.pricing-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 40px 32px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.pricing-card:hover { transform: translateY(-4px); }
+.pricing-card.featured { background: var(--text); color: var(--surface); }
+.pricing-card.featured .price { color: var(--accent); }
+.pricing-card.featured .price-period { color: #B0B8C4; }
+.pricing-card.featured ul li { color: #D0D6E0; }
+.price { font-family: 'Inter Tight', sans-serif; font-size: 48px; font-weight: 700; letter-spacing: -0.02em; margin: 16px 0 4px; }
+.price-period { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+.pricing-card ul { list-style: none; text-align: left; margin-bottom: 28px; }
+.pricing-card ul li { padding: 8px 0; font-size: 15px; color: var(--muted); }
+.pricing-card ul li::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); margin-right: 10px; vertical-align: middle; }
+
+/* CTA section */
+.cta-section {
+  text-align: center;
+  background: var(--text);
+  color: var(--surface);
+}
+.cta-section h2 { color: var(--surface); margin-bottom: 12px; }
+.cta-section p { color: #B0B8C4; font-size: 17px; margin-bottom: 32px; }
+.cta-section .btn { font-size: 18px; padding: 0 40px; }
+
+/* Footer */
+footer {
+  background: var(--surface);
+  padding: 48px 0;
+  border-top: none;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+.footer-brand { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.02em; margin-bottom: 12px; }
+.footer-links { list-style: none; }
+.footer-links h4 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+.footer-links li { margin-bottom: 8px; }
+.footer-links a { color: var(--muted); text-decoration: none; font-size: 15px; }
+.footer-links a:hover { color: var(--accent); }
+.footer-bottom { margin-top: 48px; padding-top: 24px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Parallax hero */
+.hero { will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .hero { animation: none; }
+  * { transition-duration: 0s !important; animation-duration: 0s !important; }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  h1 { font-size: 40px; }
+  h2 { font-size: 28px; }
+  .hero-press { margin: 0 0 32px 24px; padding: 28px 24px; max-width: calc(100vw - 48px); }
+  .hero-press h1 { font-size: 36px; }
+  .nav { padding: 16px 24px; }
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: minmax(0, 1fr); }
+  .split { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .pricing-grid { grid-template-columns: minmax(0, 1fr); }
+  .stats-bar { flex-wrap: wrap; gap: 32px; }
+  .stat-number { font-size: 40px; }
+  .footer-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+  section { padding: 64px 0; }
+  .container { padding: 0 20px; }
+}
+
+@media (min-width: 1800px) {
+  .container { max-width: 1400px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-logo">Soramatsu</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#" class="btn btn-primary" style="height:36px;padding:0 20px;font-size:14px;">Get started</a></li>
+  </ul>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-press">
+    <p style="font-size:15px;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent);margin-bottom:8px;">Kodomo no Hi  ·  May 5</p>
+    <h1>Plan the festival<br>they'll remember</h1>
+    <p>Soramatsu brings families together with effortless festival planning — from koinobori routes to community gatherings, all in one place.</p>
+    <a href="#" class="btn btn-primary">Start planning free</a>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2>Everything you need<br>for a perfect festival day</h2>
+      <p>Soramatsu handles the logistics so you can focus on what matters — the kids, the carp, the sky.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon sky">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9L12 2Z" fill="#FFF"/></svg>
+        </div>
+        <h3>Koinobori routes</h3>
+        <p>Map the best carp-streamer viewing spots across your city. Real-time wind conditions and crowd levels.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" fill="#FFF"/><path d="M8 12L11 15L16 9" stroke="#00D68F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>Smart scheduling</h3>
+        <p>One tap to coordinate food, activities, and guests. Automatic reminders keep everyone in sync.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon hot">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#FFF" stroke-width="2.5"/><path d="M12 7V12L15.5 15.5" stroke="#FFF" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Live event feed</h3>
+        <p>See what's happening near you — parades, workshops, food stalls — updated by the community in real time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="stats-bar reveal">
+      <div class="stat"><div class="stat-number" data-count="1200">0</div><div class="stat-label">Festivals mapped</div></div>
+      <div class="stat"><div class="stat-number" data-count="85">0</div><div class="stat-label">Cities covered</div></div>
+      <div class="stat"><div class="stat-number" data-count="50">0</div><div class="stat-label">Thousand families</div></div>
+      <div class="stat"><div class="stat-number" data-count="99.8">0</div><div class="stat-label">Uptime %</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <div class="split reveal">
+      <div class="split-content">
+        <h2>From idea to festival<br>in under ten minutes</h2>
+        <p>Pick a date, choose a template, invite your people. Soramatsu builds a beautiful event page with schedules, maps, and photo sharing — no design skills needed.</p>
+        <a href="#" class="btn btn-primary">See how it works</a>
+      </div>
+      <div class="split-image feature-1"></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2>Simple pricing,<br>no surprises</h2>
+      <p>Start free. Upgrade when your festival grows.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal">
+        <h3 style="font-size:20px;">Free</h3>
+        <div class="price">¥0</div>
+        <div class="price-period">forever</div>
+        <ul>
+          <li>Up to 3 events</li>
+          <li>25 guests per event</li>
+          <li>Basic scheduling</li>
+          <li>Community feed</li>
+        </ul>
+        <a href="#" class="btn btn-secondary" style="width:100%">Get started</a>
+      </div>
+      <div class="pricing-card featured reveal">
+        <h3 style="font-size:20px;color:var(--accent);">Family</h3>
+        <div class="price">¥800</div>
+        <div class="price-period">per month</div>
+        <ul>
+          <li>Unlimited events</li>
+          <li>500 guests per event</li>
+          <li>Smart scheduling + reminders</li>
+          <li>Photo sharing galleries</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="btn btn-primary" style="width:100%">Start free trial</a>
+      </div>
+      <div class="pricing-card reveal">
+        <h3 style="font-size:20px;">Community</h3>
+        <div class="price">¥2,400</div>
+        <div class="price-period">per month</div>
+        <ul>
+          <li>Everything in Family</li>
+          <li>Unlimited guests</li>
+          <li>Multi-organizer teams</li>
+          <li>Analytics dashboard</li>
+          <li>API access</li>
+        </ul>
+        <a href="#" class="btn btn-secondary" style="width:100%">Contact sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container reveal">
+    <h2>Ready to make this Kodomo no Hi<br>the one they talk about?</h2>
+    <p>Join 50,000 families already planning with Soramatsu.</p>
+    <a href="#" class="btn btn-primary">Start planning — it's free</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Soramatsu</div>
+        <p style="color:var(--muted);font-size:15px;">Festival planning, beautifully simple. <span class="jp">空松</span></p>
+      </div>
+      <div>
+        <ul class="footer-links">
+          <h4>Product</h4>
+          <li><a href="#">Features</a></li>
+          <li><a href="#">Pricing</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <ul class="footer-links">
+          <h4>Company</h4>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+      <div>
+        <ul class="footer-links">
+          <h4>Support</h4>
+          <li><a href="#">Help center</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Soramatsu</span>
+      <span>Made in Tokyo</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+(function() {
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mediaQuery.matches) return;
+
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(el => observer.observe(el));
+})();
+
+// Nav scroll
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('nav');
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// Hero parallax
+(function() {
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mediaQuery.matches) return;
+  const hero = document.getElementById('hero');
+  window.addEventListener('scroll', () => {
+    const s = window.scrollY;
+    if (s < window.innerHeight) {
+      hero.style.transform = `translate3d(0, ${s * 0.35}px, 0)`;
+    }
+  });
+})();
+
+// Count-up stats
+(function() {
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mediaQuery.matches) return;
+  const stats = document.querySelectorAll('[data-count]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseFloat(el.dataset.count);
+        const isFloat = target % 1 !== 0;
+        const duration = 1800;
+        const start = performance.now();
+        function update(now) {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = isFloat ? (target * eased).toFixed(1) : Math.floor(target * eased);
+          if (progress < 1) requestAnimationFrame(update);
+          else el.textContent = isFloat ? target.toFixed(1) : target;
+        }
+        requestAnimationFrame(update);
+        observer.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  stats.forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>

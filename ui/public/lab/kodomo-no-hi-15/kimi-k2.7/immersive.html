@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Koinobori — Immersive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F3FBFF;
+      --text: #001018;
+      --muted: #5B7A8A;
+      --accent: #00C2FF;
+      --accent-2: #00E676;
+      --accent-3: #FF4D6D;
+      --on-accent: #001018;
+      --text-display: clamp(48px, 7vw, 104px);
+      --text-kanji: clamp(40px, 5vw, 80px);
+      --text-h2: clamp(24px, 2.5vw, 36px);
+      --text-body: 17px;
+      --radius-card: 24px;
+      --radius-button: 16px;
+      --shadow-md: 0 8px 24px rgba(0,16,24,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, "Noto Sans JP", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+    #scroll-track {
+      position: relative;
+      z-index: 2;
+      height: 750vh;
+      pointer-events: none;
+    }
+    .segment-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+      opacity: 0;
+      padding: 5vw;
+    }
+    .segment-panel.left { justify-content: flex-start; }
+    .segment-panel.right { justify-content: flex-end; }
+    .segment-panel.center { justify-content: center; text-align: center; }
+    .press {
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-card);
+      padding: clamp(28px, 4vw, 56px);
+      max-width: 560px;
+      box-shadow: var(--shadow-md);
+    }
+    .press .kanji {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: var(--text-kanji);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 12px;
+    }
+    .press h2 {
+      margin: 0;
+      font-size: var(--text-display);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+    }
+    .press p {
+      margin: 16px 0 0 0;
+      color: rgba(255,255,255,0.8);
+      font-size: var(--text-body);
+      max-width: 420px;
+    }
+    .progress {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      height: 4px;
+      background: var(--accent);
+      width: 0%;
+      z-index: 10;
+    }
+    #fallback {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #E8F7FF;
+    }
+    #fallback svg { width: min(90vw, 1200px); height: auto; }
+    @media (prefers-reduced-motion: reduce) {
+      #fallback { display: flex; }
+      #canvas-container, #scroll-track { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="progress" id="progress"></div>
+
+  <div id="scroll-track">
+    <section class="segment-panel left" data-segment="0" style="top:0vh;">
+      <div class="press"><span class="kanji">こどもの日</span><h2>Avenue of rising carp</h2><p>Begin the journey where every streamer is a wish, lifting into the clear early-summer sky.</p></div>
+    </section>
+    <section class="segment-panel right" data-segment="1" style="top:140vh;">
+      <div class="press"><span class="kanji">鯉のぼり</span><h2>Carried by the wind</h2><p>Bright cloth ripples in the breeze. Each koinobori follows the same current, but rises in its own time.</p></div>
+    </section>
+    <section class="segment-panel left" data-segment="2" style="top:280vh;">
+      <div class="press"><h2>The river bends</h2><p>Green banks give way to open water. Courage is not the absence of fear — it is the decision to keep swimming.</p></div>
+    </section>
+    <section class="segment-panel right" data-segment="3" style="top:420vh;">
+      <div class="press"><h2>Against the falls</h2><p>The climb is steep, the current pushes back, and the summit is where the carp proves its heart.</p></div>
+    </section>
+    <section class="segment-panel center" data-segment="4" style="top:560vh;">
+      <div class="press"><span class="kanji">竜</span><h2>Become the dragon</h2><p>At the top of the waterfall, the streamer is no longer a carp. It is legend, rising.</p></div>
+    </section>
+  </div>
+
+  <div id="fallback" aria-label="Static scene fallback">
+    <svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <rect width="1440" height="900" fill="#E8F7FF"/>
+      <polygon points="-100,650 400,450 900,680 1500,520 1500,900 -100,900" fill="#69F0AE" opacity="0.7"/>
+      <polygon points="-100,750 600,580 1100,720 1500,620 1500,900 -100,900" fill="#00E676"/>
+      <path d="M600,580 Q720,560 840,580 L840,900 L600,900 Z" fill="#00C2FF" opacity="0.6"/>
+      <g transform="translate(520,420)">
+        <rect x="0" y="0" width="6" height="180" fill="#2A2A2A"/>
+        <path d="M6,20 Q70,35 80,90 Q70,145 6,160 Z" fill="#FF4D6D"/>
+        <path d="M6,40 Q60,55 68,100 Q60,145 6,150 Z" fill="#00C2FF"/>
+      </g>
+      <g transform="translate(760,400)">
+        <rect x="0" y="0" width="6" height="200" fill="#2A2A2A"/>
+        <path d="M6,20 Q-64,35 -74,90 Q-64,145 6,160 Z" fill="#1A1A1A"/>
+        <path d="M6,40 Q-54,55 -62,100 Q-54,145 6,150 Z" fill="#FF4D6D"/>
+      </g>
+      <circle cx="1200" cy="120" r="60" fill="#FFD180"/>
+    </svg>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "three": "https://esm.sh/three@0.160.0",
+      "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.0?deps=three@0.160.0,react@18.2.0",
+      "@react-three/drei": "https://esm.sh/@react-three/drei@9.92.0?deps=three@0.160.0,react@18.2.0,@react-three/fiber@8.15.0",
+      "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.0?deps=three@0.160.0,react@18.2.0,@react-three/fiber@8.15.0",
+      "gsap": "https://esm.sh/gsap@3.12.5",
+      "gsap/ScrollTrigger": "https://esm.sh/gsap@3.12.5/ScrollTrigger",
+      "gsap/CustomEase": "https://esm.sh/gsap@3.12.5/CustomEase"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import * as THREE from 'three';
+    import { Canvas, useFrame, useThree, useMemo } from '@react-three/fiber';
+    import { EffectComposer, Bloom } from '@react-three/postprocessing';
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    import { CustomEase } from 'gsap/CustomEase';
+    const h = React.createElement;
+    const scrollProgress = { current: 0 };
+
+    function lerpColor(c1, c2, t) { return c1.clone().lerp(c2, t); }
+
+    const morningBg = new THREE.Color('#E8F7FF');
+    const middayBg = new THREE.Color('#F3FBFF');
+    const duskBg = new THREE.Color('#FFE8D6');
+    const morningFog = new THREE.Color('#E8F7FF');
+    const middayFog = new THREE.Color('#D6F0FF');
+    const duskFog = new THREE.Color('#FFE0C9');
+    const morningSun = new THREE.Color('#FFF4E0');
+    const middaySun = new THREE.Color('#FFFFFF');
+    const duskSun = new THREE.Color('#FF9E6D');
+    const morningAmb = new THREE.Color('#CCE8F5');
+    const middayAmb = new THREE.Color('#E0F4FF');
+    const duskAmb = new THREE.Color('#FFD6C2');
+
+    function getDayColors(p) {
+      let t, bg, fog, sun, amb;
+      if (p < 0.5) {
+        t = p * 2;
+        bg = lerpColor(morningBg, middayBg, t);
+        fog = lerpColor(morningFog, middayFog, t);
+        sun = lerpColor(morningSun, middaySun, t);
+        amb = lerpColor(morningAmb, middayAmb, t);
+      } else {
+        t = (p - 0.5) * 2;
+        bg = lerpColor(middayBg, duskBg, t);
+        fog = lerpColor(middayFog, duskFog, t);
+        sun = lerpColor(middaySun, duskSun, t);
+        amb = lerpColor(middayAmb, duskAmb, t);
+      }
+      return { bg, fog, sun, amb };
+    }
+
+    function terrainHeight(x, z) {
+      let h = Math.sin(x * 0.04) * 1.2 + Math.cos(z * 0.025) * 0.8;
+      const rw = 12 + Math.sin(z * 0.04) * 2;
+      const d = Math.abs(x) - rw * 0.5;
+      if (d < 0) h -= 3.2;
+      else h += d * 0.12;
+      if (z > 65) {
+        const drop = (z - 65) * 1.1;
+        if (Math.abs(x) < 14) h -= drop;
+        else h -= drop * 0.25;
+      }
+      return h;
+    }
+
+    function buildTerrainGeometry() {
+      const geo = new THREE.PlaneGeometry(400, 400, 80, 80);
+      geo.rotateX(-Math.PI / 2);
+      const pos = geo.attributes.position;
+      const colors = [];
+      const cRiver = new THREE.Color('#00C2FF');
+      const cGrass = new THREE.Color('#00E676');
+      const cBank = new THREE.Color('#69F0AE');
+      const cCliff = new THREE.Color('#8D7B68');
+      const cRock = new THREE.Color('#5B6479');
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const h = terrainHeight(x, z);
+        pos.setY(i, h);
+        const rw = 12 + Math.sin(z * 0.04) * 2;
+        const d = Math.abs(x) - rw * 0.5;
+        let col = cGrass;
+        if (d < 0) col = cRiver;
+        else if (d < 5) col = cBank;
+        else if (z > 60 && Math.abs(x) < 35) col = cCliff;
+        else if (h > 4.5) col = cRock;
+        colors.push(col.r, col.g, col.b);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    function Terrain() {
+      const geo = React.useMemo(buildTerrainGeometry, []);
+      return h('mesh', { geometry: geo, receiveShadow: true },
+        h('meshStandardMaterial', { vertexColors: true, flatShading: true, roughness: 0.9, metalness: 0 })
+      );
+    }
+
+    function Water() {
+      const riverGeo = React.useMemo(() => {
+        const g = new THREE.PlaneGeometry(14, 260);
+        g.rotateX(-Math.PI / 2);
+        return g;
+      }, []);
+      const fallGeo = React.useMemo(() => {
+        const g = new THREE.PlaneGeometry(14, 55);
+        g.rotateY(-Math.PI / 2);
+        return g;
+      }, []);
+      const mat = React.useMemo(() => new THREE.MeshStandardMaterial({
+        color: '#00C2FF', transparent: true, opacity: 0.55, roughness: 0.2, metalness: 0.1
+      }), []);
+      return h(React.Fragment, null,
+        h('mesh', { geometry: riverGeo, material: mat, position: [0, -1.0, -35] }),
+        h('mesh', { geometry: fallGeo, material: mat, position: [0, -25, 90] })
+      );
+    }
+
+    function Trees() {
+      const count = 160;
+      const geo = React.useMemo(() => new THREE.ConeGeometry(1.6, 5, 5), []);
+      const mat = React.useMemo(() => new THREE.MeshStandardMaterial({ color: '#00C853', flatShading: true, roughness: 0.9 }), []);
+      const meshRef = React.useRef();
+      React.useEffect(() => {
+        const dummy = new THREE.Object3D();
+        const cols = new Float32Array(count * 3);
+        let idx = 0;
+        for (let i = 0; i < count; i++) {
+          const x = (Math.random() - 0.5) * 260;
+          const z = (Math.random() - 0.5) * 320;
+          if (Math.abs(x) < 22) continue;
+          if (Math.abs(x) > 170) continue;
+          const y = terrainHeight(x, z);
+          if (y < -5) continue;
+          dummy.position.set(x, y + 2.5, z);
+          dummy.scale.setScalar(0.8 + Math.random() * 0.8);
+          dummy.rotation.y = Math.random() * Math.PI * 2;
+          dummy.updateMatrix();
+          meshRef.current.setMatrixAt(idx, dummy.matrix);
+          const shade = 0.7 + Math.random() * 0.3;
+          cols[idx * 3] = 0 * shade;
+          cols[idx * 3 + 1] = 0.78 * shade;
+          cols[idx * 3 + 2] = 0.33 * shade;
+          idx++;
+        }
+        meshRef.current.count = idx;
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        meshRef.current.geometry.setAttribute('color', new THREE.InstancedBufferAttribute(cols, 3));
+      }, []);
+      return h('instancedMesh', { ref: meshRef, args: [geo, mat, count], castShadow: true, receiveShadow: true });
+    }
+
+    function KoinoboriPoles() {
+      const count = 22;
+      const geo = React.useMemo(() => new THREE.CylinderGeometry(0.12, 0.12, 12, 8), []);
+      const mat = React.useMemo(() => new THREE.MeshStandardMaterial({ color: '#2A2A2A', flatShading: true }), []);
+      const meshRef = React.useRef();
+      React.useEffect(() => {
+        const dummy = new THREE.Object3D();
+        let i = 0;
+        for (let z = -120; z <= 60; z += 18) {
+          for (let side = -1; side <= 1; side += 2) {
+            dummy.position.set(side * 9, 6, z);
+            dummy.rotation.set(0, 0, 0);
+            dummy.scale.set(1, 1, 1);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i++, dummy.matrix);
+          }
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+      }, []);
+      return h('instancedMesh', { ref: meshRef, args: [geo, mat, count], castShadow: true, receiveShadow: true });
+    }
+
+    const clothVertexShader = 'uniform float uTime; uniform vec3 uWindDir; uniform float uWindStrength; uniform float uLength; attribute vec3 aInstanceColor; attribute mat4 instanceMatrix; varying vec3 vColor; varying vec3 vWorldPos; void main() { vColor = aInstanceColor; float along = (position.y / uLength) + 0.5; float wave = sin(along * 8.0 - uTime * 4.0) + sin(along * 14.0 - uTime * 6.0) * 0.5; vec3 pos = position; pos.x += wave * uWindStrength * along * along; pos.z += sin(along * 6.0 - uTime * 3.0) * uWindStrength * 0.3 * along; vec4 world = instanceMatrix * vec4(pos, 1.0); vWorldPos = world.xyz; gl_Position = projectionMatrix * modelViewMatrix * world; }';
+    const clothFragmentShader = 'uniform vec3 uLightDir; varying vec3 vColor; varying vec3 vWorldPos; void main() { vec3 dx = dFdx(vWorldPos); vec3 dy = dFdy(vWorldPos); vec3 normal = normalize(cross(dx, dy)); float diff = max(dot(normal, -uLightDir), 0.25); vec3 col = vColor * (0.6 + 0.4 * diff); gl_FragColor = vec4(col, 1.0); }';
+
+    function Windsocks() {
+      const count = 22;
+      const geo = React.useMemo(() => new THREE.CylinderGeometry(0.35, 1.4, 5.5, 14, 16, 1), []);
+      const mat = React.useMemo(() => new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uWindDir: { value: new THREE.Vector3(1, 0, 0) }, uWindStrength: { value: 1.1 }, uLength: { value: 5.5 }, uLightDir: { value: new THREE.Vector3(0.5, 0.8, 0.3).normalize() } },
+        vertexShader: clothVertexShader,
+        fragmentShader: clothFragmentShader,
+        side: THREE.DoubleSide
+      }), []);
+      const meshRef = React.useRef();
+      React.useEffect(() => {
+        const dummy = new THREE.Object3D();
+        const colors = new Float32Array(count * 3);
+        const palette = [new THREE.Color('#1A1A1A'), new THREE.Color('#FF4D6D'), new THREE.Color('#00C2FF')];
+        let i = 0;
+        for (let z = -120; z <= 60; z += 18) {
+          for (let side = -1; side <= 1; side += 2) {
+            const worldDir = side === -1 ? 1 : -1;
+            dummy.position.set(side * 9 + worldDir * -2.75, 12, z);
+            dummy.rotation.set(0, 0, worldDir === 1 ? -Math.PI / 2 : Math.PI / 2);
+            dummy.scale.set(1, 1, 1);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i, dummy.matrix);
+            const c = palette[i % 3];
+            colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+            i++;
+          }
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        meshRef.current.geometry.setAttribute('aInstanceColor', new THREE.InstancedBufferAttribute(colors, 3));
+      }, []);
+      useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.getElapsedTime(); });
+      return h('instancedMesh', { ref: meshRef, args: [geo, mat, count], castShadow: true });
+    }
+
+    function Fukinagashi() {
+      const count = 22;
+      const geo = React.useMemo(() => new THREE.PlaneGeometry(1.4, 0.9, 8, 4), []);
+      const mat = React.useMemo(() => new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uWindDir: { value: new THREE.Vector3(1, 0, 0) }, uWindStrength: { value: 0.9 }, uLength: { value: 0.9 }, uLightDir: { value: new THREE.Vector3(0.5, 0.8, 0.3).normalize() } },
+        vertexShader: clothVertexShader,
+        fragmentShader: clothFragmentShader,
+        side: THREE.DoubleSide
+      }), []);
+      const meshRef = React.useRef();
+      React.useEffect(() => {
+        const dummy = new THREE.Object3D();
+        const colors = new Float32Array(count * 3);
+        const palette = [new THREE.Color('#FFFFFF'), new THREE.Color('#FF4D6D'), new THREE.Color('#00C2FF')];
+        let i = 0;
+        for (let z = -120; z <= 60; z += 18) {
+          for (let side = -1; side <= 1; side += 2) {
+            dummy.position.set(side * 9, 10.05, z);
+            dummy.rotation.set(0, 0, 0);
+            dummy.scale.set(1, 1, 1);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i, dummy.matrix);
+            const c = palette[i % 3];
+            colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+            i++;
+          }
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        meshRef.current.geometry.setAttribute('aInstanceColor', new THREE.InstancedBufferAttribute(colors, 3));
+      }, []);
+      useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.getElapsedTime(); });
+      return h('instancedMesh', { ref: meshRef, args: [geo, mat, count] });
+    }
+
+    const petalVertexShader = 'uniform float uTime; attribute vec3 aPhase; attribute float aSpeed; attribute vec3 aColor; attribute mat4 instanceMatrix; varying vec3 vColor; void main() { vColor = aColor; vec3 base = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz; float t = uTime * aSpeed + aPhase.x; vec3 drift = vec3(sin(t) * 4.0, mod(base.y + uTime * 0.4 + aPhase.y, 30.0) - 2.0, cos(t * 0.7) * 4.0 + aPhase.z); mat4 inst = instanceMatrix; inst[3].xyz = drift; vec4 mvPosition = modelViewMatrix * inst * vec4(position, 1.0); gl_Position = projectionMatrix * mvPosition; }';
+    const petalFragmentShader = 'varying vec3 vColor; void main() { gl_FragColor = vec4(vColor, 0.85); }';
+
+    function Petals() {
+      const count = 700;
+      const geo = React.useMemo(() => new THREE.PlaneGeometry(0.35, 0.35), []);
+      const mat = React.useMemo(() => new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: petalVertexShader,
+        fragmentShader: petalFragmentShader,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      }), []);
+      const meshRef = React.useRef();
+      React.useEffect(() => {
+        const dummy = new THREE.Object3D();
+        const phases = new Float32Array(count * 3);
+        const speeds = new Float32Array(count);
+        const colors = new Float32Array(count * 3);
+        const palette = [new THREE.Color('#FFC1CC'), new THREE.Color('#FFFFFF'), new THREE.Color('#FFECB3')];
+        for (let i = 0; i < count; i++) {
+          const x = (Math.random() - 0.5) * 180;
+          const y = Math.random() * 28;
+          const z = -140 + Math.random() * 290;
+          dummy.position.set(x, y, z);
+          dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+          dummy.scale.setScalar(0.6 + Math.random() * 0.6);
+          dummy.updateMatrix();
+          meshRef.current.setMatrixAt(i, dummy.matrix);
+          phases[i * 3] = Math.random() * 100;
+          phases[i * 3 + 1] = Math.random() * 30;
+          phases[i * 3 + 2] = Math.random() * 100;
+          speeds[i] = 0.5 + Math.random() * 0.8;
+          const c = palette[i % 3];
+          colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        meshRef.current.geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 3));
+        meshRef.current.geometry.setAttribute('aSpeed', new THREE.InstancedBufferAttribute(speeds, 1));
+        meshRef.current.geometry.setAttribute('aColor', new THREE.InstancedBufferAttribute(colors, 3));
+      }, []);
+      useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.getElapsedTime(); });
+      return h('instancedMesh', { ref: meshRef, args: [geo, mat, count] });
+    }
+
+    function Dragon() {
+      const groupRef = React.useRef();
+      const bodyGeo = React.useMemo(() => {
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, 0, -8),
+          new THREE.Vector3(4, 2, -2),
+          new THREE.Vector3(0, 4, 4),
+          new THREE.Vector3(-4, 2, 10),
+          new THREE.Vector3(0, 0, 16)
+        ]);
+        return new THREE.TubeGeometry(curve, 16, 1.1, 6, false);
+      }, []);
+      const headGeo = React.useMemo(() => new THREE.ConeGeometry(1.6, 4, 6), []);
+      const wingGeo = React.useMemo(() => {
+        const g = new THREE.ConeGeometry(5, 12, 3);
+        g.scale(1, 0.15, 1);
+        return g;
+      }, []);
+      const mat = React.useMemo(() => new THREE.MeshStandardMaterial({ color: '#00C2FF', emissive: '#004D66', emissiveIntensity: 0.4, flatShading: true, roughness: 0.4 }), []);
+      useFrame(({ clock }) => {
+        const t = clock.getElapsedTime();
+        const g = groupRef.current;
+        if (!g) return;
+        g.position.x = Math.sin(t * 0.25) * 16;
+        g.position.z = 125 + Math.cos(t * 0.25) * 16;
+        g.position.y = 20 + Math.sin(t * 0.4) * 4;
+        g.rotation.y = t * 0.25;
+        g.children[2].rotation.z = Math.sin(t * 2) * 0.25;
+        g.children[3].rotation.z = -Math.sin(t * 2) * 0.25;
+      });
+      return h('group', { ref: groupRef },
+        h('mesh', { geometry: bodyGeo, material: mat, castShadow: true }),
+        h('mesh', { geometry: headGeo, material: mat, position: [0, 0, 18], rotation: [Math.PI / 2, 0, 0], castShadow: true }),
+        h('mesh', { geometry: wingGeo, material: mat, position: [5, 2, 4], rotation: [0, 0, 0.3], castShadow: true }),
+        h('mesh', { geometry: wingGeo, material: mat, position: [-5, 2, 4], rotation: [0, 0, -0.3], castShadow: true })
+      );
+    }
+
+    function LightingAndFog() {
+      const scene = useThree((s) => s.scene);
+      const dirRef = React.useRef();
+      const ambRef = React.useRef();
+      useFrame(() => {
+        const p = scrollProgress.current;
+        const c = getDayColors(p);
+        scene.background = c.bg;
+        if (scene.fog) scene.fog.color = c.fog;
+        if (dirRef.current) { dirRef.current.color.copy(c.sun); dirRef.current.intensity = 1.1 + Math.sin(p * Math.PI) * 0.3; }
+        if (ambRef.current) { ambRef.current.color.copy(c.amb); ambRef.current.intensity = 0.55 + Math.sin(p * Math.PI) * 0.15; }
+      });
+      return h(React.Fragment, null,
+        h('fog', { attach: 'fog', args: [morningFog, 25, 210] }),
+        h('ambientLight', { ref: ambRef, intensity: 0.6 }),
+        h('directionalLight', { ref: dirRef, position: [40, 70, -30], intensity: 1.2, castShadow: true, 'shadow-mapSize': [2048, 2048], 'shadow-camera-near': 0.5, 'shadow-camera-far': 300, 'shadow-camera-left': -100, 'shadow-camera-right': 100, 'shadow-camera-top': 100, 'shadow-camera-bottom': -100 }),
+        h('pointLight', { position: [-30, 20, 40], intensity: 0.4, color: '#00C2FF' })
+      );
+    }
+
+    function CameraRig() {
+      const camera = useThree((s) => s.camera);
+      useFrame(() => {
+        camera.position.lerp(posTarget.current, 0.08);
+        camera.lookAt(lookTarget.current);
+        const bar = document.getElementById('progress');
+        if (bar) bar.style.width = (scrollProgress.current * 100) + '%';
+      });
+      return null;
+    }
+
+    function PostFX() {
+      return h(EffectComposer, null,
+        h(Bloom, { intensity: 0.45, luminanceThreshold: 0.25, luminanceSmoothing: 0.85, mipmapBlur: true })
+      );
+    }
+
+    const posTarget = { current: new THREE.Vector3(-18, 7, -125) };
+    const lookTarget = { current: new THREE.Vector3(0, 5, -75) };
+
+    function World() {
+      React.useEffect(() => {
+        gsap.registerPlugin(ScrollTrigger, CustomEase);
+        CustomEase.create('easeAvenue', 'M0,0 C0.25,0.1 0.25,1 1,1');
+        CustomEase.create('easeBend', 'M0,0 C0.7,0 0.3,1 1,1');
+        CustomEase.create('easeApproach', 'M0,0 C0.2,0.8 0.5,1 1,1');
+        CustomEase.create('easeClimb', 'M0,0 C0.9,0 0.1,1 1,1');
+        CustomEase.create('easeSummit', 'M0,0 C0.4,0 0.2,1 1,1');
+        const panels = document.querySelectorAll('.segment-panel');
+        const ranges = [[0,0.22],[0.18,0.42],[0.38,0.58],[0.54,0.78],[0.74,1.0]];
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#scroll-track',
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.6,
+            onUpdate: (self) => {
+              scrollProgress.current = self.progress;
+              panels.forEach((panel, i) => {
+                const [a, b] = ranges[i];
+                const mid = (a + b) / 2;
+                let op = 1 - Math.abs(self.progress - mid) / ((b - a) / 2);
+                op = Math.max(0, Math.min(1, op / 0.75));
+                panel.style.opacity = op;
+                panel.style.pointerEvents = op > 0.3 ? 'auto' : 'none';
+              });
+            }
+          }
+        });
+        tl.to(posTarget.current, { x: 14, y: 6, z: -80, duration: 1, ease: 'easeAvenue' }, 0);
+        tl.to(lookTarget.current, { x: 0, y: 4, z: -35, duration: 1, ease: 'easeAvenue' }, 0);
+        tl.to(posTarget.current, { x: -10, y: 5, z: -30, duration: 1.3, ease: 'easeBend' }, 1);
+        tl.to(lookTarget.current, { x: 0, y: 3, z: 15, duration: 1.3, ease: 'easeBend' }, 1);
+        tl.to(posTarget.current, { x: 12, y: 4, z: 35, duration: 1, ease: 'easeApproach' }, 2.3);
+        tl.to(lookTarget.current, { x: 0, y: 2, z: 75, duration: 1, ease: 'easeApproach' }, 2.3);
+        tl.to(posTarget.current, { x: 0, y: -12, z: 95, duration: 1.6, ease: 'easeClimb' }, 3.3);
+        tl.to(lookTarget.current, { x: 0, y: 5, z: 80, duration: 1.6, ease: 'easeClimb' }, 3.3);
+        tl.to(posTarget.current, { x: 0, y: 20, z: 115, duration: 1.2, ease: 'easeSummit' }, 4.9);
+        tl.to(lookTarget.current, { x: 0, y: 15, z: 150, duration: 1.2, ease: 'easeSummit' }, 4.9);
+        return () => { tl.kill(); ScrollTrigger.getAll().forEach(st => st.kill()); };
+      }, []);
+      return h(React.Fragment, null,
+        h(LightingAndFog),
+        h(CameraRig),
+        h(Terrain),
+        h(Water),
+        h(Trees),
+        h(KoinoboriPoles),
+        h(Windsocks),
+        h(Fukinagashi),
+        h(Petals),
+        h(Dragon)
+      );
+    }
+
+    function App() {
+      const [loop, setLoop] = React.useState('always');
+      React.useEffect(() => {
+        const onVis = () => setLoop(document.hidden ? 'never' : 'always');
+        document.addEventListener('visibilitychange', onVis);
+        return () => document.removeEventListener('visibilitychange', onVis);
+      }, []);
+      return h(Canvas, {
+        camera: { fov: 55, near: 0.5, far: 300, position: [-18, 7, -125] },
+        dpr: Math.min(window.devicePixelRatio, 2),
+        frameloop: loop,
+        shadows: true,
+        gl: { antialias: true, alpha: false, powerPreference: 'high-performance' },
+        style: { position: 'fixed', inset: 0 }
+      }, h(World), h(PostFX));
+    }
+
+    function init() {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const canvas = document.createElement('canvas');
+      const hasWebGL = !!window.WebGLRenderingContext && !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+      if (reduced || !hasWebGL) {
+        document.getElementById('fallback').style.display = 'flex';
+        document.getElementById('canvas-container').style.display = 'none';
+        document.getElementById('scroll-track').style.display = 'none';
+        return;
+      }
+      const root = createRoot(document.getElementById('canvas-container'));
+      root.render(h(App));
+    }
+    init();
+  </script>
+</body>
+</html>

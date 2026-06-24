@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kōyoi — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --color-white: #FFFFFF;
+  --color-off-white: #FAFBFC;
+  --color-surface: #F3F4F6;
+  --color-muted: #9CA3AF;
+  --color-secondary: #6B7280;
+  --color-primary: #1F2937;
+  --color-black: #0A0A0A;
+
+  --color-accent-blue: #0090FF;
+  --color-accent-blue-hover: #0077DD;
+  --color-accent-green: #00D68F;
+  --color-accent-green-light: #E8FFF3;
+  --color-accent-coral: #FF366C;
+  --color-accent-coral-hover: #E8345D;
+
+  --font-display: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --font-body: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --control-height: 44px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.625;
+  color: var(--color-primary);
+  background: var(--color-off-white);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ── */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--color-white);
+  border-right: 1px solid var(--color-surface);
+  padding: var(--space-8) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-black);
+  padding: 0 var(--space-6);
+  margin-bottom: var(--space-10);
+}
+
+.sidebar-logo span {
+  font-weight: 400;
+  color: var(--color-secondary);
+  font-size: 0.75rem;
+  margin-left: 0.375rem;
+}
+
+.sidebar-nav { list-style: none; flex: 1; }
+
+.sidebar-nav li a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  border-radius: 0;
+}
+
+.sidebar-nav li a:hover {
+  color: var(--color-primary);
+  background: var(--color-off-white);
+}
+
+.sidebar-nav li a.active {
+  color: var(--color-accent-blue);
+  background: color-mix(in srgb, var(--color-accent-blue) 6%, transparent);
+  font-weight: 600;
+}
+
+.sidebar-nav li a svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  padding: var(--space-8) var(--space-6) var(--space-3);
+}
+
+.sidebar-user {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-surface);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+}
+
+/* ── Main ── */
+.main {
+  padding: var(--space-8) var(--space-12);
+  overflow-y: auto;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.topbar-left h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-black);
+}
+
+.topbar-left p {
+  font-size: 0.875rem;
+  color: var(--color-secondary);
+  margin-top: 2px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ── Buttons ── */
+.btn {
+  height: var(--control-height);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-blue) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn:disabled {
+  background: var(--color-surface) !important;
+  color: var(--color-muted) !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background: var(--color-accent-blue);
+  color: var(--color-white);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-blue-hover);
+  transform: scale(1.02);
+}
+
+.btn-secondary {
+  background: var(--color-white);
+  color: var(--color-accent-blue);
+  border: 1px solid var(--color-accent-blue);
+}
+
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--color-accent-blue) 4%, transparent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+/* ── Form Controls ── */
+.input {
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-surface);
+  background: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  width: 240px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input::placeholder { color: var(--color-muted); }
+.input:hover { border-color: var(--color-muted); }
+.input:focus {
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-blue) 30%, transparent);
+  outline: none;
+}
+.input:disabled {
+  background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.select {
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-surface);
+  background: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  width: 160px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.select:focus {
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-blue) 30%, transparent);
+  outline: none;
+}
+
+/* ── Metric Cards ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.metric-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.metric-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-secondary);
+}
+
+.metric-badge {
+  height: 24px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.metric-badge.up {
+  background: var(--color-accent-green-light);
+  color: var(--color-accent-green);
+}
+
+.metric-badge.down {
+  background: color-mix(in srgb, var(--color-accent-coral) 10%, transparent);
+  color: var(--color-accent-coral);
+}
+
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-black);
+  line-height: 1.1;
+}
+
+.metric-sub {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+/* ── Chart Area ── */
+.chart-area {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  margin-bottom: var(--space-6);
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.chart-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.chart-tab {
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: color 0.15s, background 0.15s;
+  border-radius: var(--radius-md);
+}
+
+.chart-tab:hover { color: var(--color-primary); background: var(--color-off-white); }
+
+.chart-tab.active {
+  color: var(--color-accent-blue);
+  background: color-mix(in srgb, var(--color-accent-blue) 8%, transparent);
+  font-weight: 600;
+}
+
+.chart-tab:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-blue) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.chart-placeholder {
+  width: 100%;
+  height: 240px;
+  border-radius: var(--radius-md);
+  background: var(--color-off-white);
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  gap: var(--space-3);
+}
+
+.chart-bar {
+  flex: 1;
+  border-radius: 8px 8px 0 0;
+  min-height: 16px;
+  transition: opacity 0.15s;
+}
+
+.chart-bar:hover { opacity: 0.8; }
+
+.chart-bar.blue { background: var(--color-accent-blue); }
+.chart-bar.green { background: var(--color-accent-green); }
+.chart-bar.coral { background: var(--color-accent-coral); }
+
+/* ── Data Table ── */
+.data-table-area {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: var(--space-6) var(--space-8);
+  border-bottom: 1px solid var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead { background: var(--color-white); }
+
+th {
+  padding: var(--space-3) var(--space-6);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--color-surface);
+}
+
+td {
+  padding: var(--space-4) var(--space-6);
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-surface);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover { background: var(--color-off-white); }
+
+.table-status {
+  height: 24px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.table-status.active {
+  background: var(--color-accent-green-light);
+  color: var(--color-accent-green);
+}
+
+.table-status.pending {
+  background: color-mix(in srgb, var(--color-accent-blue) 10%, transparent);
+  color: var(--color-accent-blue);
+}
+
+.table-status.archived {
+  background: var(--color-surface);
+  color: var(--color-secondary);
+}
+
+.table-link {
+  color: var(--color-accent-blue);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.table-link:hover { text-decoration: underline; }
+
+.table-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+/* ── Two Column Grid ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* ── Activity Feed ── */
+.activity-feed {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.activity-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-black);
+  margin-bottom: var(--space-6);
+}
+
+.activity-item {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-surface);
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.activity-dot.blue { background: var(--color-accent-blue); }
+.activity-dot.green { background: var(--color-accent-green); }
+.activity-dot.coral { background: var(--color-accent-coral); }
+
+.activity-text {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  line-height: 1.5;
+}
+
+.activity-text strong { font-weight: 600; }
+
+.activity-time {
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: var(--space-6) var(--space-4); }
+  .input { width: 100%; }
+  .select { width: 100%; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Kōyoi <span>この宵</span></div>
+
+    <p class="sidebar-section-label">Product</p>
+    <ul class="sidebar-nav">
+      <li><a href="#" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Projects
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a></li>
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Team
+      </a></li>
+    </ul>
+
+    <p class="sidebar-section-label">System</p>
+    <ul class="sidebar-nav">
+      <li><a href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">RK</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Rita K.</div>
+        <div class="sidebar-user-role">Admin</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Overview</h1>
+        <p>Welcome back, Rita — here's what's happening today.</p>
+      </div>
+      <div class="topbar-actions">
+        <input class="input" type="text" placeholder="Search…">
+        <select class="select">
+          <option>Last 30 days</option>
+          <option>Last 7 days</option>
+          <option>Last 90 days</option>
+        </select>
+        <button class="btn btn-primary">+ New Project</button>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Active Projects</span>
+          <span class="metric-badge up">+12%</span>
+        </div>
+        <div class="metric-value">247</div>
+        <div class="metric-sub">Across 18 teams</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Users This Month</span>
+          <span class="metric-badge up">+8.3%</span>
+        </div>
+        <div class="metric-value">12,849</div>
+        <div class="metric-sub">From 11,858 last month</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Completion Rate</span>
+          <span class="metric-badge up">+2.1%</span>
+        </div>
+        <div class="metric-value">94.2%</div>
+        <div class="metric-sub">Target: 95%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Avg. Build Time</span>
+          <span class="metric-badge down">-3.4%</span>
+        </div>
+        <div class="metric-value">2.4<span style="font-size:1rem;font-weight:500;color:var(--color-secondary);">s</span></div>
+        <div class="metric-sub">Down from 2.5s</div>
+      </div>
+    </div>
+
+    <!-- Chart + Activity -->
+    <div class="two-col">
+      <div class="chart-area">
+        <div class="chart-header">
+          <span class="chart-title">Project Activity</span>
+          <div class="chart-tabs">
+            <button class="chart-tab">Day</button>
+            <button class="chart-tab active">Week</button>
+            <button class="chart-tab">Month</button>
+            <button class="chart-tab">Year</button>
+          </div>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-bar blue" style="height:45%"></div>
+          <div class="chart-bar green" style="height:62%"></div>
+          <div class="chart-bar blue" style="height:78%"></div>
+          <div class="chart-bar coral" style="height:55%"></div>
+          <div class="chart-bar blue" style="height:90%"></div>
+          <div class="chart-bar green" style="height:70%"></div>
+          <div class="chart-bar blue" style="height:85%"></div>
+          <div class="chart-bar coral" style="height:65%"></div>
+          <div class="chart-bar green" style="height:95%"></div>
+          <div class="chart-bar blue" style="height:72%"></div>
+          <div class="chart-bar blue" style="height:88%"></div>
+          <div class="chart-bar green" style="height:60%"></div>
+        </div>
+      </div>
+
+      <div class="activity-feed">
+        <div class="activity-title">Recent Activity</div>
+        <div class="activity-item">
+          <div class="activity-dot blue"></div>
+          <div>
+            <div class="activity-text"><strong>Sprint 24</strong> was deployed to production</div>
+            <div class="activity-time">12 minutes ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot green"></div>
+          <div>
+            <div class="activity-text"><strong>Aya M.</strong> completed design review for Kōyoi v2</div>
+            <div class="activity-time">1 hour ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot coral"></div>
+          <div>
+            <div class="activity-text"><strong>Build #1847</strong> failed — dependency resolution error</div>
+            <div class="activity-time">2 hours ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot blue"></div>
+          <div>
+            <div class="activity-text"><strong>Team Arni</strong> added 3 new components</div>
+            <div class="activity-time">5 hours ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot green"></div>
+          <div>
+            <div class="activity-text"><strong>Dashboard</strong> metrics updated successfully</div>
+            <div class="activity-time">Yesterday at 4:32 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Table -->
+    <div class="data-table-area">
+      <div class="table-header">
+        <span class="table-title">Active Projects</span>
+        <button class="btn btn-ghost">View All →</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Team</th>
+            <th>Last Updated</th>
+            <th>ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#" class="table-link">Kōyoi Design System</a></td>
+            <td><span class="table-status active">Active</span></td>
+            <td>Design</td>
+            <td>2 hours ago</td>
+            <td class="table-mono">PRJ-001</td>
+          </tr>
+          <tr>
+            <td><a href="#" class="table-link">Temper Kernel v3</a></td>
+            <td><span class="table-status active">Active</span></td>
+            <td>Platform</td>
+            <td>4 hours ago</td>
+            <td class="table-mono">PRJ-014</td>
+          </tr>
+          <tr>
+            <td><a href="#" class="table-link">Katagami Curation</a></td>
+            <td><span class="table-status pending">In Review</span></td>
+            <td>Curation</td>
+            <td>Yesterday</td>
+            <td class="table-mono">PRJ-023</td>
+          </tr>
+          <tr>
+            <td><a href="#" class="table-link">Genesis Git Server</a></td>
+            <td><span class="table-status active">Active</span></td>
+            <td>Infrastructure</td>
+            <td>3 days ago</td>
+            <td class="table-mono">PRJ-008</td>
+          </tr>
+          <tr>
+            <td><a href="#" class="table-link">TempCLI v2</a></td>
+            <td><span class="table-status archived">Archived</span></td>
+            <td>Developer Tools</td>
+            <td>2 weeks ago</td>
+            <td class="table-mono">PRJ-005</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

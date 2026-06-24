@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aozora Lift | Launch the Season Upward</title>
+  <style>
+    :root {
+      --paper: #ffffff;
+      --ink: #050505;
+      --ink-soft: #3a3d40;
+      --ash: #eef3f3;
+      --cloud: #f7fbfb;
+      --sky: #00a7ff;
+      --sky-deep: #005cff;
+      --leaf: #18e66b;
+      --leaf-deep: #087a3a;
+      --hot: #ff2e6d;
+      --sun: #f7ff2f;
+      --font-sans: "Inter", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+      --font-display: "Arial Narrow", "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+      --text-xs: 0.78rem;
+      --text-sm: 0.86rem;
+      --text-base: 1rem;
+      --text-md: 1.12rem;
+      --text-lg: 1.35rem;
+      --text-xl: clamp(2.4rem, 7vw, 6.7rem);
+      --track-display: -0.02em;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4.5rem;
+      --space-9: 7rem;
+      --radius-sm: 16px;
+      --radius-md: 24px;
+      --radius-pill: 9999px;
+      --control-h: 48px;
+      --shadow-soft: 0 24px 70px rgba(0, 33, 44, 0.13);
+      --shadow-tight: 0 12px 30px rgba(0, 33, 44, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--paper);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: var(--font-sans);
+      font-size: 17px;
+      line-height: 1.45;
+      text-rendering: geometricPrecision;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    p {
+      margin: 0;
+      color: var(--ink-soft);
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--font-display);
+      letter-spacing: var(--track-display);
+      line-height: 0.94;
+    }
+
+    h1 {
+      max-width: 12ch;
+      font-size: var(--text-xl);
+      text-transform: uppercase;
+    }
+
+    h2 {
+      font-size: clamp(2.15rem, 5vw, 4.6rem);
+      text-transform: uppercase;
+    }
+
+    h3 {
+      font-size: clamp(1.35rem, 2vw, 2rem);
+    }
+
+    button,
+    .button,
+    input,
+    select,
+    textarea {
+      min-height: var(--control-h);
+      border: 0;
+      border-radius: var(--radius-pill);
+      font: inherit;
+    }
+
+    button,
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-5);
+      color: var(--paper);
+      background: var(--ink);
+      box-shadow: inset 0 -5px 0 var(--sky);
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, opacity 180ms ease;
+    }
+
+    button:hover:not(:disabled),
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: inset 0 -7px 0 var(--leaf), var(--shadow-tight);
+    }
+
+    button:active:not(:disabled),
+    .button:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 -3px 0 var(--sky-deep);
+    }
+
+    .button.secondary,
+    button.secondary {
+      color: var(--ink);
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px var(--sky), inset 0 -5px 0 var(--leaf);
+    }
+
+    .button.hot,
+    button.hot {
+      color: var(--paper);
+      background: var(--hot);
+      box-shadow: inset 0 -5px 0 var(--ink);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      color: var(--ink);
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px rgba(0, 92, 255, 0.24);
+      transition: box-shadow 180ms ease, background 180ms ease, transform 180ms ease, opacity 180ms ease;
+    }
+
+    input,
+    select {
+      height: var(--control-h);
+      padding: 0 var(--space-4);
+    }
+
+    textarea {
+      min-height: calc(var(--control-h) * 2.5);
+      padding: var(--space-4);
+      resize: vertical;
+      border-radius: var(--radius-md);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #60666b;
+    }
+
+    select {
+      appearance: none;
+      background-image: none;
+    }
+
+    input:hover:not(:disabled),
+    select:hover:not(:disabled),
+    textarea:hover:not(:disabled) {
+      box-shadow: inset 0 0 0 2px var(--sky);
+    }
+
+    :where(button, .button, input, select, textarea):focus-visible,
+    .field:focus-within,
+    .control-row:focus-within,
+    .check-row:focus-within,
+    .radio-row:focus-within,
+    .segmented:focus-within {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--sky-deep), 0 0 0 7px rgba(0, 167, 255, 0.22);
+    }
+
+    :where(button, input, select, textarea):disabled,
+    .button[aria-disabled="true"] {
+      cursor: not-allowed;
+      opacity: 0.42;
+      filter: saturate(0.2);
+      transform: none;
+    }
+
+    .check-row,
+    .radio-row {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: var(--control-h);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--paper);
+      cursor: pointer;
+      box-shadow: inset 0 0 0 2px rgba(0, 92, 255, 0.14);
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      appearance: none;
+      width: 22px;
+      min-width: 22px;
+      height: 22px;
+      min-height: 22px;
+      padding: 0;
+      border-radius: 7px;
+      background: var(--paper);
+      box-shadow: inset 0 0 0 2px var(--ink);
+    }
+
+    input[type="radio"] {
+      border-radius: var(--radius-pill);
+    }
+
+    input[type="checkbox"]:checked,
+    input[type="radio"]:checked {
+      background: var(--leaf);
+      box-shadow: inset 0 0 0 6px var(--ink);
+    }
+
+    input[type="range"] {
+      appearance: none;
+      height: var(--control-h);
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      margin-top: -10px;
+      border-radius: var(--radius-pill);
+      background: var(--ink);
+      box-shadow: inset 0 0 0 6px var(--paper);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--ink);
+      box-shadow: inset 0 0 0 6px var(--paper);
+    }
+
+    .site-header {
+      position: fixed;
+      z-index: 20;
+      top: var(--space-4);
+      left: 50%;
+      width: min(1160px, calc(100% - 2rem));
+      min-height: 62px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow-tight);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-pill);
+      background: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      border-radius: var(--radius-pill);
+    }
+
+    .brand-mark::before {
+      width: 28px;
+      height: 10px;
+      left: 8px;
+      top: 9px;
+      background: var(--sky);
+      transform: rotate(-18deg);
+    }
+
+    .brand-mark::after {
+      width: 24px;
+      height: 9px;
+      right: -2px;
+      bottom: 8px;
+      background: var(--leaf);
+      transform: rotate(-18deg);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      color: var(--ink-soft);
+      font-size: var(--text-sm);
+      font-weight: 750;
+    }
+
+    nav a:hover {
+      color: var(--ink);
+    }
+
+    .header-cta {
+      min-height: 44px;
+      padding: 0 var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 96vh;
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      isolation: isolate;
+      padding: 7.5rem max(1rem, calc((100vw - 1180px) / 2)) var(--space-7);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: rgba(255, 255, 255, 0.12);
+      pointer-events: none;
+    }
+
+    .hero-image {
+      position: absolute;
+      z-index: -2;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-copy {
+      width: min(760px, 100%);
+      padding: var(--space-6);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(14px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+      color: var(--ink);
+      font-size: var(--text-xs);
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 10px;
+      border-radius: var(--radius-pill);
+      background: var(--leaf);
+      box-shadow: 34px 0 0 var(--sky), 58px 0 0 var(--hot);
+    }
+
+    .hero p {
+      max-width: 58ch;
+      margin-top: var(--space-5);
+      color: #1c2023;
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .hero-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-3);
+      width: min(1180px, calc(100% - 2rem));
+      margin: calc(var(--space-6) * -1) auto var(--space-8);
+      position: relative;
+      z-index: 3;
+    }
+
+    .signal {
+      min-height: 132px;
+      padding: var(--space-5);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+      box-shadow: var(--shadow-tight);
+    }
+
+    .signal strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 4.2rem);
+      letter-spacing: -0.03em;
+      line-height: 0.9;
+    }
+
+    .signal span {
+      display: block;
+      margin-top: var(--space-3);
+      color: var(--ink-soft);
+      font-size: var(--text-sm);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .signal:nth-child(1) {
+      box-shadow: inset 0 -10px 0 var(--sky), var(--shadow-tight);
+    }
+
+    .signal:nth-child(2) {
+      box-shadow: inset 0 -10px 0 var(--leaf), var(--shadow-tight);
+    }
+
+    .signal:nth-child(3) {
+      box-shadow: inset 0 -10px 0 var(--hot), var(--shadow-tight);
+    }
+
+    .section {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: var(--space-8) 0;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+      gap: var(--space-7);
+      align-items: center;
+    }
+
+    .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 var(--space-3);
+      margin-bottom: var(--space-5);
+      border-radius: var(--radius-pill);
+      color: var(--ink);
+      background: var(--sun);
+      font-size: var(--text-xs);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .lead {
+      margin-top: var(--space-5);
+      font-size: var(--text-lg);
+      color: var(--ink-soft);
+    }
+
+    .feature-image {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      border-radius: var(--radius-md);
+      background: var(--cloud);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .feature-image img {
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      object-fit: cover;
+    }
+
+    .feature-image::after {
+      content: "";
+      position: absolute;
+      right: 8%;
+      bottom: 8%;
+      width: 120px;
+      height: 26px;
+      border-radius: var(--radius-pill);
+      background: var(--hot);
+      box-shadow: -84px -44px 0 var(--leaf), -132px -86px 0 var(--sky);
+    }
+
+    .proof-list {
+      display: grid;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .proof {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: var(--space-4);
+      align-items: start;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--cloud);
+    }
+
+    .proof b {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-pill);
+      color: var(--paper);
+      background: var(--ink);
+      box-shadow: inset 0 -7px 0 var(--sky);
+    }
+
+    .proof strong {
+      display: block;
+      margin-bottom: var(--space-1);
+      font-size: var(--text-md);
+    }
+
+    .poster-band {
+      width: min(1180px, calc(100% - 2rem));
+      margin: var(--space-8) auto;
+      padding: var(--space-7);
+      border-radius: var(--radius-md);
+      color: var(--paper);
+      background: var(--ink);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .poster-band::before,
+    .poster-band::after {
+      content: "";
+      position: absolute;
+      border-radius: var(--radius-pill);
+      transform: rotate(-16deg);
+    }
+
+    .poster-band::before {
+      width: 420px;
+      height: 76px;
+      right: -86px;
+      top: 72px;
+      background: var(--sky);
+    }
+
+    .poster-band::after {
+      width: 280px;
+      height: 58px;
+      right: 92px;
+      bottom: 66px;
+      background: var(--leaf);
+      box-shadow: -92px -104px 0 var(--hot);
+    }
+
+    .poster-content {
+      position: relative;
+      z-index: 1;
+      width: min(720px, 100%);
+    }
+
+    .poster-band h2,
+    .poster-band p {
+      color: var(--paper);
+    }
+
+    .poster-band p {
+      margin-top: var(--space-5);
+      color: rgba(255, 255, 255, 0.78);
+      font-size: var(--text-lg);
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-6);
+    }
+
+    .flow-card {
+      min-height: 260px;
+      padding: var(--space-5);
+      border-radius: var(--radius-md);
+      background: var(--paper);
+      box-shadow: var(--shadow-tight);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-card::before {
+      content: "";
+      position: absolute;
+      top: var(--space-5);
+      right: var(--space-5);
+      width: 86px;
+      height: 20px;
+      border-radius: var(--radius-pill);
+      background: var(--sky);
+      transform: rotate(-18deg);
+    }
+
+    .flow-card:nth-child(2)::before {
+      background: var(--leaf);
+    }
+
+    .flow-card:nth-child(3)::before {
+      background: var(--hot);
+    }
+
+    .flow-card span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: var(--space-5);
+      border-radius: var(--radius-pill);
+      color: var(--paper);
+      background: var(--ink);
+      font-weight: 900;
+    }
+
+    .flow-card p {
+      margin-top: var(--space-3);
+    }
+
+    .signup {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--cloud);
+      box-shadow: inset 0 -8px 0 var(--leaf);
+    }
+
+    .signup .field {
+      border-radius: var(--radius-pill);
+    }
+
+    .footer {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: var(--space-6) 0 var(--space-8);
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-4);
+      color: var(--ink-soft);
+      font-size: var(--text-sm);
+    }
+
+    @media (max-width: 900px) {
+      nav {
+        display: none;
+      }
+
+      .hero {
+        min-height: 92vh;
+        padding-top: 7rem;
+      }
+
+      .hero-copy {
+        padding: var(--space-5);
+      }
+
+      .hero-strip,
+      .split,
+      .flow-grid,
+      .signup {
+        grid-template-columns: 1fr;
+      }
+
+      .poster-band {
+        padding: var(--space-6);
+      }
+
+      .poster-band::before {
+        width: 260px;
+        height: 48px;
+        top: auto;
+        bottom: 38px;
+      }
+
+      .poster-band::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        font-size: 16px;
+      }
+
+      .site-header {
+        top: var(--space-3);
+      }
+
+      .brand span {
+        max-width: 10ch;
+        line-height: 1;
+      }
+
+      .header-cta {
+        padding: 0 var(--space-3);
+      }
+
+      .hero-copy {
+        padding: var(--space-4);
+      }
+
+      .hero-actions,
+      .footer {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button,
+      .button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header" aria-label="Aozora Lift navigation">
+    <a class="brand" href="#">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Aozora Lift</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#platform">Platform</a>
+      <a href="#signals">Signals</a>
+      <a href="#launch">Launch room</a>
+    </nav>
+    <a class="button header-cta" href="dashboard.html">Open dashboard</a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-image" src="media/hero-koi-rise.png" alt="Koinobori-inspired streamers rising through clear early-summer light above fresh green terraces.">
+      <div class="hero-copy">
+        <div class="eyebrow">May launch intelligence</div>
+        <h1 id="hero-title">Aozora Lift</h1>
+        <p>Plan, sense, and lift cultural launches with a bright operating system built for city festivals, brand moments, and community programs that need every signal moving upward.</p>
+        <div class="hero-actions">
+          <a class="button" href="#platform">Map the season</a>
+          <a class="button secondary" href="dashboard.html">View live room</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero-strip" aria-label="Launch signals">
+      <article class="signal">
+        <strong>94%</strong>
+        <span>route readiness</span>
+      </article>
+      <article class="signal">
+        <strong>38</strong>
+        <span>partner sites synced</span>
+      </article>
+      <article class="signal">
+        <strong>11k</strong>
+        <span>families forecast</span>
+      </article>
+    </section>
+
+    <section class="section split" id="platform">
+      <div>
+        <span class="section-kicker">One clean flight plan</span>
+        <h2>The season has a current.</h2>
+        <p class="lead">Aozora Lift turns fragmented May campaigns into one visible air path: program status, local momentum, sponsor commitments, weather risk, and field-team readiness in a single launch rhythm.</p>
+        <div class="proof-list">
+          <div class="proof">
+            <b>01</b>
+            <div>
+              <strong>Align the route before the wind changes.</strong>
+              <p>Stakeholders see the same day-by-day operating map, from morning setup to evening drawdown.</p>
+            </div>
+          </div>
+          <div class="proof">
+            <b>02</b>
+            <div>
+              <strong>Read the signals without visual noise.</strong>
+              <p>Priority, risk, and lift use a three-accent language so teams know what needs action.</p>
+            </div>
+          </div>
+          <div class="proof">
+            <b>03</b>
+            <div>
+              <strong>Launch with grown-up festival energy.</strong>
+              <p>The system feels public, optimistic, and sharp enough for executive rooms and field teams alike.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figure class="feature-image">
+        <img src="media/feature-wind-studio.png" alt="Editorial product-world scene with floating campaign panels and koinobori-like wind ribbons in bright daylight.">
+      </figure>
+    </section>
+
+    <section class="poster-band" id="signals">
+      <div class="poster-content">
+        <span class="section-kicker">Signal color, not decoration</span>
+        <h2>Blue for reach. Green for readiness. Hot for human attention.</h2>
+        <p>Every product surface uses the same vivid grammar, so teams can move from landing promise to operations dashboard without relearning the system.</p>
+      </div>
+    </section>
+
+    <section class="section" id="launch">
+      <span class="section-kicker">What the platform does</span>
+      <h2>Built for the week the whole city looks up.</h2>
+      <div class="flow-grid">
+        <article class="flow-card">
+          <span>A</span>
+          <h3>Forecast lift</h3>
+          <p>Blend attendance, weather, transit, creator reach, and partner readiness into a single confidence score.</p>
+        </article>
+        <article class="flow-card">
+          <span>O</span>
+          <h3>Orchestrate crews</h3>
+          <p>Coordinate field teams, sponsor moments, school groups, vendors, and safety sweeps from one command view.</p>
+        </article>
+        <article class="flow-card">
+          <span>Z</span>
+          <h3>Publish momentum</h3>
+          <p>Turn live conditions into clean executive updates, public comms, and next-action prompts.</p>
+        </article>
+      </div>
+
+      <form class="signup" aria-label="Request an Aozora Lift launch packet">
+        <div class="field">
+          <label class="sr-only" for="email" style="position:absolute;left:-9999px;">Work email</label>
+          <input id="email" name="email" type="email" placeholder="work email for the May launch packet">
+        </div>
+        <button class="hot" type="submit">Send packet</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Aozora Lift design language and product surface</span>
+    <span>Kodomo no Hi, translated for launch operations</span>
+  </footer>
+</body>
+</html>
