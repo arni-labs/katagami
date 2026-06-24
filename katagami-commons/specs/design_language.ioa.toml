@@ -147,6 +147,21 @@ name = "usage_count"
 type = "counter"
 initial = 0
 
+[[state]]
+name = "has_credits"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_model_provenance"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_default_art_style"
+type = "bool"
+initial = "false"
+
 # --- Actions: Spec Authoring (Draft & UnderReview) ---
 
 [[action]]
@@ -345,6 +360,14 @@ from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
 params = ["model_provenance"]
 hint = "Record which AI models produced this design language. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the spec, the model that sourced/researched it, and the model that generated its imagery. Editable on Published without re-publishing."
+
+[[action]]
+name = "SetDefaultArtStyle"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_default_art_style", value = "true" }]
+params = ["default_art_style_id"]
+hint = "Link the default ArtStyle entity (its id) this language is built with — the first-class entity-level pairing, distinct from the imagery_direction.pairs_with slug. Editable on Published without re-publishing."
 
 [[action]]
 name = "SetFeatured"
