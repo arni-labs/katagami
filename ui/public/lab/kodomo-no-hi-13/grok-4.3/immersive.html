@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koinobori — Flight</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F8FAFC;
+      --text: #0F172A;
+      --text-strong: #020617;
+      --muted: #64748B;
+      --accent: #00D4FF;
+      --accent-2: #00F38A;
+      --accent-3: #FF2D92;
+      --on-accent: #0A0A0A;
+      --font-sans: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Helvetica Neue", Arial, sans-serif;
+      --font-display: "Hiragino Sans", system-ui, -apple-system, "Noto Sans JP", sans-serif;
+      --fs-base: 17px;
+      --fs-lg: 19px;
+      --fs-xl: 22px;
+      --fs-2xl: 28px;
+      --fs-display: 56px;
+      --lh-tight: 1.05;
+      --lh-normal: 1.5;
+      --ls-tight: -0.025em;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --radius: 16px;
+      --h-control: 48px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; background: #0B0F14; color: var(--text); font-family: var(--font-sans); font-size: var(--fs-base); line-height: var(--lh-normal); overflow-x: hidden; }
+    #world {
+      position: fixed; inset: 0; z-index: 1; display: block; background: #0B0F14;
+    }
+    .content {
+      position: relative; z-index: 10; pointer-events: none;
+    }
+    .scroller {
+      min-height: 620vh; /* enough scroll distance for cinematic segments */
+    }
+    .glass {
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px -12px rgba(0,0,0,0.12);
+    }
+    .panel {
+      pointer-events: auto;
+      max-width: 620px;
+      padding: var(--space-7) var(--space-7);
+      margin: 0 0 var(--space-7) 0;
+    }
+    .panel.dark {
+      background: rgba(15,23,42,0.78);
+      color: #E2E8F0;
+      backdrop-filter: blur(18px);
+    }
+    .panel h1, .panel h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: var(--ls-tight);
+      line-height: var(--lh-tight);
+      margin: 0 0 var(--space-4);
+    }
+    .panel .jp { font-size: 15px; letter-spacing: 0.08em; opacity: 0.85; }
+    .panel p { margin: 0 0 var(--space-5); }
+    .meta {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      opacity: 0.7;
+    }
+    .segment-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .accent { color: var(--accent); }
+    .accent2 { color: var(--accent-2); }
+    .accent3 { color: var(--accent-3); }
+
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; pointer-events: auto;
+    }
+    .nav .logo {
+      font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em;
+      color: #fff; text-decoration: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .nav a { color: #fff; text-decoration: none; font-size: 13px; opacity: 0.9; }
+    .nav a:hover { opacity: 1; }
+
+    .overlay-left {
+      position: fixed; left: 48px; bottom: 48px; z-index: 40; pointer-events: auto;
+      max-width: 420px;
+    }
+    .overlay-right {
+      position: fixed; right: 48px; top: 140px; z-index: 40; pointer-events: auto;
+      max-width: 380px;
+    }
+
+    .story {
+      opacity: 0;
+      transition: opacity 220ms linear;
+      pointer-events: none;
+    }
+    .story.visible { opacity: 1; pointer-events: auto; }
+
+    .scrim {
+      position: fixed; inset: 0; z-index: 5; pointer-events: none;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.0) 68%, rgba(0,0,0,0.36) 100%);
+    }
+
+    .footer {
+      position: relative; z-index: 20; padding: 120px 48px 80px; pointer-events: auto;
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;
+    }
+    .footer .btn {
+      height: 48px; padding: 0 28px; border-radius: 16px; font-weight: 600; font-size: 15px;
+      border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none; font-family: var(--font-display);
+    }
+    .btn-primary { background: var(--accent); color: #0A0A0A; }
+    .btn-ghost { background: rgba(255,255,255,0.9); color: #111; }
+
+    .reduced-fallback {
+      display: none;
+      position: fixed; inset: 0; z-index: 2;
+      background: #0B0F14 url('./media/hero.jpg') center/cover no-repeat;
+      opacity: 0.92;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reduced-fallback { display: block; }
+      #world { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="world"></canvas>
+
+  <!-- Reduced motion / no-webgl fallback -->
+  <div class="reduced-fallback"></div>
+
+  <!-- Fixed minimal nav -->
+  <div class="nav">
+    <a href="landing.html" class="logo">KOINOBORI</a>
+    <div style="display:flex;gap:24px;align-items:center;">
+      <a href="landing.html">Return to land</a>
+      <a href="dashboard.html">Open dashboard</a>
+    </div>
+  </div>
+
+  <!-- Content that creates scroll distance -->
+  <div class="content">
+    <div class="scroller" id="scroller">
+      <!-- Spacer for first camera move -->
+      <div style="height: 38vh;"></div>
+
+      <!-- SEGMENT 1 : THE AVENUE -->
+      <div style="height: 62vh; display:flex; align-items:flex-end; padding: 0 48px;">
+        <div class="glass panel story" id="seg1" style="margin-bottom:48px;">
+          <div class="segment-label" style="color:#111;">01 — THE AVENUE</div>
+          <h1 style="font-size:var(--fs-display);line-height:0.94;color:#111;">こどもの日<br>風が運ぶ</h1>
+          <p style="max-width:38ch;color:#334155;">Hundreds of koinobori rise on tall poles. The wind finds every streamer and the avenue begins to speak.</p>
+          <div class="meta" style="color:#475569;">May 5 • first light • 14,820 families</div>
+        </div>
+      </div>
+
+      <div style="height: 54vh;"></div>
+
+      <!-- SEGMENT 2 : THE RIVER -->
+      <div style="height: 78vh; display:flex; align-items:flex-end; padding:0 48px; justify-content:flex-end;">
+        <div class="glass panel story" id="seg2">
+          <div class="segment-label accent2">02 — THE RIVER BEND</div>
+          <h2 style="font-size:42px; color:#0F172A;">The current carries<br>what we choose to lift.</h2>
+          <p style="max-width:36ch; color:#334155;">From the avenue the river bends. Every flag that reaches the water has already begun its climb.</p>
+        </div>
+      </div>
+
+      <div style="height: 66vh;"></div>
+
+      <!-- SEGMENT 3 : THE FALLS -->
+      <div style="height: 92vh; display:flex; align-items:center; padding:0 48px;">
+        <div class="panel dark story" id="seg3" style="max-width:520px;">
+          <div class="segment-label accent3">03 — THE WATERFALL</div>
+          <h2 style="font-size:42px; color:#F8FAFC;">Only the brave<br>reach the top.</h2>
+          <p style="max-width:38ch; color:#CBD5E1;">The river rises. The carp must climb the white water. In the roar they decide who they will become.</p>
+          <div class="meta" style="margin-top:18px; color:#94A3B8;">The climb is never quiet.</div>
+        </div>
+      </div>
+
+      <div style="height: 58vh;"></div>
+
+      <!-- SEGMENT 4 : DRAGON -->
+      <div style="height: 86vh; display:flex; align-items:flex-end; padding:0 48px; justify-content:flex-end;">
+        <div class="glass panel story" id="seg4" style="max-width:540px; margin-bottom: 72px;">
+          <div class="segment-label" style="color:#111;">04 — THE DRAGON</div>
+          <h2 style="font-size:46px; line-height:0.96; color:#111;">What rises through<br>water becomes sky.</h2>
+          <p style="max-width:38ch; color:#334155;">At the crest the carp opens into dragon. The last banner is the first promise kept.</p>
+          <div style="margin-top:18px; display:flex; gap:12px; align-items:center;">
+            <a href="dashboard.html" class="btn btn-primary" style="height:46px;font-size:14px;">Raise your own</a>
+            <a href="landing.html" class="btn btn-ghost" style="height:46px;font-size:14px;border:1px solid #111;color:#111;background:transparent;">See the season</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 120px;"></div>
+    </div>
+  </div>
+
+  <!-- Bottom fixed overlays -->
+  <div class="overlay-left">
+    <div class="panel glass" style="pointer-events:auto;">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+        <div style="width:6px;height:6px;border-radius:9999px;background:#00D4FF;"></div>
+        <div style="font-size:11px;letter-spacing:0.1em;font-weight:600;color:#111;">LIVE FLIGHT</div>
+      </div>
+      <div style="font-size:13px;color:#334155;">One continuous world. Scroll to move the camera.</div>
+    </div>
+  </div>
+
+  <div class="overlay-right">
+    <div class="panel dark" style="font-size:13px; line-height:1.45; color:#CBD5E1;">
+      鯉のぼり — the carp that became a dragon.<br>
+      <span style="opacity:0.6">A story of courage told in wind and water.</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div style="color:#fff; font-size:13px; opacity:0.7; letter-spacing:0.04em;">KOINOBORI 2026</div>
+      <div style="color:#fff; font-size:22px; font-weight:700; letter-spacing:-0.01em; margin-top:4px;">Raise what matters.</div>
+    </div>
+    <div>
+      <a href="dashboard.html" class="btn btn-primary" style="min-width:188px;">Open the dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONFIG & FALLBACKS =====
+    const canvas = document.getElementById('world');
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Hide 3D on reduced motion or no WebGL
+    function hasWebGL() {
+      try {
+        const test = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext && (test.getContext('webgl') || test.getContext('experimental-webgl')));
+      } catch(e) { return false; }
+    }
+    if (prefersReduced || !hasWebGL()) {
+      canvas.style.display = 'none';
+      return; // static fallback already visible
+    }
+
+    // ===== THREE + GSAP SETUP =====
+    gsap.registerPlugin(ScrollTrigger);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      alpha: false,
+      powerPreference: "high-performance"
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = false;
+
+    const scene = new THREE.Scene();
+
+    // Fog + background for atmosphere (matched)
+    const fogColor = new THREE.Color(0xA8C5D8);
+    scene.fog = new THREE.Fog(fogColor, 58, 192);
+    scene.background = fogColor;
+
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.5, 380);
+    camera.position.set(0, 28, 92);
+
+    // Dual-ref rig targets (updated every frame)
+    const camPosTarget = new THREE.Vector3(0, 28, 92);
+    const camLookTarget = new THREE.Vector3(0, 12, -18);
+
+    // ===== LIGHTING — layered, time-of-day journey =====
+    const ambient = new THREE.AmbientLight(0xA8C5D8, 0.72);
+    scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0xFFF1D6, 1.05);
+    keyLight.position.set(18, 62, 26);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x9CC8E8, 0.55);
+    fillLight.position.set(-42, 22, -12);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0xFFE4B3, 0.9, 240);
+    rimLight.position.set(-12, 48, -48);
+    scene.add(rimLight);
+
+    // ===== WORLD: GROUND + TERRAIN =====
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0xC8D9C2, flatShading: true });
+    const groundGeo = new THREE.PlaneGeometry(280, 280, 22, 22);
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI * 0.5;
+    ground.position.y = -0.8;
+
+    // Deform terrain for hills
+    const gPos = ground.geometry.attributes.position;
+    for (let i = 0; i < gPos.count; i++) {
+      const x = gPos.getX(i);
+      const y = gPos.getY(i);
+      let h = 0;
+      h += Math.sin(x * 0.027 + 1.6) * 3.2;
+      h += Math.sin(y * 0.031 - 0.8) * 2.6;
+      h += Math.sin((x + y) * 0.018) * 1.9;
+      if (Math.abs(y) < 28) h -= Math.max(0, (28 - Math.abs(y)) * 0.08); // flatten river corridor
+      gPos.setZ(i, h);
+    }
+    gPos.needsUpdate = true;
+    ground.geometry.computeVertexNormals();
+    scene.add(ground);
+
+    // ===== RIVER (bed + animated water) =====
+    const riverBedMat = new THREE.MeshLambertMaterial({ color: 0x7B9AA8, flatShading: true });
+    const riverBed = new THREE.Mesh(new THREE.PlaneGeometry(46, 196, 4, 36), riverBedMat);
+    riverBed.rotation.x = -Math.PI * 0.5;
+    riverBed.position.set(6, -0.2, -22);
+    scene.add(riverBed);
+
+    // Water surface — slight waves via vertex animation in render
+    const waterMat = new THREE.MeshLambertMaterial({ color: 0xA8D9E8, flatShading: true, transparent: true, opacity: 0.92 });
+    const waterGeo = new THREE.PlaneGeometry(42, 192, 3, 28);
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI * 0.5;
+    water.position.set(6.5, 0.35, -20);
+    scene.add(water);
+
+    // ===== WATERFALL — stepped low-poly planes + foam lines =====
+    const fallMat = new THREE.MeshLambertMaterial({ color: 0xE8F0F4, flatShading: true });
+    const fallGroup = new THREE.Group();
+    // Main fall face
+    const fall1 = new THREE.Mesh(new THREE.PlaneGeometry(29, 26, 2, 4), fallMat);
+    fall1.rotation.x = -0.7;
+    fall1.position.set(4, 11, -78);
+    fallGroup.add(fall1);
+
+    const fall2 = new THREE.Mesh(new THREE.PlaneGeometry(24, 18, 2, 3), fallMat);
+    fall2.rotation.x = -1.15;
+    fall2.position.set(5, 19, -70);
+    fallGroup.add(fall2);
+
+    const fall3 = new THREE.Mesh(new THREE.PlaneGeometry(19, 14, 1, 2), fallMat);
+    fall3.rotation.x = -0.95;
+    fall3.position.set(6, 26.5, -63);
+    fallGroup.add(fall3);
+
+    // Side rocks
+    const rockMat = new THREE.MeshLambertMaterial({ color: 0x9BA8A0, flatShading: true });
+    const rockL = new THREE.Mesh(new THREE.BoxGeometry(11, 29, 8), rockMat);
+    rockL.position.set(-11, 15, -71);
+    fallGroup.add(rockL);
+
+    const rockR = new THREE.Mesh(new THREE.BoxGeometry(9, 32, 7), rockMat);
+    rockR.position.set(19, 14, -73);
+    fallGroup.add(rockR);
+
+    scene.add(fallGroup);
+
+    // ===== DISTANT SCENERY (low-poly hills + horizon) =====
+    const hillMat = new THREE.MeshLambertMaterial({ color: 0x9BB38F, flatShading: true });
+    function makeHill(x, z, sx, sy, sz, rot) {
+      const h = new THREE.Mesh(new THREE.ConeGeometry(sx, sy, 5), hillMat);
+      h.position.set(x, sy * 0.4, z);
+      h.rotation.y = rot || 0;
+      h.scale.z = sz / sx;
+      scene.add(h);
+      return h;
+    }
+    makeHill(-82, -118, 38, 31, 28, 0.6);
+    makeHill(64, -104, 29, 24, 21, -1.1);
+    makeHill(-48, -146, 51, 27, 39, 2.4);
+    makeHill(96, -131, 24, 19, 18, -0.3);
+
+    // Far ridge plane
+    const ridge = new THREE.Mesh(new THREE.PlaneGeometry(310, 44, 1, 1), new THREE.MeshLambertMaterial({ color: 0x8BA38A, flatShading: true }));
+    ridge.rotation.x = -1.02;
+    ridge.position.set(0, 9, -148);
+    scene.add(ridge);
+
+    // ===== POLES + KOINOBORI (INSTANCED + CUSTOM SHADER) =====
+    const poleMat = new THREE.MeshLambertMaterial({ color: 0x3C3F44, flatShading: true });
+    const poleGeo = new THREE.CylinderGeometry(0.26, 0.3, 18.5, 5);
+    const NUM_POLES = 19;
+    const poles = new THREE.InstancedMesh(poleGeo, poleMat, NUM_POLES);
+    const polePositions = [];
+
+    const flagMat = new THREE.ShaderMaterial({
+      flatShading: true,
+      uniforms: {
+        time: { value: 0 },
+        windStrength: { value: 1.0 },
+        windDir: { value: new THREE.Vector2(0.6, 0.35) },
+        phase: { value: 0 }
+      },
+      vertexShader: `
+        uniform float time;
+        uniform float windStrength;
+        uniform vec2 windDir;
+        uniform float phase;
+        varying vec3 vColor;
+        void main() {
+          vec3 pos = position;
+          float along = (uv.y - 0.5) * 2.0;
+          // traveling sine waves for cloth ripple
+          float wave1 = sin(along * 3.6 + time * 2.6 + phase) * 0.9;
+          float wave2 = sin(along * 5.8 - time * 1.9 + phase * 0.7) * 0.55;
+          float lateral = (wave1 + wave2) * windStrength * 0.85;
+          // wind tilt + directional billow
+          pos.x += lateral * windDir.x;
+          pos.z += lateral * windDir.y * 0.6 + sin(time * 1.3 + phase) * 0.4 * windStrength;
+          // slight vertical lift variation
+          pos.y += sin(along * 1.7 + time * 1.4) * 0.18 * windStrength;
+          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+          vColor = color;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          gl_FragColor = vec4(vColor, 1.0);
+        }
+      `,
+      vertexColors: true
+    });
+
+    // Custom flag geometry (tapered streamer shape)
+    function createFlagGeometry(length = 9.5, width = 2.8) {
+      const geo = new THREE.PlaneGeometry(width, length, 1, 6);
+      // Taper the streamer toward the tail
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i);
+        const t = (y + length * 0.5) / length;
+        const scaleX = 0.92 + (1.0 - t) * 0.38;
+        pos.setX(i, pos.getX(i) * scaleX);
+      }
+      pos.needsUpdate = true;
+      geo.computeVertexNormals();
+      return geo;
+    }
+    const flagGeo = createFlagGeometry();
+
+    const flags = new THREE.InstancedMesh(flagGeo, flagMat, NUM_POLES);
+    flags.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    // Traditional vivid koinobori palette + stripe variation
+    const flagColors = [
+      [0.06,0.08,0.11], // black
+      [0.92,0.18,0.28], // red
+      [0.12,0.48,0.88], // blue
+      [0.18,0.72,0.42], // green
+      [0.92,0.18,0.28], // red
+      [0.06,0.08,0.11],
+      [0.12,0.48,0.88],
+      [0.18,0.72,0.42],
+      [0.92,0.18,0.28],
+      [0.06,0.08,0.11],
+      [0.12,0.48,0.88],
+      [0.18,0.72,0.42],
+      [0.92,0.18,0.28],
+      [0.06,0.08,0.11],
+      [0.12,0.48,0.88],
+      [0.18,0.72,0.42],
+      [0.92,0.18,0.28],
+      [0.06,0.08,0.11],
+      [0.12,0.48,0.88]
+    ];
+
+    const dummy = new THREE.Object3D();
+    const flagPhases = [];
+
+    for (let i = 0; i < NUM_POLES; i++) {
+      const x = (i - NUM_POLES * 0.5) * 6.8 + (i % 2 === 0 ? 1.6 : -1.2);
+      const z = -12 - i * 6.1;
+      const y = 6.5 + Math.sin(i * 0.6) * 0.8;
+
+      // pole
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(0, (i % 3) * 0.06 - 0.03, 0);
+      dummy.updateMatrix();
+      poles.setMatrixAt(i, dummy.matrix);
+
+      // flag instance position (top of pole)
+      dummy.position.set(x, y + 8.1, z);
+      dummy.rotation.set(-0.08 + (i % 2) * 0.03, (i % 3) * 0.09, 0.02);
+      dummy.updateMatrix();
+      flags.setMatrixAt(i, dummy.matrix);
+
+      // color per flag
+      const col = flagColors[i % flagColors.length];
+      const c = new THREE.Color(col[0], col[1], col[2]);
+      flags.setColorAt(i, c);
+
+      polePositions.push({ x, y: y + 8.1, z });
+      flagPhases.push(i * 0.9);
+    }
+    poles.instanceMatrix.needsUpdate = true;
+    flags.instanceMatrix.needsUpdate = true;
+    if (flags.instanceColor) flags.instanceColor.needsUpdate = true;
+
+    scene.add(poles);
+    scene.add(flags);
+
+    // Fukinagashi windsocks (smaller instanced)
+    const sockGeo = new THREE.CylinderGeometry(0.65, 0.28, 3.4, 5, 1, true);
+    const sockMat = new THREE.MeshLambertMaterial({ color: 0xE8E4D8, flatShading: true, side: THREE.DoubleSide });
+    const socks = new THREE.InstancedMesh(sockGeo, sockMat, NUM_POLES);
+    for (let i = 0; i < NUM_POLES; i++) {
+      const p = polePositions[i];
+      dummy.position.set(p.x + 1.8, p.y + 1.1, p.z - 0.6);
+      dummy.rotation.set(0.6, 0.3, 0.2);
+      dummy.updateMatrix();
+      socks.setMatrixAt(i, dummy.matrix);
+    }
+    socks.instanceMatrix.needsUpdate = true;
+    scene.add(socks);
+
+    // ===== PETALS / PARTICLES (instanced drift) =====
+    const petalGeo = new THREE.PlaneGeometry(0.7, 0.7);
+    const petalMat = new THREE.MeshLambertMaterial({ color: 0xF4D9C8, flatShading: true, side: THREE.DoubleSide });
+    const NUM_PETALS = 38;
+    const petals = new THREE.InstancedMesh(petalGeo, petalMat, NUM_PETALS);
+    const petalData = [];
+    for (let i = 0; i < NUM_PETALS; i++) {
+      const px = (Math.random() - 0.5) * 88;
+      const py = 6 + Math.random() * 38;
+      const pz = -10 - Math.random() * 92;
+      dummy.position.set(px, py, pz);
+      dummy.rotation.set(Math.random() * 2, Math.random() * 3, Math.random() * 2);
+      dummy.scale.setScalar(0.6 + Math.random() * 0.7);
+      dummy.updateMatrix();
+      petals.setMatrixAt(i, dummy.matrix);
+      petalData.push({
+        x: px, y: py, z: pz,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: -2.1 - Math.random() * 1.1,
+        vz: (Math.random() - 0.5) * 1.4,
+        rot: Math.random() * Math.PI * 2,
+        rs: 0.6 + Math.random() * 1.6
+      });
+    }
+    petals.instanceMatrix.needsUpdate = true;
+    scene.add(petals);
+
+    // ===== DRAGON (simple low-poly, at top of falls) =====
+    const dragon = new THREE.Group();
+    const dMat = new THREE.MeshLambertMaterial({ color: 0xE8C36B, flatShading: true });
+
+    // body segments
+    const body1 = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 1.9, 9.5, 5), dMat);
+    body1.rotation.z = -0.6;
+    body1.position.set(3, 35, -57);
+    dragon.add(body1);
+
+    const body2 = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.2, 6.8, 5), dMat);
+    body2.rotation.z = -1.05;
+    body2.position.set(-1, 38.5, -62);
+    dragon.add(body2);
+
+    const body3 = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.7, 5.2, 4), dMat);
+    body3.rotation.z = -1.35;
+    body3.position.set(-5.5, 39, -67);
+    dragon.add(body3);
+
+    // head
+    const head = new THREE.Mesh(new THREE.ConeGeometry(1.8, 3.8, 5), dMat);
+    head.rotation.z = -1.8;
+    head.position.set(-9.5, 37, -71);
+    dragon.add(head);
+
+    // horns
+    const hornMat = new THREE.MeshLambertMaterial({ color: 0xC8A55C, flatShading: true });
+    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.3, 2.4, 3), hornMat);
+    hornL.position.set(-11.2, 39.5, -73);
+    hornL.rotation.set(-0.6, 0.3, -2.2);
+    dragon.add(hornL);
+    const hornR = hornL.clone();
+    hornR.position.set(-11.2, 36, -70);
+    hornR.rotation.set(0.4, -0.2, -1.8);
+    dragon.add(hornR);
+
+    // wings
+    const wingMat = new THREE.MeshLambertMaterial({ color: 0xD4A85C, flatShading: true });
+    const wingL = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 4.5), wingMat);
+    wingL.rotation.set(0.2, -0.7, -0.3);
+    wingL.position.set(-2, 37.5, -60);
+    dragon.add(wingL);
+    const wingR = wingL.clone();
+    wingR.rotation.set(-0.5, 1.6, 1.2);
+    wingR.position.set(-2, 39, -61);
+    dragon.add(wingR);
+
+    scene.add(dragon);
+
+    // ===== CAMERA PATH SEGMENTS (explicit ranges + cinematic targets) =====
+    // Progress 0 → 1 mapped to scroll
+    const segments = [
+      { start: 0.00, end: 0.19, pos: [ -6, 31, 84 ],  look: [  4, 14, -14 ], dur: 1.0 },
+      { start: 0.19, end: 0.39, pos: [ 19, 19, 52 ],  look: [  3,  9, -34 ], dur: 1.05 },
+      { start: 0.39, end: 0.57, pos: [ 29, 13, 14 ],  look: [  8,  6, -56 ], dur: 0.95 },
+      { start: 0.57, end: 0.75, pos: [ 14, 17, -18 ], look: [  2, 14, -69 ], dur: 1.15 },
+      { start: 0.75, end: 0.88, pos: [  2, 28, -48 ], look: [  4, 26, -71 ], dur: 0.85 },
+      { start: 0.88, end: 1.00, pos: [ -7, 35, -59 ], look: [ -5, 37, -68 ], dur: 1.0 }
+    ];
+
+    let scrollProgress = 0;
+    let lastTime = 0;
+
+    function getCameraForProgress(p) {
+      // find active segment and interpolate
+      for (let s of segments) {
+        if (p >= s.start && p <= s.end) {
+          const t = (p - s.start) / (s.end - s.start);
+          // simple smoothstep for rhythm
+          const easeT = t * t * (3 - 2 * t);
+          const a = segments.indexOf(s) > 0 ? segments[segments.indexOf(s)-1] : s;
+          const fromPos = (segments.indexOf(s) > 0) ? a.pos : s.pos;
+          const fromLook = (segments.indexOf(s) > 0) ? a.look : s.look;
+
+          const px = fromPos[0] + (s.pos[0] - fromPos[0]) * easeT;
+          const py = fromPos[1] + (s.pos[1] - fromPos[1]) * easeT;
+          const pz = fromPos[2] + (s.pos[2] - fromPos[2]) * easeT;
+
+          const lx = fromLook[0] + (s.look[0] - fromLook[0]) * easeT;
+          const ly = fromLook[1] + (s.look[1] - fromLook[1]) * easeT;
+          const lz = fromLook[2] + (s.look[2] - fromLook[2]) * easeT;
+
+          return {
+            pos: new THREE.Vector3(px, py, pz),
+            look: new THREE.Vector3(lx, ly, lz)
+          };
+        }
+      }
+      // clamp ends
+      const last = segments[segments.length - 1];
+      return {
+        pos: new THREE.Vector3(...last.pos),
+        look: new THREE.Vector3(...last.look)
+      };
+    }
+
+    // GSAP ScrollTrigger — native scroll, scrub camera progress
+    const scroller = document.getElementById('scroller');
+
+    ScrollTrigger.create({
+      trigger: scroller,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 0.6, // frame-locked feel
+      onUpdate: (self) => {
+        scrollProgress = self.progress;
+      }
+    });
+
+    // ===== ANIMATION LOOP =====
+    let raf = null;
+    let isPaused = false;
+
+    function updateTimeOfDay(progress) {
+      // morning (cool bright) → dusk (warmer, lower)
+      const sunProgress = Math.min(1, Math.max(0, (progress - 0.18) / 0.78));
+
+      // key light angle + color
+      const sunY = 58 + sunProgress * 18;
+      const sunX = 18 - sunProgress * 44;
+      keyLight.position.set(sunX, sunY, 26 - sunProgress * 32);
+      const keyColor = new THREE.Color().setHSL(0.11 - sunProgress * 0.03, 0.58, 0.92 - sunProgress * 0.18);
+      keyLight.color.copy(keyColor);
+      keyLight.intensity = 1.05 - sunProgress * 0.28;
+
+      // ambient cool to warmer
+      ambient.intensity = 0.72 - sunProgress * 0.12;
+      ambient.color.setHSL(0.58, 0.26, 0.82 - sunProgress * 0.1);
+
+      // fog warms slightly at end
+      const f = 0.62 + sunProgress * 0.16;
+      fogColor.setHSL(0.55 - sunProgress * 0.06, 0.28, f);
+      scene.fog.color.copy(fogColor);
+      scene.background.copy(fogColor);
+
+      // rim becomes warmer
+      rimLight.intensity = 0.9 + sunProgress * 0.35;
+      rimLight.color.setHSL(0.09 + sunProgress * 0.03, 0.7, 0.88);
+    }
+
+    function animate(now = 0) {
+      if (isPaused) { raf = requestAnimationFrame(animate); return; }
+
+      const delta = (now - lastTime) * 0.001;
+      lastTime = now;
+
+      // Update camera targets from scroll progress (dual-ref rig)
+      const cam = getCameraForProgress(scrollProgress);
+      camPosTarget.copy(cam.pos);
+      camLookTarget.copy(cam.look);
+
+      // Smooth lerp rig (cinematic, not twitchy)
+      camera.position.lerp(camPosTarget, 0.072);
+      camera.lookAt(camLookTarget);
+
+      // Time of day
+      updateTimeOfDay(scrollProgress);
+
+      // Animate flags (shader uniforms)
+      const t = now * 0.0009;
+      flagMat.uniforms.time.value = t;
+      // Gentle wind modulation with scroll (more at climax)
+      const wind = 0.78 + Math.sin(scrollProgress * 6.2) * 0.16 + scrollProgress * 0.45;
+      flagMat.uniforms.windStrength.value = wind;
+
+      // Animate water surface waves
+      const wPos = water.geometry.attributes.position;
+      for (let i = 0; i < wPos.count; i++) {
+        const x = wPos.getX(i);
+        const y = wPos.getY(i);
+        const wave = Math.sin(x * 0.6 + t * 3.4) * 0.16 + Math.sin(y * 1.1 + t * 2.2) * 0.09;
+        wPos.setZ(i, wave);
+      }
+      wPos.needsUpdate = true;
+
+      // Petal drift (instanced)
+      const pMat = petals.instanceMatrix;
+      for (let i = 0; i < NUM_PETALS; i++) {
+        const d = petalData[i];
+        d.y += d.vy * delta * 3.6;
+        d.x += (d.vx + scrollProgress * 1.6) * delta * 2.2;
+        d.z += d.vz * delta * 2.8;
+
+        // wind push
+        d.x += Math.sin(t * 1.6 + i) * 0.6 * delta;
+        d.z += Math.cos(t * 1.2 + i * 0.7) * 0.4 * delta;
+
+        if (d.y < -2 || d.z > 6) {
+          // respawn high and upstream
+          d.x = (Math.random() - 0.5) * 66 + scrollProgress * -10;
+          d.y = 36 + Math.random() * 14;
+          d.z = -48 - Math.random() * 38;
+        }
+
+        dummy.position.set(d.x, d.y, d.z);
+        dummy.rotation.set(d.rot + t * d.rs * 0.4, t * 0.7, d.rot * 0.6);
+        dummy.scale.setScalar(0.6 + Math.sin(t * 2 + i) * 0.08 + 0.12);
+        dummy.updateMatrix();
+        pMat.setMatrixAt(i, dummy.matrix);
+      }
+      pMat.needsUpdate = true;
+
+      // Gentle dragon wing breathing
+      dragon.rotation.y = Math.sin(t * 0.6) * 0.035 - 0.04;
+      dragon.rotation.x = Math.sin(t * 0.3) * 0.015;
+
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(animate);
+    }
+
+    // Segment story reveals (opacity driven by progress ranges)
+    const segEls = [
+      { el: document.getElementById('seg1'), range: [0.0, 0.28] },
+      { el: document.getElementById('seg2'), range: [0.18, 0.48] },
+      { el: document.getElementById('seg3'), range: [0.49, 0.72] },
+      { el: document.getElementById('seg4'), range: [0.71, 1.0] }
+    ];
+
+    function updateSegmentVisibility(p) {
+      for (const s of segEls) {
+        const [a, b] = s.range;
+        const inside = p > a && p < b;
+        if (s.el) {
+          s.el.classList.toggle('visible', inside);
+          // hide completely outside a small buffer to avoid flash on transitions
+          s.el.style.display = (p < a - 0.03 || p > b + 0.03) ? 'none' : 'block';
+        }
+      }
+    }
+
+    // Visibility + performance
+    function onVisibility() {
+      isPaused = document.hidden;
+      if (!isPaused && !raf) raf = requestAnimationFrame(animate);
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // Resize
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // Start render loop
+    function start() {
+      // initial camera placement
+      const init = getCameraForProgress(0.01);
+      camera.position.copy(init.pos);
+      camera.lookAt(init.look);
+      camPosTarget.copy(init.pos);
+      camLookTarget.copy(init.look);
+
+      // Prime first story panel
+      const s1 = document.getElementById('seg1');
+      if (s1) s1.classList.add('visible');
+
+      // Kick the loop
+      lastTime = performance.now();
+      raf = requestAnimationFrame(animate);
+
+      // Also drive segment visibility in a RAF-synced loop (cheap)
+      setInterval(() => {
+        if (!isPaused) updateSegmentVisibility(scrollProgress);
+      }, 80);
+    }
+
+    // Kick off
+    start();
+
+    // Keyboard niceties
+    document.addEventListener('keydown', function(e) {
+      if (e.key.toLowerCase() === 'r') {
+        // reset camera journey for testing
+        scrollProgress = 0;
+        window.scrollTo(0, 0);
+      }
+    });
+
+    // Make sure initial scroll position gives good starting view
+    window.scrollTo(0, 40);
+  </script>
+</body>
+</html>

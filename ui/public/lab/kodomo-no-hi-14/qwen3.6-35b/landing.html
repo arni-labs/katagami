@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOI — Rise Above the Current</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   KOI Design Language — landing.html
+   ======================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Neutrals */
+  --color-white: #FFFFFF;
+  --color-bg: #FAFBFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E8ECF0;
+  --color-text: #0F1923;
+  --color-text-secondary: #5A6A7A;
+  --color-text-tertiary: #8A96A4;
+
+  /* Accent — electric sky-blue */
+  --color-accent: #00A0FF;
+  --color-accent-hover: #0088DD;
+  --color-accent-active: #006BBB;
+  --color-accent-light: #E8F6FF;
+
+  /* Accent — fresh green */
+  --color-green: #00D68F;
+  --color-green-hover: #00B87A;
+  --color-green-light: #E6FAF3;
+
+  /* Accent — hot coral */
+  --color-coral: #FF4D6A;
+  --color-coral-hover: #E63A55;
+  --color-coral-light: #FFF0F3;
+
+  /* Semantic */
+  --color-success: #00D68F;
+  --color-warning: #FFB020;
+  --color-error: #FF4D6A;
+  --color-info: #00A0FF;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+
+  /* Radius */
+  --radius-none: 0;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-round: 9999px;
+
+  /* Height token — shared control height */
+  --height-control: 44px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15,25,35,0.06);
+  --shadow-md: 0 4px 16px rgba(15,25,35,0.08);
+  --shadow-lg: 0 8px 32px rgba(15,25,35,0.10);
+  --shadow-accent: 0 4px 24px rgba(0,160,255,0.15);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  background: var(--color-white);
+}
+
+/* ---- NAV ---- */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.nav.scrolled {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-logo {
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-white);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.nav.scrolled .nav-logo {
+  color: var(--color-text);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav.scrolled .nav-links a {
+  color: var(--color-text-secondary);
+}
+
+.nav-links a:hover {
+  color: var(--color-white);
+}
+
+.nav.scrolled .nav-links a:hover {
+  color: var(--color-text);
+}
+
+.nav-cta {
+  height: var(--height-control);
+  padding: 0 var(--space-xl);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  background: var(--color-white);
+  color: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.nav-cta:hover {
+  background: var(--color-accent-light);
+  transform: translateY(-1px);
+}
+
+.nav-cta:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-white), 0 0 0 4px var(--color-accent);
+}
+
+/* ---- HERO ---- */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background: var(--color-text);
+}
+
+.hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.85;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    to bottom,
+    rgba(15,25,35,0.3) 0%,
+    rgba(15,25,35,0.1) 40%,
+    rgba(15,25,35,0.5) 100%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 800px;
+  padding: var(--space-4xl) var(--space-xl);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 28px;
+  padding: 0 var(--space-md);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-accent);
+  background: rgba(255,255,255,0.12);
+  border-radius: var(--radius-round);
+  margin-bottom: var(--space-xl);
+  backdrop-filter: blur(8px);
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-green);
+}
+
+.hero h1 {
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-white);
+  margin-bottom: var(--space-xl);
+}
+
+.hero h1 .accent {
+  color: var(--color-accent);
+}
+
+.hero-subtitle {
+  font-size: 1.375rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.8);
+  max-width: 560px;
+  margin: 0 auto var(--space-2xl);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--height-control);
+  padding: 0 var(--space-xl);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-white);
+  box-shadow: var(--shadow-accent);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 32px rgba(0,160,255,0.25);
+}
+
+.btn-primary:active {
+  background: var(--color-accent-active);
+  transform: translateY(0);
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-white), 0 0 0 4px var(--color-accent), var(--shadow-accent);
+}
+
+.btn-primary:disabled {
+  background: rgba(138,150,164,0.4);
+  color: rgba(255,255,255,0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-white);
+  border: 2px solid rgba(255,255,255,0.35);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.6);
+}
+
+.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-white), 0 0 0 4px rgba(0,160,255,0.5);
+}
+
+.btn-secondary:disabled {
+  background: transparent;
+  border-color: rgba(138,150,164,0.3);
+  color: rgba(138,150,164,0.5);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.btn-ghost:hover {
+  background: var(--color-bg);
+}
+
+.btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent), 0 0 0 4px var(--color-accent-light);
+}
+
+.btn-ghost:disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+/* ---- SOCIAL PROOF ---- */
+.social-proof {
+  padding: var(--space-3xl) var(--space-xl);
+  text-align: center;
+  background: var(--color-bg);
+}
+
+.social-proof p {
+  font-size: 0.9375rem;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-lg);
+  font-weight: 500;
+}
+
+.logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3xl);
+  flex-wrap: wrap;
+  max-width: 800px;
+  margin: 0 auto;
+  opacity: 0.4;
+}
+
+.logos span {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/* ---- FEATURES ---- */
+.features {
+  padding: var(--space-4xl) var(--space-xl);
+  background: var(--color-white);
+}
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 28px;
+  padding: 0 var(--space-md);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  border-radius: var(--radius-round);
+  margin-bottom: var(--space-lg);
+}
+
+.section-title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.section-subtitle {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  max-width: 560px;
+  margin-bottom: var(--space-3xl);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xl);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.feature-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+  font-size: 1.5rem;
+}
+
+.feature-icon.blue { background: var(--color-accent-light); }
+.feature-icon.green { background: var(--color-green-light); }
+.feature-icon.coral { background: var(--color-coral-light); }
+
+.feature-card h3 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-sm);
+}
+
+.feature-card p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* ---- SHOWCASE ---- */
+.showcase {
+  padding: var(--space-4xl) var(--space-xl);
+  background: var(--color-bg);
+}
+
+.showcase-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.showcase-image {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  margin-top: var(--space-3xl);
+}
+
+.showcase-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---- TESTIMONIAL ---- */
+.testimonial {
+  padding: var(--space-4xl) var(--space-xl);
+  background: var(--color-white);
+}
+
+.testimonial-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.testimonial blockquote {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin-bottom: var(--space-xl);
+  letter-spacing: var(--tracking-tight);
+}
+
+.testimonial cite {
+  font-style: normal;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+}
+
+.testimonial cite strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* ---- CTA ---- */
+.cta {
+  padding: var(--space-4xl) var(--space-xl);
+  text-align: center;
+  background: var(--color-text);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 140%;
+  height: 200%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,160,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cta h2 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-white);
+  margin-bottom: var(--space-md);
+}
+
+.cta p {
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: var(--space-2xl);
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta .btn-primary {
+  background: var(--color-accent);
+  color: var(--color-white);
+  font-size: 1.125rem;
+  padding: 0 var(--space-2xl);
+}
+
+/* ---- FOOTER ---- */
+.footer {
+  padding: var(--space-3xl) var(--space-xl);
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.footer p {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+.footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.5rem; }
+  .hero-subtitle { font-size: 1.125rem; }
+  .hero-actions { flex-direction: column; }
+  .btn { width: 100%; max-width: 320px; }
+  .logos { gap: var(--space-xl); }
+  .logos span { font-size: 0.9375rem; }
+}
+
+/* ---- REDUCED MOTION ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">KOI</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#showcase">Product</a></li>
+    <li><a href="#testimonial">Customers</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <button class="nav-cta">Get Started</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-image">
+    <img src="media/hero-koinobori.jpg" alt="Koinobori carp streamers rising against a brilliant early-summer sky">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Now in Public Beta</div>
+    <h1>Rise above<br>the <span class="accent">current</span></h1>
+    <p class="hero-subtitle">
+      KOI is the analytics platform that helps teams swim upstream. 
+      Real-time insights, zero friction, beautiful by default.
+    </p>
+    <div class="hero-actions">
+      <a href="#" class="btn btn-primary">Start Free Trial</a>
+      <a href="#" class="btn btn-secondary">Watch Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="social-proof">
+  <p>Trusted by forward-thinking teams worldwide</p>
+  <div class="logos">
+    <span>VERCEL</span>
+    <span>LINEAR</span>
+    <span>NOTION</span>
+    <span>FIGMA</span>
+    <span>STRIPE</span>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div style="max-width:1280px;margin:0 auto;">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
+    <p class="section-subtitle">
+      Three pillars of clarity. Built for teams that value signal over noise 
+      and move faster than their dashboards.
+    </p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00A0FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Real-time Pulse</h3>
+        <p>Live metrics that update as your systems change. No refresh needed. No waiting. Just clarity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        </div>
+        <h3>Upstream Signals</h3>
+        <p>AI-powered anomaly detection that surfaces what matters before it becomes an incident.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon coral">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF4D6A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Time Travel</h3>
+        <p>Go back to any moment. Compare any period. Understand the full story, not just the snapshot.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section class="showcase" id="showcase">
+  <div class="showcase-inner">
+    <div class="section-label">Product</div>
+    <h2 class="section-title">Built for the way<br>you actually work</h2>
+    <p class="section-subtitle">
+      A dashboard that feels like it was designed for your team — 
+      because it was. Clean, fast, and opinionated about what matters.
+    </p>
+    <div class="showcase-image">
+      <img src="media/dashboard-mockup.jpg" alt="KOI dashboard showing analytics and metrics">
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial" id="testimonial">
+  <div class="testimonial-inner">
+    <blockquote>
+      "KOI replaced three tools and two spreadsheets. Our team actually looks 
+      at the dashboard now. That's never happened before."
+    </blockquote>
+    <cite>
+      <strong>Mika Tanaka</strong> · Head of Product, Streamline Labs
+    </cite>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="pricing">
+  <h2>Ready to swim upstream?</h2>
+  <p>Start your free 14-day trial. No credit card required. Full access to everything.</p>
+  <a href="#" class="btn btn-primary">Start Free Trial</a>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>&copy; 2026 KOI Analytics · <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Status</a></p>
+</footer>
+
+<script>
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 50) {
+    nav.classList.add('scrolled');
+  } else {
+    nav.classList.remove('scrolled');
+  }
+}, { passive: true });
+</script>
+</body>
+</html>

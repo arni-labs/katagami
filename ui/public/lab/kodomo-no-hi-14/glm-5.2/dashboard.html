@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SORYU — Dashboard</title>
+<style>
+  /* ===== SORYU DESIGN TOKENS ===== */
+  :root {
+    --color-bg: #FFFFFF;
+    --color-surface: #F7F8FA;
+    --color-ink: #0A0E14;
+    --color-ink-secondary: #4A5568;
+    --color-ink-muted: #8A94A6;
+    --color-line: #E8ECF1;
+
+    --color-sky: #0066FF;
+    --color-sky-bright: #00B4FF;
+    --color-green: #00C853;
+    --color-coral: #FF3D6E;
+
+    --color-success: #00C853;
+    --color-warning: #FF9500;
+    --color-danger: #FF3D6E;
+    --color-info: #00B4FF;
+
+    --color-sky-tint: #EBF5FF;
+    --color-green-tint: #E8FBF0;
+    --color-coral-tint: #FFF0F4;
+    --color-warning-tint: #FFF6E9;
+
+    --text-display: 3.5rem;
+    --text-h1: 2.5rem;
+    --text-h2: 2rem;
+    --text-h3: 1.5rem;
+    --text-h4: 1.25rem;
+    --text-body: 1.0625rem;
+    --text-body-sm: 0.9375rem;
+    --text-label: 0.875rem;
+    --text-caption: 0.8125rem;
+    --text-micro: 0.6875rem;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    --radius-none: 0px;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-pill: 9999px;
+
+    --control-height: 44px;
+
+    --shadow-sm: 0 1px 3px rgba(10,14,20,0.06);
+    --shadow-md: 0 4px 16px rgba(10,14,20,0.08);
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+
+    --sidebar-w: 240px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { font-family: var(--font); font-size: var(--text-body); line-height: 1.6; color: var(--color-ink); background: var(--color-surface); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  img { display: block; max-width: 100%; height: auto; }
+  input, select, textarea { font-family: inherit; }
+
+  .eyebrow { font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-sky); }
+
+  /* ===== BUTTONS ===== */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--control-height); padding: 0 20px; border-radius: var(--radius-md); font-size: var(--text-label); font-weight: 600; letter-spacing: 0.01em; transition: all var(--duration-fast) var(--ease); white-space: nowrap; }
+  .btn-primary { background: var(--color-sky); color: #fff; }
+  .btn-primary:hover { background: var(--color-sky-bright); }
+  .btn-primary:active { transform: scale(0.98); background: #0052cc; }
+  .btn-secondary { background: var(--color-surface); color: var(--color-ink); }
+  .btn-secondary:hover { background: #EDF0F4; }
+  .btn-secondary:active { transform: scale(0.98); }
+  .btn-ghost { background: transparent; color: var(--color-ink-secondary); }
+  .btn-ghost:hover { background: var(--color-surface); color: var(--color-ink); }
+  .btn-danger { background: var(--color-coral); color: #fff; }
+  .btn-danger:hover { background: #e63560; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .btn:focus-visible { outline: 2px solid var(--color-sky); outline-offset: 2px; }
+  .btn-sm { height: 36px; padding: 0 16px; font-size: var(--text-caption); }
+  .btn-icon { width: var(--control-height); height: var(--control-height); padding: 0; border-radius: var(--radius-md); }
+  .btn-icon.btn-sm { width: 36px; height: 36px; }
+
+  /* ===== INPUTS ===== */
+  .input, .select { height: var(--control-height); padding: 0 16px; border-radius: var(--radius-sm); background: var(--color-surface); border: none; font-size: var(--text-body-sm); color: var(--color-ink); transition: all var(--duration-fast) var(--ease); width: 100%; }
+  .input::placeholder { color: var(--color-ink-muted); }
+  .input:focus, .select:focus { outline: none; box-shadow: 0 0 0 2px var(--color-sky), 0 0 0 4px var(--color-sky-tint); background: var(--color-bg); }
+  .input:disabled, .select:disabled { opacity: 0.5; cursor: not-allowed; background: var(--color-surface); }
+  .input-icon { position: relative; }
+  .input-icon svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--color-ink-muted); pointer-events: none; }
+  .input-icon .input { padding-left: 42px; }
+
+  .select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A94A6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  /* ===== TOGGLE ===== */
+  .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--color-line); border-radius: var(--radius-pill); transition: background var(--duration-normal) var(--ease); }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); transition: transform var(--duration-normal) var(--ease); }
+  .toggle input:checked + .toggle-track { background: var(--color-sky); }
+  .toggle input:checked + .toggle-track .toggle-thumb { transform: translateX(20px); }
+  .toggle input:focus-visible + .toggle-track { box-shadow: 0 0 0 2px var(--color-sky), 0 0 0 4px var(--color-sky-tint); }
+  .toggle input:disabled + .toggle-track { opacity: 0.4; }
+
+  /* ===== CHECKBOX ===== */
+  .checkbox { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-body-sm); color: var(--color-ink-secondary); }
+  .checkbox input { position: absolute; opacity: 0; }
+  .checkbox-box { width: 20px; height: 20px; border-radius: var(--radius-sm); border: 2px solid var(--color-line); background: var(--color-bg); display: flex; align-items: center; justify-content: center; transition: all var(--duration-fast) var(--ease); flex-shrink: 0; }
+  .checkbox input:checked ~ .checkbox-box { background: var(--color-sky); border-color: var(--color-sky); }
+  .checkbox input:checked ~ .checkbox-box::after { content: ''; width: 6px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+  .checkbox input:focus-visible ~ .checkbox-box { box-shadow: 0 0 0 2px var(--color-sky), 0 0 0 4px var(--color-sky-tint); }
+  .checkbox input:disabled ~ .checkbox-box { opacity: 0.4; }
+
+  /* ===== RADIO ===== */
+  .radio { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: var(--text-body-sm); color: var(--color-ink-secondary); }
+  .radio input { position: absolute; opacity: 0; }
+  .radio-circle { width: 20px; height: 20px; border-radius: var(--radius-pill); border: 2px solid var(--color-line); background: var(--color-bg); display: flex; align-items: center; justify-content: center; transition: all var(--duration-fast) var(--ease); flex-shrink: 0; }
+  .radio input:checked ~ .radio-circle { border-color: var(--color-sky); }
+  .radio input:checked ~ .radio-circle::after { content: ''; width: 10px; height: 10px; border-radius: var(--radius-pill); background: var(--color-sky); }
+  .radio input:focus-visible ~ .radio-circle { box-shadow: 0 0 0 2px var(--color-sky), 0 0 0 4px var(--color-sky-tint); }
+  .radio input:disabled ~ .radio-circle { opacity: 0.4; }
+
+  /* ===== SEGMENTED CONTROL ===== */
+  .segmented { display: inline-flex; background: var(--color-surface); border-radius: var(--radius-sm); padding: 3px; height: var(--control-height); align-items: center; gap: 2px; }
+  .segmented button { height: 38px; padding: 0 16px; border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; color: var(--color-ink-secondary); transition: all var(--duration-fast) var(--ease); }
+  .segmented button:hover { color: var(--color-ink); }
+  .segmented button.active { background: var(--color-bg); color: var(--color-ink); box-shadow: var(--shadow-sm); }
+  .segmented button:focus-visible { outline: 2px solid var(--color-sky); outline-offset: 2px; }
+  .segmented button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== TAGS / BADGES ===== */
+  .tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); font-size: var(--text-caption); font-weight: 600; letter-spacing: 0.01em; }
+  .tag-sky { background: var(--color-sky-tint); color: var(--color-sky); }
+  .tag-green { background: var(--color-green-tint); color: #009E42; }
+  .tag-coral { background: var(--color-coral-tint); color: #D93057; }
+  .tag-warning { background: var(--color-warning-tint); color: #C2710A; }
+  .tag-neutral { background: var(--color-surface); color: var(--color-ink-secondary); }
+
+  .status-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); flex-shrink: 0; }
+  .status-dot.green { background: var(--color-green); }
+  .status-dot.coral { background: var(--color-coral); }
+  .status-dot.sky { background: var(--color-sky); }
+  .status-dot.warning { background: var(--color-warning); }
+  .status-dot.muted { background: var(--color-ink-muted); }
+
+  /* ===== LAYOUT ===== */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar { width: var(--sidebar-w); background: var(--color-bg); border-right: 1px solid var(--color-line); display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
+  .sidebar-logo { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-5); height: 64px; font-size: var(--text-h4); font-weight: 800; letter-spacing: -0.02em; border-bottom: 1px solid var(--color-line); }
+  .sidebar-logo svg { width: 24px; height: 24px; }
+  .sidebar-nav { flex: 1; padding: var(--space-4); display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+  .sidebar-section-label { font-size: var(--text-micro); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-ink-muted); padding: var(--space-4) var(--space-4) var(--space-2); }
+  .sidebar-link { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4); height: 40px; border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 500; color: var(--color-ink-secondary); transition: all var(--duration-fast) var(--ease); }
+  .sidebar-link:hover { background: var(--color-surface); color: var(--color-ink); }
+  .sidebar-link.active { background: var(--color-sky-tint); color: var(--color-sky); font-weight: 600; }
+  .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .sidebar-link:focus-visible { outline: 2px solid var(--color-sky); outline-offset: 2px; }
+  .sidebar-footer { padding: var(--space-4); border-top: 1px solid var(--color-line); }
+  .sidebar-user { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+  .sidebar-user:hover { background: var(--color-surface); }
+  .sidebar-avatar { width: 36px; height: 36px; border-radius: var(--radius-pill); background: linear-gradient(135deg, var(--color-sky), var(--color-sky-bright)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: var(--text-label); font-weight: 700; flex-shrink: 0; }
+  .sidebar-user-info { display: flex; flex-direction: column; min-width: 0; }
+  .sidebar-user-name { font-size: var(--text-label); font-weight: 600; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-user-org { font-size: var(--text-micro); color: var(--color-ink-muted); }
+
+  /* ===== MAIN ===== */
+  .main { flex: 1; min-width: 0; }
+  .topbar { height: 64px; background: var(--color-bg); border-bottom: 1px solid var(--color-line); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: 50; }
+  .topbar-left { display: flex; align-items: center; gap: var(--space-4); }
+  .topbar-title { font-size: var(--text-h4); font-weight: 700; letter-spacing: -0.01em; }
+  .topbar-right { display: flex; align-items: center; gap: var(--space-3); }
+  .topbar-search { width: 280px; }
+
+  .content { padding: var(--space-6); max-width: 1400px; }
+
+  /* ===== CARDS ===== */
+  .card { background: var(--color-bg); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); }
+  .card-title { font-size: var(--text-h4); font-weight: 700; letter-spacing: -0.01em; }
+  .card-sub { font-size: var(--text-caption); color: var(--color-ink-muted); margin-top: 2px; }
+
+  /* ===== KPI CARDS ===== */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
+  .kpi { background: var(--color-bg); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); }
+  .kpi-label { font-size: var(--text-caption); color: var(--color-ink-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: var(--space-3); }
+  .kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-caption); font-weight: 600; margin-top: var(--space-2); }
+  .kpi-delta.up { color: var(--color-green); }
+  .kpi-delta.down { color: var(--color-coral); }
+  .kpi-spark { margin-top: var(--space-4); height: 40px; }
+
+  /* ===== CHART AREA ===== */
+  .chart-card { margin-bottom: var(--space-5); }
+  .chart-area { height: 280px; position: relative; }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* ===== TABLE ===== */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-size: var(--text-micro); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-ink-muted); text-align: left; padding: 0 var(--space-4); height: 44px; border-bottom: 1px solid var(--color-line); white-space: nowrap; }
+  tbody td { font-size: var(--text-caption); color: var(--color-ink-secondary); padding: 0 var(--space-4); height: 44px; border-bottom: 1px solid var(--color-line); white-space: nowrap; }
+  tbody tr { transition: background var(--duration-fast) var(--ease); }
+  tbody tr:hover { background: var(--color-surface); }
+  tbody tr:last-child td { border-bottom: none; }
+  .td-strong { color: var(--color-ink); font-weight: 600; }
+  .td-mono { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--color-ink); }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); flex-wrap: wrap; }
+  .filter-bar .input, .filter-bar .select { width: auto; min-width: 160px; }
+
+  /* ===== DASHBOARD GRID ===== */
+  .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-5); margin-bottom: var(--space-5); }
+  .dash-grid-right { display: flex; flex-direction: column; gap: var(--space-5); }
+
+  /* ===== ACTIVITY FEED ===== */
+  .activity-item { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-line); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); margin-top: 6px; flex-shrink: 0; }
+  .activity-text { font-size: var(--text-body-sm); color: var(--color-ink-secondary); line-height: 1.5; }
+  .activity-text strong { color: var(--color-ink); font-weight: 600; }
+  .activity-time { font-size: var(--text-micro); color: var(--color-ink-muted); margin-top: 2px; }
+
+  /* ===== ALERT CONFIG ===== */
+  .config-row { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--color-line); }
+  .config-row:last-child { border-bottom: none; }
+  .config-label { font-size: var(--text-body-sm); color: var(--color-ink); font-weight: 500; }
+  .config-desc { font-size: var(--text-micro); color: var(--color-ink-muted); margin-top: 2px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1024px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+    .topbar-search { width: 200px; }
+  }
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .content { padding: var(--space-4); }
+    .topbar { padding: 0 var(--space-4); }
+    .topbar-search { display: none; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .filter-bar .input, .filter-bar .select { width: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 28 28" fill="none">
+        <path d="M4 18 Q14 6 24 18" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="24" cy="18" r="3" fill="#00B4FF"/>
+        <path d="M4 22 Q14 14 20 20" stroke="#00C853" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+      </svg>
+      SORYU
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="#" class="sidebar-link active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        Live streams
+      </a>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        Growth signals
+      </a>
+
+      <div class="sidebar-section-label">Analysis</div>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Explore
+      </a>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Reports
+      </a>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Alerts
+      </a>
+
+      <div class="sidebar-section-label">Settings</div>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+      <a href="#" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
+        Team
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="sidebar-user">
+        <div class="sidebar-avatar">RT</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Rita Tachibana</div>
+          <div class="sidebar-user-org">Nordwind Inc.</div>
+        </div>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Dashboard</div>
+        <span class="tag tag-green"><span class="status-dot green"></span> All systems live</span>
+      </div>
+      <div class="topbar-right">
+        <div class="input-icon topbar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" class="input" placeholder="Search metrics, events..." aria-label="Search">
+        </div>
+        <button class="btn btn-icon btn-sm" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New dashboard
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <select class="select" aria-label="Time range">
+          <option>Last 24 hours</option>
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+        </select>
+        <select class="select" aria-label="Environment">
+          <option>All environments</option>
+          <option>Production</option>
+          <option>Staging</option>
+        </select>
+        <select class="select" aria-label="Region">
+          <option>All regions</option>
+          <option>us-east-1</option>
+          <option>eu-west-1</option>
+          <option>ap-northeast-1</option>
+        </select>
+        <div class="segmented" role="tablist">
+          <button class="active" role="tab">Overview</button>
+          <button role="tab">Details</button>
+          <button role="tab" disabled>Raw</button>
+        </div>
+        <div style="flex:1"></div>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Active users</div>
+          <div class="kpi-value">48,291</div>
+          <div class="kpi-delta up">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            +12.4% vs last week
+          </div>
+          <svg class="kpi-spark" viewBox="0 0 200 40" preserveAspectRatio="none"><polyline points="0,30 20,28 40,25 60,22 80,20 100,15 120,18 140,12 160,10 180,8 200,5" fill="none" stroke="#00C853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Events / min</div>
+          <div class="kpi-value">312,840</div>
+          <div class="kpi-delta up">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            +8.1% vs last week
+          </div>
+          <svg class="kpi-spark" viewBox="0 0 200 40" preserveAspectRatio="none"><polyline points="0,25 20,22 40,28 60,20 80,18 100,22 120,15 140,14 160,10 180,12 200,8" fill="none" stroke="#0066FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Error rate</div>
+          <div class="kpi-value">0.34<span style="font-size:1.2rem;color:var(--color-ink-muted)">%</span></div>
+          <div class="kpi-delta down">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            +0.08% vs last week
+          </div>
+          <svg class="kpi-spark" viewBox="0 0 200 40" preserveAspectRatio="none"><polyline points="0,30 20,32 40,28 60,30 80,25 100,28 120,20 140,22 160,18 180,15 200,12" fill="none" stroke="#FF3D6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">P99 latency</div>
+          <div class="kpi-value">342<span style="font-size:1.2rem;color:var(--color-ink-muted)">ms</span></div>
+          <div class="kpi-delta up">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+            -18ms improvement
+          </div>
+          <svg class="kpi-spark" viewBox="0 0 200 40" preserveAspectRatio="none"><polyline points="0,10 20,12 40,15 60,14 80,18 100,16 120,20 140,22 160,25 180,24 200,28" fill="none" stroke="#00B4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <!-- MAIN CHART + SIDE PANEL -->
+      <div class="dash-grid">
+        <!-- CHART -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Event throughput</div>
+              <div class="card-sub">Events per minute, last 24 hours</div>
+            </div>
+            <div class="segmented">
+              <button class="active">1h</button>
+              <button>6h</button>
+              <button>24h</button>
+              <button>7d</button>
+            </div>
+          </div>
+          <div class="chart-area">
+            <svg class="chart-svg" viewBox="0 0 800 280" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="0" y1="70" x2="800" y2="70" stroke="#E8ECF1" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="140" x2="800" y2="140" stroke="#E8ECF1" stroke-width="1" stroke-dasharray="4,4"/>
+              <line x1="0" y1="210" x2="800" y2="210" stroke="#E8ECF1" stroke-width="1" stroke-dasharray="4,4"/>
+              <!-- Area fill -->
+              <path d="M0,200 L40,180 L80,190 L120,160 L160,140 L200,150 L240,120 L280,100 L320,110 L360,90 L400,70 L440,80 L480,60 L520,50 L560,65 L600,45 L640,55 L680,40 L720,30 L760,35 L800,25 L800,280 L0,280 Z" fill="#EBF5FF" opacity="0.6"/>
+              <!-- Line -->
+              <path d="M0,200 L40,180 L80,190 L120,160 L160,140 L200,150 L240,120 L280,100 L320,110 L360,90 L400,70 L440,80 L480,60 L520,50 L560,65 L600,45 L640,55 L680,40 L720,30 L760,35 L800,25" fill="none" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Second line (green) -->
+              <path d="M0,230 L40,220 L80,225 L120,210 L160,200 L200,205 L240,190 L280,180 L320,185 L360,170 L400,160 L440,165 L480,150 L520,145 L560,155 L600,140 L640,148 L680,135 L720,128 L760,132 L800,120" fill="none" stroke="#00C853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+              <!-- Current point -->
+              <circle cx="800" cy="25" r="5" fill="#0066FF"/>
+              <circle cx="800" cy="25" r="9" fill="#0066FF" opacity="0.2"/>
+            </svg>
+          </div>
+          <div style="display:flex;gap:var(--space-5);margin-top:var(--space-4);font-size:var(--text-caption);color:var(--color-ink-muted);">
+            <span style="display:flex;align-items:center;gap:6px;"><span class="status-dot sky"></span> Ingested events</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span class="status-dot green"></span> Processed events</span>
+          </div>
+        </div>
+
+        <!-- ACTIVITY FEED -->
+        <div class="dash-grid-right">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Live activity</div>
+              <span class="tag tag-sky"><span class="status-dot sky"></span> Live</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--color-green)"></div>
+              <div>
+                <div class="activity-text"><strong>checkout.completed</strong> surge detected on us-east-1</div>
+                <div class="activity-time">2 min ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--color-coral)"></div>
+              <div>
+                <div class="activity-text"><strong>api.error</strong> rate above threshold on /v2/orders</div>
+                <div class="activity-time">7 min ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--color-sky)"></div>
+              <div>
+                <div class="activity-text">New deployment <strong>v2.4.1</strong> rolled out to production</div>
+                <div class="activity-time">14 min ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--color-warning)"></div>
+              <div>
+                <div class="activity-text">Latency on <strong>eu-west-1</strong> approaching warning threshold</div>
+                <div class="activity-time">22 min ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:var(--color-green)"></div>
+              <div>
+                <div class="activity-text">Anomaly resolved: <strong>signup.flow</strong> back to baseline</div>
+                <div class="activity-time">35 min ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERT CONFIG + TOP EVENTS TABLE -->
+      <div class="dash-grid">
+        <!-- ALERT CONFIG -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Alert configuration</div>
+              <div class="card-sub">Tune anomaly detection sensitivity</div>
+            </div>
+            <button class="btn btn-secondary btn-sm">Save changes</button>
+          </div>
+
+          <div class="config-row">
+            <div>
+              <div class="config-label">Enable real-time anomaly alerts</div>
+              <div class="config-desc">Get notified when metrics deviate from baseline</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" checked>
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="config-row">
+            <div>
+              <div class="config-label">Sensitivity</div>
+              <div class="config-desc">Higher sensitivity catches smaller deviations</div>
+            </div>
+            <select class="select" style="width:160px;">
+              <option>High</option>
+              <option selected>Medium</option>
+              <option>Low</option>
+            </select>
+          </div>
+
+          <div class="config-row">
+            <div>
+              <div class="config-label">Alert channels</div>
+              <div class="config-desc">Where to send alert notifications</div>
+            </div>
+            <div style="display:flex;gap:var(--space-4);">
+              <label class="checkbox">
+                <input type="checkbox" checked>
+                <span class="checkbox-box"></span>
+                Slack
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" checked>
+                <span class="checkbox-box"></span>
+                Email
+              </label>
+              <label class="checkbox">
+                <input type="checkbox">
+                <span class="checkbox-box"></span>
+                PagerDuty
+              </label>
+            </div>
+          </div>
+
+          <div class="config-row">
+            <div>
+              <div class="config-label">Quiet hours</div>
+              <div class="config-desc">Suppress non-critical alerts during off-hours</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="config-row">
+            <div>
+              <div class="config-label">Severity threshold</div>
+              <div class="config-desc">Minimum severity to trigger immediate alert</div>
+            </div>
+            <div style="display:flex;gap:var(--space-4);">
+              <label class="radio">
+                <input type="radio" name="severity">
+                <span class="radio-circle"></span>
+                Low
+              </label>
+              <label class="radio">
+                <input type="radio" name="severity" checked>
+                <span class="radio-circle"></span>
+                Medium
+              </label>
+              <label class="radio">
+                <input type="radio" name="severity">
+                <span class="radio-circle"></span>
+                High
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOP EVENTS TABLE -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Top event streams</div>
+              <div class="card-sub">By volume, last 24 hours</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">View all</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Count</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="td-strong">page.view</td>
+                  <td class="td-mono">1.2M</td>
+                  <td><span class="tag tag-green">+15%</span></td>
+                </tr>
+                <tr>
+                  <td class="td-strong">checkout.started</td>
+                  <td class="td-mono">842K</td>
+                  <td><span class="tag tag-green">+8%</span></td>
+                </tr>
+                <tr>
+                  <td class="td-strong">checkout.completed</td>
+                  <td class="td-mono">621K</td>
+                  <td><span class="tag tag-green">+12%</span></td>
+                </tr>
+                <tr>
+                  <td class="td-strong">user.signup</td>
+                  <td class="td-mono">389K</td>
+                  <td><span class="tag tag-coral">-3%</span></td>
+                </tr>
+                <tr>
+                  <td class="td-strong">api.error</td>
+                  <td class="td-mono">12.4K</td>
+                  <td><span class="tag tag-coral">+22%</span></td>
+                </tr>
+                <tr>
+                  <td class="td-strong">session.timeout</td>
+                  <td class="td-mono">8.1K</td>
+                  <td><span class="tag tag-neutral">0%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEPLOYMENT TABLE -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recent deployments</div>
+            <div class="card-sub">Production environment</div>
+          </div>
+          <div style="display:flex;gap:var(--space-3);align-items:center;">
+            <div class="input-icon" style="width:240px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" class="input" placeholder="Filter deployments...">
+            </div>
+            <button class="btn btn-primary btn-sm">Deploy</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Version</th>
+                <th>Service</th>
+                <th>Status</th>
+                <th>Region</th>
+                <th>Duration</th>
+                <th>Deployed</th>
+                <th>By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-mono">v2.4.1</td>
+                <td class="td-strong">api-gateway</td>
+                <td><span class="tag tag-green"><span class="status-dot green"></span> Healthy</span></td>
+                <td>us-east-1</td>
+                <td class="td-mono">2m 14s</td>
+                <td>14 min ago</td>
+                <td>R. Tachibana</td>
+              </tr>
+              <tr>
+                <td class="td-mono">v2.4.0</td>
+                <td class="td-strong">event-processor</td>
+                <td><span class="tag tag-green"><span class="status-dot green"></span> Healthy</span></td>
+                <td>eu-west-1</td>
+                <td class="td-mono">3m 42s</td>
+                <td>1 hour ago</td>
+                <td>K. Yoshida</td>
+              </tr>
+              <tr>
+                <td class="td-mono">v2.3.9</td>
+                <td class="td-strong">dashboard-ui</td>
+                <td><span class="tag tag-warning"><span class="status-dot warning"></span> Rolling out</span></td>
+                <td>ap-northeast-1</td>
+                <td class="td-mono">1m 08s</td>
+                <td>2 hours ago</td>
+                <td>M. Park</td>
+              </tr>
+              <tr>
+                <td class="td-mono">v2.3.8</td>
+                <td class="td-strong">auth-service</td>
+                <td><span class="tag tag-coral"><span class="status-dot coral"></span> Failed</span></td>
+                <td>us-east-1</td>
+                <td class="td-mono">0m 45s</td>
+                <td>3 hours ago</td>
+                <td>R. Tachibana</td>
+              </tr>
+              <tr>
+                <td class="td-mono">v2.3.7</td>
+                <td class="td-strong">analytics-engine</td>
+                <td><span class="tag tag-green"><span class="status-dot green"></span> Healthy</span></td>
+                <td>all regions</td>
+                <td class="td-mono">5m 21s</td>
+                <td>5 hours ago</td>
+                <td>K. Yoshida</td>
+              </tr>
+              <tr>
+                <td class="td-mono">v2.3.6</td>
+                <td class="td-strong">billing-service</td>
+                <td><span class="tag tag-neutral"><span class="status-dot muted"></span> Rolled back</span></td>
+                <td>eu-west-1</td>
+                <td class="td-mono">2m 33s</td>
+                <td>8 hours ago</td>
+                <td>M. Park</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori Festival — Kodomo no Hi, May 5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFFFFF;
+  --surface: #F4F8FB;
+  --surface-raised: #EAF2F7;
+  --text: #0B1220;
+  --muted: #5A6675;
+  --border: #E2E8EE;
+  --accent: #00B5FF;
+  --accent-2: #00C853;
+  --accent-3: #FF3D5A;
+  --on-accent: #FFFFFF;
+  --success: #00C853;
+  --warning: #FFB020;
+  --error: #FF3D5A;
+  --info: #00B5FF;
+
+  --r-0: 0;
+  --r-16: 16px;
+  --r-24: 24px;
+  --r-pill: 9999px;
+
+  --control-h: 48px;
+
+  --hero-image: url('./media/hero.jpg');
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.no-js .reveal { opacity: 1 !important; transform: none !important; }
+
+/* ============ NAV ============ */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  list-style: none;
+}
+.nav-links a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  transition: opacity 200ms;
+}
+.nav-links a:hover { opacity: 0.6; }
+.nav-actions { display: flex; gap: 12px; align-items: center; }
+
+/* ============ BUTTONS ============ */
+.btn {
+  height: var(--control-h);
+  padding: 0 20px;
+  border-radius: var(--r-16);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 200ms, transform 100ms, opacity 200ms;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: color-mix(in oklab, var(--accent), var(--text) 8%); }
+.btn-secondary { background: var(--surface); color: var(--text); }
+.btn-secondary:hover { background: var(--surface-raised); }
+.btn-ghost { background: transparent; color: var(--text); }
+.btn-ghost:hover { background: var(--surface); }
+.btn-hot { background: var(--accent-3); color: var(--on-accent); }
+.btn-hot:hover { background: color-mix(in oklab, var(--accent-3), var(--text) 8%); }
+
+/* ============ HERO ============ */
+.hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  min-height: 640px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.0) 40%, rgba(255,255,255,0.85) 100%),
+    linear-gradient(90deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 60%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 96px;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-3);
+  margin-bottom: 24px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 2px;
+  background: var(--accent-3);
+}
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(56px, 9vw, 128px);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  max-width: 1100px;
+  margin-bottom: 24px;
+}
+.hero h1 .jp {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.hero h1 .accent { color: var(--accent); }
+.hero h1 .hot { color: var(--accent-3); }
+.hero-sub {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 560px;
+  margin-bottom: 40px;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============ SECTIONS ============ */
+.section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 128px 32px;
+}
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  margin-bottom: 96px;
+  align-items: end;
+}
+.section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+}
+.section-eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 2px;
+  background: var(--accent);
+}
+.section h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+.section h2 .jp {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+}
+.section-lede {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 480px;
+}
+
+/* ============ STACKED COLUMN (features) ============ */
+.feature-stack {
+  display: grid;
+  grid-template-columns: 8px 1fr;
+  gap: 48px;
+}
+.feature-column {
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  width: 100%;
+}
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+}
+.feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  padding: 48px 0;
+}
+.feature:nth-child(even) {
+  grid-template-columns: 1fr 1fr;
+}
+.feature:nth-child(even) .feature-text { order: 2; }
+.feature:nth-child(even) .feature-visual { order: 1; }
+
+.feature-text h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.feature-text .feature-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: block;
+}
+.feature-text p {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 440px;
+}
+.feature-visual {
+  aspect-ratio: 4/3;
+  border-radius: var(--r-24);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+.feature-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ============ BENTO (programs) ============ */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+.bento-card {
+  background: var(--surface);
+  border-radius: var(--r-24);
+  padding: 32px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.bento-card.large { grid-column: span 4; min-height: 320px; }
+.bento-card.medium { grid-column: span 2; min-height: 320px; }
+.bento-card.small { grid-column: span 2; min-height: 240px; }
+.bento-card.wide { grid-column: span 3; min-height: 240px; }
+
+.bento-card .bento-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.bento-card .bento-tag.hot { color: var(--accent-3); }
+.bento-card .bento-tag.green { color: var(--accent-2); }
+
+.bento-card h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.bento-card.large h3 { font-size: 40px; }
+.bento-card p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.bento-card .bento-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.bento-card .bento-meta .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.bento-card .bento-meta .dot.hot { background: var(--accent-3); }
+.bento-card .bento-meta .dot.green { background: var(--accent-2); }
+
+.bento-card.accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.bento-card.accent h3,
+.bento-card.accent p { color: var(--on-accent); }
+.bento-card.accent .bento-tag { color: rgba(255,255,255,0.85); }
+
+.bento-card.hot {
+  background: var(--accent-3);
+  color: var(--on-accent);
+}
+.bento-card.hot h3,
+.bento-card.hot p { color: var(--on-accent); }
+.bento-card.hot .bento-tag { color: rgba(255,255,255,0.85); }
+
+/* ============ LONG-FORM (story) ============ */
+.story {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 96px;
+  align-items: start;
+}
+.story-side {
+  position: sticky;
+  top: 96px;
+}
+.story-side h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+.story-side .story-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-3);
+  margin-bottom: 24px;
+  display: block;
+}
+.story-body {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.story-body p {
+  margin-bottom: 32px;
+  max-width: 640px;
+}
+.story-body p:first-of-type::first-letter {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 0.8;
+  float: left;
+  margin: 8px 16px 0 0;
+  color: var(--accent);
+}
+.story-pull {
+  border-left: 4px solid var(--accent);
+  padding: 16px 0 16px 24px;
+  margin: 48px 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  max-width: 640px;
+}
+.story-pull .jp {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+}
+
+/* ============ CTA ============ */
+.cta {
+  background: var(--text);
+  color: var(--bg);
+  border-radius: var(--r-24);
+  padding: 96px 64px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 64px;
+  align-items: end;
+}
+.cta h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--bg);
+}
+.cta h2 .accent { color: var(--accent); }
+.cta h2 .hot { color: var(--accent-3); }
+.cta-side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.cta-side p {
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.7);
+}
+.cta-side .btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.cta-side .btn-primary:hover {
+  background: color-mix(in oklab, var(--accent), white 10%);
+}
+
+/* ============ FOOTER ============ */
+.footer {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 64px 32px 32px;
+}
+.footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 64px;
+}
+.footer-brand p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 16px;
+  max-width: 320px;
+}
+.footer h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.footer ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer ul a {
+  font-size: 15px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 200ms;
+}
+.footer ul a:hover { color: var(--text); }
+.footer-bottom {
+  max-width: 1400px;
+  margin: 64px auto 0;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ============ REVEAL ANIMATIONS ============ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 800ms cubic-bezier(.16,1,.3,1), transform 800ms cubic-bezier(.16,1,.3,1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1024px) {
+  .section-head { grid-template-columns: 1fr; gap: 32px; }
+  .feature { grid-template-columns: 1fr !important; gap: 32px; }
+  .feature:nth-child(even) .feature-text { order: 1; }
+  .feature:nth-child(even) .feature-visual { order: 2; }
+  .story { grid-template-columns: 1fr; gap: 48px; }
+  .story-side { position: static; }
+  .cta { grid-template-columns: 1fr; gap: 32px; padding: 64px 32px; }
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .nav-inner { padding: 0 16px; }
+  .section { padding: 64px 16px; }
+  .section-head { margin-bottom: 48px; }
+  .hero-content { padding: 0 16px 64px; }
+  .bento { grid-template-columns: 1fr; }
+  .bento-card.large,
+  .bento-card.medium,
+  .bento-card.small,
+  .bento-card.wide { grid-column: span 1; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .feature-stack { grid-template-columns: 4px 1fr; gap: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body class="no-js">
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 4C16 4 8 8 8 16C8 22 12 26 16 28C20 26 24 22 24 16C24 8 16 4 16 4Z" fill="#00B5FF"/>
+          <circle cx="16" cy="14" r="2" fill="#FFFFFF"/>
+          <path d="M24 16L30 12L28 18L24 16Z" fill="#FF3D5A"/>
+        </svg>
+      </span>
+      Nobori
+    </a>
+    <ul class="nav-links">
+      <li><a href="#festival">Festival</a></li>
+      <li><a href="#programs">Programs</a></li>
+      <li><a href="#story">Story</a></li>
+      <li><a href="#visit">Visit</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-ghost">Sign in</a>
+      <a href="#" class="btn btn-primary">Get tickets</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow reveal">May 5 · Kodomo no Hi · Tokyo</div>
+    <h1 class="reveal">
+      <span class="jp">鯉のぼり</span><br>
+      climb toward <span class="accent">May 5</span>.<br>
+      <span class="hot">Children rise.</span>
+    </h1>
+    <p class="hero-sub reveal">
+      Nobori Festival is a three-day celebration of childhood courage in the riverside
+      gardens of Sumida. Koinobori on every pole, dragon dances at dusk, and a community
+      that shows up for its kids.
+    </p>
+    <div class="hero-actions reveal">
+      <a href="#" class="btn btn-primary">Reserve a spot — free</a>
+      <a href="#" class="btn btn-secondary">See the schedule</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FESTIVAL (Stacked Column) ============ -->
+<section class="section" id="festival">
+  <div class="section-head">
+    <div>
+      <div class="section-eyebrow reveal">The festival</div>
+      <h2 class="reveal">A weekend built<br>around <span style="color: var(--accent)">one</span> question.</h2>
+    </div>
+    <p class="section-lede reveal">
+      What does it mean to wish a child well? Every program at Nobori answers it differently —
+      through art, food, sport, and the simple act of standing together under a sky full of carp.
+    </p>
+  </div>
+
+  <div class="feature-stack">
+    <div class="feature-column reveal"></div>
+    <div class="feature-list">
+      <div class="feature reveal">
+        <div class="feature-text">
+          <span class="feature-num">01 / Carp pole raising</span>
+          <h3>Sixty poles.<br>One river.</h3>
+          <p>
+            On May 3, families raise their own koinobori along the Sumida riverbank. Each pole
+            carries three carp — black for the father, red for the mother, and a smaller fish
+            for each child in the household.
+          </p>
+        </div>
+        <div class="feature-visual">
+          <img src="./media/feature-1.jpg" alt="Carp poles along the river">
+        </div>
+      </div>
+
+      <div class="feature reveal">
+        <div class="feature-text">
+          <span class="feature-num">02 / Dragon dance</span>
+          <h3>From carp to<br>dragon, at dusk.</h3>
+          <p>
+            The traditional transformation — the carp climbing the waterfall to become a dragon —
+            is performed live by the Asakusa troupe on May 4. Children are invited to join the
+            procession.
+          </p>
+        </div>
+        <div class="feature-visual">
+          <img src="./media/feature-2.jpg" alt="Dragon dance procession">
+        </div>
+      </div>
+
+      <div class="feature reveal">
+        <div class="feature-text">
+          <span class="feature-num">03 / Children's day market</span>
+          <h3>Made by kids,<br>for everyone.</h3>
+          <p>
+            A weekend market of stalls run by children under 14 — origami, calligraphy,
+            hand-bound notebooks, fresh pastries. Every purchase supports a young maker's
+            first savings account.
+          </p>
+        </div>
+        <div class="feature-visual">
+          <img src="./media/feature-1.jpg" alt="Children's market stalls">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROGRAMS (Bento) ============ -->
+<section class="section" id="programs" style="background: var(--surface); max-width: none; padding-left: 0; padding-right: 0;">
+  <div style="max-width: 1400px; margin: 0 auto; padding: 0 32px;">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow reveal">Programs</div>
+        <h2 class="reveal">Three days,<br>twelve programs.</h2>
+      </div>
+      <p class="section-lede reveal">
+        Every program is free and open. Reserve a spot if you want a guaranteed seat —
+        otherwise, just show up.
+      </p>
+    </div>
+
+    <div class="bento">
+      <div class="bento-card accent large reveal">
+        <div>
+          <span class="bento-tag">May 3 · 09:00</span>
+          <h3>Opening pole raising<br>at Sumida Park</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot"></span>
+          <span>Free · All ages</span>
+        </div>
+      </div>
+
+      <div class="bento-card medium reveal">
+        <div>
+          <span class="bento-tag green">May 3 · 14:00</span>
+          <h3>Origami workshop</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot green"></span>
+          <span>Free · Ages 5–12</span>
+        </div>
+      </div>
+
+      <div class="bento-card small reveal">
+        <div>
+          <span class="bento-tag">May 3 · 17:00</span>
+          <h3>Koto concert</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot"></span>
+          <span>Free</span>
+        </div>
+      </div>
+
+      <div class="bento-card hot large reveal">
+        <div>
+          <span class="bento-tag">May 4 · 19:30</span>
+          <h3>Dragon dance procession<br>through Asakusa</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot hot"></span>
+          <span>Free · All ages</span>
+        </div>
+      </div>
+
+      <div class="bento-card medium reveal">
+        <div>
+          <span class="bento-tag">May 4 · 11:00</span>
+          <h3>Calligraphy<br>for beginners</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot"></span>
+          <span>Free · Ages 8+</span>
+        </div>
+      </div>
+
+      <div class="bento-card small reveal">
+        <div>
+          <span class="bento-tag green">May 4 · 15:00</span>
+          <h3>Children's<br>tea ceremony</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot green"></span>
+          <span>Free · Ages 6+</span>
+        </div>
+      </div>
+
+      <div class="bento-card medium reveal">
+        <div>
+          <span class="bento-tag hot">May 5 · 10:00</span>
+          <h3>Children's<br>market opens</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot hot"></span>
+          <span>Free · All ages</span>
+        </div>
+      </div>
+
+      <div class="bento-card wide reveal">
+        <div>
+          <span class="bento-tag">May 5 · 16:00</span>
+          <h3>Koinobori design workshop</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot"></span>
+          <span>Free · Ages 7–14</span>
+        </div>
+      </div>
+
+      <div class="bento-card wide reveal">
+        <div>
+          <span class="bento-tag">May 5 · 20:00</span>
+          <h3>Closing lantern float</h3>
+        </div>
+        <div class="bento-meta">
+          <span class="dot"></span>
+          <span>Free · All ages</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STORY (Long-form) ============ -->
+<section class="section" id="story">
+  <div class="story">
+    <div class="story-side">
+      <span class="story-eyebrow reveal">The tradition</span>
+      <h2 class="reveal">Why carp<br>climb the<br>waterfall.</h2>
+    </div>
+    <div class="story-body">
+      <p class="reveal">
+        The story of Kodomo no Hi is the story of a fish that refused to swim downstream. In
+        the old Chinese tale that traveled to Japan in the eighth century, a school of carp
+        spent their lives swimming against the current of the Yellow River. One by one, most
+        turned back. A few kept going — all the way to the waterfall at the source, where the
+        current was so strong it should have killed them. Instead, the carp that climbed the
+        falls transformed into dragons.
+      </p>
+      <div class="story-pull reveal">
+        "The wish is not that the child becomes powerful. The wish is that the child keeps<br>
+        swimming <span class="jp" style="color: var(--accent-3)">upstream</span>, even when the water is strong."
+      </div>
+      <p class="reveal">
+        In Japan, the carp became the symbol of that wish. Families raise koinobori — long,
+        cylindrical windsocks shaped like swimming carp — outside their homes in early May,
+        each one a quiet prayer that the children inside will have the courage to climb their
+        own falls. The black carp at the top is the father; the red carp, the mother; the
+        smaller carp below, the children themselves.
+      </p>
+      <p class="reveal">
+        Nobori Festival is our version of that tradition, scaled for a city. We don't believe
+        in nostalgia — we believe in the carp. Three days, twelve programs, sixty poles, and
+        one river. The rest is up to whoever shows up.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="section" id="visit">
+  <div class="cta reveal">
+    <h2>
+      May 5.<br>
+      <span class="accent">Free</span> for kids.<br>
+      <span class="hot">Free</span> for everyone.
+    </h2>
+    <div class="cta-side">
+      <p>
+        Reserve a spot for the dragon dance or the calligraphy workshop. The opening pole
+        raising and the closing lantern float are open — just show up.
+      </p>
+      <a href="#" class="btn btn-primary">Reserve a spot</a>
+      <a href="#" class="btn btn-ghost" style="color: var(--bg);">See the full schedule →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="#" class="brand">
+        <span class="brand-mark">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 4C16 4 8 8 8 16C8 22 12 26 16 28C20 26 24 22 24 16C24 8 16 4 16 4Z" fill="#00B5FF"/>
+            <circle cx="16" cy="14" r="2" fill="#FFFFFF"/>
+            <path d="M24 16L30 12L28 18L24 16Z" fill="#FF3D5A"/>
+          </svg>
+        </span>
+        Nobori
+      </a>
+      <p>
+        A Children's Day festival in Sumida, Tokyo. Three days, twelve programs, one river.
+        Organized by the Asakusa Cultural Trust.
+      </p>
+    </div>
+    <div>
+      <h4>Festival</h4>
+      <ul>
+        <li><a href="#">Programs</a></li>
+        <li><a href="#">Schedule</a></li>
+        <li><a href="#">Map</a></li>
+        <li><a href="#">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Visit</h4>
+      <ul>
+        <li><a href="#">Getting there</a></li>
+        <li><a href="#">Accessibility</a></li>
+        <li><a href="#">Family guide</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>About</h4>
+      <ul>
+        <li><a href="#">The tradition</a></li>
+        <li><a href="#">Sponsors</a></li>
+        <li><a href="#">Volunteer</a></li>
+        <li><a href="#">Press</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Nobori Festival · Asakusa Cultural Trust</span>
+    <span>こどもの日 · May 5</span>
+  </div>
+</footer>
+
+<script>
+  // Remove no-js class so reveal animations engage
+  document.documentElement.classList.add('js');
+  document.body.classList.remove('no-js');
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -64px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
