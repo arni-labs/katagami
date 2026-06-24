@@ -301,6 +301,13 @@ params = ["thumbnail_asset_id", "thumbnail_asset_url", "embodiment_asset_id", "e
 hint = "Attach immutable public artifact URLs created by the generic Temper publish-artifact flow. PawFS file ids remain the governed source artifacts; asset URLs are the public serving plane for thumbnails, embodiments, and DESIGN.md."
 
 [[action]]
+name = "AttachLandingThumbnail"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["landing_thumbnail_file_id", "landing_thumbnail_asset_url"]
+hint = "Attach or update the static gallery preview captured from the bespoke Landing (a screenshot of its hero), distinct from the embodiment gallery thumbnail. The gallery card prefers this landing preview over the embodiment thumbnail when present. Editable on Published without re-publishing because it is a derived preview asset, not a governed source artifact — so it never invalidates published assets or quality review."
+
+[[action]]
 name = "AttachTasteVector"
 kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
