@@ -3,6 +3,7 @@ import {
   getFileUrl,
   listArtStyles,
   parseJson,
+  taxonomyFamilyIndex,
 } from "@/lib/odata";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { ArtStyleCatalog } from "@/components/lane-catalog";
@@ -39,7 +40,13 @@ export default async function ArtStylesPage() {
   // Published-only everywhere — draft/archived art styles never appear in the
   // catalog or counts. Owners can still archive published art styles.
   const owner = await isOwner();
-  const rows = await listArtStyles("Status eq 'Published'").catch(() => []);
+  const [rows, taxFamily] = await Promise.all([
+    listArtStyles("Status eq 'Published'").catch(() => []),
+    taxonomyFamilyIndex().catch(() => new Map<string, { name: string; parentId: string }>()),
+  ]);
+  // id → category name, so the lane can shelve by taxonomy like the home gallery.
+  const categoryNames: Record<string, string> = {};
+  for (const [id, info] of taxFamily) categoryNames[id] = info.name;
   const items: ArtStyleItem[] = rows
     .map((r) => ({
       id: r.entity_id,
@@ -52,6 +59,7 @@ export default async function ArtStylesPage() {
       proofs: refUrls(r.fields.proof_shots_file_ids),
       thumb: r.fields.thumbnail_file_id ? getFileUrl(r.fields.thumbnail_file_id) : "",
       tags: parseJson<string[]>(r.fields.tags) ?? [],
+      taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
     }))
     // Keep archived items last so they never crowd the live catalog.
     .sort((a, b) => Number(a.status === "Archived") - Number(b.status === "Archived"));
@@ -66,7 +74,7 @@ export default async function ArtStylesPage() {
         rightSlot={<HeroStat value={items.length} label="art styles" accent="sakura" />}
       />
       <div className="mt-10">
-        <ArtStyleCatalog items={items} canArchive={owner} />
+        <ArtStyleCatalog items={items} canArchive={owner} categoryNames={categoryNames} />
       </div>
     </div>
   );

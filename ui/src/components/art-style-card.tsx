@@ -14,6 +14,8 @@ export interface ArtStyleItem {
   proofs: string[];
   thumb: string;
   tags: string[];
+  /** Canonical taxonomy category ids (for shelving the lane by category). */
+  taxonomyIds?: string[];
 }
 
 const accentColors = [

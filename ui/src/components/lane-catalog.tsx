@@ -37,6 +37,10 @@ const MEDIUM_INKS = [
   "var(--sakura)", "var(--yuzu)", "var(--ramune)", "var(--sumire)",
 ];
 
+// Festival & Poster Graphics always sinks to the bottom of a lane (matches the
+// home gallery).
+const BOTTOM_CATEGORY = "en-019efb96-d5ca-7330-9a3c-d5dc2b9f9ee3";
+
 function paletteShelfKey(p: PaletteItem): string {
   if (p.status === "Archived") return "archived";
   return colorMoodShelfKey({
@@ -66,6 +70,43 @@ function mediumShelves(items: ArtStyleItem[]): ShelfBucket<ArtStyleItem>[] {
     .map(([key, arr], i) => ({
       key,
       label: key,
+      blurb: "",
+      ink: MEDIUM_INKS[i % MEDIUM_INKS.length],
+      items: arr,
+    }));
+  if (archived.length) shelves.push({ ...ARCHIVED_SHELF, items: archived });
+  return shelves;
+}
+
+/** Shelve art styles by their taxonomy category (matching the home gallery):
+ *  largest category first, Festival sunk to the bottom, untagged + archived
+ *  last. Returns null when nothing is tagged, so the caller falls back to medium. */
+function taxonomyShelves(
+  items: ArtStyleItem[],
+  names: Record<string, string>,
+): ShelfBucket<ArtStyleItem>[] | null {
+  const buckets = new Map<string, ArtStyleItem[]>();
+  const archived: ArtStyleItem[] = [];
+  let tagged = 0;
+  for (const a of items) {
+    if (a.status === "Archived") {
+      archived.push(a);
+      continue;
+    }
+    const id = (a.taxonomyIds ?? []).find((t) => names[t]);
+    if (id) tagged += 1;
+    const key = id ?? "__untagged__";
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(a);
+    else buckets.set(key, [a]);
+  }
+  if (tagged === 0) return null;
+  const rank = (k: string) => (k === "__untagged__" ? 2 : k === BOTTOM_CATEGORY ? 1 : 0);
+  const shelves: ShelfBucket<ArtStyleItem>[] = [...buckets.entries()]
+    .sort((a, b) => rank(a[0]) - rank(b[0]) || b[1].length - a[1].length)
+    .map(([key, arr], i) => ({
+      key,
+      label: key === "__untagged__" ? "mixed & more" : (names[key] ?? key).toLowerCase(),
       blurb: "",
       ink: MEDIUM_INKS[i % MEDIUM_INKS.length],
       items: arr,
@@ -231,9 +272,13 @@ export function PaletteCatalog({
 export function ArtStyleCatalog({
   items,
   canArchive = false,
+  categoryNames,
 }: {
   items: ArtStyleItem[];
   canArchive?: boolean;
+  /** taxonomy id → category name; when present the lane shelves by category
+   *  (like the home gallery), falling back to medium for untagged items. */
+  categoryNames?: Record<string, string>;
 }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
@@ -247,8 +292,10 @@ export function ArtStyleCatalog({
   }, [q, items]);
   const shelves = useMemo(() => {
     if (q.trim() || activeCount(items) <= LANE_SHELF_THRESHOLD) return null;
-    return mediumShelves(items);
-  }, [q, items]);
+    return (
+      (categoryNames && taxonomyShelves(items, categoryNames)) ?? mediumShelves(items)
+    );
+  }, [q, items, categoryNames]);
 
   const renderCard = (a: ArtStyleItem) => (
     <ArtStyleCard art={a} owner={canArchive} />
