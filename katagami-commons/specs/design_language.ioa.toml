@@ -407,6 +407,24 @@ from = ["Draft"]
 params = ["parent_ids", "lineage_type", "generation_number"]
 hint = "Set lineage: parent_ids=[] for originals, single parent for evolution, multiple for remix."
 
+# --- Actions: Art-style link ---
+
+[[action]]
+name = "SetDefaultArtStyle"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["default_art_style_id"]
+hint = "Link the default art style (ArtStyle entity id) this language is built with — the entity-level pairing, distinct from imagery_direction.pairs_with. Settable while Published so the link can be backfilled without a Revise."
+
+# --- Actions: Credits ---
+
+[[action]]
+name = "SetCredits"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["credits"]
+hint = "Set the credits list — named artists / movements / studios / traditions a recognizable look traces to. Each entry: { name, kind, note }."
+
 # --- Actions: Review Lifecycle ---
 
 [[action]]
