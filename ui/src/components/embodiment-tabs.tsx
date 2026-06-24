@@ -31,31 +31,31 @@ export function EmbodimentTabs({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex bg-card/70 p-0.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)]">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="inline-flex max-w-full flex-wrap bg-card/70 p-0.5 shadow-[0_1px_2px_rgba(30,35,45,0.05),0_2px_8px_rgba(30,35,45,0.05)]">
           {tabs.map((t, i) => (
             <button
               key={t.key}
               onClick={() => setActive(i)}
               data-active={i === active}
-              className="px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background data-[active=true]:shadow-[0_1px_0_rgba(30,35,45,0.18)]"
+              className="px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground transition-colors data-[active=true]:bg-foreground data-[active=true]:text-background data-[active=true]:shadow-[0_1px_0_rgba(30,35,45,0.18)] sm:px-3.5 sm:tracking-[0.14em]"
             >
               {t.label}
             </button>
           ))}
         </div>
         {cur.note ? (
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80">
+          <span className="min-w-0 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80 [overflow-wrap:anywhere]">
             {cur.note}
           </span>
         ) : null}
       </div>
 
-      <div className="relative">
-        <div className="sticker-card relative p-3 pb-10">
+      <div className="relative min-w-0">
+        <div className="sticker-card relative p-2 pb-9 sm:p-3 sm:pb-10">
           {/* key=url → remount on tab switch so height re-measures */}
           <EmbodimentViewer key={cur.url} src={cur.url} />
-          <span className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
+          <span className="absolute bottom-3 left-2 right-2 truncate text-center font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/80 sm:text-[10px] sm:tracking-[0.22em]">
             {cur.label.toLowerCase()} · {slug || "preview"}
           </span>
         </div>

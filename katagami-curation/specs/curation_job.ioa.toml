@@ -389,6 +389,28 @@ type = "field"
 field = "query_id"
 
 [[action]]
+name = "SessionCompletedWithoutJobCompletion"
+kind = "input"
+from = ["Running"]
+to = "Failed"
+params = ["output", "child_session_id", "child_status"]
+hint = "Child Session completed without dispatching the typed CurationJob completion action. Fail explicitly instead of leaving the job Running."
+
+[[action.triggers]]
+name = "session_completed_without_job_completion_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+
+[action.triggers.params]
+error_message = "CurationJob child Session completed without dispatching its typed completion action."
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+[[action]]
 name = "CompleteSynthesis"
 kind = "input"
 from = ["Running"]

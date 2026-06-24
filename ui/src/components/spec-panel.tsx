@@ -91,7 +91,7 @@ function SpecNote({
 }) {
   return (
     <div
-      className={`relative px-4 py-3 text-[14px] leading-relaxed text-foreground/88 ${className}`}
+      className={`relative px-4 py-3 text-[14px] leading-relaxed text-foreground/88 [overflow-wrap:anywhere] ${className}`}
       style={{
         background: `color-mix(in oklch, var(--${color}) 6%, transparent)`,
         boxShadow: `inset 3px 0 0 color-mix(in oklch, var(--${color}) 72%, var(--paper-tape-mix))`,
@@ -116,7 +116,7 @@ function PeeledLabel({
   const rot = (((index * 13) % 7) - 3) * 0.4;
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2 py-1 font-sans text-[11px] font-semibold leading-none text-foreground/78"
+      className="inline-flex max-w-full items-center gap-1.5 px-2 py-1 font-sans text-[11px] font-semibold leading-snug text-foreground/78 [overflow-wrap:anywhere]"
       style={{
         transform: `rotate(${rot * 0.35}deg)`,
         background: `color-mix(in oklch, var(--${color}) 9%, transparent)`,
@@ -202,7 +202,7 @@ function PhilosophyView({ raw }: { raw?: string }) {
         <section>
           <SectionRule label="lineage" color="ramune" />
           <blockquote
-            className="bg-card/45 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/78"
+            className="bg-card/45 py-2 pl-4 pr-3 text-[13px] italic leading-relaxed text-foreground/78 [overflow-wrap:anywhere]"
             style={{
               boxShadow:
                 "inset 2px 0 0 color-mix(in oklch, var(--ramune) 72%, var(--paper-tape-mix))",
@@ -315,7 +315,7 @@ function KVList({ values }: { values: Record<string, unknown> }) {
           <dt className="w-28 shrink-0 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
             {k.replace(/_/g, " ")}
           </dt>
-          <dd className="flex-1 min-w-0 font-mono text-[11px] text-foreground/90">
+          <dd className="min-w-0 flex-1 font-mono text-[11px] text-foreground/90 [overflow-wrap:anywhere]">
             <KVValue value={v} />
           </dd>
         </div>
@@ -346,7 +346,7 @@ function KVValue({ value }: { value: unknown }) {
     return (
       <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         {entries.map(([ik, iv], i) => (
-          <span key={ik} className="whitespace-nowrap">
+          <span key={ik} className="min-w-0 [overflow-wrap:anywhere]">
             <span className="text-muted-foreground/70">
               {ik.replace(/_/g, " ")}
             </span>{" "}
@@ -383,7 +383,7 @@ function RulesView({ raw }: { raw?: string }) {
                   className="flex gap-2 text-[13px] leading-relaxed text-foreground/86"
                 >
                   <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ramune)]" />
-                  <span>{d}</span>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{d}</span>
                 </li>
               ))}
             </ul>
@@ -398,7 +398,7 @@ function RulesView({ raw }: { raw?: string }) {
                   className="flex gap-2 text-[13px] leading-relaxed text-foreground/86"
                 >
                   <span className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--beni)]" />
-                  <span>{d}</span>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{d}</span>
                 </li>
               ))}
             </ul>
@@ -422,7 +422,7 @@ function RuleNote({
 }) {
   return (
     <section
-      className="relative px-4 pb-3 pt-8"
+      className="relative min-w-0 px-4 pb-3 pt-8"
       style={{
         background: `color-mix(in oklch, var(--${color}) 5%, transparent)`,
         boxShadow: `inset 3px 0 0 color-mix(in oklch, var(--${color}) 68%, var(--paper-tape-mix))`,
@@ -479,7 +479,7 @@ function RichKeyValueView({ raw }: { raw?: string }) {
               <section key={key}>
                 <SectionRule label={label} color={color} />
                 <blockquote
-                  className="bg-card/50 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/82"
+                  className="bg-card/50 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/82 [overflow-wrap:anywhere]"
                   style={{
                     boxShadow: `inset 2px 0 0 var(--${color})`,
                   }}
@@ -492,7 +492,7 @@ function RichKeyValueView({ raw }: { raw?: string }) {
           return (
             <section key={key}>
               <SectionRule label={label} color={color} />
-              <p className="text-[14px] leading-relaxed text-foreground/90">
+              <p className="text-[14px] leading-relaxed text-foreground/90 [overflow-wrap:anywhere]">
                 {val}
               </p>
             </section>
@@ -1197,7 +1197,7 @@ function Section({
         <span className="flex-1">{label}</span>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70 transition-transform duration-200 group-open:rotate-90" />
       </summary>
-      <div className="pb-5 pt-1">{children}</div>
+      <div className="min-w-0 pb-5 pt-1">{children}</div>
     </details>
   );
 }
@@ -1234,7 +1234,7 @@ export function SpecPanel(props: SpecPanelProps) {
   });
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       {showActions && (
         <div className="mb-5 flex flex-wrap items-start justify-end gap-2">
           <SpecActions
@@ -1248,7 +1248,7 @@ export function SpecPanel(props: SpecPanelProps) {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <Section label="philosophy" color="teal" defaultOpen>
           <PhilosophyView raw={philosophy} />
         </Section>

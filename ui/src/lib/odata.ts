@@ -119,6 +119,8 @@ export interface DesignLanguage {
     embodiment_file_id?: string;
     embodiment_asset_url?: string;
     embodiment_asset_id?: string;
+    landing_file_id?: string;
+    dashboard_file_id?: string;
     thumbnail_file_id?: string;
     thumbnail_asset_url?: string;
     thumbnail_asset_id?: string;
@@ -165,6 +167,10 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "embodiment_format",
   "embodiment_verified",
   "has_embodiment",
+  // The bespoke marketing landing — the card's preferred card visual (its
+  // full-bleed hero is the strongest thumbnail). Rendered live in a small
+  // ScaledFrame when present; falls back to the embodiment thumbnail otherwise.
+  "landing_file_id",
   "thumbnail_file_id",
   "thumbnail_asset_url",
   "thumbnail_asset_id",

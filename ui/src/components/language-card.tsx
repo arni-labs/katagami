@@ -4,6 +4,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { parseJson } from "@/lib/odata";
 import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
+import { LandingCardPreview } from "@/components/landing-card-preview";
 
 const statusFallbackTone: Record<string, string> = {
   Draft: "var(--muted-foreground)",
@@ -175,6 +176,9 @@ function FullCard({
   const isPublished = lang.status === "Published";
   const thumbnailProxyFileId = isPublished ? undefined : thumbnailFileId;
   const hasThumbnailPreview = Boolean(thumbnailAssetUrl || thumbnailProxyFileId);
+  // Prefer the bespoke landing as the card visual when present — its full-bleed
+  // hero is a stronger thumbnail than the 600x400 of the element showcase.
+  const landingFileId = (f.landing_file_id || "").trim();
 
 
   return (
@@ -194,7 +198,17 @@ function FullCard({
               <span key={`${color}-${i}`} className="h-full flex-1" style={{ background: color }} />
             ))}
         </div>
-        {hasThumbnailPreview ? (
+        {landingFileId ? (
+          <LandingCardPreview
+            landingFileId={landingFileId}
+            thumbnailFileId={thumbnailProxyFileId}
+            thumbnailAssetUrl={thumbnailAssetUrl}
+            alt={`${f.name || "Design language"} landing`}
+            eager={eagerThumbnail}
+            placeholderTint={stickyTint}
+            paletteColors={paletteColors.slice(0, 4)}
+          />
+        ) : hasThumbnailPreview ? (
           <ThumbnailPreview
             fileId={thumbnailProxyFileId}
             src={thumbnailAssetUrl}

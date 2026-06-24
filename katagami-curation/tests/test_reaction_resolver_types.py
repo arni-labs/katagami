@@ -94,6 +94,7 @@ class ReactionResolverTypeTests(unittest.TestCase):
             "legacy_research_completion_advances_query": "ResearchComplete",
             "legacy_organization_completion_finishes_query": "OrganizationComplete",
             "job_failure_fails_query": "Fail",
+            "session_completed_without_job_completion_fails_query": "Fail",
         }.items():
             self.assertIn(name, triggers)
             self.assertEqual(triggers[name]["target_entity"], "CurationQuery")
@@ -255,6 +256,10 @@ class ReactionResolverTypeTests(unittest.TestCase):
         ]:
             self.assertIn(name, actions)
             self.assertEqual(actions[name]["to"], "Finalizing")
+
+        self.assertIn("SessionCompletedWithoutJobCompletion", actions)
+        self.assertEqual(actions["SessionCompletedWithoutJobCompletion"]["from"], ["Running"])
+        self.assertEqual(actions["SessionCompletedWithoutJobCompletion"]["to"], "Failed")
 
     def test_job_templates_cover_all_job_types(self):
         root = Path(__file__).resolve().parents[1]

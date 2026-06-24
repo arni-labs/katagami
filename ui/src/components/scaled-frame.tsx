@@ -51,6 +51,10 @@ export function ScaledFrame({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState<number | null>(null);
   const [contentHeight, setContentHeight] = useState(DEFAULT_HEIGHT);
+  // Bookkeeping for the deferred re-measure passes + the in-iframe observers,
+  // so a tab switch (which reloads the iframe) tears the old ones down cleanly.
+  const measureTimers = useRef<number[]>([]);
+  const docObserver = useRef<ResizeObserver | null>(null);
 
   const srcDoc = html ? patchHtml(html) : "";
 
@@ -69,21 +73,93 @@ export function ScaledFrame({
     return () => ro.disconnect();
   }, [viewportWidth]);
 
+  // Tear down any pending measurement work on unmount / html change.
+  useEffect(() => {
+    return () => {
+      measureTimers.current.forEach((t) => window.clearTimeout(t));
+      measureTimers.current = [];
+      docObserver.current?.disconnect();
+      docObserver.current = null;
+    };
+  }, [srcDoc]);
+
   function measureContent() {
     const iframe = iframeRef.current;
     if (!iframe) return;
     try {
       const doc = iframe.contentDocument;
       if (!doc) return;
+      const body = doc.body;
+      // The true composition height is the largest of the document/body box
+      // metrics AND the bottom edge of every child — absolutely-positioned or
+      // transformed sections (full-bleed heroes, pinned footers) don't always
+      // grow scrollHeight, so a pure scrollHeight read can under-measure and
+      // clip the frame. getBoundingClientRect().bottom catches those.
+      let maxBottom = 0;
+      if (body) {
+        for (const child of Array.from(body.children)) {
+          const bottom = (child as HTMLElement).getBoundingClientRect().bottom;
+          if (Number.isFinite(bottom) && bottom > maxBottom) maxBottom = bottom;
+        }
+      }
       const measured = Math.max(
         doc.documentElement.scrollHeight,
-        doc.body?.scrollHeight ?? 0,
-        doc.body?.offsetHeight ?? 0,
+        doc.documentElement.offsetHeight,
+        body?.scrollHeight ?? 0,
+        body?.offsetHeight ?? 0,
+        Math.ceil(maxBottom),
         MIN_HEIGHT,
       );
-      setContentHeight(Math.min(measured, MAX_HEIGHT));
+      setContentHeight((prev) => {
+        const next = Math.min(measured, MAX_HEIGHT);
+        // Only grow / settle on a meaningfully different value to avoid a
+        // measure→resize→measure feedback loop with the in-iframe observer.
+        return Math.abs(next - prev) > 1 ? next : prev;
+      });
     } catch {
       /* keep default */
+    }
+  }
+
+  // Robust settle: measure now, after the deferred timers, once web fonts are
+  // ready, after each in-frame <img> decodes, and on any later layout shift via
+  // a ResizeObserver on the iframe's own <body> (same-origin srcdoc). This is
+  // what makes a tall landing show in full instead of coming up cut.
+  function onFrameLoad() {
+    measureTimers.current.forEach((t) => window.clearTimeout(t));
+    measureTimers.current = [];
+    docObserver.current?.disconnect();
+    docObserver.current = null;
+
+    measureContent();
+    for (const delay of [120, 350, 700, 1400]) {
+      measureTimers.current.push(
+        window.setTimeout(measureContent, delay),
+      );
+    }
+
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    if (!doc) return;
+    try {
+      // Re-measure once custom fonts have loaded (they reflow text height).
+      doc.fonts?.ready?.then(() => measureContent()).catch(() => {});
+      // Re-measure as each image finishes decoding.
+      for (const img of Array.from(doc.images)) {
+        if (!img.complete) {
+          img.addEventListener("load", measureContent, { once: true });
+          img.addEventListener("error", measureContent, { once: true });
+        }
+      }
+      // Catch every later reflow (lazy assets, fonts, expanding sections).
+      if (doc.body && typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => measureContent());
+        ro.observe(doc.body);
+        ro.observe(doc.documentElement);
+        docObserver.current = ro;
+      }
+    } catch {
+      /* same-origin read failed — the timed passes above still apply */
     }
   }
 
@@ -113,14 +189,11 @@ export function ScaledFrame({
             transform: `scale(${scale as number})`,
             transformOrigin: "top left",
           }}
-          sandbox=""
-          // Measure a few times: fonts/images settle after first paint, so a
-          // single early measure can under-read and clip the frame.
-          onLoad={() => {
-            measureContent();
-            setTimeout(measureContent, 350);
-            setTimeout(measureContent, 1000);
-          }}
+          // allow-same-origin lets us read the srcdoc document for height
+          // measurement + observe its reflows. Scripts stay disabled (no
+          // allow-scripts), so the preview remains static and safe.
+          sandbox="allow-same-origin"
+          onLoad={onFrameLoad}
           title={title}
         />
       ) : (

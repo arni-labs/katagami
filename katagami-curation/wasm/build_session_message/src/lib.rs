@@ -447,7 +447,7 @@ fn create_session_link(
         "ParentEntityId": parent_job_id,
         "ParentActionNamespace": "Katagami.Curation",
         "ChildSessionId": child_session_id,
-        "OnCompletedAction": "",
+        "OnCompletedAction": "SessionCompletedWithoutJobCompletion",
         "OnFailureAction": "Fail",
         "MaxChecks": "80",
     });
