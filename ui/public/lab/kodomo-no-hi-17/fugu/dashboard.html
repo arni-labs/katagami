@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Kodomo no Hi Companion</title>
+  <style>
+    :root {
+      --bg: #fbfff7;
+      --surface: #ffffff;
+      --text: #07140f;
+      --muted: #476057;
+      --border: #d7eadf;
+      --accent: #13a8ff;
+      --on-accent: #ffffff;
+      --success: #35ee72;
+      --warning: #ff4f7b;
+      --error: #ff4f7b;
+      --info: #13a8ff;
+      --hero-image: url("./media/dashboard-map.webp");
+      --album-image: url("./media/dashboard-album.webp");
+      --font-display: "Arial Narrow", "Avenir Next Condensed", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+      --font-body: "Avenir Next", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", "Roboto Mono", Consolas, monospace;
+      --step-0: 17px;
+      --step-1: 19px;
+      --step-2: 24px;
+      --step-3: 34px;
+      --step-4: clamp(44px, 8vw, 104px);
+      --step-label: 13px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 18px;
+      --space-4: 28px;
+      --space-5: 44px;
+      --space-6: 72px;
+      --space-7: 112px;
+      --section-pad: clamp(60px, 8vw, 118px);
+      --radius-none: 0;
+      --radius-sm: 16px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --control-height: 52px;
+      --control-pad-x: 22px;
+      --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 34%, transparent);
+      --soft-shadow: 0 22px 70px color-mix(in srgb, var(--text) 12%, transparent);
+      --lift-shadow: 0 28px 88px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--text); }
+    body {
+      margin: 0;
+      min-width: 0;
+      font-family: var(--font-body);
+      font-size: var(--step-0);
+      line-height: 1.62;
+      background:
+        radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 16%, transparent) 0 160px, transparent 162px),
+        radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--success) 20%, transparent) 0 180px, transparent 182px),
+        var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img, svg { display: block; max-width: 100%; }
+    p { margin: 0; }
+    h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); letter-spacing: -0.035em; color: var(--text); }
+    h1 { font-size: var(--step-4); line-height: 0.88; text-transform: uppercase; max-width: 10ch; }
+    h2 { font-size: clamp(38px, 5vw, 74px); line-height: 0.94; text-transform: uppercase; }
+    h3 { font-size: var(--step-3); line-height: 1.02; text-transform: uppercase; }
+    h4 { font-size: var(--step-2); line-height: 1.08; text-transform: uppercase; }
+
+    .skip-link {
+      position: fixed;
+      left: var(--space-3);
+      top: var(--space-3);
+      z-index: 20;
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      background: var(--text);
+      color: var(--surface);
+      transform: translateY(-140%);
+    }
+    .skip-link:focus-visible { transform: translateY(0); box-shadow: var(--focus-ring); outline: none; }
+
+    .shell { width: min(1440px, 100%); margin: 0 auto; padding: 0 clamp(18px, 4vw, 56px); }
+    .topbar {
+      padding: clamp(20px, 3vw, 44px) 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 0.88;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+    }
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      font-size: var(--step-label);
+      line-height: 1;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--muted);
+    }
+    .nav-links a { min-height: var(--control-height); display: inline-flex; align-items: center; }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-pill); padding: 0 var(--space-2); }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+    button, .button {
+      min-height: var(--control-height);
+      height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--control-pad-x);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: var(--step-label);
+      cursor: pointer;
+      box-shadow: 0 12px 34px color-mix(in srgb, var(--text) 10%, transparent);
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      text-align: center;
+      white-space: nowrap;
+    }
+    button.primary, .button.primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--lift-shadow); }
+    button:hover, .button:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+    button.primary:hover, .button.primary:hover { background: color-mix(in srgb, var(--accent) 82%, var(--text)); color: var(--on-accent); }
+    button:focus-visible, .button:focus-visible { outline: none; box-shadow: var(--focus-ring), var(--lift-shadow); }
+    button:active, .button:active { transform: translateY(1px); box-shadow: 0 8px 18px color-mix(in srgb, var(--text) 12%, transparent); }
+    button:disabled, .button[aria-disabled="true"] { background: color-mix(in srgb, var(--muted) 14%, var(--surface)); color: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
+
+    .companion-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(360px, 1fr);
+      gap: var(--space-4);
+      align-items: stretch;
+      padding: var(--space-4) 0 var(--space-6);
+    }
+    .hero-copy {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(28px, 5vw, 64px);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-5);
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      right: -15%;
+      top: 18%;
+      width: 58%;
+      height: 96px;
+      background: var(--warning);
+      border-radius: var(--radius-lg);
+      transform: skewY(-7deg);
+      opacity: 0.88;
+    }
+    .hero-copy > * { position: relative; z-index: 1; }
+    .hero-map {
+      min-height: 520px;
+      border-radius: var(--radius-lg);
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--soft-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-map::before {
+      content: "";
+      position: absolute;
+      inset: auto 24px 24px 24px;
+      height: 112px;
+      border-radius: var(--radius-lg);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+    .kicker, .label {
+      font-size: var(--step-label);
+      line-height: 1;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--muted);
+      margin-bottom: var(--space-3);
+    }
+    .lead { font-size: var(--step-1); color: var(--muted); max-width: 43rem; margin-top: var(--space-4); }
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+    .metric {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3);
+      min-width: 0;
+    }
+    .metric strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 54px);
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      color: var(--text);
+    }
+    .metric span { display: block; color: var(--muted); margin-top: var(--space-2); }
+
+    main { padding-bottom: var(--space-7); }
+    .section { padding: var(--section-pad) 0 0; }
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(280px, 0.75fr);
+      gap: var(--space-5);
+      align-items: end;
+      margin-bottom: var(--space-5);
+      padding-top: var(--space-4);
+    }
+    .section-head p { font-size: var(--step-1); color: var(--muted); max-width: 42rem; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+    .panel {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(24px, 4vw, 44px);
+      box-shadow: var(--soft-shadow);
+      min-width: 0;
+    }
+    .panel.sky { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+    .panel.leaf { background: color-mix(in srgb, var(--success) 18%, var(--surface)); }
+    .panel.coral { background: var(--warning); color: var(--on-accent); }
+    .panel.coral h3, .panel.coral p, .panel.coral .label { color: var(--on-accent); }
+    .panel p { color: var(--muted); margin-top: var(--space-3); }
+    .panel.coral p { color: color-mix(in srgb, var(--on-accent) 88%, transparent); }
+
+    .schedule-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) auto;
+      gap: var(--space-2);
+      align-items: end;
+      margin-bottom: var(--space-4);
+    }
+    form { display: grid; gap: var(--space-3); }
+    label { display: grid; gap: var(--space-1); font-size: var(--step-label); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 900; color: var(--muted); }
+    input, select, textarea, button { font: inherit; color: var(--text); }
+    input, select {
+      width: 100%;
+      min-height: var(--control-height);
+      height: var(--control-height);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent), 0 10px 30px color-mix(in srgb, var(--text) 7%, transparent);
+      padding: 0 var(--control-pad-x);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M4 7 L9 12 L14 7' fill='none' stroke='%2307140f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 20px center;
+      padding-right: 52px;
+    }
+    textarea {
+      width: 100%;
+      min-height: calc(var(--control-height) * 2.25);
+      border: 0;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent), 0 10px 30px color-mix(in srgb, var(--text) 7%, transparent);
+      padding: 16px var(--control-pad-x);
+      resize: vertical;
+      outline: none;
+    }
+    input:hover, select:hover, textarea:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: var(--focus-ring), inset 0 0 0 1px var(--accent); }
+    input:disabled, select:disabled, textarea:disabled {
+      background: color-mix(in srgb, var(--muted) 10%, var(--surface));
+      color: var(--muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    ::placeholder { color: color-mix(in srgb, var(--muted) 72%, var(--surface)); opacity: 1; }
+
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-3); }
+    .choice-row {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: var(--space-2);
+      align-items: center;
+      border-radius: var(--radius-pill);
+      padding: 0 var(--control-pad-x);
+      background: color-mix(in srgb, var(--success) 13%, var(--surface));
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: var(--step-0);
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 22%, transparent);
+    }
+    .choice-row input[type="checkbox"], .choice-row input[type="radio"] {
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: inset 0 0 0 2px var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .choice-row input[type="radio"] { border-radius: var(--radius-pill); }
+    .choice-row input:checked { background: var(--success); box-shadow: inset 0 0 0 6px var(--surface), inset 0 0 0 11px var(--success); }
+    .choice-row:hover { background: color-mix(in srgb, var(--success) 24%, var(--surface)); }
+    .choice-row:focus-within { box-shadow: var(--focus-ring); }
+    .choice-row:active { transform: translateY(1px); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0 var(--space-2); min-width: 720px; }
+    th {
+      text-align: left;
+      font-size: var(--step-label);
+      line-height: 1;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 var(--space-3) var(--space-1);
+    }
+    td {
+      background: var(--bg);
+      padding: var(--space-3);
+      vertical-align: top;
+      color: var(--text);
+    }
+    tr:nth-child(even) td { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    tr:hover td { background: color-mix(in srgb, var(--accent) 15%, var(--surface)); }
+    tr:focus-within td { box-shadow: var(--focus-ring); }
+    td:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); font-family: var(--font-mono); font-weight: 800; white-space: nowrap; }
+    td:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--success) 30%, var(--surface));
+      font-size: var(--step-label);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .status.hot { background: var(--warning); color: var(--on-accent); }
+    .status.sky { background: var(--accent); color: var(--on-accent); }
+
+    .zone-map {
+      display: grid;
+      gap: var(--space-3);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      box-shadow: var(--soft-shadow);
+    }
+    .map-stage {
+      min-height: 420px;
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--accent) 19%, transparent) 0 18%, transparent 18% 100%),
+        linear-gradient(45deg, transparent 0 60%, color-mix(in srgb, var(--success) 22%, transparent) 60% 100%),
+        var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .river {
+      position: absolute;
+      left: -8%;
+      top: 16%;
+      width: 118%;
+      height: 86px;
+      background: var(--accent);
+      border-radius: var(--radius-pill);
+      transform: rotate(-7deg);
+      opacity: 0.92;
+    }
+    .green {
+      position: absolute;
+      left: 8%;
+      bottom: 12%;
+      width: 46%;
+      height: 180px;
+      background: var(--success);
+      border-radius: var(--radius-lg);
+      transform: skewY(-6deg);
+    }
+    .stage-block {
+      position: absolute;
+      right: 10%;
+      bottom: 18%;
+      width: 26%;
+      height: 120px;
+      background: var(--warning);
+      border-radius: var(--radius-lg);
+      transform: skewY(-6deg);
+    }
+    .pole-lane {
+      position: absolute;
+      left: 18%;
+      top: 36%;
+      width: 66%;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pole-lane i {
+      display: block;
+      height: 92px;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      box-shadow: 0 10px 30px color-mix(in srgb, var(--text) 10%, transparent);
+    }
+    .zone-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+    .legend-item {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-pill);
+      padding: 0 var(--control-pad-x);
+      background: var(--bg);
+      font-weight: 800;
+      min-width: 0;
+    }
+    .swatch { width: 18px; height: 18px; border-radius: var(--radius-pill); background: var(--accent); flex: 0 0 auto; }
+    .swatch.leaf { background: var(--success); }
+    .swatch.coral { background: var(--warning); }
+
+    .guide-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+    .guide-card {
+      min-height: 260px;
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .guide-card:nth-child(2) { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+    .guide-card:nth-child(3) { background: color-mix(in srgb, var(--success) 18%, var(--surface)); }
+    .guide-card:nth-child(5) { background: var(--warning); color: var(--on-accent); }
+    .guide-card:nth-child(5) h3, .guide-card:nth-child(5) p, .guide-card:nth-child(5) .label { color: var(--on-accent); }
+    .guide-card p { color: var(--muted); margin-top: var(--space-3); }
+    .guide-card:nth-child(5) p { color: color-mix(in srgb, var(--on-accent) 88%, transparent); }
+
+    .album-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: var(--space-4);
+      align-items: stretch;
+    }
+    .album-image {
+      min-height: 520px;
+      border-radius: var(--radius-lg);
+      background-image: var(--album-image);
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--soft-shadow);
+    }
+    .album-list { display: grid; gap: var(--space-3); }
+    .album-item {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: center;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      box-shadow: var(--soft-shadow);
+    }
+    .album-number {
+      width: 96px;
+      height: 96px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-lg);
+      background: var(--accent);
+      color: var(--on-accent);
+      font-family: var(--font-display);
+      font-size: 44px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .album-item:nth-child(2) .album-number { background: var(--success); color: var(--text); }
+    .album-item:nth-child(3) .album-number { background: var(--warning); color: var(--on-accent); }
+    .album-item p { color: var(--muted); }
+
+    .planner {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.8fr);
+      gap: var(--space-4);
+      align-items: start;
+    }
+    .quiet-note {
+      color: var(--muted);
+      font-size: var(--step-1);
+      margin-top: var(--space-4);
+    }
+
+    footer { padding: var(--space-6) 0; color: var(--muted); }
+    .footer-inner { display: flex; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+
+    .js .reveal { opacity: 0; transform: translateY(22px); transition: opacity 650ms ease, transform 650ms ease; }
+    .js .reveal.in { opacity: 1; transform: translateY(0); }
+    .js .map-stage .river, .js .map-stage .green, .js .map-stage .stage-block { transition: transform 720ms ease, opacity 720ms ease; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+      .js .reveal { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 1020px) {
+      .topbar, .companion-hero, .section-head, .dashboard-grid, .album-grid, .planner { grid-template-columns: 1fr; }
+      .nav-links { justify-content: start; }
+      .topbar .button { justify-self: start; }
+      .guide-grid { grid-template-columns: 1fr 1fr; }
+      .hero-map, .album-image { min-height: 420px; }
+      .schedule-controls { grid-template-columns: 1fr 1fr; }
+      .schedule-controls .button { grid-column: 1 / -1; width: 100%; }
+    }
+    @media (max-width: 700px) {
+      .shell { padding: 0 18px; }
+      .nav-links a:nth-child(n+3) { display: none; }
+      .metric-strip, .guide-grid, .zone-legend, .choice-grid { grid-template-columns: 1fr; }
+      .schedule-controls { grid-template-columns: 1fr; }
+      .hero-copy, .panel, .zone-map, .guide-card { padding: 22px; }
+      .hero-map, .map-stage, .album-image { min-height: 330px; }
+      .table-wrap { margin-inline: -18px; padding-inline: 18px; }
+      table { min-width: 600px; }
+      .hide-mobile { display: none; }
+      td:first-child { white-space: normal; }
+      .album-item { grid-template-columns: 72px minmax(0, 1fr); }
+      .album-number { width: 72px; height: 72px; font-size: 34px; }
+      .button-row { flex-direction: column; align-items: stretch; }
+      .button-row > * { width: 100%; }
+    }
+  </style>
+  <script>
+    document.documentElement.classList.add('js');
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to companion content</a>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="landing.html" aria-label="Nobori welcome page">Nobori</a>
+      <nav class="nav-links" aria-label="Companion navigation">
+        <a href="#programme">Programme</a>
+        <a href="#map">Map</a>
+        <a href="#guide">Guide</a>
+        <a href="#album">Album</a>
+      </nav>
+      <a class="button primary" href="landing.html">Welcome page</a>
+    </header>
+
+    <section class="companion-hero" aria-labelledby="page-title">
+      <div class="hero-copy reveal">
+        <div>
+          <div class="kicker">Kodomo no Hi companion</div>
+          <h1 id="page-title">The day, held clearly.</h1>
+          <p class="lead">A dense public guide for the Nobori celebration: programme times, koinobori lanes, food notes, workshop capacity, resting grass, and the family album desk.</p>
+        </div>
+        <div class="metric-strip" aria-label="Festival summary">
+          <div class="metric"><strong>18</strong><span>programme moments</span></div>
+          <div class="metric"><strong>6</strong><span>riverbank zones</span></div>
+          <div class="metric"><strong>4</strong><span>album windows</span></div>
+        </div>
+      </div>
+      <div class="hero-map reveal" role="img" aria-label="Schematic riverside Kodomo no Hi festival map"></div>
+    </section>
+  </div>
+
+  <main id="main" class="shell">
+    <section id="programme" class="section">
+      <div class="section-head reveal">
+        <div>
+          <div class="kicker">Programme</div>
+          <h2>Follow the wind without checking twice.</h2>
+        </div>
+        <p>Times are grouped for real festival use. The table keeps the day readable for hosts while staying generous enough for a phone at the gate.</p>
+      </div>
+      <div class="dashboard-grid">
+        <section class="panel reveal" aria-label="Festival programme table">
+          <div class="schedule-controls">
+            <label>Search the day
+              <input type="search" placeholder="Try mochi, taiko, iris, album">
+            </label>
+            <label>Area
+              <select>
+                <option>All riverbank zones</option>
+                <option>Streamer poles</option>
+                <option>Food court</option>
+                <option>Workshop tents</option>
+                <option>Main stage</option>
+              </select>
+            </label>
+            <button class="primary" type="button">Filter</button>
+          </div>
+          <div class="table-wrap">
+            <table aria-label="Kodomo no Hi festival programme">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Moment</th>
+                  <th>Place</th>
+                  <th class="hide-mobile">Host note</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>08:30</td>
+                  <td>Streamer pole raise</td>
+                  <td>North river gate</td>
+                  <td class="hide-mobile">Best viewing from the grass bank</td>
+                  <td><span class="status sky">Open</span></td>
+                </tr>
+                <tr>
+                  <td>09:15</td>
+                  <td>Wish card table</td>
+                  <td>Cedar tent</td>
+                  <td class="hide-mobile">Cards and cotton ties supplied</td>
+                  <td><span class="status">Ready</span></td>
+                </tr>
+                <tr>
+                  <td>10:00</td>
+                  <td>Iris bundle workshop</td>
+                  <td>Green lane</td>
+                  <td class="hide-mobile">Twelve families each round</td>
+                  <td><span class="status hot">Busy</span></td>
+                </tr>
+                <tr>
+                  <td>11:30</td>
+                  <td>Chimaki wrapping</td>
+                  <td>Food court</td>
+                  <td class="hide-mobile">Leaf prep starts fifteen minutes early</td>
+                  <td><span class="status">Ready</span></td>
+                </tr>
+                <tr>
+                  <td>12:20</td>
+                  <td>Taiko rehearsal open circle</td>
+                  <td>Main stage</td>
+                  <td class="hide-mobile">Standing room near the blue lane</td>
+                  <td><span class="status sky">Open</span></td>
+                </tr>
+                <tr>
+                  <td>14:00</td>
+                  <td>Kashiwa mochi service</td>
+                  <td>Food court</td>
+                  <td class="hide-mobile">Separate pickup for preorders</td>
+                  <td><span class="status hot">Busy</span></td>
+                </tr>
+                <tr>
+                  <td>15:30</td>
+                  <td>Family album portraits</td>
+                  <td>South streamer lane</td>
+                  <td class="hide-mobile">White bench faces the river light</td>
+                  <td><span class="status">Ready</span></td>
+                </tr>
+                <tr>
+                  <td>17:10</td>
+                  <td>Closing song under the poles</td>
+                  <td>Main stage</td>
+                  <td class="hide-mobile">Coral wristbands meet at stage left</td>
+                  <td><span class="status sky">Open</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="panel sky reveal" aria-label="Today desk">
+          <div class="label">Host desk</div>
+          <h3>What changed today</h3>
+          <p>The iris table moved closer to the green lane, the album bench opens after lunch, and the mochi counter has a separate family pickup window.</p>
+          <form aria-label="Companion alert settings">
+            <label>Alert time
+              <select>
+                <option>Ten minutes before a saved moment</option>
+                <option>Thirty minutes before a saved moment</option>
+                <option>Only for location changes</option>
+              </select>
+            </label>
+            <div class="choice-grid">
+              <label class="choice-row"><input type="radio" name="pace" checked> Calm route</label>
+              <label class="choice-row"><input type="radio" name="pace"> Full programme</label>
+              <label class="choice-row"><input type="checkbox" checked> Include food notes</label>
+              <label class="choice-row"><input type="checkbox"> Include album desk</label>
+            </div>
+            <button type="button" class="primary">Save desk view</button>
+          </form>
+        </aside>
+      </div>
+    </section>
+
+    <section id="map" class="section">
+      <div class="section-head reveal">
+        <div>
+          <div class="kicker">Map of the festivities</div>
+          <h2>Six zones, one clean river walk.</h2>
+        </div>
+        <p>The map uses koinobori lanes instead of boxed pins. Blue is flow, green is rest and making, coral is the high-energy stage and portrait hour.</p>
+      </div>
+      <div class="dashboard-grid">
+        <div class="zone-map reveal" aria-label="Festival zone map">
+          <div class="map-stage" role="img" aria-label="Graphic map with river lane, grass area, stage, and streamer poles">
+            <div class="river"></div>
+            <div class="green"></div>
+            <div class="stage-block"></div>
+            <div class="pole-lane" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="zone-legend">
+            <div class="legend-item"><span class="swatch"></span><span>River flow</span></div>
+            <div class="legend-item"><span class="swatch leaf"></span><span>Rest and making</span></div>
+            <div class="legend-item"><span class="swatch coral"></span><span>Stage and album</span></div>
+          </div>
+        </div>
+        <div class="panel leaf reveal">
+          <div class="label">Route notes</div>
+          <h3>Move with the streamers.</h3>
+          <p>Enter from the north gate for the first koinobori lane. Families with strollers should use the green path behind the workshop tents. The south lane is calm until album hour.</p>
+          <p>Restrooms sit between the food court and cedar tent. Water refill tables are placed at both ends of the river walk.</p>
+          <div class="button-row">
+            <button type="button" class="primary">Save route</button>
+            <button type="button">Print guide</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="guide" class="section">
+      <div class="section-head reveal">
+        <div>
+          <div class="kicker">Guide</div>
+          <h2>Small decisions made before arrival.</h2>
+        </div>
+        <p>This is the practical layer: what to bring, where to stand, how the food windows work, and which moments are best for mixed-age families.</p>
+      </div>
+      <div class="guide-grid">
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Bring</div>
+            <h3>Hands free</h3>
+          </div>
+          <p>A small cloth, water bottle, and one bag that can sit under a bench during the wish-card hour.</p>
+        </article>
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Stand</div>
+            <h3>Blue lane</h3>
+          </div>
+          <p>Best view of the streamers is the open strip between the north poles and the first food tent.</p>
+        </article>
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Eat</div>
+            <h3>Mochi window</h3>
+          </div>
+          <p>Preorder pickup stays on the quiet side of the counter so the tasting line can keep moving.</p>
+        </article>
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Make</div>
+            <h3>Iris bundle</h3>
+          </div>
+          <p>The green tent hosts short rounds. Families can join without committing to the full workshop.</p>
+        </article>
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Gather</div>
+            <h3>Portrait hour</h3>
+          </div>
+          <p>Meet at the coral bench after lunch when the streamer shadows cross the south lane.</p>
+        </article>
+        <article class="guide-card reveal">
+          <div>
+            <div class="label">Rest</div>
+            <h3>Grass bank</h3>
+          </div>
+          <p>The grass bank is kept free of vendor tables. It is the place to sit, look up, and let the day slow down.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="album" class="section">
+      <div class="section-head reveal">
+        <div>
+          <div class="kicker">Family album</div>
+          <h2>The celebration keeps a record.</h2>
+        </div>
+        <p>Album windows are structured so families know when to arrive and hosts know what kind of picture each moment needs.</p>
+      </div>
+      <div class="album-grid">
+        <div class="album-image reveal" role="img" aria-label="Editorial Kodomo no Hi family album moments"></div>
+        <div class="album-list">
+          <article class="album-item reveal">
+            <div class="album-number">01</div>
+            <div><h4>Streamer raise</h4><p>Wide photograph with the north poles and families looking up.</p></div>
+          </article>
+          <article class="album-item reveal">
+            <div class="album-number">02</div>
+            <div><h4>Hands at the table</h4><p>Close crop of wish cards, iris leaves, and cotton ties.</p></div>
+          </article>
+          <article class="album-item reveal">
+            <div class="album-number">03</div>
+            <div><h4>Food cloth</h4><p>Kashiwa mochi and chimaki arranged before the afternoon service.</p></div>
+          </article>
+          <article class="album-item reveal">
+            <div class="album-number">04</div>
+            <div><h4>South lane portrait</h4><p>Families seated at the white bench with koinobori above.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="planner">
+        <div class="panel coral reveal">
+          <div class="label">Before you leave</div>
+          <h2>Build a small plan.</h2>
+          <p>Choose a pace, save three moments, and add one meeting note. The companion is useful when it is specific.</p>
+        </div>
+        <form class="panel reveal" aria-label="Personal festival plan">
+          <label>Your meeting point
+            <input placeholder="North gate under the first blue streamer">
+          </label>
+          <label>Three moments to save
+            <textarea placeholder="Streamer raise, mochi pickup, south lane portrait"></textarea>
+          </label>
+          <label>Group size
+            <select>
+              <option>Two to four people</option>
+              <option>Five to eight people</option>
+              <option>Nine or more people</option>
+            </select>
+          </label>
+          <div class="choice-grid">
+            <label class="choice-row"><input type="checkbox" checked> Need quiet rest spots</label>
+            <label class="choice-row"><input type="checkbox"> Need workshop capacity</label>
+          </div>
+          <div class="button-row">
+            <button class="primary" type="button">Save plan</button>
+            <button type="button">Clear form</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <div class="footer-inner">
+      <strong>Nobori</strong>
+      <span>Festival companion for Kodomo no Hi, using one shared design language.</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+      if (reduce || !('IntersectionObserver' in window)) {
+        nodes.forEach(function (node) { node.classList.add('in'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.14 });
+      nodes.forEach(function (node, index) {
+        node.style.transitionDelay = Math.min(index % 5, 4) * 70 + 'ms';
+        observer.observe(node);
+      });
+    }());
+  </script>
+</body>
+</html>

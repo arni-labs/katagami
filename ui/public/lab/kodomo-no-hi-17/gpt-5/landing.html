@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori | Kodomo no Hi Festival</title>
+  <meta name="description" content="Nobori is a bright, graphic Kodomo no Hi festival welcome page for koinobori, customs, food, and public celebration.">
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F5F8F2;
+      --text: #000000;
+      --muted: #39443B;
+      --border: color-mix(in srgb, var(--text) 12%, transparent);
+      --accent: #00A8FF;
+      --on-accent: #000000;
+      --success: #39FF88;
+      --warning: #FF315A;
+      --error: #FF315A;
+      --info: #00A8FF;
+      --hero-image: url("media/koinobori-hero.png");
+      --font-display: "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+      --font-body: "Hiragino Sans", "Yu Gothic", "Avenir Next", "Segoe UI", sans-serif;
+      --type-xs: 0.91rem;
+      --type-sm: 0.94rem;
+      --type-body: 1.0625rem;
+      --type-lead: clamp(1.2rem, 1vw + 1rem, 1.55rem);
+      --type-h3: clamp(1.45rem, 1.1vw + 1.1rem, 2rem);
+      --type-h2: clamp(2.3rem, 3.4vw + 1rem, 5.25rem);
+      --type-hero: clamp(4.4rem, 13vw, 16rem);
+      --tracking-display: -0.02em;
+      --tracking-ui: 0;
+      --leading-tight: 0.86;
+      --leading-copy: 1.55;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4.5rem;
+      --space-9: 7rem;
+      --container: min(1500px, calc(100vw - 40px));
+      --radius-0: 0;
+      --radius-16: 16px;
+      --radius-24: 24px;
+      --radius-full: 9999px;
+      --control-h: 52px;
+      --ring: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: var(--leading-copy);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 0;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-size: var(--type-body);
+    }
+
+    body,
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: var(--tracking-ui);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    p {
+      margin: 0;
+      max-width: 68ch;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-weight: 900;
+      letter-spacing: var(--tracking-display);
+      line-height: var(--leading-tight);
+      text-transform: uppercase;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .site-nav {
+      position: absolute;
+      z-index: 4;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      width: var(--container);
+      margin: 0 auto;
+      padding: var(--space-5) 0;
+      color: var(--text);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: var(--control-h);
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: var(--tracking-display);
+      line-height: 1;
+      text-transform: uppercase;
+      text-shadow: 0 2px 18px color-mix(in srgb, var(--bg) 82%, transparent);
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: var(--radius-full);
+      box-shadow: 22px 0 0 var(--success), 44px 0 0 var(--warning);
+      flex: 0 0 auto;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+      min-height: var(--control-h);
+      color: var(--text);
+      font-size: var(--type-sm);
+      font-weight: 800;
+      text-transform: uppercase;
+      text-shadow: 0 2px 18px color-mix(in srgb, var(--bg) 82%, transparent);
+    }
+
+    .nav-links a {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--control-h);
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 8px;
+      height: 6px;
+      background: var(--success);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 160ms ease;
+      z-index: -1;
+    }
+
+    .nav-links a:hover::after,
+    .nav-links a:focus-visible::after {
+      transform: scaleX(1);
+    }
+
+    .nav-links a:focus-visible {
+      outline: 0;
+      box-shadow: var(--ring);
+      border-radius: var(--radius-16);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100svh;
+      width: 100vw;
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 30svh;
+      background: var(--bg);
+      clip-path: polygon(0 72%, 100% 48%, 100% 100%, 0 100%);
+      z-index: -1;
+    }
+
+    .hero-band {
+      position: absolute;
+      z-index: 1;
+      right: -7vw;
+      top: 22svh;
+      width: 48vw;
+      min-width: 480px;
+      height: 34px;
+      background: var(--accent);
+      transform: rotate(-8deg);
+      box-shadow: 0 54px 0 var(--success), 0 108px 0 var(--warning);
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      width: var(--container);
+      margin: 0 auto;
+      padding: calc(var(--space-9) + 4rem) 0 var(--space-8);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 var(--space-4);
+      margin-bottom: var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--success);
+      color: var(--text);
+      font-size: var(--type-sm);
+      font-weight: 900;
+      text-transform: uppercase;
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--bg) 44%, transparent);
+    }
+
+    .hero h1 {
+      max-width: 8ch;
+      font-size: var(--type-hero);
+      text-shadow: 0 3px 26px color-mix(in srgb, var(--bg) 92%, transparent);
+    }
+
+    .hero-deck {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.45fr);
+      gap: var(--space-6);
+      align-items: end;
+      margin-top: var(--space-5);
+      max-width: 980px;
+    }
+
+    .hero-deck p {
+      padding-top: var(--space-4);
+      font-size: var(--type-lead);
+      font-weight: 800;
+      line-height: 1.28;
+      text-shadow: 0 2px 18px color-mix(in srgb, var(--bg) 90%, transparent);
+    }
+
+    .date-chip {
+      display: grid;
+      gap: var(--space-2);
+      align-content: center;
+      min-height: 140px;
+      padding: var(--space-5);
+      border-radius: var(--radius-24);
+      background: var(--bg);
+      box-shadow: 0 24px 60px color-mix(in srgb, var(--text) 12%, transparent);
+    }
+
+    .date-chip strong {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 5rem);
+      line-height: 0.86;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .date-chip span {
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .section {
+      position: relative;
+      padding: var(--space-9) 0;
+    }
+
+    .section.surface {
+      background: var(--surface);
+    }
+
+    .section-inner {
+      width: var(--container);
+      margin: 0 auto;
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.55fr);
+      gap: var(--space-7);
+      align-items: end;
+      margin-bottom: var(--space-7);
+      padding-top: var(--space-3);
+    }
+
+    .section-title h2 {
+      font-size: var(--type-h2);
+    }
+
+    .section-title p {
+      color: var(--muted);
+      font-size: var(--type-lead);
+      font-weight: 700;
+      line-height: 1.36;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .stat {
+      min-width: 0;
+      padding: var(--space-6);
+      border-radius: var(--radius-24);
+      background: var(--surface);
+    }
+
+    .stat:nth-child(2) {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .stat:nth-child(3) {
+      background: var(--success);
+    }
+
+    .stat:nth-child(4) {
+      background: var(--warning);
+    }
+
+    .stat strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 6vw, 7.5rem);
+      font-weight: 900;
+      letter-spacing: var(--tracking-display);
+      line-height: 0.86;
+      text-transform: uppercase;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: var(--space-4);
+      font-size: var(--type-sm);
+      font-weight: 850;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .wind-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--space-6);
+      align-items: stretch;
+    }
+
+    .wind-stack {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .wind-band-row {
+      display: grid;
+      grid-template-columns: minmax(72px, 0.18fr) minmax(0, 1fr);
+      min-height: 118px;
+      background: var(--bg);
+      border-radius: var(--radius-24);
+      overflow: hidden;
+    }
+
+    .wind-band-row:nth-child(2) .band-key {
+      background: var(--success);
+    }
+
+    .wind-band-row:nth-child(3) .band-key {
+      background: var(--warning);
+    }
+
+    .band-key {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 4.8rem);
+      font-weight: 900;
+      letter-spacing: var(--tracking-display);
+      line-height: 0.9;
+    }
+
+    .band-copy {
+      padding: var(--space-5);
+    }
+
+    .band-copy h3 {
+      margin-bottom: var(--space-3);
+      font-size: var(--type-h3);
+    }
+
+    .band-copy p {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .feature-panel {
+      display: grid;
+      align-content: end;
+      min-height: 100%;
+      padding: var(--space-7);
+      border-radius: var(--radius-24);
+      background: var(--text);
+      color: var(--bg);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .feature-panel::before {
+      content: "";
+      position: absolute;
+      top: var(--space-6);
+      right: var(--space-6);
+      width: 46%;
+      height: 30px;
+      background: var(--accent);
+      box-shadow: 0 48px 0 var(--success), 0 96px 0 var(--warning);
+      transform: rotate(-10deg);
+    }
+
+    .feature-panel h3 {
+      color: var(--bg);
+      font-size: clamp(2.4rem, 5vw, 7rem);
+    }
+
+    .feature-panel p {
+      margin-top: var(--space-5);
+      color: color-mix(in srgb, var(--bg) 82%, transparent);
+      font-size: var(--type-lead);
+      font-weight: 700;
+    }
+
+    .customs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .custom {
+      min-width: 0;
+      padding: var(--space-6);
+      border-radius: var(--radius-24);
+      background: var(--bg);
+    }
+
+    .custom h3 {
+      margin-bottom: var(--space-4);
+      font-size: var(--type-h3);
+    }
+
+    .custom p {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .custom .stripe {
+      width: min(220px, 100%);
+      height: 18px;
+      margin-bottom: var(--space-5);
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      box-shadow: 28px 0 0 var(--success), 56px 0 0 var(--warning);
+    }
+
+    .table-wrap {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1.2fr) minmax(160px, 0.5fr);
+      gap: var(--space-4);
+      align-items: center;
+      min-height: 74px;
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-16);
+      background: var(--surface);
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+
+    .table-row:nth-child(even) {
+      background: var(--bg);
+    }
+
+    .table-row strong {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      letter-spacing: var(--tracking-display);
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .table-row span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .feast {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .feast-callout {
+      position: sticky;
+      top: var(--space-5);
+      padding: var(--space-7);
+      border-radius: var(--radius-24);
+      background: var(--success);
+    }
+
+    .feast-callout h2 {
+      font-size: var(--type-h2);
+    }
+
+    .food-list {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .food {
+      display: grid;
+      grid-template-columns: minmax(90px, 0.22fr) minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: start;
+      padding: var(--space-5);
+      border-radius: var(--radius-24);
+      background: var(--surface);
+    }
+
+    .food strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--control-h);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      line-height: 1;
+      letter-spacing: var(--tracking-display);
+      text-transform: uppercase;
+    }
+
+    .food h3 {
+      margin-bottom: var(--space-2);
+      font-size: var(--type-h3);
+    }
+
+    .food p {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .join-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 0.45fr);
+      gap: var(--space-4);
+      align-items: end;
+      padding: var(--space-6);
+      border-radius: var(--radius-24);
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+
+    .field label,
+    .check span {
+      color: inherit;
+      font-size: var(--type-sm);
+      font-weight: 850;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: var(--radius-16);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: var(--control-h);
+      padding: 0 var(--space-4);
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: inset 0 0 0 2px transparent;
+      outline: 0;
+      transition: background 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+    }
+
+    textarea {
+      min-height: calc(var(--control-h) * 2);
+      padding-top: var(--space-4);
+      resize: vertical;
+    }
+
+    select {
+      padding-right: 48px;
+    }
+
+    .select-field {
+      position: relative;
+    }
+
+    .select-field::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      bottom: calc((var(--control-h) - 7px) / 2);
+      width: 12px;
+      height: 7px;
+      background: var(--text);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      pointer-events: none;
+    }
+
+    input:hover,
+    select:hover,
+    textarea:hover {
+      background: var(--surface);
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .field:focus-within {
+      box-shadow: var(--ring);
+    }
+
+    input:active,
+    select:active,
+    textarea:active {
+      transform: translateY(1px);
+    }
+
+    input:disabled,
+    select:disabled,
+    textarea:disabled,
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--control-h);
+      padding: 0 var(--space-5);
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 950;
+      line-height: 1;
+      text-align: center;
+      text-transform: uppercase;
+      cursor: pointer;
+      outline: 0;
+      transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .btn:hover {
+      background: var(--success);
+    }
+
+    .btn:focus-visible {
+      box-shadow: var(--ring);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      background: var(--warning);
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: var(--control-h);
+    }
+
+    .check input {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: var(--radius-full);
+      background: var(--bg);
+      cursor: pointer;
+    }
+
+    .check input:checked {
+      background: var(--success);
+      box-shadow: inset 0 0 0 8px var(--text);
+    }
+
+    .footer {
+      padding: var(--space-7) 0;
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .footer-inner {
+      width: var(--container);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+    }
+
+    .footer strong {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 5rem);
+      letter-spacing: var(--tracking-display);
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    .footer p {
+      color: color-mix(in srgb, var(--bg) 72%, transparent);
+      font-weight: 700;
+    }
+
+    .motion-ready .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+    }
+
+    .motion-ready.motion-run .reveal {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 620ms ease, transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+      transition-delay: var(--delay, 0ms);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+
+      .motion-ready .reveal,
+      .motion-ready.motion-run .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .nav-links a:not(:last-child) {
+        display: none;
+      }
+
+      .hero-band {
+        top: 18svh;
+        right: -44vw;
+      }
+
+      .hero-deck,
+      .section-title,
+      .wind-grid,
+      .feast,
+      .join-form {
+        grid-template-columns: 1fr;
+      }
+
+      .stats,
+      .customs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature-panel {
+        min-height: 420px;
+      }
+
+      .feast-callout {
+        position: static;
+      }
+    }
+
+    @media (max-width: 620px) {
+      :root {
+        --container: min(100vw - 24px, 1500px);
+      }
+
+      .site-nav {
+        padding-top: var(--space-4);
+      }
+
+      .brand {
+        font-size: 1.6rem;
+      }
+
+      .brand-mark {
+        width: 32px;
+        box-shadow: 16px 0 0 var(--success), 32px 0 0 var(--warning);
+      }
+
+      .hero-copy {
+        padding-bottom: var(--space-6);
+      }
+
+      .hero h1 {
+        font-size: clamp(4.2rem, 26vw, 8.4rem);
+      }
+
+      .section {
+        padding: var(--space-8) 0;
+      }
+
+      .stats,
+      .customs {
+        grid-template-columns: 1fr;
+      }
+
+      .wind-band-row,
+      .food,
+      .table-row {
+        grid-template-columns: 1fr;
+      }
+
+      .band-key {
+        min-height: 84px;
+      }
+
+      .table-row span:last-child {
+        display: none;
+      }
+
+      .footer-inner {
+        display: grid;
+      }
+    }
+  </style>
+  <script>
+    document.documentElement.classList.remove("no-js");
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("motion-ready");
+      window.addEventListener("DOMContentLoaded", function () {
+        requestAnimationFrame(function () {
+          document.documentElement.classList.add("motion-run");
+        });
+      });
+    }
+  </script>
+</head>
+<body>
+  <header class="site-nav" aria-label="Festival navigation">
+    <a class="brand" href="#top" aria-label="Nobori Kodomo no Hi home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Nobori
+    </a>
+    <nav class="nav-links" aria-label="Page sections">
+      <a href="#rise">Koinobori</a>
+      <a href="#customs">Customs</a>
+      <a href="#food">Food</a>
+      <a href="dashboard.html">Companion</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-band" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <span class="eyebrow reveal">Kodomo no Hi public festival</span>
+        <h1 id="hero-title" class="reveal" style="--delay: 80ms;">Koinobori rise</h1>
+        <div class="hero-deck">
+          <p class="reveal" style="--delay: 160ms;">May 5 opens in clear light: carp streamers above the park, fresh leaves around the route, families gathering for strength, joy, and the first bright heat of early summer.</p>
+          <div class="date-chip reveal" style="--delay: 240ms;" aria-label="Festival date">
+            <strong>May 5</strong>
+            <span>10:00 to 18:30 at River Terrace Park</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="pulse-title">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2 id="pulse-title">The day at full height</h2>
+          <p>Nobori turns the festival into a clean civic poster: direct routes, open air, strong time signals, and color used only when it needs to lift the crowd.</p>
+        </div>
+        <div class="stats" aria-label="Festival highlights">
+          <article class="stat">
+            <strong>72</strong>
+            <span>Carp streamers above the main lawn</span>
+          </article>
+          <article class="stat">
+            <strong>8</strong>
+            <span>Programme blocks from opening call to dusk chorus</span>
+          </article>
+          <article class="stat">
+            <strong>4</strong>
+            <span>Custom stations for helmets, leaves, tea, and wishes</span>
+          </article>
+          <article class="stat">
+            <strong>1</strong>
+            <span>Shared day for courage, growth, and good wind</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section surface" id="rise" aria-labelledby="rise-title">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2 id="rise-title">Carp streamers in the May wind</h2>
+          <p>The route begins under a high line of koinobori. Each streamer marks a family wish: strength in the current, resilience in weather, and a child carried forward by the whole town.</p>
+        </div>
+        <div class="wind-grid">
+          <div class="wind-stack">
+            <article class="wind-band-row">
+              <div class="band-key">01</div>
+              <div class="band-copy">
+                <h3>Welcome gate</h3>
+                <p>Volunteers tie new streamers to the opening line and hand out the day's route sheet before the first drum call.</p>
+              </div>
+            </article>
+            <article class="wind-band-row">
+              <div class="band-key">02</div>
+              <div class="band-copy">
+                <h3>Sky corridor</h3>
+                <p>A long walk beneath blue, green, and hot koi bands, with pauses for family photographs and small dedication tags.</p>
+              </div>
+            </article>
+            <article class="wind-band-row">
+              <div class="band-key">03</div>
+              <div class="band-copy">
+                <h3>Dusk lift</h3>
+                <p>The final raising happens when the light turns low and the streamers cut clean shapes against the river.</p>
+              </div>
+            </article>
+          </div>
+          <aside class="feature-panel" aria-label="Festival feeling">
+            <h3>Air made visible</h3>
+            <p>The graphic system follows the same idea: long bands reveal motion, direction, and gathering without crowding the day.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="customs" aria-labelledby="customs-title">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2 id="customs-title">Customs with clean hands and bright edges</h2>
+          <p>Kodomo no Hi is tactile without becoming messy: folded paper, oak leaves, helmets, baths scented with iris, and wishes spoken into clear air.</p>
+        </div>
+        <div class="customs">
+          <article class="custom">
+            <div class="stripe" aria-hidden="true"></div>
+            <h3>Kabuto folding</h3>
+            <p>Make a paper helmet at the long table, then stamp the lining with the year's festival mark and a family name.</p>
+          </article>
+          <article class="custom">
+            <div class="stripe" aria-hidden="true"></div>
+            <h3>Oak leaf wishes</h3>
+            <p>Kashiwa leaves carry the wish for continuity. Guests write a short note, tie it, and leave space for the next family.</p>
+          </article>
+          <article class="custom">
+            <div class="stripe" aria-hidden="true"></div>
+            <h3>Iris water</h3>
+            <p>Fresh shobu is bundled at the garden station, connecting the day to courage, health, and the scent of early summer.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section surface" aria-labelledby="programme-title">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2 id="programme-title">Festival pulse</h2>
+          <p>A simple day with enough structure to feel generous: arrive, walk, make, eat, listen, and return to the streamers when the light changes.</p>
+        </div>
+        <div class="table-wrap" role="table" aria-label="Welcome page programme">
+          <div class="table-row" role="row">
+            <strong role="cell">10:00</strong>
+            <div role="cell">Opening drum and first koinobori lift</div>
+            <span role="cell">Main lawn</span>
+          </div>
+          <div class="table-row" role="row">
+            <strong role="cell">11:30</strong>
+            <div role="cell">Kabuto folding table and family portraits</div>
+            <span role="cell">Craft court</span>
+          </div>
+          <div class="table-row" role="row">
+            <strong role="cell">13:00</strong>
+            <div role="cell">Kashiwa mochi service and tea counter</div>
+            <span role="cell">Food lane</span>
+          </div>
+          <div class="table-row" role="row">
+            <strong role="cell">16:45</strong>
+            <div role="cell">River walk procession beneath the streamer line</div>
+            <span role="cell">Sky corridor</span>
+          </div>
+          <div class="table-row" role="row">
+            <strong role="cell">18:10</strong>
+            <div role="cell">Dusk chorus and closing wish line</div>
+            <span role="cell">Garden stage</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="food" aria-labelledby="food-title">
+      <div class="section-inner feast">
+        <div class="feast-callout">
+          <h2 id="food-title">Food for a clear day</h2>
+          <p>The menu stays seasonal and exact: leaf-wrapped sweets, clean broth, grilled greens, chilled tea, and bright citrus.</p>
+        </div>
+        <div class="food-list">
+          <article class="food">
+            <strong>Leaf</strong>
+            <div>
+              <h3>Kashiwa mochi</h3>
+              <p>Soft rice cake folded in oak leaf, served from the south counter in small batches through the afternoon.</p>
+            </div>
+          </article>
+          <article class="food">
+            <strong>Steam</strong>
+            <div>
+              <h3>Spring bamboo bowl</h3>
+              <p>Rice, bamboo shoots, and herbs in a warm bowl designed for sitting on the grass without slowing the route.</p>
+            </div>
+          </article>
+          <article class="food">
+            <strong>Cool</strong>
+            <div>
+              <h3>Yuzu barley tea</h3>
+              <p>A cold station near the koinobori corridor keeps the day bright, dry, and moving.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section surface" aria-labelledby="join-title">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2 id="join-title">Bring a streamer</h2>
+          <p>Register a family streamer, reserve a craft time, or ask the welcome crew where to place a dedication tag.</p>
+        </div>
+        <form class="join-form">
+          <div class="field">
+            <label for="family-name">Family name</label>
+            <input id="family-name" name="family-name" type="text" placeholder="Sato family">
+          </div>
+          <div class="field select-field">
+            <label for="arrival">Arrival window</label>
+            <select id="arrival" name="arrival">
+              <option>Morning lift</option>
+              <option>Midday crafts</option>
+              <option>Dusk chorus</option>
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Reserve</button>
+          <label class="check">
+            <input type="checkbox" name="bring-streamer">
+            <span>We will bring a streamer</span>
+          </label>
+          <button class="btn" type="button">Ask the crew</button>
+          <button class="btn" type="button" disabled>Lantern pickup closed</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <strong>Nobori</strong>
+      <p>Kodomo no Hi at River Terrace Park. Clear sky, high streamers, careful welcome.</p>
+    </div>
+  </footer>
+</body>
+</html>

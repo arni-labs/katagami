@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nobori — Festival Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFFFFF;
+  --surface: #F7F8FA;
+  --muted: #9CA3AF;
+  --secondary: #6B7280;
+  --text: #1F2937;
+  --black: #0A0A0A;
+  --accent: #0090FF;
+  --accent-hover: #0077DD;
+  --accent-active: #0066BB;
+  --accent-ring: rgba(0,144,255,0.35);
+  --success: #00D68F;
+  --success-light: #E8FFF3;
+  --warning: #F59E0B;
+  --error: #FF3D6C;
+  --error-hover: #E8345D;
+  --info: #0090FF;
+  --font-display: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --font-body: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  --text-6xl: 4.5rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --radius-sm: 0;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  --control-height: 44px;
+  --container: 1200px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-body); font-size: var(--text-base); line-height: 1.625rem; color: var(--text); background: var(--bg); }
+img { display: block; max-width: 100%; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+.display { font-family: var(--font-display); letter-spacing: -0.02em; }
+.t-6xl { font-size: var(--text-6xl); line-height: 5rem; font-weight: 800; }
+.t-5xl { font-size: var(--text-5xl); line-height: 4.25rem; font-weight: 700; }
+.t-4xl { font-size: var(--text-4xl); line-height: 3.125rem; font-weight: 700; }
+.t-3xl { font-size: var(--text-3xl); line-height: 2.5rem; font-weight: 700; }
+.t-2xl { font-size: var(--text-2xl); line-height: 2rem; font-weight: 600; }
+.t-xl { font-size: var(--text-xl); line-height: 1.875rem; font-weight: 600; }
+.t-lg { font-size: var(--text-lg); line-height: 1.75rem; color: var(--secondary); }
+.t-base { font-size: var(--text-base); line-height: 1.625rem; }
+.t-sm { font-size: var(--text-sm); line-height: 1.375rem; }
+.t-xs { font-size: var(--text-xs); line-height: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.container { max-width: var(--container); margin: 0 auto; padding-left: var(--space-6); padding-right: var(--space-6); }
+@media (min-width: 1024px) { .container { padding-left: var(--space-12); padding-right: var(--space-12); } }
+@media (min-width: 2560px) { .container { max-width: 1440px; } }
+.page-header { padding: var(--space-12) 0 var(--space-8); border-bottom: 1px solid var(--surface); }
+@media (min-width: 1024px) { .page-header { padding: var(--space-16) 0 var(--space-12); } }
+.page-header__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-8); margin-bottom: var(--space-8); }
+.page-header__title { font-size: var(--text-3xl); line-height: 2.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.page-header__date { font-size: var(--text-sm); color: var(--muted); margin-top: var(--space-2); }
+.page-header__actions { display: flex; gap: var(--space-4); flex-shrink: 0; }
+.dash-grid { display: grid; gap: var(--space-8); padding-bottom: var(--space-24); }
+@media (min-width: 1024px) { .dash-grid { grid-template-columns: 1fr 380px; } }
+.card { background: var(--bg); border-radius: var(--radius-lg); padding: var(--space-8); box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06); }
+.card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4); }
+.card__title { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; }
+.schedule-item { display: grid; grid-template-columns: 80px 1fr; gap: var(--space-6); padding: var(--space-5) 0; border-bottom: 1px solid var(--surface); }
+.schedule-item:last-child { border-bottom: none; }
+.schedule-item--active { background: var(--success-light); margin: calc(-1 * var(--space-5)) 0 calc(-1 * var(--space-5)) calc(-1 * var(--space-8)); padding: var(--space-5) var(--space-8); border-radius: var(--radius-md); }
+.schedule-item--active .schedule__time { color: var(--success); }
+.schedule__time { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; color: var(--text); padding-top: 2px; }
+.schedule__title { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-1); }
+.schedule__location { font-size: var(--text-sm); color: var(--secondary); }
+.schedule__badge { display: inline-block; font-size: var(--text-xs); font-weight: 600; padding: 0 var(--space-3); border-radius: var(--radius-full); height: 22px; line-height: 22px; vertical-align: middle; }
+.schedule__badge--main { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.schedule__badge--food { background: color-mix(in srgb, var(--error) 10%, transparent); color: var(--error); }
+.schedule__badge--family { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+thead th { text-align: left; font-size: var(--text-xs); font-weight: 600; letter-spacing: -0.02em; text-transform: uppercase; color: var(--secondary); padding: var(--space-3) var(--space-4); background: var(--surface); position: sticky; top: 0; }
+tbody td { padding: var(--space-4); font-size: var(--text-sm); border-bottom: 1px solid var(--surface); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface); }
+tbody td.mono { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--secondary); }
+.map { width: 100%; aspect-ratio: 16/10; background: var(--surface); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: var(--text-sm); position: relative; overflow: hidden; }
+.map__grid { position: absolute; inset: 0; background-image: linear-gradient(var(--surface) 1px, transparent 1px), linear-gradient(90deg, var(--surface) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.5; }
+.map__pin { position: relative; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 4px rgba(0,144,255,0.2); }
+.map__pin--green { background: var(--success); box-shadow: 0 0 0 4px rgba(0,214,143,0.2); }
+.map__pin--coral { background: var(--error); box-shadow: 0 0 0 4px rgba(255,61,108,0.2); }
+.map__pin--warning { background: var(--warning); box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
+.map__label { position: relative; margin-top: var(--space-2); font-size: var(--text-xs); font-weight: 600; color: var(--text); white-space: nowrap; }
+.family-list { display: flex; flex-direction: column; gap: var(--space-4); }
+.family-member { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--surface); }
+.family-member:last-child { border-bottom: none; }
+.family-avatar { width: 36px; height: 36px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: var(--text-sm); font-weight: 700; color: #FFFFFF; flex-shrink: 0; }
+.family-avatar--blue { background: var(--accent); }
+.family-avatar--green { background: var(--success); }
+.family-avatar--coral { background: var(--error); }
+.family-avatar--muted { background: var(--muted); }
+.family-info { flex: 1; min-width: 0; }
+.family-name { font-size: var(--text-sm); font-weight: 600; }
+.family-role { font-size: var(--text-xs); color: var(--muted); }
+.family-status { font-size: var(--text-xs); font-weight: 600; padding: 0 var(--space-3); border-radius: var(--radius-full); height: 22px; line-height: 22px; }
+.family-status--confirmed { background: var(--success-light); color: var(--success); }
+.family-status--pending { background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning); }
+.photo-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 768px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+.photo { aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; background: var(--surface); position: relative; }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo__caption { position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-4); background: linear-gradient(to top, rgba(10,10,10,0.6), transparent); color: #FFFFFF; font-size: var(--text-xs); font-weight: 500; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-6); border-radius: var(--radius-md); font-family: var(--font-display); font-size: var(--text-sm); font-weight: 600; letter-spacing: -0.01em; border: none; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease; text-decoration: none; gap: var(--space-2); }
+.btn:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--accent); color: #FFFFFF; }
+.btn--primary:hover { background: var(--accent-hover); }
+.btn--primary:active { background: var(--accent-active); }
+.btn--secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.btn--secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.btn--ghost { background: transparent; color: var(--accent); }
+.btn--ghost:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.btn--destructive { background: var(--error); color: #FFFFFF; }
+.btn--destructive:hover { background: var(--error-hover); }
+.btn--sm { height: 36px; padding: 0 var(--space-4); font-size: var(--text-xs); }
+.btn--block { width: 100%; }
+.input { height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--surface); background: var(--bg); font-family: var(--font-body); font-size: var(--text-base); color: var(--text); width: 100%; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.input::placeholder { color: var(--muted); }
+.input:hover { border-color: var(--muted); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); outline: none; }
+.input:disabled { background: var(--surface); color: var(--muted); cursor: not-allowed; }
+.input--sm { height: 36px; font-size: var(--text-sm); }
+textarea.input { min-height: var(--control-height); padding: var(--space-4); resize: vertical; }
+.select { height: var(--control-height); padding: 0 var(--space-4); padding-right: var(--space-10); border-radius: var(--radius-md); border: 1px solid var(--surface); background: var(--bg); font-family: var(--font-body); font-size: var(--text-base); color: var(--text); width: 100%; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right var(--space-4) center; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.select:hover { border-color: var(--muted); }
+.select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); outline: none; }
+.select:disabled { background: var(--surface); color: var(--muted); cursor: not-allowed; }
+.checkbox-group { display: flex; flex-direction: column; gap: var(--space-3); }
+.checkbox-label { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); cursor: pointer; }
+.checkbox-label input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.radio-group { display: flex; flex-direction: column; gap: var(--space-3); }
+.radio-label { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); cursor: pointer; }
+.radio-label input[type="radio"] { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.form-group { margin-bottom: var(--space-6); }
+.form-label { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--text); margin-bottom: var(--space-2); }
+.form-hint { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-2); }
+.nav { padding: var(--space-6) 0; display: flex; align-items: center; justify-content: space-between; }
+@media (min-width: 1024px) { .nav { padding: var(--space-8) 0; } }
+.nav__brand { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 800; color: var(--text); letter-spacing: -0.02em; text-decoration: none; }
+.nav__back { font-size: var(--text-sm); color: var(--secondary); text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-2); }
+.nav__back:hover { color: var(--accent); }
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.anim .reveal { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--surface); margin-bottom: var(--space-8); overflow-x: auto; }
+.tab { padding: var(--space-4) var(--space-6); font-size: var(--text-sm); font-weight: 500; color: var(--secondary); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-family: var(--font-body); transition: color 0.15s ease, border-color 0.15s ease; }
+.tab:hover { color: var(--text); }
+.tab--active { color: var(--accent); border-bottom-color: var(--accent); }
+.stat-row { display: flex; gap: var(--space-8); padding: var(--space-6) 0; border-bottom: 1px solid var(--surface); flex-wrap: wrap; }
+.stat-row:last-child { border-bottom: none; }
+.stat-row__value { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; }
+.stat-row__label { font-size: var(--text-xs); color: var(--muted); margin-top: var(--space-1); }
+.stat-row__value--accent { color: var(--accent); }
+.stat-row__value--success { color: var(--success); }
+.stat-row__value--coral { color: var(--error); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div style="display: flex; align-items: center; gap: var(--space-8);">
+    <a href="./landing.html" class="nav__back">&#8592; Back to Festival</a>
+    <a href="./landing.html" class="nav__brand">Nobori</a>
+  </div>
+  <div style="display: flex; gap: var(--space-4);">
+    <button class="btn btn--secondary btn--sm">Share</button>
+    <button class="btn btn--primary btn--sm">Register</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-header__top">
+      <div>
+        <h1 class="page-header__title display">Festival Companion</h1>
+        <p class="page-header__date">Sunday, May 5, 2026 &#183; Sumida Park, Tokyo</p>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div><div class="stat-row__value stat-row__value--accent">12</div><div class="stat-row__label">Events Today</div></div>
+      <div><div class="stat-row__value stat-row__value--success">3</div><div class="stat-row__label">Families Registered</div></div>
+      <div><div class="stat-row__value stat-row__value--coral">2</div><div class="stat-row__label">Food Stations</div></div>
+      <div><div class="stat-row__value">24&#176;C</div><div class="stat-row__label">Forecast</div></div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab tab--active" role="tab" aria-selected="true">Schedule</button>
+    <button class="tab" role="tab" aria-selected="false">Map</button>
+    <button class="tab" role="tab" aria-selected="false">Families</button>
+    <button class="tab" role="tab" aria-selected="false">Album</button>
+    <button class="tab" role="tab" aria-selected="false">Register</button>
+  </div>
+
+  <div class="dash-grid">
+    <div>
+      <div class="card reveal">
+        <div class="card__header">
+          <h2 class="card__title">Today's Schedule</h2>
+          <button class="btn btn--ghost btn--sm">Export</button>
+        </div>
+        <div class="schedule-item schedule-item--active">
+          <div class="schedule__time">9:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--main">Main</span>
+              <span class="schedule__title">Koinobori Rising Ceremony</span>
+            </div>
+            <div class="schedule__location">Central Lawn &#183; Main Stage</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">10:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--main">Main</span>
+              <span class="schedule__title">Kendo Demonstration</span>
+            </div>
+            <div class="schedule__location">East Courtyard &#183; Dojo Tent</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">11:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--food">Food</span>
+              <span class="schedule__title">Chimaki &amp; Kashiwa-mochi Tasting</span>
+            </div>
+            <div class="schedule__location">Food Court &#183; South Gate</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">12:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--family">Family</span>
+              <span class="schedule__title">Children's Parade</span>
+            </div>
+            <div class="schedule__location">Gathering &#183; North Entrance</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">13:30</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--main">Main</span>
+              <span class="schedule__title">Iris Bath Workshop</span>
+            </div>
+            <div class="schedule__location">Garden Pavilion &#183; West Wing</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">15:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--family">Family</span>
+              <span class="schedule__title">Dragon Head Crafting for Kids</span>
+            </div>
+            <div class="schedule__location">Craft Tent &#183; Near Food Court</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">16:30</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--family">Family</span>
+              <span class="schedule__title">Family Photo Session</span>
+            </div>
+            <div class="schedule__location">River Bank &#183; Carp Streamer Backdrop</div>
+          </div>
+        </div>
+        <div class="schedule-item">
+          <div class="schedule__time">18:00</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: var(--space-3);">
+              <span class="schedule__badge schedule__badge--main">Main</span>
+              <span class="schedule__title">Sunset Koinobori &#8212; Final Rising</span>
+            </div>
+            <div class="schedule__location">Central Lawn &#183; All Poles</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal" style="margin-top: var(--space-8);">
+        <div class="card__header">
+          <h2 class="card__title">Festival Grounds</h2>
+          <select class="select input--sm" style="width: auto; min-width: 160px;">
+            <option>All Zones</option>
+            <option>Main Stage</option>
+            <option>Food Court</option>
+            <option>Garden</option>
+          </select>
+        </div>
+        <div class="map">
+          <div class="map__grid"></div>
+          <div style="position: absolute; top: 25%; left: 30%;">
+            <div class="map__pin"></div>
+            <div class="map__label">Main Stage</div>
+          </div>
+          <div style="position: absolute; top: 60%; left: 70%;">
+            <div class="map__pin map__pin--coral"></div>
+            <div class="map__label">Food Court</div>
+          </div>
+          <div style="position: absolute; top: 40%; left: 15%;">
+            <div class="map__pin map__pin--green"></div>
+            <div class="map__label">Garden Pavilion</div>
+          </div>
+          <div style="position: absolute; top: 75%; left: 45%;">
+            <div class="map__pin map__pin--warning"></div>
+            <div class="map__label">Craft Tent</div>
+          </div>
+          <div style="position: absolute; top: 20%; left: 75%;">
+            <div class="map__pin"></div>
+            <div class="map__label">River Bank</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal" style="margin-top: var(--space-8);">
+        <div class="card__header">
+          <h2 class="card__title">All Events</h2>
+          <input type="text" class="input input--sm" placeholder="Search events&#8230;" style="width: 240px;">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Time</th>
+                <th>Event</th>
+                <th>Zone</th>
+                <th style="width: 100px;">Type</th>
+                <th style="width: 80px;">Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">9:00</td>
+                <td><strong>Koinobori Rising Ceremony</strong><br><span class="t-sm" style="color: var(--muted);">Opening ceremony with community blessing</span></td>
+                <td>Central Lawn</td>
+                <td><span class="schedule__badge schedule__badge--main">Main</span></td>
+                <td class="mono">60m</td>
+              </tr>
+              <tr>
+                <td class="mono">10:00</td>
+                <td><strong>Kendo Demonstration</strong><br><span class="t-sm" style="color: var(--muted);">Local dojo showcases traditional swordsmanship</span></td>
+                <td>East Courtyard</td>
+                <td><span class="schedule__badge schedule__badge--main">Main</span></td>
+                <td class="mono">60m</td>
+              </tr>
+              <tr>
+                <td class="mono">11:00</td>
+                <td><strong>Chimaki &amp; Kashiwa-mochi Tasting</strong><br><span class="t-sm" style="color: var(--muted);">Sample traditional festival foods</span></td>
+                <td>Food Court</td>
+                <td><span class="schedule__badge schedule__badge--food">Food</span></td>
+                <td class="mono">120m</td>
+              </tr>
+              <tr>
+                <td class="mono">12:00</td>
+                <td><strong>Children's Parade</strong><br><span class="t-sm" style="color: var(--muted);">Kids march with handmade carp streamers</span></td>
+                <td>North Entrance</td>
+                <td><span class="schedule__badge schedule__badge--family">Family</span></td>
+                <td class="mono">90m</td>
+              </tr>
+              <tr>
+                <td class="mono">13:30</td>
+                <td><strong>Iris Bath Workshop</strong><br><span class="t-sm" style="color: var(--muted);">Learn about shobu-yu traditions</span></td>
+                <td>Garden Pavilion</td>
+                <td><span class="schedule__badge schedule__badge--main">Main</span></td>
+                <td class="mono">60m</td>
+              </tr>
+              <tr>
+                <td class="mono">15:00</td>
+                <td><strong>Dragon Head Crafting</strong><br><span class="t-sm" style="color: var(--muted);">Make paper dragon heads for koinobori</span></td>
+                <td>Craft Tent</td>
+                <td><span class="schedule__badge schedule__badge--family">Family</span></td>
+                <td class="mono">90m</td>
+              </tr>
+              <tr>
+                <td class="mono">16:30</td>
+                <td><strong>Family Photo Session</strong><br><span class="t-sm" style="color: var(--muted);">Professional photos with carp backdrop</span></td>
+                <td>River Bank</td>
+                <td><span class="schedule__badge schedule__badge--family">Family</span></td>
+                <td class="mono">60m</td>
+              </tr>
+              <tr>
+                <td class="mono">18:00</td>
+                <td><strong>Sunset Koinobori</strong><br><span class="t-sm" style="color: var(--muted);">Final rising as the sun sets</span></td>
+                <td>Central Lawn</td>
+                <td><span class="schedule__badge schedule__badge--main">Main</span></td>
+                <td class="mono">60m</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card reveal" style="margin-bottom: var(--space-8);">
+        <div class="card__header">
+          <h2 class="card__title">Registered Families</h2>
+          <button class="btn btn--primary btn--sm">+ Add</button>
+        </div>
+        <div class="family-list">
+          <div class="family-member">
+            <div class="family-avatar family-avatar--blue">T</div>
+            <div class="family-info">
+              <div class="family-name">Tanaka Family</div>
+              <div class="family-role">2 children &#183; All events</div>
+            </div>
+            <span class="family-status family-status--confirmed">Confirmed</span>
+          </div>
+          <div class="family-member">
+            <div class="family-avatar family-avatar--green">S</div>
+            <div class="family-info">
+              <div class="family-name">Sato Family</div>
+              <div class="family-role">1 child &#183; Food + Parade</div>
+            </div>
+            <span class="family-status family-status--confirmed">Confirmed</span>
+          </div>
+          <div class="family-member">
+            <div class="family-avatar family-avatar--coral">K</div>
+            <div class="family-info">
+              <div class="family-name">Kimura Family</div>
+              <div class="family-role">3 children &#183; Full day</div>
+            </div>
+            <span class="family-status family-status--pending">Pending</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <div class="card__header"><h2 class="card__title">Quick Register</h2></div>
+        <div class="form-group">
+          <label class="form-label" for="family-name">Family Name</label>
+          <input type="text" id="family-name" class="input" placeholder="e.g. Yamamoto">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="children-count">Number of Children</label>
+          <select id="children-count" class="select">
+            <option value="">Select&#8230;</option>
+            <option>1 child</option>
+            <option>2 children</option>
+            <option>3 children</option>
+            <option>4+ children</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Events of Interest</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label"><input type="checkbox" checked> Koinobori Rising</label>
+            <label class="checkbox-label"><input type="checkbox" checked> Children's Parade</label>
+            <label class="checkbox-label"><input type="checkbox"> Kendo Demo</label>
+            <label class="checkbox-label"><input type="checkbox"> Crafting Workshop</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dietary Notes</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="diet" checked> No restrictions</label>
+            <label class="radio-label"><input type="radio" name="diet"> Vegetarian</label>
+            <label class="radio-label"><input type="radio" name="diet"> Allergies (note below)</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="notes">Notes</label>
+          <textarea id="notes" class="input" rows="3" placeholder="Any special requirements&#8230;"></textarea>
+        </div>
+        <button class="btn btn--primary btn--block">Register Family</button>
+        <p class="form-hint" style="text-align: center; margin-top: var(--space-4);">Free entry &#183; All families welcome</p>
+      </div>
+
+      <div class="card reveal" style="margin-top: var(--space-8);">
+        <div class="card__header">
+          <h2 class="card__title">Today's Album</h2>
+          <button class="btn btn--ghost btn--sm">View All</button>
+        </div>
+        <div class="photo-grid">
+          <div class="photo">
+            <div style="width:100%;height:100%;background: linear-gradient(135deg, #0090FF 0%, #00D68F 100%);"></div>
+            <div class="photo__caption">Morning setup</div>
+          </div>
+          <div class="photo">
+            <div style="width:100%;height:100%;background: linear-gradient(135deg, #FF3D6C 0%, #F59E0B 100%);"></div>
+            <div class="photo__caption">First streamers up</div>
+          </div>
+          <div class="photo">
+            <div style="width:100%;height:100%;background: linear-gradient(135deg, #00D68F 0%, #0090FF 100%);"></div>
+            <div class="photo__caption">Parade route</div>
+          </div>
+          <div class="photo">
+            <div style="width:100%;height:100%;background: linear-gradient(135deg, #F59E0B 0%, #FF3D6C 100%);"></div>
+            <div class="photo__caption">Food court</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (!prefersReduced.matches) {
+    document.documentElement.classList.add('anim');
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el) { el.style.opacity = '1'; el.style.transform = 'none'; });
+    return;
+  }
+  var reveals = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) { entry.target.style.opacity = '1'; entry.target.style.transform = 'translateY(0)'; observer.unobserve(entry.target); }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+    reveals.forEach(function(el) { observer.observe(el); });
+  } else {
+    reveals.forEach(function(el) { el.style.opacity = '1'; el.style.transform = 'none'; });
+  }
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('tab--active'); t.setAttribute('aria-selected', 'false'); });
+      tab.classList.add('tab--active');
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+})();
+</script>
+</body>
+</html>

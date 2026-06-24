@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koinobori — Festival Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFFFFF;
+  --surface: #F5F7FA;
+  --text: #0B0D12;
+  --muted: #64748B;
+  --border: #E2E8F0;
+  --accent: #0066FF;
+  --on-accent: #FFFFFF;
+  --accent-2: #00C853;
+  --accent-3: #FF2D55;
+  --success: #00C853;
+  --warning: #FFAB00;
+  --error: #FF2D55;
+  --info: #0066FF;
+  --text-display: 800 56px/64px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-h1: 700 40px/48px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-h2: 700 32px/40px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-h3: 600 24px/32px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-body: 400 17px/28px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-body-strong: 600 17px/28px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-small: 400 14px/20px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --text-caption: 500 12px/16px 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px;
+  --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px;
+  --radius-none: 0; --radius-md: 16px; --radius-lg: 24px; --radius-full: 9999px;
+  --control-h: 48px;
+  --hero-image: url('./media/festival-aerial.jpg');
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body { font: var(--text-body); color: var(--text); background: var(--bg); letter-spacing: -0.01em; overflow-x: hidden; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+html.has-motion .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+html.has-motion .reveal.is-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { html.has-motion .reveal { opacity: 1; transform: none; transition: none; } }
+
+.container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 var(--space-lg); }
+
+/* ── Nav ── */
+.nav { background: var(--bg); padding: var(--space-md) 0; position: sticky; top: 0; z-index: 10; }
+.nav .container { display: flex; align-items: center; justify-content: space-between; }
+.nav-brand { font: var(--text-h3); color: var(--text); letter-spacing: -0.03em; text-decoration: none; }
+.nav-brand:hover { text-decoration: none; }
+.nav-links { display: flex; gap: var(--space-lg); list-style: none; }
+.nav-links a { font: var(--text-small); font-weight: 600; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-links a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 767px) { .nav-links { display: none; } }
+
+/* ── Header banner ── */
+.header-banner {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 280px;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+.header-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(11,13,18,0.65) 0%, rgba(11,13,18,0.0) 60%);
+  pointer-events: none;
+}
+.header-banner-content { position: relative; z-index: 2; width: 100%; padding-bottom: var(--space-xl); }
+.header-banner h1 { font: var(--text-display); color: var(--on-accent); letter-spacing: -0.03em; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.header-banner p { font: var(--text-body); color: rgba(255,255,255,0.85); margin-top: var(--space-sm); text-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+@media (max-width: 767px) {
+  .header-banner { height: 200px; }
+  .header-banner h1 { font-size: 32px; line-height: 40px; }
+}
+
+/* ── Dashboard grid ── */
+.dashboard { padding: var(--space-2xl) 0; }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--space-xl);
+  align-items: start;
+}
+@media (max-width: 1023px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+/* ── Panels ── */
+.panel { background: var(--surface); border-radius: var(--radius-md); padding: var(--space-xl); margin-bottom: var(--space-xl); }
+.panel-title { font: var(--text-h2); letter-spacing: -0.03em; margin-bottom: var(--space-lg); }
+.panel-subtitle { font: var(--text-small); color: var(--muted); margin-bottom: var(--space-lg); }
+
+/* ── Schedule ── */
+.schedule-list { list-style: none; }
+.schedule-item {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: var(--space-lg);
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+.schedule-item:last-child { border-bottom: none; }
+.schedule-time { font: var(--text-body-strong); color: var(--accent); white-space: nowrap; padding-top: 2px; }
+.schedule-event h4 { font: var(--text-body-strong); margin-bottom: var(--space-xs); }
+.schedule-event p { font: var(--text-small); color: var(--muted); }
+.schedule-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-md);
+  font: var(--text-caption);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  margin-top: var(--space-sm);
+}
+.badge-blue { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.badge-green { background: color-mix(in srgb, var(--accent-2) 12%, transparent); color: var(--accent-2); }
+.badge-coral { background: color-mix(in srgb, var(--accent-3) 12%, transparent); color: var(--accent-3); }
+
+/* ── Guide cards ── */
+.guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.guide-card {
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.guide-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(11,13,18,0.06); }
+.guide-card h4 { font: var(--text-h3); letter-spacing: -0.02em; margin-bottom: var(--space-sm); font-size: 18px; line-height: 26px; }
+.guide-card p { font: var(--text-small); color: var(--muted); }
+.guide-card-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--space-md);
+}
+@media (max-width: 767px) { .guide-grid { grid-template-columns: 1fr; } }
+
+/* ── Map ── */
+.map-container {
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  overflow: hidden;
+}
+.map-svg { width: 100%; height: auto; }
+.map-legend { display: flex; gap: var(--space-lg); flex-wrap: wrap; margin-top: var(--space-md); }
+.map-legend-item { display: flex; align-items: center; gap: var(--space-sm); font: var(--text-small); color: var(--muted); }
+.map-legend-dot { width: 12px; height: 12px; border-radius: var(--radius-full); flex-shrink: 0; }
+
+/* ── Album ── */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+.album-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+}
+.album-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+.album-item:hover img { transform: scale(1.05); }
+.album-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: var(--space-md);
+  background: linear-gradient(to top, rgba(11,13,18,0.7), transparent);
+  color: var(--on-accent);
+  font: var(--text-small);
+  font-weight: 600;
+}
+@media (max-width: 767px) { .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Sidebar ── */
+.sidebar-panel { background: var(--surface); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-lg); }
+.sidebar-title { font: var(--text-h3); letter-spacing: -0.02em; margin-bottom: var(--space-md); font-size: 18px; line-height: 26px; }
+.info-row { display: flex; justify-content: space-between; padding: var(--space-sm) 0; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-label { font: var(--text-small); color: var(--muted); }
+.info-value { font: var(--text-small); font-weight: 600; color: var(--text); }
+
+/* ── Form controls ── */
+.search-input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--space-md);
+  background: var(--bg);
+  color: var(--text);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font: var(--text-body);
+  letter-spacing: -0.01em;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+}
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { border-color: var(--accent); outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.filter-select {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--space-md);
+  padding-right: var(--space-xl);
+  background: var(--bg);
+  color: var(--text);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font: var(--text-body);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  outline: none;
+  cursor: pointer;
+}
+.filter-select:focus { border-color: var(--accent); outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); padding: 0 var(--space-lg);
+  background: var(--accent); color: var(--on-accent);
+  font: var(--text-body-strong); border: none; border-radius: var(--radius-full);
+  cursor: pointer; text-decoration: none; transition: filter 0.15s, transform 0.15s;
+}
+.btn-primary:hover { filter: brightness(0.88); transform: translateY(-1px); text-decoration: none; }
+.btn-primary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn-primary:active { filter: brightness(0.82); transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); padding: 0 var(--space-lg);
+  background: transparent; color: var(--accent);
+  font: var(--text-body-strong); border: 2px solid var(--accent); border-radius: var(--radius-full);
+  cursor: pointer; text-decoration: none; transition: filter 0.15s, transform 0.15s, background 0.15s;
+}
+.btn-secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); transform: translateY(-1px); text-decoration: none; }
+.btn-secondary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn-secondary:active { transform: translateY(0); }
+.btn-secondary:disabled { opacity: 0.4; pointer-events: none; }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) 0; }
+.toggle-label { font: var(--text-small); color: var(--text); }
+.toggle {
+  width: 48px; height: 26px; border-radius: var(--radius-full);
+  background: var(--border); position: relative; cursor: pointer;
+  transition: background 0.2s; border: none; padding: 0;
+}
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: var(--radius-full);
+  background: var(--bg); transition: transform 0.2s;
+}
+.toggle[aria-checked="true"] { background: var(--accent); }
+.toggle[aria-checked="true"]::after { transform: translateX(22px); }
+.toggle:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.checkbox-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; }
+.checkbox {
+  width: 24px; height: 24px; border-radius: var(--radius-none);
+  border: 2px solid var(--border); background: var(--bg);
+  cursor: pointer; appearance: none; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+}
+.checkbox:checked { background: var(--accent); border-color: var(--accent); }
+.checkbox:checked::after {
+  content: ''; width: 6px; height: 12px;
+  border: solid var(--on-accent); border-width: 0 2px 2px 0;
+  transform: rotate(45deg); margin-top: -2px;
+}
+.checkbox:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.checkbox-label { font: var(--text-small); color: var(--text); cursor: pointer; }
+
+/* ── Footer ── */
+.footer { padding: var(--space-xl) 0; background: var(--surface); margin-top: var(--space-2xl); }
+.footer .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md); }
+.footer-brand { font: var(--text-h3); letter-spacing: -0.03em; }
+.footer-copy { font: var(--text-small); color: var(--muted); }
+@media (max-width: 767px) { .footer .container { flex-direction: column; text-align: center; } }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Festival companion navigation">
+  <div class="container">
+    <a href="#" class="nav-brand">Koinobori</a>
+    <ul class="nav-links">
+      <li><a href="#programme">Programme</a></li>
+      <li><a href="#guide">Guide</a></li>
+      <li><a href="#map">Map</a></li>
+      <li><a href="#album">Album</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Header banner -->
+<div class="header-banner">
+  <div class="header-banner-content container">
+    <h1>Festival Companion</h1>
+    <p>Kodomo no Hi — 5 May 2026 — Your guide to the day</p>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<main class="dashboard">
+  <div class="container">
+    <div class="dashboard-grid">
+
+      <!-- Main column -->
+      <div class="main-col">
+
+        <!-- Programme -->
+        <section class="panel reveal" id="programme">
+          <h2 class="panel-title">Programme</h2>
+          <p class="panel-subtitle">The day's events, from first light to evening bath</p>
+
+          <div style="display: flex; gap: var(--space-md); margin-bottom: var(--space-lg); flex-wrap: wrap;">
+            <input type="text" class="search-input" placeholder="Search events..." aria-label="Search events" style="flex: 1; min-width: 200px;">
+            <select class="filter-select" aria-label="Filter by category" style="width: auto; min-width: 160px;">
+              <option>All events</option>
+              <option>Ceremony</option>
+              <option>Food</option>
+              <option>Activity</option>
+              <option>Performance</option>
+            </select>
+          </div>
+
+          <ul class="schedule-list">
+            <li class="schedule-item">
+              <span class="schedule-time">08:00</span>
+              <div class="schedule-event">
+                <h4>Koinobori raising ceremony</h4>
+                <p>Families gather at the main riverside pole to raise the season's streamers together. The tallest carp goes first.</p>
+                <span class="schedule-badge badge-blue">Ceremony</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">09:30</span>
+              <div class="schedule-event">
+                <h4>Kabuto and warrior doll exhibition</h4>
+                <p>A curated display of samurai helmets and May dolls in the festival hall. Families with young children are welcome.</p>
+                <span class="schedule-badge badge-green">Activity</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">10:30</span>
+              <div class="schedule-event">
+                <h4>Kashiwa-mochi making workshop</h4>
+                <p>Learn to wrap sweet rice cakes in oak leaves with local confectioners. All ingredients provided; take your mochi home.</p>
+                <span class="schedule-badge badge-coral">Food</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">12:00</span>
+              <div class="schedule-event">
+                <h4>Festival picnic on the riverbank</h4>
+                <p>Bring a blanket and share the midday meal beneath the streamers. Food stalls line the path with chimaki, green tea, and seasonal sweets.</p>
+                <span class="schedule-badge badge-coral">Food</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">13:30</span>
+              <div class="schedule-event">
+                <h4>Taiko drumming performance</h4>
+                <p>The Matsuri Taiko Ensemble performs on the main stage. A powerful, rhythmic welcome to the afternoon.</p>
+                <span class="schedule-badge badge-blue">Performance</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">14:30</span>
+              <div class="schedule-event">
+                <h4>Children's koinobori painting</h4>
+                <p>A hands-on workshop where children paint their own miniature carp streamers to take home. Materials provided.</p>
+                <span class="schedule-badge badge-green">Activity</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">16:00</span>
+              <div class="schedule-event">
+                <h4>Shobu-yu iris bath preparation</h4>
+                <p>A demonstration of the traditional iris-leaf bath. Fresh shobu leaves are arranged and the story of the custom is shared.</p>
+                <span class="schedule-badge badge-blue">Ceremony</span>
+              </div>
+            </li>
+            <li class="schedule-item">
+              <span class="schedule-time">17:30</span>
+              <div class="schedule-event">
+                <h4>Evening lantern walk</h4>
+                <p>As the light fades, paper lanterns are lit along the river path. A quiet close to the day's celebration.</p>
+                <span class="schedule-badge badge-green">Activity</span>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Guide -->
+        <section class="panel reveal" id="guide">
+          <h2 class="panel-title">Festival Guide</h2>
+          <p class="panel-subtitle">Everything you need to know for the day</p>
+
+          <div class="guide-grid">
+            <div class="guide-card">
+              <div class="guide-card-icon" style="background: color-mix(in srgb, var(--accent) 10%, transparent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <h4>Arriving and parking</h4>
+              <p>The festival grounds open at 07:30. Parking is available at the north lot (200 spaces) and the riverside overflow (80 spaces). Arrive early for the raising ceremony.</p>
+            </div>
+            <div class="guide-card">
+              <div class="guide-card-icon" style="background: color-mix(in srgb, var(--accent-2) 10%, transparent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <h4>Family rest areas</h4>
+              <p>Covered pavilions with seating are located at the east garden and the main hall. Nursing rooms and changing stations are in the main hall ground floor.</p>
+            </div>
+            <div class="guide-card">
+              <div class="guide-card-icon" style="background: color-mix(in srgb, var(--accent-3) 10%, transparent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <h4>Food and drink</h4>
+              <p>Eight food stalls along the main path serve kashiwa-mochi, chimaki, yakitori, shaved ice, and matcha. The tea house in the east garden is open all day.</p>
+            </div>
+            <div class="guide-card">
+              <div class="guide-card-icon" style="background: color-mix(in srgb, var(--accent) 10%, transparent);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <h4>Accessibility</h4>
+              <p>All paths are paved and wheelchair-accessible. Sign language interpretation is available at the main stage. Accessible toilets at the main hall and east pavilion.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Map -->
+        <section class="panel reveal" id="map">
+          <h2 class="panel-title">Festival Grounds</h2>
+          <p class="panel-subtitle">Navigate the celebration</p>
+
+          <div class="map-container">
+            <svg class="map-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of the Kodomo no Hi festival grounds showing key locations">
+              <!-- River -->
+              <path d="M0 200 Q200 180 400 210 Q600 240 800 220" fill="none" stroke="#B3D9FF" stroke-width="48" stroke-linecap="round" opacity="0.5"/>
+              <path d="M0 200 Q200 180 400 210 Q600 240 800 220" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="8 4" opacity="0.3"/>
+              <text x="400" y="205" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--accent)" font-weight="600" letter-spacing="0.08em">RIVER</text>
+
+              <!-- Paths -->
+              <path d="M100 100 L300 120 L500 110 L700 130" fill="none" stroke="var(--border)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M300 120 L320 300 L340 420" fill="none" stroke="var(--border)" stroke-width="3" stroke-linecap="round"/>
+              <path d="M500 110 L510 320 L520 430" fill="none" stroke="var(--border)" stroke-width="3" stroke-linecap="round"/>
+
+              <!-- Green areas -->
+              <rect x="60" y="280" width="160" height="120" rx="16" fill="#E8F5E9" opacity="0.6"/>
+              <text x="140" y="345" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--accent-2)" font-weight="600">East Garden</text>
+
+              <rect x="580" y="300" width="160" height="100" rx="16" fill="#E8F5E9" opacity="0.6"/>
+              <text x="660" y="355" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--accent-2)" font-weight="600">Picnic Meadow</text>
+
+              <!-- Buildings -->
+              <rect x="350" y="60" width="100" height="60" rx="16" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+              <text x="400" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--text)" font-weight="600">Main Hall</text>
+
+              <rect x="160" y="80" width="80" height="50" rx="16" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+              <text x="200" y="110" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="var(--text)" font-weight="500">Tea House</text>
+
+              <!-- Koinobori poles -->
+              <circle cx="400" cy="160" r="8" fill="var(--accent-3)"/>
+              <text x="400" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="var(--accent-3)" font-weight="600">Main Pole</text>
+
+              <circle cx="250" cy="170" r="6" fill="var(--accent)"/>
+              <circle cx="550" cy="175" r="6" fill="var(--accent)"/>
+              <circle cx="150" cy="185" r="5" fill="var(--accent)" opacity="0.6"/>
+              <circle cx="650" cy="180" r="5" fill="var(--accent)" opacity="0.6"/>
+
+              <!-- Stage -->
+              <rect x="440" y="310" width="100" height="60" rx="16" fill="color-mix(in srgb, var(--accent-3) 10%, var(--surface))" stroke="var(--accent-3)" stroke-width="1" opacity="0.8"/>
+              <text x="490" y="345" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--accent-3)" font-weight="600">Main Stage</text>
+
+              <!-- Food stalls -->
+              <rect x="310" y="380" width="120" height="40" rx="16" fill="color-mix(in srgb, var(--warning) 10%, var(--surface))" stroke="var(--warning)" stroke-width="1" opacity="0.8"/>
+              <text x="370" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#B8860B" font-weight="600">Food Stalls</text>
+
+              <!-- Parking -->
+              <rect x="620" y="60" width="120" height="50" rx="16" fill="var(--surface)" stroke="var(--border)" stroke-width="1" stroke-dasharray="4 2"/>
+              <text x="680" y="90" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="var(--muted)" font-weight="500">North Parking</text>
+
+              <!-- Entrance -->
+              <rect x="370" y="450" width="60" height="30" rx="9999" fill="var(--accent)" opacity="0.9"/>
+              <text x="400" y="470" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="var(--on-accent)" font-weight="700">Entry</text>
+            </svg>
+          </div>
+
+          <div class="map-legend">
+            <div class="map-legend-item"><div class="map-legend-dot" style="background: var(--accent-3);"></div> Main koinobori pole</div>
+            <div class="map-legend-item"><div class="map-legend-dot" style="background: var(--accent);"></div> Streamer poles</div>
+            <div class="map-legend-item"><div class="map-legend-dot" style="background: var(--accent-2);"></div> Gardens and meadows</div>
+            <div class="map-legend-item"><div class="map-legend-dot" style="background: var(--warning);"></div> Food stalls</div>
+          </div>
+        </section>
+
+        <!-- Album -->
+        <section class="panel reveal" id="album">
+          <h2 class="panel-title">Family Album</h2>
+          <p class="panel-subtitle">Moments from Kodomo no Hi</p>
+
+          <div class="album-grid">
+            <div class="album-item">
+              <img src="./media/hero-koinobori.jpg" alt="Carp streamers rising against a bright blue sky">
+              <div class="album-caption">Morning raising ceremony</div>
+            </div>
+            <div class="album-item">
+              <img src="./media/festival-food.jpg" alt="Kashiwa-mochi and chimaki on the festival table">
+              <div class="album-caption">Festival table</div>
+            </div>
+            <div class="album-item">
+              <img src="./media/festival-aerial.jpg" alt="Aerial view of the festival grounds with streamers over the river">
+              <div class="album-caption">Riverside celebration</div>
+            </div>
+            <div class="album-item">
+              <img src="./media/hero-koinobori.jpg" alt="Close-up of a vivid coral carp streamer against sky">
+              <div class="album-caption">The coral carp rises</div>
+            </div>
+            <div class="album-item">
+              <img src="./media/festival-aerial.jpg" alt="Families gathered on the green riverbank beneath streamers">
+              <div class="album-caption">Picnic on the meadow</div>
+            </div>
+            <div class="album-item">
+              <img src="./media/festival-food.jpg" alt="Green tea and seasonal sweets at the tea house">
+              <div class="album-caption">Tea house afternoon</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar-col">
+
+        <div class="sidebar-panel reveal">
+          <h3 class="sidebar-title">Day at a glance</h3>
+          <div class="info-row"><span class="info-label">Date</span><span class="info-value">5 May 2026</span></div>
+          <div class="info-row"><span class="info-label">Gates open</span><span class="info-value">07:30</span></div>
+          <div class="info-row"><span class="info-label">Closing</span><span class="info-value">18:30</span></div>
+          <div class="info-row"><span class="info-label">Weather</span><span class="info-value">22 C, clear</span></div>
+          <div class="info-row"><span class="info-label">Wind</span><span class="info-value">12 km/h NW</span></div>
+          <div class="info-row"><span class="info-label">Admission</span><span class="info-value">Free</span></div>
+        </div>
+
+        <div class="sidebar-panel reveal">
+          <h3 class="sidebar-title">Getting here</h3>
+          <div class="info-row"><span class="info-label">Train</span><span class="info-value">Kodomo Station, 8 min walk</span></div>
+          <div class="info-row"><span class="info-label">Bus</span><span class="info-value">Route 15, Festival stop</span></div>
+          <div class="info-row"><span class="info-label">Parking</span><span class="info-value">280 spaces, north lot</span></div>
+          <div class="info-row"><span class="info-label">Bicycle</span><span class="info-value">Racks at main entry</span></div>
+        </div>
+
+        <div class="sidebar-panel reveal">
+          <h3 class="sidebar-title">Preferences</h3>
+          <div class="toggle-row">
+            <span class="toggle-label">Notifications</span>
+            <button class="toggle" role="switch" aria-checked="true" aria-label="Toggle notifications" onclick="this.setAttribute('aria-checked', this.getAttribute('aria-checked')==='true'?'false':'true')"></button>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">Family mode</span>
+            <button class="toggle" role="switch" aria-checked="false" aria-label="Toggle family mode" onclick="this.setAttribute('aria-checked', this.getAttribute('aria-checked')==='true'?'false':'true')"></button>
+          </div>
+
+          <div style="margin-top: var(--space-md);">
+            <p style="font: var(--text-small); color: var(--muted); margin-bottom: var(--space-sm);">Show on map:</p>
+            <div class="checkbox-row">
+              <input type="checkbox" class="checkbox" id="chk-food" checked>
+              <label class="checkbox-label" for="chk-food">Food stalls</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" class="checkbox" id="chk-stage" checked>
+              <label class="checkbox-label" for="chk-stage">Stages</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" class="checkbox" id="chk-rest" checked>
+              <label class="checkbox-label" for="chk-rest">Rest areas</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" class="checkbox" id="chk-parking">
+              <label class="checkbox-label" for="chk-parking">Parking</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-panel reveal">
+          <h3 class="sidebar-title">Share the day</h3>
+          <p style="font: var(--text-small); color: var(--muted); margin-bottom: var(--space-md);">Send the festival programme to family and friends.</p>
+          <div style="display: flex; gap: var(--space-sm);">
+            <button class="btn-primary" style="flex: 1;">Share programme</button>
+          </div>
+          <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
+            <button class="btn-secondary" style="flex: 1;">Download PDF</button>
+          </div>
+          <div style="margin-top: var(--space-md);">
+            <button class="btn-primary" disabled style="width: 100%;">Register for workshop</button>
+            <p style="font: var(--text-caption); color: var(--muted); margin-top: var(--space-xs); text-align: center;">Workshop is full</p>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <span class="footer-brand">Koinobori</span>
+    <span class="footer-copy">Kodomo no Hi 2026 — A celebration of every child's strength and spirit</span>
+  </div>
+</footer>
+
+<script>
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('has-motion');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+})();
+</script>
+
+</body>
+</html>

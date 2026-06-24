@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fukinagashi — Day Companion · Kodomo no Hi</title>
+<meta name="description" content="The Kodomo no Hi day companion: live programme, map of the grounds, family album, and check-in." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Shippori+Mincho+B1:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FUKINAGASHI — Day Companion. Same tokens & mechanic as the language.
+   ============================================================ */
+:root{
+  --bg:#FFFFFF; --surface:#EEF4FC; --surface-2:#E3EDF9; --surface-ink:#0B1A2E;
+  --text:#0B1A2E; --muted:#56697E; --border:#DEE8F3;
+  --accent:#1257FF; --accent-deep:#0E45CC; --accent-2:#00C46B; --accent-3:#FF4326;
+  --on-accent:#FFFFFF;
+  --success:#00A85C; --warning:#E8930B; --error:#E5392B; --info:#1257FF;
+  --hero-image:url('./media/festival-map.jpg');
+  --ff-display:'Space Grotesk',system-ui,sans-serif;
+  --ff-jp:'Shippori Mincho B1',serif;
+  --ff-body:'Inter',system-ui,sans-serif;
+  --fs-h1:clamp(2.2rem,5vw,3.6rem); --fs-h2:clamp(1.6rem,3vw,2.4rem); --fs-h3:1.35rem;
+  --fs-lead:1.2rem; --fs-body:1.0625rem; --fs-sm:0.95rem; --fs-eyebrow:0.78rem;
+  --r-0:0; --r-control:16px; --r-card:24px; --r-pill:9999px;
+  --control-h:52px; --maxw:1280px;
+  --shadow:0 18px 50px -24px rgba(11,26,46,.28);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--ff-body);font-size:var(--fs-body);line-height:1.6;color:var(--text);
+  background:var(--surface);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{margin:0;font-family:var(--ff-display);font-weight:700;letter-spacing:-0.03em;line-height:1.06}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(20px,5vw,48px)}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--ff-display);
+  font-size:var(--fs-eyebrow);font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 18px}
+.eyebrow::before{content:"";width:26px;height:8px;border-radius:var(--r-pill);background:var(--accent-3)}
+
+/* streamer mechanic */
+.streamer-rule{display:flex;gap:7px;align-items:center}
+.streamer-rule span{height:7px;border-radius:var(--r-pill)}
+.streamer-rule span:nth-child(1){width:46px;background:var(--accent)}
+.streamer-rule span:nth-child(2){width:26px;background:var(--accent-2)}
+.streamer-rule span:nth-child(3){width:14px;background:var(--accent-3)}
+.eye{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:var(--r-pill);
+  background:var(--accent);flex:none}
+.eye::after{content:"";width:5px;height:5px;border-radius:var(--r-pill);background:#fff}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:var(--control-h);
+  padding-inline:24px;border:0;cursor:pointer;font-family:var(--ff-display);font-size:1rem;
+  font-weight:600;letter-spacing:-0.01em;border-radius:var(--r-control);background:var(--surface);
+  color:var(--text);transition:transform .16s,background .16s,box-shadow .16s;white-space:nowrap}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-deep);transform:translateY(-1px);box-shadow:0 12px 26px -12px rgba(18,87,255,.7)}
+.btn-secondary{background:var(--surface-2);color:var(--accent)}
+.btn-secondary:hover{background:#D4E2F6;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text)}
+.btn-ghost:hover{background:rgba(11,26,46,.06);transform:translateY(-1px)}
+.btn:focus-visible{outline:2px solid transparent;box-shadow:0 0 0 3px rgba(18,87,255,.32);outline-offset:2px}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn.icon{width:var(--control-h);padding:0}
+
+/* tags / status pills */
+.tag{display:inline-flex;align-items:center;gap:8px;height:30px;padding-inline:13px;
+  border-radius:var(--r-pill);font-size:var(--fs-sm);font-weight:600;background:var(--surface);color:var(--text)}
+.tag .dot{width:8px;height:8px;border-radius:var(--r-pill);flex:none}
+.pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding-inline:12px;
+  border-radius:var(--r-pill);font-size:0.85rem;font-weight:600}
+.pill .dot{width:8px;height:8px;border-radius:var(--r-pill)}
+.pill.live{background:rgba(0,196,107,.16);color:#06713f}
+.pill.live .dot{background:var(--accent-2);animation:pulse 1.8s ease-in-out infinite}
+.pill.soon{background:rgba(18,87,255,.12);color:var(--accent-deep)}
+.pill.soon .dot{background:var(--accent)}
+.pill.done{background:rgba(86,105,126,.14);color:var(--muted)}
+.pill.done .dot{background:var(--muted)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,196,107,.5)}50%{box-shadow:0 0 0 5px rgba(0,196,107,0)}}
+
+/* ---------- top bar (sticky, no-JS safe) ---------- */
+.topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px);box-shadow:0 1px 0 rgba(11,26,46,.07)}
+.topbar .row{display:flex;align-items:center;gap:20px;height:76px}
+.brand{display:flex;align-items:baseline;gap:11px}
+.brand b{font-family:var(--ff-display);font-weight:700;font-size:1.3rem;letter-spacing:-0.03em}
+.brand .jp{font-family:var(--ff-jp);font-weight:700;font-size:0.92rem;color:var(--muted)}
+.topbar .spacer{flex:1}
+.search{position:relative;width:min(300px,40vw)}
+.search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;
+  color:var(--muted);pointer-events:none}
+.search input{height:var(--control-h);width:100%;padding:0 16px 0 44px;font-family:var(--ff-body);
+  font-size:0.98rem;color:var(--text);background:var(--surface);border:1.5px solid transparent;
+  border-radius:var(--r-control);transition:.15s}
+.search input::placeholder{color:#90A1B5}
+.search input:hover{background:var(--surface-2)}
+.search input:focus-visible,.search input:focus{outline:none;background:#fff;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(18,87,255,.2)}
+.topbar .clock{font-family:var(--ff-display);font-weight:600;font-variant-numeric:tabular-nums;
+  font-size:0.98rem}
+@media(max-width:820px){.search{display:none}.topbar .hide-sm{display:none}}
+
+/* ---------- page header band ---------- */
+.head{padding:clamp(34px,5vw,56px) 0 clamp(24px,3vw,36px)}
+.head .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:30px}
+.head h1{font-size:var(--fs-h1)}
+.head h1 .jp{font-family:var(--ff-jp);font-weight:800;font-size:0.4em;color:var(--accent-3);
+  letter-spacing:0.03em;display:block;margin-bottom:8px}
+
+/* KPI cards with streamer bars */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.kpi{background:#fff;border-radius:var(--r-card);padding:22px 24px;box-shadow:var(--shadow);min-width:0}
+.kpi .lab{font-size:var(--fs-sm);color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.kpi .val{font-family:var(--ff-display);font-weight:700;letter-spacing:-0.03em;
+  font-size:2.3rem;line-height:1;margin:12px 0 14px;font-variant-numeric:tabular-nums}
+.kpi .val small{font-size:1rem;color:var(--muted);font-weight:500}
+.kpi .bar{height:9px;border-radius:var(--r-pill);background:var(--surface);overflow:hidden}
+.kpi .bar i{display:block;height:100%;border-radius:var(--r-pill);width:var(--w,60%);
+  background:var(--c,var(--accent));transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+.anim .kpi .bar i{width:0}
+.anim .kpi.in .bar i{width:var(--w,60%)}
+
+/* ---------- generic card / panel ---------- */
+.panel{background:#fff;border-radius:var(--r-card);padding:clamp(22px,3vw,34px);box-shadow:var(--shadow);min-width:0}
+.grid{display:grid;gap:22px}
+.cols-2{grid-template-columns:1.5fr 1fr}
+.section-h{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.section-h h2{font-size:var(--fs-h2)}
+.block{padding-block:clamp(22px,3vw,34px)}
+
+/* ---------- programme table ---------- */
+table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+thead th{text-align:left;font-family:var(--ff-display);font-weight:600;font-size:0.78rem;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:0 14px 14px;white-space:nowrap}
+tbody td{padding:15px 14px;border-top:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:var(--surface)}
+.t-time{font-family:var(--ff-display);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.t-event{font-weight:600}
+.t-event small{display:block;font-weight:400;color:var(--muted);font-size:0.85rem;margin-top:2px}
+.t-place{color:var(--muted)}
+@media(max-width:720px){.t-place,.th-place{display:none}}
+
+/* ---------- map + legend ---------- */
+.map-img{border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);aspect-ratio:3/2;
+  background:var(--surface) center/cover}
+.legend{display:flex;flex-direction:column;gap:4px}
+.legend li{display:flex;align-items:center;gap:13px;padding:13px 12px;border-radius:var(--r-control);
+  list-style:none;transition:background .15s}
+.legend li:hover{background:var(--surface)}
+.legend .mk{width:14px;height:14px;border-radius:var(--r-pill);flex:none}
+.legend .nm{font-weight:600}
+.legend .ct{margin-left:auto;color:var(--muted);font-size:var(--fs-sm);font-variant-numeric:tabular-nums}
+.legend ul{margin:0;padding:0}
+
+/* ---------- check-in form ---------- */
+.field{display:flex;flex-direction:column;gap:8px;min-width:0;margin-bottom:18px}
+.field label.lab{font-size:var(--fs-sm);font-weight:600;color:var(--text)}
+.control{height:var(--control-h);width:100%;padding-inline:16px;font-family:var(--ff-body);
+  font-size:1rem;color:var(--text);background:var(--surface);border:1.5px solid transparent;
+  border-radius:var(--r-control);transition:.15s}
+textarea.control{height:auto;min-height:96px;padding-block:13px;resize:vertical;line-height:1.5}
+.control::placeholder{color:#90A1B5}
+.control:hover{background:var(--surface-2)}
+.control:focus-visible,.control:focus{outline:none;background:#fff;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(18,87,255,.22)}
+.control:disabled{opacity:.5;cursor:not-allowed}
+select.control{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:44px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231257FF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center}
+/* radio group */
+.radios{display:flex;gap:10px;flex-wrap:wrap}
+.radio{position:relative;flex:1;min-width:120px}
+.radio input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.radio span{display:flex;align-items:center;justify-content:center;gap:9px;height:var(--control-h);
+  border-radius:var(--r-control);background:var(--surface);font-weight:600;font-size:0.96rem;
+  color:var(--muted);transition:.15s;cursor:pointer}
+.radio span::before{content:"";width:18px;height:18px;border-radius:var(--r-pill);
+  border:2px solid #B9CADF;flex:none;transition:.15s}
+.radio input:checked + span{background:rgba(18,87,255,.1);color:var(--accent-deep)}
+.radio input:checked + span::before{border-color:var(--accent);box-shadow:inset 0 0 0 4px var(--accent)}
+.radio input:focus-visible + span{box-shadow:0 0 0 3px rgba(18,87,255,.3)}
+/* switch */
+.switch{display:flex;align-items:center;gap:13px;cursor:pointer;font-size:var(--fs-sm);color:var(--text)}
+.switch input{position:absolute;opacity:0}
+.switch .tk{width:50px;height:30px;border-radius:var(--r-pill);background:#C6D5E8;position:relative;
+  transition:.18s;flex:none}
+.switch .tk::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:var(--r-pill);
+  background:#fff;box-shadow:0 1px 3px rgba(11,26,46,.3);transition:.18s}
+.switch input:checked + .tk{background:var(--accent-2)}
+.switch input:checked + .tk::after{transform:translateX(20px)}
+.switch input:focus-visible + .tk{box-shadow:0 0 0 3px rgba(0,196,107,.35)}
+/* range */
+.range-wrap{display:flex;align-items:center;gap:16px}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:8px;border-radius:var(--r-pill);
+  background:linear-gradient(90deg,var(--accent) 0 50%,var(--surface-2) 50% 100%);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:var(--r-pill);
+  background:#fff;border:3px solid var(--accent);cursor:pointer;box-shadow:var(--shadow)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:var(--r-pill);background:#fff;
+  border:3px solid var(--accent);cursor:pointer}
+input[type=range]:focus-visible{box-shadow:0 0 0 3px rgba(18,87,255,.3)}
+.range-val{font-family:var(--ff-display);font-weight:700;font-variant-numeric:tabular-nums;
+  min-width:44px;text-align:right;font-size:1.2rem}
+/* checkbox */
+.check{display:flex;align-items:center;gap:11px;font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
+.check input{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;
+  border:1.5px solid #B9CADF;border-radius:0;background:#fff;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.check input:checked{background:var(--accent);border-color:var(--accent)}
+.check input:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg) translateY(-1px)}
+.check input:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(18,87,255,.3)}
+
+/* ---------- album ---------- */
+.album{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.album figure{margin:0;border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow);
+  background:var(--surface);position:relative;aspect-ratio:1/1}
+.album figure.wide{grid-column:span 2;aspect-ratio:2/1}
+.album .ph{width:100%;height:100%;background-size:cover;background-position:center;transition:transform .5s}
+.album figure:hover .ph{transform:scale(1.05)}
+.album figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px;color:#fff;font-size:var(--fs-sm);
+  font-weight:600;background:linear-gradient(0deg,rgba(8,18,32,.78),rgba(8,18,32,0))}
+@media(max-width:760px){.album{grid-template-columns:1fr 1fr}.album figure.wide{grid-column:span 2}}
+
+/* footer */
+.foot{background:var(--surface-ink);color:#A9BDD6;padding:48px 0 36px;margin-top:14px}
+.foot .row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px;align-items:center}
+.foot .brand b,.foot .brand .jp{color:#fff}
+.foot a{color:#A9BDD6;font-size:var(--fs-sm)}
+.foot a:hover{color:#fff}
+.foot .links{display:flex;gap:24px;flex-wrap:wrap}
+
+/* reveal */
+.anim .reveal{opacity:0;transform:translateY(22px)}
+.anim .reveal.in{opacity:1;transform:none;transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1)}
+
+/* responsive */
+@media(max-width:980px){.kpis{grid-template-columns:1fr 1fr}.cols-2{grid-template-columns:1fr}}
+@media(max-width:560px){.kpis{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .anim .reveal{opacity:1;transform:none;transition:none}
+  .anim .kpi .bar i{width:var(--w,60%)!important}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="row">
+      <div class="brand"><b>Fukinagashi</b><span class="jp hide-sm">こどもの日</span></div>
+      <span class="pill live hide-sm"><span class="dot"></span>Festival is live</span>
+      <div class="spacer"></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" placeholder="Search the programme, stalls, zones…" aria-label="Search the day">
+      </div>
+      <span class="clock hide-sm" id="clock">13:24</span>
+      <a class="btn btn-primary" href="#checkin">Check in</a>
+    </div>
+  </div>
+</header>
+
+<!-- HEADER BAND -->
+<section class="head">
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="streamer-rule" style="margin-bottom:18px" aria-hidden="true"><span></span><span></span><span></span></div>
+        <h1><span class="jp">こどもの日 · 五月五日</span>The Day Companion</h1>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="tag"><span class="dot" style="background:var(--accent-2)"></span>Riverside Grounds</span>
+        <span class="tag"><span class="dot" style="background:var(--accent)"></span>May 5 · 10:00–dusk</span>
+        <span class="tag"><span class="dot" style="background:var(--accent-3)"></span>22°C · clear</span>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi reveal" style="--w:88%;--c:var(--accent)">
+        <div class="lab"><span class="eye" aria-hidden="true"></span>Streamers flying</div>
+        <div class="val">1,284</div>
+        <div class="bar"><i></i></div>
+      </div>
+      <div class="kpi reveal" style="--w:64%;--c:var(--accent-2)">
+        <div class="lab">Families here now</div>
+        <div class="val">3,910 <small>/ 6,000</small></div>
+        <div class="bar"><i></i></div>
+      </div>
+      <div class="kpi reveal" style="--w:36%;--c:var(--accent-3)">
+        <div class="lab">Next event in</div>
+        <div class="val">00:42</div>
+        <div class="bar"><i></i></div>
+      </div>
+      <div class="kpi reveal" style="--w:78%;--c:var(--accent)">
+        <div class="lab">Kashiwa-mochi made</div>
+        <div class="val">2,460</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROGRAMME + MAP -->
+<section class="block">
+  <div class="wrap">
+    <div class="grid cols-2">
+      <!-- programme -->
+      <div class="panel reveal">
+        <div class="section-h" style="margin-bottom:18px">
+          <div><p class="eyebrow" style="margin-bottom:8px">Today's programme</p><h2>The day, hour by hour</h2></div>
+          <a class="btn btn-secondary" href="#">Full schedule</a>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Event</th><th class="th-place">Place</th><th>Status</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="t-time">10:00</td><td class="t-event">Gates open · raising of the great pole<small>The first carp goes up</small></td><td class="t-place">Carp Field</td><td><span class="pill done"><span class="dot"></span>Done</span></td></tr>
+            <tr><td class="t-time">11:30</td><td class="t-event">Kashiwa-mochi & chimaki making<small>Hands-on, all ages</small></td><td class="t-place">Food Lane</td><td><span class="pill done"><span class="dot"></span>Done</span></td></tr>
+            <tr><td class="t-time">13:00</td><td class="t-event">Carp parade along the river<small>Follow the shoal</small></td><td class="t-place">River Walk</td><td><span class="pill live"><span class="dot"></span>Live</span></td></tr>
+            <tr><td class="t-time">14:00</td><td class="t-event">Kabuto folding workshop<small>Fold your own paper helmet</small></td><td class="t-place">Kabuto Stage</td><td><span class="pill soon"><span class="dot"></span>Soon</span></td></tr>
+            <tr><td class="t-time">15:30</td><td class="t-event">Taiko drumming for children<small>Stand close, it's loud</small></td><td class="t-place">Family Lawn</td><td><span class="pill soon"><span class="dot"></span>Soon</span></td></tr>
+            <tr><td class="t-time">17:00</td><td class="t-event">Shōbu-leaf giveaway for the bath<small>Take one home</small></td><td class="t-place">Gate A</td><td><span class="pill soon"><span class="dot"></span>Soon</span></td></tr>
+            <tr><td class="t-time">18:30</td><td class="t-event">Lowering of the carp · lanterns<small>The day closes</small></td><td class="t-place">Carp Field</td><td><span class="pill soon"><span class="dot"></span>Soon</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- map -->
+      <div class="panel reveal">
+        <p class="eyebrow" style="margin-bottom:8px">Map of the grounds</p>
+        <h2 style="margin-bottom:18px">Five zones by the river</h2>
+        <div class="map-img" role="img" aria-label="Stylised map of the riverside festival grounds with carp-streamer poles, paths and stalls"
+          style="background-image:var(--hero-image);margin-bottom:18px"></div>
+        <ul class="legend">
+          <li><span class="mk" style="background:var(--accent)"></span><span class="nm">Carp Field</span><span class="ct">the great pole</span></li>
+          <li><span class="mk" style="background:var(--accent-3)"></span><span class="nm">Food Lane</span><span class="ct">14 stalls</span></li>
+          <li><span class="mk" style="background:var(--accent-2)"></span><span class="nm">Kabuto Stage</span><span class="ct">workshops</span></li>
+          <li><span class="mk" style="background:var(--surface-ink)"></span><span class="nm">River Walk</span><span class="ct">the parade</span></li>
+          <li><span class="mk" style="background:var(--accent)"></span><span class="nm">Family Lawn</span><span class="ct">picnics · taiko</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHECK-IN + GUIDE -->
+<section class="block">
+  <div class="wrap">
+    <div class="grid cols-2">
+      <!-- check-in form -->
+      <div class="panel reveal" id="checkin">
+        <p class="eyebrow" style="margin-bottom:8px">Check in to the day</p>
+        <h2 style="margin-bottom:6px">Tell us you're here</h2>
+        <p style="color:var(--muted);margin:0 0 24px;font-size:var(--fs-sm)">We'll point you to your
+          family's streamer and ping you before each event you pick.</p>
+        <form onsubmit="return false" aria-label="Check in">
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px">
+            <div class="field"><label class="lab" for="nm">Family name</label>
+              <input class="control" id="nm" type="text" placeholder="e.g. Arakawa"></div>
+            <div class="field"><label class="lab" for="ar">Arriving</label>
+              <select class="control" id="ar">
+                <option>Now</option><option>Within the hour</option><option>This afternoon</option>
+              </select></div>
+          </div>
+          <div class="field">
+            <label class="lab">Arriving by</label>
+            <div class="radios">
+              <label class="radio"><input type="radio" name="by" checked><span>On foot</span></label>
+              <label class="radio"><input type="radio" name="by"><span>Train</span></label>
+              <label class="radio"><input type="radio" name="by"><span>Car</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lab" for="party">Party size</label>
+            <div class="range-wrap">
+              <input type="range" id="party" min="1" max="8" value="4" aria-label="Party size">
+              <span class="range-val" id="partyVal">4</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lab" for="msg">A note for the streamer tail (optional)</label>
+            <textarea class="control" id="msg" placeholder="Grow strong, grow kind."></textarea>
+          </div>
+          <label class="switch" style="margin-bottom:16px">
+            <input type="checkbox" checked><span class="tk"></span>Notify me before each event I follow
+          </label>
+          <label class="check" style="margin-bottom:24px">
+            <input type="checkbox"> Add the programme to my calendar
+          </label>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <button class="btn btn-primary" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              Check in
+            </button>
+            <button class="btn btn-ghost" type="button">Save for later</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- guide -->
+      <div class="grid" style="align-content:start">
+        <div class="panel reveal">
+          <p class="eyebrow" style="margin-bottom:8px">Good to know</p>
+          <h2 style="margin-bottom:18px;font-size:var(--fs-h3)">Bring a carp of your own</h2>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;gap:13px;align-items:flex-start"><span class="eye" style="margin-top:3px" aria-hidden="true"></span>
+              <div><strong>Hand it in at Gate A</strong><br><span style="color:var(--muted);font-size:var(--fs-sm)">We'll fly it on the great pole and tag it with your family name.</span></div></div>
+            <div style="display:flex;gap:13px;align-items:flex-start"><span class="eye" style="margin-top:3px;background:var(--accent-3)" aria-hidden="true"></span>
+              <div><strong>Collect it by dusk</strong><br><span style="color:var(--muted);font-size:var(--fs-sm)">Carp come down at the 18:30 lowering. It's yours to take home.</span></div></div>
+            <div style="display:flex;gap:13px;align-items:flex-start"><span class="eye" style="margin-top:3px;background:var(--accent-2)" aria-hidden="true"></span>
+              <div><strong>Free shōbu leaves</strong><br><span style="color:var(--muted);font-size:var(--fs-sm)">For the bath tonight — one bundle per family at 17:00.</span></div></div>
+          </div>
+        </div>
+        <div class="panel reveal" style="background:var(--surface-ink);color:#EAF1FB">
+          <p class="eyebrow" style="margin-bottom:8px;color:#8FA6C2">Weather on the water</p>
+          <div style="display:flex;align-items:baseline;gap:14px">
+            <span style="font-family:var(--ff-display);font-weight:700;font-size:3rem;letter-spacing:-.03em">22°</span>
+            <span style="color:#A9BDD6">Clear, light south wind 12 km/h —<br>perfect for flying carp.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAMILY ALBUM -->
+<section class="block">
+  <div class="wrap">
+    <div class="section-h reveal" style="margin-bottom:22px">
+      <div><p class="eyebrow" style="margin-bottom:8px">Family album</p><h2>Today, by the river</h2></div>
+      <a class="btn btn-secondary" href="#">Add a photo</a>
+    </div>
+    <div class="album reveal">
+      <figure class="wide"><div class="ph" style="background-image:url('./media/streamers-riverbank.jpg')"></div><figcaption>The shoal over the river walk</figcaption></figure>
+      <figure><div class="ph" style="background-image:url('./media/hero-koinobori-sky.jpg')"></div><figcaption>Nose to the sky</figcaption></figure>
+      <figure><div class="ph" style="background-image:url('./media/food-kashiwamochi.jpg')"></div><figcaption>Kashiwa-mochi, Food Lane</figcaption></figure>
+      <figure><div class="ph" style="background-image:url('./media/customs-kabuto-shobu.jpg')"></div><figcaption>Kabuto & shōbu, Gate A</figcaption></figure>
+      <figure class="wide"><div class="ph" style="background-image:url('./media/festival-map.jpg')"></div><figcaption>The whole grounds from above</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="row">
+      <div class="brand"><b>Fukinagashi</b><span class="jp">こどもの日</span></div>
+      <div class="links">
+        <a href="landing.html">Festival welcome</a>
+        <a href="#">Programme</a><a href="#checkin">Check in</a><a href="#">Lost & found</a><a href="#">Help · Gate A</a>
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,.12);margin:22px 0 18px"></div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:0.85rem;color:#7C92AE">
+      <span>Kodomo no Hi · May 5 · Riverside Grounds. The carp come down at dusk.</span>
+      <span>Fukinagashi — a Katagami design language.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* live range output (works regardless of motion pref) */
+  var r=document.getElementById('party'), v=document.getElementById('partyVal');
+  if(r&&v){
+    var paint=function(){
+      v.textContent=r.value;
+      var p=(r.value-r.min)/(r.max-r.min)*100;
+      r.style.background='linear-gradient(90deg,var(--accent) 0 '+p+'%,var(--surface-2) '+p+'% 100%)';
+    };
+    r.addEventListener('input',paint); paint();
+  }
+  /* motion gate */
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return;
+  document.documentElement.classList.add('anim');
+  function reveal(){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+    },{rootMargin:'0px 0px -8% 0px',threshold:0.12});
+    document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+  }
+  if(document.readyState!=='loading') reveal();
+  else document.addEventListener('DOMContentLoaded',reveal);
+})();
+</script>
+</body>
+</html>

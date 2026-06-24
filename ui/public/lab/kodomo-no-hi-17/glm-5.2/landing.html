@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" class="js-ready">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satsuki — Kodomo no Hi · Children's Day Festival</title>
+<meta name="description" content="Kodomo no Hi, the koinobori festival. A celebration of children, carp-streamers rising, and the clear light of early summer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SATSUKI — Kodomo no Hi design language
+   Role vars defaults (injectTheme overrides these)
+   ============================================================ */
+:root{
+  --bg:#FFFFFF;
+  --surface:#F4F8FB;
+  --surface-2:#E6EEF3;
+  --text:#0A1219;
+  --muted:#5C6E7D;
+  --border:transparent;
+  --accent:#00B4FF;       /* electric sky-blue */
+  --accent-2:#00D96B;     /* fresh green */
+  --accent-3:#FF3D6E;     /* hot coral pop */
+  --on-accent:#FFFFFF;
+  --success:#00D96B;
+  --warning:#FFB020;
+  --error:#FF3D6E;
+  --info:#00B4FF;
+
+  --font-display:"Bricolage Grotesque", system-ui, sans-serif;
+  --font-body:"Inter", system-ui, sans-serif;
+
+  --fs-body:clamp(17px, 1.06vw + 14px, 19px);
+  --fs-display:clamp(2.75rem, 8vw, 7rem);
+  --fs-h2:clamp(2rem, 4.5vw, 3.5rem);
+  --fs-h3:clamp(1.35rem, 2.2vw, 1.85rem);
+  --fs-eyebrow:0.82rem;
+  --lh-tight:1.02;
+  --lh-body:1.6;
+  --ls-display:-0.02em;
+
+  --r-sharp:0;
+  --r-surface:16px;
+  --r-pill:9999px;
+
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px;
+  --space-9:96px; --space-10:128px;
+
+  --gutter:clamp(20px, 5vw, 80px);
+  --maxw:1280px;
+  --control-h:48px;
+
+  --hero-image:url('media/hero-landing.jpg');
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-body);
+  font-size:var(--fs-body);
+  line-height:var(--lh-body);
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+::selection{background:var(--accent);color:var(--on-accent)}
+
+/* ===== Reveal gate (rule 35) ===== */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+html:not(.js-ready) .reveal{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1!important;transform:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+
+/* ===== Navigation — breathes, not boxed (rule 19) ===== */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px var(--gutter);
+  transition:background .4s, backdrop-filter .4s, padding .4s;
+}
+.nav.scrolled{
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:saturate(180%) blur(14px);
+  padding-top:12px;padding-bottom:12px;
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;letter-spacing:-0.01em;font-size:1.15rem}
+.brand-mark{width:14px;height:14px;border-radius:var(--r-pill);background:var(--accent);position:relative}
+.brand-mark::after{content:"";position:absolute;inset:-5px;border-radius:var(--r-pill);background:var(--accent-3);opacity:.18;z-index:-1}
+.nav-links{display:flex;align-items:center;gap:30px;list-style:none}
+.nav-links a{font-size:.95rem;font-weight:500;color:var(--muted);transition:color .25s;position:relative}
+.nav-links a:hover{color:var(--text)}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-4px;height:2px;width:0;background:var(--accent);transition:width .3s}
+.nav-links a:hover::after{width:100%}
+.nav-cta{display:flex;align-items:center;gap:12px}
+.nav-toggle{display:none;width:var(--control-h);height:var(--control-h);border-radius:var(--r-pill);background:var(--surface);align-items:center;justify-content:center}
+.nav-toggle span,.nav-toggle span::before,.nav-toggle span::after{content:"";display:block;width:18px;height:2px;background:var(--text);border-radius:2px;transition:.3s}
+.nav-toggle span::before{transform:translateY(-6px)}
+.nav-toggle span::after{transform:translateY(4px)}
+
+/* ===== Buttons — one shape/height, one clear primary (rule 16) ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  height:var(--control-h);padding:0 26px;border-radius:var(--r-pill);
+  font-weight:600;font-size:.97rem;letter-spacing:-0.01em;
+  transition:background .25s,color .25s,transform .15s,box-shadow .25s;
+  white-space:nowrap;text-align:center;
+}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:color-mix(in srgb,var(--accent),#000 12%)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-ghost{background:var(--surface);color:var(--text)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-ghost:active{transform:translateY(1px)}
+.btn-outline{background:transparent;color:var(--text);box-shadow:inset 0 0 0 2px var(--text)}
+.btn-outline:hover{background:var(--text);color:var(--bg)}
+.btn:focus-visible,.btn-primary:focus-visible,.btn-ghost:focus-visible,.btn-outline:focus-visible{
+  outline:none;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent);
+}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+
+/* ===== Hero — full viewport, swappable image (rules 28-30) ===== */
+.hero{
+  position:relative;min-height:100svh;width:100vw;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  background-image:var(--hero-image);
+  background-size:cover;background-position:center;
+  overflow:hidden;
+}
+.hero::before{
+  /* legible overlay, not a lazy scrim — a tonal ascent band */
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg, rgba(10,18,25,.10) 0%, rgba(10,18,25,.05) 35%, rgba(10,18,25,.62) 100%);
+}
+.hero::after{
+  /* the Rise — a vertical accent ribbon climbing the right edge */
+  content:"";position:absolute;top:0;right:8%;width:6px;height:0;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  border-radius:var(--r-pill);
+}
+html.js-ready .hero.is-risen::after{height:72%;transition:height 1.6s cubic-bezier(.16,1,.3,1) .3s}
+.hero-inner{position:relative;z-index:2;padding:0 var(--gutter) clamp(48px,7vh,96px);max-width:var(--maxw);width:100%;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:var(--fs-eyebrow);font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--on-accent);opacity:.92;margin-bottom:var(--space-5)}
+.hero-eyebrow .dot{width:8px;height:8px;border-radius:var(--r-pill);background:var(--accent-3)}
+.hero h1{
+  font-family:var(--font-display);font-weight:800;
+  font-size:var(--fs-display);line-height:var(--lh-tight);letter-spacing:var(--ls-display);
+  color:#fff;max-width:16ch;
+}
+.hero h1 em{font-style:normal;color:var(--accent-2)}
+.hero h1 .pop{color:var(--accent-3)}
+.hero-sub{margin-top:var(--space-5);max-width:48ch;font-size:clamp(1.05rem,1.4vw,1.3rem);line-height:1.5;color:rgba(255,255,255,.92);font-weight:400}
+.hero-actions{margin-top:var(--space-7);display:flex;flex-wrap:wrap;gap:14px}
+.hero-meta{margin-top:var(--space-7);display:flex;flex-wrap:wrap;gap:var(--space-8);color:rgba(255,255,255,.85);font-size:.92rem}
+.hero-meta b{display:block;font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:#fff;letter-spacing:-0.01em}
+.hero-meta span{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+
+/* ===== Section frame ===== */
+.section{padding:clamp(64px,9vh,128px) var(--gutter)}
+.container{max-width:var(--maxw);margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:var(--fs-eyebrow);font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.eyebrow .num{font-family:var(--font-display);color:var(--accent-3)}
+.eyebrow::before{content:"";width:24px;height:2px;background:var(--accent);border-radius:2px}
+h2{font-family:var(--font-display);font-weight:700;font-size:var(--fs-h2);line-height:1.05;letter-spacing:var(--ls-display);margin-top:var(--space-4);max-width:18ch}
+h3{font-family:var(--font-display);font-weight:600;font-size:var(--fs-h3);line-height:1.15;letter-spacing:-0.01em}
+.lead{font-size:clamp(1.05rem,1.3vw,1.2rem);line-height:1.55;color:var(--muted);max-width:52ch;margin-top:var(--space-4)}
+
+/* ===== Section: the Rise (koinobori) ===== */
+.rise{background:var(--bg)}
+.rise-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(32px,5vw,80px);align-items:center}
+.rise-visual{position:relative;border-radius:var(--r-surface);overflow:hidden;aspect-ratio:4/5;background:var(--surface-2)}
+.rise-visual img{width:100%;height:100%;object-fit:cover}
+.rise-visual .ribbon{position:absolute;top:0;left:9%;width:5px;height:100%;background:linear-gradient(180deg,var(--accent),var(--accent-2));border-radius:var(--r-pill);opacity:.9}
+.rise-visual .ribbon.r2{left:auto;right:18%;background:linear-gradient(180deg,var(--accent-3),var(--accent));opacity:.7}
+.rise-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-6)}
+.stat{background:var(--surface);border-radius:var(--r-surface);padding:var(--space-5) var(--space-4)}
+.stat b{display:block;font-family:var(--font-display);font-weight:800;font-size:clamp(1.8rem,3vw,2.6rem);letter-spacing:-0.02em;color:var(--accent)}
+.stat:nth-child(2) b{color:var(--accent-2)}
+.stat:nth-child(3) b{color:var(--accent-3)}
+.stat span{font-size:.85rem;color:var(--muted);line-height:1.4;display:block;margin-top:4px}
+
+/* ===== Section: customs ===== */
+.customs{background:var(--surface)}
+.customs-head{display:flex;justify-content:space-between;align-items:flex-end;gap:var(--space-6);flex-wrap:wrap}
+.customs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-5);margin-top:var(--space-8)}
+.card{background:var(--bg);border-radius:var(--r-surface);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.card-media{aspect-ratio:5/4;overflow:hidden;background:var(--surface-2)}
+.card-media img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.card:hover .card-media img{transform:scale(1.04)}
+.card-body{padding:var(--space-5) var(--space-5) var(--space-6)}
+.card-tag{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--space-3)}
+.card-tag .pip{width:6px;height:6px;border-radius:var(--r-pill);background:currentColor}
+.card:nth-child(2) .card-tag{color:var(--accent-2)}
+.card:nth-child(3) .card-tag{color:var(--accent-3)}
+.card h3{margin-bottom:var(--space-3)}
+.card p{color:var(--muted);font-size:.97rem;line-height:1.55}
+
+/* ===== Section: food ===== */
+.food{background:var(--bg)}
+.food-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(32px,5vw,72px);align-items:center}
+.food-img{border-radius:var(--r-surface);overflow:hidden;aspect-ratio:4/3;background:var(--surface-2)}
+.food-img img{width:100%;height:100%;object-fit:cover}
+.food-list{margin-top:var(--space-6);display:flex;flex-direction:column;gap:var(--space-4)}
+.food-item{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-4);align-items:center;padding:var(--space-4);background:var(--surface);border-radius:var(--r-surface)}
+.food-item .glyph{width:44px;height:44px;border-radius:var(--r-pill);display:grid;place-items:center;background:var(--bg)}
+.food-item .glyph svg{width:22px;height:22px}
+.food-item:nth-child(1) .glyph{background:var(--accent);color:var(--on-accent)}
+.food-item:nth-child(2) .glyph{background:var(--accent-2);color:var(--on-accent)}
+.food-item:nth-child(3) .glyph{background:var(--accent-3);color:var(--on-accent)}
+.food-item h4{font-family:var(--font-display);font-weight:600;font-size:1.1rem}
+.food-item p{color:var(--muted);font-size:.9rem;margin-top:2px}
+.food-item .price{font-family:var(--font-display);font-weight:700;color:var(--text)}
+
+/* ===== Section: feeling (quote / poster) ===== */
+.feeling{position:relative;background:var(--text);color:#fff;overflow:hidden}
+.feeling::before{content:"";position:absolute;top:-20%;right:-10%;width:60%;height:140%;background:radial-gradient(circle at 70% 30%, color-mix(in srgb,var(--accent) 55%,transparent), transparent 60%);filter:blur(10px)}
+.feeling::after{content:"";position:absolute;bottom:-30%;left:-10%;width:50%;height:120%;background:radial-gradient(circle at 30% 70%, color-mix(in srgb,var(--accent-3) 45%,transparent), transparent 60%);filter:blur(10px)}
+.feeling-inner{position:relative;z-index:2;max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:clamp(40px,6vw,90px);align-items:center}
+.feeling blockquote{font-family:var(--font-display);font-weight:500;font-size:clamp(1.6rem,3.6vw,3rem);line-height:1.12;letter-spacing:-0.02em}
+.feeling blockquote .hl{color:var(--accent-2)}
+.feeling blockquote .pop{color:var(--accent-3)}
+.feeling cite{display:block;margin-top:var(--space-6);font-style:normal;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.feeling-side{background:rgba(255,255,255,.06);border-radius:var(--r-surface);padding:var(--space-7)}
+.feeling-side h3{font-size:1.2rem;margin-bottom:var(--space-4);color:#fff}
+.feeling-side ul{list-style:none;display:flex;flex-direction:column;gap:var(--space-4)}
+.feeling-side li{display:grid;grid-template-columns:auto 1fr;gap:var(--space-4);align-items:start;font-size:.95rem;color:rgba(255,255,255,.85)}
+.feeling-side li svg{width:20px;height:20px;color:var(--accent-2);flex:none;margin-top:2px}
+.feeling-side li b{color:#fff;font-weight:600}
+
+/* ===== Section: gather (CTA) ===== */
+.gather{background:var(--surface)}
+.gather-card{background:var(--bg);border-radius:var(--r-surface);padding:clamp(40px,6vw,80px);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(32px,5vw,64px);align-items:center}
+.gather h2{margin-top:var(--space-4)}
+.gather-form{display:flex;flex-direction:column;gap:var(--space-4)}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.input{height:var(--control-h);padding:0 18px;border-radius:var(--r-surface);background:var(--surface);color:var(--text);font:inherit;font-size:.97rem;border:none;outline:none;transition:box-shadow .25s,background .25s;width:100%}
+.input::placeholder{color:var(--muted)}
+.input:hover{background:var(--surface-2)}
+.input:focus-visible{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--accent)}
+textarea.input{height:auto;min-height:calc(var(--control-h) * 2.4);padding:14px 18px;resize:vertical}
+.select-wrap{position:relative}
+.select-wrap::after{content:"";position:absolute;right:18px;top:50%;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+select.input{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:pointer}
+.gather-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:var(--space-2)}
+
+/* ===== Footer ===== */
+.footer{background:var(--text);color:rgba(255,255,255,.7);padding:var(--space-9) var(--gutter) var(--space-7)}
+.footer-inner{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:var(--space-7)}
+.footer .brand{color:#fff;margin-bottom:var(--space-4)}
+.footer p{font-size:.92rem;line-height:1.55;max-width:38ch}
+.footer h5{font-family:var(--font-display);font-weight:600;font-size:.95rem;color:#fff;margin-bottom:var(--space-4)}
+.footer ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer ul a{font-size:.92rem;color:rgba(255,255,255,.7);transition:color .25s}
+.footer ul a:hover{color:#fff}
+.footer-bottom{max-width:var(--maxw);margin:var(--space-7) auto 0;padding-top:var(--space-5);display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;font-size:.85rem;color:rgba(255,255,255,.5)}
+
+/* ===== Responsive ===== */
+@media (max-width:900px){
+  .nav-links{display:none}
+  .nav-toggle{display:flex}
+  .rise-grid,.food-layout,.feeling-inner,.gather-card{grid-template-columns:1fr}
+  .customs-grid{grid-template-columns:1fr 1fr}
+  .footer-inner{grid-template-columns:1fr 1fr}
+  .rise-stats{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .customs-grid{grid-template-columns:1fr}
+  .footer-inner{grid-template-columns:1fr}
+  .hero-meta{gap:var(--space-5)}
+  .food-item{grid-template-columns:auto 1fr}
+  .food-item .price{grid-column:1/-1;padding-left:56px}
+}
+@media (min-width:1800px){
+  :root{--maxw:1320px}
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <a href="#" class="brand"><span class="brand-mark" aria-hidden="true"></span>Satsuki</a>
+  <ul class="nav-links">
+    <li><a href="#rise">The Streamers</a></li>
+    <li><a href="#customs">Customs</a></li>
+    <li><a href="#food">Food</a></li>
+    <li><a href="dashboard.html">Day Companion</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="#gather" class="btn btn-primary">Join the Day</a>
+    <button class="nav-toggle" aria-label="Open menu"><span></span></button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="hero">
+  <div class="hero-inner">
+    <span class="hero-eyebrow"><span class="dot" aria-hidden="true"></span>Kodomo no Hi · May 5</span>
+    <h1>The carp <em>rise</em>, and the <span class="pop">sky</span> fills with hope.</h1>
+    <p class="hero-sub">Satsuki is a public celebration of children — a day when families raise koinobori to the clear early-summer wind, share kashiwa-mochi, and wish the next generation the strength to swim upstream.</p>
+    <div class="hero-actions">
+      <a href="#gather" class="btn btn-primary">Reserve a pole
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a href="dashboard.html" class="btn btn-ghost" style="background:rgba(255,255,255,.14);color:#fff">Open the day companion</a>
+    </div>
+    <div class="hero-meta">
+      <div><b>May 5</b><span>Festival day</span></div>
+      <div><b>09:00–17:00</b><span>Open hours</span></div>
+      <div><b>Midori Park</b><span>Riverside grounds</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- Section: The Rise -->
+<section class="section rise" id="rise">
+  <div class="container">
+    <div class="rise-grid">
+      <div class="rise-visual reveal">
+        <img src="media/feature-streamer.jpg" alt="A koinobori carp streamer climbing against a clear blue early-summer sky.">
+        <span class="ribbon" aria-hidden="true"></span>
+        <span class="ribbon r2" aria-hidden="true"></span>
+      </div>
+      <div class="reveal">
+        <span class="eyebrow"><span class="num">01</span> The Rise</span>
+        <h2>Cloth carp that swim in the wind.</h2>
+        <p class="lead">A koinobori is a carp made of cloth, hoisted on a tall pole. When the wind catches it, the carp fills and climbs — black carp for the father, red for the mother, blue for the child, and one more for each sibling. The streamer does not fly; it ascends, the way a strong child grows.</p>
+        <div class="rise-stats">
+          <div class="stat"><b>312</b><span>poles raised across the grounds</span></div>
+          <div class="stat"><b>14 m</b><span>height of the great river carp</span></div>
+          <div class="stat"><b>5</b><span>colours in a full family set</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section: Customs -->
+<section class="section customs" id="customs">
+  <div class="container">
+    <div class="customs-head reveal">
+      <div>
+        <span class="eyebrow"><span class="num">02</span> The Customs</span>
+        <h2>Wishes for strength, drawn in objects.</h2>
+      </div>
+      <p class="lead" style="margin-top:0">Every object on the day carries a wish: that the child grow brave, resilient, and kind. The customs are old, and they are made new each May.</p>
+    </div>
+    <div class="customs-grid">
+      <article class="card reveal">
+        <div class="card-media"><img src="media/feature-customs.jpg" alt="A kabuto helmet and shobu iris flowers arranged for Children's Day."></div>
+        <div class="card-body">
+          <span class="card-tag"><span class="pip" aria-hidden="true"></span>Armour</span>
+          <h3>Kabuto &amp; Gogatsu-ningyo</h3>
+          <p>Families display a kabuto helmet and a May doll of a young warrior — not for war, but for the wish that a child meet difficulty the way armour meets a blow: whole, and standing.</p>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card-media"><img src="media/feature-streamer.jpg" alt="Detail of a koinobori carp streamer against blue sky."></div>
+        <div class="card-body">
+          <span class="card-tag"><span class="pip" aria-hidden="true"></span>Bath</span>
+          <h3>Shobu-yu</h3>
+          <p>On the evening of the fifth, families steep shobu — sweet-flag iris leaves — in the bath. The iris's sword-shaped leaves carry the wish for health through the heat of the summer to come.</p>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card-media"><img src="media/feature-food.jpg" alt="Kashiwa-mochi and chimaki sweets arranged for the festival."></div>
+        <div class="card-body">
+          <span class="card-tag"><span class="pip" aria-hidden="true"></span>Carp</span>
+          <h3>Koinobori no Aki</h3>
+          <p>Children write a single wish on a paper carp and tie it where the wind will find it. The wish is simple, and private, and it belongs to the child alone — the wind does the reading.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Section: Food -->
+<section class="section food" id="food">
+  <div class="container">
+    <div class="food-layout">
+      <div class="food-img reveal">
+        <img src="media/feature-food.jpg" alt="Kashiwa-mochi oak-leaf rice cakes and chimaki bamboo-leaf sweets for Kodomo no Hi.">
+      </div>
+      <div class="reveal">
+        <span class="eyebrow"><span class="num">03</span> The Food</span>
+        <h2>Leaves that carry the sweet.</h2>
+        <p class="lead">Two sweets define the day, and both come wrapped in a leaf — because the wish is for a child to grow the way a leaf grows: from something that was itself once green.</p>
+        <div class="food-list">
+          <div class="food-item">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-4 3-7 7-11 4 4 7 7 7 11a7 7 0 0 1-7 7Z"/></svg></span>
+            <div><h4>Kashiwa-mochi</h4><p>Sweet red bean paste in rice cake, wrapped in an oak leaf.</p></div>
+            <span class="price">¥320</span>
+          </div>
+          <div class="food-item">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M12 3v18M5 5l14 14M19 5L5 19"/></svg></span>
+            <div><h4>Chimaki</h4><p>Glutinous rice in bamboo leaf, tied with twine, steamed.</p></div>
+            <span class="price">¥280</span>
+          </div>
+          <div class="food-item">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span>
+            <div><h4>Satsuki-cha</h4><p>Iris-steeped green tea, served cold, served warm.</p></div>
+            <span class="price">¥180</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section: Feeling -->
+<section class="section feeling">
+  <div class="feeling-inner">
+    <div class="reveal">
+      <span class="eyebrow" style="color:var(--accent-2)"><span class="num" style="color:var(--accent-3)">04</span> The Feeling</span>
+      <blockquote style="margin-top:var(--space-5)">
+        A child does not become strong because you <span class="hl">tell</span> them to be. They become strong because, once a year, the whole street lifts a cloth fish into the wind and <span class="pop">watches it climb</span>.
+      </blockquote>
+      <cite>— from the Satsuki festival programme, 2026</cite>
+    </div>
+    <aside class="feeling-side reveal">
+      <h3>What the day asks of you</h3>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span><b>Arrive early.</b> The wind is steadiest before noon, and the great carp is raised at 09:30.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span><b>Bring a wish.</b> Paper carp are free at the children's tent — one per child.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span><b>Stay for the bath.</b> Shobu-yu opens at 16:00; the leaves are gathered from the park.</span></li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- Section: Gather (CTA / form) -->
+<section class="section gather" id="gather">
+  <div class="container">
+    <div class="gather-card reveal">
+      <div>
+        <span class="eyebrow"><span class="num">05</span> Gather</span>
+        <h2>Reserve a pole for your family.</h2>
+        <p class="lead">Poles are limited and assigned by lottery. Register your family by April 28; we will write to confirm your pole number and the colour of your carp.</p>
+      </div>
+      <form class="gather-form" onsubmit="event.preventDefault();this.querySelector('.btn-primary').textContent='Registered — check your mail';">
+        <div class="field">
+          <label for="fam">Family name</label>
+          <input class="input" id="fam" type="text" placeholder="e.g. Tanaka" required>
+        </div>
+        <div class="field">
+          <label for="carp">Number of carp</label>
+          <div class="select-wrap">
+            <select class="input" id="carp">
+              <option>1 — one child</option>
+              <option selected>2 — parents &amp; one child</option>
+              <option>3 — two children</option>
+              <option>4+ — extended family</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="mail">Email for confirmation</label>
+          <input class="input" id="mail" type="email" placeholder="you@example.jp" required>
+        </div>
+        <div class="gather-actions">
+          <button type="submit" class="btn btn-primary">Enter the lottery</button>
+          <button type="button" class="btn btn-outline" aria-disabled="true" disabled>Lottery closes Apr 28</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <a href="#" class="brand"><span class="brand-mark" aria-hidden="true"></span>Satsuki</a>
+      <p>A public celebration of Kodomo no Hi, held each May 5 at Midori Park on the riverside grounds. Free entry; poles by lottery.</p>
+    </div>
+    <div>
+      <h5>The Day</h5>
+      <ul>
+        <li><a href="#rise">The Streamers</a></li>
+        <li><a href="#customs">Customs</a></li>
+        <li><a href="#food">Food</a></li>
+        <li><a href="dashboard.html">Day Companion</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Visit</h5>
+      <ul>
+        <li><a href="#">Midori Park, riverside</a></li>
+        <li><a href="#">09:00 – 17:00, May 5</a></li>
+        <li><a href="#">Free admission</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Take Part</h5>
+      <ul>
+        <li><a href="#gather">Reserve a pole</a></li>
+        <li><a href="#">Volunteer</a></li>
+        <li><a href="#">Press &amp; media</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Satsuki Festival Committee</span>
+    <span>Design language: Satsuki · A Katagami language</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var html=document.documentElement;
+  html.classList.add('js-ready');
+  // hero ribbon rise
+  var hero=document.getElementById('hero');
+  if(hero){requestAnimationFrame(function(){hero.classList.add('is-risen')});}
+  // nav scroll state
+  var nav=document.getElementById('nav');
+  function onScroll(){if(window.scrollY>30){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')}}
+  onScroll();window.addEventListener('scroll',onScroll,{passive:true});
+  // reveal on intersect
+  var reveals=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}});
+    },{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
+    reveals.forEach(function(el){io.observe(el)});
+  } else {
+    reveals.forEach(function(el){el.classList.add('in')});
+  }
+  // mobile menu toggle
+  var toggle=document.querySelector('.nav-toggle');
+  var links=document.querySelector('.nav-links');
+  if(toggle&&links){toggle.addEventListener('click',function(){
+    var open=links.style.display==='flex';
+    links.style.display=open?'':'flex';
+    links.style.position='absolute';links.style.top='64px';links.style.left='var(--gutter)';links.style.right='var(--gutter)';
+    links.style.flexDirection='column';links.style.background='var(--bg)';links.style.padding='16px';
+    links.style.borderRadius='var(--r-surface)';links.style.boxShadow='0 8px 30px rgba(10,18,25,.10)';
+    if(open){links.style.display='none';}
+  });}
+})();
+</script>
+</body>
+</html>
