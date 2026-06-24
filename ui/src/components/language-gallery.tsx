@@ -271,14 +271,10 @@ function buildFamilyShelves(
 ): Shelf[] | null {
   const taxesOf = (lang: DesignLanguage) =>
     taxonomyByLang.get(lang.entity_id) ?? [];
-  // A leaf category is a node whose parent is itself a known parent.
-  const isLeaf = (id: string): boolean => {
-    const info = parents.get(id);
-    return Boolean(info && info.parentId && parents.has(info.parentId));
-  };
-  // A language's primary category is its first taxonomy that resolves to a leaf.
+  // A language's primary category is its first taxonomy id known in the tree —
+  // a top-level canonical category OR a legacy leaf; both shelve directly.
   const primaryLeaf = (lang: DesignLanguage): string | null => {
-    for (const t of taxesOf(lang)) if (isLeaf(t)) return t;
+    for (const t of taxesOf(lang)) if (parents.has(t)) return t;
     return null;
   };
 
@@ -336,7 +332,8 @@ function buildFamilyShelves(
     shelves.push({
       key: leaf,
       label: categoryLabel(parents.get(leaf)?.name ?? leaf),
-      blurb: familyLabel(parents.get(fam)?.name ?? ""),
+      // top-level canonical categories are their own family — no redundant blurb.
+      blurb: fam !== leaf ? familyLabel(parents.get(fam)?.name ?? "") : "",
       ink: famInk.get(fam) ?? "var(--ramune)",
       languages: v,
     });
