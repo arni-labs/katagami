@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
@@ -28,8 +29,13 @@ interface TokensLite {
   colors?: Record<string, string | undefined>;
 }
 
-async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
-  const items: PaletteIndexItem[] = [];
+// The ⌘K search index is identical on every page, but it lives in this layout
+// so it was rebuilt — 3 catalog fetches + parsing every item — on every single
+// page render (the dominant shared TTFB cost across all pages). Cache the whole
+// built index so it's produced once per window, not per request.
+const buildSearchIndex = unstable_cache(
+  async (): Promise<PaletteIndexItem[]> => {
+    const items: PaletteIndexItem[] = [];
 
   try {
     // Search only surfaces the public catalog — Published only (palettes and
@@ -106,8 +112,11 @@ async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
     });
   }
 
-  return items;
-}
+    return items;
+  },
+  ["site-search-index-v1"],
+  { revalidate: 60 },
+);
 
 export default async function SiteLayout({
   children,
