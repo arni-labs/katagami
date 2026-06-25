@@ -8,8 +8,6 @@ interface SpecActionsProps {
   languageId?: string;
   katagamiSpec: string;
   designMd: string;
-  shadcnTheme: string;
-  shadcnDesignMd?: string;
   slug?: string;
   variant?: "compact" | "hero";
 }
@@ -71,7 +69,6 @@ export function SpecActions({
   languageId,
   katagamiSpec,
   designMd,
-  shadcnDesignMd,
   slug,
   variant = "compact",
 }: SpecActionsProps) {
@@ -93,15 +90,26 @@ export function SpecActions({
     return `${window.location.origin}${path}/${suffix}`;
   };
 
-  const markdownFor = (f: Format) =>
-    f === "katagami"
-      ? katagamiSpec
-      : f === "design-md"
-        ? designMd
-        : shadcnDesignMd ?? designMd;
+  // katagami + design-md are inlined; the shadcn DESIGN.md is generated on demand
+  // by its route (kept off the page's critical-path render), so fetch it only
+  // when the user actually copies/downloads it.
+  const resolveMarkdown = async (f: Format): Promise<string> => {
+    if (f === "katagami") return katagamiSpec;
+    if (f === "design-md") return designMd;
+    if (!languageId) return designMd;
+    try {
+      const res = await fetch(
+        `/language/${encodeURIComponent(languageId)}/${URL_SUFFIX["shadcn-md"]}`,
+      );
+      if (res.ok) return await res.text();
+    } catch {
+      /* fall back to the plain DESIGN.md below */
+    }
+    return designMd;
+  };
 
   const handleCopy = async () => {
-    const md = markdownFor(format);
+    const md = await resolveMarkdown(format);
     const url = urlFor(format);
     const refLine = url ? `\n\nSource: ${url}` : "";
     await writeClipboard(`${PREAMBLE[format]}${refLine}\n\n${md}`);
@@ -117,8 +125,8 @@ export function SpecActions({
     flash("link");
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([markdownFor(format)], {
+  const handleDownload = async () => {
+    const blob = new Blob([await resolveMarkdown(format)], {
       type: "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);

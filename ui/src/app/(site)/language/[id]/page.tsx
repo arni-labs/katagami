@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -14,22 +15,19 @@ import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
-import { readTemperFileText } from "@/lib/temper-files";
 import {
   designMdToMarkdown,
   katagamiSpecToMarkdown,
-  shadcnThemeJson,
   SpecPanel,
 } from "@/components/spec-panel";
 import { SpecActions } from "@/components/spec-actions";
 import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
-import { ShadcnPreview } from "@/components/shadcn-preview";
+import { ShadcnKitSection } from "@/components/shadcn-kit-section";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
 import { PageHero } from "@/components/page-hero";
-import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
   StickyNote,
   SectionHeading,
@@ -201,48 +199,10 @@ export default async function LanguageDetailPage({
   };
   const katagamiMarkdown = katagamiSpecToMarkdown(specProps);
   const designMd = designMdToMarkdown(specProps);
-  const [
-    storedShadcnTheme,
-    storedShadcnComponentSpec,
-    storedShadcnPreviewShots,
-  ] = await Promise.all([
-    readTemperFileText(f.shadcn_export_file_id),
-    readTemperFileText(f.shadcn_component_spec_file_id),
-    readTemperFileText(f.shadcn_preview_shots_file_id),
-  ]);
-  const shadcnTheme = storedShadcnTheme ?? shadcnThemeJson(specProps);
-  const shadcnThemeStatus = storedShadcnTheme
-    ? lang.booleans.shadcn_export_verified
-      ? "validated"
-      : "stored-unverified"
-    : "generated-preview";
-  const shadcnComponentStatus = storedShadcnComponentSpec
-    ? lang.booleans.shadcn_component_spec_verified
-      ? "validated"
-      : "stored-unverified"
-    : "generated-preview";
-  const shadcnPreviewShotsStatus = storedShadcnPreviewShots
-    ? lang.booleans.shadcn_preview_shots_verified
-      ? "validated"
-      : "stored-unverified"
-    : "generated-preview";
-  const shadcnDesignMd = shadcnDesignMdMarkdown({
-    languageId: id,
-    name,
-    slug: f.slug,
-    tokens: f.tokens,
-    philosophy: f.philosophy,
-    rules: f.rules,
-    layout: f.layout_principles,
-    guidance: f.guidance,
-    designMd,
-    themeJson: shadcnTheme,
-    componentSpec: storedShadcnComponentSpec,
-    previewShotsJson: storedShadcnPreviewShots,
-    themeStatus: shadcnThemeStatus,
-    componentSpecStatus: shadcnComponentStatus,
-    previewShotsStatus: shadcnPreviewShotsStatus,
-  });
+  // The shadcn implementation kit (3 stored-file reads + markdown generation) is
+  // rendered in a streamed <ShadcnKitSection> Suspense island below — it no
+  // longer blocks the page's TTFB. The shadcn download is served on demand by
+  // the /DESIGN.with-shadcn.md route.
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
@@ -294,8 +254,6 @@ export default async function LanguageDetailPage({
         languageId={id}
         katagamiSpec={katagamiMarkdown}
         designMd={designMd}
-        shadcnTheme={shadcnTheme}
-        shadcnDesignMd={shadcnDesignMd}
         slug={f.slug}
         variant="hero"
       />
@@ -362,24 +320,20 @@ export default async function LanguageDetailPage({
               implementation kit
             </SectionHeading>
             <StickyNote tint="teal" className="p-4 sm:p-5">
-              <ShadcnPreview
-                languageId={id}
-                languageName={name}
-                slug={f.slug}
-                tokensRaw={f.tokens}
-                philosophyRaw={f.philosophy}
-                rulesRaw={f.rules}
-                layoutRaw={f.layout_principles}
-                guidanceRaw={f.guidance}
-                storedThemeJson={storedShadcnTheme}
-                storedComponentSpec={storedShadcnComponentSpec}
-                storedPreviewShots={storedShadcnPreviewShots}
-                shadcnDesignMd={shadcnDesignMd}
-                themeStatus={shadcnThemeStatus}
-                componentSpecStatus={shadcnComponentStatus}
-                previewShotsStatus={shadcnPreviewShotsStatus}
-                compact
-              />
+              <Suspense
+                fallback={
+                  <div className="h-40 animate-pulse rounded-[2px] bg-foreground/5" />
+                }
+              >
+                <ShadcnKitSection
+                  languageId={id}
+                  name={name}
+                  designMd={designMd}
+                  fields={f}
+                  booleans={lang.booleans}
+                  specProps={specProps}
+                />
+              </Suspense>
             </StickyNote>
           </section>
         </div>
