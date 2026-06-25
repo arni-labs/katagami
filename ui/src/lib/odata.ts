@@ -875,6 +875,15 @@ export const getArtStyle = (id: string) =>
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 
+// ── Directions (bake-off rounds) ──
+// A Direction is a reimagine brief / bake-off round. Contributor submissions
+// (DesignLanguage/ArtStyle/PaletteSystem) link to it via `direction_id`; the
+// round is every entity with that direction_id. Fields arrive snake_case:
+// is_bakeoff, title, brief, source_language_id, round_label, model_pool, tags.
+export type Direction = LaneEntity;
+export const listDirections = (filter?: string) => listLane("Directions", filter);
+export const getDirection = (id: string) => getLane("Directions", id);
+
 /** Flatten a PaletteSystem's structured fields (signature/neutrals/semantic)
  *  into the flat color set the embodiment + studio theme on. signature[0] is
  *  the primary accent (the star). */

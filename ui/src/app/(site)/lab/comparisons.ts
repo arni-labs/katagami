@@ -7,15 +7,23 @@
 export type LabView = "embodiment" | "landing" | "dashboard" | "immersive";
 
 export interface LabModel {
-  name: string; // revealed name
-  dir: string; // folder under public/lab/<slug>/
+  name: string; // revealed name (the MODEL — what the quiz asks you to guess)
+  dir: string; // folder under public/lab/<slug>/ (legacy static rounds only)
   views?: LabView[]; // per-model available views; defaults to the comparison's views
-  tokens?: string; // thinking tokens, display string (e.g. "132K") — shown on reveal
+  tokens?: string; // thinking tokens (headline), display string (e.g. "132K") — shown on reveal
+  tokensTotal?: string; // total tokens incl. cache (secondary), display string (e.g. "1.2M")
   cost?: string; // billed cost, display string (e.g. "$5.04") — shown on reveal
   wall?: string; // wall-clock run time, display string (e.g. "25m 09s") — shown on reveal
   harness?: string; // the CLI/agent it ran in (claude-code, codex, grok-build) — shown on reveal
   imageModel?: string; // image model used (Grok Imagine, gpt-image, …) — shown on reveal
   note?: string; // small footnote shown on reveal
+  // Backend (live Katagami) rounds: previews resolve to real file URLs instead of
+  // static /lab/<slug>/<dir>/<view>.html paths.
+  previews?: Partial<Record<LabView, string>>; // view -> rendered file URL
+  designMd?: string; // URL to the language's DESIGN.md
+  languageId?: string; // the submitted DesignLanguage id (for the detail link)
+  languageName?: string; // the language's own name (e.g. "Halation") — shown on reveal
+  status?: string; // submission lifecycle (UnderReview / Published) — small badge
 }
 
 // An alternate generation of the SAME models (e.g. "no rules") — toggled in the UI.
@@ -34,6 +42,8 @@ export interface LabComparison {
   eyebrow: string;
   blurb: string;
   prompt?: string; // the brief handed to every model this round ("what was the prompt")
+  sourceId?: string; // the source language being reimagined (backend rounds)
+  sourceName?: string; // its display name, e.g. "Prism Works"
   views: LabView[];
   blindOrder: string[]; // model keys in display order -> A, B, C, … (cost descending)
   models: Record<string, LabModel>;
