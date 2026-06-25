@@ -371,33 +371,53 @@ export function bakeoffModelSlug(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// Aggregate every round's submissions by authoring model. Reuses the cached
-// per-round data — a fan-out over rounds (warm: cheap; cold: pays each round's
-// catalog read once, then the 60s cache holds it).
+// Aggregate every round's submissions by authoring model. The earlier version
+// fanned out over rounds (getBakeoffRound per round), and since the kernel doesn't
+// honor the direction_id filter (ARN-97) each of those re-reads the WHOLE catalog
+// — N full scans, which times out cold and is why the per-model pages sometimes
+// didn't render. This reads the catalog ONCE plus the directions, and groups in
+// memory: O(1 scan) instead of O(rounds). Source names come from the same scan
+// (sources are published languages already in it), so there are no per-round
+// fetches either.
 async function buildBakeoffModels(): Promise<BakeoffModelEntry[]> {
-  const rounds = await listBakeoffRounds();
+  let dirs: Direction[];
+  let allLangs: DesignLanguage[];
+  try {
+    [dirs, allLangs] = await Promise.all([
+      listDirections().then((ds) => ds.filter(isBakeoff)),
+      listDesignLanguages(),
+    ]);
+  } catch {
+    return [];
+  }
+  const dirById = new Map(dirs.map((d) => [d.entity_id, d]));
+  const langById = new Map(allLangs.map((l) => [l.entity_id, l]));
+
   const byModel = new Map<string, BakeoffModelEntry>();
-  for (const r of rounds) {
-    const round = await getBakeoffRound(r.id);
-    if (!round) continue;
-    for (const key of round.blindOrder) {
-      const m = round.models[key];
-      if (!m) continue;
-      const name = (m.name || "Unknown").trim();
-      const slug = bakeoffModelSlug(name);
-      let entry = byModel.get(slug);
-      if (!entry) {
-        entry = { name, slug, count: 0, submissions: [] };
-        byModel.set(slug, entry);
-      }
-      entry.submissions.push({
-        roundId: r.id,
-        roundTitle: r.title,
-        sourceName: r.sourceName,
-        model: m,
-      });
-      entry.count += 1;
+  for (const lang of allLangs) {
+    if (!isLive(lang)) continue;
+    const dirId = (lang.fields.direction_id ?? "").trim();
+    const dir = dirId ? dirById.get(dirId) : undefined;
+    if (!dir) continue; // not a bake-off submission
+    const sourceId = dir.fields.source_language_id;
+    const sourceName = sourceId
+      ? langById.get(sourceId)?.fields.name?.trim() || undefined
+      : undefined;
+    const m = toModel(lang);
+    const name = (m.name || "Unknown").trim();
+    const slug = bakeoffModelSlug(name);
+    let entry = byModel.get(slug);
+    if (!entry) {
+      entry = { name, slug, count: 0, submissions: [] };
+      byModel.set(slug, entry);
     }
+    entry.submissions.push({
+      roundId: dir.entity_id,
+      roundTitle: roundTitle(sourceName, dir.fields.title),
+      sourceName,
+      model: m,
+    });
+    entry.count += 1;
   }
   // Newest first within a model (round ids are uuid-v7, time-ordered).
   for (const e of byModel.values())
