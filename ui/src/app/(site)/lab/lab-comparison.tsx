@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -193,6 +193,12 @@ function viewUrl(m: LabModel, slug: string, view: LabView): string {
   return m.previews?.[view] ?? `/lab/${slug}/${m.dir}/${view}.html`;
 }
 
+// Compositions are authored at the desktop breakpoint. Render at a FIXED desktop
+// width and scale the whole frame to fit the column — so the preview always shows
+// the true desktop layout, just smaller, and never reflows into its own mobile
+// view (which makes a squashed preview unreadable). Same technique as the site's
+// ScaledFrame (studio + detail-page viewer). "View full" opens the real page.
+const PREVIEW_CANVAS_WIDTH = 1440;
 function PreviewFrame({
   src,
   title,
@@ -202,15 +208,40 @@ function PreviewFrame({
   title: string;
   className: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // ResizeObserver fires once on observe(), so the first scale is set too.
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setScale(w / PREVIEW_CANVAS_WIDTH);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // A 16:10 desktop slice (the hero region), scaled to the column width.
+  const canvasHeight = Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
   return (
-    <div className={`sticker-card relative overflow-hidden ${className}`}>
-      <iframe
-        src={src}
-        title={title}
-        loading="lazy"
-        className="absolute left-0 top-0 origin-top-left"
-        style={{ width: "200%", height: "200%", transform: "scale(0.5)", border: 0 }}
-      />
+    <div ref={ref} className={`sticker-card relative overflow-hidden ${className}`}>
+      {scale > 0 ? (
+        <iframe
+          src={src}
+          title={title}
+          loading="lazy"
+          scrolling="no"
+          className="absolute left-0 top-0 origin-top-left"
+          style={{
+            width: `${PREVIEW_CANVAS_WIDTH}px`,
+            height: `${canvasHeight}px`,
+            transform: `scale(${scale})`,
+            border: 0,
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 animate-pulse bg-muted" />
+      )}
     </div>
   );
 }
