@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   demoArtStyles,
   demoDesignLanguages,
@@ -35,16 +36,42 @@ const headers: Record<string, string> = {
 // OData reads are GET-only (mutations live in odata-mutations.ts), so they're
 // safe to cache. Every page re-fetched the whole catalog from Temper on each
 // request with `no-store`, which made SSR slow (2.5–3.5s TTFB) and every reload
-// re-do all of it. A short revalidate window serves cached data (fast) and stays
-// fresh: UI mutations already revalidatePath the affected routes, and new
-// pipeline-published content appears within the window.
+// re-do all of it.
+//
+// IMPORTANT: fetch-level `next.revalidate` does NOT cache these — Next opts any
+// fetch carrying an Authorization header out of the fetch Data Cache. So we cache
+// the parsed RESULT via unstable_cache (keyed by path), which is independent of
+// the request/headers. It stays fresh: UI mutations already revalidatePath the
+// affected routes, and new pipeline-published content appears within the window.
 const ODATA_REVALIDATE_SECONDS = 60;
 
+async function odataFetch<T>(path: string): Promise<T> {
+  const res = await fetch(odataUrl(path), { headers, cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`OData ${res.status}: ${await res.text()}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// Entries over Next's ~2MB Data Cache limit are simply re-fetched (not cached);
+// correctness is unaffected, those reads just stay uncached.
+const cachedOdataFetch = unstable_cache(
+  (path: string) => odataFetch<unknown>(path),
+  ["odata-read-v1"],
+  { revalidate: ODATA_REVALIDATE_SECONDS },
+);
+
 async function odata<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? "GET").toUpperCase();
+  // Reads (GET, no body) are cached; anything else (defensive — mutations live
+  // in odata-mutations.ts) goes straight through, uncached.
+  if (method === "GET" && !init?.body) {
+    return cachedOdataFetch(path) as Promise<T>;
+  }
   const res = await fetch(odataUrl(path), {
     ...init,
     headers: { ...headers, ...init?.headers },
-    next: { revalidate: ODATA_REVALIDATE_SECONDS },
+    cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`OData ${res.status}: ${await res.text()}`);
