@@ -189,16 +189,35 @@ export interface BakeoffRoundSummary {
   roundLabel?: string;
   sourceId?: string;
   sourceName?: string;
+  sourceThumb?: string;
   modelCount: number;
   status: string; // Open / Closed
 }
 
-async function sourceName(sourceId?: string): Promise<string | undefined> {
-  if (!sourceId) return undefined;
+interface SourceInfo {
+  name?: string;
+  thumb?: string;
+}
+
+// The published language a round reimagines: its name + a thumbnail to show it
+// (landing screenshot preferred, else the embodiment thumbnail).
+async function sourceInfo(sourceId?: string): Promise<SourceInfo> {
+  if (!sourceId) return {};
   try {
-    return (await getDesignLanguage(sourceId)).fields.name?.trim() || undefined;
+    const f = (await getDesignLanguage(sourceId)).fields as Record<
+      string,
+      string | undefined
+    >;
+    const thumb =
+      (f.landing_thumbnail_asset_url || "").trim() ||
+      (f.landing_thumbnail_file_id
+        ? getFileUrl(f.landing_thumbnail_file_id)
+        : "") ||
+      (f.thumbnail_asset_url || "").trim() ||
+      (f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "");
+    return { name: f.name?.trim() || undefined, thumb: thumb || undefined };
   } catch {
-    return undefined;
+    return {};
   }
 }
 
@@ -215,13 +234,15 @@ export async function listBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
       const langs = await languagesForRound(d.entity_id);
       if (langs.length === 0) return null; // hide empty/placeholder rounds
       const f = d.fields;
+      const src = await sourceInfo(f.source_language_id);
       return {
         id: d.entity_id,
         title: (f.title || "Untitled round").trim(),
         brief: f.brief,
         roundLabel: f.round_label,
         sourceId: f.source_language_id,
-        sourceName: await sourceName(f.source_language_id),
+        sourceName: src.name,
+        sourceThumb: src.thumb,
         modelCount: langs.length,
         status: d.status,
       };
@@ -256,6 +277,7 @@ export async function getBakeoffRound(id: string): Promise<LabComparison | null>
   for (const k of blindOrder)
     (models[k].views ?? []).forEach((v) => present.add(v));
   const views = VIEW_ORDER.filter((v) => present.has(v));
+  const src = await sourceInfo(f.source_language_id);
 
   return {
     slug: id,
@@ -265,7 +287,8 @@ export async function getBakeoffRound(id: string): Promise<LabComparison | null>
     blurb: "",
     prompt: f.brief,
     sourceId: f.source_language_id,
-    sourceName: await sourceName(f.source_language_id),
+    sourceName: src.name,
+    sourceThumb: src.thumb,
     views: views.length ? views : ["landing"],
     blindOrder,
     models,

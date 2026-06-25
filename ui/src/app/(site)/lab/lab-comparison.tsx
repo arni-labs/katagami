@@ -297,35 +297,61 @@ function MetaLine({ m }: { m: LabModel }) {
   );
 }
 
-// The submitted Katagami language behind a design (backend rounds): its name, a
-// link to the full language page, and its review status. The model is what you
-// GUESS; this is what the model actually MADE.
+// A Katagami status rubber-stamp — rotated, ink-toned, hairline as an inset
+// print artifact (never a grey border).
+const STATUS_LABEL: Record<string, string> = {
+  Draft: "Draft",
+  UnderReview: "Under review",
+  Published: "Published",
+  Archived: "Archived",
+};
+function StatusStamp({ status }: { status: string }) {
+  const label = STATUS_LABEL[status] ?? status;
+  const tone = status === "Archived" ? "var(--beni)" : "var(--ramune)";
+  return (
+    <span
+      className="inline-flex items-center rounded-[2px] px-2 py-[3px] font-mono text-[9px] font-bold uppercase leading-none tracking-[0.14em]"
+      style={{
+        color: tone,
+        background: `color-mix(in oklch, ${tone} 9%, var(--card))`,
+        boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${tone} 36%, transparent)`,
+        transform: "rotate(-1.2deg)",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// The submitted Katagami language behind a design (backend rounds): its name, its
+// review status (as a stamp), and a link to the full language page. The model is
+// what you GUESS; this is what the model actually MADE.
 function LanguageLine({ m, center }: { m: LabModel; center?: boolean }) {
   if (!m.languageName && !m.languageId) return null;
   return (
-    <p className={`text-[14px] ${center ? "text-center" : ""}`}>
+    <div
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 ${center ? "justify-center" : ""}`}
+    >
+      <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        Language
+      </span>
       {m.languageName && (
-        <>
-          <span className="text-muted-foreground">Language: </span>
-          <span className="font-bold">{m.languageName}</span>
-        </>
+        <span className="font-display text-[16px] font-bold tracking-[-0.02em] text-foreground">
+          {m.languageName}
+        </span>
       )}
+      {m.status && m.status !== "Published" && <StatusStamp status={m.status} />}
       {m.languageId && (
         <a
           href={`/language/${m.languageId}`}
           target="_blank"
           rel="noreferrer"
-          className="ml-2 font-medium text-foreground underline-offset-4 hover:underline"
+          className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ramune)] underline-offset-4 hover:underline"
         >
           View language &rarr;
         </a>
       )}
-      {m.status && m.status !== "Published" && (
-        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ramune)]">
-          {m.status}
-        </span>
-      )}
-    </p>
+    </div>
   );
 }
 
@@ -645,7 +671,21 @@ function DetailsGrid({
 }) {
   const order = active.blindOrder;
   const n = order.length;
-  const anyWall = order.some((k) => active.models[k]?.wall);
+  const [sort, setSort] = useState<"default" | "price-desc" | "price-asc">(
+    "default",
+  );
+  const anyCost = order.some((k) => parseCost(active.models[k]?.cost) != null);
+  const displayOrder =
+    sort === "default"
+      ? order
+      : [...order].sort((a, b) => {
+          const ca = parseCost(active.models[a]?.cost);
+          const cb = parseCost(active.models[b]?.cost);
+          if (ca == null && cb == null) return 0;
+          if (ca == null) return 1; // models without a cost sort last
+          if (cb == null) return -1;
+          return sort === "price-desc" ? cb - ca : ca - cb;
+        });
 
   return (
     <>
@@ -665,19 +705,33 @@ function DetailsGrid({
         </div>
       </div>
 
-      <p className="mt-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        All {n} designs
-      </p>
-
-      {anyWall && (
-        <p className="mt-2 text-center text-[13px] leading-relaxed text-muted-foreground">
-          Times are time-to-produce the full set under concurrent load — not a
-          solo speed benchmark; don&rsquo;t rank models by it.
-        </p>
-      )}
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
+        <span className="font-mono text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          All {n} designs
+        </span>
+        {anyCost && (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Sort
+            </span>
+            <Segmented
+              options={[
+                { key: "default", label: "Default" },
+                { key: "price-desc", label: "Price ↓" },
+                { key: "price-asc", label: "Price ↑" },
+              ]}
+              value={sort}
+              onChange={(k) =>
+                setSort(k as "default" | "price-desc" | "price-asc")
+              }
+            />
+          </div>
+        )}
+      </div>
 
       <div className="mt-6 grid gap-8 sm:grid-cols-2">
-        {order.map((key, i) => {
+        {displayOrder.map((key) => {
+          const i = order.indexOf(key);
           const m = active.models[key];
           const label = LABELS[i] ?? String(i + 1);
           const base = `/lab/${active.slug}/${m.dir}`;
@@ -885,26 +939,47 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         )}
       </h1>
       <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">
-        Guess which model made each design
-        {c.sourceName && (
-          <>
-            {" — all reimagining "}
-            {c.sourceId ? (
-              <a
-                href={`/language/${c.sourceId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                {c.sourceName}
-              </a>
-            ) : (
-              <span className="font-medium text-foreground">{c.sourceName}</span>
-            )}
-          </>
-        )}
-        .
+        Guess which model made each design.
       </p>
+
+      {/* the published Katagami language every model reimagined — shown + linked */}
+      {c.sourceName && (
+        <a
+          href={c.sourceId ? `/language/${c.sourceId}` : undefined}
+          target="_blank"
+          rel="noreferrer"
+          className="sticker-card group mt-5 flex max-w-md items-stretch overflow-hidden"
+          style={{ ["--card-ink" as string]: "var(--ramune)" }}
+        >
+          <div
+            className="relative w-28 shrink-0 overflow-hidden bg-muted"
+            style={{ aspectRatio: "4 / 3" }}
+          >
+            <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[4px]">
+              <span className="h-full flex-1" style={{ background: "var(--sakura)" }} />
+              <span className="h-full flex-1" style={{ background: "var(--yuzu)" }} />
+              <span className="h-full flex-1" style={{ background: "var(--ramune)" }} />
+            </div>
+            {c.sourceThumb && (
+              <div
+                className="absolute inset-0 bg-cover bg-top"
+                style={{ backgroundImage: `url(${c.sourceThumb})` }}
+              />
+            )}
+          </div>
+          <div className="flex min-w-0 flex-col justify-center gap-1 px-4 py-3">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
+              Reimagining
+            </span>
+            <span className="truncate font-display text-[19px] font-bold leading-tight tracking-[-0.02em] text-foreground group-hover:text-[var(--ramune)]">
+              {c.sourceName}
+            </span>
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+              Published language · View &rarr;
+            </span>
+          </div>
+        </a>
+      )}
 
       {/* the direction — the reimagine brief every model was given, verbatim */}
       {c.prompt && (
@@ -917,8 +992,8 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
           </button>
           {showPrompt && (
             <figure
-              className="mt-4 max-w-2xl rounded-[16px] bg-card p-6 sm:p-7"
-              style={{ boxShadow: "var(--shadow-card)" }}
+              className="sticker-card mt-4 max-w-2xl p-6 sm:p-7"
+              style={{ ["--card-ink" as string]: "var(--yuzu)" }}
             >
               <figcaption className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
                 The direction
