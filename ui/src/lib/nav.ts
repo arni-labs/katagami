@@ -11,9 +11,9 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/palettes", label: "Palettes" },
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },
-  { href: "/lineage", label: "Lineage" },
-  { href: "/compare", label: "Compare" },
   { href: "/model-bake-off", label: "Bake-off" },
+  // Lineage + Compare are hidden from the menu for now (routes still work via
+  // direct URL); re-add here when they're ready to surface again.
 ];
 
 /** Is `href` the active section for the current pathname? */

@@ -61,6 +61,12 @@ const GENERIC_CONTENT_TYPES = new Set([
   "application/binary",
   "application/unknown",
   "*/*",
+  // Explicitly download-forcing mimes some uploads carry — sniff these too so a
+  // mis-mimed embodiment/landing renders inline instead of downloading.
+  "application/x-download",
+  "application/force-download",
+  "application/download",
+  "application/x-msdownload",
 ]);
 
 // Sniff a real content type from the bytes when the stored mime is generic.
