@@ -168,21 +168,35 @@ function toModel(lang: DesignLanguage): LabModel {
   };
 }
 
-// Every language linked to a round. The dynamic-field server filter works
+// A round's LIVE submissions only: UnderReview (in play) + Published (kept).
+// Archived = the orchestrator/curator cleaned it up; Draft = not yet submitted.
+// Counting Archived would keep a cleaned-up round (all-archived) showing forever.
+const LIVE_STATUSES = new Set(["UnderReview", "Published"]);
+function isLive(l: DesignLanguage): boolean {
+  return LIVE_STATUSES.has(l.status || l.fields.Status || "");
+}
+
+// Every live language linked to a round. The dynamic-field server filter works
 // today; the client fallback keeps the screen correct if a kernel change ever
 // stops honoring it (a filter that silently returns everything would otherwise
 // mix rounds together).
 async function languagesForRound(id: string): Promise<DesignLanguage[]> {
+  let rows: DesignLanguage[] = [];
   try {
-    const rows = await listDesignLanguages(`direction_id eq '${id}'`);
-    const matched = rows.filter((l) => (l.fields.direction_id ?? "") === id);
-    if (matched.length) return matched;
-    if (rows.length === 0) return [];
+    const filtered = await listDesignLanguages(`direction_id eq '${id}'`);
+    rows = filtered.filter((l) => (l.fields.direction_id ?? "") === id);
+    if (rows.length === 0 && filtered.length === 0) {
+      // filter may not have been honored — fall back to a full scan
+      rows = (await listDesignLanguages()).filter(
+        (l) => (l.fields.direction_id ?? "") === id,
+      );
+    }
   } catch {
-    /* fall through to a full scan */
+    rows = (await listDesignLanguages()).filter(
+      (l) => (l.fields.direction_id ?? "") === id,
+    );
   }
-  const all = await listDesignLanguages();
-  return all.filter((l) => (l.fields.direction_id ?? "") === id);
+  return rows.filter(isLive);
 }
 
 export interface BakeoffRoundSummary {
