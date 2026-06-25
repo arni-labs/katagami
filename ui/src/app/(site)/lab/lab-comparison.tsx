@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
@@ -174,14 +175,22 @@ type SurfaceSet = {
   label: string;
 };
 
-// resolve a model's iframe src in a surface set + view; null if it has no design here
+// resolve a model's iframe src in a surface set + view; null if it has no design here.
+// Backend rounds carry real file URLs in `previews`; legacy static rounds fall back
+// to the /lab/<slug>/<dir>/<view>.html artifact path.
 function resolvePreview(set: SurfaceSet | null, key: string, view: LabView) {
   if (!set || !set.models[key]) return null;
   const m = set.models[key];
   const avail = m.views ?? set.views;
   if (!avail.length) return null;
   const vw = avail.includes(view) ? view : avail[0];
-  return { set, m, view: vw, base: `/lab/${set.slug}/${m.dir}` };
+  const url = m.previews?.[vw] ?? `/lab/${set.slug}/${m.dir}/${vw}.html`;
+  return { set, m, view: vw, url };
+}
+
+// the "Open in new tab" / details link target for a model's view
+function viewUrl(m: LabModel, slug: string, view: LabView): string {
+  return m.previews?.[view] ?? `/lab/${slug}/${m.dir}/${view}.html`;
 }
 
 function PreviewFrame({
@@ -274,12 +283,48 @@ function StatRow({ m }: { m: LabModel }) {
 }
 
 function MetaLine({ m }: { m: LabModel }) {
-  if (!m.harness && !m.imageModel) return null;
+  if (!m.harness && !m.imageModel && !m.tokensTotal) return null;
   return (
     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
-      {[m.harness && `Harness: ${m.harness}`, m.imageModel && `Image: ${m.imageModel}`]
+      {[
+        m.harness && `Harness: ${m.harness}`,
+        m.imageModel && `Image: ${m.imageModel}`,
+        m.tokensTotal && `${m.tokensTotal} total tok`,
+      ]
         .filter(Boolean)
         .join(" · ")}
+    </p>
+  );
+}
+
+// The submitted Katagami language behind a design (backend rounds): its name, a
+// link to the full language page, and its review status. The model is what you
+// GUESS; this is what the model actually MADE.
+function LanguageLine({ m, center }: { m: LabModel; center?: boolean }) {
+  if (!m.languageName && !m.languageId) return null;
+  return (
+    <p className={`text-[14px] ${center ? "text-center" : ""}`}>
+      {m.languageName && (
+        <>
+          <span className="text-muted-foreground">Language: </span>
+          <span className="font-bold">{m.languageName}</span>
+        </>
+      )}
+      {m.languageId && (
+        <a
+          href={`/language/${m.languageId}`}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-2 font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          View language &rarr;
+        </a>
+      )}
+      {m.status && m.status !== "Published" && (
+        <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--ramune)]">
+          {m.status}
+        </span>
+      )}
     </p>
   );
 }
@@ -382,7 +427,6 @@ function QuizQuestion({
     usedSet = other;
   }
   const m = usedSet.models[q.key];
-  const cost = parseCost(m.cost);
   const picked = answers[q.key];
   const answered = picked !== undefined;
   const isCorrect = picked === q.name;
@@ -434,7 +478,7 @@ function QuizQuestion({
       <div className="mt-3">
         {pr ? (
           <PreviewFrame
-            src={`${pr.base}/${pr.view}.html`}
+            src={pr.url}
             title={`Design ${index + 1}`}
             className="aspect-[16/10] w-full"
           />
@@ -516,6 +560,9 @@ function QuizQuestion({
           </p>
           <StatRow m={m} />
           <MetaLine m={m} />
+          <div className="mt-2">
+            <LanguageLine m={m} center />
+          </div>
           <button onClick={onNext} className={`${STICKER} mt-5 bg-foreground text-background`}>
             {index + 1 < total ? "Next design →" : "See your score →"}
           </button>
@@ -598,6 +645,7 @@ function DetailsGrid({
 }) {
   const order = active.blindOrder;
   const n = order.length;
+  const anyWall = order.some((k) => active.models[k]?.wall);
   const [perPage, setPerPage] = useState(1);
   const [start, setStart] = useState(0);
   const maxStart = Math.max(0, n - perPage);
@@ -689,12 +737,20 @@ function DetailsGrid({
         </span>
       </div>
 
+      {anyWall && (
+        <p className="mt-3 text-center text-[12px] leading-relaxed text-muted-foreground">
+          Times are time-to-produce the full set under concurrent load — not a
+          solo speed benchmark; don&rsquo;t rank models by it.
+        </p>
+      )}
+
       <div className={`mt-6 grid gap-7 ${perPage === 2 ? "md:grid-cols-2" : "mx-auto max-w-3xl grid-cols-1"}`}>
         {pageKeys.map((key) => {
           const i = order.indexOf(key);
           const m = active.models[key];
           const label = LABELS[i];
           const base = `/lab/${active.slug}/${m.dir}`;
+          const previewSrc = viewUrl(m, active.slug, view);
           const hasView = (m.views ?? active.views).includes(view);
           const guessed = answers[key];
           const aspect = perPage === 1 ? "aspect-[16/10]" : "aspect-[4/3]";
@@ -746,10 +802,11 @@ function DetailsGrid({
               )}
 
               <MetaLine m={m} />
+              <LanguageLine m={m} />
 
               {hasView ? (
                 <PreviewFrame
-                  src={`${base}/${view}.html`}
+                  src={previewSrc}
                   title={`Model ${label} — ${view}`}
                   className={aspect}
                 />
@@ -766,7 +823,7 @@ function DetailsGrid({
               <div className="flex items-center gap-5 text-[13px]">
                 {hasView && (
                   <a
-                    href={`${base}/${view}.html`}
+                    href={previewSrc}
                     target="_blank"
                     rel="noreferrer"
                     className="font-medium text-foreground underline-offset-4 hover:underline"
@@ -774,14 +831,25 @@ function DetailsGrid({
                     Open {view}
                   </a>
                 )}
-                <a
-                  href={`${base}/DESIGN.md`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-muted-foreground underline-offset-4 hover:underline"
-                >
-                  Design notes
-                </a>
+                {m.languageId ? (
+                  <a
+                    href={`/language/${m.languageId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-muted-foreground underline-offset-4 hover:underline"
+                  >
+                    View language
+                  </a>
+                ) : (
+                  <a
+                    href={`${base}/DESIGN.md`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-muted-foreground underline-offset-4 hover:underline"
+                  >
+                    Design notes
+                  </a>
+                )}
               </div>
             </div>
           );
@@ -857,15 +925,57 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
       `}</style>
 
       {/* header — Katagami highlighter on the title */}
-      <h1 className="font-display text-2xl font-black tracking-[-0.03em] sm:text-3xl">
-        Model{" "}
-        <span className="marker">
-          <span className="marker-fill" style={{ background: "var(--yuzu)" }} />
-          <span className="marker-text">Bake Off</span>
-        </span>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <Link
+          href="/model-bake-off"
+          className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          &larr; All rounds
+        </Link>
+        {c.tag && (
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
+            {c.tag}
+          </span>
+        )}
+      </div>
+      <h1 className="mt-2 font-display text-2xl font-black tracking-[-0.03em] sm:text-3xl">
+        {c.title ? (
+          <>
+            <span className="marker">
+              <span className="marker-fill" style={{ background: "var(--yuzu)" }} />
+              <span className="marker-text">{c.title}</span>
+            </span>
+          </>
+        ) : (
+          <>
+            Model{" "}
+            <span className="marker">
+              <span className="marker-fill" style={{ background: "var(--yuzu)" }} />
+              <span className="marker-text">Bake Off</span>
+            </span>
+          </>
+        )}
       </h1>
       <p className="mt-2 text-[15px] text-muted-foreground">
-        Guess which model made each design.
+        Guess which model made each design
+        {c.sourceName && (
+          <>
+            {" — all reimagining "}
+            {c.sourceId ? (
+              <a
+                href={`/language/${c.sourceId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                {c.sourceName}
+              </a>
+            ) : (
+              <span className="font-medium text-foreground">{c.sourceName}</span>
+            )}
+          </>
+        )}
+        .
       </p>
 
       {/* the prompt — hidden by default, compact, code-style */}
@@ -894,7 +1004,7 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
                     <div key={i}>
                       {head && (
                         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
-                          <span className="text-foreground/30">// </span>
+                          <span className="text-foreground/30">{"// "}</span>
                           {head}
                         </p>
                       )}
