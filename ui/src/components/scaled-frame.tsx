@@ -42,10 +42,16 @@ export function ScaledFrame({
   html,
   title = "preview",
   viewportWidth = VIEWPORT_WIDTH,
+  measurable = false,
 }: {
   html: string;
   title?: string;
   viewportWidth?: number;
+  // When true, sandbox with allow-same-origin so the parent can read the content
+  // height and size the frame to the WHOLE page (still no allow-scripts, so it
+  // stays static — safe). Default keeps the opaque-origin sandbox, where height
+  // can't be measured and the frame holds the default desktop aspect.
+  measurable?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -113,7 +119,9 @@ export function ScaledFrame({
             transform: `scale(${scale as number})`,
             transformOrigin: "top left",
           }}
-          sandbox=""
+          // allow-same-origin (no allow-scripts) keeps it static yet lets us read
+          // the content height; "" is an opaque origin we can't measure.
+          sandbox={measurable ? "allow-same-origin" : ""}
           // Measure a few times: fonts/images settle after first paint, so a
           // single early measure can under-read and clip the frame.
           onLoad={() => {

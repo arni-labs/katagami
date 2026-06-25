@@ -307,7 +307,7 @@ function PreviewFrame({
           </p>
         </div>
       ) : html ? (
-        <ScaledFrame html={html} title={title} />
+        <ScaledFrame html={html} title={title} measurable />
       ) : (
         <div className="absolute inset-0 animate-pulse bg-muted" />
       )}
