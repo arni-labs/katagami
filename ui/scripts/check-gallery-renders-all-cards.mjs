@@ -16,6 +16,9 @@ const palettesPageSource = readProjectFile("src/app/(site)/palettes/page.tsx");
 const paletteDetailSource = readProjectFile("src/app/(site)/palettes/[id]/page.tsx");
 const artStylesPageSource = readProjectFile("src/app/(site)/art-styles/page.tsx");
 const artStyleDetailSource = readProjectFile("src/app/(site)/art-styles/[id]/page.tsx");
+// Shared row->item mappers the catalog pages consume; they apply the display-name
+// helper on behalf of the pages (palettes/art-styles + the Under Review queue).
+const laneItemsSource = readProjectFile("src/lib/lane-items.ts");
 const remixOptionsSource = readProjectFile("src/lib/remix-options.ts");
 const ownerPageSource = readProjectFile("src/app/(site)/owner/page.tsx");
 const sendToReviewSource = readProjectFile("src/components/send-to-review-language-button.tsx");
@@ -242,7 +245,13 @@ if (!/export function paletteDisplayName/.test(odataSource)) {
   });
 }
 
-if (!/paletteDisplayName/.test(palettesPageSource) || !/paletteDisplayName/.test(paletteDetailSource)) {
+// The page may use the helper directly, or via the shared toPaletteItem mapper
+// (which applies it) — either way the display name comes from the one helper.
+const palettePageUsesHelper =
+  /paletteDisplayName/.test(palettesPageSource) ||
+  (/toPaletteItem/.test(palettesPageSource) &&
+    /paletteDisplayName/.test(laneItemsSource));
+if (!palettePageUsesHelper || !/paletteDisplayName/.test(paletteDetailSource)) {
   violations.push({
     label: "palette catalog/detail pages do not use the shared display-name helper",
   });
@@ -254,7 +263,11 @@ if (!/export function artStyleDisplayName/.test(odataSource)) {
   });
 }
 
-if (!/artStyleDisplayName/.test(artStylesPageSource) || !/artStyleDisplayName/.test(artStyleDetailSource)) {
+const artStylePageUsesHelper =
+  /artStyleDisplayName/.test(artStylesPageSource) ||
+  (/toArtStyleItem/.test(artStylesPageSource) &&
+    /artStyleDisplayName/.test(laneItemsSource));
+if (!artStylePageUsesHelper || !/artStyleDisplayName/.test(artStyleDetailSource)) {
   violations.push({
     label: "art-style catalog/detail pages do not use the shared display-name helper",
   });

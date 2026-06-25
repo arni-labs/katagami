@@ -1,11 +1,5 @@
-import {
-  listPaletteSystems,
-  paletteCore,
-  paletteDisplayName,
-  paletteRoles,
-  parseJson,
-  taxonomyFamilyIndex,
-} from "@/lib/odata";
+import { listPaletteSystems, taxonomyFamilyIndex } from "@/lib/odata";
+import { toPaletteItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { PaletteCatalog } from "@/components/lane-catalog";
 import type { PaletteItem } from "@/components/palette-card";
@@ -29,21 +23,7 @@ export default async function PalettesPage() {
   const categoryNames: Record<string, string> = {};
   for (const [id, info] of taxFamily) categoryNames[id] = info.name;
   const items: PaletteItem[] = rows
-    .map((r) => {
-      const core = paletteCore(r.fields);
-      return {
-        id: r.entity_id,
-        name: paletteDisplayName(r.fields, core),
-        slug: r.fields.slug ?? "",
-        status: r.status,
-        roles: paletteRoles(r.fields),
-        core,
-        ramps: parseJson<Record<string, Record<string, string>>>(r.fields.ramps) ?? {},
-        tags: parseJson<string[]>(r.fields.tags) ?? [],
-        featured: /^(true|1)$/i.test(String(r.fields.featured ?? "")),
-        taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
-      };
-    })
+    .map(toPaletteItem)
     // Keep archived items last so they never crowd the live catalog.
     .sort((a, b) => Number(a.status === "Archived") - Number(b.status === "Archived"));
 

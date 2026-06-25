@@ -101,6 +101,7 @@ const buildSearchIndex = unstable_cache(
     { name: "Studio", href: "/studio" },
     { name: "Taxonomy", href: "/taxonomy" },
     { name: "Model bake-off", href: "/model-bake-off" },
+    { name: "Under Review", href: "/under-review" },
     // Lineage + Compare hidden for now (see lib/nav.ts).
   ]) {
     items.push({
