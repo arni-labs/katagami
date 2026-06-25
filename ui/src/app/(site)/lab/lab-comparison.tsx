@@ -978,6 +978,28 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
   const total = questions.length;
   const correct = c.blindOrder.filter((k) => answers[k] === c.models[k].name).length;
 
+  // The quiz is a once-per-round intro, not a gate on every visit. Remember (per
+  // round) when a visitor has skipped or finished it, and send returning visitors
+  // straight to the results instead of restarting the quiz on reload.
+  const quizSeenKey = `katagami:bakeoff-quiz-seen:${c.slug}`;
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(quizSeenKey)) setMode("details");
+    } catch {
+      /* no storage (private mode) — just show the quiz */
+    }
+  }, [quizSeenKey]);
+  useEffect(() => {
+    const finishedQuiz = mode === "quiz" && total > 0 && step >= total;
+    if (mode === "details" || finishedQuiz) {
+      try {
+        localStorage.setItem(quizSeenKey, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [mode, step, total, quizSeenKey]);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
       <style>{`
