@@ -238,6 +238,19 @@ async function sourceInfo(sourceId?: string): Promise<SourceInfo> {
   }
 }
 
+// The round name is DERIVED from the source language — never the orchestrator's
+// hardcoded Direction.title (which has shipped things like "(r2)"). Falls back to
+// the stored title (with any trailing "(rN)" stripped) only when there is no
+// resolvable source.
+function roundTitle(
+  sourceName: string | undefined,
+  storedTitle: string | undefined,
+): string {
+  if (sourceName && sourceName.trim()) return `Reimagine ${sourceName.trim()}`;
+  const t = (storedTitle || "").replace(/\s*\(r\d+\)\s*$/i, "").trim();
+  return t || "Untitled round";
+}
+
 /** All bake-off rounds that actually have submissions, newest first. */
 export async function listBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
   let dirs: Direction[];
@@ -254,7 +267,7 @@ export async function listBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
       const src = await sourceInfo(f.source_language_id);
       return {
         id: d.entity_id,
-        title: (f.title || "Untitled round").trim(),
+        title: roundTitle(src.name, f.title),
         brief: f.brief,
         roundLabel: f.round_label,
         sourceId: f.source_language_id,
@@ -299,7 +312,7 @@ export async function getBakeoffRound(id: string): Promise<LabComparison | null>
   return {
     slug: id,
     tag: (f.round_label || "").toUpperCase(),
-    title: (f.title || "Untitled round").trim(),
+    title: roundTitle(src.name, f.title),
     eyebrow: "",
     blurb: "",
     prompt: f.brief,
