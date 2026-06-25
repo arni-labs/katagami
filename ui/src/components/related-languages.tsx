@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import { TrackedLink } from "@/components/tracked-link";
 import { listDesignLanguages, parseJson } from "@/lib/odata";
 
@@ -85,12 +86,10 @@ export async function RelatedLanguages({
                   shares {shared.slice(0, 3).join(" · ")}
                 </span>
               </span>
-              <span
+              <ArrowUpRight
                 aria-hidden
-                className="shrink-0 font-mono text-[12px] text-muted-foreground transition-transform group-hover:translate-x-0.5"
-              >
-                →
-              </span>
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
             </TrackedLink>
           );
         })}

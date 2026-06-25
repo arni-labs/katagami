@@ -85,8 +85,11 @@ export async function LanguageIdentity({
         href: `/palettes/${linked.entity_id}`,
       }
     : {
+        // No linked PaletteSystem yet → the language's own colours, shown
+        // without a borrowed name (just "Palette"). A name appears once the
+        // pipeline links a real PaletteSystem (Phase B).
         core: appliedPalette(fields.tokens),
-        name: "Applied palette",
+        name: undefined as string | undefined,
         href: undefined as string | undefined,
       };
 
@@ -127,19 +130,25 @@ function ArtStyleCard({
   return (
     <Link
       href={`/art-styles/${art.entity_id}`}
-      className="sticker-card group flex items-stretch overflow-hidden"
+      className="sticker-card group flex flex-col overflow-hidden"
       style={{ ["--card-ink" as string]: "var(--matcha)" }}
     >
-      <span
-        className="w-28 shrink-0 bg-cover bg-center sm:w-36"
-        style={
-          thumb
-            ? { backgroundImage: `url(${thumb})` }
-            : { background: "var(--foreground)", opacity: 0.06 }
-        }
-        aria-hidden
-      />
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 py-4">
+      {/* The proof image at its OWN aspect ratio — never cropped to a strip. */}
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={thumb}
+          alt={`${artStyleDisplayName(art.fields)} proof`}
+          className="block w-full"
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="block w-full"
+          style={{ aspectRatio: "16 / 10", background: "var(--foreground)", opacity: 0.06 }}
+        />
+      )}
+      <span className="flex flex-1 flex-col gap-1 px-4 py-3.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           Art style
         </span>
@@ -165,7 +174,7 @@ function PaletteStrip({
 }: {
   palette: {
     core: PaletteCore;
-    name: string;
+    name?: string;
     href?: string;
   };
 }) {
@@ -203,9 +212,11 @@ function PaletteStrip({
           <span className="block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             Palette
           </span>
-          <span className="block truncate font-display text-[18px] font-bold leading-tight tracking-[-0.015em]">
-            {palette.name}
-          </span>
+          {palette.name ? (
+            <span className="block truncate font-display text-[18px] font-bold leading-tight tracking-[-0.015em]">
+              {palette.name}
+            </span>
+          ) : null}
           {mood.temperature || mood.key_hue ? (
             <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/85">
               {[mood.temperature, mood.key_hue].filter(Boolean).join(" · ")}
