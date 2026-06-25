@@ -48,25 +48,59 @@ function decodeBase64ImageValue(
   }
 }
 
-// Upstream mime types that carry no real information — the file's stored
-// mime_type was never set, or set to a download-forcing default. A browser
-// served `application/octet-stream` DOWNLOADS the response instead of rendering
-// it, so an embodiment/landing whose file was uploaded with the wrong mime
-// (some bake-off submissions do this) downloads instead of opening. These are
-// design artifacts meant to render in-browser, never to be force-downloaded.
-const GENERIC_CONTENT_TYPES = new Set([
-  "",
-  "application/octet-stream",
-  "binary/octet-stream",
-  "application/binary",
-  "application/unknown",
-  "*/*",
-  // Explicitly download-forcing mimes some uploads carry — sniff these too so a
-  // mis-mimed embodiment/landing renders inline instead of downloading.
-  "application/x-download",
-  "application/force-download",
-  "application/download",
-  "application/x-msdownload",
+// The stored mime_type is set by the contributor model, and some models set it
+// wrong — never (→ "", or the POST's application/x-www-form-urlencoded), or to a
+// download-forcing default (application/octet-stream). A browser served HTML or
+// an image under such a type won't render it: the "Open" link downloads a file
+// and the <img>/iframe breaks. So we DON'T trust an arbitrary stored mime.
+//
+// Instead of a blocklist of known-bad mimes (which can never be exhaustive — the
+// next model invents a new wrong value and breaks again), we keep a SAFELIST of
+// types that are genuinely renderable in a browser. A stored mime is honored only
+// if it's on this list; anything else (missing, generic, or an unrecognized value
+// like x-www-form-urlencoded) is resolved from the file's actual bytes. This way
+// no contributor mime can ever force a download or break a preview — the class of
+// bug is closed, and it retroactively fixes any file we'd otherwise miss.
+const RENDERABLE_CONTENT_TYPES = new Set([
+  // markup / text
+  "text/html",
+  "text/css",
+  "text/plain",
+  "text/markdown",
+  "text/xml",
+  "text/csv",
+  "text/javascript",
+  "application/xml",
+  "application/json",
+  "application/javascript",
+  "application/ecmascript",
+  "application/pdf",
+  // images
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+  "image/svg+xml",
+  "image/bmp",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  // fonts (the byte-sniffer can't identify these, so trust a correct mime)
+  "font/woff",
+  "font/woff2",
+  "font/ttf",
+  "font/otf",
+  "application/font-woff",
+  "application/x-font-woff",
+  "application/vnd.ms-fontobject",
+  // media
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
 ]);
 
 // Sniff a real content type from the bytes when the stored mime is generic.
@@ -89,6 +123,18 @@ function sniffContentType(bytes: ArrayBuffer): string {
     .replace(/^﻿/, "")
     .trimStart();
   const lower = head.toLowerCase();
+  // Some binaries are stored as base64 TEXT (or a data: URI) rather than raw
+  // bytes — decodeBase64ImageValue decodes them later, but only if we resolve an
+  // image/* type now. The leading base64 of each format's magic bytes is a
+  // reliable tell, so a mis-mimed base64 image resolves correctly instead of
+  // looking like plain text.
+  const dataUri = head.match(/^data:([a-z]+\/[a-z0-9.+-]+);base64,/i);
+  if (dataUri) return dataUri[1].toLowerCase();
+  if (head.startsWith("/9j/")) return "image/jpeg"; // 0xFFD8FF
+  if (head.startsWith("iVBORw0KGgo")) return "image/png"; // PNG signature
+  if (head.startsWith("R0lGOD")) return "image/gif"; // "GIF8"
+  if (head.startsWith("UklGR")) return "image/webp"; // "RIFF"
+  if (head.startsWith("JVBER")) return "application/pdf"; // "%PDF"
   if (lower.startsWith("<?xml") && lower.includes("<svg"))
     return "image/svg+xml";
   if (lower.startsWith("<svg")) return "image/svg+xml";
@@ -109,12 +155,14 @@ function sniffContentType(bytes: ArrayBuffer): string {
   return "text/plain; charset=utf-8";
 }
 
-// The type we should actually serve: trust a specific stored mime, but repair a
-// generic/missing one by sniffing — so a mis-uploaded HTML file opens instead of
-// downloading.
+// The type we should actually serve: honor the stored mime ONLY when it's a
+// recognized renderable type; otherwise determine the real type from the bytes.
+// So a correct mime is preserved, and any missing/generic/unrecognized one (the
+// failure mode) is repaired from content — a mis-mimed HTML file opens, a
+// mis-mimed image previews, and nothing is ever force-downloaded.
 function resolveContentType(upstream: string, bytes: ArrayBuffer): string {
   const base = (upstream || "").split(";")[0].trim().toLowerCase();
-  if (!GENERIC_CONTENT_TYPES.has(base)) return upstream;
+  if (RENDERABLE_CONTENT_TYPES.has(base)) return upstream;
   return sniffContentType(bytes);
 }
 
