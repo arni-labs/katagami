@@ -646,71 +646,6 @@ function DetailsGrid({
   const order = active.blindOrder;
   const n = order.length;
   const anyWall = order.some((k) => active.models[k]?.wall);
-  const [perPage, setPerPage] = useState(1);
-  const [start, setStart] = useState(0);
-  const maxStart = Math.max(0, n - perPage);
-  const clamped = Math.min(start, maxStart);
-  const pageKeys = order.slice(clamped, clamped + perPage);
-  const atStart = clamped <= 0;
-  const atEnd = clamped + perPage >= n;
-
-  // responsive: 2 designs side-by-side on desktop, 1 on mobile (no manual toggle)
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const apply = () => setPerPage(mq.matches ? 2 : 1);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") setStart((s) => Math.max(0, Math.min(s, maxStart) - perPage));
-      else if (e.key === "ArrowRight")
-        setStart((s) => Math.min(maxStart, Math.min(s, maxStart) + perPage));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [maxStart, perPage]);
-
-  const pos =
-    perPage === 1
-      ? `${clamped + 1} / ${n}`
-      : `${clamped + 1}–${Math.min(clamped + perPage, n)} / ${n}`;
-
-  const nav = (
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      <button
-        onClick={() => setStart(Math.max(0, clamped - perPage))}
-        disabled={atStart}
-        className={`${STICKER} bg-card text-foreground disabled:pointer-events-none disabled:opacity-30`}
-      >
-        &larr; Prev
-      </button>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {order.map((k, di) => {
-          const here = di >= clamped && di < clamped + perPage;
-          return (
-            <button
-              key={k}
-              aria-label={`Go to design ${di + 1}`}
-              onClick={() => setStart(Math.min(di, maxStart))}
-              className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                here ? "bg-foreground" : "bg-muted hover:bg-foreground/40"
-              }`}
-            />
-          );
-        })}
-      </div>
-      <button
-        onClick={() => setStart(Math.min(maxStart, clamped + perPage))}
-        disabled={atEnd}
-        className={`${STICKER} bg-foreground text-background disabled:pointer-events-none disabled:opacity-30`}
-      >
-        Next &rarr;
-      </button>
-    </div>
-  );
 
   return (
     <>
@@ -730,30 +665,25 @@ function DetailsGrid({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        {nav}
-        <span className="shrink-0 font-mono text-[12px] font-bold uppercase tracking-[0.16em] tabular-nums text-muted-foreground">
-          {pos}
-        </span>
-      </div>
+      <p className="mt-4 text-center font-mono text-[12px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+        All {n} designs
+      </p>
 
       {anyWall && (
-        <p className="mt-3 text-center text-[12px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-center text-[13px] leading-relaxed text-muted-foreground">
           Times are time-to-produce the full set under concurrent load — not a
           solo speed benchmark; don&rsquo;t rank models by it.
         </p>
       )}
 
-      <div className={`mt-6 grid gap-7 ${perPage === 2 ? "md:grid-cols-2" : "mx-auto max-w-3xl grid-cols-1"}`}>
-        {pageKeys.map((key) => {
-          const i = order.indexOf(key);
+      <div className="mt-6 grid gap-8 sm:grid-cols-2">
+        {order.map((key, i) => {
           const m = active.models[key];
-          const label = LABELS[i];
+          const label = LABELS[i] ?? String(i + 1);
           const base = `/lab/${active.slug}/${m.dir}`;
           const previewSrc = viewUrl(m, active.slug, view);
           const hasView = (m.views ?? active.views).includes(view);
           const guessed = answers[key];
-          const aspect = perPage === 1 ? "aspect-[16/10]" : "aspect-[4/3]";
           return (
             <div
               key={key}
@@ -808,10 +738,10 @@ function DetailsGrid({
                 <PreviewFrame
                   src={previewSrc}
                   title={`Model ${label} — ${view}`}
-                  className={aspect}
+                  className="aspect-[16/10]"
                 />
               ) : (
-                <div className={`sticker-card relative ${aspect} overflow-hidden`}>
+                <div className="sticker-card relative aspect-[16/10] overflow-hidden">
                   <div className="absolute inset-0 grid place-items-center bg-card px-6 text-center">
                     <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
                       {m.note ?? `No ${VIEW_LABEL[view].toLowerCase()} — this model didn’t produce one.`}
@@ -820,7 +750,7 @@ function DetailsGrid({
                 </div>
               )}
 
-              <div className="flex items-center gap-5 text-[13px]">
+              <div className="flex items-center gap-5 text-[14px]">
                 {hasView && (
                   <a
                     href={previewSrc}
@@ -855,8 +785,6 @@ function DetailsGrid({
           );
         })}
       </div>
-
-      <div className="mt-8">{nav}</div>
     </>
   );
 }
@@ -956,7 +884,7 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
           </>
         )}
       </h1>
-      <p className="mt-2 text-[15px] text-muted-foreground">
+      <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">
         Guess which model made each design
         {c.sourceName && (
           <>
@@ -978,47 +906,36 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         .
       </p>
 
-      {/* the prompt — hidden by default, compact, code-style */}
+      {/* the direction — the reimagine brief every model was given, verbatim */}
       {c.prompt && (
         <div className="mt-5">
           <button
             onClick={() => setShowPrompt((s) => !s)}
             className={`${STICKER} bg-card text-foreground`}
           >
-            {showPrompt ? "Hide the prompt" : "See the prompt"}
+            {showPrompt ? "Hide the direction" : "See the direction"}
           </button>
           {showPrompt && (
-            <figure className="relative mt-4 max-w-2xl">
-              <span
-                aria-hidden
-                className="block font-display text-5xl font-black leading-none text-[var(--sakura)]"
-              >
-                &ldquo;
-              </span>
-              <div className="mt-2 space-y-3 font-mono">
-                {c.prompt.split("\n\n").map((section, i) => {
-                  const nl = section.indexOf("\n");
-                  const head = nl === -1 ? "" : section.slice(0, nl);
-                  const body = nl === -1 ? section : section.slice(nl + 1);
-                  return (
-                    <div key={i}>
-                      {head && (
-                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
-                          <span className="text-foreground/30">{"// "}</span>
-                          {head}
-                        </p>
-                      )}
-                      <p className="mt-1 text-[13px] leading-relaxed text-foreground/75">{body}</p>
-                    </div>
-                  );
-                })}
+            <figure
+              className="mt-4 max-w-2xl rounded-[16px] bg-card p-6 sm:p-7"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <figcaption className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
+                The direction
+              </figcaption>
+              <div className="mt-3 space-y-4">
+                {c.prompt
+                  .trim()
+                  .split(/\n{2,}/)
+                  .map((para, i) => (
+                    <p
+                      key={i}
+                      className="whitespace-pre-line text-[16.5px] leading-relaxed text-foreground/85"
+                    >
+                      {para.trim()}
+                    </p>
+                  ))}
               </div>
-              <span
-                aria-hidden
-                className="mt-2 block text-right font-display text-5xl font-black leading-none text-[var(--ramune)]"
-              >
-                &rdquo;
-              </span>
             </figure>
           )}
         </div>

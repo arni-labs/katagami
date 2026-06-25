@@ -13,7 +13,7 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
       <h1 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] sm:text-5xl">
         Model bake-offs
       </h1>
-      <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+      <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
         Each round hands one design language to every model and asks it to
         reimagine — its own art style, palette and language. Play blind: guess
         which model made each. Unlisted — share the link directly.
@@ -24,7 +24,7 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
           className="mt-10 rounded-[16px] bg-card p-8"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
-          <p className="text-[15px] leading-relaxed text-muted-foreground">
+          <p className="text-[17px] leading-relaxed text-muted-foreground">
             No rounds with submissions yet. Start one from a design language link;
             each model&rsquo;s entry appears here as it submits.
           </p>
@@ -53,7 +53,7 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
                 {r.title}
               </span>
               {r.sourceName && (
-                <span className="text-[14px] text-muted-foreground">
+                <span className="text-[15px] text-muted-foreground">
                   Reimagining{" "}
                   <span className="font-medium text-foreground">
                     {r.sourceName}
@@ -61,7 +61,7 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
                 </span>
               )}
               {r.brief && (
-                <span className="text-sm leading-relaxed text-muted-foreground">
+                <span className="text-[15px] leading-relaxed text-muted-foreground">
                   {r.brief.length > 220 ? `${r.brief.slice(0, 220)}…` : r.brief}
                 </span>
               )}
