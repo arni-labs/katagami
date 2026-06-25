@@ -10,6 +10,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { RelatedLanguages } from "@/components/related-languages";
+import { LanguageIdentity } from "@/components/language-identity";
 import { LanguageLineage } from "@/components/language-lineage";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
@@ -300,6 +301,9 @@ export default async function LanguageDetailPage({
       />
 
       <Perforation />
+
+      {/* Identity — what the language is BUILT WITH: its art style + palette. */}
+      <LanguageIdentity fields={f} />
 
       {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">

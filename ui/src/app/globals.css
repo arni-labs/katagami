@@ -310,20 +310,22 @@
     box-shadow: var(--shadsync-shadow);
   }
 
-  .shadsync-kit-notice {
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-paper);
+  /* Implementation-kit status — KATAGAMI house chrome (this is the site's own
+     card, not a previewed theme). Sharp, borderless, flat ink-tint — never a
+     gradient or a coloured border. Scoped by the data-attr so the flat tint +
+     radius 0 win over the shadcn Card's rounded-xl / bg-card utilities. */
+  .shadsync-kit-notice[data-shadcn-agent-kit] {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: var(--shadow-card) !important;
   }
 
-  .shadsync-kit-ready {
-    border-color: color-mix(in srgb, var(--teal) 42%, var(--border));
+  .shadsync-kit-notice[data-shadcn-agent-kit="ready"] {
+    background: color-mix(in srgb, var(--teal) 7%, var(--card)) !important;
   }
 
-  .shadsync-kit-missing {
-    border-color: color-mix(in srgb, var(--yuzu) 52%, var(--border));
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--yuzu) 14%, transparent), transparent 48%),
-      var(--card);
+  .shadsync-kit-notice[data-shadcn-agent-kit="missing"] {
+    background: color-mix(in srgb, var(--yuzu) 12%, var(--card)) !important;
   }
 
   .shadsync-compatibility-panel {

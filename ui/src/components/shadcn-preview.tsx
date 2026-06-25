@@ -747,7 +747,7 @@ function ImplementationKitNotice({
   return (
     <Card
       className={cn(
-        "shadsync-kit-notice border-0 ring-0 bg-card/95 shadow-[var(--shadow-card)]",
+        "shadsync-kit-notice border-0 ring-0",
         hasAgentKit ? "shadsync-kit-ready" : "shadsync-kit-missing",
       )}
       data-testid="shadcn-implementation-kit-status"
@@ -755,19 +755,29 @@ function ImplementationKitNotice({
     >
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge className="shadsync-status">
+          <span
+            className="inline-flex shrink-0 items-center px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]"
+            style={{
+              background: hasAgentKit
+                ? "color-mix(in srgb, var(--teal) 16%, var(--card))"
+                : "color-mix(in srgb, var(--yuzu) 24%, var(--card))",
+              color: hasAgentKit
+                ? "color-mix(in oklch, var(--teal) 72%, var(--foreground))"
+                : "color-mix(in oklch, var(--yuzu) 68%, var(--foreground))",
+            }}
+          >
             {hasAgentKit ? "agent-authored kit" : "needs agent-authored kit"}
-          </Badge>
+          </span>
           {componentSpecStatus === previewShotsStatus ? (
             <ArtifactStatusBadge status={componentSpecStatus} />
           ) : (
             <>
-              <Badge variant="outline" className="h-5 rounded-md font-mono text-[10px] uppercase tracking-[0.14em]">
+              <span className="inline-flex h-5 items-center bg-[color-mix(in_srgb,var(--foreground)_7%,var(--card))] px-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 recipes {statusLabel(componentSpecStatus)}
-              </Badge>
-              <Badge variant="outline" className="h-5 rounded-md font-mono text-[10px] uppercase tracking-[0.14em]">
+              </span>
+              <span className="inline-flex h-5 items-center bg-[color-mix(in_srgb,var(--foreground)_7%,var(--card))] px-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 shots {statusLabel(previewShotsStatus)}
-              </Badge>
+              </span>
             </>
           )}
         </div>
