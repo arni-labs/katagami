@@ -55,33 +55,22 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
                   <div className="absolute inset-0 bg-muted" />
                 )}
                 {r.sourceName && (
-                  <span className="absolute bottom-2 left-2 z-10 inline-flex items-center bg-background/90 px-2 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.16em] text-foreground shadow-[0_1px_0_#1e232d1f]">
-                    reimagining {r.sourceName}
+                  <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1.5 bg-background/92 px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.16em] text-foreground shadow-[0_1px_0_#1e232d1f]">
+                    <span className="text-muted-foreground">based on</span>
+                    {r.sourceName}
                   </span>
                 )}
               </div>
 
               {/* footer meta */}
               <div className="flex flex-1 flex-col gap-2 px-4 py-3.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  {r.roundLabel && (
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
-                      {r.roundLabel}
-                    </span>
-                  )}
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    {r.modelCount} {r.modelCount === 1 ? "model" : "models"}
-                    {r.status === "Closed" ? " · judged" : ""}
-                  </span>
-                </div>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  {r.modelCount} {r.modelCount === 1 ? "model" : "models"}
+                  {r.status === "Closed" ? " · judged" : ""}
+                </span>
                 <h3 className="font-display text-[22px] font-bold leading-tight tracking-[-0.02em] text-foreground group-hover:text-[var(--ramune)]">
                   {r.title}
                 </h3>
-                {r.brief && (
-                  <p className="text-[14px] leading-relaxed text-muted-foreground">
-                    {r.brief.length > 160 ? `${r.brief.slice(0, 160)}…` : r.brief}
-                  </p>
-                )}
               </div>
             </Link>
           ))}

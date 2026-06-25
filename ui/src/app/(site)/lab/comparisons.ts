@@ -10,8 +10,8 @@ export interface LabModel {
   name: string; // revealed name (the MODEL — what the quiz asks you to guess)
   dir: string; // folder under public/lab/<slug>/ (legacy static rounds only)
   views?: LabView[]; // per-model available views; defaults to the comparison's views
-  tokens?: string; // thinking tokens (headline), display string (e.g. "132K") — shown on reveal
-  tokensTotal?: string; // total tokens incl. cache (secondary), display string (e.g. "1.2M")
+  tokens?: string; // total tokens (headline, lines up with cost), e.g. "4.8M" — shown on reveal
+  tokensThinking?: string; // thinking tokens (fresh+output, excl. cache), secondary note e.g. "785K"
   cost?: string; // billed cost, display string (e.g. "$5.04") — shown on reveal
   wall?: string; // wall-clock run time, display string (e.g. "25m 09s") — shown on reveal
   harness?: string; // the CLI/agent it ran in (claude-code, codex, grok-build) — shown on reveal

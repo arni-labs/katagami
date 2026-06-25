@@ -67,8 +67,8 @@ function modelDisplay(raw?: string): string {
 }
 
 interface Metrics {
-  thinking_tokens?: number; // headline: fresh_input + output (the model's real work)
-  total_tokens?: number; // secondary: fresh + cache_read + cache_write + output
+  thinking_tokens?: number; // fresh_input + output (the model's real work, excl. cache)
+  total_tokens?: number; // fresh + cache_read + cache_write + output — what cost_usd is computed over
   cost_usd?: number; // realistic API list price, cache-aware
   wall_seconds?: number; // harness start -> exit
   billing?: string;
@@ -156,8 +156,11 @@ function toModel(lang: DesignLanguage): LabModel {
     // Reveal stats — populated once the orchestrator backfills metrics; absent
     // until then (StatRow/MetaLine render nothing rather than zeros).
     cost: fmtCost(m.cost_usd),
-    tokens: fmtTokens(m.thinking_tokens),
-    tokensTotal: fmtTokens(m.total_tokens),
+    // The headline token count sits beside the cost, and cost_usd is computed
+    // over ALL tokens — so the number that "lines up with cost" is total_tokens.
+    // thinking_tokens (the model's real work, excl. cache) is the secondary note.
+    tokens: fmtTokens(m.total_tokens),
+    tokensThinking: fmtTokens(m.thinking_tokens),
     wall: fmtWall(m.wall_seconds),
     languageId: lang.entity_id,
     languageName: (f.name || "Untitled").trim(),

@@ -283,13 +283,13 @@ function StatRow({ m }: { m: LabModel }) {
 }
 
 function MetaLine({ m }: { m: LabModel }) {
-  if (!m.harness && !m.imageModel && !m.tokensTotal) return null;
+  if (!m.harness && !m.imageModel && !m.tokensThinking) return null;
   return (
     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
       {[
         m.harness && `Harness: ${m.harness}`,
         m.imageModel && `Image: ${m.imageModel}`,
-        m.tokensTotal && `${m.tokensTotal} total tok`,
+        m.tokensThinking && `${m.tokensThinking} thinking tok`,
       ]
         .filter(Boolean)
         .join(" · ")}
@@ -297,8 +297,7 @@ function MetaLine({ m }: { m: LabModel }) {
   );
 }
 
-// A Katagami status rubber-stamp — rotated, ink-toned, hairline as an inset
-// print artifact (never a grey border).
+// A Katagami status rubber-stamp — the site's own .stamp (rotated, grain-inked).
 const STATUS_LABEL: Record<string, string> = {
   Draft: "Draft",
   UnderReview: "Under review",
@@ -307,50 +306,29 @@ const STATUS_LABEL: Record<string, string> = {
 };
 function StatusStamp({ status }: { status: string }) {
   const label = STATUS_LABEL[status] ?? status;
-  const tone = status === "Archived" ? "var(--beni)" : "var(--ramune)";
+  const tone = status === "Archived" ? "var(--beni)" : "var(--sakura)";
   return (
-    <span
-      className="inline-flex items-center rounded-[2px] px-2 py-[3px] font-mono text-[9px] font-bold uppercase leading-none tracking-[0.14em]"
-      style={{
-        color: tone,
-        background: `color-mix(in oklch, ${tone} 9%, var(--card))`,
-        boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${tone} 36%, transparent)`,
-        transform: "rotate(-1.2deg)",
-      }}
-    >
+    <span className="stamp" style={{ color: tone }}>
       {label}
     </span>
   );
 }
 
-// The submitted Katagami language behind a design (backend rounds): its name, its
-// review status (as a stamp), and a link to the full language page. The model is
-// what you GUESS; this is what the model actually MADE.
+// The submitted Katagami language behind a design: its name + review stamp. The
+// model is what you GUESS; this is what the model actually MADE.
 function LanguageLine({ m, center }: { m: LabModel; center?: boolean }) {
-  if (!m.languageName && !m.languageId) return null;
+  if (!m.languageName) return null;
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 ${center ? "justify-center" : ""}`}
+      className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5 ${center ? "justify-center" : ""}`}
     >
       <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-        Language
+        made
       </span>
-      {m.languageName && (
-        <span className="font-display text-[16px] font-bold tracking-[-0.02em] text-foreground">
-          {m.languageName}
-        </span>
-      )}
+      <span className="font-display text-[17px] font-bold tracking-[-0.02em] text-foreground">
+        {m.languageName}
+      </span>
       {m.status && m.status !== "Published" && <StatusStamp status={m.status} />}
-      {m.languageId && (
-        <a
-          href={`/language/${m.languageId}`}
-          target="_blank"
-          rel="noreferrer"
-          className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--ramune)] underline-offset-4 hover:underline"
-        >
-          View language &rarr;
-        </a>
-      )}
     </div>
   );
 }
@@ -475,7 +453,7 @@ function QuizQuestion({
           )}
         </span>
         <button onClick={onSkip} className={`${STICKER} bg-[var(--sakura)] px-5 text-black`}>
-          Skip the quiz &rarr;
+          Skip the quiz
         </button>
       </div>
       {/* progress dots */}
@@ -590,7 +568,7 @@ function QuizQuestion({
             <LanguageLine m={m} center />
           </div>
           <button onClick={onNext} className={`${STICKER} mt-5 bg-foreground text-background`}>
-            {index + 1 < total ? "Next design →" : "See your score →"}
+            {index + 1 < total ? "Next design" : "See your score"}
           </button>
         </div>
       )}
@@ -647,7 +625,7 @@ function ScoreScreen({
         onClick={onDetails}
         className={`${STICKER} mt-7 bg-foreground px-6 py-3 text-background`}
       >
-        See all designs &amp; details &rarr;
+        See all designs &amp; details
       </button>
     </div>
   );
@@ -734,7 +712,6 @@ function DetailsGrid({
           const i = order.indexOf(key);
           const m = active.models[key];
           const label = LABELS[i] ?? String(i + 1);
-          const base = `/lab/${active.slug}/${m.dir}`;
           const previewSrc = viewUrl(m, active.slug, view);
           const hasView = (m.views ?? active.views).includes(view);
           const guessed = answers[key];
@@ -744,50 +721,17 @@ function DetailsGrid({
               className="flex flex-col gap-3"
               style={{ animation: "quiz-in 360ms cubic-bezier(.2,.9,.3,1) both" }}
             >
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground font-display text-lg font-bold text-background">
+              {/* model — the reveal answer */}
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-foreground font-display text-[15px] font-bold text-background">
                   {label}
                 </span>
-                <span
-                  className="inline-block font-mono text-sm font-bold tracking-wide"
-                  style={{ animation: "lab-pop 440ms cubic-bezier(.2,.9,.3,1) both" }}
-                >
+                <span className="font-display text-[20px] font-bold leading-none tracking-[-0.02em]">
                   {m.name}
                 </span>
-                {(m.cost || m.tokens || m.wall) && (
-                  <span
-                    className="inline-block text-[13px] tabular-nums text-muted-foreground"
-                    style={{ animation: "lab-pop 440ms cubic-bezier(.2,.9,.3,1) 110ms both" }}
-                  >
-                    {m.cost}
-                    {(m.tokens || m.wall) && (
-                      <span className="opacity-60">
-                        {m.cost ? " · " : ""}
-                        {[m.tokens && `${m.tokens} tok`, m.wall].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                  </span>
-                )}
               </div>
 
-              {guessed && (
-                <p className="text-[13px] font-bold">
-                  {guessed === m.name ? (
-                    <span className="marker">
-                      <span className="marker-fill" style={{ background: "var(--yuzu)" }} />
-                      <span className="marker-text">Correct — you got it</span>
-                    </span>
-                  ) : (
-                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                      You guessed {guessed} — it&rsquo;s {m.name}
-                    </span>
-                  )}
-                </p>
-              )}
-
-              <MetaLine m={m} />
-              <LanguageLine m={m} />
-
+              {/* the design */}
               {hasView ? (
                 <PreviewFrame
                   src={previewSrc}
@@ -804,34 +748,67 @@ function DetailsGrid({
                 </div>
               )}
 
-              <div className="flex items-center gap-5 text-[14px]">
+              {/* what it made + your guess */}
+              <LanguageLine m={m} />
+              {guessed &&
+                (guessed === m.name ? (
+                  <p className="text-[13px] font-bold">
+                    <span className="marker">
+                      <span className="marker-fill" style={{ background: "var(--yuzu)" }} />
+                      <span className="marker-text">You guessed it</span>
+                    </span>
+                  </p>
+                ) : (
+                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    You guessed {guessed}
+                  </p>
+                ))}
+
+              {/* what it cost — cost is the headline, tokens line up with it */}
+              {(m.cost || m.tokens || m.wall) && (
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-2 pt-0.5">
+                  {(
+                    [
+                      ["cost", m.cost],
+                      ["total tokens", m.tokens],
+                      ["time", m.wall],
+                    ] as [string, string | undefined][]
+                  )
+                    .filter(([, v]) => v)
+                    .map(([lbl, v]) => (
+                      <span key={lbl} className="inline-flex flex-col">
+                        <span className="font-display text-[19px] font-black leading-none tracking-[-0.02em] tabular-nums text-foreground">
+                          {v}
+                        </span>
+                        <span className="mt-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          {lbl}
+                        </span>
+                      </span>
+                    ))}
+                </div>
+              )}
+              <MetaLine m={m} />
+
+              {/* links */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.14em]">
                 {hasView && (
                   <a
                     href={previewSrc}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                    className="ink-underline text-foreground"
                   >
                     Open {view}
                   </a>
                 )}
-                {m.languageId ? (
+                {m.languageId && (
                   <a
                     href={`/language/${m.languageId}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-muted-foreground underline-offset-4 hover:underline"
+                    className="ink-underline text-[var(--ramune)]"
                   >
                     View language
-                  </a>
-                ) : (
-                  <a
-                    href={`${base}/DESIGN.md`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-muted-foreground underline-offset-4 hover:underline"
-                  >
-                    Design notes
                   </a>
                 )}
               </div>
@@ -850,7 +827,6 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
   const [view, setView] = useState<LabView>(
     c.views.includes("landing") ? "landing" : c.views[0],
   );
-  const [showPrompt, setShowPrompt] = useState(false);
   const [variantMode, setVariantMode] = useState<"primary" | "variant">("primary");
 
   const primarySet: SurfaceSet = {
@@ -907,20 +883,13 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
       `}</style>
 
       {/* header — Katagami highlighter on the title */}
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <Link
-          href="/model-bake-off"
-          className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          &larr; All rounds
-        </Link>
-        {c.tag && (
-          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
-            {c.tag}
-          </span>
-        )}
-      </div>
-      <h1 className="mt-2 font-display text-2xl font-black tracking-[-0.03em] sm:text-3xl">
+      <Link
+        href="/model-bake-off"
+        className="ink-underline inline-block font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        All rounds
+      </Link>
+      <h1 className="mt-3 font-display text-3xl font-black tracking-[-0.03em] sm:text-4xl">
         {c.title ? (
           <>
             <span className="marker">
@@ -938,82 +907,44 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
           </>
         )}
       </h1>
-      <p className="mt-3 text-[17px] leading-relaxed text-muted-foreground">
-        Guess which model made each design.
-      </p>
-
-      {/* the published Katagami language every model reimagined — shown + linked */}
+      {/* based on — the existing published language, shown full-frame + linked */}
       {c.sourceName && (
         <a
           href={c.sourceId ? `/language/${c.sourceId}` : undefined}
           target="_blank"
           rel="noreferrer"
-          className="sticker-card group mt-5 flex max-w-md items-stretch overflow-hidden"
-          style={{ ["--card-ink" as string]: "var(--ramune)" }}
+          className="group mt-5 inline-flex items-center gap-4"
         >
-          <div
-            className="relative w-28 shrink-0 overflow-hidden bg-muted"
-            style={{ aspectRatio: "4 / 3" }}
+          <span
+            className="relative block w-44 shrink-0 overflow-hidden shadow-[var(--shadow-card)] transition-transform group-hover:-translate-y-[2px]"
+            style={{ aspectRatio: "16 / 10" }}
           >
-            <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[4px]">
+            <span aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-[3px]">
               <span className="h-full flex-1" style={{ background: "var(--sakura)" }} />
               <span className="h-full flex-1" style={{ background: "var(--yuzu)" }} />
               <span className="h-full flex-1" style={{ background: "var(--ramune)" }} />
-            </div>
-            {c.sourceThumb && (
-              <div
-                className="absolute inset-0 bg-cover bg-top"
+            </span>
+            {c.sourceThumb ? (
+              <span
+                className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${c.sourceThumb})` }}
               />
+            ) : (
+              <span className="absolute inset-0 bg-muted" />
             )}
-          </div>
-          <div className="flex min-w-0 flex-col justify-center gap-1 px-4 py-3">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
-              Reimagining
+          </span>
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Based on the existing language
             </span>
-            <span className="truncate font-display text-[19px] font-bold leading-tight tracking-[-0.02em] text-foreground group-hover:text-[var(--ramune)]">
+            <span className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] text-foreground">
               {c.sourceName}
             </span>
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-              Published language · View &rarr;
+            <span className="ink-underline inline-block w-fit font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ramune)]">
+              View language
             </span>
-          </div>
+          </span>
         </a>
-      )}
-
-      {/* the direction — the reimagine brief every model was given, verbatim */}
-      {c.prompt && (
-        <div className="mt-5">
-          <button
-            onClick={() => setShowPrompt((s) => !s)}
-            className={`${STICKER} bg-card text-foreground`}
-          >
-            {showPrompt ? "Hide the direction" : "See the direction"}
-          </button>
-          {showPrompt && (
-            <figure
-              className="sticker-card mt-4 max-w-2xl p-6 sm:p-7"
-              style={{ ["--card-ink" as string]: "var(--yuzu)" }}
-            >
-              <figcaption className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--ramune)]">
-                The direction
-              </figcaption>
-              <div className="mt-3 space-y-4">
-                {c.prompt
-                  .trim()
-                  .split(/\n{2,}/)
-                  .map((para, i) => (
-                    <p
-                      key={i}
-                      className="whitespace-pre-line text-[16.5px] leading-relaxed text-foreground/85"
-                    >
-                      {para.trim()}
-                    </p>
-                  ))}
-              </div>
-            </figure>
-          )}
-        </div>
       )}
 
       {/* "anti-slop" rules on/off (on = round 11 with rules, off = round 12 no rules) */}
@@ -1025,6 +956,12 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
             label={<>&ldquo;anti-slop&rdquo; rules</>}
           />
         </div>
+      )}
+
+      {mode === "quiz" && step < total && (
+        <p className="mt-8 text-[17px] leading-relaxed text-muted-foreground">
+          Guess which model made each design.
+        </p>
       )}
 
       {mode === "quiz" && step < total && (
