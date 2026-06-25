@@ -29,8 +29,11 @@ let activePreloads = 0;
 const MAX_CONCURRENT_THUMBNAILS = 6;
 const MAX_CONCURRENT_PRELOADS = 4;
 const THUMBNAIL_LOAD_TIMEOUT_MS = 30000;
-const LOAD_ROOT_MARGIN = "3200px 0px 3200px 0px";
-const PRELOAD_ROOT_MARGIN = "12000px 0px 12000px 0px";
+// Load ~one viewport ahead, prefetch ~two. The previous 3200px/12000px margins
+// eagerly decoded/fetched dozens of off-screen thumbnails during a scroll,
+// churning memory for images the user might never reach.
+const LOAD_ROOT_MARGIN = "900px 0px 900px 0px";
+const PRELOAD_ROOT_MARGIN = "1800px 0px 1800px 0px";
 
 function finishQueueItem(item: QueueItem) {
   if (!item.started || item.finished) return;

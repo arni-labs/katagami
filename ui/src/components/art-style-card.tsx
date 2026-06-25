@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
 import { ArchivedStamp } from "@/components/archived-stamp";
 
@@ -74,11 +75,15 @@ export function ArtStyleCard({
       {/* hero reference — edge to edge; proofs ride as a small strip in the corner */}
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
         {hero ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // next/image: the optimizer serves a display-sized, lazy, modern-format
+          // variant of the (often multi-MB) source — same look, a fraction of the
+          // decoded-image memory that was crashing this gallery.
+          <Image
             src={hero}
             alt={`${art.name} — hero reference`}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
           />
         ) : (
           <div className="absolute inset-0" style={{ background: `color-mix(in srgb, ${tint} 14%, var(--card))` }} />
@@ -87,8 +92,7 @@ export function ArtStyleCard({
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {stripShots.slice(0, 3).map((src, i) => (
               <div key={i} className="relative h-8 w-8 shrink-0 overflow-hidden bg-muted shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${art.name} proof ${i + 1}`} className="h-full w-full object-cover" />
+                <Image src={src} alt={`${art.name} proof ${i + 1}`} fill sizes="32px" className="object-cover" />
               </div>
             ))}
             {overflow > 0 && (
