@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -45,24 +46,27 @@ export function MobileMenu() {
   }, [open]);
 
   return (
-    <div className="lg:hidden">
+    <>
       <button
         type="button"
         aria-label="Open menu"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 w-9 items-center justify-center text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-9 w-9 items-center justify-center text-foreground/80 transition-colors hover:text-foreground lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
 
-      {open ? (
+      {/* Portal to <body>: the header has backdrop-filter + overflow-x-clip,
+          which would otherwise trap and clip a position:fixed overlay. */}
+      {open && typeof document !== "undefined"
+        ? createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
-          className="fixed inset-0 z-50"
+          className="fixed inset-0 z-50 lg:hidden"
         >
           {/* ink-toned scrim — not pure black */}
           <button
@@ -118,8 +122,10 @@ export function MobileMenu() {
               })}
             </nav>
           </div>
-        </div>
-      ) : null}
-    </div>
+        </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
