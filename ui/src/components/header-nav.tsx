@@ -3,22 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { trackNav } from "@/lib/analytics";
-
-const links = [
-  { href: "/", label: "Gallery" },
-  { href: "/palettes", label: "Palettes" },
-  { href: "/art-styles", label: "Art Styles" },
-  { href: "/studio", label: "Studio" },
-  { href: "/lineage", label: "Lineage" },
-  { href: "/compare", label: "Compare" },
-];
+import { NAV_LINKS, isActiveNav } from "@/lib/nav";
 
 export function HeaderNav() {
   const pathname = usePathname();
   return (
-    <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium md:flex md:flex-none md:gap-5">
-      {links.map((l) => {
-        const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+    <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium md:flex md:flex-none md:gap-4 lg:gap-5">
+      {NAV_LINKS.map((l) => {
+        const active = isActiveNav(l.href, pathname);
         return (
           <Link
             key={l.href}
