@@ -261,31 +261,12 @@ function PreviewFrame({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  if (!desktop && thumb) {
-    return (
-      <a
-        href={openHref ?? src}
-        target="_blank"
-        rel="noreferrer"
-        className={`sticker-card relative block overflow-hidden ${className}`}
-      >
-        {/* Static screenshot — the live iframe is reserved for desktop. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={thumb}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-top"
-        />
-        <span className="absolute bottom-2 right-2 bg-foreground/85 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-background">
-          open ↗
-        </span>
-      </a>
-    );
-  }
-
-  const innerHeight = scrollable
+  // Phones never mount tall full-result iframes for every model: they get a
+  // compact 16:10 preview — a static screenshot when one exists, else a single
+  // lightweight hero iframe — and the "Open" link below shows the full result.
+  const isMobile = !desktop;
+  const effScrollable = scrollable && !isMobile;
+  const innerHeight = effScrollable
     ? contentHeight
     : Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
   const scaledHeight = scale > 0 ? Math.round(innerHeight * scale) : 0;
@@ -294,10 +275,30 @@ function PreviewFrame({
     <div
       ref={ref}
       className={`sticker-card relative ${
-        scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
-      } ${className}`}
+        effScrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
+      } ${isMobile ? "aspect-[16/10] w-full" : className}`}
     >
-      {visible && scale > 0 ? (
+      {isMobile && thumb ? (
+        <a
+          href={openHref ?? src}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute inset-0 block"
+        >
+          {/* Static screenshot — the live iframe is reserved for desktop. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumb}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
+          <span className="absolute bottom-2 right-2 bg-foreground/85 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-background">
+            open ↗
+          </span>
+        </a>
+      ) : visible && scale > 0 ? (
         // Inner box sized to the SCALED height (transform doesn't change layout),
         // so the scroll container scrolls the full scaled result.
         <div style={{ position: "relative", width: "100%", height: scaledHeight }}>
@@ -308,7 +309,7 @@ function PreviewFrame({
             loading="lazy"
             scrolling="no"
             onLoad={() => {
-              if (!scrollable) return;
+              if (!effScrollable) return;
               try {
                 const doc = iframeRef.current?.contentDocument;
                 const h =
