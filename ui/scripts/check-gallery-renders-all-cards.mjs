@@ -6,7 +6,9 @@ function readProjectFile(path) {
 }
 
 const pageSource = readProjectFile("src/app/(site)/page.tsx");
-const gallerySource = readProjectFile("src/components/language-gallery.tsx");
+const infiniteGalleriesSource = readProjectFile(
+  "src/components/infinite-galleries.tsx",
+);
 const languageCardSource = readProjectFile("src/components/language-card.tsx");
 const ownerControlsSource = readProjectFile("src/components/language-card-owner-controls.tsx");
 const odataSource = readProjectFile("src/lib/odata.ts");
@@ -34,7 +36,7 @@ const violations = [
   {
     label: "gallery imports or renders the client-only deferred card renderer",
     pattern: /DeferredLanguageCards/,
-    sources: [pageSource, gallerySource],
+    sources: [pageSource],
   },
   {
     label: "deferred language card component still exists",
@@ -43,31 +45,49 @@ const violations = [
   {
     label: "gallery defines an eager-card cap",
     pattern: /\bINITIAL_CARDS\b/,
-    sources: [pageSource, gallerySource],
+    sources: [pageSource],
   },
   {
     label: "gallery caps rendered cards to INITIAL_CARDS",
     pattern: /languages\.slice\(\s*0\s*,\s*INITIAL_CARDS\s*\)/,
-    sources: [pageSource, gallerySource],
+    sources: [pageSource],
   },
   {
     label: "gallery places the remainder behind a deferred slice",
     pattern: /languages\.slice\(\s*INITIAL_CARDS\s*\)/,
-    sources: [pageSource, gallerySource],
+    sources: [pageSource],
   },
 ].filter(({ pattern, sources, test }) =>
   test ? test() : sources.some((source) => pattern.test(source)),
 );
 
-if (!/<LanguageGallery[\s\S]*?languages=\{languages\}/.test(pageSource)) {
+// Scalable gallery: the home page SSR-renders the FIRST keyset page and the
+// client gallery loads the rest on scroll + searches server-side — items stay
+// reachable without dumping the whole catalog into the initial HTML.
+if (
+  !/<InfiniteLanguages[\s\S]*?initialItems=/.test(pageSource) ||
+  !/pageDesignLanguages\(/.test(pageSource)
+) {
   violations.push({
-    label: "homepage does not pass the complete languages array to LanguageGallery",
+    label: "home gallery does not render InfiniteLanguages from a keyset first page",
   });
 }
 
-if (!/languages\.map\(\(lang(?:,\s*index)?\)\s*=>[\s\S]*?<LanguageCard/.test(gallerySource)) {
+if (
+  !/<LanguageCard\b/.test(infiniteGalleriesSource) ||
+  !/loadLanguagePage/.test(infiniteGalleriesSource)
+) {
   violations.push({
-    label: "LanguageGallery does not map every language to a LanguageCard",
+    label: "InfiniteLanguages does not map items to LanguageCard or load pages via the server action",
+  });
+}
+
+if (
+  !/Id lt '\$\{odataLiteral\(cursor\)\}'/.test(odataSource) ||
+  !/"\$orderby",\s*"Id desc"/.test(odataSource)
+) {
+  violations.push({
+    label: "keyset paginators do not page by a descending Id cursor (newest first)",
   });
 }
 

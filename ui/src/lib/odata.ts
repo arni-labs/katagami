@@ -910,6 +910,135 @@ export const getArtStyle = (id: string) =>
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 
+// ── Keyset (cursor) pagination for the public galleries ──────────────────────
+// The gallery pages must NOT fetch the whole catalog. Page by a keyset cursor on
+// the time-ordered UUIDv7 Id (the kernel doesn't honor $skip), newest first, with
+// optional server-side search over name + tags. Each page is a small,
+// independently cacheable query — fast regardless of how big a lane gets.
+
+export interface PageResult<T> {
+  items: T[];
+  /** Pass back as `cursor` to fetch the next page; null once exhausted. */
+  nextCursor: string | null;
+}
+export interface PageOpts {
+  cursor?: string | null;
+  limit?: number;
+  search?: string;
+}
+
+function odataLiteral(s: string): string {
+  return s.replace(/'/g, "''");
+}
+
+function pageQuery(
+  cursor: string | null | undefined,
+  limit: number,
+  search: string | undefined,
+): string {
+  const clauses = ["Status eq 'Published'"];
+  if (cursor) clauses.push(`Id lt '${odataLiteral(cursor)}'`);
+  const q = search?.trim();
+  if (q) {
+    const lit = odataLiteral(q);
+    clauses.push(`(contains(name,'${lit}') or contains(tags,'${lit}'))`);
+  }
+  const params = new URLSearchParams();
+  params.set("$filter", clauses.join(" and "));
+  params.set("$orderby", "Id desc");
+  // one extra row tells us whether another page remains
+  params.set("$top", String(limit + 1));
+  return params.toString();
+}
+
+function slicePage<T extends { entity_id: string }>(
+  rows: T[],
+  limit: number,
+): PageResult<T> {
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore
+    ? (items[items.length - 1]?.entity_id ?? null)
+    : null;
+  return { items, nextCursor };
+}
+
+// Offline/error fallback: a filtered first page of the demo catalog so the
+// galleries still render without the backend.
+function demoFirstPage<
+  T extends { entity_id: string; fields: { name?: string; tags?: string } },
+>(demo: T[], limit: number, search: string | undefined): PageResult<T> {
+  const q = search?.trim().toLowerCase();
+  const filtered = q
+    ? demo.filter((d) =>
+        `${d.fields.name ?? ""} ${d.fields.tags ?? ""}`
+          .toLowerCase()
+          .includes(q),
+      )
+    : demo;
+  return { items: filtered.slice(0, limit), nextCursor: null };
+}
+
+/** One keyset page of Published design languages, newest first (server search). */
+export async function pageDesignLanguages({
+  cursor,
+  limit = 48,
+  search,
+}: PageOpts = {}): Promise<PageResult<DesignLanguage>> {
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `DesignLanguages?${pageQuery(cursor, limit, search)}`,
+    );
+    const rows = (resp.value ?? [])
+      .map(normalizeDesignLanguageRow)
+      .filter((l) => l.fields.name);
+    return slicePage(rows, limit);
+  } catch {
+    if (cursor) return { items: [], nextCursor: null };
+    return demoFirstPage(demoDesignLanguages(), limit, search);
+  }
+}
+
+async function pageLane(
+  set: string,
+  demo: LaneEntity[],
+  { cursor, limit = 48, search }: PageOpts,
+): Promise<PageResult<LaneEntity>> {
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `${set}?${pageQuery(cursor, limit, search)}`,
+    );
+    const rows = (resp.value ?? []).map((r) => normalizeLaneRow(r, set));
+    return slicePage(rows, limit);
+  } catch {
+    if (cursor) return { items: [], nextCursor: null };
+    return demoFirstPage(demo, limit, search);
+  }
+}
+
+export const pagePaletteSystems = (opts: PageOpts = {}) =>
+  pageLane("PaletteSystems", demoPaletteSystems(), opts);
+export const pageArtStyles = (opts: PageOpts = {}) =>
+  pageLane("ArtStyles", demoArtStyles(), opts);
+
+// Total Published count via $count (no rows fetched) — for the hero stat, so it
+// stays accurate without listing the whole lane.
+async function countLane(set: string, demo: LaneEntity[]): Promise<number> {
+  try {
+    const resp = await odata<ODataResponse<unknown>>(
+      `${set}?$filter=Status eq 'Published'&$count=true&$top=0`,
+    );
+    return (
+      (resp["@odata.count"] ?? 0) +
+      demo.filter((d) => d.status === "Published").length
+    );
+  } catch {
+    return demo.filter((d) => d.status === "Published").length;
+  }
+}
+export const countPaletteSystems = () => countLane("PaletteSystems", demoPaletteSystems());
+export const countArtStyles = () => countLane("ArtStyles", demoArtStyles());
+
 // ── Directions (bake-off rounds) ──
 // A Direction is a reimagine brief / bake-off round. Contributor submissions
 // (DesignLanguage/ArtStyle/PaletteSystem) link to it via `direction_id`; the
