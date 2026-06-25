@@ -267,8 +267,13 @@ function PreviewFrame({
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [desktop, setDesktop] = useState(true);
-  const [html, setHtml] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  // Keyed by src: switching the view tab (landing/dashboard/embodiment) changes
+  // src, and we must re-fetch that view rather than keep showing the first one.
+  const [data, setData] = useState<{
+    src: string;
+    html: string | null;
+    failed: boolean;
+  }>({ src, html: null, failed: false });
 
   // Lazy-mount: a round has a dozen models, so only fetch/render a composition
   // once its card nears the viewport.
@@ -303,22 +308,25 @@ function PreviewFrame({
   const useThumb = isMobile && Boolean(thumb);
 
   // Fetch the self-contained composition once in view (unless a phone thumbnail
-  // covers it) and hand the HTML to ScaledFrame.
+  // covers it). Keyed on src, so a view-tab switch re-fetches the new view.
   useEffect(() => {
-    if (!visible || useThumb || html || failed || !src) return;
+    if (!visible || useThumb || !src) return;
     let cancelled = false;
     fetch(src)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
       .then((t) => {
-        if (!cancelled) setHtml(t);
+        if (!cancelled) setData({ src, html: t, failed: false });
       })
       .catch(() => {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) setData({ src, html: null, failed: true });
       });
     return () => {
       cancelled = true;
     };
-  }, [visible, useThumb, html, failed, src]);
+  }, [visible, useThumb, src]);
+
+  // Until the current src's fetch resolves, show loading — never the prior view.
+  const fresh = data.src === src ? data : { src, html: null, failed: false };
 
   // Mobile is a fixed 16:10 image card; desktop is a fixed desktop-window aspect
   // you scroll inside.
@@ -349,14 +357,14 @@ function PreviewFrame({
             open ↗
           </span>
         </a>
-      ) : failed ? (
+      ) : fresh.failed ? (
         <div className="absolute inset-0 grid place-items-center bg-card px-6 text-center">
           <p className="font-mono text-[11px] text-muted-foreground">
             preview unavailable
           </p>
         </div>
-      ) : html ? (
-        <DesktopPreview html={html} title={title} />
+      ) : fresh.html ? (
+        <DesktopPreview html={fresh.html} title={title} />
       ) : (
         <div className="absolute inset-0 animate-pulse bg-muted" />
       )}
