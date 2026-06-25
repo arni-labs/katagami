@@ -302,9 +302,6 @@ export default async function LanguageDetailPage({
 
       <Perforation />
 
-      {/* Identity — what the language is BUILT WITH: its art style + palette. */}
-      <LanguageIdentity fields={f} />
-
       {/* Mobile leads with the visual preview; wider screens set spec left, visuals right. */}
       <div className="grid gap-8 sm:gap-10 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)] md:items-start md:gap-x-10">
         <section data-reveal className="order-2 md:order-1 md:col-start-1">
@@ -387,6 +384,10 @@ export default async function LanguageDetailPage({
           </section>
         </div>
       </div>
+
+      {/* Identity — what the language is BUILT WITH: its art style + palette.
+          Sits UNDER the embodiment, never above it. */}
+      <LanguageIdentity fields={f} />
 
       <Credits raw={f.credits} />
 
