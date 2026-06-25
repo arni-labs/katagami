@@ -44,6 +44,18 @@ Render the landing AND the embodiment AND the art-style references, **read the s
 
 For each artifact: `POST /tdata/Files {"workspace_id":"katagami-contrib","path":"/contrib/<slug>/<file>","mime_type":"<mime>"}` → `entity_id`; `PUT /tdata/Files('<id>')/$value` raw bytes; poll `GET /tdata/Files('<id>')` until `status == "Ready"`. (Do NOT use `CreateFile` — broken.) Patch the landing's `--hero-image` to `https://katagami.ai/api/file/<hero_id>` before uploading the landing.
 
+**Set `mime_type` correctly per artifact — NEVER `application/octet-stream`** (browsers DOWNLOAD octet-stream instead of rendering it, so the bake-off page can't show the composition):
+
+| Artifact | `mime_type` |
+|---|---|
+| `embodiment.html` / `landing.html` / `dashboard.html` | `text/html` |
+| `hero.png` / reference / proof / thumbnail PNGs | `image/png` |
+| JPG images | `image/jpeg` |
+| SVG | `image/svg+xml` |
+| `tokens.css` | `text/css` |
+| `DESIGN.md` + shadcn `.md` | `text/markdown` |
+| shadcn `.json` | `application/json` |
+
 ## 6. Submit the set for review (one author call each, then the transition)
 
 All three carry `direction_id = <your direction id>` (the round link) and `model_provenance`. The language carries `parent_ids = ["<source_id>"]`, `lineage_type = "evolution"`, `generation_number = 2`.
