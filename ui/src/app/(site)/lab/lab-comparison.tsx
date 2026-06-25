@@ -978,6 +978,28 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         </a>
       )}
 
+      {/* the brief every model was given — pulled verbatim from the Direction */}
+      {c.prompt && (
+        <figure className="mt-6 max-w-2xl">
+          <figcaption className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            The brief
+          </figcaption>
+          <div className="mt-2 space-y-3">
+            {c.prompt
+              .trim()
+              .split(/\n{2,}/)
+              .map((para, i) => (
+                <p
+                  key={i}
+                  className="whitespace-pre-line text-[16px] leading-relaxed text-foreground/80"
+                >
+                  {para.trim()}
+                </p>
+              ))}
+          </div>
+        </figure>
+      )}
+
       {/* "anti-slop" rules on/off (on = round 11 with rules, off = round 12 no rules) */}
       {variantSet && (
         <div className="mt-5">
