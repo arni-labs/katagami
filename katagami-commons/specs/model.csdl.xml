@@ -161,6 +161,25 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- Direction: a reimagine brief / bake-off round; submissions link via DirectionId -->
+      <EntityType Name="Direction">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Open" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Brief" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleSlug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="IsBakeoff" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RoundLabel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ModelPool" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <!-- PaletteSystem: a curated, remixable color system (roles + ramps + proof scenes + token export) -->
       <EntityType Name="PaletteSystem">
         <Key>
@@ -318,6 +337,7 @@
         <EntitySet Name="PaletteSystems" EntityType="Katagami.PaletteSystem" />
         <EntitySet Name="ArtStyles" EntityType="Katagami.ArtStyle" />
         <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
+        <EntitySet Name="Directions" EntityType="Katagami.Direction" />
       </EntityContainer>
 
     </Schema>
