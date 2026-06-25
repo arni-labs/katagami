@@ -383,10 +383,16 @@ async function buildBakeoffModels(): Promise<BakeoffModelEntry[]> {
   let dirs: Direction[];
   let allLangs: DesignLanguage[];
   try {
-    [dirs, allLangs] = await Promise.all([
-      listDirections().then((ds) => ds.filter(isBakeoff)),
-      listDesignLanguages(),
+    // Only live statuses can be a submission or a source; the kernel HONORS a
+    // status filter (unlike direction_id), so two targeted reads beat the
+    // unfiltered 4-status fan-out.
+    const [dirsRaw, underReview, published] = await Promise.all([
+      listDirections(),
+      listDesignLanguages("Status eq 'UnderReview'"),
+      listDesignLanguages("Status eq 'Published'"),
     ]);
+    dirs = dirsRaw.filter(isBakeoff);
+    allLangs = [...underReview, ...published];
   } catch {
     return [];
   }
