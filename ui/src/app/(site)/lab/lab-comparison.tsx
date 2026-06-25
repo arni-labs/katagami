@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScaledFrame } from "@/components/scaled-frame";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -195,26 +194,67 @@ function viewUrl(m: LabModel, slug: string, view: LabView): string {
 }
 
 // Compositions are authored at the desktop breakpoint and are full live pages
-// (100vh heroes, entrance animations). Each is rendered through the shared
-// ScaledFrame — the same path the detail-page viewer uses: it injects a safety
-// stylesheet (freeze animations, cap runaway 100vh), measures the real content
-// height a few times as fonts/images settle, and scales the desktop layout to fit
-// the column. So a preview reads as a small STATIC desktop you scroll — not a
-// live, half-measured image you pan around.
+// (100vh heroes, entrance animations). A preview renders each at a FIXED desktop
+// viewport, scaled to the column, and you scroll the page natively inside that
+// small window. Fixing the viewport is the whole trick: it keeps a 100vh hero
+// exactly one screen tall. Measuring the content and resizing the frame to fit it
+// instead re-inflates 100vh into a giant hero — that's the "scrolling around a big
+// image" failure. sandbox (no scripts) + frozen CSS animations keep it a still,
+// safe preview that still scrolls.
+const PREVIEW_VIEWPORT_W = 1440;
+const PREVIEW_VIEWPORT_H = 1024;
+const FREEZE_STYLE = `<style>*,*::before,*::after{animation:none!important;transition:none!important}</style>`;
+function freezeHtml(html: string): string {
+  if (html.includes("<head>")) return html.replace("<head>", `<head>${FREEZE_STYLE}`);
+  const m = html.match(/<html[^>]*>/i);
+  if (m) return html.replace(m[0], `${m[0]}<head>${FREEZE_STYLE}</head>`);
+  return FREEZE_STYLE + html;
+}
+
+function DesktopPreview({ html, title }: { html: string; title: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setScale(w / PREVIEW_VIEWPORT_W);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="absolute inset-0 overflow-hidden">
+      {scale > 0 ? (
+        <iframe
+          srcDoc={freezeHtml(html)}
+          title={title}
+          // allow-same-origin (no allow-scripts) → static, no runaway scripts; the
+          // page still scrolls natively inside the fixed viewport.
+          sandbox="allow-same-origin"
+          className="absolute left-0 top-0 origin-top-left border-0"
+          style={{
+            width: `${PREVIEW_VIEWPORT_W}px`,
+            height: `${PREVIEW_VIEWPORT_H}px`,
+            transform: `scale(${scale})`,
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function PreviewFrame({
   src,
   title,
   thumb,
   openHref,
-  scrollable = false,
-  className,
 }: {
   src: string;
   title: string;
   thumb?: string;
   openHref?: string;
-  scrollable?: boolean;
-  className: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -272,14 +312,15 @@ function PreviewFrame({
     };
   }, [visible, useThumb, html, failed, src]);
 
-  // Mobile is a fixed 16:10 card; desktop honors the caller's height and (when
-  // scrollable) scrolls the full static page.
-  const frameClass = isMobile
-    ? "aspect-[16/10] w-full overflow-hidden"
-    : `${scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"} ${className}`;
-
+  // Mobile is a fixed 16:10 image card; desktop is a fixed desktop-window aspect
+  // you scroll inside.
   return (
-    <div ref={ref} className={`sticker-card relative ${frameClass}`}>
+    <div
+      ref={ref}
+      className={`sticker-card relative w-full overflow-hidden ${
+        isMobile ? "aspect-[16/10]" : "aspect-[1440/1024]"
+      }`}
+    >
       {useThumb ? (
         <a
           href={openHref ?? src}
@@ -307,7 +348,7 @@ function PreviewFrame({
           </p>
         </div>
       ) : html ? (
-        <ScaledFrame html={html} title={title} measurable />
+        <DesktopPreview html={html} title={title} />
       ) : (
         <div className="absolute inset-0 animate-pulse bg-muted" />
       )}
@@ -586,8 +627,6 @@ function QuizQuestion({
             title={`Design ${index + 1}`}
             thumb={m.thumb}
             openHref={pr.url}
-            scrollable
-            className="h-[60vh] min-h-[360px] w-full"
           />
         ) : (
           <NoSurface what="This model produced no design here." />
@@ -841,8 +880,6 @@ function DetailsGrid({
                   title={`Model ${label} — ${view}`}
                   thumb={m.thumb}
                   openHref={previewSrc}
-                  scrollable
-                  className="h-[440px]"
                 />
               ) : (
                 <div className="sticker-card relative aspect-[16/10] overflow-hidden">
