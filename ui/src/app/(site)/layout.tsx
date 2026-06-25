@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
+import { MobileMenu } from "@/components/mobile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import {
@@ -95,6 +96,7 @@ async function buildSearchIndex(): Promise<PaletteIndexItem[]> {
     { name: "Taxonomy", href: "/taxonomy" },
     { name: "Lineage", href: "/lineage" },
     { name: "Compare", href: "/compare" },
+    { name: "Model bake-off", href: "/model-bake-off" },
   ]) {
     items.push({
       id: page.href,
@@ -147,13 +149,14 @@ export default async function SiteLayout({
             </span>
           </Link>
           <HeaderNav />
-          <div className="ml-auto hidden items-center gap-2.5 md:flex">
+          <div className="ml-auto hidden items-center gap-2.5 lg:flex">
             <CommandPaletteTrigger />
             <ThemeToggle />
           </div>
-          <div className="ml-auto flex items-center gap-2 md:hidden">
+          <div className="ml-auto flex items-center gap-2 lg:hidden">
             <CommandPaletteTrigger />
             <ThemeToggle />
+            <MobileMenu />
           </div>
         </nav>
         {/* Halftone rule instead of a border — the header's bottom edge
