@@ -1039,6 +1039,79 @@ async function countLane(set: string, demo: LaneEntity[]): Promise<number> {
 export const countPaletteSystems = () => countLane("PaletteSystems", demoPaletteSystems());
 export const countArtStyles = () => countLane("ArtStyles", demoArtStyles());
 
+// ── Curator's picks (owner-pinned `featured`) ────────────────────────────────
+// Keyset paging is newest-first, so pinned picks would otherwise scatter through
+// the list. Fetch the (small) set of featured items separately so the galleries
+// can lead with them. Bounded + filtered defensively: a re-check on the rows
+// means a non-honored boolean filter can never pin a non-featured item (worst
+// case: a pick is simply not pinned — never wrong, just unpinned).
+
+function isTruthyFlag(v: unknown): boolean {
+  return (
+    v === true ||
+    v === 1 ||
+    (typeof v === "string" && /^(true|1)$/i.test(v.trim()))
+  );
+}
+
+function isDesignLanguageFeatured(l: DesignLanguage): boolean {
+  const bag = l as unknown as Record<string, Record<string, unknown> | undefined>;
+  for (const b of [bag.booleans, bag.fields, bag.counters]) {
+    if (b && (isTruthyFlag(b.featured) || isTruthyFlag(b.Featured) || isTruthyFlag(b.isFeatured)))
+      return true;
+  }
+  return false;
+}
+
+function isLaneFeatured(e: LaneEntity): boolean {
+  return isTruthyFlag(e.fields.featured) || isTruthyFlag(e.fields.Featured);
+}
+
+// Curators set a `display_order` alongside `featured`; lower comes first.
+function displayOrderOf(e: {
+  fields: Record<string, string | undefined>;
+  counters?: Record<string, number>;
+}): number {
+  const raw =
+    e.counters?.display_order ??
+    e.fields.display_order ??
+    e.fields.displayOrder;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw ?? ""), 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+export async function listFeaturedDesignLanguages(
+  limit = 100,
+): Promise<DesignLanguage[]> {
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `DesignLanguages?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
+    );
+    return (resp.value ?? [])
+      .map(normalizeDesignLanguageRow)
+      .filter((l) => l.fields.name && isDesignLanguageFeatured(l))
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
+export async function listFeaturedPaletteSystems(
+  limit = 100,
+): Promise<LaneEntity[]> {
+  try {
+    const resp = await odata<{ value?: Record<string, unknown>[] }>(
+      `PaletteSystems?$filter=Status eq 'Published' and featured eq true&$top=${limit}`,
+    );
+    return (resp.value ?? [])
+      .map((r) => normalizeLaneRow(r, "PaletteSystems"))
+      .filter(isLaneFeatured)
+      .sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
+  } catch {
+    return [];
+  }
+}
+
 // ── Directions (bake-off rounds) ──
 // A Direction is a reimagine brief / bake-off round. Contributor submissions
 // (DesignLanguage/ArtStyle/PaletteSystem) link to it via `direction_id`; the
