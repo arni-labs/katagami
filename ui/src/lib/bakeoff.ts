@@ -6,6 +6,7 @@
 // quiz/score/details experience is identical — only the data source changed,
 // from a static manifest to the live commons.
 
+import { unstable_cache } from "next/cache";
 import {
   listDirections,
   getDirection,
@@ -252,7 +253,7 @@ function roundTitle(
 }
 
 /** All bake-off rounds that actually have submissions, newest first. */
-export async function listBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
+async function buildBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
   let dirs: Direction[];
   try {
     dirs = (await listDirections()).filter(isBakeoff);
@@ -283,8 +284,17 @@ export async function listBakeoffRounds(): Promise<BakeoffRoundSummary[]> {
     .sort((a, b) => b.id.localeCompare(a.id)); // uuid-v7 ids sort by creation time
 }
 
+// Cache the assembled summaries — building them scans the catalog per round, so
+// it must not re-run on every request. Small payload (ids/titles/counts/source),
+// well under the Data Cache entry cap. Revalidate-window matches the rest of the app.
+export const listBakeoffRounds = unstable_cache(
+  buildBakeoffRounds,
+  ["bakeoff-rounds-v1"],
+  { revalidate: 60 },
+);
+
 /** One round, shaped for the game component. null if not a bake-off / no entries. */
-export async function getBakeoffRound(id: string): Promise<LabComparison | null> {
+async function buildBakeoffRound(id: string): Promise<LabComparison | null> {
   let dir: Direction;
   try {
     dir = await getDirection(id);
@@ -325,3 +335,10 @@ export async function getBakeoffRound(id: string): Promise<LabComparison | null>
     judged: dir.status === "Closed",
   };
 }
+
+// Cache per round id — the round's metadata + preview URLs are small + stable.
+export const getBakeoffRound = unstable_cache(
+  buildBakeoffRound,
+  ["bakeoff-round-v1"],
+  { revalidate: 60 },
+);

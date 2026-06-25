@@ -6,7 +6,9 @@ import { LabComparison } from "../lab-comparison";
 // commons (the round's submitted languages), so it reflects submissions as they
 // land — including those still UnderReview.
 
-export const dynamic = "force-dynamic";
+// ISR: cache the assembled round per slug and revalidate in the background. It
+// was force-dynamic, re-scanning the catalog on every open (slow TTFB).
+export const revalidate = 60;
 
 export default async function LabComparisonPage({
   params,

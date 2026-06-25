@@ -210,6 +210,7 @@ function PreviewFrame({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -219,13 +220,28 @@ function PreviewFrame({
       if (w > 0) setScale(w / PREVIEW_CANVAS_WIDTH);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    // Lazy-mount the iframe only when the card nears the viewport, so a round
+    // with a dozen models doesn't load a dozen full embodiment documents up front.
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+    };
   }, []);
   // A 16:10 desktop slice (the hero region), scaled to the column width.
   const canvasHeight = Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
   return (
     <div ref={ref} className={`sticker-card relative overflow-hidden ${className}`}>
-      {scale > 0 ? (
+      {visible && scale > 0 ? (
         <iframe
           src={src}
           title={title}

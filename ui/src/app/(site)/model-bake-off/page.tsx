@@ -5,7 +5,9 @@ import { BakeoffIndex } from "../lab/bakeoff-index";
 // reachable at /model-bake-off. Each round is a Direction (a reimagine brief)
 // with its submitted Katagami languages.
 
-export const dynamic = "force-dynamic";
+// ISR: serve the assembled rounds index from the edge cache, revalidating in the
+// background. It was force-dynamic, re-scanning the catalog on every open (slow).
+export const revalidate = 60;
 
 export const metadata = {
   title: "Model Bake Off — Katagami",
