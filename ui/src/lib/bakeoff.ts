@@ -346,3 +346,76 @@ export const getBakeoffRound = unstable_cache(
   ["bakeoff-round-v1"],
   { revalidate: 60 },
 );
+
+// ---- Per-model view: everything one model made across every bake-off round ----
+
+export interface BakeoffModelSubmission {
+  roundId: string;
+  roundTitle: string;
+  sourceName?: string;
+  model: LabModel;
+}
+export interface BakeoffModelEntry {
+  /** Authoring model, display name (e.g. "Composer 2.5"). */
+  name: string;
+  /** URL slug. */
+  slug: string;
+  count: number;
+  submissions: BakeoffModelSubmission[];
+}
+
+export function bakeoffModelSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Aggregate every round's submissions by authoring model. Reuses the cached
+// per-round data — a fan-out over rounds (warm: cheap; cold: pays each round's
+// catalog read once, then the 60s cache holds it).
+async function buildBakeoffModels(): Promise<BakeoffModelEntry[]> {
+  const rounds = await listBakeoffRounds();
+  const byModel = new Map<string, BakeoffModelEntry>();
+  for (const r of rounds) {
+    const round = await getBakeoffRound(r.id);
+    if (!round) continue;
+    for (const key of round.blindOrder) {
+      const m = round.models[key];
+      if (!m) continue;
+      const name = (m.name || "Unknown").trim();
+      const slug = bakeoffModelSlug(name);
+      let entry = byModel.get(slug);
+      if (!entry) {
+        entry = { name, slug, count: 0, submissions: [] };
+        byModel.set(slug, entry);
+      }
+      entry.submissions.push({
+        roundId: r.id,
+        roundTitle: r.title,
+        sourceName: r.sourceName,
+        model: m,
+      });
+      entry.count += 1;
+    }
+  }
+  // Newest first within a model (round ids are uuid-v7, time-ordered).
+  for (const e of byModel.values())
+    e.submissions.sort((a, b) => b.roundId.localeCompare(a.roundId));
+  return [...byModel.values()].sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  );
+}
+
+export const listBakeoffModels = unstable_cache(
+  buildBakeoffModels,
+  ["bakeoff-models-v1"],
+  { revalidate: 60 },
+);
+
+export async function getBakeoffModel(
+  slug: string,
+): Promise<BakeoffModelEntry | null> {
+  const all = await listBakeoffModels();
+  return all.find((m) => m.slug === slug) ?? null;
+}

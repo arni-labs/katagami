@@ -253,7 +253,7 @@ function DesktopPreview({ html, title }: { html: string; title: string }) {
   );
 }
 
-function PreviewFrame({
+export function PreviewFrame({
   src,
   title,
   thumb,
