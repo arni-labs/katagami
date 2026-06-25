@@ -1,4 +1,4 @@
-import { listBakeoffRounds } from "@/lib/bakeoff";
+import { listBakeoffModels, listBakeoffRounds } from "@/lib/bakeoff";
 import { BakeoffIndex } from "../lab/bakeoff-index";
 
 // The published model bake-off — the rounds index. Unlisted on purpose;
@@ -16,6 +16,9 @@ export const metadata = {
 };
 
 export default async function ModelBakeOffPage() {
-  const rounds = await listBakeoffRounds();
-  return <BakeoffIndex rounds={rounds} />;
+  const [rounds, models] = await Promise.all([
+    listBakeoffRounds(),
+    listBakeoffModels(),
+  ]);
+  return <BakeoffIndex rounds={rounds} models={models} />;
 }

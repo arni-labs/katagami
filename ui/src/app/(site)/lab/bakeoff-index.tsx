@@ -1,11 +1,18 @@
 import Link from "next/link";
-import type { BakeoffRoundSummary } from "@/lib/bakeoff";
+import type { BakeoffModelEntry, BakeoffRoundSummary } from "@/lib/bakeoff";
 
 // The rounds index for the model bake-off. Each round is one Direction (a
 // reimagine brief) with its submitted Katagami languages; click through to play
 // the guess-the-model game over that round's entries. Katagami house style:
 // sharp sticker-cards, the trio ink strip, the source language as the visual.
-export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
+// `models` powers "browse by model" — everything one model made, across rounds.
+export function BakeoffIndex({
+  rounds,
+  models,
+}: {
+  rounds: BakeoffRoundSummary[];
+  models: BakeoffModelEntry[];
+}) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
       <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--sakura)]">
@@ -14,6 +21,30 @@ export function BakeoffIndex({ rounds }: { rounds: BakeoffRoundSummary[] }) {
       <h1 className="mt-3 font-display text-4xl font-black tracking-[-0.03em] sm:text-5xl">
         Model bake-offs
       </h1>
+
+      {models.length > 0 && (
+        <section className="mt-8">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Browse by model
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2.5">
+            {models.map((m) => (
+              <Link
+                key={m.slug}
+                href={`/model-bake-off/model/${m.slug}`}
+                className="group inline-flex items-baseline gap-2 bg-card px-3.5 py-2 shadow-[0_1px_0_#1e232d1f] transition-colors hover:bg-foreground hover:text-background"
+              >
+                <span className="font-display text-[15px] font-bold tracking-[-0.01em]">
+                  {m.name}
+                </span>
+                <span className="font-mono text-[11px] font-bold tabular-nums text-muted-foreground group-hover:text-background/70">
+                  {m.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {rounds.length === 0 ? (
         <div
