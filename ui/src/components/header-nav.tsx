@@ -8,7 +8,7 @@ import { NAV_LINKS, isActiveNav } from "@/lib/nav";
 export function HeaderNav() {
   const pathname = usePathname();
   return (
-    <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium md:flex md:flex-none md:gap-4 lg:gap-5">
+    <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium lg:flex lg:flex-none lg:gap-5">
       {NAV_LINKS.map((l) => {
         const active = isActiveNav(l.href, pathname);
         return (

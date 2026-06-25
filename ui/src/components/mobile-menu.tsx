@@ -12,7 +12,8 @@ import { NAV_LINKS, isActiveNav } from "@/lib/nav";
  * lists ALL top-level sections (the same as the desktop nav). It complements
  * the bottom tab bar (a 4-item quick-access subset), which it never replaces:
  * the bar stays for the thumb, the drawer covers the rest (Lineage, Compare,
- * Bake-off…). Hidden on md+ where the full header nav is shown.
+ * Bake-off…). Shown below lg (mobile + tablet); at lg+ the full inline header
+ * nav is shown instead, where all the links fit without crowding.
  */
 export function MobileMenu() {
   const pathname = usePathname();
@@ -44,7 +45,7 @@ export function MobileMenu() {
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
         aria-label="Open menu"
