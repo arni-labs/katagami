@@ -32,11 +32,19 @@ const headers: Record<string, string> = {
   ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
 };
 
+// OData reads are GET-only (mutations live in odata-mutations.ts), so they're
+// safe to cache. Every page re-fetched the whole catalog from Temper on each
+// request with `no-store`, which made SSR slow (2.5–3.5s TTFB) and every reload
+// re-do all of it. A short revalidate window serves cached data (fast) and stays
+// fresh: UI mutations already revalidatePath the affected routes, and new
+// pipeline-published content appears within the window.
+const ODATA_REVALIDATE_SECONDS = 60;
+
 async function odata<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(odataUrl(path), {
     ...init,
     headers: { ...headers, ...init?.headers },
-    cache: "no-store",
+    next: { revalidate: ODATA_REVALIDATE_SECONDS },
   });
   if (!res.ok) {
     throw new Error(`OData ${res.status}: ${await res.text()}`);
