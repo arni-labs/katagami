@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ScaledFrame } from "@/components/scaled-frame";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -193,12 +194,13 @@ function viewUrl(m: LabModel, slug: string, view: LabView): string {
   return m.previews?.[view] ?? `/lab/${slug}/${m.dir}/${view}.html`;
 }
 
-// Compositions are authored at the desktop breakpoint. Render at a FIXED desktop
-// width and scale the whole frame to fit the column — so the preview always shows
-// the true desktop layout, just smaller, and never reflows into its own mobile
-// view (which makes a squashed preview unreadable). Same technique as the site's
-// ScaledFrame (studio + detail-page viewer). "View full" opens the real page.
-const PREVIEW_CANVAS_WIDTH = 1440;
+// Compositions are authored at the desktop breakpoint and are full live pages
+// (100vh heroes, entrance animations). Each is rendered through the shared
+// ScaledFrame — the same path the detail-page viewer uses: it injects a safety
+// stylesheet (freeze animations, cap runaway 100vh), measures the real content
+// height a few times as fonts/images settle, and scales the desktop layout to fit
+// the column. So a preview reads as a small STATIC desktop you scroll — not a
+// live, half-measured image you pan around.
 function PreviewFrame({
   src,
   title,
@@ -215,26 +217,16 @@ function PreviewFrame({
   className: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [scale, setScale] = useState(0);
   const [visible, setVisible] = useState(false);
   const [desktop, setDesktop] = useState(true);
-  // Starts as a 16:10 slice; when scrollable, grows to the result's real height
-  // (measured on load) so the card scrolls through the whole page, not the hero.
-  const [contentHeight, setContentHeight] = useState(
-    Math.round(PREVIEW_CANVAS_WIDTH / 1.6),
-  );
+  const [html, setHtml] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  // Lazy-mount: a round has a dozen models, so only fetch/render a composition
+  // once its card nears the viewport.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // ResizeObserver fires once on observe(), so the first scale is set too.
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setScale(w / PREVIEW_CANVAS_WIDTH);
-    });
-    ro.observe(el);
-    // Lazy-mount the iframe only when the card nears the viewport, so a round
-    // with a dozen models doesn't load a dozen full embodiment documents up front.
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
@@ -245,13 +237,11 @@ function PreviewFrame({
       { rootMargin: "600px 0px" },
     );
     io.observe(el);
-    return () => {
-      ro.disconnect();
-      io.disconnect();
-    };
+    return () => io.disconnect();
   }, []);
-  // Phones get a static screenshot that opens the full result on tap — far
-  // cheaper than mounting a live embodiment iframe per model on mobile.
+
+  // Phones get a static screenshot when one exists — cheaper than rendering the
+  // composition; the "Open" link below shows the full result.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(min-width: 640px)");
@@ -261,31 +251,43 @@ function PreviewFrame({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Phones never mount tall full-result iframes for every model: they get a
-  // compact 16:10 preview — a static screenshot when one exists, else a single
-  // lightweight hero iframe — and the "Open" link below shows the full result.
   const isMobile = !desktop;
-  const effScrollable = scrollable && !isMobile;
-  const innerHeight = effScrollable
-    ? contentHeight
-    : Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
-  const scaledHeight = scale > 0 ? Math.round(innerHeight * scale) : 0;
+  const useThumb = isMobile && Boolean(thumb);
+
+  // Fetch the self-contained composition once in view (unless a phone thumbnail
+  // covers it) and hand the HTML to ScaledFrame.
+  useEffect(() => {
+    if (!visible || useThumb || html || failed || !src) return;
+    let cancelled = false;
+    fetch(src)
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((t) => {
+        if (!cancelled) setHtml(t);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, useThumb, html, failed, src]);
+
+  // Mobile is a fixed 16:10 card; desktop honors the caller's height and (when
+  // scrollable) scrolls the full static page.
+  const frameClass = isMobile
+    ? "aspect-[16/10] w-full overflow-hidden"
+    : `${scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"} ${className}`;
 
   return (
-    <div
-      ref={ref}
-      className={`sticker-card relative ${
-        effScrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
-      } ${isMobile ? "aspect-[16/10] w-full" : className}`}
-    >
-      {isMobile && thumb ? (
+    <div ref={ref} className={`sticker-card relative ${frameClass}`}>
+      {useThumb ? (
         <a
           href={openHref ?? src}
           target="_blank"
           rel="noreferrer"
           className="absolute inset-0 block"
         >
-          {/* Static screenshot — the live iframe is reserved for desktop. */}
+          {/* Static screenshot — the live composition is reserved for desktop. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={thumb}
@@ -298,36 +300,14 @@ function PreviewFrame({
             open ↗
           </span>
         </a>
-      ) : visible && scale > 0 ? (
-        // Inner box sized to the SCALED height (transform doesn't change layout),
-        // so the scroll container scrolls the full scaled result.
-        <div style={{ position: "relative", width: "100%", height: scaledHeight }}>
-          <iframe
-            ref={iframeRef}
-            src={src}
-            title={title}
-            loading="lazy"
-            scrolling="no"
-            onLoad={() => {
-              if (!effScrollable) return;
-              try {
-                const doc = iframeRef.current?.contentDocument;
-                const h =
-                  doc?.documentElement?.scrollHeight || doc?.body?.scrollHeight;
-                if (h && h > 200) setContentHeight(Math.min(h, 8000));
-              } catch {
-                // same-origin /api/file is measurable; ignore if ever not.
-              }
-            }}
-            className="absolute left-0 top-0 origin-top-left"
-            style={{
-              width: `${PREVIEW_CANVAS_WIDTH}px`,
-              height: `${innerHeight}px`,
-              transform: `scale(${scale})`,
-              border: 0,
-            }}
-          />
+      ) : failed ? (
+        <div className="absolute inset-0 grid place-items-center bg-card px-6 text-center">
+          <p className="font-mono text-[11px] text-muted-foreground">
+            preview unavailable
+          </p>
         </div>
+      ) : html ? (
+        <ScaledFrame html={html} title={title} />
       ) : (
         <div className="absolute inset-0 animate-pulse bg-muted" />
       )}
