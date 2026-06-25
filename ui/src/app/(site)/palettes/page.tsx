@@ -1,4 +1,8 @@
-import { countPaletteSystems, pagePaletteSystems } from "@/lib/odata";
+import {
+  countPaletteSystems,
+  listFeaturedPaletteSystems,
+  pagePaletteSystems,
+} from "@/lib/odata";
 import { toPaletteItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { InfinitePalettes } from "@/components/infinite-galleries";
@@ -14,11 +18,13 @@ export default async function PalettesPage() {
   // Published-only. Keyset-paginated + server-searched so the catalog stays fast
   // at any size — the first page renders here, the rest load on scroll.
   const owner = await isOwner();
-  const [first, total] = await Promise.all([
+  const [first, total, featuredRows] = await Promise.all([
     pagePaletteSystems({ limit: 48 }),
     countPaletteSystems(),
+    listFeaturedPaletteSystems(),
   ]);
   const items = first.items.map(toPaletteItem);
+  const featured = featuredRows.map(toPaletteItem);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
@@ -35,6 +41,7 @@ export default async function PalettesPage() {
       />
       <div className="mt-10">
         <InfinitePalettes
+          featured={featured}
           initialItems={items}
           initialCursor={first.nextCursor}
           canArchive={owner}

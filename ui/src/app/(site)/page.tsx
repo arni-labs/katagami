@@ -1,5 +1,9 @@
 import { Suspense } from "react";
-import { countDesignLanguages, pageDesignLanguages } from "@/lib/odata";
+import {
+  countDesignLanguages,
+  listFeaturedDesignLanguages,
+  pageDesignLanguages,
+} from "@/lib/odata";
 import { InfiniteLanguages } from "@/components/infinite-galleries";
 import { RisoHeroPress } from "@/components/riso-hero";
 import { RisoInkField } from "@/components/riso-ink-field";
@@ -101,8 +105,13 @@ function HowItWorksFold() {
 async function GalleryGrid({ demo }: { demo?: boolean }) {
   const canDelete = demo ? false : await isOwner();
   let first: Awaited<ReturnType<typeof pageDesignLanguages>>;
+  let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>>;
   try {
-    first = await pageDesignLanguages({ limit: 48 });
+    // Curator's picks lead the gallery; the rest paginate in.
+    [first, featured] = await Promise.all([
+      pageDesignLanguages({ limit: 48 }),
+      listFeaturedDesignLanguages(),
+    ]);
   } catch {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
@@ -111,7 +120,7 @@ async function GalleryGrid({ demo }: { demo?: boolean }) {
       </div>
     );
   }
-  if (first.items.length === 0) {
+  if (first.items.length === 0 && featured.length === 0) {
     return (
       <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
         No design languages found.
@@ -121,6 +130,7 @@ async function GalleryGrid({ demo }: { demo?: boolean }) {
   }
   return (
     <InfiniteLanguages
+      featured={featured}
       initialItems={first.items}
       initialCursor={first.nextCursor}
       canDelete={canDelete}
