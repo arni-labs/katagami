@@ -202,15 +202,28 @@ const PREVIEW_CANVAS_WIDTH = 1440;
 function PreviewFrame({
   src,
   title,
+  thumb,
+  openHref,
+  scrollable = false,
   className,
 }: {
   src: string;
   title: string;
+  thumb?: string;
+  openHref?: string;
+  scrollable?: boolean;
   className: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [desktop, setDesktop] = useState(true);
+  // Starts as a 16:10 slice; when scrollable, grows to the result's real height
+  // (measured on load) so the card scrolls through the whole page, not the hero.
+  const [contentHeight, setContentHeight] = useState(
+    Math.round(PREVIEW_CANVAS_WIDTH / 1.6),
+  );
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -237,24 +250,84 @@ function PreviewFrame({
       io.disconnect();
     };
   }, []);
-  // A 16:10 desktop slice (the hero region), scaled to the column width.
-  const canvasHeight = Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
+  // Phones get a static screenshot that opens the full result on tap — far
+  // cheaper than mounting a live embodiment iframe per model on mobile.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 640px)");
+    const apply = () => setDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Phones never mount tall full-result iframes for every model: they get a
+  // compact 16:10 preview — a static screenshot when one exists, else a single
+  // lightweight hero iframe — and the "Open" link below shows the full result.
+  const isMobile = !desktop;
+  const effScrollable = scrollable && !isMobile;
+  const innerHeight = effScrollable
+    ? contentHeight
+    : Math.round(PREVIEW_CANVAS_WIDTH / 1.6);
+  const scaledHeight = scale > 0 ? Math.round(innerHeight * scale) : 0;
+
   return (
-    <div ref={ref} className={`sticker-card relative overflow-hidden ${className}`}>
-      {visible && scale > 0 ? (
-        <iframe
-          src={src}
-          title={title}
-          loading="lazy"
-          scrolling="no"
-          className="absolute left-0 top-0 origin-top-left"
-          style={{
-            width: `${PREVIEW_CANVAS_WIDTH}px`,
-            height: `${canvasHeight}px`,
-            transform: `scale(${scale})`,
-            border: 0,
-          }}
-        />
+    <div
+      ref={ref}
+      className={`sticker-card relative ${
+        effScrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
+      } ${isMobile ? "aspect-[16/10] w-full" : className}`}
+    >
+      {isMobile && thumb ? (
+        <a
+          href={openHref ?? src}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute inset-0 block"
+        >
+          {/* Static screenshot — the live iframe is reserved for desktop. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumb}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
+          <span className="absolute bottom-2 right-2 bg-foreground/85 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-background">
+            open ↗
+          </span>
+        </a>
+      ) : visible && scale > 0 ? (
+        // Inner box sized to the SCALED height (transform doesn't change layout),
+        // so the scroll container scrolls the full scaled result.
+        <div style={{ position: "relative", width: "100%", height: scaledHeight }}>
+          <iframe
+            ref={iframeRef}
+            src={src}
+            title={title}
+            loading="lazy"
+            scrolling="no"
+            onLoad={() => {
+              if (!effScrollable) return;
+              try {
+                const doc = iframeRef.current?.contentDocument;
+                const h =
+                  doc?.documentElement?.scrollHeight || doc?.body?.scrollHeight;
+                if (h && h > 200) setContentHeight(Math.min(h, 8000));
+              } catch {
+                // same-origin /api/file is measurable; ignore if ever not.
+              }
+            }}
+            className="absolute left-0 top-0 origin-top-left"
+            style={{
+              width: `${PREVIEW_CANVAS_WIDTH}px`,
+              height: `${innerHeight}px`,
+              transform: `scale(${scale})`,
+              border: 0,
+            }}
+          />
+        </div>
       ) : (
         <div className="absolute inset-0 animate-pulse bg-muted" />
       )}
@@ -531,7 +604,10 @@ function QuizQuestion({
           <PreviewFrame
             src={pr.url}
             title={`Design ${index + 1}`}
-            className="aspect-[16/10] w-full"
+            thumb={m.thumb}
+            openHref={pr.url}
+            scrollable
+            className="h-[60vh] min-h-[360px] w-full"
           />
         ) : (
           <NoSurface what="This model produced no design here." />
@@ -783,7 +859,10 @@ function DetailsGrid({
                 <PreviewFrame
                   src={previewSrc}
                   title={`Model ${label} — ${view}`}
-                  className="aspect-[16/10]"
+                  thumb={m.thumb}
+                  openHref={previewSrc}
+                  scrollable
+                  className="h-[440px]"
                 />
               ) : (
                 <div className="sticker-card relative aspect-[16/10] overflow-hidden">
