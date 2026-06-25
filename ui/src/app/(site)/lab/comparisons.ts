@@ -24,6 +24,7 @@ export interface LabModel {
   languageId?: string; // the submitted DesignLanguage id (for the detail link)
   languageName?: string; // the language's own name (e.g. "Halation") — shown on reveal
   status?: string; // submission lifecycle (UnderReview / Published) — small badge
+  thumb?: string; // a static screenshot of the result — used on mobile (opens on tap)
 }
 
 // An alternate generation of the SAME models (e.g. "no rules") — toggled in the UI.

@@ -166,6 +166,10 @@ function toModel(lang: DesignLanguage): LabModel {
     languageId: lang.entity_id,
     languageName: (f.name || "Untitled").trim(),
     status: lang.status,
+    thumb:
+      (f.landing_thumbnail_asset_url || "").trim() ||
+      (f.thumbnail_asset_url || "").trim() ||
+      undefined,
   };
 }
 
