@@ -20,9 +20,13 @@ export async function readTemperFileBytes(
   const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
   if (API_KEY) fetchHeaders.Authorization = `Bearer ${API_KEY}`;
 
+  // File ids are immutable (a re-export gets a new id), so the content for a
+  // given id never changes — cache it. The language detail page reads several
+  // of these per request (shadcn export / component spec / preview shots); with
+  // no-store every load + reload re-fetched them all from Temper.
   const res = await fetch(`${API_BASE}/tdata/Files('${fileId}')/$value`, {
     headers: fetchHeaders,
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
 
   if (!res.ok) return null;
