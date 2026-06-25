@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CatalogCardOwnerControls } from "@/components/catalog-card-owner-controls";
 import { ArchivedStamp } from "@/components/archived-stamp";
 
@@ -23,6 +24,40 @@ const accentColors = [
 ];
 
 const STRIP_MAX = 4;
+
+/** Fills its (relative) parent. Local paths are optimized by next/image —
+ *  resize + lazy + modern format, the fix for the gallery's image-memory blow-up
+ *  — but only without a query string (Next's localPatterns rejects those), so we
+ *  strip the cache-bust `?v=` (file ids are immutable, so it's redundant).
+ *  Absolute/external URLs aren't allowlisted under images config, so they fall
+ *  back to a lazy <img> rather than throw an SSR error on an un-configured host. */
+function GalleryImg({
+  src,
+  alt,
+  sizes,
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  sizes: string;
+  className?: string;
+}) {
+  if (src.startsWith("/")) {
+    return (
+      <Image src={src.split("?")[0]} alt={alt} fill sizes={sizes} className={className} />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className={`absolute inset-0 h-full w-full ${className}`}
+    />
+  );
+}
 
 function hashInt(s: string) {
   let h = 0;
@@ -74,11 +109,11 @@ export function ArtStyleCard({
       {/* hero reference — edge to edge; proofs ride as a small strip in the corner */}
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
         {hero ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <GalleryImg
             src={hero}
             alt={`${art.name} — hero reference`}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.03]"
           />
         ) : (
           <div className="absolute inset-0" style={{ background: `color-mix(in srgb, ${tint} 14%, var(--card))` }} />
@@ -87,8 +122,7 @@ export function ArtStyleCard({
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {stripShots.slice(0, 3).map((src, i) => (
               <div key={i} className="relative h-8 w-8 shrink-0 overflow-hidden bg-muted shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${art.name} proof ${i + 1}`} className="h-full w-full object-cover" />
+                <GalleryImg src={src} alt={`${art.name} proof ${i + 1}`} sizes="48px" className="object-cover" />
               </div>
             ))}
             {overflow > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { PaletteCard, type PaletteItem } from "@/components/palette-card";
@@ -16,6 +16,14 @@ import {
 
 const GRID =
   "grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4";
+
+// Skip rendering + painting off-screen cards (and loading their images) — the
+// browser remembers each card's real height after first paint, so the reserved
+// placeholder self-corrects. Matches the language gallery's card culling.
+const CARD_CV: CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "auto 220px",
+};
 
 /** A lane shelves itself once it outgrows a flat wall; below this it's a
  *  single grid. Lower than the language gallery's threshold because the
@@ -179,6 +187,7 @@ function LaneGrid<T extends { id: string }>({
           href={`${hrefBase}/${item.id}`}
           prefetch={false}
           className="group block min-w-0"
+          style={CARD_CV}
         >
           {renderCard(item)}
         </Link>
