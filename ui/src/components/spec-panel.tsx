@@ -3,7 +3,6 @@ import { parseJson } from "@/lib/odata";
 import {
   buildShadcnRegistryTheme,
   shadcnCssBlock,
-  shadcnDesignMdMarkdown,
   shadcnThemeToJson,
   shadcnUsageMarkdown,
 } from "@/lib/shadcn-export";
@@ -1220,18 +1219,6 @@ export function SpecPanel(props: SpecPanelProps) {
   const katagamiMarkdown = katagamiSpecToMarkdown(props);
   const designMd = designMdToMarkdown(props);
   const shadcnJson = shadcnThemeJson(props);
-  const shadcnDesignMd = shadcnDesignMdMarkdown({
-    languageId: props.languageId,
-    name: props.name,
-    slug: props.slug,
-    tokens: props.tokens,
-    philosophy: props.philosophy,
-    rules: props.rules,
-    layout: props.layout,
-    guidance: props.guidance,
-    designMd,
-    themeJson: shadcnJson,
-  });
 
   return (
     <div className="relative min-w-0">
@@ -1241,8 +1228,6 @@ export function SpecPanel(props: SpecPanelProps) {
             languageId={props.languageId}
             katagamiSpec={katagamiMarkdown}
             designMd={designMd}
-            shadcnTheme={shadcnJson}
-            shadcnDesignMd={shadcnDesignMd}
             slug={props.slug}
           />
         </div>
