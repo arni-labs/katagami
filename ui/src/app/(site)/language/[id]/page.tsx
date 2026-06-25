@@ -10,6 +10,7 @@ import {
   parseJson,
 } from "@/lib/odata";
 import { RelatedLanguages } from "@/components/related-languages";
+import { LanguageLineage } from "@/components/language-lineage";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
 import { InlineRemix } from "@/components/remix/inline-remix";
 import { readTemperFileText } from "@/lib/temper-files";
@@ -407,6 +408,8 @@ export default async function LanguageDetailPage({
           />
         </section>
       ) : null}
+
+      <LanguageLineage currentId={id} fields={f} />
 
       <RelatedLanguages
         currentId={id}
