@@ -194,21 +194,28 @@ function viewUrl(m: LabModel, slug: string, view: LabView): string {
 }
 
 // Compositions are authored at the desktop breakpoint and are full live pages
-// (100vh heroes, entrance animations). A preview renders each at a FIXED desktop
-// viewport, scaled to the column, and you scroll the page natively inside that
-// small window. Fixing the viewport is the whole trick: it keeps a 100vh hero
-// exactly one screen tall. Measuring the content and resizing the frame to fit it
-// instead re-inflates 100vh into a giant hero — that's the "scrolling around a big
-// image" failure. sandbox (no scripts) + frozen CSS animations keep it a still,
-// safe preview that still scrolls.
+// (100vh heroes, entrance animations, JS-revealed content). A preview renders each
+// at a FIXED desktop viewport, scaled to the column, and you scroll the page
+// natively inside that small window. Fixing the viewport is the whole trick: it
+// keeps a 100vh hero exactly one screen tall. Measuring the content and resizing
+// the frame to fit it instead re-inflates 100vh into a giant hero — the "scrolling
+// around a big image" failure.
+//
+// Scripts run (sandbox=allow-scripts, WITHOUT allow-same-origin → fully isolated:
+// can't reach the page, navigate the top, or open anything), because some
+// compositions start their text hidden and reveal it via JS/scroll — with no
+// scripts that text never appears (the "only the background shows" bug). The
+// injected style settles CSS entrance animations to their END state instantly, so
+// revealed text shows without lingering motion, instead of freezing them at the
+// hidden start.
 const PREVIEW_VIEWPORT_W = 1440;
 const PREVIEW_VIEWPORT_H = 1024;
-const FREEZE_STYLE = `<style>*,*::before,*::after{animation:none!important;transition:none!important}</style>`;
-function freezeHtml(html: string): string {
-  if (html.includes("<head>")) return html.replace("<head>", `<head>${FREEZE_STYLE}`);
+const SETTLE_STYLE = `<style>*,*::before,*::after{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important;animation-fill-mode:forwards!important;transition:none!important}</style>`;
+function settleHtml(html: string): string {
+  if (html.includes("<head>")) return html.replace("<head>", `<head>${SETTLE_STYLE}`);
   const m = html.match(/<html[^>]*>/i);
-  if (m) return html.replace(m[0], `${m[0]}<head>${FREEZE_STYLE}</head>`);
-  return FREEZE_STYLE + html;
+  if (m) return html.replace(m[0], `${m[0]}<head>${SETTLE_STYLE}</head>`);
+  return SETTLE_STYLE + html;
 }
 
 function DesktopPreview({ html, title }: { html: string; title: string }) {
@@ -228,11 +235,12 @@ function DesktopPreview({ html, title }: { html: string; title: string }) {
     <div ref={ref} className="absolute inset-0 overflow-hidden">
       {scale > 0 ? (
         <iframe
-          srcDoc={freezeHtml(html)}
+          srcDoc={settleHtml(html)}
           title={title}
-          // allow-same-origin (no allow-scripts) → static, no runaway scripts; the
-          // page still scrolls natively inside the fixed viewport.
-          sandbox="allow-same-origin"
+          // allow-scripts ONLY (no allow-same-origin) → the composition's reveal JS
+          // runs so text shows, but it's fully isolated: no access to the page, no
+          // top navigation, no popups. Still scrolls natively in the fixed viewport.
+          sandbox="allow-scripts"
           className="absolute left-0 top-0 origin-top-left border-0"
           style={{
             width: `${PREVIEW_VIEWPORT_W}px`,
@@ -1112,25 +1120,41 @@ export function LabComparison({ comparison: c }: { comparison: LabComparisonType
         </a>
       )}
 
-      {/* the brief every model was given — pulled verbatim from the Direction */}
+      {/* the brief every model was given — pulled verbatim from the Direction.
+          Rendered as a big colourful pull-quote (it IS the quote the models worked
+          from), with the body text set smaller so the quote leads. */}
       {c.prompt && (
         <figure className="mt-6 max-w-2xl">
           <figcaption className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             The brief
           </figcaption>
-          <div className="mt-2 space-y-3">
-            {c.prompt
-              .trim()
-              .split(/\n{2,}/)
-              .map((para, i) => (
-                <p
-                  key={i}
-                  className="whitespace-pre-line text-[16px] leading-relaxed text-foreground/80"
-                >
-                  {para.trim()}
-                </p>
-              ))}
-          </div>
+          <blockquote className="relative mt-2 pl-9">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-1 select-none font-display text-[58px] font-black leading-[0.55] text-[var(--yuzu)]"
+            >
+              &ldquo;
+            </span>
+            <div className="space-y-2">
+              {c.prompt
+                .trim()
+                .split(/\n{2,}/)
+                .map((para, i) => (
+                  <p
+                    key={i}
+                    className="whitespace-pre-line text-[13.5px] leading-relaxed text-foreground/70"
+                  >
+                    {para.trim()}
+                  </p>
+                ))}
+            </div>
+            <span
+              aria-hidden
+              className="pointer-events-none mt-1 block select-none text-right font-display text-[40px] font-black leading-[0.4] text-[var(--sakura)]"
+            >
+              &rdquo;
+            </span>
+          </blockquote>
         </figure>
       )}
 
