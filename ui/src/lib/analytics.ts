@@ -115,11 +115,30 @@ export function trackLanguageClick(d: {
   });
 }
 
+/** A design-language DETAIL page was viewed. RUM already records the page view
+ *  automatically (keyed by @view.url_path = /language/<id>), but that carries
+ *  only the id. This custom event additionally carries the human NAME (and slug)
+ *  so dashboards can rank languages by readable name, not opaque ids. Fire once
+ *  per detail-page mount; dedupe to unique visitors via @usr.anonymous_id. */
+export function trackLanguageView(d: {
+  languageId: string;
+  languageName?: string;
+  slug?: string;
+}): void {
+  track("language_view", {
+    language_id: d.languageId,
+    language_name: d.languageName,
+    slug: d.slug,
+  });
+}
+
 /** Copy-to-clipboard. `artifact` names what was copied (design_md | shadcn_md |
- *  katagami | link | css_var | color | prompt | brief …). */
+ *  katagami | link | css_var | color | prompt | brief …). `languageName` is
+ *  carried so copies can be ranked by readable language name. */
 export function trackCopy(d: {
   artifact: string;
   languageId?: string;
+  languageName?: string;
   paletteId?: string;
   label?: string;
   page?: string;
@@ -127,6 +146,7 @@ export function trackCopy(d: {
   track("copy", {
     artifact: d.artifact,
     language_id: d.languageId,
+    language_name: d.languageName,
     palette_id: d.paletteId,
     label: d.label,
     page: d.page,
@@ -138,6 +158,7 @@ export function trackDownload(d: {
   file: string;
   format?: string;
   languageId?: string;
+  languageName?: string;
   paletteId?: string;
   page?: string;
 }): void {
@@ -145,6 +166,7 @@ export function trackDownload(d: {
     file: d.file,
     format: d.format,
     language_id: d.languageId,
+    language_name: d.languageName,
     palette_id: d.paletteId,
     page: d.page,
   });

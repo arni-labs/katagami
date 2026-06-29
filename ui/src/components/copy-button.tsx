@@ -11,6 +11,7 @@ export function CopyButton({
   variant = "outline",
   artifact,
   languageId,
+  languageName,
   paletteId,
 }: {
   text: string;
@@ -19,6 +20,7 @@ export function CopyButton({
   /** What is being copied, for analytics (falls back to `label`). */
   artifact?: string;
   languageId?: string;
+  languageName?: string;
   paletteId?: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -28,7 +30,7 @@ export function CopyButton({
       className={variant === "ink" ? KX_BTN_INK : KX_BTN_PAPER}
       onClick={() => {
         void navigator.clipboard.writeText(text);
-        trackCopy({ artifact: artifact ?? label, languageId, paletteId, label });
+        trackCopy({ artifact: artifact ?? label, languageId, languageName, paletteId, label });
         setCopied(true);
         setTimeout(() => setCopied(false), 1600);
       }}

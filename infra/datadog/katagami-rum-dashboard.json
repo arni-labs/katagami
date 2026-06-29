@@ -1,6 +1,6 @@
 {
   "title": "Katagami — Visitors & Usage (RUM)",
-  "description": "What's getting traction on katagami.ai: unique visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nFacets confirmed against live data: custom-action name = @action.target.name (language_click, copy, download, nav_click, search); attributes = @context.<key> (@context.artifact, @context.file, @context.source, @context.query). No calibration needed.",
+  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed / copied / downloaded, which buttons are clicked on language pages, and what's searched. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nEvery query is scoped to `env:production` (literal) so verification/test events (e.g. env:local-verify) are excluded. Language popularity is measured as UNIQUE VISITORS — CARDINALITY(@usr.anonymous_id) — so one person reopening a page counts once. Language rows link through to katagami.ai.\n\nNames: page-view, copy and download events carry @context.language_id (id). The readable @context.language_name arrives on `language_view`/`copy`/`download` events once the instrumented UI is deployed (no backfill); until then the language rollups key on id / url_path.",
   "layout_type": "ordered",
   "reflow_type": "fixed",
   "template_variables": [],
@@ -8,7 +8,7 @@
     {
       "definition": {
         "type": "note",
-        "content": "## Katagami — Visitors & Usage\nUnique visits, page views, language traction, copies & downloads. Data starts the day RUM credentials go live; there is no historical backfill.",
+        "content": "## Katagami — Visitors & Usage\nUnique visitors, visits, page views, per-language traction (views / copies / downloads), language-page buttons, copies & search. Scoped to env:production. Popularity = unique visitors (deduped by anonymous id). Data starts the day RUM credentials go live; there is no historical backfill.",
         "background_color": "white",
         "font_size": "14",
         "text_align": "left",
@@ -28,6 +28,31 @@
         "widgets": [
           {
             "definition": {
+              "title": "Unique visitors",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "visitors",
+                      "indexes": ["*"],
+                      "search": { "query": "env:production @type:session @session.type:user" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "visitors" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
               "title": "Visits (sessions)",
               "type": "query_value",
               "requests": [
@@ -38,7 +63,7 @@
                       "data_source": "rum",
                       "name": "visits",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -49,7 +74,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
           },
           {
             "definition": {
@@ -63,7 +88,7 @@
                       "data_source": "rum",
                       "name": "views",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
+                      "search": { "query": "env:production @type:view" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -74,7 +99,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 6, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
@@ -88,7 +113,7 @@
                       "data_source": "rum",
                       "name": "actions",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.type:custom" },
+                      "search": { "query": "env:production @type:action @action.type:custom" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -99,7 +124,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 6, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 8, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
@@ -113,7 +138,7 @@
                       "data_source": "rum",
                       "name": "views",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
+                      "search": { "query": "env:production @type:view" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     },
@@ -121,7 +146,7 @@
                       "data_source": "rum",
                       "name": "sessions",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -132,11 +157,11 @@
               "autoscale": true,
               "precision": 1
             },
-            "layout": { "x": 9, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 10, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
-              "title": "Visits over time",
+              "title": "Unique visitors over time",
               "type": "timeseries",
               "requests": [
                 {
@@ -144,14 +169,14 @@
                   "queries": [
                     {
                       "data_source": "rum",
-                      "name": "visits",
+                      "name": "visitors",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": []
                     }
                   ],
-                  "formulas": [{ "formula": "visits" }],
+                  "formulas": [{ "formula": "visitors" }],
                   "display_type": "bars"
                 }
               ]
@@ -160,7 +185,7 @@
           },
           {
             "definition": {
-              "title": "Visits by country",
+              "title": "Visitors by country",
               "type": "toplist",
               "requests": [
                 {
@@ -170,13 +195,13 @@
                       "data_source": "rum",
                       "name": "byCountry",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
-                      "compute": { "aggregation": "count" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@geo.country",
                           "limit": 10,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
                       ]
                     }
@@ -199,7 +224,7 @@
                       "data_source": "rum",
                       "name": "byDevice",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -228,7 +253,7 @@
                       "data_source": "rum",
                       "name": "byReferrer",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "env:production @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -251,13 +276,13 @@
     },
     {
       "definition": {
-        "title": "Languages & pages",
+        "title": "Languages & engagement",
         "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
             "definition": {
-              "title": "Top languages by page views (which languages get traction)",
+              "title": "Top languages — page views (unique visitors)",
               "type": "toplist",
               "requests": [
                 {
@@ -265,28 +290,31 @@
                   "queries": [
                     {
                       "data_source": "rum",
-                      "name": "langViews",
+                      "name": "langUV",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view @view.url_path:\"/language/*\"" },
-                      "compute": { "aggregation": "count" },
+                      "search": { "query": "env:production @type:view @view.url_path:/language/*" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@view.url_path",
                           "limit": 25,
-                          "sort": { "aggregation": "count", "order": "desc" }
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
                       ]
                     }
                   ],
-                  "formulas": [{ "formula": "langViews" }]
+                  "formulas": [{ "formula": "langUV" }]
                 }
+              ],
+              "custom_links": [
+                { "label": "Open language on katagami.ai", "link": "https://katagami.ai{{@view.url_path}}" }
               ]
             },
             "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
           },
           {
             "definition": {
-              "title": "Top pages (all routes)",
+              "title": "Top pages — all routes (unique visitors)",
               "type": "toplist",
               "requests": [
                 {
@@ -294,24 +322,146 @@
                   "queries": [
                     {
                       "data_source": "rum",
-                      "name": "pageViews",
+                      "name": "pageUV",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
-                      "compute": { "aggregation": "count" },
+                      "search": { "query": "env:production @type:view" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
                           "facet": "@view.url_path_group",
                           "limit": 20,
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "pageUV" }]
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Top languages — copies (unique visitors)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "copyUV",
+                      "indexes": ["*"],
+                      "search": { "query": "env:production @type:action @action.target.name:copy @context.language_id:*" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
+                      "group_by": [
+                        {
+                          "facet": "@context.language_id",
+                          "limit": 20,
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "copyUV" }]
+                }
+              ],
+              "custom_links": [
+                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
+              ]
+            },
+            "layout": { "x": 0, "y": 4, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Top languages — downloads (unique visitors)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "dlUV",
+                      "indexes": ["*"],
+                      "search": { "query": "env:production @type:action @action.target.name:download @context.language_id:*" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
+                      "group_by": [
+                        {
+                          "facet": "@context.language_id",
+                          "limit": 20,
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "dlUV" }]
+                }
+              ],
+              "custom_links": [
+                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
+              ]
+            },
+            "layout": { "x": 4, "y": 4, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Most-clicked languages (by name)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "clickName",
+                      "indexes": ["*"],
+                      "search": { "query": "env:production @type:action @action.target.name:language_click" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
+                      "group_by": [
+                        {
+                          "facet": "@context.language_name",
+                          "limit": 25,
+                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
+                        }
+                      ]
+                    }
+                  ],
+                  "formulas": [{ "formula": "clickName" }]
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 4, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Buttons clicked on language pages (all controls)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "langButtons",
+                      "indexes": ["*"],
+                      "search": { "query": "env:production @type:action @view.url_path:/language/*" },
+                      "compute": { "aggregation": "count" },
+                      "group_by": [
+                        {
+                          "facet": "@action.target.name",
+                          "limit": 25,
                           "sort": { "aggregation": "count", "order": "desc" }
                         }
                       ]
                     }
                   ],
-                  "formulas": [{ "formula": "pageViews" }]
+                  "formulas": [{ "formula": "langButtons" }]
                 }
               ]
             },
-            "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+            "layout": { "x": 0, "y": 8, "width": 6, "height": 4 }
           },
           {
             "definition": {
@@ -325,7 +475,7 @@
                       "data_source": "rum",
                       "name": "clickSource",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:language_click" },
+                      "search": { "query": "env:production @type:action @action.target.name:language_click" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -340,40 +490,11 @@
                 }
               ]
             },
-            "layout": { "x": 0, "y": 4, "width": 6, "height": 4 }
-          },
-          {
-            "definition": {
-              "title": "Most-clicked languages (by name)",
-              "type": "toplist",
-              "requests": [
-                {
-                  "response_format": "scalar",
-                  "queries": [
-                    {
-                      "data_source": "rum",
-                      "name": "clickName",
-                      "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:language_click" },
-                      "compute": { "aggregation": "count" },
-                      "group_by": [
-                        {
-                          "facet": "@context.language_name",
-                          "limit": 25,
-                          "sort": { "aggregation": "count", "order": "desc" }
-                        }
-                      ]
-                    }
-                  ],
-                  "formulas": [{ "formula": "clickName" }]
-                }
-              ]
-            },
-            "layout": { "x": 6, "y": 4, "width": 6, "height": 4 }
+            "layout": { "x": 6, "y": 8, "width": 6, "height": 4 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 10, "width": 12, "height": 9 }
+      "layout": { "x": 0, "y": 10, "width": 12, "height": 13 }
     },
     {
       "definition": {
@@ -393,7 +514,7 @@
                       "data_source": "rum",
                       "name": "byEvent",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.type:custom" },
+                      "search": { "query": "env:production @type:action @action.type:custom" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -422,7 +543,7 @@
                       "data_source": "rum",
                       "name": "copies",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "search": { "query": "env:production @type:action @action.target.name:copy" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -441,7 +562,7 @@
           },
           {
             "definition": {
-              "title": "Top downloads",
+              "title": "Top downloads (by file)",
               "type": "toplist",
               "requests": [
                 {
@@ -451,7 +572,7 @@
                       "data_source": "rum",
                       "name": "downloads",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:download" },
+                      "search": { "query": "env:production @type:action @action.target.name:download" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -480,7 +601,7 @@
                       "data_source": "rum",
                       "name": "copy",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "search": { "query": "env:production @type:action @action.target.name:copy" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     },
@@ -488,7 +609,7 @@
                       "data_source": "rum",
                       "name": "download",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:download" },
+                      "search": { "query": "env:production @type:action @action.target.name:download" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -515,7 +636,7 @@
                       "data_source": "rum",
                       "name": "searches",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:search" },
+                      "search": { "query": "env:production @type:action @action.target.name:search" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -534,7 +655,7 @@
           }
         ]
       },
-      "layout": { "x": 0, "y": 19, "width": 12, "height": 8 }
+      "layout": { "x": 0, "y": 23, "width": 12, "height": 8 }
     }
   ]
 }

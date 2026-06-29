@@ -19,8 +19,14 @@ Tracking starts the day credentials go live — there is **no historical backfil
   - `copy` — copy-to-clipboard, with `artifact` (design_md, shadcn_md, katagami,
     link, color, tokens_css, recipe, prompt, remix_brief, …).
   - `download` — DESIGN.md / shadcn / css downloads, with `file` + `format`.
+  - `language_view` — a language DETAIL page was viewed, carrying the readable
+    `language_name` + `language_id` (+ `slug`). The automatic page view only
+    knows the id from the URL; this adds the name so languages can be ranked by
+    name and deduped to unique visitors.
   - `search` — search terms (truncated to 100 chars) + result counts.
   - `compare`, `nav_click` — compare-tray selections and primary-nav clicks.
+  - `copy` and `download` now also carry `language_name` (alongside
+    `language_id`) so copies/downloads can be attributed to a named language.
 - Everything else (filters, tabs, shuffle, etc.) is still captured by RUM's
   automatic interaction tracking (`trackUserInteractions`), so the long tail is
   covered without bespoke code.
@@ -51,7 +57,15 @@ No PII: `defaultPrivacyLevel: mask-user-input`, no session replay.
    local dev and previews are unaffected.
 
 3. **Import the dashboard**: Datadog → Dashboards → New Dashboard → **Import
-   dashboard JSON** → paste `katagami-rum-dashboard.json`.
+   dashboard JSON** → paste `katagami-rum-dashboard.json`. Every query is scoped
+   to `env:production` (literal) so `env:local-verify` test events are excluded.
+   The top row leads with a **Unique visitors** tile
+   (`CARDINALITY(@usr.anonymous_id)`); the "Languages & engagement" group ranks
+   languages by **unique visitors** for page views / copies / downloads, lists
+   the buttons clicked on language pages, and each language row links through to
+   katagami.ai. Until the instrumented UI is deployed those rollups key on
+   `@view.url_path` / `@context.language_id` (id); once `language_name` flows
+   they can switch to readable names (no backfill of pre-deploy data).
 
 ## Facets (confirmed against live data)
 
@@ -65,7 +79,8 @@ and querying them back:
 - Sessions/views are standard RUM facets (`@type`, `@view.url_path`, `@geo.country`,
   `@device.type`, `@session.referrer`).
 - Each event also carries `@usr.anonymous_id`, so unique *visitors* (not just
-  sessions) can be counted with `CARDINALITY(@usr.anonymous_id)` if wanted.
+  sessions) are counted with `CARDINALITY(@usr.anonymous_id)` — surfaced as the
+  "Unique visitors" tile.
 
 The dashboard JSON already uses these exact facets — no calibration needed.
 
