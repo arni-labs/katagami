@@ -1,14 +1,21 @@
 {
   "title": "Katagami — Visitors & Usage (RUM)",
-  "description": "What's getting traction on katagami.ai: unique visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nFacets confirmed against live data: custom-action name = @action.target.name (language_click, copy, download, nav_click, search); attributes = @context.<key> (@context.artifact, @context.file, @context.source, @context.query). No calibration needed.",
+  "description": "What's getting traction on katagami.ai: unique visitors, visits, page views, which languages get viewed/clicked, and which artifacts get copied and downloaded. Fed by Datadog RUM (see infra/datadog/README.md). Import via Datadog → Dashboards → New Dashboard → Import dashboard JSON.\n\nScoped to the `$env` template variable (default `production`) so verification/test events (e.g. env:local-verify) are excluded. Unique visitors = CARDINALITY(@usr.anonymous_id).\n\nFacets confirmed against live data: custom-action name = @action.target.name (language_click, copy, download, nav_click, search); attributes = @context.<key> (@context.artifact, @context.file, @context.source, @context.query). No calibration needed.",
   "layout_type": "ordered",
   "reflow_type": "fixed",
-  "template_variables": [],
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": ["production"],
+      "default": "production"
+    }
+  ],
   "widgets": [
     {
       "definition": {
         "type": "note",
-        "content": "## Katagami — Visitors & Usage\nUnique visits, page views, language traction, copies & downloads. Data starts the day RUM credentials go live; there is no historical backfill.",
+        "content": "## Katagami — Visitors & Usage\nUnique visitors, visits, page views, language traction, copies & downloads. Scoped to `$env` (default production). Data starts the day RUM credentials go live; there is no historical backfill.",
         "background_color": "white",
         "font_size": "14",
         "text_align": "left",
@@ -28,6 +35,31 @@
         "widgets": [
           {
             "definition": {
+              "title": "Unique visitors",
+              "type": "query_value",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "rum",
+                      "name": "visitors",
+                      "indexes": ["*"],
+                      "search": { "query": "$env @type:session @session.type:user" },
+                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
+                      "group_by": []
+                    }
+                  ],
+                  "formulas": [{ "formula": "visitors" }]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
               "title": "Visits (sessions)",
               "type": "query_value",
               "requests": [
@@ -38,7 +70,7 @@
                       "data_source": "rum",
                       "name": "visits",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -49,7 +81,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
           },
           {
             "definition": {
@@ -63,7 +95,7 @@
                       "data_source": "rum",
                       "name": "views",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
+                      "search": { "query": "$env @type:view" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -74,7 +106,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 6, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
@@ -88,7 +120,7 @@
                       "data_source": "rum",
                       "name": "actions",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.type:custom" },
+                      "search": { "query": "$env @type:action @action.type:custom" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -99,7 +131,7 @@
               "autoscale": true,
               "precision": 0
             },
-            "layout": { "x": 6, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 8, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
@@ -113,7 +145,7 @@
                       "data_source": "rum",
                       "name": "views",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
+                      "search": { "query": "$env @type:view" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     },
@@ -121,7 +153,7 @@
                       "data_source": "rum",
                       "name": "sessions",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -132,7 +164,7 @@
               "autoscale": true,
               "precision": 1
             },
-            "layout": { "x": 9, "y": 0, "width": 3, "height": 2 }
+            "layout": { "x": 10, "y": 0, "width": 2, "height": 2 }
           },
           {
             "definition": {
@@ -146,7 +178,7 @@
                       "data_source": "rum",
                       "name": "visits",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -170,7 +202,7 @@
                       "data_source": "rum",
                       "name": "byCountry",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -199,7 +231,7 @@
                       "data_source": "rum",
                       "name": "byDevice",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -228,7 +260,7 @@
                       "data_source": "rum",
                       "name": "byReferrer",
                       "indexes": ["*"],
-                      "search": { "query": "@type:session @session.type:user" },
+                      "search": { "query": "$env @type:session @session.type:user" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -267,7 +299,7 @@
                       "data_source": "rum",
                       "name": "langViews",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view @view.url_path:\"/language/*\"" },
+                      "search": { "query": "$env @type:view @view.url_path:\"/language/*\"" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -296,7 +328,7 @@
                       "data_source": "rum",
                       "name": "pageViews",
                       "indexes": ["*"],
-                      "search": { "query": "@type:view" },
+                      "search": { "query": "$env @type:view" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -325,7 +357,7 @@
                       "data_source": "rum",
                       "name": "clickSource",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:language_click" },
+                      "search": { "query": "$env @type:action @action.target.name:language_click" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -354,7 +386,7 @@
                       "data_source": "rum",
                       "name": "clickName",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:language_click" },
+                      "search": { "query": "$env @type:action @action.target.name:language_click" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -393,7 +425,7 @@
                       "data_source": "rum",
                       "name": "byEvent",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.type:custom" },
+                      "search": { "query": "$env @type:action @action.type:custom" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -422,7 +454,7 @@
                       "data_source": "rum",
                       "name": "copies",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "search": { "query": "$env @type:action @action.target.name:copy" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -451,7 +483,7 @@
                       "data_source": "rum",
                       "name": "downloads",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:download" },
+                      "search": { "query": "$env @type:action @action.target.name:download" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {
@@ -480,7 +512,7 @@
                       "data_source": "rum",
                       "name": "copy",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:copy" },
+                      "search": { "query": "$env @type:action @action.target.name:copy" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     },
@@ -488,7 +520,7 @@
                       "data_source": "rum",
                       "name": "download",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:download" },
+                      "search": { "query": "$env @type:action @action.target.name:download" },
                       "compute": { "aggregation": "count" },
                       "group_by": []
                     }
@@ -515,7 +547,7 @@
                       "data_source": "rum",
                       "name": "searches",
                       "indexes": ["*"],
-                      "search": { "query": "@type:action @action.target.name:search" },
+                      "search": { "query": "$env @type:action @action.target.name:search" },
                       "compute": { "aggregation": "count" },
                       "group_by": [
                         {

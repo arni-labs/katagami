@@ -51,7 +51,11 @@ No PII: `defaultPrivacyLevel: mask-user-input`, no session replay.
    local dev and previews are unaffected.
 
 3. **Import the dashboard**: Datadog → Dashboards → New Dashboard → **Import
-   dashboard JSON** → paste `katagami-rum-dashboard.json`.
+   dashboard JSON** → paste `katagami-rum-dashboard.json`. The dashboard is
+   scoped to the `$env` template variable (default `production`) so the
+   `env:local-verify` test events are excluded, and the top row leads with a
+   **Unique visitors** tile (`CARDINALITY(@usr.anonymous_id)`) alongside visits
+   (sessions).
 
 ## Facets (confirmed against live data)
 
@@ -65,7 +69,8 @@ and querying them back:
 - Sessions/views are standard RUM facets (`@type`, `@view.url_path`, `@geo.country`,
   `@device.type`, `@session.referrer`).
 - Each event also carries `@usr.anonymous_id`, so unique *visitors* (not just
-  sessions) can be counted with `CARDINALITY(@usr.anonymous_id)` if wanted.
+  sessions) are counted with `CARDINALITY(@usr.anonymous_id)` — surfaced as the
+  "Unique visitors" tile.
 
 The dashboard JSON already uses these exact facets — no calibration needed.
 
