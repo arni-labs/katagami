@@ -21,6 +21,7 @@ import {
   SpecPanel,
 } from "@/components/spec-panel";
 import { SpecActions } from "@/components/spec-actions";
+import { LanguageViewTracker } from "@/components/language-view-tracker";
 import { DesignMdShowcase } from "@/components/design-md-showcase";
 import { EmbodimentTabs, type EmbodimentTab } from "@/components/embodiment-tabs";
 import { DesignShowcase } from "@/components/design-showcase";
@@ -206,6 +207,10 @@ export default async function LanguageDetailPage({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:space-y-10 sm:py-10">
+      {/* Records a `language_view` RUM event with the language NAME + id, so
+          dashboards can rank languages by name and dedupe to unique visitors. */}
+      <LanguageViewTracker languageId={id} languageName={name} slug={f.slug} />
+
       {/* Back link */}
       <Link
         href="/"
@@ -252,6 +257,7 @@ export default async function LanguageDetailPage({
 
       <SpecActions
         languageId={id}
+        languageName={name}
         katagamiSpec={katagamiMarkdown}
         designMd={designMd}
         slug={f.slug}

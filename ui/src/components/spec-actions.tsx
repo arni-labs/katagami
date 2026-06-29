@@ -6,6 +6,7 @@ import { trackCopy, trackDownload } from "@/lib/analytics";
 
 interface SpecActionsProps {
   languageId?: string;
+  languageName?: string;
   katagamiSpec: string;
   designMd: string;
   slug?: string;
@@ -67,6 +68,7 @@ async function writeClipboard(text: string) {
 
 export function SpecActions({
   languageId,
+  languageName,
   katagamiSpec,
   designMd,
   slug,
@@ -113,7 +115,7 @@ export function SpecActions({
     const url = urlFor(format);
     const refLine = url ? `\n\nSource: ${url}` : "";
     await writeClipboard(`${PREAMBLE[format]}${refLine}\n\n${md}`);
-    trackCopy({ artifact: format, languageId, label: "spec" });
+    trackCopy({ artifact: format, languageId, languageName, label: "spec" });
     flash("copy");
   };
 
@@ -121,7 +123,7 @@ export function SpecActions({
     const url = urlFor(format);
     if (!url) return;
     await writeClipboard(url);
-    trackCopy({ artifact: `${format}-url`, languageId, label: "link" });
+    trackCopy({ artifact: `${format}-url`, languageId, languageName, label: "link" });
     flash("link");
   };
 
@@ -139,7 +141,7 @@ export function SpecActions({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    trackDownload({ file: a.download, format, languageId });
+    trackDownload({ file: a.download, format, languageId, languageName });
   };
 
   const accent = ACCENT[format];
