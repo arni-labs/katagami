@@ -273,7 +273,7 @@ export function EntityPicker({
               e.preventDefault(); // focus the search box, not the first row — and never scroll the page
               inputRef.current?.focus({ preventScroll: true });
             }}
-            className="z-50 flex max-h-[min(60vh,26rem)] w-[min(92vw,22rem)] flex-col overflow-hidden bg-card shadow-[0_18px_50px_rgba(30,35,45,0.24)]"
+            className="z-50 flex max-h-[min(26rem,var(--radix-popover-content-available-height))] w-[min(92vw,22rem)] flex-col overflow-hidden bg-card shadow-[0_18px_50px_rgba(30,35,45,0.24)]"
           >
             <div className="shrink-0 bg-card px-4 pb-2.5 pt-3">
               <div className="mb-2 flex items-center justify-between">

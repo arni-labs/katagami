@@ -139,8 +139,10 @@ export function InlineRemix({
     () =>
       palettes.map((p) => {
         const facets: Record<string, string> = {};
-        if (p.temperature) facets.temperature = p.temperature;
-        if (p.keyHue) facets.hue = p.keyHue;
+        // Bucket the compound temperature ("cool-balanced") to its axis so it's
+        // a small, usable facet (cool/warm/neutral), not a dozen one-offs.
+        if (p.temperature) facets.temperature = p.temperature.split("-")[0].trim();
+        if (p.keyHue) facets.hue = p.keyHue; // free-text; stays searchable, not a chip (dropped by the cardinality guard)
         return {
           id: p.id,
           name: p.name,
