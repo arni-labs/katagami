@@ -292,11 +292,11 @@
                       "data_source": "rum",
                       "name": "langUV",
                       "indexes": ["*"],
-                      "search": { "query": "env:production @type:view @view.url_path:/language/*" },
+                      "search": { "query": "env:production @type:action @action.target.name:language_view" },
                       "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
-                          "facet": "@view.url_path",
+                          "facet": "@context.language_name",
                           "limit": 25,
                           "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
@@ -307,7 +307,7 @@
                 }
               ],
               "custom_links": [
-                { "label": "Open language on katagami.ai", "link": "https://katagami.ai{{@view.url_path}}" }
+                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
               ]
             },
             "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
@@ -353,11 +353,11 @@
                       "data_source": "rum",
                       "name": "copyUV",
                       "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:copy @context.language_id:*" },
+                      "search": { "query": "env:production @type:action @action.target.name:copy @context.language_name:*" },
                       "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
-                          "facet": "@context.language_id",
+                          "facet": "@context.language_name",
                           "limit": 20,
                           "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
@@ -385,11 +385,11 @@
                       "data_source": "rum",
                       "name": "dlUV",
                       "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:download @context.language_id:*" },
+                      "search": { "query": "env:production @type:action @action.target.name:download @context.language_name:*" },
                       "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
-                          "facet": "@context.language_id",
+                          "facet": "@context.language_name",
                           "limit": 20,
                           "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
