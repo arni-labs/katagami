@@ -139,10 +139,12 @@ export function InlineRemix({
     () =>
       palettes.map((p) => {
         const facets: Record<string, string> = {};
-        // Bucket the compound temperature ("cool-balanced") to its axis so it's
-        // a small, usable facet (cool/warm/neutral), not a dozen one-offs.
-        if (p.temperature) facets.temperature = p.temperature.split("-")[0].trim();
-        if (p.keyHue) facets.hue = p.keyHue; // free-text; stays searchable, not a chip (dropped by the cardinality guard)
+        // temperature + keyHue are free-text ("warm with cool indigo structure",
+        // "transformative teal") — near-unique, so the cardinality guard keeps
+        // them out of the chip row. They stay in facets so the text search still
+        // covers them (via the haystack); they just aren't shown as filters.
+        if (p.temperature) facets.temperature = p.temperature;
+        if (p.keyHue) facets.hue = p.keyHue;
         return {
           id: p.id,
           name: p.name,
