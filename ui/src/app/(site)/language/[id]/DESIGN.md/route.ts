@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDesignLanguage } from "@/lib/odata";
+import { getPublishedDesignLanguage } from "@/lib/odata";
 import { designMdToMarkdown } from "@/components/spec-panel";
 import {
   buildShadcnRegistryTheme,
@@ -65,7 +65,7 @@ export async function GET(
 
   let lang;
   try {
-    lang = await getDesignLanguage(id);
+    lang = await getPublishedDesignLanguage(id);
   } catch {
     return new NextResponse("design language not found\n", {
       status: 404,
