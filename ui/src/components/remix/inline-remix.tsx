@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RemixPreview } from "@/components/remix/remix-preview";
-import { CommandPicker, DrawerPicker, type PickItem } from "@/components/remix/entity-picker";
+import { EntityPicker, type PickItem } from "@/components/remix/entity-picker";
 import { WashiTape } from "@/components/scrapbook";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
@@ -97,7 +97,6 @@ export function InlineRemix({
   palettes,
   art,
   fixed = {},
-  variant = "command",
   enableSave = false,
   initial,
 }: {
@@ -105,7 +104,6 @@ export function InlineRemix({
   palettes: PaletteOpt[];
   art: ArtOpt[];
   fixed?: { language?: string; palette?: string; art?: string };
-  variant?: "command" | "drawer";
   enableSave?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
 }) {
@@ -125,8 +123,6 @@ export function InlineRemix({
   const pal = palettes.find((p) => p.id === palId) ?? palettes[0];
   const sel = art.find((a) => a.id === artId) ?? art[0];
   const comp = COMPS[compIdx] ?? COMPS[0];
-
-  const Picker = variant === "drawer" ? DrawerPicker : CommandPicker;
 
   const langItems: PickItem[] = useMemo(
     () =>
@@ -232,17 +228,17 @@ export function InlineRemix({
         {fixed.language ? (
           <FixedChip label="UI language" name={lang?.name ?? "—"} media={<Thumb src={lang?.thumb} />} />
         ) : (
-          <Picker label="UI language" items={langItems} value={langId} onSelect={setLangId} />
+          <EntityPicker label="UI language" items={langItems} value={langId} onSelect={setLangId} />
         )}
         {fixed.palette ? (
           <FixedChip label="Palette" name={pal?.name ?? "—"} media={<Swatches colors={pal?.swatches ?? []} />} />
         ) : (
-          <Picker label="Palette" items={palItems} value={palId} onSelect={setPalId} />
+          <EntityPicker label="Palette" items={palItems} value={palId} onSelect={setPalId} />
         )}
         {fixed.art ? (
           <FixedChip label="Art style" name={sel?.name ?? "—"} media={<Thumb src={sel?.hero} />} />
         ) : (
-          <Picker label="Art style" items={artItems} value={artId} onSelect={setArtId} />
+          <EntityPicker label="Art style" items={artItems} value={artId} onSelect={setArtId} />
         )}
       </div>
 
