@@ -63,9 +63,10 @@ No PII: `defaultPrivacyLevel: mask-user-input`, no session replay.
    (`CARDINALITY(@usr.anonymous_id)`); the "Languages & engagement" group ranks
    languages by **unique visitors** for page views / copies / downloads, lists
    the buttons clicked on language pages, and each language row links through to
-   katagami.ai. Until the instrumented UI is deployed those rollups key on
-   `@view.url_path` / `@context.language_id` (id); once `language_name` flows
-   they can switch to readable names (no backfill of pre-deploy data).
+   katagami.ai. The page-views / copies / downloads rollups group by readable
+   `@context.language_name` (from the `language_view` / `copy` / `download`
+   events); they only count traffic since the instrumented UI deployed (no
+   backfill), so they fill in over time.
 
 ## Facets (confirmed against live data)
 
