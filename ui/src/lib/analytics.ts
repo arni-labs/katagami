@@ -69,6 +69,9 @@ export async function initRum(): Promise<void> {
       trackLongTasks: true,
       defaultPrivacyLevel: "mask-user-input",
     });
+    // Replay any events fired before the SDK finished importing (e.g. the
+    // on-mount `language_view`), which would otherwise have been dropped.
+    flushPending();
   } catch {
     // SDK failed to load — leave as a no-op, never surface to the user.
     rum = null;
@@ -87,9 +90,35 @@ function clean(attrs: Attributes): Record<string, string | number | boolean> {
   return out;
 }
 
-/** Low-level: record a custom RUM action. No-op until RUM is ready. */
+// The RUM SDK is imported lazily, so events fired between first paint and the
+// import resolving (notably the on-mount `language_view`) arrive while `rum` is
+// still null. Buffer those (capped) and flush them in initRum once the SDK is
+// ready, instead of silently dropping them.
+const MAX_PENDING = 50;
+const pending: Array<{ name: string; attributes: Attributes }> = [];
+
+function flushPending(): void {
+  if (!rum) return;
+  const queued = pending.splice(0, pending.length);
+  for (const ev of queued) {
+    try {
+      rum.addAction(ev.name, clean(ev.attributes));
+    } catch {
+      /* analytics must never throw into the UI */
+    }
+  }
+}
+
+/** Low-level: record a custom RUM action. Buffers until the SDK is ready; a
+ *  permanent no-op when RUM credentials are absent. */
 export function track(name: string, attributes: Attributes = {}): void {
-  if (!rum || !initialized) return;
+  if (typeof window === "undefined" || !rumEnabled()) return;
+  if (!rum) {
+    // SDK still importing — buffer (capped) so early on-mount events aren't
+    // lost to the init race; flushed by initRum.
+    if (pending.length < MAX_PENDING) pending.push({ name, attributes });
+    return;
+  }
   try {
     rum.addAction(name, clean(attributes));
   } catch {
