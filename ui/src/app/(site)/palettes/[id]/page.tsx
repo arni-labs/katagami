@@ -225,7 +225,6 @@ export default async function PaletteDetailPage({ params }: { params: Promise<{ 
             palettes={palOpts}
             art={artOpts}
             fixed={{ palette: id }}
-            variant="drawer"
           />
         ) : (
           <div className="sticker-card p-5 text-sm text-muted-foreground">

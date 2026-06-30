@@ -369,7 +369,6 @@ export default async function LanguageDetailPage({
             palettes={remixPalOpts}
             art={remixArtOpts}
             fixed={{ language: id }}
-            variant="drawer"
           />
         </section>
       ) : null}

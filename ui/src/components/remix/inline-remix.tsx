@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RemixPreview } from "@/components/remix/remix-preview";
-import { CommandPicker, DrawerPicker, type PickItem } from "@/components/remix/entity-picker";
+import { EntityPicker, type PickItem } from "@/components/remix/entity-picker";
 import { WashiTape } from "@/components/scrapbook";
 import { buildRemixBrief } from "@/lib/remix-brief";
 import { COMPOSITIONS } from "@/lib/remix-compositions";
@@ -97,7 +97,6 @@ export function InlineRemix({
   palettes,
   art,
   fixed = {},
-  variant = "command",
   enableSave = false,
   initial,
 }: {
@@ -105,7 +104,6 @@ export function InlineRemix({
   palettes: PaletteOpt[];
   art: ArtOpt[];
   fixed?: { language?: string; palette?: string; art?: string };
-  variant?: "command" | "drawer";
   enableSave?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
 }) {
@@ -126,8 +124,6 @@ export function InlineRemix({
   const sel = art.find((a) => a.id === artId) ?? art[0];
   const comp = COMPS[compIdx] ?? COMPS[0];
 
-  const Picker = variant === "drawer" ? DrawerPicker : CommandPicker;
-
   const langItems: PickItem[] = useMemo(
     () =>
       languages.map((l) => ({
@@ -143,6 +139,10 @@ export function InlineRemix({
     () =>
       palettes.map((p) => {
         const facets: Record<string, string> = {};
+        // temperature + keyHue are free-text ("warm with cool indigo structure",
+        // "transformative teal") — near-unique, so the cardinality guard keeps
+        // them out of the chip row. They stay in facets so the text search still
+        // covers them (via the haystack); they just aren't shown as filters.
         if (p.temperature) facets.temperature = p.temperature;
         if (p.keyHue) facets.hue = p.keyHue;
         return {
@@ -232,17 +232,17 @@ export function InlineRemix({
         {fixed.language ? (
           <FixedChip label="UI language" name={lang?.name ?? "—"} media={<Thumb src={lang?.thumb} />} />
         ) : (
-          <Picker label="UI language" items={langItems} value={langId} onSelect={setLangId} />
+          <EntityPicker label="UI language" items={langItems} value={langId} onSelect={setLangId} />
         )}
         {fixed.palette ? (
           <FixedChip label="Palette" name={pal?.name ?? "—"} media={<Swatches colors={pal?.swatches ?? []} />} />
         ) : (
-          <Picker label="Palette" items={palItems} value={palId} onSelect={setPalId} />
+          <EntityPicker label="Palette" items={palItems} value={palId} onSelect={setPalId} />
         )}
         {fixed.art ? (
           <FixedChip label="Art style" name={sel?.name ?? "—"} media={<Thumb src={sel?.hero} />} />
         ) : (
-          <Picker label="Art style" items={artItems} value={artId} onSelect={setArtId} />
+          <EntityPicker label="Art style" items={artItems} value={artId} onSelect={setArtId} />
         )}
       </div>
 

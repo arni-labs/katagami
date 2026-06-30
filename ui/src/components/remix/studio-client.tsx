@@ -36,7 +36,6 @@ export function StudioClient({
         languages={ui}
         palettes={palettes}
         art={art}
-        variant="command"
         enableSave
         initial={initial}
       />
