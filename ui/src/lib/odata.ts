@@ -925,6 +925,8 @@ export interface PageOpts {
   cursor?: string | null;
   limit?: number;
   search?: string;
+  hue?: string; // hue_bucket facet (design languages)
+  family?: string; // family_id facet (design languages)
 }
 
 function odataLiteral(s: string): string {
@@ -935,14 +937,28 @@ function pageQuery(
   cursor: string | null | undefined,
   limit: number,
   search: string | undefined,
+  facets: {
+    searchField?: "search_blob" | "name_tags";
+    hue?: string;
+    family?: string;
+  } = {},
 ): string {
   const clauses = ["Status eq 'Published'"];
   if (cursor) clauses.push(`Id lt '${odataLiteral(cursor)}'`);
   const q = search?.trim();
   if (q) {
-    const lit = odataLiteral(q);
-    clauses.push(`(contains(name,'${lit}') or contains(tags,'${lit}'))`);
+    if (facets.searchField === "search_blob") {
+      // search_blob is stored lowercased → case-insensitive substring match
+      // (the kernel has no tolower/$search). Lowercase the query to match.
+      clauses.push(`contains(search_blob,'${odataLiteral(q.toLowerCase())}')`);
+    } else {
+      const lit = odataLiteral(q);
+      clauses.push(`(contains(name,'${lit}') or contains(tags,'${lit}'))`);
+    }
   }
+  if (facets.hue) clauses.push(`hue_bucket eq '${odataLiteral(facets.hue)}'`);
+  if (facets.family)
+    clauses.push(`family_id eq '${odataLiteral(facets.family)}'`);
   const params = new URLSearchParams();
   params.set("$filter", clauses.join(" and "));
   params.set("$orderby", "Id desc");
@@ -984,10 +1000,12 @@ export async function pageDesignLanguages({
   cursor,
   limit = 48,
   search,
+  hue,
+  family,
 }: PageOpts = {}): Promise<PageResult<DesignLanguage>> {
   try {
     const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `DesignLanguages?${pageQuery(cursor, limit, search)}`,
+      `DesignLanguages?${pageQuery(cursor, limit, search, { searchField: "search_blob", hue, family })}`,
     );
     const rows = (resp.value ?? [])
       .map(normalizeDesignLanguageRow)

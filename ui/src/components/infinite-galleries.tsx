@@ -27,6 +27,7 @@ function InfiniteShell({
   search,
   setSearch,
   placeholder,
+  toolbar,
   loading,
   exhausted,
   empty,
@@ -36,6 +37,7 @@ function InfiniteShell({
   search: string;
   setSearch: (v: string) => void;
   placeholder: string;
+  toolbar?: ReactNode;
   loading: boolean;
   exhausted: boolean;
   empty: boolean;
@@ -44,15 +46,18 @@ function InfiniteShell({
 }) {
   return (
     <div className="space-y-6">
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
-          className={`${KX_FIELD} h-9 pl-7`}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            className={`${KX_FIELD} h-9 pl-7`}
+          />
+        </div>
+        {toolbar}
       </div>
 
       {empty && !loading ? (
@@ -89,6 +94,65 @@ function CuratorsPicks({ children }: { children: ReactNode }) {
 
 const LANGUAGE_GRID = "grid gap-7 sm:grid-cols-2 lg:grid-cols-3";
 
+// The 9 hue_bucket facets, each with a representative ink. Toggling one filters
+// server-side (hue_bucket eq …), AND-composed with search + the keyset cursor.
+const HUE_SWATCHES: [string, string][] = [
+  ["red", "#e5484d"],
+  ["orange", "#f76b15"],
+  ["yellow", "#f5c000"],
+  ["green", "#30a46c"],
+  ["teal", "#12a594"],
+  ["blue", "#3b82f6"],
+  ["violet", "#8b5cf6"],
+  ["pink", "#e93d82"],
+  ["neutral", "#9ba1a6"],
+];
+
+function HueBar({
+  active,
+  onPick,
+}: {
+  active?: string;
+  onPick: (h?: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        color
+      </span>
+      {HUE_SWATCHES.map(([bucket, color]) => (
+        <button
+          key={bucket}
+          type="button"
+          onClick={() => onPick(bucket)}
+          data-on={active === bucket}
+          aria-pressed={active === bucket}
+          title={bucket}
+          className="flex items-center gap-1 rounded-full py-0.5 pl-0.5 pr-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] data-[on=true]:bg-foreground data-[on=true]:text-background"
+        >
+          <span
+            aria-hidden
+            className="h-3.5 w-3.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.14)]"
+            style={{ background: color }}
+          />
+          <span className="font-mono text-[10px] lowercase tracking-[0.02em]">
+            {bucket}
+          </span>
+        </button>
+      ))}
+      {active ? (
+        <button
+          type="button"
+          onClick={() => onPick(undefined)}
+          className="ml-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          clear
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function InfiniteLanguages({
   featured = [],
   initialItems,
@@ -100,9 +164,23 @@ export function InfiniteLanguages({
   initialCursor: string | null;
   canDelete?: boolean;
 }) {
-  const { items, search, setSearch, loading, cursor, sentinelRef } =
-    useInfiniteList<DesignLanguage>(initialItems, initialCursor, loadLanguagePage);
-  const browsing = search.trim() === "" && featured.length > 0;
+  const {
+    items,
+    search,
+    setSearch,
+    facets,
+    setFacet,
+    loading,
+    cursor,
+    sentinelRef,
+  } = useInfiniteList<DesignLanguage>(
+    initialItems,
+    initialCursor,
+    loadLanguagePage,
+  );
+  // Curator's picks lead only the unfiltered browse view.
+  const filtering = search.trim() !== "" || !!facets.hue || !!facets.family;
+  const browsing = !filtering && featured.length > 0;
   const pinnedIds = new Set(featured.map((f) => f.entity_id));
   const gridItems = browsing
     ? items.filter((l) => !pinnedIds.has(l.entity_id))
@@ -111,7 +189,8 @@ export function InfiniteLanguages({
     <InfiniteShell
       search={search}
       setSearch={setSearch}
-      placeholder="Search languages by name or tag…"
+      placeholder="Search languages…"
+      toolbar={<HueBar active={facets.hue} onPick={(h) => setFacet("hue", h)} />}
       loading={loading}
       exhausted={cursor === null}
       empty={(browsing ? featured.length : 0) + gridItems.length === 0}

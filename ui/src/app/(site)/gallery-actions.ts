@@ -20,10 +20,14 @@ const LIMIT = 48;
 export async function loadLanguagePage(input: {
   cursor?: string | null;
   search?: string;
+  hue?: string;
+  family?: string;
 }): Promise<PageResult<DesignLanguage>> {
   return pageDesignLanguages({
     cursor: input.cursor ?? undefined,
     search: input.search,
+    hue: input.hue,
+    family: input.family,
     limit: LIMIT,
   });
 }
