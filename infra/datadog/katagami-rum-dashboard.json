@@ -343,7 +343,7 @@
           },
           {
             "definition": {
-              "title": "Top languages — copies (unique visitors)",
+              "title": "Top languages — take-it clicks (unique visitors)",
               "type": "toplist",
               "requests": [
                 {
@@ -351,59 +351,27 @@
                   "queries": [
                     {
                       "data_source": "rum",
-                      "name": "copyUV",
+                      "name": "takeUV",
                       "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:copy @context.language_name:*" },
+                      "search": { "query": "env:production @type:action @view.url_path:/language/* @action.target.name:(copy OR download OR link OR tokens OR \"DESIGN.md\" OR \"with shadcn\" OR \"Download DESIGN.md\")" },
                       "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
                       "group_by": [
                         {
-                          "facet": "@context.language_name",
-                          "limit": 20,
+                          "facet": "@view.url_path",
+                          "limit": 25,
                           "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
                         }
                       ]
                     }
                   ],
-                  "formulas": [{ "formula": "copyUV" }]
+                  "formulas": [{ "formula": "takeUV" }]
                 }
               ],
               "custom_links": [
-                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
+                { "label": "Open language on katagami.ai", "link": "https://katagami.ai{{@view.url_path}}" }
               ]
             },
-            "layout": { "x": 0, "y": 4, "width": 4, "height": 4 }
-          },
-          {
-            "definition": {
-              "title": "Top languages — downloads (unique visitors)",
-              "type": "toplist",
-              "requests": [
-                {
-                  "response_format": "scalar",
-                  "queries": [
-                    {
-                      "data_source": "rum",
-                      "name": "dlUV",
-                      "indexes": ["*"],
-                      "search": { "query": "env:production @type:action @action.target.name:download @context.language_name:*" },
-                      "compute": { "aggregation": "cardinality", "metric": "@usr.anonymous_id" },
-                      "group_by": [
-                        {
-                          "facet": "@context.language_name",
-                          "limit": 20,
-                          "sort": { "aggregation": "cardinality", "metric": "@usr.anonymous_id", "order": "desc" }
-                        }
-                      ]
-                    }
-                  ],
-                  "formulas": [{ "formula": "dlUV" }]
-                }
-              ],
-              "custom_links": [
-                { "label": "Open language on katagami.ai", "link": "https://katagami.ai/language/{{@context.language_id}}" }
-              ]
-            },
-            "layout": { "x": 4, "y": 4, "width": 4, "height": 4 }
+            "layout": { "x": 0, "y": 4, "width": 6, "height": 4 }
           },
           {
             "definition": {
@@ -432,7 +400,7 @@
                 }
               ]
             },
-            "layout": { "x": 8, "y": 4, "width": 4, "height": 4 }
+            "layout": { "x": 6, "y": 4, "width": 6, "height": 4 }
           },
           {
             "definition": {
