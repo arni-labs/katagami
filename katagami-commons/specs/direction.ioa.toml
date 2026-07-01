@@ -1,0 +1,35 @@
+# Direction — a reimagine brief / bake-off round.
+#
+# N models reimagine ONE Direction; each model's submissions (its ArtStyle + PaletteSystem +
+# DesignLanguage) link back via their `direction_id` param. The round = every entity whose
+# `direction_id` equals this Direction's id (a real link, not a tag). Lives in commons so a
+# Direction is queryable alongside the entities it groups, for the bake-off display.
+#
+# Lifecycle: Open -> Closed (Reopen to revisit).
+
+[automaton]
+name = "Direction"
+states = ["Open", "Closed"]
+initial = "Open"
+allow_indefinite_states = ["Open", "Closed"]
+
+[[action]]
+name = "SetDirection"
+kind = "input"
+from = ["Open"]
+params = ["title", "brief", "source_language_id", "art_style_slug", "is_bakeoff", "round_label", "model_pool", "tags"]
+hint = "Author the direction in one call: title, the reimagine brief (the concept/angle to reimagine toward + constraints — what 'good' looks like for this round), source_language_id (the language being reimagined), an optional shared art_style_slug, is_bakeoff + round_label (the bake-off round identifier), an optional model_pool (the models invited), and tags. Contributor submissions reference this Direction's id via their direction_id; the round is all entities with that direction_id."
+
+[[action]]
+name = "Close"
+kind = "input"
+from = ["Open"]
+to = "Closed"
+hint = "Close the round — no further submissions expected."
+
+[[action]]
+name = "Reopen"
+kind = "input"
+from = ["Closed"]
+to = "Open"
+hint = "Reopen a closed round to accept more submissions."

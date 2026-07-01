@@ -211,6 +211,30 @@ params = ["name", "slug", "philosophy", "tokens", "rules", "layout_principles", 
 hint = "Set the complete core spec for a newly synthesized or substantially revised language in one coherent hot-path transition."
 
 [[action]]
+name = "SubmitDesignLanguage"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_philosophy", value = "true" },
+  { type = "set_bool", var = "has_tokens", value = "true" },
+  { type = "set_bool", var = "has_rules", value = "true" },
+  { type = "set_bool", var = "has_layout", value = "true" },
+  { type = "set_bool", var = "has_guidance", value = "true" },
+  { type = "set_bool", var = "has_embodiment", value = "true" },
+  { type = "set_bool", var = "has_compositions", value = "true" },
+  { type = "set_bool", var = "has_design_md", value = "true" },
+  { type = "set_bool", var = "has_valid_design_md", value = "true" },
+  { type = "set_bool", var = "has_shadcn_export", value = "true" },
+  { type = "set_bool", var = "has_shadcn_component_spec", value = "true" },
+  { type = "set_bool", var = "has_shadcn_preview_shots", value = "true" },
+  { type = "set_bool", var = "has_thumbnail", value = "true" },
+  { type = "set_bool", var = "has_model_provenance", value = "true" },
+  { type = "set_bool", var = "has_provenance", value = "true" }
+]
+params = ["name", "slug", "philosophy", "tokens", "rules", "layout_principles", "guidance", "tags", "imagery_direction", "embodiment_file_id", "element_count", "composition_count", "embodiment_format", "landing_file_id", "dashboard_file_id", "design_md_file_id", "design_md_lint_result", "design_md_format_version", "shadcn_export_file_id", "shadcn_export_format_version", "shadcn_export_manifest", "shadcn_component_spec_file_id", "shadcn_component_spec_format_version", "shadcn_component_spec_manifest", "shadcn_preview_shots_file_id", "shadcn_preview_shots_format_version", "shadcn_preview_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "provenance_tier", "provenance", "direction_id", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE design language in ONE call — full spec + imagery_direction + every artifact file id (embodiment, landing + dashboard compositions, DESIGN.md + clean lint result, shadcn export/component-spec/preview-shots, thumbnail) + lineage (parent_ids/lineage_type/generation_number) + model_provenance + curator_notes (record the reimagine direction here for provenance). Sets every SubmitForReview guard var, so the very next call is SubmitForReview. It does NOT transition state — the entity stays in Draft and a curator reviews then Publishes; contributors never self-publish. Files must already be uploaded and Ready (the SubmitForReview cross-entity guards still verify them, and the finalizer still rejects a non-clean DESIGN.md lint). Mirrors SetSpec's one-coherent-transition pattern; collapses the ~12-call author ladder into one."
+
+[[action]]
 name = "WritePhilosophy"
 kind = "input"
 from = ["Draft", "UnderReview"]
@@ -345,6 +369,13 @@ kind = "internal"
 from = ["Draft", "UnderReview", "Published"]
 params = ["taste_vector", "taste_vector_model"]
 hint = "Attach the semantic taste embedding computed from the language's canonical taste document (name, tags, philosophy summary, typography, palette). taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer after quality review, or by the backfill job."
+
+[[action]]
+name = "AttachComputedFacets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["search_blob", "hue_bucket", "family_id"]
+hint = "Attach precomputed gallery facets so the catalog filters + searches server-side under keyset pagination — the kernel only $filters flat stored scalars, and only case-sensitively, so these are derived once at publish and stored. search_blob = lowercase(name + tags + philosophy summary) for case-insensitive contains; hue_bucket = HSL bucket of the primary token color (one of neutral/red/orange/yellow/green/teal/blue/violet/pink); family_id = the language's root taxonomy family id. Written by the curation finalizer after quality review, or by the backfill job."
 
 # --- Actions: Classification ---
 
