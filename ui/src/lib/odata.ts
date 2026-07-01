@@ -575,6 +575,34 @@ export async function taxonomyFamilyIndex(): Promise<Map<string, TaxonomyParent>
   return map;
 }
 
+/**
+ * The families actually present in the catalog (family_id → name + count), for
+ * the gallery's family facet. Derived from the published languages' stored
+ * family_id + the taxonomy index; only the small result is cached (the fetch is
+ * transient, so it never blows the Data Cache entry cap). Fine at today's size;
+ * a stored aggregate would be the move past a few thousand languages.
+ */
+export const galleryFamilies = unstable_cache(
+  async (): Promise<{ id: string; name: string; count: number }[]> => {
+    const index = await taxonomyFamilyIndex();
+    const rows = await collectODataPages<Record<string, unknown>>(
+      "DesignLanguages?$filter=Status eq 'Published'&$top=5000",
+    );
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const f = (row.fields ?? row) as Record<string, unknown>;
+      const fid = typeof f.family_id === "string" ? f.family_id : "";
+      if (fid) counts.set(fid, (counts.get(fid) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([id, count]) => ({ id, name: index.get(id)?.name ?? "", count }))
+      .filter((f) => f.name)
+      .sort((a, b) => b.count - a.count);
+  },
+  ["gallery-families-v1"],
+  { revalidate: 300 },
+);
+
 let languageTaxonomyCache: { at: number; map: Map<string, string[]> } | null =
   null;
 
@@ -1027,7 +1055,8 @@ async function pageLane(
 ): Promise<PageResult<LaneEntity>> {
   try {
     const resp = await odata<{ value?: Record<string, unknown>[] }>(
-      `${set}?${pageQuery(cursor, limit, search)}`,
+      // Lanes carry a backfilled search_blob too → case-insensitive search.
+      `${set}?${pageQuery(cursor, limit, search, { searchField: "search_blob" })}`,
     );
     const rows = (resp.value ?? []).map((r) => normalizeLaneRow(r, set));
     return slicePage(rows, limit);

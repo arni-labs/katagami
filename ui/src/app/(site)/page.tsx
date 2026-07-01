@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import {
   countDesignLanguages,
+  galleryFamilies,
   listFeaturedDesignLanguages,
   pageDesignLanguages,
 } from "@/lib/odata";
@@ -106,11 +107,14 @@ async function GalleryGrid({ demo }: { demo?: boolean }) {
   const canDelete = demo ? false : await isOwner();
   let first: Awaited<ReturnType<typeof pageDesignLanguages>>;
   let featured: Awaited<ReturnType<typeof listFeaturedDesignLanguages>>;
+  let families: Awaited<ReturnType<typeof galleryFamilies>> = [];
   try {
-    // Curator's picks lead the gallery; the rest paginate in.
-    [first, featured] = await Promise.all([
+    // Curator's picks lead the gallery; the rest paginate in. Families feed the
+    // facet dropdown (non-fatal — the gallery renders without it).
+    [first, featured, families] = await Promise.all([
       pageDesignLanguages({ limit: 48 }),
       listFeaturedDesignLanguages(),
+      galleryFamilies().catch(() => []),
     ]);
   } catch {
     return (
@@ -131,6 +135,7 @@ async function GalleryGrid({ demo }: { demo?: boolean }) {
   return (
     <InfiniteLanguages
       featured={featured}
+      families={families}
       initialItems={first.items}
       initialCursor={first.nextCursor}
       canDelete={canDelete}
