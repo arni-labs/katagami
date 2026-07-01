@@ -76,6 +76,14 @@
              related languages). JSON float array + the model that made it. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Precomputed gallery facets: flat scalars for server-side filtering +
+             keyset pagination. The kernel can only $filter stored scalars (not
+             JSON-derived values, and only case-sensitively), so the categorical
+             facets are derived once at publish and stored here. Written by the
+             curation finalizer / backfill via AttachComputedFacets. -->
+        <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HueBucket" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="FamilyId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Quality signals -->
         <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

@@ -346,6 +346,13 @@ from = ["Draft", "UnderReview", "Published"]
 params = ["taste_vector", "taste_vector_model"]
 hint = "Attach the semantic taste embedding computed from the language's canonical taste document (name, tags, philosophy summary, typography, palette). taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer after quality review, or by the backfill job."
 
+[[action]]
+name = "AttachComputedFacets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["search_blob", "hue_bucket", "family_id"]
+hint = "Attach precomputed gallery facets so the catalog filters + searches server-side under keyset pagination — the kernel only $filters flat stored scalars, and only case-sensitively, so these are derived once at publish and stored. search_blob = lowercase(name + tags + philosophy summary) for case-insensitive contains; hue_bucket = HSL bucket of the primary token color (one of neutral/red/orange/yellow/green/teal/blue/violet/pink); family_id = the language's root taxonomy family id. Written by the curation finalizer after quality review, or by the backfill job."
+
 # --- Actions: Classification ---
 
 [[action]]
