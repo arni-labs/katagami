@@ -28,6 +28,7 @@ import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnKitSection } from "@/components/shadcn-kit-section";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
+import { ProvenanceBadge } from "@/components/provenance-badge";
 import { PageHero } from "@/components/page-hero";
 import {
   StickyNote,
@@ -350,6 +351,8 @@ export default async function LanguageDetailPage({
       <LanguageIdentity fields={f} />
 
       <Credits raw={f.credits} />
+
+      <ProvenanceBadge tier={f.provenance_tier} variant="detail" />
 
       <ModelProvenance raw={f.model_provenance} />
 

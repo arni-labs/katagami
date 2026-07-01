@@ -4,6 +4,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { parseJson } from "@/lib/odata";
 import { LanguageCardOwnerControls } from "@/components/language-card-owner-controls";
 import { ThumbnailPreview } from "@/components/thumbnail-preview";
+import { ProvenanceBadge } from "@/components/provenance-badge";
 
 const statusFallbackTone: Record<string, string> = {
   Draft: "var(--muted-foreground)",
@@ -156,6 +157,8 @@ function FullCard({
   const id = lang.entity_id;
 
   const tags = parseJson<string[]>(f.tags) ?? [];
+  const isHumanProvenance =
+    f.provenance_tier === "human_curated" || f.provenance_tier === "human_authored";
   const tokens = parseJson<Tokens>(f.tokens);
 
   const colors = tokens?.colors ?? {};
@@ -241,8 +244,9 @@ function FullCard({
           ) : null}
         </div>
 
-        {tags.length > 0 && (
+        {(tags.length > 0 || isHumanProvenance) && (
           <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+            <ProvenanceBadge tier={f.provenance_tier} variant="card" />
             {tags.slice(0, 3).map((t, i) => (
               <span
                 key={t}
