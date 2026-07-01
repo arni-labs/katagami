@@ -129,6 +129,8 @@ export interface DesignLanguage {
     parent_ids?: string;
     lineage_type?: string;
     generation_number?: string;
+    provenance_tier?: string;
+    provenance?: string;
     taxonomy_ids?: string;
     tags?: string;
     taste_vector?: string;
@@ -190,6 +192,7 @@ export const DESIGN_LANGUAGE_GALLERY_FIELDS = [
   "version",
   "quality_review_passed",
   "review_status",
+  "provenance_tier",
   "has_design_md",
   "has_valid_design_md",
   "design_md_verified",

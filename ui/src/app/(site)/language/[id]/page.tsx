@@ -27,6 +27,7 @@ import { DesignShowcase } from "@/components/design-showcase";
 import { ShadcnPreview } from "@/components/shadcn-preview";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
+import { ProvenanceBadge } from "@/components/provenance-badge";
 import { PageHero } from "@/components/page-hero";
 import { shadcnDesignMdMarkdown } from "@/lib/shadcn-export";
 import {
@@ -385,6 +386,8 @@ export default async function LanguageDetailPage({
       </div>
 
       <Credits raw={f.credits} />
+
+      <ProvenanceBadge tier={f.provenance_tier} variant="detail" />
 
       <ModelProvenance raw={f.model_provenance} />
 
