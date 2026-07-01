@@ -61,12 +61,14 @@ No PII: `defaultPrivacyLevel: mask-user-input`, no session replay.
    to `env:production` (literal) so `env:local-verify` test events are excluded.
    The top row leads with a **Unique visitors** tile
    (`CARDINALITY(@usr.anonymous_id)`); the "Languages & engagement" group ranks
-   languages by **unique visitors** for page views / copies / downloads, lists
-   the buttons clicked on language pages, and each language row links through to
-   katagami.ai. The page-views / copies / downloads rollups group by readable
-   `@context.language_name` (from the `language_view` / `copy` / `download`
-   events); they only count traffic since the instrumented UI deployed (no
-   backfill), so they fill in over time.
+   languages by **unique visitors** — page views and most-clicked group by
+   readable `@context.language_name` (from the `language_view` / `language_click`
+   events, post-deploy only, no backfill). A **take-it clicks** tile ranks
+   languages by the take-it actions on their page (copy / download / link /
+   tokens / DESIGN.md / with shadcn); those are auto-captured button clicks that
+   carry the page URL but not the name, so it keys on `@view.url_path` (id) to
+   capture the full volume — historical included. Each language row links through
+   to katagami.ai, and the group also lists the buttons clicked on language pages.
 
 ## Facets (confirmed against live data)
 
