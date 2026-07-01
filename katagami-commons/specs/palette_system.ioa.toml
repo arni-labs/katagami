@@ -200,6 +200,13 @@ from = ["Draft", "UnderReview", "Published"]
 params = ["taste_vector", "taste_vector_model"]
 hint = "Attach the semantic taste embedding computed from this entity's canonical taste document. taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared. Written by the curation finalizer or the backfill job."
 
+[[action]]
+name = "AttachComputedFacets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["search_blob"]
+hint = "Attach the precomputed lowercase search blob (name + tags + descriptive fields) so the catalog can be searched case-insensitively server-side under keyset pagination — the kernel only $filters flat stored scalars, and only case-sensitively. Written by the curation finalizer or the backfill job."
+
 # --- Actions: Classification ---
 
 [[action]]

@@ -153,13 +153,49 @@ function HueBar({
   );
 }
 
+// Filter by taxonomy family (family_id eq …). Only the families actually present
+// in the catalog are listed (with counts), server-side filtered.
+function FamilySelect({
+  families,
+  active,
+  onPick,
+}: {
+  families: { id: string; name: string; count: number }[];
+  active?: string;
+  onPick: (id?: string) => void;
+}) {
+  if (families.length === 0) return null;
+  return (
+    <label className="flex items-center gap-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        family
+      </span>
+      <select
+        value={active ?? ""}
+        onChange={(e) => onPick(e.target.value || undefined)}
+        aria-label="Filter by family"
+        className={`${KX_FIELD} h-8 max-w-[11rem] cursor-pointer pr-5 text-[12px]`}
+      >
+        <option value="">all families</option>
+        {families.map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.name} ({f.count})
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function InfiniteLanguages({
   featured = [],
+  families = [],
   initialItems,
   initialCursor,
   canDelete = false,
 }: {
   featured?: DesignLanguage[];
+  families?: { id: string; name: string; count: number }[];
   initialItems: DesignLanguage[];
   initialCursor: string | null;
   canDelete?: boolean;
@@ -190,7 +226,16 @@ export function InfiniteLanguages({
       search={search}
       setSearch={setSearch}
       placeholder="Search languages…"
-      toolbar={<HueBar active={facets.hue} onPick={(h) => setFacet("hue", h)} />}
+      toolbar={
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <HueBar active={facets.hue} onPick={(h) => setFacet("hue", h)} />
+          <FamilySelect
+            families={families}
+            active={facets.family}
+            onPick={(id) => setFacet("family", id)}
+          />
+        </div>
+      }
       loading={loading}
       exhausted={cursor === null}
       empty={(browsing ? featured.length : 0) + gridItems.length === 0}

@@ -252,6 +252,8 @@
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+        <!-- Precomputed lowercase search blob for case-insensitive catalog search. -->
+        <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
       <!-- ArtStyle: an engine-agnostic style-transfer recipe (prompt template + reference images + slot recipes + proof shots) -->
@@ -316,6 +318,8 @@
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+        <!-- Precomputed lowercase search blob for case-insensitive catalog search. -->
+        <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
       <!-- Remix: a saved cross-lane mix (DesignLanguage + PaletteSystem + ArtStyle + composition) -->
