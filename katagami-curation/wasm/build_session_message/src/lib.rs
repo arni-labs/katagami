@@ -945,12 +945,31 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
             "human feedback to incorporate",
         ),
     ];
+    const ART_STYLE_KNOWLEDGE: &[(&str, &str)] = &[
+        (
+            "/system/knowledge/design-principles.md",
+            "embodiment standards",
+        ),
+        (
+            "/system/knowledge/quality-standards.md",
+            "quality thresholds",
+        ),
+        (
+            "/system/knowledge/feedback-log.md",
+            "human feedback to incorporate",
+        ),
+        (
+            "/knowledge/rules/art-style.md",
+            "art-style generation rules",
+        ),
+    ];
 
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
         "research-direction" => &[],
+        "synthesize-art-style" => ART_STYLE_KNOWLEDGE,
         _ => FULL_CURATION_KNOWLEDGE,
     }
 }
@@ -1231,6 +1250,14 @@ mod tests {
         assert!(knowledge_read_specs_for_skill("synthesize-language")
             .iter()
             .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
+    }
+
+    #[test]
+    fn art_style_synthesis_loads_art_style_rulebook() {
+        let specs = knowledge_read_specs_for_skill("synthesize-art-style");
+        assert!(specs
+            .iter()
+            .any(|(path, _)| *path == "/knowledge/rules/art-style.md"));
     }
 
     #[test]
