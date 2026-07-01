@@ -72,6 +72,10 @@
         <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ModelProvenance" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasModelProvenance" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Provenance tier (ADR-0016): WHO did the creative work — agent_generated | human_curated | human_authored -->
+        <Property Name="ProvenanceTier" Type="Edm.String" Nullable="false" DefaultValue="agent_generated" />
+        <Property Name="Provenance" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasProvenance" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Taste embedding: semantic vector for discovery (taste deck,
              related languages). JSON float array + the model that made it. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
@@ -165,6 +169,25 @@
         <Property Name="HistoricalContext" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="RelatedTaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="LanguageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- Direction: a reimagine brief / bake-off round; submissions link via DirectionId -->
+      <EntityType Name="Direction">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Open" />
+        <Property Name="Title" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Brief" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SourceLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleSlug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="IsBakeoff" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RoundLabel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ModelPool" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
@@ -326,6 +349,7 @@
         <EntitySet Name="PaletteSystems" EntityType="Katagami.PaletteSystem" />
         <EntitySet Name="ArtStyles" EntityType="Katagami.ArtStyle" />
         <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
+        <EntitySet Name="Directions" EntityType="Katagami.Direction" />
       </EntityContainer>
 
     </Schema>
