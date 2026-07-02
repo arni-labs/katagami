@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(new URL(next, origin));
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // Transport-keyed like the handshake cookies in start/route.ts.
+    secure: req.nextUrl.protocol === "https:",
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,

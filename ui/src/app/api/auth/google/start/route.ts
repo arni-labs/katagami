@@ -23,7 +23,10 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(handshake.url);
   const cookie = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // Keyed to the actual transport, not NODE_ENV: a production build served
+    // over http://localhost must not mark cookies Secure — Safari drops them,
+    // which kills the state/verifier round-trip and fails every sign-in.
+    secure: req.nextUrl.protocol === "https:",
     sameSite: "lax",
     path: "/",
     maxAge: 600,
