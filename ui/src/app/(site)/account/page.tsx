@@ -55,7 +55,7 @@ export default async function AccountPage() {
   ) => lane.find((e) => e.entity_id === id)?.fields.name ?? "—";
 
   const mine: MixRow[] = remixes
-    .filter((r) => (r.fields.creator_email ?? "") === user.email)
+    .filter((r) => (r.fields.creator_sub ?? "") === user.sub)
     .map((r) => ({
       id: r.entity_id,
       language: nameOf(languages, r.fields.design_language_id ?? ""),

@@ -47,7 +47,9 @@ export async function saveRemix(sel: RemixSelection): Promise<string> {
 export async function rateRemix(id: string, rating: number): Promise<void> {
   const user = await requireUser();
   const remix = await getRemix(id);
-  if ((remix.fields.creator_email ?? "") !== user.email) {
+  // Ownership is the stable Google subject id, not the email — emails change
+  // hands (and Workspace recycles them); subs don't.
+  if ((remix.fields.creator_sub ?? "") !== user.sub) {
     throw new Error("Only the mix's creator can rate it.");
   }
   const clamped = Math.max(1, Math.min(5, Math.round(rating)));

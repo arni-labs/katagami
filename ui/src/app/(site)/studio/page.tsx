@@ -33,10 +33,11 @@ export default async function StudioPage() {
   const art = toArtOpts(artStyles);
 
   // "Your mixes" means yours: creator-attributed remixes of the signed-in
-  // human. Filtered in app code — projected OData filters can silently omit
-  // entities (ARN-97), and pre-attribution saves carry no creator fields.
+  // human, matched on the stable Google subject id (emails change hands;
+  // subs don't). Filtered in app code — projected OData filters can silently
+  // omit entities (ARN-97), and pre-attribution saves carry no creator fields.
   const mine = user
-    ? savedRemixes.filter((r) => (r.fields.creator_email ?? "") === user.email)
+    ? savedRemixes.filter((r) => (r.fields.creator_sub ?? "") === user.sub)
     : [];
 
   const saved: SavedMix[] = mine.map((r) => ({

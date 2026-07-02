@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { googleAuthUrl } from "@/lib/google-oidc";
+import { beginGoogleAuth } from "@/lib/google-oidc";
 import {
   OAUTH_NEXT_COOKIE,
+  OAUTH_NONCE_COOKIE,
   OAUTH_STATE_COOKIE,
+  OAUTH_VERIFIER_COOKIE,
   isAuthConfigured,
   safeInternalPath,
 } from "@/lib/user-auth";
@@ -17,7 +19,8 @@ export async function GET(req: NextRequest) {
   }
   const state = crypto.randomUUID();
   const next = safeInternalPath(req.nextUrl.searchParams.get("next"));
-  const res = NextResponse.redirect(googleAuthUrl(origin, state));
+  const handshake = await beginGoogleAuth(origin, state);
+  const res = NextResponse.redirect(handshake.url);
   const cookie = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -26,6 +29,14 @@ export async function GET(req: NextRequest) {
     maxAge: 600,
   } as const;
   res.cookies.set(OAUTH_STATE_COOKIE, state, cookie);
-  if (next !== "/") res.cookies.set(OAUTH_NEXT_COOKIE, next, cookie);
+  res.cookies.set(OAUTH_VERIFIER_COOKIE, handshake.verifier, cookie);
+  res.cookies.set(OAUTH_NONCE_COOKIE, handshake.nonce, cookie);
+  if (next !== "/") {
+    res.cookies.set(OAUTH_NEXT_COOKIE, next, cookie);
+  } else {
+    // Clear any leftover target from an abandoned attempt so it can't
+    // redirect this fresh sign-in.
+    res.cookies.delete(OAUTH_NEXT_COOKIE);
+  }
   return res;
 }

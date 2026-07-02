@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
@@ -10,14 +10,40 @@ import { signOut } from "@/app/auth-actions";
 // Header identity chip — the human counterpart of the theme stamp next to it.
 // Signed out it's a "sign in" stamp; signed in it's your avatar opening a
 // small paper menu (account, sign out). Owner mode stays separate at /owner.
+//
+// The session is fetched client-side from /api/auth/me: reading cookies()
+// in the shared (site) layout would opt every route out of the full-route
+// cache, and this chip is the only personalized element on most pages.
 
 export type HeaderUser = { name: string; email: string; picture: string };
 
 const MENU_ITEM =
   "flex w-full cursor-pointer items-center gap-2 px-2.5 py-2 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground/80 outline-none transition-colors data-[highlighted]:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] data-[highlighted]:text-foreground";
 
-export function UserMenu({ user }: { user: HeaderUser | null }) {
+export function UserMenu() {
   const [, startTransition] = useTransition();
+  // undefined = still resolving; render a same-size blank so the header
+  // doesn't jump when the answer arrives.
+  const [user, setUser] = useState<HeaderUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d: { user: HeaderUser | null }) => {
+        if (alive) setUser(d.user ?? null);
+      })
+      .catch(() => {
+        if (alive) setUser(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (user === undefined) {
+    return <span aria-hidden className="inline-block h-7 w-7" />;
+  }
 
   if (!user) {
     return (
@@ -78,7 +104,14 @@ export function UserMenu({ user }: { user: HeaderUser | null }) {
             </Dropdown.Item>
             <Dropdown.Item
               className={MENU_ITEM}
-              onSelect={() => startTransition(() => signOut())}
+              onSelect={() =>
+                startTransition(async () => {
+                  // The layout persists through the action's client-side
+                  // redirect, so flip the chip ourselves.
+                  setUser(null);
+                  await signOut();
+                })
+              }
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden />
               sign out

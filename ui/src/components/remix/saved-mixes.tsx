@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RemixPreview } from "@/components/remix/remix-preview";
 import { rateRemix } from "@/app/remix-actions";
@@ -43,12 +43,20 @@ export function SavedMixes({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [rateFailed, setRateFailed] = useState(false);
   if (saved.length === 0) return null;
 
   function rate(id: string, n: number) {
     startTransition(async () => {
-      await rateRemix(id, n);
-      router.refresh();
+      try {
+        await rateRemix(id, n);
+        setRateFailed(false);
+        router.refresh();
+      } catch {
+        // Expired session or a refused rating — surface it inline instead of
+        // crashing to the route error boundary.
+        setRateFailed(true);
+      }
     });
   }
 
@@ -57,6 +65,11 @@ export function SavedMixes({
       <div className="mb-3 flex flex-wrap items-center gap-2.5">
         <span className="stamp text-[var(--yuzu)]">saved</span>
         <span className={KX_LABEL}>your mixes · click one to reopen it above · rate to teach taste</span>
+        {rateFailed ? (
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-destructive">
+            rating didn&apos;t stick — check you&apos;re still signed in
+          </span>
+        ) : null}
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {saved.map((m) => {

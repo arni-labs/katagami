@@ -11,6 +11,8 @@ import { cookies } from "next/headers";
 export const SESSION_COOKIE = "katagami_user";
 export const OAUTH_STATE_COOKIE = "katagami_oauth_state";
 export const OAUTH_NEXT_COOKIE = "katagami_oauth_next";
+export const OAUTH_VERIFIER_COOKIE = "katagami_oauth_verifier";
+export const OAUTH_NONCE_COOKIE = "katagami_oauth_nonce";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 export type SessionUser = {
@@ -85,8 +87,17 @@ export async function requireUser(): Promise<SessionUser> {
   return user;
 }
 
-// Post-sign-in redirect targets must stay on this site: a single leading
-// slash (no scheme, no //host, no /\host). Anything else falls back to "/".
+// Post-sign-in redirect targets must stay on this site. Control characters
+// are rejected outright — the WHATWG URL parser strips tab/CR/LF, so
+// "/\t/evil.com" would sail past a prefix check and resolve off-site — and
+// the survivor is validated by actually resolving it against a fixed origin.
 export function safeInternalPath(p?: string | null): string {
-  return p && /^\/(?![/\\])/.test(p) ? p : "/";
+  if (!p || /[\u0000-\u001f\\]/.test(p) || !/^\/(?!\/)/.test(p)) return "/";
+  try {
+    const url = new URL(p, "https://katagami.invalid");
+    if (url.origin !== "https://katagami.invalid") return "/";
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return "/";
+  }
 }
