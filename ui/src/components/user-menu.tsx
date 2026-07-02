@@ -42,7 +42,8 @@ export function UserMenu() {
   }, []);
 
   if (user === undefined) {
-    return <span aria-hidden className="inline-block h-7 w-7" />;
+    // Sized to the signed-in avatar button so returning users see no shift.
+    return <span aria-hidden className="inline-block h-8 w-8" />;
   }
 
   if (!user) {
