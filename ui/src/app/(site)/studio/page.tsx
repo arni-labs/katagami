@@ -5,6 +5,7 @@ import {
   listRemixes,
 } from "@/lib/odata";
 import { toLanguageOpts, toPaletteOpts, toArtOpts } from "@/lib/remix-options";
+import { getUser } from "@/lib/user-auth";
 import Link from "next/link";
 import { PageHero, Marker } from "@/components/page-hero";
 import { StudioClient } from "@/components/remix/studio-client";
@@ -18,18 +19,27 @@ export const metadata = {
 };
 
 export default async function StudioPage() {
-  const [languages, palettes, artStyles, savedRemixes] = await Promise.all([
-    listDesignLanguages("Status eq 'Published'").catch(() => []),
-    listPaletteSystems().catch(() => []),
-    listArtStyles().catch(() => []),
-    listRemixes("Status eq 'Saved'").catch(() => []),
-  ]);
+  const [user, languages, palettes, artStyles, savedRemixes] =
+    await Promise.all([
+      getUser(),
+      listDesignLanguages("Status eq 'Published'").catch(() => []),
+      listPaletteSystems().catch(() => []),
+      listArtStyles().catch(() => []),
+      listRemixes("Status eq 'Saved'").catch(() => []),
+    ]);
 
   const ui = toLanguageOpts(languages);
   const pal = toPaletteOpts(palettes);
   const art = toArtOpts(artStyles);
 
-  const saved: SavedMix[] = savedRemixes.map((r) => ({
+  // "Your mixes" means yours: creator-attributed remixes of the signed-in
+  // human. Filtered in app code — projected OData filters can silently omit
+  // entities (ARN-97), and pre-attribution saves carry no creator fields.
+  const mine = user
+    ? savedRemixes.filter((r) => (r.fields.creator_email ?? "") === user.email)
+    : [];
+
+  const saved: SavedMix[] = mine.map((r) => ({
     id: r.entity_id,
     ui: r.fields.design_language_id ?? "",
     palette: r.fields.palette_system_id ?? "",
@@ -57,7 +67,13 @@ export default async function StudioPage() {
         </div>
       ) : (
         <div className="mt-8">
-          <StudioClient ui={ui} palettes={pal} art={art} saved={saved} />
+          <StudioClient
+            ui={ui}
+            palettes={pal}
+            art={art}
+            saved={saved}
+            signedIn={Boolean(user)}
+          />
         </div>
       )}
     </div>

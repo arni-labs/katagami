@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getRemix } from "@/lib/odata";
 import { createEntity, dispatchAction } from "@/lib/odata-mutations";
+import { requireUser } from "@/lib/user-auth";
 
 export interface RemixSelection {
   designLanguageId: string;
@@ -11,14 +13,24 @@ export interface RemixSelection {
   slotAssignments?: string; // JSON: slot key -> reference id/url
 }
 
-/** Persist the current mix as a Remix entity, walked to Saved. Returns its id. */
+/**
+ * Persist the current mix as a Remix entity, walked to Saved and attributed
+ * to the signed-in human. Returns its id.
+ */
 export async function saveRemix(sel: RemixSelection): Promise<string> {
+  const user = await requireUser();
   const remix = await createEntity("Remixes");
   await dispatchAction("Remixes", remix.entity_id, "SetSelection", {
     design_language_id: sel.designLanguageId,
     palette_system_id: sel.paletteSystemId,
     art_style_id: sel.artStyleId,
     composition_key: sel.compositionKey,
+  });
+  await dispatchAction("Remixes", remix.entity_id, "SetCreator", {
+    creator_sub: user.sub,
+    creator_email: user.email,
+    creator_name: user.name,
+    creator_avatar_url: user.picture,
   });
   if (sel.slotAssignments) {
     await dispatchAction("Remixes", remix.entity_id, "SetSlotAssignments", {
@@ -27,12 +39,19 @@ export async function saveRemix(sel: RemixSelection): Promise<string> {
   }
   await dispatchAction("Remixes", remix.entity_id, "Save", {});
   revalidatePath("/studio");
+  revalidatePath("/account");
   return remix.entity_id;
 }
 
-/** Rate a saved mix 1–5. Feeds the remix-compatibility taste signal. */
+/** Rate one of your own mixes 1–5. Feeds the remix-compatibility taste signal. */
 export async function rateRemix(id: string, rating: number): Promise<void> {
+  const user = await requireUser();
+  const remix = await getRemix(id);
+  if ((remix.fields.creator_email ?? "") !== user.email) {
+    throw new Error("Only the mix's creator can rate it.");
+  }
   const clamped = Math.max(1, Math.min(5, Math.round(rating)));
   await dispatchAction("Remixes", id, "Rate", { rating: clamped });
   revalidatePath("/studio");
+  revalidatePath("/account");
 }

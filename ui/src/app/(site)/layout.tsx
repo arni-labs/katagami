@@ -4,6 +4,8 @@ import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { MobileMenu } from "@/components/mobile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
+import { getUser } from "@/lib/user-auth";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import {
   CommandPalette,
@@ -123,7 +125,13 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const searchIndex = await buildSearchIndex();
+  const [searchIndex, user] = await Promise.all([
+    buildSearchIndex(),
+    getUser(),
+  ]);
+  const headerUser = user
+    ? { name: user.name, email: user.email, picture: user.picture }
+    : null;
 
   return (
     <div className="flex min-h-full w-full max-w-full flex-col overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
@@ -161,10 +169,12 @@ export default async function SiteLayout({
           <div className="ml-auto hidden items-center gap-2.5 lg:flex">
             <CommandPaletteTrigger />
             <ThemeToggle />
+            <UserMenu user={headerUser} />
           </div>
           <div className="ml-auto flex items-center gap-2 lg:hidden">
             <CommandPaletteTrigger />
             <ThemeToggle />
+            <UserMenu user={headerUser} />
             <MobileMenu />
           </div>
         </nav>

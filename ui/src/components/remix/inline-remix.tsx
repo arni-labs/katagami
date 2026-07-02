@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RemixPreview } from "@/components/remix/remix-preview";
 import { EntityPicker, type PickItem } from "@/components/remix/entity-picker";
@@ -98,6 +99,7 @@ export function InlineRemix({
   art,
   fixed = {},
   enableSave = false,
+  signedIn = true,
   initial,
 }: {
   languages: LanguageOpt[];
@@ -105,6 +107,8 @@ export function InlineRemix({
   art: ArtOpt[];
   fixed?: { language?: string; palette?: string; art?: string };
   enableSave?: boolean;
+  /** Saving is a signed-in act; signed out, the save button becomes the door. */
+  signedIn?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
 }) {
   const router = useRouter();
@@ -268,9 +272,15 @@ export function InlineRemix({
           </button>
         ) : null}
         {enableSave ? (
-          <button type="button" onClick={doSave} disabled={!haveAll || pending} className={KX_BTN_PAPER}>
-            {saved ? "Saved" : pending ? "Saving" : "Save mix"}
-          </button>
+          signedIn ? (
+            <button type="button" onClick={doSave} disabled={!haveAll || pending} className={KX_BTN_PAPER}>
+              {saved ? "Saved" : pending ? "Saving" : "Save mix"}
+            </button>
+          ) : (
+            <Link href="/signin?next=/studio" className={KX_BTN_PAPER}>
+              Sign in to save
+            </Link>
+          )
         ) : null}
         <button
           type="button"
