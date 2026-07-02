@@ -123,6 +123,45 @@ pub fn family_id(taxonomy_ids_str: &str, tax_parents: &HashMap<String, String>) 
     cur
 }
 
+/// Lowercase search blob for a lane entity (PaletteSystems / ArtStyles), mirroring
+/// ui/scripts/backfill-lane-search.mjs: name + slug + tags, plus medium (art) or
+/// mood summary/hue/temperature (palettes).
+pub fn lane_search_blob(set_name: &str, fields: &Value) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    for k in ["name", "slug"] {
+        if let Some(s) = fields.get(k).and_then(|v| v.as_str()) {
+            parts.push(s.to_string());
+        }
+    }
+    if let Some(tags) = fields
+        .get("tags")
+        .and_then(|v| v.as_str())
+        .and_then(|s| serde_json::from_str::<Vec<Value>>(s).ok())
+    {
+        for t in tags {
+            if let Some(s) = t.as_str() {
+                parts.push(s.to_string());
+            }
+        }
+    }
+    if set_name == "ArtStyles" {
+        if let Some(m) = fields.get("medium").and_then(|v| v.as_str()) {
+            parts.push(m.to_string());
+        }
+    } else if let Some(mood) = fields
+        .get("mood")
+        .and_then(|v| v.as_str())
+        .and_then(|s| serde_json::from_str::<Value>(s).ok())
+    {
+        for k in ["summary", "key_hue", "temperature"] {
+            if let Some(s) = mood.get(k).and_then(|v| v.as_str()) {
+                parts.push(s.to_string());
+            }
+        }
+    }
+    parts.join(" ").to_lowercase().split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -171,5 +210,13 @@ mod tests {
         assert_eq!(family_id("[\"orphan\"]", &m), "orphan");
         assert_eq!(family_id("[\"unknown\",\"leaf\"]", &m), "root");
         assert_eq!(family_id("[]", &m), "");
+    }
+
+    #[test]
+    fn lane_blobs() {
+        let art = json!({ "name": "Risograph Ember", "slug": "risograph-ember", "tags": "[\"riso\"]", "medium": "risograph" });
+        assert_eq!(lane_search_blob("ArtStyles", &art), "risograph ember risograph-ember riso risograph");
+        let pal = json!({ "name": "Teal One", "slug": "teal-one", "tags": "[]", "mood": "{\"summary\":\"Cool\",\"key_hue\":\"teal\"}" });
+        assert_eq!(lane_search_blob("PaletteSystems", &pal), "teal one teal-one cool teal");
     }
 }
