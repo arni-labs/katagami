@@ -1826,6 +1826,27 @@ fn walk_lane_entity_to_published(
         publish_action,
         &json!({}),
     )?;
+    // Derive + store the lane's case-insensitive search blob (compute here, Temper
+    // governs the write). Non-fatal — never fails a publish.
+    let empty = json!({});
+    let sb = facets::lane_search_blob(set_name, entity.get("fields").unwrap_or(&empty));
+    if !sb.is_empty()
+        && dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            set_name,
+            entity_id,
+            "AttachComputedFacets",
+            &json!({ "search_blob": sb }),
+        )
+        .is_err()
+    {
+        ctx.log(
+            "warn",
+            &format!("facets: AttachComputedFacets failed for {set_name}('{entity_id}') (non-fatal)"),
+        );
+    }
     Ok(())
 }
 

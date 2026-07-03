@@ -4,6 +4,7 @@ import { HeaderNav } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { MobileMenu } from "@/components/mobile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import {
   CommandPalette,
@@ -161,10 +162,12 @@ export default async function SiteLayout({
           <div className="ml-auto hidden items-center gap-2.5 lg:flex">
             <CommandPaletteTrigger />
             <ThemeToggle />
+            <UserMenu />
           </div>
           <div className="ml-auto flex items-center gap-2 lg:hidden">
             <CommandPaletteTrigger />
             <ThemeToggle />
+            <UserMenu />
             <MobileMenu />
           </div>
         </nav>

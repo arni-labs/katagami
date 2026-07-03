@@ -14,11 +14,13 @@ export function StudioClient({
   palettes,
   art,
   saved,
+  signedIn,
 }: {
   ui: LanguageOpt[];
   palettes: PaletteOpt[];
   art: ArtOpt[];
   saved: SavedMix[];
+  signedIn: boolean;
 }) {
   const [initial, setInitial] = useState<LoadSelection | undefined>(undefined);
   const [nonce, setNonce] = useState(0);
@@ -37,9 +39,12 @@ export function StudioClient({
         palettes={palettes}
         art={art}
         enableSave
+        signedIn={signedIn}
         initial={initial}
       />
-      <SavedMixes saved={saved} languages={ui} palettes={palettes} art={art} onLoad={load} />
+      {signedIn ? (
+        <SavedMixes saved={saved} languages={ui} palettes={palettes} art={art} onLoad={load} />
+      ) : null}
     </div>
   );
 }

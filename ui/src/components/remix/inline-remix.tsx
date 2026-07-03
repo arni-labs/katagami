@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RemixPreview } from "@/components/remix/remix-preview";
 import { EntityPicker, type PickItem } from "@/components/remix/entity-picker";
@@ -98,6 +99,7 @@ export function InlineRemix({
   art,
   fixed = {},
   enableSave = false,
+  signedIn = true,
   initial,
 }: {
   languages: LanguageOpt[];
@@ -105,6 +107,8 @@ export function InlineRemix({
   art: ArtOpt[];
   fixed?: { language?: string; palette?: string; art?: string };
   enableSave?: boolean;
+  /** Saving is a signed-in act; signed out, the save button becomes the door. */
+  signedIn?: boolean;
   initial?: { langId?: string; palId?: string; artId?: string; compositionKey?: string };
 }) {
   const router = useRouter();
@@ -118,6 +122,7 @@ export function InlineRemix({
   });
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const lang = languages.find((l) => l.id === langId) ?? languages[0];
   const pal = palettes.find((p) => p.id === palId) ?? palettes[0];
@@ -212,16 +217,24 @@ export function InlineRemix({
   function doSave() {
     if (!haveAll) return;
     startTransition(async () => {
-      await saveRemix({
-        designLanguageId: lang.id,
-        paletteSystemId: pal.id,
-        artStyleId: sel.id,
-        compositionKey: comp.key,
-        slotAssignments: JSON.stringify({ hero }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1600);
-      router.refresh();
+      try {
+        await saveRemix({
+          designLanguageId: lang.id,
+          paletteSystemId: pal.id,
+          artStyleId: sel.id,
+          compositionKey: comp.key,
+          slotAssignments: JSON.stringify({ hero }),
+        });
+        setSaveFailed(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1600);
+        router.refresh();
+      } catch {
+        // Most likely an expired session mid-visit (signedIn is a render-time
+        // snapshot). Keep the mix on screen and point at the door instead of
+        // crashing to the route error boundary.
+        setSaveFailed(true);
+      }
     });
   }
 
@@ -268,9 +281,23 @@ export function InlineRemix({
           </button>
         ) : null}
         {enableSave ? (
-          <button type="button" onClick={doSave} disabled={!haveAll || pending} className={KX_BTN_PAPER}>
-            {saved ? "Saved" : pending ? "Saving" : "Save mix"}
-          </button>
+          signedIn ? (
+            <button type="button" onClick={doSave} disabled={!haveAll || pending} className={KX_BTN_PAPER}>
+              {saved ? "Saved" : pending ? "Saving" : saveFailed ? "Retry save" : "Save mix"}
+            </button>
+          ) : (
+            <Link href="/signin?next=/studio" className={KX_BTN_PAPER}>
+              Sign in to save
+            </Link>
+          )
+        ) : null}
+        {saveFailed ? (
+          <Link
+            href="/signin?next=/studio"
+            className="font-mono text-[10px] uppercase tracking-[0.14em] text-destructive underline-offset-2 hover:underline"
+          >
+            couldn&apos;t save — check you&apos;re signed in →
+          </Link>
         ) : null}
         <button
           type="button"

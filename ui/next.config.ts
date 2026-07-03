@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
     // Cache them long so the image-heavy art-styles gallery serves /_next/image
     // HITs instead of re-optimizing hundreds of images on every cold load.
     minimumCacheTTL: 2592000, // 30 days
+    // Google account avatars (header chip, /account) — lh3/lh4/… subdomains.
+    remotePatterns: [
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+    ],
   },
 };
 
