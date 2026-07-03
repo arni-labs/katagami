@@ -20,6 +20,7 @@ const layout = read("src/app/(site)/layout.tsx");
 const studio = read("src/app/(site)/studio/page.tsx");
 const authActions = read("src/app/auth-actions.ts");
 const inlineRemix = read("src/components/remix/inline-remix.tsx");
+const owner = read("src/lib/owner.ts");
 
 const required = [
   // The session is off, never insecurely on: no fallback secret anywhere.
@@ -53,6 +54,11 @@ const required = [
   // dynamic; the header chip hydrates from /api/auth/me instead.
   ["layout stays cookie-free (full-route cache preserved)", layout, /^(?![\s\S]*getUser)[\s\S]*$/],
   ["identity endpoint is uncacheable", me, /no-store/],
+  // Owner mode is identity (ARN-144): a signed-in sub on the allowlist —
+  // no passphrase, no per-browser unlock cookie, no HMAC grant path.
+  ["owner mode keys on the sub allowlist", owner, /KATAGAMI_OWNER_SUBS/],
+  ["owner check reads the signed-in session", owner, /getUser/],
+  ["no passphrase grant path remains", owner, /^(?![\s\S]*(grantOwnerSession|createHmac|timingSafeEqual|process\.env\.KATAGAMI_OWNER_SECRET))[\s\S]*$/],
 ];
 
 let failed = 0;

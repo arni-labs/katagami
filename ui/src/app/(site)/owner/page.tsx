@@ -6,18 +6,14 @@ import {
   Check,
   FileText,
   GitMerge,
-  KeyRound,
-  Lock,
+  LogIn,
   Sparkles,
-  Unlock,
   X,
 } from "lucide-react";
 import {
   acceptTasteRule,
-  lockOwnerMode,
   queueTasteDistillation,
   rejectTasteRule,
-  unlockOwnerMode,
 } from "@/app/actions";
 import {
   getFileUrl,
@@ -27,6 +23,9 @@ import {
 } from "@/lib/odata";
 import type { CurationJob, TasteRule } from "@/lib/odata";
 import { isOwner, isOwnerModeConfigured } from "@/lib/owner";
+import { getUser } from "@/lib/user-auth";
+import { UserAvatar } from "@/components/user-menu";
+import { KX_BTN_PAPER } from "@/lib/katagami-ui";
 import {
   Marker,
   PageHero,
@@ -36,11 +35,6 @@ import {
   StickyNote,
   WashiTape,
 } from "@/components/scrapbook";
-
-const errorCopy: Record<string, string> = {
-  "bad-passphrase": "That passphrase did not unlock owner mode.",
-  "not-configured": "Set KATAGAMI_OWNER_SECRET on the server first.",
-};
 
 type TasteRuleDashboard = {
   proposed: TasteRule[];
@@ -287,21 +281,12 @@ function tasteRuleIds(rule: TasteRule, ...keys: string[]): string[] {
   return [];
 }
 
-export default async function OwnerPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    error?: string;
-    locked?: string;
-    unlocked?: string;
-  }>;
-}) {
-  const [sp, owner, configured] = await Promise.all([
-    searchParams,
+export default async function OwnerPage() {
+  const [user, owner, configured] = await Promise.all([
+    getUser(),
     isOwner(),
     Promise.resolve(isOwnerModeConfigured()),
   ]);
-  const error = sp.error ? errorCopy[sp.error] : undefined;
   const tasteRules = await loadTasteRuleDashboard(owner);
 
   return (
@@ -328,9 +313,10 @@ export default async function OwnerPage({
         title={<Marker color={owner ? "sakura" : "sumire"}>Owner mode</Marker>}
         description={
           <>
-            Unlock this browser to reveal curator controls in the gallery and
-            language detail pages. The server still checks owner mode before it
-            archives anything.
+            Owner access follows your Google account: sign in with an
+            allowlisted account and the curator controls appear in the gallery
+            and language detail pages, on any device. The server still checks
+            the allowlist before it archives anything.
           </>
         }
         rightSlot={
@@ -339,7 +325,7 @@ export default async function OwnerPage({
               owner ? "text-[var(--sakura)]" : "text-[var(--sumire)]"
             }`}
           >
-            {owner ? "unlocked" : "locked"}
+            {owner ? "owner" : "locked"}
           </span>
         }
       />
@@ -353,72 +339,50 @@ export default async function OwnerPage({
         />
         <StickyNote className="p-5 sm:p-6">
           <SectionHeading
-            eyebrow={owner ? "session active" : "unlock"}
+            eyebrow={owner ? "access active" : "access"}
             eyebrowColor={owner ? "sakura" : "sumire"}
           >
             <Marker color={owner ? "sakura" : "sumire"}>
-              {owner ? "archive controls are visible" : "enter passphrase"}
+              {owner ? "Curator controls are live" : "Owner access"}
             </Marker>
           </SectionHeading>
 
-          {owner ? (
-            <div className="space-y-5">
-              {sp.unlocked ? (
-                <p className="text-sm text-muted-foreground">
-                  Owner mode is active in this browser.
+          {!configured ? (
+            <p className="text-sm text-muted-foreground">
+              Set{" "}
+              <code className="font-mono text-[12px]">KATAGAMI_OWNER_SUBS</code>{" "}
+              on the server first — a comma-separated allowlist of Google
+              subject ids. Find yours on any mix you saved (
+              <code className="font-mono text-[12px]">creator_sub</code>).
+            </p>
+          ) : user ? (
+            <div className="flex flex-wrap items-center gap-4">
+              <UserAvatar user={user} size={40} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium leading-tight text-foreground">
+                  {user.name || user.email}
                 </p>
-              ) : null}
-              <form action={lockOwnerMode}>
-                <button className="inline-flex h-9 items-center gap-1.5 bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))] shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground">
-                  <Lock className="h-3.5 w-3.5" />
-                  lock owner mode
-                </button>
-              </form>
+                <p className="mt-0.5 font-mono text-[11px] lowercase tracking-[0.04em] text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {owner
+                  ? "This account is on the owner list."
+                  : "This account is not on the owner list."}
+              </p>
             </div>
           ) : (
-            <form action={unlockOwnerMode} className="space-y-4">
-              <div className="space-y-2">
-                <label
-                  htmlFor="owner-passphrase"
-                  className="block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
-                >
-                  owner passphrase
-                </label>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <span className="relative flex-1">
-                    <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      id="owner-passphrase"
-                      name="passphrase"
-                      type="password"
-                      autoComplete="current-password"
-                      disabled={!configured}
-                      className="h-10 w-full min-w-0 border-0 border-b-2 border-foreground/15 bg-background/70 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-[var(--sumire)] disabled:cursor-not-allowed disabled:opacity-60"
-                      placeholder={
-                        configured
-                          ? "Only the owner knows this"
-                          : "Set KATAGAMI_OWNER_SECRET first"
-                      }
-                    />
-                  </span>
-                  <button
-                    disabled={!configured}
-                    className="inline-flex h-10 items-center justify-center gap-1.5 bg-[color-mix(in_srgb,var(--sumire)_14%,var(--paper-stamp-mix))] px-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[color-mix(in_oklch,var(--sumire)_72%,var(--foreground))] shadow-[0_1px_2px_rgba(30,35,45,0.05)] transition-all hover:-translate-y-[2px] hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    <Unlock className="h-3.5 w-3.5" />
-                    unlock
-                  </button>
-                </div>
-              </div>
-              {error ? (
-                <p className="text-sm font-medium text-destructive">{error}</p>
-              ) : null}
-              {sp.locked ? (
-                <p className="text-sm text-muted-foreground">
-                  Owner mode is locked for this browser.
-                </p>
-              ) : null}
-            </form>
+            <div className="space-y-4">
+              <p className="max-w-md text-sm text-muted-foreground">
+                No passphrase, no per-browser unlock — sign in with the
+                owner&apos;s Google account and everything lights up.
+              </p>
+              <Link href="/signin?next=/owner" className={KX_BTN_PAPER}>
+                <LogIn className="h-3.5 w-3.5" aria-hidden />
+                sign in
+              </Link>
+            </div>
           )}
         </StickyNote>
       </section>
