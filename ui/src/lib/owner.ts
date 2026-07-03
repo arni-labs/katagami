@@ -20,6 +20,10 @@ export function isOwnerModeConfigured(): boolean {
 }
 
 export async function isOwner(): Promise<boolean> {
+  // Short-circuit before touching cookies: an unconfigured deploy stays
+  // fully static on the pages that ask (the old passphrase code behaved
+  // the same way).
+  if (!isOwnerModeConfigured()) return false;
   const user = await getUser();
   return Boolean(user && ownerSubs().includes(user.sub));
 }

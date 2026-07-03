@@ -83,6 +83,7 @@ export async function addCuratorNotes(
   id: string,
   notes: string,
 ): Promise<void> {
+  await assertOwner();
   await dispatchAction("DesignLanguages", id, "AddCuratorNotes", {
     curator_notes: notes,
   });
