@@ -144,7 +144,7 @@ function parseJson(raw) {
 
 async function fetchPublished(set) {
   const out = [];
-  let url = `${apiUrl}/tdata/${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=200`;
+  let url = `${apiUrl}/tdata/${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=1000`;
   while (url) {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`list ${set} failed: HTTP ${res.status}`);

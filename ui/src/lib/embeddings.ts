@@ -14,6 +14,43 @@ export const TASTE_EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 export const TASTE_EMBEDDING_DIM = 384;
 export const TASTE_DOC_VERSION = "taste-doc-v1";
 
+/** A stored taste_vector is usable only when its model matches the current
+ *  space — vectors from different models are not comparable. */
+export function parseStoredTasteVector(fields: {
+  taste_vector?: string;
+  taste_vector_model?: string;
+}): number[] | null {
+  if (fields.taste_vector_model !== TASTE_EMBEDDING_MODEL) return null;
+  if (!fields.taste_vector) return null;
+  try {
+    const vector = JSON.parse(fields.taste_vector) as unknown;
+    if (
+      Array.isArray(vector) &&
+      vector.length === TASTE_EMBEDDING_DIM &&
+      vector.every((v) => typeof v === "number")
+    ) {
+      return vector;
+    }
+  } catch {
+    // malformed stored vector — treat as absent
+  }
+  return null;
+}
+
+/** Stored vectors are L2-normalized at embed time, but don't assume it. */
+export function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length && i < b.length; i += 1) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  const denom = Math.sqrt(na) * Math.sqrt(nb);
+  return denom > 0 ? dot / denom : 0;
+}
+
 export interface EmbeddingDocInput {
   name?: string;
   slug?: string;
@@ -101,7 +138,13 @@ let extractorPromise: Promise<FeatureExtractor> | null = null;
 async function getExtractor(): Promise<FeatureExtractor> {
   if (!extractorPromise) {
     extractorPromise = (async () => {
-      const { pipeline } = await import("@xenova/transformers");
+      const { pipeline, env } = await import("@xenova/transformers");
+      // Serverless functions have a read-only filesystem except /tmp; the
+      // default cache dir (inside node_modules) is not writable there, so the
+      // model download would fail after loading the runtime.
+      if (process.env.VERCEL) {
+        env.cacheDir = "/tmp/xenova-transformers-cache";
+      }
       const extractor = await pipeline("feature-extraction", TASTE_EMBEDDING_MODEL, {
         quantized: true,
       });

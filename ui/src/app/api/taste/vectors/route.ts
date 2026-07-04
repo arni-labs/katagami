@@ -12,6 +12,7 @@ import {
   buildEmbeddingDocument,
   buildPaletteEmbeddingDocument,
   embedDocument,
+  parseStoredTasteVector,
   TASTE_EMBEDDING_DIM,
   TASTE_EMBEDDING_MODEL,
 } from "@/lib/embeddings";
@@ -27,16 +28,7 @@ function storedVector(fields: {
   taste_vector?: string;
   taste_vector_model?: string;
 }): number[] | null {
-  if (fields.taste_vector_model !== TASTE_EMBEDDING_MODEL) return null;
-  const vector = parseJson<number[]>(fields.taste_vector);
-  if (
-    Array.isArray(vector) &&
-    vector.length === TASTE_EMBEDDING_DIM &&
-    vector.every((v) => typeof v === "number")
-  ) {
-    return vector;
-  }
-  return null;
+  return parseStoredTasteVector(fields);
 }
 
 /**
@@ -95,8 +87,10 @@ export async function GET() {
         }),
       );
     }
-  } catch {
-    // lane unavailable — the others may still load
+  } catch (err) {
+    // lane unavailable — the others may still load, but say so (a silent
+    // catch here hid the onnxruntime load failure entirely)
+    console.error("taste/vectors: design-language lane failed:", err);
   }
 
   try {
@@ -118,8 +112,8 @@ export async function GET() {
         }),
       );
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error("taste/vectors: lane failed:", err);
   }
 
   try {
@@ -138,8 +132,8 @@ export async function GET() {
         }),
       );
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error("taste/vectors: lane failed:", err);
   }
 
   if (!anyLaneLoaded) {
