@@ -93,7 +93,7 @@ Embedding generation (API calls, nondeterministic floats) — producers are post
 
 ## 6. Open questions for sign-off
 
-1. OData surface: bound function (a) vs query option (b)? (Recommendation: a.)
+1. ~~OData surface: bound function (a) vs query option (b)?~~ **Resolved (Rita, 2026-07-04): whichever is preferable for agents — that is the bound function.** Agents consume this through tool calls, and a bound function's named parameters map 1:1 onto a tool schema (`Temper.Nearest(decl, to, k, filter)` ≡ one MCP tool); the query option would make agents compose nested custom grammar inside a URL string, where they reliably fumble quoting, and errors surface as parse failures instead of "k must be a number."
 2. Should v1 `Nearest` accept an inline `filter` param (pre-ranking equality filter), or ship filter composition in v2?
 3. Turso: accept watermark semantics for v1 (recommended), or block on closing the co-commit gap first?
 4. Katagami consumer blend: does gallery *search* also rank by vector in phase C, or only "related" + the agent tool first?
