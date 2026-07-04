@@ -233,8 +233,23 @@ class WritingLaneWiringContractTests(unittest.TestCase):
             "katagami:voice-bands/v1",
             "min_words_to_evaluate",
             "no evaluable evidence",
+            "CURATOR GATE",
+            '"auto_publish": false',
+            "char_trigrams",
+            "sentence_openers",
+            "connectives_per_1000_words",
+            "hapax_ratio",
         ]:
             self.assertIn(marker, self.FINALIZER)
+
+    def test_writing_styles_never_auto_publish(self):
+        src = self.FINALIZER
+        start = src.index("fn verify_synthesized_writing_styles")
+        end = src.index("fn verify_voice_consent")
+        body = src[start:end]
+        self.assertNotIn("walk_lane_entity_to_published", body)
+        self.assertIn('"MarkQualityPassed"', body)
+        self.assertNotIn('"Publish"', body.replace("AttachPublishedAssets", ""))
 
     def test_assets_worker_serves_writing_styles(self):
         worker = (self.CURATION.parent / "infra" / "cloudflare" / "katagami-assets-worker" / "src" / "index.js").read_text()

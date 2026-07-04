@@ -48,11 +48,6 @@ export function WritingStyleCard({ item }: { item: WritingStyleItem }) {
           {item.persona}
         </p>
       ) : null}
-      {item.refusal ? (
-        <p className="mt-4 text-[13px] italic leading-relaxed text-foreground/80">
-          &ldquo;{item.refusal}&rdquo;
-        </p>
-      ) : null}
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
         {item.tone.slice(1).map((t) => (
           <span

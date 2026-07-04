@@ -2,9 +2,11 @@ import {
   listArtStyles,
   listDesignLanguages,
   listPaletteSystems,
+  listWritingStyles,
   taxonomyFamilyIndex,
 } from "@/lib/odata";
-import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
+import { toArtStyleItem, toPaletteItem, toWritingStyleItem } from "@/lib/lane-items";
+import { WritingStyleCard } from "@/components/writing-style-card";
 import { ArtStyleCatalog, PaletteCatalog } from "@/components/lane-catalog";
 import { LanguageCard } from "@/components/language-card";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
@@ -58,10 +60,13 @@ export default async function UnderReviewPage() {
   // UnderReview-only — the published catalog lives on the gallery pages; this is
   // the curation queue, kept deliberately separate so the two never mix.
   const owner = await isOwner();
-  const [languages, paletteRows, artRows, taxFamily] = await Promise.all([
+  const [languages, paletteRows, artRows, writingRows, taxFamily] = await Promise.all([
     listDesignLanguages(UNDER_REVIEW).catch(() => []),
     listPaletteSystems(UNDER_REVIEW).catch(() => []),
     listArtStyles(UNDER_REVIEW).catch(() => []),
+    // Writing styles are owner-only end to end; the queue section renders
+    // only for the owner.
+    owner ? listWritingStyles(UNDER_REVIEW).catch(() => []) : Promise.resolve([]),
     taxonomyFamilyIndex().catch(
       () => new Map<string, { name: string; parentId: string }>(),
     ),
@@ -72,7 +77,8 @@ export default async function UnderReviewPage() {
   const langs = languages.filter((l) => l.fields.name);
   const palettes = paletteRows.map(toPaletteItem);
   const artStyles = artRows.map(toArtStyleItem);
-  const total = langs.length + palettes.length + artStyles.length;
+  const writingStyles = writingRows.map(toWritingStyleItem);
+  const total = langs.length + palettes.length + artStyles.length + writingStyles.length;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-10">
@@ -152,6 +158,21 @@ export default async function UnderReviewPage() {
               <NoneYet what="art styles" />
             )}
           </section>
+
+          {owner && writingStyles.length ? (
+            <section className="space-y-5">
+              <SectionHeading
+                label="Writing styles"
+                count={writingStyles.length}
+                accent="matcha"
+              />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {writingStyles.map((item) => (
+                  <WritingStyleCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       )}
     </div>

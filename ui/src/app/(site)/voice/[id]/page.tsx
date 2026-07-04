@@ -8,6 +8,7 @@ import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scr
 import { CopyButton } from "@/components/copy-button";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
+import { PublishVoiceButton } from "@/components/publish-voice-button";
 
 export const dynamic = "force-dynamic";
 
@@ -92,17 +93,33 @@ export default async function VoiceDetailPage({
         }
         description={persona || "A verifiable, consent-clean voice contract."}
         rightSlot={
-          <Stamp color="matcha">
-            {BASIS_LABEL[consent.basis ?? ""] ?? "voice"}
+          <Stamp color={ws.status === "Published" ? "matcha" : "yuzu"}>
+            {ws.status === "Published"
+              ? (BASIS_LABEL[consent.basis ?? ""] ?? "voice")
+              : "under review"}
           </Stamp>
         }
       />
+
+      {ws.status === "UnderReview" ? (
+        <StickyNote tint="yuzu" className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-[14px] leading-relaxed text-foreground">
+              Mechanics verified by the finalizer; taste is yours. Publishing
+              is one click once this voice reads right.
+            </p>
+            <span className="ml-auto">
+              <PublishVoiceButton id={id} />
+            </span>
+          </div>
+        </StickyNote>
+      ) : null}
 
       {/* The refusals lead — taste is what you reject. */}
       {refusals.length ? (
         <StickyNote tint="sakura" className="p-5 sm:p-6">
           <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Never
+            This voice never
           </div>
           <ul className="space-y-2">
             {refusals.map((r, i) => (

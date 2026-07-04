@@ -2669,12 +2669,45 @@ fn verify_synthesized_writing_styles(
             )?;
         }
 
-        walk_lane_entity_to_published(ctx, api_url, headers, "WritingStyles", id, "Publish")?;
+        // CURATOR GATE (Rita, 2026-07-04): writing styles never auto-publish.
+        // Mechanics are machine-verified above; taste stays human. Walk the
+        // entity to UnderReview fully publish-ready (quality marked, assets
+        // attached, every Publish guard satisfied) and STOP — the curator
+        // reads the voice and dispatches Publish from the owner UI.
+        let current = load_required_entity(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "missing_writing_style",
+        )?;
+        if entity_status_value(&current) == "Draft" {
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyles",
+                id,
+                "SubmitForReview",
+                &json!({}),
+            )?;
+        }
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "MarkQualityPassed",
+            &json!({}),
+        )?;
     }
     Ok(json!({
         "validated": true,
         "job_type": "synthesize_writing_style",
-        "published_writing_style_ids": ids,
+        "review_ready_writing_style_ids": ids,
+        "auto_publish": false,
     }))
 }
 
@@ -2816,6 +2849,63 @@ fn js_divergence(p: &[f64], q: &[f64]) -> f64 {
     (0.5 * kl(p, &m) + 0.5 * kl(q, &m)).max(0.0)
 }
 
+// ── Bands v2: evenness + character-level fingerprint (2026-07-04) ──
+// AI-text detectors mostly detect EVENNESS (uniform rhythm, repeated openers,
+// connective overuse). These are the deterministic cousins of those signals —
+// no reference LM required — plus char-trigram distance, one of the strongest
+// classical authorship features.
+
+const CONNECTIVES: [&str; 14] = [
+    "however", "moreover", "furthermore", "additionally", "thus", "therefore",
+    "indeed", "notably", "importantly", "crucially", "consequently",
+    "nevertheless", "nonetheless", "ultimately",
+];
+
+fn paragraphs_of(text: &str) -> Vec<String> {
+    text.split("\n\n")
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .collect()
+}
+
+fn char_trigram_distribution(text: &str) -> std::collections::BTreeMap<String, f64> {
+    let cleaned: String = text
+        .to_ascii_lowercase()
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == ' ' || c == '\'' { c } else { ' ' })
+        .collect();
+    let chars: Vec<char> = cleaned.chars().collect();
+    let mut counts: std::collections::BTreeMap<String, f64> = std::collections::BTreeMap::new();
+    for window in chars.windows(3) {
+        let gram: String = window.iter().collect();
+        if gram.trim().len() < 2 {
+            continue;
+        }
+        *counts.entry(gram).or_insert(0.0) += 1.0;
+    }
+    let total: f64 = counts.values().sum();
+    if total > 0.0 {
+        for value in counts.values_mut() {
+            *value /= total;
+        }
+    }
+    counts
+}
+
+fn trigram_js_divergence(
+    p: &std::collections::BTreeMap<String, f64>,
+    q: &std::collections::BTreeMap<String, f64>,
+) -> f64 {
+    let keys: std::collections::BTreeSet<&String> = p.keys().chain(q.keys()).collect();
+    let mut pv = Vec::with_capacity(keys.len());
+    let mut qv = Vec::with_capacity(keys.len());
+    for key in keys {
+        pv.push(*p.get(key).unwrap_or(&0.0));
+        qv.push(*q.get(key).unwrap_or(&0.0));
+    }
+    js_divergence(&pv, &qv)
+}
+
 fn range_of(value: Option<&serde_json::Value>) -> Option<(f64, f64)> {
     let arr = value?.as_array()?;
     if arr.len() != 2 {
@@ -2858,9 +2948,16 @@ fn check_voice_bands(
         })
         .unwrap_or_default();
 
-    // The corpus aggregate is the function-word reference for self-consistency.
+    // The corpus aggregate is the reference for self-consistency: function
+    // words and character trigrams both compare each text against the whole.
     let all_words: Vec<String> = texts.iter().flat_map(|(_, body)| words_of(body)).collect();
     let reference_dist = function_word_distribution(&all_words);
+    let all_text: String = texts
+        .iter()
+        .map(|(_, body)| body.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let reference_trigrams = char_trigram_distribution(&all_text);
 
     let mut evaluated = 0usize;
     for (label, body) in texts {
@@ -2958,6 +3055,108 @@ fn check_voice_bands(
             if dist > max_distance {
                 return Err(format!(
                     "{label}: function-word divergence {dist:.3} above {max_distance}"
+                ));
+            }
+        }
+
+        if let Some(max_distance) = bands
+            .get("char_trigrams")
+            .and_then(|v| v.get("max_distance"))
+            .and_then(|v| v.as_f64())
+        {
+            let dist = trigram_js_divergence(&char_trigram_distribution(body), &reference_trigrams);
+            if dist > max_distance {
+                return Err(format!(
+                    "{label}: char-trigram divergence {dist:.3} above {max_distance}"
+                ));
+            }
+        }
+
+        if let Some(max_share) = bands
+            .get("sentence_openers")
+            .and_then(|v| v.get("max_top_share"))
+            .and_then(|v| v.as_f64())
+        {
+            let sentences = sentences_of(body);
+            if sentences.len() >= 8 {
+                let mut opener_counts: std::collections::BTreeMap<String, usize> =
+                    std::collections::BTreeMap::new();
+                for sentence in &sentences {
+                    if let Some(first) = words_of(sentence).into_iter().next() {
+                        *opener_counts.entry(first).or_insert(0) += 1;
+                    }
+                }
+                if let Some((opener, top)) = opener_counts.iter().max_by_key(|(_, n)| **n) {
+                    let share = *top as f64 / sentences.len() as f64;
+                    if share > max_share {
+                        return Err(format!(
+                            "{label}: {share:.0}% of sentences open with '{opener}' (ceiling {:.0}%) — evenness tell",
+                            max_share * 100.0, share = share * 100.0
+                        ));
+                    }
+                }
+            }
+        }
+
+        if let Some(range) = bands.get("connectives_per_1000_words") {
+            if let Some((lo, hi)) = range_of(Some(range)) {
+                let count = words
+                    .iter()
+                    .filter(|w| CONNECTIVES.contains(&w.as_str()))
+                    .count();
+                let rate = count as f64 * 1000.0 / words.len() as f64;
+                if rate < lo || rate > hi {
+                    return Err(format!(
+                        "{label}: connective rate {rate:.1}/1000 outside [{lo}, {hi}] — discourse-marker tell"
+                    ));
+                }
+            }
+        }
+
+        if let Some(stdev_min) = bands
+            .get("paragraph_length")
+            .and_then(|v| v.get("stdev_min"))
+            .and_then(|v| v.as_f64())
+        {
+            let lengths: Vec<f64> = paragraphs_of(body)
+                .iter()
+                .map(|p| words_of(p).len() as f64)
+                .collect();
+            if lengths.len() >= 4 {
+                let (_, stdev) = mean_stdev(&lengths);
+                if stdev < stdev_min {
+                    return Err(format!(
+                        "{label}: paragraph-length stdev {stdev:.1} below {stdev_min} — uniform-block tell"
+                    ));
+                }
+            }
+        }
+
+        if let Some(hapax_min) = bands
+            .get("hapax_ratio")
+            .and_then(|v| v.get("min"))
+            .and_then(|v| v.as_f64())
+        {
+            let window = bands
+                .get("hapax_ratio")
+                .and_then(|v| v.get("window_words"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(500.0)
+                .max(1.0) as usize;
+            let mut ratios: Vec<f64> = Vec::new();
+            for chunk in words.chunks(window) {
+                let mut counts: std::collections::BTreeMap<&String, usize> =
+                    std::collections::BTreeMap::new();
+                for word in chunk {
+                    *counts.entry(word).or_insert(0) += 1;
+                }
+                let hapax = counts.values().filter(|n| **n == 1).count();
+                ratios.push(hapax as f64 / chunk.len() as f64);
+            }
+            let (ratio, _) = mean_stdev(&ratios);
+            if ratio < hapax_min {
+                return Err(format!(
+                    "{label}: windowed hapax ratio {ratio:.2} below {hapax_min} — vocabulary-evenness tell"
                 ));
             }
         }
@@ -3936,6 +4135,104 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         texts.push(("exemplar:0".to_string(), ornate));
         let err = check_voice_bands(&b, &texts).unwrap_err();
         assert!(err.contains("function-word divergence"), "{err}");
+    }
+
+    #[test]
+    fn repeated_openers_fail_the_evenness_band() {
+        let same_opener = (0..20)
+            .map(|i| format!("The system handled case {i} without any trouble at all today."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "sentence_openers": {"max_top_share": 0.5},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), same_opener)]).unwrap_err();
+        assert!(err.contains("evenness tell"), "{err}");
+    }
+
+    #[test]
+    fn connective_overuse_fails_the_discourse_band() {
+        let stuffed = (0..15)
+            .map(|i| format!(
+                "However, the {i} result held. Moreover, the trend continued upward. Furthermore, the budget survived intact."
+            ))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "connectives_per_1000_words": [0, 20],
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), stuffed)]).unwrap_err();
+        assert!(err.contains("discourse-marker tell"), "{err}");
+    }
+
+    #[test]
+    fn uniform_paragraphs_fail_the_block_band() {
+        let para = "Ship it now. The count held steady. Nothing else moved today, and the ledger closed on time without a single retry across regions.";
+        let uniform = (0..6).map(|_| para.to_string()).collect::<Vec<_>>().join("\n\n");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "paragraph_length": {"stdev_min": 3.0},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), uniform)]).unwrap_err();
+        assert!(err.contains("uniform-block tell"), "{err}");
+    }
+
+    #[test]
+    fn low_hapax_fails_the_vocabulary_band() {
+        let recycled = std::iter::repeat("the same words repeat and repeat in the same order again")
+            .take(30)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "hapax_ratio": {"min": 0.3, "window_words": 200},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), recycled)]).unwrap_err();
+        assert!(err.contains("vocabulary-evenness tell"), "{err}");
+    }
+
+    #[test]
+    fn off_fingerprint_text_fails_char_trigram_distance() {
+        let ornate = std::iter::repeat(
+            "Whereupon yonder gentleman, being of the most agreeable disposition amongst all whom fortune had thither conveyed, did graciously consent unto the proposal.",
+        )
+        .take(14)
+        .collect::<Vec<_>>()
+        .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "char_trigrams": {"max_distance": 0.08},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let mut texts = Vec::new();
+        for i in 0..6 {
+            texts.push((format!("corpus:{i}"), on_voice_corpus()));
+        }
+        texts.push(("exemplar:0".to_string(), ornate));
+        let err = check_voice_bands(&b, &texts).unwrap_err();
+        assert!(err.contains("char-trigram divergence"), "{err}");
+    }
+
+    #[test]
+    fn varied_prose_passes_the_v2_bands() {
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "sentence_openers": {"max_top_share": 0.5},
+                "connectives_per_1000_words": [0, 20],
+                "paragraph_length": {"stdev_min": 0.5},
+                "hapax_ratio": {"min": 0.03, "window_words": 500},
+                "char_trigrams": {"max_distance": 0.2},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let evaluated =
+            check_voice_bands(&b, &[("corpus:a".to_string(), on_voice_corpus())]).unwrap();
+        assert_eq!(evaluated, 1);
     }
 
     #[test]
