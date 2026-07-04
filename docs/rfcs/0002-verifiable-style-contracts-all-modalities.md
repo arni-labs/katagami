@@ -81,7 +81,10 @@ lineage:
   parents: []            # or single parent (evolution) / multiple (remix)
   generation: 1
 corpus:
-  consent: opt_in        # hard requirement; no opt_in, no publish
+  consent: opt_in        # basis: opt_in | public_domain | original (refined 2026-07-04);
+                         # personal/brand voices REQUIRE opt_in; encyclopedia registers may
+                         # use verified public-domain corpora (provenance names the works)
+                         # or pipeline-original in-register prose. No valid basis, no publish.
   author: <who this voice belongs to / derives from>
   license: <license governing reuse>
   samples: <count>       # provenance: how many source texts, of what kind

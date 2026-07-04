@@ -139,11 +139,11 @@ BANDS = {
     "min_words_to_evaluate": 120,
 }
 
-VOICE_MD = """---
+VOICE_MD_TEMPLATE = """---
 version: alpha
 kind: voice
 corpus:
-  consent: opt_in
+  consent: {basis}
 ---
 ## Overview
 Plain operational register: numbers first, no drama.
@@ -163,9 +163,9 @@ Never exclaim twice. Never hedge a measured claim.
 """
 
 
-def submit_style(label, corpus_docs, consent_basis="opt_in", exemplars=None):
+def submit_style(label, corpus_docs, consent_basis="original", consent_extra=None, exemplars=None):
     corpus_ids = [make_file(f"{label}-corpus-{i}.md", doc.encode(), "text/markdown") for i, doc in enumerate(corpus_docs)]
-    voice_md = make_file(f"{label}-VOICE.md", VOICE_MD.encode(), "text/markdown")
+    voice_md = make_file(f"{label}-VOICE.md", VOICE_MD_TEMPLATE.replace("{basis}", consent_basis if consent_basis in ("opt_in", "public_domain", "original") else "opt_in").encode(), "text/markdown")
     thumb = make_file(f"{label}-thumb.jpg", jpeg_bytes(), "image/jpeg")
 
     st, body = req("POST", "/tdata/WritingStyles", {})
@@ -181,7 +181,7 @@ def submit_style(label, corpus_docs, consent_basis="opt_in", exemplars=None):
         "mechanical_bands": json.dumps(BANDS),
         "corpus_file_ids": corpus_ids,
         "corpus_manifest": json.dumps({"items": [{"file_id": i, "kind": "original-in-register"} for i in corpus_ids]}),
-        "consent": json.dumps({"basis": consent_basis, "author": "katagami-curation (original in-register corpus)", "license": "internal", "samples": len(corpus_ids), "provenance": "e2e fixtures"}),
+        "consent": json.dumps({**{"basis": consent_basis, "author": "katagami-curation (original in-register corpus)", "license": "internal", "samples": len(corpus_ids), "provenance": "e2e fixtures"}, **(consent_extra or {})}),
         "exemplars": json.dumps(exemplars or [
             {"text": "Shipped. 3 bugs, 0 regressions.", "annotation": "close on the number", "kind": "sent"},
             {"text": "Plain words win arguments.", "annotation": "thesis first", "kind": "sent"},
@@ -268,6 +268,25 @@ def main():
     report("writing/consent: job Failed", status == "Failed", f"job={status}")
     report("writing/consent: names the consent gate", "voice_consent_invalid" in err, f"err={err}")
     report("writing/consent: style NOT published", w3.get("status") != "Published", f"style={w3.get('status')}")
+
+    print("== stage 4: public-domain corpus basis publishes (provenance named) ==")
+    ws4 = submit_style("pdblend", corpus_texts(), consent_basis="public_domain", consent_extra={
+        "author": "period register blend (multiple PD authors)",
+        "license": "public domain",
+        "provenance": "e2e stand-in naming works/editions: Example Papers (1890-1910), Gutenberg ebooks 101/102/103",
+    })
+    status, w4, err = run_job(ws4)
+    report("writing/pd: job Completed", status == "Completed", f"job={status} err={err}")
+    report("writing/pd: style Published", w4.get("status") == "Published", f"style={w4.get('status')}")
+
+    print("== stage 5: public-domain WITHOUT named provenance is rejected ==")
+    ws5 = submit_style("pdvague", corpus_texts(), consent_basis="public_domain", consent_extra={
+        "license": "public domain", "provenance": "",
+    })
+    status, w5, err = run_job(ws5)
+    report("writing/pd-vague: job Failed", status == "Failed", f"job={status}")
+    report("writing/pd-vague: names the consent gate", "voice_consent_invalid" in err, f"err={err[:160]}")
+    report("writing/pd-vague: style NOT published", w5.get("status") != "Published", f"style={w5.get('status')}")
 
     print()
     print(f"== RESULT: {len(PASS)} passed, {len(FAIL)} failed ==")

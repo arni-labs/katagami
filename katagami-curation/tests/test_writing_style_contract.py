@@ -209,7 +209,11 @@ class WritingLaneWiringContractTests(unittest.TestCase):
         skill = (self.CURATION / "agents" / "curator" / "skills" / "synthesize-writing-style" / "SKILL.md").read_text()
         for marker in [
             "synthesize_writing_style",
-            "Never a living author",
+            "Never a living",
+            "public_domain",
+            "Verify actual PD status",
+            "multi-author period blends",
+            "reference document, not a clone",
             "katagami:voice-bands/v1",
             "DERIVED, not invented",
             "CompleteWritingStyleSynthesis",

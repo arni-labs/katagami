@@ -22,17 +22,32 @@ WritingStyle to `Published`. Do NOT call `AttestConsent`,
 ## Sourcing rules (this lane is consent-first)
 
 - **Public registers, genres, movements, and traditions ONLY**: hardboiled
-  wire copy, plain-style technical prose, gonzo reportage, Victorian
-  naturalist field notes, radio continuity, etc. **Never a living author's
-  voice, never a scraped personal corpus.** Personal/brand voices enter
-  through the consent-gated find-your-style intake, not this lane.
-- The corpus is **original writing you author in-register** — it is the
-  style's reference fingerprint, not quotation. Credit the register/movement
-  it descends from via `SetCredits` ({name, kind (register|movement|tradition|
-  writer-school), note}); credit ALL influences.
-- The consent block records this origination honestly:
-  `{"basis": "opt_in", "author": "katagami-curation (original in-register corpus)",
-    "license": "<license>", "samples": N, "provenance": "<how it was authored>"}`.
+  wire copy, plain-style technical prose, penny-press crime reportage,
+  Victorian naturalist field notes, radio continuity, etc. **Never a living
+  author's voice, never a scraped personal corpus, never a non-public-domain
+  author's signature** (a genre whose signature is one identifiable
+  non-PD author is that author's voice — skip it). Personal/brand voices
+  enter through the consent-gated find-your-style intake, not this lane.
+- **Two legitimate corpus sources, each with an honest consent basis:**
+  1. `basis: "original"` — you author the corpus in-register yourself. The
+     corpus is the style's reference fingerprint, not quotation.
+  2. `basis: "public_domain"` — real human-written PD text as the reference
+     corpus. This grounds the fingerprint in human prose (better
+     function-word and burstiness references than model-written pastiche)
+     and is the PREFERRED source when solid PD material exists.
+     **Verify actual PD status** (US: published before 1930; when in doubt,
+     exclude — a dead author is not automatically PD). `provenance` must
+     name the works/editions (e.g. "Pride and Prejudice (1813), Project
+     Gutenberg ebook 1342"). **Prefer multi-author period blends** (several
+     PD writers of one register) over a single author's idiolect; a single
+     PD author is allowed with open crediting.
+- **Credit openly, name independently.** Credits name the register/movement
+  and, for PD corpora, the authors/works (`{name, kind (register|movement|
+  tradition|writer|corpus), note}`); credit ALL influences. The STYLE is
+  named for its register quality (e.g. "Drawing-Room Irony"), never marketed
+  as "write like <author>" — a reference document, not a clone.
+- The personal-voice intake is the only place `basis: "opt_in"` originates;
+  this lane never fabricates it.
 
 ## Before Starting
 

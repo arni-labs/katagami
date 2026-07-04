@@ -160,7 +160,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_corpus", value = "true" }, { type = "set_bool", var = "consent_attested", value = "false" }, { type = "set_bool", var = "bands_self_consistent", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["corpus_file_ids", "corpus_manifest", "consent"]
-hint = "Attach the consented reference corpus: file ids + a manifest describing each sample (kind, channel, words) + the consent block JSON {basis: 'opt_in', author, license, samples, provenance}. Intake IS the consent gate: a voice is both a product feature and a sensitive fingerprint, so opt-in + license are bound here, enforced at publish. Changing the corpus invalidates consent_attested and bands_self_consistent."
+hint = "Attach the reference corpus: file ids + a manifest describing each sample (kind, channel, words) + the consent block JSON {basis, author, license, samples, provenance}. basis is one of opt_in (a person/brand handed over their corpus — the only basis the personal-voice intake produces), public_domain (verified-PD text; provenance must name the works/editions), or original (the pipeline authored the corpus in-register). A voice is both a product feature and a sensitive fingerprint, so the basis + license are bound here and enforced at publish. Changing the corpus invalidates consent_attested and bands_self_consistent."
 
 [[action]]
 name = "SetExemplars"
@@ -211,7 +211,7 @@ kind = "internal"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "consent_attested", value = "true" }]
 params = []
-hint = "Mark the corpus consent block as verified: basis is opt_in, author and license are present, manifest matches the attached corpus files. Dispatched only by the curation finalizer after reading the actual consent evidence — never by the authoring agent."
+hint = "Mark the corpus consent block as verified: basis is opt_in | public_domain | original, author and license are present (public_domain also requires provenance naming the source works/editions). Dispatched only by the curation finalizer after reading the actual consent evidence — never by the authoring agent."
 
 [[action]]
 name = "MarkBandsSelfConsistent"

@@ -2685,11 +2685,23 @@ fn verify_voice_consent(
     let basis = consent.get("basis").and_then(|v| v.as_str()).unwrap_or("");
     let author = consent.get("author").and_then(|v| v.as_str()).unwrap_or("");
     let license = consent.get("license").and_then(|v| v.as_str()).unwrap_or("");
-    if basis != "opt_in" || author.trim().is_empty() || license.trim().is_empty() {
+    let provenance = consent
+        .get("provenance")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    // Three honest bases (RFC-0002 §5.1 as refined 2026-07-04):
+    //   opt_in        — a person/brand handed over their corpus (the intake gate;
+    //                   the ONLY basis the personal-voice track accepts)
+    //   public_domain — a verified-PD corpus; provenance must name the
+    //                   author/work/edition
+    //   original      — the pipeline authored the corpus in-register itself
+    let basis_ok = matches!(basis, "opt_in" | "public_domain" | "original");
+    let provenance_ok = basis != "public_domain" || !provenance.trim().is_empty();
+    if !basis_ok || !provenance_ok || author.trim().is_empty() || license.trim().is_empty() {
         return Err(VerificationError::new(
             "voice_consent_invalid",
             format!(
-                "WritingStyle '{owner_id}' consent must be opt_in with author and license (found basis '{basis}')"
+                "WritingStyle '{owner_id}' consent must carry basis opt_in | public_domain | original with author and license (public_domain also requires provenance naming the source work/edition); found basis '{basis}'"
             ),
         )
         .entity("WritingStyle", owner_id)
@@ -2712,8 +2724,13 @@ fn verify_voice_md_body(
     if !lower.contains("kind: voice") {
         problems.push("front matter missing kind: voice".to_string());
     }
-    if !lower.contains("consent: opt_in") {
-        problems.push("front matter missing consent: opt_in".to_string());
+    if !["consent: opt_in", "consent: public_domain", "consent: original"]
+        .iter()
+        .any(|marker| lower.contains(marker))
+    {
+        problems.push(
+            "front matter missing consent basis (opt_in | public_domain | original)".to_string(),
+        );
     }
     for heading in ["## Overview", "## Tone", "## Vocabulary", "## Moves", "## Register", "## Never"] {
         if !trimmed.contains(heading) {
@@ -3926,6 +3943,21 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert!(verify_voice_consent("ws-1", &serde_json::json!({
             "basis": "opt_in", "author": "Rita", "license": "internal"
         })).is_ok());
+        assert!(verify_voice_consent("ws-1", &serde_json::json!({
+            "basis": "original", "author": "katagami-curation", "license": "katagami-commons"
+        })).is_ok());
+        assert!(verify_voice_consent("ws-1", &serde_json::json!({
+            "basis": "public_domain", "author": "Jane Austen",
+            "license": "public domain",
+            "provenance": "Pride and Prejudice (1813), Project Gutenberg ebook 1342"
+        })).is_ok());
+        // public_domain without a named source is not attestable.
+        assert_eq!(
+            verify_voice_consent("ws-1", &serde_json::json!({
+                "basis": "public_domain", "author": "Jane Austen", "license": "public domain"
+            })).unwrap_err().code,
+            "voice_consent_invalid"
+        );
         assert_eq!(
             verify_voice_consent("ws-1", &serde_json::json!({"basis": "scraped", "author": "x", "license": "y"}))
                 .unwrap_err().code,
