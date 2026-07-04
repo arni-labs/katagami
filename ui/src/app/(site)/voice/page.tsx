@@ -1,4 +1,6 @@
+import { notFound } from "next/navigation";
 import { countWritingStyles, pageWritingStyles } from "@/lib/odata";
+import { isOwner } from "@/lib/owner";
 import { toWritingStyleItem } from "@/lib/lane-items";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { WritingStyleCard } from "@/components/writing-style-card";
@@ -11,6 +13,10 @@ export const metadata = {
 };
 
 export default async function VoicePage() {
+  // Owner-only while the lane seeds: rita's signed-in Google identity
+  // (KATAGAMI_OWNER_SUBS) or a plain 404 — the section does not exist
+  // for the public yet.
+  if (!(await isOwner())) notFound();
   // The voice catalog is young — a single server-rendered page (96) covers it.
   // Keyset infinite scroll joins when the lane outgrows one page.
   const [first, total] = await Promise.all([

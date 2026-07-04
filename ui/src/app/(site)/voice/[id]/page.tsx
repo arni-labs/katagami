@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getWritingStyle, getFileUrl, parseJson } from "@/lib/odata";
+import { isOwner } from "@/lib/owner";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
 import { CopyButton } from "@/components/copy-button";
@@ -34,6 +35,7 @@ export default async function VoiceDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  if (!(await isOwner())) notFound();
   const { id } = await params;
   let ws;
   try {

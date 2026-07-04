@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { trackNav } from "@/lib/analytics";
-import { NAV_LINKS, isActiveNav } from "@/lib/nav";
+import { isActiveNav } from "@/lib/nav";
+import { useNavLinks } from "@/lib/use-owner-links";
 
 export function HeaderNav() {
   const pathname = usePathname();
+  const links = useNavLinks();
   return (
     <div className="hidden min-w-0 flex-1 items-center gap-4 text-sm font-medium lg:flex lg:flex-none lg:gap-5">
-      {NAV_LINKS.map((l) => {
+      {links.map((l) => {
         const active = isActiveNav(l.href, pathname);
         return (
           <Link
