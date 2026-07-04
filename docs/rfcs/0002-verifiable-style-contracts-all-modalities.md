@@ -9,11 +9,11 @@
 
 ## 1. Summary
 
-Katagami's edge is that a style — visual, image, or textual — is a **verifiable, consent-clean contract**, not soft guidance. Agents drift: hand one a beautiful DESIGN.md or voice.md and it approximates from training data unless something checks it. Guidance is where everyone is; the checker is where almost no one is.
+Katagami's edge is that a style — visual, image, or textual — is a **verifiable, consent-clean contract**, not soft guidance. Agents drift: hand one a beautiful DESIGN.md or VOICE.md and it approximates from training data unless something checks it. Guidance is where everyone is; the checker is where almost no one is.
 
 This RFC turns that thesis into a build plan across three lanes plus a shared substrate, and adds the third modality — **writing styles** — to the commons. It also fixes a gap the thesis exposes in our own house: today the pipeline deeply verifies design languages before publish, but art styles and palettes are published on a rubber stamp. A commons that sells verification must verify its own shelves first.
 
-Two deliverables are specified in full here: the **voice.md contract schema** (the prose sibling of DESIGN.md) and the **WritingStyle entity** that carries it through the same Draft → UnderReview → Published lifecycle as every other modality.
+Two deliverables are specified in full here: the **VOICE.md contract schema** (the prose sibling of DESIGN.md) and the **WritingStyle entity** that carries it through the same Draft → UnderReview → Published lifecycle as every other modality.
 
 ## 2. What we are addressing, and the expected end state
 
@@ -26,7 +26,7 @@ We are addressing three things:
 Expected end state:
 
 1. Every modality — design language, art style, palette, writing style — publishes only through **real artifact verification**: file bodies read, structure validated, style-specific invariants checked. No lane rubber-stamps `MarkQualityPassed`.
-2. **WritingStyle is a first-class modality**: an IOA spec in `katagami-commons`, a curation lane in `katagami-curation`, a `/voice/<id>` page, and a portable `voice.md` projection — produced by the same pipeline and quality gates as everything else, never hand-built.
+2. **WritingStyle is a first-class modality**: an IOA spec in `katagami-commons`, a curation lane in `katagami-curation`, a `/voice/<id>` page, and a portable `VOICE.md` projection — produced by the same pipeline and quality gates as everything else, never hand-built.
 3. A published writing style is a **compiled contract**: its mechanical bands are machine-checked at publish time against its own exemplars (a contract that its own corpus can't pass does not publish).
 4. Each lane has a **conformance checker** consumers can run against their own output: deterministic mechanics hard-gate, embedding similarity reports a soft score with confidence and an explicit abstain, and taste stays human.
 5. Consent, provenance, license, lineage, and naming are **one shared substrate** across modalities, not three parallel implementations.
@@ -62,11 +62,11 @@ From the verification research (Aya: `design-ai-verification`):
 
 The enforcement split, which recurs in every lane and **is** the thesis, not a caveat to it: machine-enforce the mechanics and the consent boundary; report similarity as a soft, abstaining signal; keep a human as the taste oracle for what can't be reduced to a rule. A firewall kills mechanical slop (drift, hardcoded values, banned phrases, failed contrast); it does not certify *good*.
 
-## 5. The voice.md contract (ARN-137 — specified here)
+## 5. The VOICE.md contract (ARN-137 — specified here)
 
-A Katagami voice.md is not a fifth soft-prompt template. It is the soft layer everyone ships (Hassid, Lago, Castos, EVY all ship voice.md-shaped prompts today) **plus the three things nobody ships**: deterministic mechanical bands, a soft similarity check with confidence and abstain, and consent/provenance/license binding.
+A Katagami VOICE.md is not a fifth soft-prompt template. It is the soft layer everyone ships (Hassid, Lago, Castos, EVY all ship voice.md-shaped prompts today) **plus the three things nobody ships**: deterministic mechanical bands, a soft similarity check with confidence and abstain, and consent/provenance/license binding.
 
-Format: markdown with YAML front matter, published at `https://katagami.ai/voice/<id>/voice.md` — the prose sibling of `/language/<id>/DESIGN.md`. Katagami entity fields remain the source of truth; voice.md is the required portable projection, linted before attach exactly like DESIGN.md.
+Format: markdown with YAML front matter, published at `https://katagami.ai/voice/<id>/VOICE.md` — the prose sibling of `/language/<id>/DESIGN.md`. Katagami entity fields remain the source of truth; VOICE.md is the required portable projection, linted before attach exactly like DESIGN.md.
 
 ### 5.1 Front matter (identity + consent binding)
 
@@ -147,7 +147,7 @@ Honesty guarantees built in, from the research ceilings: style and content are e
 
 ### 5.6 Lint contract
 
-Like DESIGN.md, voice.md gets a no-network contract checker run before attach: front matter keys present, `corpus.consent == opt_in`, all required sections present, bands block parses against `katagami:voice-bands/v1`, at least 3 annotated examples, no placeholder text. Zero errors, zero warnings, warnings blocking.
+Like DESIGN.md, VOICE.md gets a no-network contract checker run before attach: front matter keys present, `corpus.consent == opt_in`, all required sections present, bands block parses against `katagami:voice-bands/v1`, at least 3 annotated examples, no placeholder text. Zero errors, zero warnings, warnings blocking.
 
 ## 6. The WritingStyle entity and curation lane
 
@@ -161,23 +161,23 @@ Same lifecycle as ArtStyle: `Draft → UnderReview → Published → Archived`, 
 - `has_mechanical_bands` — bands JSON attached
 - `has_exemplars` — annotated examples attached
 - `bands_self_consistent` — verifier-owned; set by the finalizer only after every exemplar passes the style's own bands
-- `has_voice_md` — linted voice.md attached
+- `has_voice_md` — linted VOICE.md attached
 - `has_thumbnail`, `has_published_assets`, `quality_review_passed`, `featured`, `version`, `fork_count`, `usage_count` — as in sibling specs
 - credits + model provenance — as in ArtStyle (`SetCredits`, `SetModelProvenance`), but **in the publish guard** from day one
 
-`Publish` guard: all of the above true, plus `cross_entity_state` Ready/Locked on every referenced file — corpus, exemplars, voice.md, thumbnail. Invariants assert the same set in `Published`, preventive not reactive (RFC-0001 discipline).
+`Publish` guard: all of the above true, plus `cross_entity_state` Ready/Locked on every referenced file — corpus, exemplars, VOICE.md, thumbnail. Invariants assert the same set in `Published`, preventive not reactive (RFC-0001 discipline).
 
 ### 6.2 Curation lane (`katagami-curation`)
 
 - `research-direction`: accept `output_type = "writing_style"`; a direction researches a voice tradition/register the same way it researches a design movement.
-- New skill `synthesize-writing-style`: given a direction, author the corpus-derived spec — voice layer, bands (computed, not invented), exemplars, voice.md — through governed actions. Same tooling rules as sibling skills.
-- Quality review: a per-direction second opinion, like design languages get. The reviewer validates spec coherence, re-runs the bands self-consistency check, reads the voice.md projection, and fixes concrete violations before typed completion.
-- Finalizer: `verify_synthesized_writing_styles` — **deep from day one** (§7's generic shape): read voice.md body, validate front matter + sections + bands schema, run the deterministic bands checker over the exemplars in WASM (pure Rust computation — regex, sentence stats, JS divergence; no sandbox, no network), verify the consent block, then flip verifier-owned booleans and publish through guards.
+- New skill `synthesize-writing-style`: given a direction, author the corpus-derived spec — voice layer, bands (computed, not invented), exemplars, VOICE.md — through governed actions. Same tooling rules as sibling skills.
+- Quality review: a per-direction second opinion, like design languages get. The reviewer validates spec coherence, re-runs the bands self-consistency check, reads the VOICE.md projection, and fixes concrete violations before typed completion.
+- Finalizer: `verify_synthesized_writing_styles` — **deep from day one** (§7's generic shape): read VOICE.md body, validate front matter + sections + bands schema, run the deterministic bands checker over the exemplars in WASM (pure Rust computation — regex, sentence stats, JS divergence; no sandbox, no network), verify the consent block, then flip verifier-owned booleans and publish through guards.
 - Seeds (ARN-141): the first voices go through this exact pipeline. No hand-built stand-ins — the standing rule, and doubly so for the lane whose pitch is verification.
 
 ### 6.3 UI
 
-`/voice` gallery + `/voice/<id>` detail page (voice.md rendered, bands visible, consent/provenance shown as first-class facts, cross-modal link to the sibling design language), following the existing art-styles page patterns. The gallery card states what "verified" means for this lane, in one sentence.
+`/voice` gallery + `/voice/<id>` detail page (VOICE.md rendered, bands visible, consent/provenance shown as first-class facts, cross-modal link to the sibling design language), following the existing art-styles page patterns. The gallery card states what "verified" means for this lane, in one sentence.
 
 ## 7. Fix the rubber stamp early (art styles + palettes)
 
@@ -233,7 +233,7 @@ Deliverable for ARN-135: a definition document + a prototype on one published ar
 Build once, use in all lanes:
 
 - **Verification engine pattern (Temper)** — already proven in this codebase: agent authors → finalizer independently verifies evidence → verifier-owned booleans → guarded publish → preventive invariants. §7 generalizes it; the conformance gate (rungs 4) extends the same pattern to consumer-submitted artifacts.
-- **Consent / provenance / license binding** — one schema across modalities (the voice.md `corpus` block, the art-style credits + model provenance, the design-language provenance tier shipped in #123 converge on the same fields: source, author, license, consent basis, attested-by). Bound at synthesis, enforced at publish.
+- **Consent / provenance / license binding** — one schema across modalities (the VOICE.md `corpus` block, the art-style credits + model provenance, the design-language provenance tier shipped in #123 converge on the same fields: source, author, license, consent basis, attested-by). Bound at synthesis, enforced at publish.
 - **Cross-modal lineage** — entity-level references voice ↔ design language ↔ art style, so a brand or person is one lineaged identity across prose, pixels, and images. Surfaced on all three detail pages.
 - **Naming** — the existing muscle, applied to voices (a named, referenceable voice is the product; a profile dump is not). Existing naming rules apply unchanged, including cultural-match and variety disciplines.
 
@@ -251,7 +251,7 @@ The soft layer never hard-gates in either deployment. AI-text detectors are expl
 Mapped to the Linear tree; each phase independently shippable, dependency order Genesis → Temper → TemperPaw → Katagami where cross-repo work appears:
 
 - **Phase 0 — verify our own shelves** (§7; new issue under ARN-133): deep finalizer verification for art styles + palettes; credits/provenance into the ArtStyle publish guard; backfill pass over published styles. No new entities.
-- **Phase 1 — the writing modality** (ARN-137 + entity work from ARN-121): `writing_style.ioa.toml`, voice.md lint contract, `synthesize-writing-style`, deterministic bands checker in the finalizer, `/voice` UI, 3–5 seed voices through the pipeline (ARN-141 production half).
+- **Phase 1 — the writing modality** (ARN-137 + entity work from ARN-121): `writing_style.ioa.toml`, VOICE.md lint contract, `synthesize-writing-style`, deterministic bands checker in the finalizer, `/voice` UI, 3–5 seed voices through the pipeline (ARN-141 production half).
 - **Phase 2 — voice intake + soft layer** (ARN-138, ARN-139, ARN-140): find-your-style corpus intake with consent binding, extraction + naming flow, embedding similarity with confidence/abstain, consumer conformance endpoint for voices.
 - **Phase 3 — design firewall** (ARN-134): DTCG export, language rule-set checker, Temper conformance gate, generated per-language enforcement kit (typed token surface + lint rule package).
 - **Phase 4 — art-style verification definition** (ARN-135): definition + one-style prototype, then scope the build.
@@ -261,7 +261,7 @@ Positioning work in ARN-141 (audiences, "reference document, not a clone" framin
 
 ## 13. Open decisions
 
-1. **Entity name.** Proposal: `WritingStyle` (sibling of `ArtStyle`; the modality is "writing styles", the artifact is voice.md, the URL is `/voice/<id>`). Alternative: `WritingLanguage` (ARN-121's working name, sibling of `DesignLanguage`). Recommend `WritingStyle`; needs Rita's call.
+1. **Entity name.** Proposal: `WritingStyle` (sibling of `ArtStyle`; the modality is "writing styles", the artifact is VOICE.md, the URL is `/voice/<id>`). Alternative: `WritingLanguage` (ARN-121's working name, sibling of `DesignLanguage`). Recommend `WritingStyle`; needs Rita's call.
 2. **ARN-121 fold.** ARN-121 (writing modality under the Atlas epic) and ARN-132/137 (voice contract) describe the same build from two angles. Recommend folding ARN-121 into ARN-132 as the commons-entity story so they can't drift; needs Rita's call in Linear.
 3. **Embedding model + hosting** for the soft layer (StyleDistance vs LUAR; hosted where) — decide in Phase 2, after the deterministic layer is live and calibrated.
 4. **Agent-driven quality review for art styles/palettes** (taste judgment beyond artifact integrity) — decide with ARN-135.
