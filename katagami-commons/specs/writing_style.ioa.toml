@@ -1,0 +1,454 @@
+# WritingStyle — I/O Automaton Specification
+#
+# A named, verifiable, consent-clean VOICE CONTRACT (RFC-0002 §5-6): the prose
+# sibling of a DesignLanguage. A WritingStyle carries a consented reference
+# corpus (provenance + license bound at intake), a human-legible voice layer
+# (tone scales, vocabulary use/ban lists, rhetorical moves, register, refusals),
+# deterministic MechanicalBands (katagami:voice-bands/v1 — burstiness band,
+# banned phrases, punctuation rates, type-token ratio, function-word distance),
+# annotated Exemplars (the drafted-vs-sent ground truth), and the portable
+# VOICE.md projection published at /voice/<id>/VOICE.md.
+#
+# The publish gate that makes this lane VERIFIED rather than described:
+# `bands_self_consistent` — every exemplar in the style's own corpus must pass
+# the style's own mechanical bands. A contract its own author cannot satisfy is
+# miscalibrated and does not publish. `consent_attested` is the second
+# verifier-owned gate: corpus consent must be opt-in with author + license
+# present. Both booleans are set ONLY by finalizer-dispatched internal actions
+# after evidence checks — never by the authoring agent.
+#
+# Soft voice-embedding similarity is deliberately NOT part of this spec's
+# gates: it is a reporting signal with confidence + abstain (RFC-0002 §5.4)
+# and never hard-gates.
+#
+# Lifecycle: Draft -> UnderReview -> Published -> Archived
+#                         ^              |             |
+#                         └──────────────┴─────────────┘ (Revise/Restore)
+#
+# Key invariants: can't Publish without corpus + attested consent + voice layer
+# + mechanical bands + exemplars + bands self-consistency + VOICE.md + thumbnail
+# + credits + model provenance + quality review + public assets.
+
+[automaton]
+name = "WritingStyle"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+
+allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_corpus"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "consent_attested"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_voice_layer"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_mechanical_bands"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_exemplars"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "bands_self_consistent"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_voice_md"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_thumbnail"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_published_assets"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "review_status"
+type = "string"
+initial = "unreviewed"
+
+[[state]]
+name = "quality_review_passed"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_credits"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "has_model_provenance"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "featured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "display_order"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "version"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "fork_count"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "usage_count"
+type = "counter"
+initial = 0
+
+# --- Actions: Contract Authoring (Draft & UnderReview) ---
+
+[[action]]
+name = "SetName"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["name", "slug"]
+hint = "Set the writing style's real, ownable name and URL-safe slug. Katagami naming rules apply: the name is the product (a lineaged, referenceable voice), not a profile dump."
+
+[[action]]
+name = "SetVoiceLayer"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_voice_layer", value = "true" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["persona", "tone_scales", "vocabulary", "moves", "register", "refusals"]
+hint = "Set the human-legible voice layer. tone_scales: numbered scales with anchors (formality 3/10 with a one-line example), never bare adjectives. vocabulary: {use: [...], ban: [...]} — the ban list carries the anti-AI-tells layer. moves: how this voice opens, argues, qualifies, closes. register: tone-by-channel matrix. refusals: what this voice NEVER does — refusals carry most of the weight."
+
+[[action]]
+name = "SetMechanicalBands"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_mechanical_bands", value = "true" }, { type = "set_bool", var = "bands_self_consistent", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["mechanical_bands"]
+hint = "Set the deterministic bands JSON (schema katagami:voice-bands/v1): sentence_length {mean: [lo,hi], stdev_min}, banned_phrases, banned_patterns, punctuation rates per 1000 words, type_token_ratio, function_words {reference_file_id, metric, max_distance}, min_words_to_evaluate. Bands are DERIVED from the corpus by extraction, not invented. Changing bands invalidates bands_self_consistent — the finalizer must re-prove every exemplar passes."
+
+[[action]]
+name = "AttachCorpus"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_corpus", value = "true" }, { type = "set_bool", var = "consent_attested", value = "false" }, { type = "set_bool", var = "bands_self_consistent", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["corpus_file_ids", "corpus_manifest", "consent"]
+hint = "Attach the consented reference corpus: file ids + a manifest describing each sample (kind, channel, words) + the consent block JSON {basis: 'opt_in', author, license, samples, provenance}. Intake IS the consent gate: a voice is both a product feature and a sensitive fingerprint, so opt-in + license are bound here, enforced at publish. Changing the corpus invalidates consent_attested and bands_self_consistent."
+
+[[action]]
+name = "SetExemplars"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_exemplars", value = "true" }, { type = "set_bool", var = "bands_self_consistent", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["exemplars"]
+hint = "Set 3-15 annotated example passages as JSON, each {text, annotation, kind}. Prefer drafted-vs-sent pairs ('the gap is the voice'). Exemplars are the calibration ground truth: every one must pass the style's own mechanical bands before publish (bands_self_consistent)."
+
+[[action]]
+name = "AttachVoiceMd"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_voice_md", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+params = ["voice_md_file_id", "voice_md_lint_result", "voice_md_format_version"]
+hint = "Attach the linted VOICE.md projection (RFC-0002 §5). Katagami entity fields remain the source of truth; VOICE.md is the required portable projection at /voice/<id>/VOICE.md. The lint contract requires: front matter keys, corpus.consent == opt_in, all required sections, a bands block parsing against katagami:voice-bands/v1, >= 3 annotated examples, no placeholder text. Zero errors, zero warnings; warnings are blocking."
+
+[[action]]
+name = "AttachThumbnail"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "has_thumbnail", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }]
+params = ["thumbnail_file_id"]
+hint = "Attach or update the static gallery thumbnail. The SubmitForReview/Publish cross_entity_state guards require the referenced File to be Ready/Locked."
+
+[[action]]
+name = "SubmitWritingStyle"
+kind = "input"
+from = ["Draft"]
+effect = [
+  { type = "set_bool", var = "has_corpus", value = "true" },
+  { type = "set_bool", var = "has_voice_layer", value = "true" },
+  { type = "set_bool", var = "has_mechanical_bands", value = "true" },
+  { type = "set_bool", var = "has_exemplars", value = "true" },
+  { type = "set_bool", var = "has_voice_md", value = "true" },
+  { type = "set_bool", var = "has_thumbnail", value = "true" },
+  { type = "set_bool", var = "has_credits", value = "true" },
+  { type = "set_bool", var = "has_model_provenance", value = "true" }
+]
+params = ["name", "slug", "persona", "tone_scales", "vocabulary", "moves", "register", "refusals", "mechanical_bands", "corpus_file_ids", "corpus_manifest", "consent", "exemplars", "voice_md_file_id", "voice_md_lint_result", "voice_md_format_version", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
+hint = "Contributor hot-path: author a COMPLETE writing style in ONE call — voice layer + bands + consented corpus + exemplars + VOICE.md + thumbnail + lineage + model_provenance + credits. Sets every authoring guard var so the next call is SubmitForReview. Does NOT set the verifier-owned gates (consent_attested, bands_self_consistent) — only the finalizer's evidence checks set those. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Mirrors SubmitArtStyle/SubmitPaletteSystem."
+
+# --- Actions: Verifier-Owned Gates (finalizer only) ---
+
+[[action]]
+name = "AttestConsent"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "consent_attested", value = "true" }]
+params = []
+hint = "Mark the corpus consent block as verified: basis is opt_in, author and license are present, manifest matches the attached corpus files. Dispatched only by the curation finalizer after reading the actual consent evidence — never by the authoring agent."
+
+[[action]]
+name = "MarkBandsSelfConsistent"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "bands_self_consistent", value = "true" }]
+params = []
+hint = "Mark the mechanical bands as self-consistent: the finalizer ran the deterministic bands checker over every exemplar and all passed. This is the writing-lane analog of proof shots — a contract its own corpus cannot satisfy is miscalibrated and must not publish. Dispatched only by the curation finalizer."
+
+[[action]]
+name = "AttachPublishedAssets"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_published_assets", value = "true" }]
+params = ["voice_md_asset_id", "voice_md_asset_url", "thumbnail_asset_id", "thumbnail_asset_url"]
+hint = "Attach immutable public artifact URLs from the generic Temper publish-artifact flow so /voice/<id>/VOICE.md serves without auth. PawFS file ids remain the governed source."
+
+[[action]]
+name = "AttachTasteVector"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+params = ["taste_vector", "taste_vector_model"]
+hint = "Attach the semantic taste embedding computed from this entity's canonical taste document. taste_vector is a JSON float array; taste_vector_model identifies the embedding model so mixed-model vectors are never compared."
+
+# --- Actions: Classification & Provenance ---
+
+[[action]]
+name = "SetTaxonomy"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["taxonomy_ids"]
+hint = "Assign taxonomy categories to this writing style."
+
+[[action]]
+name = "SetTags"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["tags"]
+hint = "Set freeform tags for discovery and search."
+
+[[action]]
+name = "SetCredits"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_credits", value = "true" }]
+params = ["credits"]
+hint = "Credit the writers, registers, movements, or traditions this style is attributable to. JSON list of {name, kind (writer|movement|register|tradition), note}. Public genres and registers only — never a living author's voice without their opt-in corpus. Editable on Published without re-publishing."
+
+[[action]]
+name = "SetModelProvenance"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
+params = ["model_provenance"]
+hint = "Record which AI models produced this writing style. JSON {style:{model}, extraction:{model, tool}}: the model that authored the contract and the model/tool that ran stylometric extraction. Editable on Published without re-publishing."
+
+[[action]]
+name = "SetCrossModal"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["design_language_id", "art_style_id"]
+hint = "Link the sibling visual identity: the DesignLanguage (and optionally ArtStyle) this voice belongs with, so a person or brand is one lineaged identity across prose and pixels. Editable on Published without re-publishing."
+
+[[action]]
+name = "SetFeatured"
+kind = "input"
+from = ["Draft", "UnderReview", "Published"]
+params = ["featured", "display_order"]
+hint = "Set featured status and display order for gallery sorting."
+
+[[action]]
+name = "AddCuratorNotes"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["curator_notes"]
+hint = "Add curator feedback notes to a draft or under-review writing style."
+
+[[action]]
+name = "SetSources"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["source_ids"]
+hint = "Link DesignSource entities that informed this writing style."
+
+# --- Actions: Lineage ---
+
+[[action]]
+name = "SetLineage"
+kind = "input"
+from = ["Draft"]
+params = ["parent_ids", "lineage_type", "generation_number"]
+hint = "Set lineage: parent_ids=[] for originals, single parent for evolution (including refreshes from the drafted-vs-sent gap), multiple for remix."
+
+# --- Actions: Review Lifecycle ---
+
+[[action]]
+name = "SubmitForReview"
+kind = "internal"
+from = ["Draft"]
+to = "UnderReview"
+guard = [{ type = "is_true", var = "has_corpus" }, { type = "is_true", var = "has_voice_layer" }, { type = "is_true", var = "has_mechanical_bands" }, { type = "is_true", var = "has_exemplars" }, { type = "is_true", var = "has_voice_md" }, { type = "is_true", var = "has_thumbnail" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "corpus_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "voice_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
+hint = "Submit for curator review. Requires corpus, voice layer, mechanical bands, exemplars, VOICE.md, and thumbnail. Cross-entity guards require every referenced corpus File, the VOICE.md File, and the thumbnail File to be Ready/Locked (bytes durably stored) so an unready/404 file cannot leave Draft."
+
+[[action]]
+name = "Publish"
+kind = "internal"
+from = ["UnderReview"]
+to = "Published"
+guard = [{ type = "is_true", var = "has_corpus" }, { type = "is_true", var = "consent_attested" }, { type = "is_true", var = "has_voice_layer" }, { type = "is_true", var = "has_mechanical_bands" }, { type = "is_true", var = "has_exemplars" }, { type = "is_true", var = "bands_self_consistent" }, { type = "is_true", var = "has_voice_md" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_credits" }, { type = "is_true", var = "has_model_provenance" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "corpus_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "voice_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
+effect = [{ type = "increment", field = "version" }]
+hint = "Curator approves and publishes. Requires the full contract: consented corpus (attested), voice layer, mechanical bands proven self-consistent against the exemplars, VOICE.md, thumbnail, credits, model provenance, quality review, and public assets. consent_attested and bands_self_consistent are verifier-owned — set only by finalizer evidence checks — so a writing style can never publish as soft guidance: it publishes as a checked contract or not at all."
+
+[[action]]
+name = "Revise"
+kind = "input"
+from = ["Published"]
+to = "UnderReview"
+params = ["curator_notes"]
+hint = "Pull a published writing style back for revision with stated rationale."
+
+[[action]]
+name = "Archive"
+kind = "internal"
+from = ["Draft", "UnderReview", "Published"]
+to = "Archived"
+params = ["curator_notes"]
+hint = "Archive a malformed, test, superseded, or published writing style while preserving a governed restore path."
+
+[[action]]
+name = "Restore"
+kind = "input"
+from = ["Archived"]
+to = "UnderReview"
+params = ["curator_notes"]
+hint = "Restore an archived writing style into review so the finalizer can re-verify consent, bands self-consistency, and artifacts, then publish through normal guards."
+
+# --- Actions: Quality & Usage Signals ---
+
+[[action]]
+name = "UpdateQuality"
+kind = "input"
+from = ["UnderReview", "Published"]
+params = ["quality_score", "review_status"]
+hint = "Update quality score and/or review status (unreviewed, reviewed, needs_revision)."
+
+[[action]]
+name = "MarkQualityPassed"
+kind = "internal"
+from = ["UnderReview", "Published"]
+effect = [{ type = "set_bool", var = "quality_review_passed", value = "true" }]
+params = []
+hint = "Mark quality review as passed after finalizer-side artifact and state validation."
+
+[[action]]
+name = "IncrementUsage"
+kind = "input"
+from = ["Published"]
+effect = "increment usage_count"
+hint = "Record that an agent or person invoked this writing style."
+
+[[action]]
+name = "IncrementFork"
+kind = "input"
+from = ["Published"]
+effect = "increment fork_count"
+hint = "Record that a child writing style was forked from this one."
+
+# --- Output Actions ---
+
+[[action]]
+name = "WritingStylePublishedEvent"
+kind = "output"
+hint = "Emitted when a writing style is published."
+
+[[action]]
+name = "WritingStyleArchivedEvent"
+kind = "output"
+hint = "Emitted when a writing style is archived."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "PublishedRequiresCorpus"
+when = ["Published"]
+assert = "has_corpus"
+
+[[invariant]]
+name = "PublishedRequiresAttestedConsent"
+when = ["Published"]
+assert = "consent_attested"
+
+[[invariant]]
+name = "PublishedRequiresVoiceLayer"
+when = ["Published"]
+assert = "has_voice_layer"
+
+[[invariant]]
+name = "PublishedRequiresMechanicalBands"
+when = ["Published"]
+assert = "has_mechanical_bands"
+
+[[invariant]]
+name = "PublishedRequiresExemplars"
+when = ["Published"]
+assert = "has_exemplars"
+
+[[invariant]]
+name = "PublishedRequiresBandsSelfConsistency"
+when = ["Published"]
+assert = "bands_self_consistent"
+
+[[invariant]]
+name = "PublishedRequiresVoiceMd"
+when = ["Published"]
+assert = "has_voice_md"
+
+[[invariant]]
+name = "PublishedRequiresThumbnail"
+when = ["Published"]
+assert = "has_thumbnail"
+
+[[invariant]]
+name = "PublishedRequiresCredits"
+when = ["Published"]
+assert = "has_credits"
+
+[[invariant]]
+name = "PublishedRequiresModelProvenance"
+when = ["Published"]
+assert = "has_model_provenance"
+
+[[invariant]]
+name = "PublishedRequiresPublicAssets"
+when = ["Published"]
+assert = "has_published_assets"
+
+[[invariant]]
+name = "PublishedRequiresQualityReview"
+when = ["Published"]
+assert = "quality_review_passed"

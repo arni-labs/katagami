@@ -1,8 +1,8 @@
 # katagami-commons
 
 Core data layer for the Katagami Design Language Commons. Stores design
-languages, palette systems, art styles, design elements, design sources,
-taxonomy, and the element manifest.
+languages, palette systems, art styles, writing styles, design elements,
+design sources, taxonomy, and the element manifest.
 
 ## Entity Types
 
@@ -42,6 +42,20 @@ thumbnail evidence, and publication verification flags.
 A portable image-style recipe for remix lanes. Stores medium, prompt template
 with `{subject}` and `{palette}` holes, negative prompt, engine hints, slot
 recipes, usage guidance, preview evidence, and publication verification flags.
+
+**States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
+
+### WritingStyle
+
+A named, verifiable, consent-clean voice contract (RFC-0002) — the prose
+sibling of a DesignLanguage. Stores a consented reference corpus (provenance +
+license bound at intake), a human-legible voice layer (tone scales, use/ban
+lists, rhetorical moves, register, refusals), deterministic mechanical bands
+(`katagami:voice-bands/v1`), annotated exemplars, and the portable VOICE.md
+projection served at `/voice/<id>/VOICE.md`. Two verifier-owned publish gates
+make the lane verified rather than described: `ConsentAttested` (opt-in corpus
+with author + license) and `BandsSelfConsistent` (every exemplar passes the
+style's own bands).
 
 **States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
 
