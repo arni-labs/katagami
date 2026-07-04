@@ -157,5 +157,85 @@ class WritingStyleContractTests(unittest.TestCase):
         self.assertIn("resource is WritingStyle", policy)
 
 
+
+
+class WritingLaneWiringContractTests(unittest.TestCase):
+    """Phase 1 lane wiring: the writing_style output type flows query ->
+    direction -> synthesize_writing_style job -> finalizer, mirroring the
+    art-style lane, and the finalizer owns the two evidence gates."""
+
+    CURATION = Path(__file__).resolve().parents[1]
+    FINALIZER = (CURATION / "wasm" / "finalize_spawned_session" / "src" / "lib.rs").read_text()
+
+    def _spec(self, name):
+        return tomllib.loads((self.CURATION / "specs" / name).read_text())
+
+    @staticmethod
+    def _action(spec, name):
+        return next(a for a in spec["action"] if a["name"] == name)
+
+    def test_job_lane_action_and_triggers(self):
+        spec = self._spec("curation_job.ioa.toml")
+        states = {s["name"] for s in spec["state"]}
+        self.assertIn("writing_style_ids", states)
+        action = self._action(spec, "CompleteWritingStyleSynthesis")
+        self.assertEqual(action["from"], ["Running"])
+        self.assertEqual(action["to"], "Finalizing")
+        trigger_names = {t["name"] for t in action.get("triggers", [])}
+        self.assertIn("finalize_spawned_session", trigger_names)
+        self.assertIn("writing_style_synthesis_completes_direction", trigger_names)
+
+    def test_direction_and_query_lane_actions(self):
+        direction = self._spec("curation_direction.ioa.toml")
+        self.assertIn("writing_style_ids", {s["name"] for s in direction["state"]})
+        complete = self._action(direction, "CompleteWritingStyle")
+        self.assertEqual(complete["to"], "Completed")
+        self.assertIn(
+            "direction_complete_writing_style_narrows_query_barrier",
+            {t["name"] for t in complete.get("triggers", [])},
+        )
+        query = self._spec("curation_query.ioa.toml")
+        self.assertIn("writing_style_ids", {s["name"] for s in query["state"]})
+        done = self._action(query, "WritingStyleSynthesisComplete")
+        self.assertEqual(done["from"], ["Synthesizing"])
+        self.assertEqual(done["to"], "Completed")
+
+    def test_research_direction_routes_writing_style(self):
+        skill = (self.CURATION / "agents" / "curator" / "skills" / "research-direction" / "SKILL.md").read_text()
+        self.assertIn("'writing_style': 'synthesize_writing_style'", skill)
+        self.assertIn("`writing_style`", skill)
+
+    def test_synthesize_skill_is_consent_first(self):
+        skill = (self.CURATION / "agents" / "curator" / "skills" / "synthesize-writing-style" / "SKILL.md").read_text()
+        for marker in [
+            "synthesize_writing_style",
+            "Never a living author",
+            "katagami:voice-bands/v1",
+            "DERIVED, not invented",
+            "CompleteWritingStyleSynthesis",
+            "SubmitWritingStyle",
+        ]:
+            self.assertIn(marker, skill)
+
+    def test_finalizer_owns_the_evidence_gates(self):
+        for marker in [
+            "fn verify_synthesized_writing_styles",
+            '"synthesize_writing_style" => verify_synthesized_writing_styles',
+            "fn check_voice_bands",
+            "fn verify_voice_consent",
+            "fn verify_voice_md_body",
+            '"AttestConsent"',
+            '"MarkBandsSelfConsistent"',
+            "katagami:voice-bands/v1",
+            "min_words_to_evaluate",
+            "no evaluable evidence",
+        ]:
+            self.assertIn(marker, self.FINALIZER)
+
+    def test_assets_worker_serves_writing_styles(self):
+        worker = (self.CURATION.parent / "infra" / "cloudflare" / "katagami-assets-worker" / "src" / "index.js").read_text()
+        self.assertIn('"katagami/writing-styles/"', worker)
+
+
 if __name__ == "__main__":
     unittest.main()

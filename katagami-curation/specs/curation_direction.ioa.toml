@@ -96,6 +96,11 @@ type = "string"
 initial = "[]"
 
 [[state]]
+name = "writing_style_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
 name = "error_message"
 type = "string"
 initial = ""
@@ -290,6 +295,33 @@ target_entity = "CurationQuery"
 target_action = "DecrementDirectionsPending"
 # drop_ok: same as the palette lane — art_style is terminal via
 # ArtStyleSynthesisComplete; the shared-counter narrow is a no-op once the query
+# has advanced. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+direction_id = "Id"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+
+[[action]]
+name = "CompleteWritingStyle"
+kind = "input"
+from = ["Synthesizing"]
+to = "Completed"
+params = ["writing_style_ids"]
+hint = "The writing-style synthesize job for this direction completed."
+
+[[action.triggers]]
+name = "direction_complete_writing_style_narrows_query_barrier"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "DecrementDirectionsPending"
+# drop_ok: same as the palette and art-style lanes — writing_style is terminal via
+# WritingStyleSynthesisComplete; the shared-counter narrow is a no-op once the query
 # has advanced. Intentionally conditional.
 drop_ok = true
 
