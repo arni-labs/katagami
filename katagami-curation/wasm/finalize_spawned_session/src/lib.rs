@@ -1741,6 +1741,43 @@ fn verify_synthesized_palettes(
             "thumbnail",
         )?;
 
+        if !entity_bool_any(&entity, "has_published_assets") {
+            let thumbnail_asset = publish_lane_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                "PaletteSystem",
+                "katagami/palettes",
+                id,
+                &thumbnail_file_id,
+                "thumbnail",
+            )?;
+            let tokens_asset = publish_lane_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                "PaletteSystem",
+                "katagami/palettes",
+                id,
+                &tokens_export_file_id,
+                "tokens_export",
+            )?;
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "PaletteSystems",
+                id,
+                "AttachPublishedAssets",
+                &json!({
+                    "thumbnail_asset_id": thumbnail_asset.0,
+                    "thumbnail_asset_url": thumbnail_asset.1,
+                    "tokens_export_asset_id": tokens_asset.0,
+                    "tokens_export_asset_url": tokens_asset.1,
+                }),
+            )?;
+        }
+
         walk_lane_entity_to_published(
             ctx,
             api_url,
@@ -1828,6 +1865,46 @@ fn verify_synthesized_art_styles(
 
         verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "reference_manifest", &reference_ids)?;
         verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "proof_shots_manifest", &proof_ids)?;
+
+        if !entity_bool_any(&entity, "has_published_assets") {
+            let thumbnail_asset = publish_lane_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                "ArtStyle",
+                "katagami/art-styles",
+                id,
+                &thumbnail_file_id,
+                "thumbnail",
+            )?;
+            let mut reference_assets = serde_json::Map::new();
+            for file_id in &reference_ids {
+                let asset = publish_lane_file_artifact(
+                    ctx,
+                    api_url,
+                    headers,
+                    "ArtStyle",
+                    "katagami/art-styles",
+                    id,
+                    file_id,
+                    "reference",
+                )?;
+                reference_assets.insert(file_id.clone(), serde_json::Value::String(asset.1));
+            }
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "ArtStyles",
+                id,
+                "AttachPublishedAssets",
+                &json!({
+                    "thumbnail_asset_id": thumbnail_asset.0,
+                    "thumbnail_asset_url": thumbnail_asset.1,
+                    "reference_assets": serde_json::Value::Object(reference_assets).to_string(),
+                }),
+            )?;
+        }
 
         walk_lane_entity_to_published(
             ctx,
@@ -2176,6 +2253,82 @@ fn read_lane_file_value(
         .artifact(artifact_kind, file_id));
     }
     Ok(resp.body)
+}
+
+// Lanes must carry public assets before Publish (the has_published_assets
+// guard), same as design languages. Promote each governed file through the
+// generic publish-artifact flow and attach the immutable URLs.
+fn publish_lane_file_artifact(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    entity_label: &'static str,
+    namespace: &str,
+    owner_id: &str,
+    file_id: &str,
+    label: &str,
+) -> Result<(String, String), VerificationError> {
+    let body = json!({
+        "file_id": file_id,
+        "label": label,
+        "owner_ref_type": entity_label,
+        "owner_ref_id": owner_id,
+        "namespace": namespace,
+    });
+    let resp = http_call(
+        ctx,
+        "POST",
+        &format!("{api_url}/api/files/publish-artifact"),
+        headers,
+        &body.to_string(),
+    )?;
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "publish_artifact_failed",
+            format!(
+                "Failed to publish {label} artifact for {entity_label} '{owner_id}' from file '{file_id}': HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(label_to_artifact_kind(label), file_id));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body).map_err(|e| {
+        VerificationError::new(
+            "publish_artifact_bad_response",
+            format!("Failed to parse publish-artifact response: {e}"),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(label_to_artifact_kind(label), file_id)
+    })?;
+    let artifact = parsed.get("artifact").ok_or_else(|| {
+        VerificationError::new(
+            "publish_artifact_bad_response",
+            "publish-artifact response has no artifact object",
+        )
+        .entity(entity_label, owner_id)
+        .artifact(label_to_artifact_kind(label), file_id)
+    })?;
+    let asset_id = artifact
+        .get("id")
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .to_string();
+    let public_url = artifact
+        .get("public_url")
+        .and_then(|value| value.as_str())
+        .unwrap_or("")
+        .to_string();
+    if asset_id.is_empty() || public_url.is_empty() {
+        return Err(VerificationError::new(
+            "publish_artifact_bad_response",
+            "publish-artifact response is missing id or public_url",
+        )
+        .entity(entity_label, owner_id)
+        .artifact(label_to_artifact_kind(label), file_id));
+    }
+    Ok((asset_id, canonicalize_public_asset_url(&public_url)))
 }
 
 fn lane_payload_plausible_image(mime_type: &str, body: &str) -> bool {
