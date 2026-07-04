@@ -1,13 +1,14 @@
 import { ArrowUpRight } from "lucide-react";
 import { TrackedLink } from "@/components/tracked-link";
 import { listDesignLanguages, parseJson } from "@/lib/odata";
+import { cosineSimilarity, parseStoredTasteVector } from "@/lib/embeddings";
 
 interface TokensLite {
   colors?: Record<string, string | undefined>;
 }
 
-/** "More like this" — other sheets from the drawer that share tags with the
- *  current language. Tag overlap is the signal; ships empty-safe. */
+/** "More like this" — nearest neighbors in the stored taste-vector space when
+ *  the current language carries one; tag overlap otherwise. Ships empty-safe. */
 export async function RelatedLanguages({
   currentId,
   currentTags,
@@ -15,8 +16,6 @@ export async function RelatedLanguages({
   currentId: string;
   currentTags: string[];
 }) {
-  if (currentTags.length === 0) return null;
-
   let candidates: Awaited<ReturnType<typeof listDesignLanguages>>;
   try {
     // Full canonical read (no $select) — the projected $select read omits some
@@ -27,18 +26,54 @@ export async function RelatedLanguages({
   }
 
   const wanted = new Set(currentTags.map((t) => t.toLowerCase()));
-  const scored = candidates
-    .filter((l) => l.entity_id !== currentId && l.fields.name)
-    .map((l) => {
-      const tags = (parseJson<string[]>(l.fields.tags) ?? []).map((t) =>
-        t.toLowerCase(),
-      );
-      const shared = tags.filter((t) => t !== "specimen" && wanted.has(t));
-      return { lang: l, shared, score: shared.length };
-    })
-    .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score || a.lang.fields.name!.localeCompare(b.lang.fields.name!))
-    .slice(0, 6);
+  const sharedTags = (l: (typeof candidates)[number]) =>
+    (parseJson<string[]>(l.fields.tags) ?? [])
+      .map((t) => t.toLowerCase())
+      .filter((t) => t !== "specimen" && wanted.has(t));
+
+  const currentVector = parseStoredTasteVector(
+    candidates.find((l) => l.entity_id === currentId)?.fields ?? {},
+  );
+
+  let scored: Array<{
+    lang: (typeof candidates)[number];
+    shared: string[];
+    score: number;
+  }>;
+  if (currentVector) {
+    scored = candidates
+      .filter((l) => l.entity_id !== currentId && l.fields.name)
+      .map((l) => {
+        const vector = parseStoredTasteVector(l.fields);
+        return {
+          lang: l,
+          shared: sharedTags(l),
+          score: vector ? cosineSimilarity(currentVector, vector) : -1,
+        };
+      })
+      .filter((r) => r.score > 0)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          a.lang.fields.name!.localeCompare(b.lang.fields.name!),
+      )
+      .slice(0, 6);
+  } else {
+    if (currentTags.length === 0) return null;
+    scored = candidates
+      .filter((l) => l.entity_id !== currentId && l.fields.name)
+      .map((l) => {
+        const shared = sharedTags(l);
+        return { lang: l, shared, score: shared.length };
+      })
+      .filter((r) => r.score > 0)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          a.lang.fields.name!.localeCompare(b.lang.fields.name!),
+      )
+      .slice(0, 6);
+  }
 
   if (scored.length === 0) return null;
 
@@ -83,7 +118,9 @@ export async function RelatedLanguages({
                   {lang.fields.name}
                 </span>
                 <span className="block truncate font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
-                  shares {shared.slice(0, 3).join(" · ")}
+                  {shared.length > 0
+                    ? `shares ${shared.slice(0, 3).join(" · ")}`
+                    : "nearest in taste"}
                 </span>
               </span>
               <ArrowUpRight
