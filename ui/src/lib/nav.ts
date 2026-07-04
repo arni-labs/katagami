@@ -17,6 +17,13 @@ export const NAV_LINKS: NavLink[] = [
   // direct URL); re-add here when they're ready to surface again.
 ];
 
+// Owner-only sections: appended to the header/mobile nav after the
+// client-side owner check (from /api/auth/me). Deliberately NOT in NAV_LINKS
+// so the public menu and the search index never advertise them.
+export const OWNER_NAV_LINKS: NavLink[] = [
+  { href: "/voice", label: "Writing Styles" },
+];
+
 /** Is `href` the active section for the current pathname? */
 export function isActiveNav(href: string, pathname: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);

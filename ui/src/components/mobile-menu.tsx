@@ -6,7 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { trackNav } from "@/lib/analytics";
-import { NAV_LINKS, isActiveNav } from "@/lib/nav";
+import { isActiveNav } from "@/lib/nav";
+import { useNavLinks } from "@/lib/use-owner-links";
 
 /**
  * Mobile "everything" menu — a slide-in drawer reachable from the header that
@@ -17,6 +18,7 @@ import { NAV_LINKS, isActiveNav } from "@/lib/nav";
  * nav is shown instead, where all the links fit without crowding.
  */
 export function MobileMenu() {
+  const links = useNavLinks();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [navPath, setNavPath] = useState(pathname);
@@ -103,7 +105,7 @@ export function MobileMenu() {
               aria-label="All sections"
               className="flex flex-col gap-1 overflow-y-auto px-5 py-5"
             >
-              {NAV_LINKS.map((l) => {
+              {links.map((l) => {
                 const active = isActiveNav(l.href, pathname);
                 return (
                   <Link

@@ -322,6 +322,87 @@
         <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
+      <!-- WritingStyle: a named, verifiable, consent-clean voice contract (RFC-0002 §5-6) — the prose sibling of a DesignLanguage -->
+      <EntityType Name="WritingStyle">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Draft" />
+        <Property Name="Name" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Slug" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Version" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Voice layer: human-legible direction (tone scales with anchors, use/ban lists, moves, register, refusals) -->
+        <Property Name="Persona" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ToneScales" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Vocabulary" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Moves" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Register" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Refusals" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasVoiceLayer" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Mechanical bands: deterministic pass/fail constraints (katagami:voice-bands/v1) -->
+        <Property Name="MechanicalBands" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasMechanicalBands" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="BandsSelfConsistent" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Consented reference corpus: provenance + license bound at intake, attested by the finalizer -->
+        <Property Name="CorpusFileIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="CorpusManifest" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="Consent" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasCorpus" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ConsentAttested" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Annotated exemplars: the drafted-vs-sent ground truth and bands calibration corpus -->
+        <Property Name="Exemplars" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasExemplars" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- VOICE.md: the portable projection served at /voice/<id>/VOICE.md -->
+        <Property Name="VoiceMdFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VoiceMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="VoiceMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasVoiceMd" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="VoiceMdAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VoiceMdAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Gallery thumbnail -->
+        <Property Name="ThumbnailFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ThumbnailAssetUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasThumbnail" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishedAssets" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Cross-modal hook: one lineaged identity across prose and pixels -->
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Lineage -->
+        <Property Name="ParentIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LineageType" Type="Edm.String" Nullable="false" DefaultValue="original" />
+        <Property Name="GenerationNumber" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Classification -->
+        <Property Name="TaxonomyIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Tags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SourceIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="Credits" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ModelProvenance" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasModelProvenance" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
+        <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Quality signals -->
+        <Property Name="QualityScore" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="QualityReviewPassed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewStatus" Type="Edm.String" Nullable="false" DefaultValue="unreviewed" />
+        <Property Name="ForkCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="UsageCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Gallery display -->
+        <Property Name="Featured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DisplayOrder" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <!-- Timestamps -->
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="PublishedAt" Type="Edm.DateTimeOffset" />
+        <!-- Precomputed lowercase search blob for case-insensitive catalog search. -->
+        <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
+      </EntityType>
+
       <!-- Remix: a saved cross-lane mix (DesignLanguage + PaletteSystem + ArtStyle + composition) -->
       <EntityType Name="Remix">
         <Key>
@@ -352,6 +433,7 @@
         <EntitySet Name="Taxonomies" EntityType="Katagami.Taxonomy" />
         <EntitySet Name="PaletteSystems" EntityType="Katagami.PaletteSystem" />
         <EntitySet Name="ArtStyles" EntityType="Katagami.ArtStyle" />
+        <EntitySet Name="WritingStyles" EntityType="Katagami.WritingStyle" />
         <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
         <EntitySet Name="Directions" EntityType="Katagami.Direction" />
       </EntityContainer>

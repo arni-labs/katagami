@@ -53,3 +53,17 @@ locations), and the `wasm32-unknown-unknown` toolchain for step 2.
 - Everything is disposable: state lives under `.e2e-state/` (gitignored) and
   the tenant is local-only with a permit-all Cedar policy. Never point this at
   a real environment.
+
+## WritingStyle lifecycle e2e
+
+`e2e_writing_style_lifecycle.py` proves the WritingStyle spec's behavior
+(RFC-0002 §6.1) the same way: real corpus/VOICE.md/thumbnail Files, then
+`Publish` blocked in sequence on each verifier-owned gate
+(`consent_attested` → `bands_self_consistent` → `quality_review_passed` →
+`has_published_assets`), Published only with the full contract, and a corpus
+change re-locking consent (7 assertions). It only needs paw-fs + commons in
+the merged tenant (no curation app):
+
+```bash
+E2E_BASE=http://127.0.0.1:3902 python3 e2e_writing_style_lifecycle.py
+```

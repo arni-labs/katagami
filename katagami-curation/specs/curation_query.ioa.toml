@@ -118,6 +118,11 @@ name = "art_style_ids"
 type = "string"
 initial = "[]"
 
+[[state]]
+name = "writing_style_ids"
+type = "string"
+initial = "[]"
+
 # Error details if pipeline failed
 [[state]]
 name = "error_message"
@@ -332,6 +337,15 @@ from = ["Synthesizing"]
 to = "Completed"
 params = ["art_style_ids"]
 hint = "Art-style lane synthesis completed. ArtStyle records have been verified and published."
+
+
+[[action]]
+name = "WritingStyleSynthesisComplete"
+kind = "input"
+from = ["Synthesizing"]
+to = "Completed"
+params = ["writing_style_ids"]
+hint = "Writing-style lane synthesis completed. WritingStyle records have been verified and published."
 
 [[action]]
 name = "OrganizationComplete"

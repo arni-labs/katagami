@@ -8,7 +8,7 @@ Job type: `source_search`
 
 ## Process
 
-1. **Parse scope first**: Read the job input for search scope — design movements, aesthetic directions, specific styles to research. Also read `output_type`; it must be one of `design_language`, `palette`, or `art_style`. If it is missing, infer it from the task (`palette` for palette/color/swatch/ramp requests, `art_style` for art/image/illustration style recipes, otherwise `design_language`). Do not start by reading workspace files.
+1. **Parse scope first**: Read the job input for search scope — design movements, aesthetic directions, specific styles to research. Also read `output_type`; it must be one of `design_language`, `palette`, `art_style`, or `writing_style`. If it is missing, infer it from the task (`palette` for palette/color/swatch/ramp requests, `art_style` for art/image/illustration style recipes, `writing_style` for voice/prose/register/writing-style requests, otherwise `design_language`). Do not start by reading workspace files.
 2. **Bound orientation**: Do not read `/katagami/index.md` or `/katagami/log.md` during `source_search` unless the input explicitly asks for a library-wide audit. Do not call `temper.list('DesignSources', '')`. If you need duplicate protection, list only a narrow query-scoped subset, such as the current `query_id`, exact URL, or a precise title/source slug filter.
 3. **Search narrowly**: Use `temper.web_search(query)` with varied, focused queries for design system documentation, foundational articles, style guides, and reference implementations. For targeted requests, run 2-4 searches total.
 4. **Shortlist compactly**: Select 3-5 high-signal, directly relevant sources per targeted query. Use 5-8 only for broad survey jobs.
@@ -66,12 +66,14 @@ Job type: `source_search`
    `job_id` is your only id here — it labels your own job in the session prompt. Do not reference any `query_id`, `workspace_id`, or `direction_id` variable; the engine owns all direction identity.
    ```python
    output_type = input_data.get('output_type', '')
-   if output_type not in ['design_language', 'palette', 'art_style']:
+   if output_type not in ['design_language', 'palette', 'art_style', 'writing_style']:
        task_l = task_description.lower()
        if any(term in task_l for term in ['palette', 'palettes', 'pallet', 'pallets', 'color', 'colour', 'swatch', 'ramp']):
            output_type = 'palette'
        elif any(term in task_l for term in ['art style', 'art styles', 'image style', 'illustration style', 'visual style', 'style transfer']):
            output_type = 'art_style'
+       elif any(term in task_l for term in ['writing style', 'writing styles', 'voice', 'prose', 'register', 'tone of voice']):
+           output_type = 'writing_style'
        else:
            output_type = 'design_language'
    spawned_directions = []  # records the movements you spawned, NOT engine ids
@@ -83,6 +85,7 @@ Job type: `source_search`
            'design_language': 'synthesize',
            'palette': 'synthesize_palette',
            'art_style': 'synthesize_art_style',
+           'writing_style': 'synthesize_writing_style',
        }[movement_output_type]
        synth_input = json.dumps({
            'task': task_description,
