@@ -245,13 +245,17 @@ def main():
         assert 200 <= st < 300, key
     print("  bootstrap done")
 
-    print("== stage 1: happy path — corpus passes its own bands ==")
+    print("== stage 1: happy path — mechanics pass, curator gate holds ==")
     ws = submit_style("plainops", corpus_texts())
     status, w, err = run_job(ws)
     fields = w.get("fields") or {}
     report("writing/happy: job Completed", status == "Completed", f"job={status} err={err}")
-    report("writing/happy: style Published", w.get("status") == "Published", f"style={w.get('status')}")
-    report("writing/happy: VOICE.md asset attached", bool(fields.get("voice_md_asset_url")), str(fields.get("voice_md_asset_url"))[:80])
+    report("writing/happy: style stops at UnderReview (curator gate)", w.get("status") == "UnderReview", f"style={w.get('status')}")
+    report("writing/happy: VOICE.md asset attached pre-publish", bool(fields.get("voice_md_asset_url")), str(fields.get("voice_md_asset_url"))[:80])
+    st, _ = act("WritingStyles", ws, "Publish", {})
+    report("writing/happy: curator Publish succeeds in one dispatch", 200 <= st < 300, f"HTTP {st}")
+    time.sleep(1)
+    report("writing/happy: Published after curator dispatch", get_entity("WritingStyles", ws).get("status") == "Published", "")
 
     print("== stage 2: rejection — corpus violates its own bands ==")
     tainted = corpus_texts()
@@ -277,7 +281,7 @@ def main():
     })
     status, w4, err = run_job(ws4)
     report("writing/pd: job Completed", status == "Completed", f"job={status} err={err}")
-    report("writing/pd: style Published", w4.get("status") == "Published", f"style={w4.get('status')}")
+    report("writing/pd: stops at UnderReview", w4.get("status") == "UnderReview", f"style={w4.get('status')}")
 
     print("== stage 5: public-domain WITHOUT named provenance is rejected ==")
     ws5 = submit_style("pdvague", corpus_texts(), consent_basis="public_domain", consent_extra={
