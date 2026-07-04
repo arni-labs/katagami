@@ -1960,13 +1960,24 @@ fn lane_field<'a>(
         .or_else(|| fields.get(pascal_case(name).as_str()))
 }
 
+// Entity fields arrive either as JSON-encoded strings (the OData Edm.String
+// storage shape) or as already-parsed objects/arrays depending on the read
+// path; accept both, like the skills' own field helpers do.
+fn lane_json_value(fields: &serde_json::Value, name: &str) -> Option<serde_json::Value> {
+    let value = lane_field(fields, name)?;
+    match value {
+        serde_json::Value::Object(_) | serde_json::Value::Array(_) => Some(value.clone()),
+        _ => parse_json_field(Some(value)),
+    }
+}
+
 fn require_lane_json_object(
     owner_id: &str,
     entity_label: &'static str,
     fields: &serde_json::Value,
     field_name: &'static str,
 ) -> Result<serde_json::Value, VerificationError> {
-    match parse_json_field(lane_field(fields, field_name)) {
+    match lane_json_value(fields, field_name) {
         Some(serde_json::Value::Object(map)) if !map.is_empty() => {
             Ok(serde_json::Value::Object(map))
         }
@@ -1987,7 +1998,7 @@ fn require_lane_json_array(
     fields: &serde_json::Value,
     field_name: &'static str,
 ) -> Result<Vec<serde_json::Value>, VerificationError> {
-    match parse_json_field(lane_field(fields, field_name)) {
+    match lane_json_value(fields, field_name) {
         Some(serde_json::Value::Array(items)) if !items.is_empty() => Ok(items),
         _ => Err(VerificationError::new(
             "lane_field_not_array",
@@ -2783,4 +2794,346 @@ fn base64_data_url_payload(value: &str) -> Option<&str> {
 
 fn truncate(value: &str) -> String {
     value.chars().take(300).collect()
+}
+
+// Stubs for the wasm host imports so host-target builds (cargo test and the
+// incidental host cdylib) link. Excluded from the shipped wasm32 artifact;
+// never called by the pure functions under test.
+#[cfg(not(target_arch = "wasm32"))]
+mod host_stubs {
+        #[no_mangle]
+        pub extern "C" fn host_log(_a: i32, _b: i32, _c: i32, _d: i32) {}
+        #[no_mangle]
+        pub extern "C" fn host_get_context(_a: i32, _b: i32) -> i32 {
+            -1
+        }
+        #[no_mangle]
+        pub extern "C" fn host_set_result(_a: i32, _b: i32) {}
+        #[no_mangle]
+        pub extern "C" fn host_emit_progress(_a: i32, _b: i32) -> i32 {
+            -1
+        }
+        #[no_mangle]
+        pub extern "C" fn host_get_secret(_a: i32, _b: i32, _c: i32, _d: i32) -> i32 {
+            -1
+        }
+        #[no_mangle]
+        pub extern "C" fn host_http_call(
+            _a: i32,
+            _b: i32,
+            _c: i32,
+            _d: i32,
+            _e: i32,
+            _f: i32,
+            _g: i32,
+            _h: i32,
+            _i: i32,
+            _j: i32,
+        ) -> i32 {
+            -1
+        }
+        #[no_mangle]
+        pub extern "C" fn host_connect_call(
+            _a: i32,
+            _b: i32,
+            _c: i32,
+            _d: i32,
+            _e: i32,
+            _f: i32,
+            _g: i32,
+            _h: i32,
+        ) -> i32 {
+            -1
+        }
+        #[no_mangle]
+        pub extern "C" fn host_evaluate_spec(
+            _a: i32,
+            _b: i32,
+            _c: i32,
+            _d: i32,
+            _e: i32,
+            _f: i32,
+            _g: i32,
+            _h: i32,
+            _i: i32,
+            _j: i32,
+        ) -> i32 {
+            -1
+        }
+}
+
+#[cfg(test)]
+mod lane_verification_tests {
+    use super::*;
+
+    // Real image files generated with PIL (testdata/). The production body
+    // path is reqwest `.text()` = lossy UTF-8 decoding; reproduce it exactly.
+    const REAL_JPEG: &[u8] = include_bytes!("../testdata/real.jpg");
+    const REAL_PNG: &[u8] = include_bytes!("../testdata/real.png");
+
+    fn lossy(bytes: &[u8]) -> String {
+        String::from_utf8_lossy(bytes).to_string()
+    }
+
+    #[test]
+    fn real_jpeg_lossy_body_passes_the_image_gate() {
+        let body = lossy(REAL_JPEG);
+        assert!(
+            body.starts_with('\u{FFFD}'),
+            "lossy-decoded JPEG must start with the replacement char"
+        );
+        assert!(lane_payload_plausible_image("image/jpeg", &body));
+        assert!(lane_payload_plausible_image("", &body));
+        assert!(lane_payload_plausible_image("application/octet-stream", &body));
+    }
+
+    #[test]
+    fn real_png_lossy_body_passes_the_image_gate() {
+        let body = lossy(REAL_PNG);
+        assert!(body.starts_with('\u{FFFD}'));
+        assert!(lane_payload_plausible_image("image/png", &body));
+        assert!(lane_payload_plausible_image("application/octet-stream", &body));
+    }
+
+    #[test]
+    fn ascii_magic_gif_passes_without_mime() {
+        let mut body = String::from("GIF89a");
+        body.push_str(&"\u{FFFD}x".repeat(64));
+        assert!(lane_payload_plausible_image("", &body));
+    }
+
+    #[test]
+    fn html_markup_is_rejected_even_with_image_mime() {
+        let body = format!(
+            "<!doctype html><html><body>{}</body></html>",
+            "broken render ".repeat(16)
+        );
+        assert!(!lane_payload_plausible_image("image/jpeg", &body));
+        let body2 = format!("  <html><head></head><body>{}</body></html>", "x".repeat(128));
+        assert!(!lane_payload_plausible_image("image/png", &body2));
+    }
+
+    #[test]
+    fn svg_recovery_placeholders_are_rejected() {
+        let body = format!(
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">{}</svg>",
+            "<rect width=\"10\" height=\"10\"/>".repeat(8)
+        );
+        assert!(!lane_payload_plausible_image("image/jpeg", &body));
+        assert!(!lane_payload_plausible_image("", &body));
+    }
+
+    #[test]
+    fn svg_mime_is_rejected_even_with_binary_body() {
+        assert!(!lane_payload_plausible_image("image/svg+xml", &lossy(REAL_JPEG)));
+    }
+
+    #[test]
+    fn base64_and_data_url_payloads_are_rejected() {
+        let b64 = format!("/9j/{}", "4AAQSkZJRgABAQAA".repeat(16));
+        assert!(!lane_payload_plausible_image("image/jpeg", &b64));
+        let data_url = format!("data:image/jpeg;base64,/9j/{}", "4AAQSkZJRg".repeat(16));
+        assert!(!lane_payload_plausible_image("image/jpeg", &data_url));
+        let png_b64 = format!("iVBORw0KGgo{}", "AAAANSUhEUg".repeat(16));
+        assert!(!lane_payload_plausible_image("image/png", &png_b64));
+    }
+
+    #[test]
+    fn json_and_yaml_bodies_are_rejected() {
+        let json_err = format!(
+            "{{\"error\": \"file not found\", \"detail\": \"{}\"}}",
+            "x".repeat(80)
+        );
+        assert!(!lane_payload_plausible_image("application/octet-stream", &json_err));
+        assert!(!lane_payload_plausible_image("image/jpeg", &json_err));
+        let yaml = format!("version: alpha\nname: fake\ncomponents:\n  - {}", "x".repeat(80));
+        assert!(!lane_payload_plausible_image("image/jpeg", &yaml));
+        let front_matter = format!("---\nname: fake\n---\n{}", "body ".repeat(32));
+        assert!(!lane_payload_plausible_image("image/jpeg", &front_matter));
+    }
+
+    #[test]
+    fn tiny_bodies_are_rejected() {
+        assert!(!lane_payload_plausible_image("image/jpeg", "x"));
+        assert!(!lane_payload_plausible_image("image/jpeg", ""));
+    }
+
+    #[test]
+    fn prompt_template_holes_are_required() {
+        assert!(verify_prompt_template_holes(
+            "as-1",
+            "{subject}, two-color Risograph print, {palette}, coarse halftone grain"
+        )
+        .is_ok());
+        let err = verify_prompt_template_holes("as-1", "{subject} without palette").unwrap_err();
+        assert_eq!(err.code, "prompt_template_missing_hole");
+        assert!(verify_prompt_template_holes("as-1", "{palette} without subject").is_err());
+        assert!(verify_prompt_template_holes("as-1", "no holes at all").is_err());
+    }
+
+    #[test]
+    fn hex_color_rules() {
+        assert!(is_hex_color("#7c6f57"));
+        assert!(is_hex_color("#fff"));
+        assert!(is_hex_color("#7c6f57ff"));
+        assert!(!is_hex_color("7c6f57"));
+        assert!(!is_hex_color("#7c6f5"));
+        assert!(!is_hex_color("#gggggg"));
+        assert!(!is_hex_color("muddy"));
+        assert!(!is_hex_color(""));
+    }
+
+    #[test]
+    fn distinct_hex_counting() {
+        let body = "--ds-bg: #ffffff; --ds-ink: #111111; --ds-accent: #7c6f57; again #FFFFFF; not#7c6f57X a-hash #12345 short";
+        // #ffffff and #FFFFFF dedupe; #7c6f57X has a 7th hex digit... 'X' is
+        // not a hex digit, so #7c6f57 counts (already seen); #12345 is short.
+        assert_eq!(count_distinct_hex_colors(body), 3);
+    }
+
+    #[test]
+    fn skill_shaped_tokens_export_passes_and_garbage_fails() {
+        // Exact shape produced by synthesize-palette: CSS vars + "/* DTCG */" + JSON.
+        let css: String = [
+            ("bg", "#faf7f0"),
+            ("surface", "#ffffff"),
+            ("ink", "#1c1a16"),
+            ("muted", "#6b655a"),
+            ("accent", "#7c6f57"),
+            ("error", "#b3402f"),
+            ("warning", "#b3862f"),
+            ("success", "#3f7a4e"),
+        ]
+        .iter()
+        .map(|(k, v)| format!("  --ds-{k}: {v};\n"))
+        .collect();
+        let tokens_doc = format!(
+            "/* Ochre Field — Katagami palette tokens */\n:root {{\n{css}}}\n/* DTCG */\n{{\"color\": {{\"accent\": {{\"$type\": \"color\", \"$value\": \"#7c6f57\"}}}}}}"
+        );
+        assert!(verify_palette_tokens_export("ps-1", "file-1", &tokens_doc).is_ok());
+
+        let err = verify_palette_tokens_export("ps-1", "file-1", "not a tokens doc").unwrap_err();
+        assert_eq!(err.code, "palette_tokens_export_invalid");
+        // Long but colorless documents fail too.
+        let colorless = format!("/* doc */\n{}", "--ds-x: none; ".repeat(40));
+        assert!(verify_palette_tokens_export("ps-1", "file-1", &colorless).is_err());
+    }
+
+    #[test]
+    fn manifest_must_match_attached_file_ids() {
+        // Fields bag exactly as the skill writes it: manifest json.dumps'd
+        // into a string field with an {items: [...]} envelope.
+        let fields = json!({
+            "reference_manifest": "{\"items\": [{\"file_id\": \"f1\", \"role\": \"reference\", \"aspect\": \"1:1\"}, {\"file_id\": \"f2\", \"role\": \"reference\", \"aspect\": \"1:1\"}]}"
+        });
+        let ok = verify_lane_manifest_files(
+            "as-1",
+            "ArtStyle",
+            &fields,
+            "reference_manifest",
+            &["f1".to_string(), "f2".to_string()],
+        );
+        assert!(ok.is_ok());
+
+        let mismatch = verify_lane_manifest_files(
+            "as-1",
+            "ArtStyle",
+            &fields,
+            "reference_manifest",
+            &["f1".to_string(), "f3".to_string()],
+        )
+        .unwrap_err();
+        assert_eq!(mismatch.code, "lane_manifest_files_mismatch");
+
+        let missing_id_fields = json!({
+            "proof_shots_manifest": "{\"items\": [{\"subject\": \"portrait\"}]}"
+        });
+        let missing = verify_lane_manifest_files(
+            "as-1",
+            "ArtStyle",
+            &missing_id_fields,
+            "proof_shots_manifest",
+            &["f1".to_string()],
+        )
+        .unwrap_err();
+        assert_eq!(missing.code, "lane_manifest_item_missing_file_id");
+    }
+
+    #[test]
+    fn manifest_pascal_case_fallback() {
+        let fields = json!({
+            "ReferenceManifest": {"items": [{"file_id": "f1"}]}
+        });
+        assert!(verify_lane_manifest_files(
+            "as-1",
+            "ArtStyle",
+            &fields,
+            "reference_manifest",
+            &["f1".to_string()],
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn json_field_requirements() {
+        let fields = json!({
+            "slot_recipes": "{\"hero\": \"wide establishing scene\"}",
+            "credits": [{"name": "Risograph print culture", "kind": "tradition"}],
+            "model_provenance": {"style": {"model": "m"}},
+            "empty_obj": "{}",
+            "empty_arr": "[]"
+        });
+        assert!(require_lane_json_object("as-1", "ArtStyle", &fields, "slot_recipes").is_ok());
+        assert!(require_lane_json_array("as-1", "ArtStyle", &fields, "credits").is_ok());
+        assert!(
+            require_lane_json_object("as-1", "ArtStyle", &fields, "model_provenance").is_ok()
+        );
+        assert_eq!(
+            require_lane_json_object("as-1", "ArtStyle", &fields, "empty_obj")
+                .unwrap_err()
+                .code,
+            "lane_field_not_object"
+        );
+        assert_eq!(
+            require_lane_json_array("as-1", "ArtStyle", &fields, "empty_arr")
+                .unwrap_err()
+                .code,
+            "lane_field_not_array"
+        );
+        assert!(require_lane_json_object("as-1", "ArtStyle", &fields, "absent").is_err());
+    }
+
+    #[test]
+    fn palette_signature_and_role_maps() {
+        let fields = json!({
+            "signature": "[{\"hex\": \"#7c6f57\", \"name\": \"Ochre ink\"}]",
+            "neutrals": "{\"bg\": \"#faf7f0\", \"surface\": \"#ffffff\", \"ink\": \"#1c1a16\"}",
+            "semantic": "{\"error\": \"#b3402f\", \"success\": \"#3f7a4e\"}"
+        });
+        assert!(verify_palette_signature("ps-1", &fields).is_ok());
+        assert!(verify_palette_role_map("ps-1", &fields, "neutrals").is_ok());
+        assert!(verify_palette_role_map("ps-1", &fields, "semantic").is_ok());
+
+        let five = json!({
+            "signature": [
+                {"hex": "#111111"}, {"hex": "#222222"}, {"hex": "#333333"},
+                {"hex": "#444444"}, {"hex": "#555555"}
+            ]
+        });
+        assert_eq!(
+            verify_palette_signature("ps-1", &five).unwrap_err().code,
+            "palette_signature_invalid"
+        );
+
+        let bad_hex = json!({ "signature": [{"hex": "ochre"}] });
+        assert!(verify_palette_signature("ps-1", &bad_hex).is_err());
+
+        let muddy = json!({ "neutrals": {"bg": "muddy beige"} });
+        assert_eq!(
+            verify_palette_role_map("ps-1", &muddy, "neutrals")
+                .unwrap_err()
+                .code,
+            "palette_role_not_hex"
+        );
+    }
 }
