@@ -1,15 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { getDesignLanguage } from "@/lib/odata";
 import { createEntity, deleteEntity, dispatchAction } from "@/lib/odata-mutations";
-import {
-  assertOwner,
-  grantOwnerSession,
-  isOwnerModeConfigured,
-  revokeOwnerSession,
-} from "@/lib/owner";
+import { assertOwner } from "@/lib/owner";
 
 const OWNER_ARCHIVE_NOTE = "Archived from the owner gallery controls.";
 const OWNER_REVIEW_NOTE = "Sent back to review from owner controls.";
@@ -89,6 +83,7 @@ export async function addCuratorNotes(
   id: string,
   notes: string,
 ): Promise<void> {
+  await assertOwner();
   await dispatchAction("DesignLanguages", id, "AddCuratorNotes", {
     curator_notes: notes,
   });
@@ -127,24 +122,4 @@ export async function rejectTasteRule(id: string): Promise<void> {
     curator_notes: OWNER_TASTE_REJECT_NOTE,
   });
   revalidatePath("/owner");
-}
-
-export async function unlockOwnerMode(formData: FormData): Promise<void> {
-  if (!isOwnerModeConfigured()) {
-    redirect("/owner?error=not-configured");
-  }
-
-  const passphrase = String(formData.get("passphrase") ?? "");
-  if (!(await grantOwnerSession(passphrase))) {
-    redirect("/owner?error=bad-passphrase");
-  }
-
-  revalidatePath("/", "layout");
-  redirect("/owner?unlocked=1");
-}
-
-export async function lockOwnerMode(): Promise<void> {
-  await revokeOwnerSession();
-  revalidatePath("/", "layout");
-  redirect("/owner?locked=1");
 }

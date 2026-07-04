@@ -79,8 +79,11 @@ name = "Save"
 kind = "internal"
 from = ["Draft"]
 to = "Saved"
-guard = [{ type = "is_true", var = "has_selection" }]
-hint = "Persist the mix once a selection exists. Pins it for sharing and rating."
+guard = [
+  { type = "is_true", var = "has_selection" },
+  { type = "is_true", var = "has_creator" },
+]
+hint = "Persist the mix once a selection AND a creator exist. Anonymous remixes are impossible by construction: every Saved mix belongs to a signed-in human (SetCreator runs before Save)."
 
 [[action]]
 name = "Rate"
@@ -110,7 +113,8 @@ name = "Restore"
 kind = "input"
 from = ["Archived"]
 to = "Saved"
-hint = "Restore an archived mix."
+guard = [{ type = "is_true", var = "has_creator" }]
+hint = "Restore an archived mix. Guarded on has_creator so legacy anonymous mixes archived before attribution existed cannot re-enter Saved."
 
 # --- Output Actions ---
 
@@ -130,3 +134,8 @@ hint = "Emitted when a mix is rated. Consumed by curation taste-distillation to 
 name = "SavedRequiresSelection"
 when = ["Saved"]
 assert = "has_selection"
+
+[[invariant]]
+name = "SavedRequiresCreator"
+when = ["Saved"]
+assert = "has_creator"
