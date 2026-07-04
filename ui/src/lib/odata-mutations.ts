@@ -14,7 +14,9 @@ export async function dispatchAction(
   entitySet: string,
   id: string,
   action: string,
-  params: Record<string, string | number | boolean>,
+  // Values may be arrays/objects: list-typed spec fields (e.g. corpus_file_ids)
+  // must arrive as real JSON arrays for cross-entity guard resolution.
+  params: Record<string, unknown>,
 ): Promise<void> {
   const namespaces = ["KatagamiCommons", "Katagami.Curation", "Katagami", "Temper"];
   let lastError = "";
@@ -68,4 +70,35 @@ export async function deleteEntity(
   if (!res.ok) {
     throw new Error(`Delete failed ${res.status}: ${await res.text()}`);
   }
+}
+
+/** Create a File entity, upload its content, and wait until it is readable.
+ *  Returns the file id. Used by the voice intake to persist corpus samples. */
+export async function uploadFile(
+  name: string,
+  path: string,
+  mimeType: string,
+  content: string,
+): Promise<string> {
+  const created = await createEntity("Files", {
+    Name: name,
+    Path: path,
+    MimeType: mimeType,
+  });
+  const id = created.entity_id;
+  const put = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
+    method: "PUT",
+    headers: { ...headers, "Content-Type": mimeType },
+    body: content,
+  });
+  if (!put.ok) throw new Error(`File upload failed ${put.status}`);
+  for (let i = 0; i < 30; i++) {
+    const res = await fetch(`${API_BASE}/tdata/Files('${id}')`, { headers, cache: "no-store" });
+    if (res.ok) {
+      const row = (await res.json()) as { status?: string };
+      if (row.status === "Ready" || row.status === "Locked") return id;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error(`File ${id} never became Ready`);
 }
