@@ -259,10 +259,15 @@ Mapped to the Linear tree; each phase independently shippable, dependency order 
 
 Positioning work in ARN-141 (audiences, "reference document, not a clone" framing, engaging the voice.md creators) is deliberately not scheduled here; it follows once seed voices exist.
 
-## 13. Open decisions
+## 13. Decisions and open questions
 
-1. **Entity name.** Proposal: `WritingStyle` (sibling of `ArtStyle`; the modality is "writing styles", the artifact is VOICE.md, the URL is `/voice/<id>`). Alternative: `WritingLanguage` (ARN-121's working name, sibling of `DesignLanguage`). Recommend `WritingStyle`; needs Rita's call.
-2. **ARN-121 fold.** ARN-121 (writing modality under the Atlas epic) and ARN-132/137 (voice contract) describe the same build from two angles. Recommend folding ARN-121 into ARN-132 as the commons-entity story so they can't drift; needs Rita's call in Linear.
+Decided (Rita, 2026-07-03):
+
+1. **Entity name: `WritingStyle`** — sibling of `ArtStyle`; the modality is "writing styles", the artifact is VOICE.md, the URL is `/voice/<id>`. (`WritingLanguage`, ARN-121's working name, was the considered alternative.)
+2. **ARN-121 folded under ARN-132** as the commons-entity story, so the two framings can't drift.
+
+Still open:
+
 3. **Embedding model + hosting** for the soft layer (StyleDistance vs LUAR; hosted where) — decide in Phase 2, after the deterministic layer is live and calibrated.
 4. **Agent-driven quality review for art styles/palettes** (taste judgment beyond artifact integrity) — decide with ARN-135.
 
