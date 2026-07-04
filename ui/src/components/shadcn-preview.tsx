@@ -1994,10 +1994,12 @@ export function ShadcnPreview({
     : generatedPreviewShots;
   const shotsArtifact = hasAgentAuthoredShots ? storedShotsArtifact : generatedShotsArtifact;
   const hasStoredComponentSpec = hasAgentAuthoredComponentSpec;
-  const hasAgentKit =
-    hasAgentAuthoredShots &&
-    hasStoredComponentSpec &&
-    componentSpecStatus === "validated";
+  // The agent kit is earned by CONTENT: agent-authored recipes (the 7 kit
+  // markers) + renderable agent-authored preview shots. The old extra
+  // `componentSpecStatus === "validated"` clause required an entity boolean
+  // (shadcn_component_spec_verified) that no commons action can set, so no
+  // language — Pushpin included — could ever show its kit.
+  const hasAgentKit = hasAgentAuthoredShots && hasAgentAuthoredComponentSpec;
   const effectivePreviewShotsStatus = hasAgentAuthoredShots
     ? previewShotsStatus
     : "generated-preview";
