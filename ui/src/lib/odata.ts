@@ -938,6 +938,23 @@ export const getArtStyle = (id: string) =>
   getDemoArtStyle(id)
     ? Promise.resolve(getDemoArtStyle(id)!)
     : getLane("ArtStyles", id);
+/** Read a governed File's text content server-side (corpus excerpts on the
+ *  voice contract pages). Returns "" on any failure — a missing excerpt
+ *  degrades to nothing rather than a 500. */
+export async function getFileText(id: string): Promise<string> {
+  if (!id || !id.startsWith("fl-")) return "";
+  try {
+    const res = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
+      headers,
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return "";
+    return await res.text();
+  } catch {
+    return "";
+  }
+}
+
 export const listWritingStyles = (filter = "Status eq 'Published'") =>
   listLane("WritingStyles", filter);
 export const getWritingStyle = (id: string) => getLane("WritingStyles", id);

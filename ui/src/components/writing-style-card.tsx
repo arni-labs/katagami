@@ -9,6 +9,9 @@ export interface WritingStyleItem {
   slug: string;
   status: string;
   persona: string;
+  /** The style's signature passage — shown in quotes on the card so the
+   *  register is assessable at a glance. */
+  signature: string;
   basis: string;
   tone: string[];
   refusal: string;
@@ -43,8 +46,13 @@ export function WritingStyleCard({ item }: { item: WritingStyleItem }) {
       >
         {item.name}
       </h3>
+      {item.signature ? (
+        <blockquote className="mt-3 text-[16px] leading-relaxed text-foreground">
+          &ldquo;{item.signature}&rdquo;
+        </blockquote>
+      ) : null}
       {item.persona ? (
-        <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
+        <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
           {item.persona}
         </p>
       ) : null}
