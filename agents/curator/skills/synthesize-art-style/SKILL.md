@@ -144,19 +144,14 @@ PY""")
 assert 'art images ok' in gen_log, gen_log
 ```
 
-Write each file to PawFS, then attach the id lists + manifests. Record the
-producing image engine per manifest item as `model: {model, provider}` — one
-style may (ideally!) carry samples from different image engines, and per-item
-attribution is what lets the catalog display which engine produced which
-sample. Use the real engine name when an image model generated the file; the
-PIL fallback records `procedural-pil`:
+Write each file to PawFS, then attach the id lists + manifests:
 
 ```python
 ref_ids, ref_manifest = [], []
 for nm in ["ref-1","ref-2","ref-3"]:
     b = sandbox.read(f'/tmp/{nm}.jpg', binary=True)
     r = temper.write(f'/katagami/art-styles/{slug}/{nm}.jpg', b, {'mime_type': 'image/jpeg'})
-    ref_ids.append(r['file_id']); ref_manifest.append({'file_id': r['file_id'], 'role': 'reference', 'aspect': '1:1', 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
+    ref_ids.append(r['file_id']); ref_manifest.append({'file_id': r['file_id'], 'role': 'reference', 'aspect': '1:1'})
 temper.action('ArtStyles', eid, 'AttachReferenceImages', {
     'reference_image_file_ids': json.dumps(ref_ids),
     'reference_manifest': json.dumps({'items': ref_manifest}, ensure_ascii=False)
@@ -166,7 +161,7 @@ proof_ids, proof_manifest = [], []
 for subj in ["portrait","landscape","object","pattern"]:
     b = sandbox.read(f'/tmp/proof-{subj}.jpg', binary=True)
     r = temper.write(f'/katagami/art-styles/{slug}/proof-{subj}.jpg', b, {'mime_type': 'image/jpeg'})
-    proof_ids.append(r['file_id']); proof_manifest.append({'file_id': r['file_id'], 'subject': subj, 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
+    proof_ids.append(r['file_id']); proof_manifest.append({'file_id': r['file_id'], 'subject': subj})
 temper.action('ArtStyles', eid, 'AttachProofShots', {
     'proof_shots_file_ids': json.dumps(proof_ids),
     'proof_shots_manifest': json.dumps({'items': proof_manifest}, ensure_ascii=False)
@@ -184,31 +179,6 @@ tr = temper.write(f'/katagami/art-styles/{slug}/thumbnail.jpg', tb, {'mime_type'
 temper.action('ArtStyles', eid, 'AttachThumbnail', {'thumbnail_file_id': tr['file_id']})
 
 temper.action('ArtStyles', eid, 'SetLineage', {'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'})
-```
-
-## Credits + Model Provenance (publish requirements)
-
-The `Publish` guard requires `has_credits` and `has_model_provenance` (ARN-148).
-Credit ALL influences — an LLM-produced style is an aggregate of many hands; credit
-the movements, studios, or traditions it descends from, never a living artist's
-signature. Record which models produced the recipe and the images. The finalizer
-rejects the style if either field is missing or empty.
-
-```python
-credits = [
-    {"name": "Risograph print culture", "kind": "tradition", "note": "duplicator spot-ink aesthetics"},
-    {"name": "Mid-century two-color poster printing", "kind": "movement", "note": "limited-ink discipline"}
-]
-temper.action('ArtStyles', eid, 'SetCredits', {'credits': json.dumps(credits, ensure_ascii=False)})
-
-model_provenance = {
-    "style": {"model": "<the model authoring this recipe>"},
-    "source": {"model": "<the LLM that sourced/identified the tradition>"},
-    # Default/fallback engine only — when samples come from multiple engines
-    # (welcome, not an error), the per-image truth lives in the manifest items.
-    "images": {"model": "<image engine or 'procedural-pil'>", "provider": "<provider or 'sandbox'>", "tool": "<tool used>"}
-}
-temper.action('ArtStyles', eid, 'SetModelProvenance', {'model_provenance': json.dumps(model_provenance, ensure_ascii=False)})
 ```
 
 ## Final Tool Call

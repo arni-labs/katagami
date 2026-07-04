@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-# rlib in addition to cdylib so `cargo test` can link the host-target test
-# harness; the shipped artifact is still the cdylib .wasm from build.sh.
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [workspace]
 
