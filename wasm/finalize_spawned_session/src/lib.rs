@@ -1,7 +1,5 @@
 use temper_wasm_sdk::prelude::*;
 
-mod facets;
-
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
 const SHADCN_COMPONENTS: [&str; 16] = [
     "button",
@@ -420,84 +418,6 @@ fn verify_synthesized_languages(
     }))
 }
 
-// Fetch the taxonomy tree once as id -> parent_id, for family_id derivation.
-// Best-effort: a failure yields an empty map (family_id resolves to "").
-fn load_taxonomy_parents(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-) -> std::collections::HashMap<String, String> {
-    let mut map = std::collections::HashMap::new();
-    let url = format!("{api_url}/tdata/Taxonomies?$top=5000");
-    let resp = match http_call(ctx, "GET", &url, headers, "") {
-        Ok(r) if (200..300).contains(&r.status) => r,
-        _ => return map,
-    };
-    let doc: serde_json::Value = serde_json::from_str(&resp.body).unwrap_or_else(|_| json!({}));
-    if let Some(arr) = doc.get("value").and_then(|v| v.as_array()) {
-        for row in arr {
-            let id = row
-                .get("entity_id")
-                .and_then(|v| v.as_str())
-                .or_else(|| row.get("fields").and_then(|f| f.get("Id")).and_then(|v| v.as_str()))
-                .unwrap_or("");
-            if id.is_empty() {
-                continue;
-            }
-            let f = row.get("fields").unwrap_or(row);
-            let parent = f
-                .get("parent_id")
-                .or_else(|| f.get("ParentId"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            map.insert(id.to_string(), parent.to_string());
-        }
-    }
-    map
-}
-
-// Derive the gallery facets from a published language's fields and store them via
-// AttachComputedFacets — Temper governs the write. Non-fatal by contract.
-fn attach_computed_facets(
-    ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
-    language_id: &str,
-    language: &serde_json::Value,
-    tax_parents: &std::collections::HashMap<String, String>,
-) {
-    let fields = language
-        .get("fields")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-    let tokens = fields.get("tokens").and_then(|v| v.as_str()).unwrap_or("");
-    let tax_ids = fields
-        .get("taxonomy_ids")
-        .and_then(|v| v.as_str())
-        .unwrap_or("[]");
-    let params = json!({
-        "search_blob": facets::search_blob(&fields),
-        "hue_bucket": facets::hue_bucket(tokens),
-        "family_id": facets::family_id(tax_ids, tax_parents),
-    });
-    if dispatch_action(
-        ctx,
-        api_url,
-        headers,
-        "DesignLanguages",
-        language_id,
-        "AttachComputedFacets",
-        &params,
-    )
-    .is_err()
-    {
-        ctx.log(
-            "warn",
-            &format!("facets: AttachComputedFacets failed for {language_id} (non-fatal)"),
-        );
-    }
-}
-
 fn verify_quality_reviewed_languages(
     ctx: &Context,
     api_url: &str,
@@ -513,10 +433,6 @@ fn verify_quality_reviewed_languages(
         )
         .field("design_language_ids"));
     }
-
-    // Taxonomy tree for family_id, fetched once (best-effort — empty map just
-    // means family_id resolves to "").
-    let tax_parents = load_taxonomy_parents(ctx, api_url, headers);
 
     let mut published = Vec::new();
     for language_id in &language_ids {
@@ -549,9 +465,6 @@ fn verify_quality_reviewed_languages(
             &json!({}),
         )?;
         ensure_language_published(ctx, api_url, headers, language_id)?;
-        // Derive + store gallery facets (compute here, Temper governs the write).
-        // Best-effort: a facet write must never fail a publish.
-        attach_computed_facets(ctx, api_url, headers, language_id, &verified_language, &tax_parents);
         published.push(language_id.clone());
     }
 
@@ -1826,27 +1739,6 @@ fn walk_lane_entity_to_published(
         publish_action,
         &json!({}),
     )?;
-    // Derive + store the lane's case-insensitive search blob (compute here, Temper
-    // governs the write). Non-fatal — never fails a publish.
-    let empty = json!({});
-    let sb = facets::lane_search_blob(set_name, entity.get("fields").unwrap_or(&empty));
-    if !sb.is_empty()
-        && dispatch_action(
-            ctx,
-            api_url,
-            headers,
-            set_name,
-            entity_id,
-            "AttachComputedFacets",
-            &json!({ "search_blob": sb }),
-        )
-        .is_err()
-    {
-        ctx.log(
-            "warn",
-            &format!("facets: AttachComputedFacets failed for {set_name}('{entity_id}') (non-fatal)"),
-        );
-    }
     Ok(())
 }
 
