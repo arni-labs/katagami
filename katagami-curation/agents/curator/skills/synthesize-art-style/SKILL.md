@@ -181,6 +181,29 @@ temper.action('ArtStyles', eid, 'AttachThumbnail', {'thumbnail_file_id': tr['fil
 temper.action('ArtStyles', eid, 'SetLineage', {'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'})
 ```
 
+## Credits + Model Provenance (publish requirements)
+
+The `Publish` guard requires `has_credits` and `has_model_provenance` (ARN-148).
+Credit ALL influences — an LLM-produced style is an aggregate of many hands; credit
+the movements, studios, or traditions it descends from, never a living artist's
+signature. Record which models produced the recipe and the images. The finalizer
+rejects the style if either field is missing or empty.
+
+```python
+credits = [
+    {"name": "Risograph print culture", "kind": "tradition", "note": "duplicator spot-ink aesthetics"},
+    {"name": "Mid-century two-color poster printing", "kind": "movement", "note": "limited-ink discipline"}
+]
+temper.action('ArtStyles', eid, 'SetCredits', {'credits': json.dumps(credits, ensure_ascii=False)})
+
+model_provenance = {
+    "style": {"model": "<the model authoring this recipe>"},
+    "source": {"model": "<the model that sourced/identified the tradition>"},
+    "images": {"model": "<image engine or 'procedural-pil'>", "provider": "<provider or 'sandbox'>", "tool": "<tool used>"}
+}
+temper.action('ArtStyles', eid, 'SetModelProvenance', {'model_provenance': json.dumps(model_provenance, ensure_ascii=False)})
+```
+
 ## Final Tool Call
 
 ```python

@@ -1712,8 +1712,35 @@ fn verify_synthesized_palettes(
             "missing_palette_system",
         )?;
         let lane_fields = entity_fields(&entity);
-        required_string_field(id, &lane_fields, "tokens_export_file_id")?;
-        required_string_field(id, &lane_fields, "thumbnail_file_id")?;
+        let tokens_export_file_id =
+            required_string_field(id, &lane_fields, "tokens_export_file_id")?;
+        let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
+
+        verify_palette_signature(id, &lane_fields)?;
+        verify_palette_role_map(id, &lane_fields, "neutrals")?;
+        verify_palette_role_map(id, &lane_fields, "semantic")?;
+
+        let tokens_body = read_lane_file_value(
+            ctx,
+            api_url,
+            headers,
+            "PaletteSystem",
+            id,
+            &tokens_export_file_id,
+            "tokens_export",
+        )?;
+        verify_palette_tokens_export(id, &tokens_export_file_id, &tokens_body)?;
+
+        verify_lane_image_file(
+            ctx,
+            api_url,
+            headers,
+            "PaletteSystem",
+            id,
+            &thumbnail_file_id,
+            "thumbnail",
+        )?;
+
         walk_lane_entity_to_published(
             ctx,
             api_url,
@@ -1748,9 +1775,15 @@ fn verify_synthesized_art_styles(
         let entity =
             load_required_entity(ctx, api_url, headers, "ArtStyles", id, "missing_art_style")?;
         let lane_fields = entity_fields(&entity);
-        required_string_field(id, &lane_fields, "prompt_template")?;
-        required_string_field(id, &lane_fields, "thumbnail_file_id")?;
-        if string_array_flexible(lane_fields.get("reference_image_file_ids")).is_empty() {
+        let prompt_template = required_string_field(id, &lane_fields, "prompt_template")?;
+        verify_prompt_template_holes(id, &prompt_template)?;
+
+        require_lane_json_object(id, "ArtStyle", &lane_fields, "slot_recipes")?;
+        require_lane_json_array(id, "ArtStyle", &lane_fields, "credits")?;
+        require_lane_json_object(id, "ArtStyle", &lane_fields, "model_provenance")?;
+
+        let reference_ids = string_array_flexible(lane_fields.get("reference_image_file_ids"));
+        if reference_ids.is_empty() {
             return Err(VerificationError::new(
                 "missing_reference_image_file_ids",
                 format!("ArtStyle '{id}' has no reference_image_file_ids"),
@@ -1758,6 +1791,44 @@ fn verify_synthesized_art_styles(
             .entity("ArtStyle", id)
             .field("reference_image_file_ids"));
         }
+        let proof_ids = string_array_flexible(lane_fields.get("proof_shots_file_ids"));
+        if proof_ids.is_empty() {
+            return Err(VerificationError::new(
+                "missing_proof_shots_file_ids",
+                format!("ArtStyle '{id}' has no proof_shots_file_ids"),
+            )
+            .entity("ArtStyle", id)
+            .field("proof_shots_file_ids"));
+        }
+        let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
+
+        for file_id in &reference_ids {
+            verify_lane_image_file(
+                ctx,
+                api_url,
+                headers,
+                "ArtStyle",
+                id,
+                file_id,
+                "reference_image",
+            )?;
+        }
+        for file_id in &proof_ids {
+            verify_lane_image_file(ctx, api_url, headers, "ArtStyle", id, file_id, "proof_shot")?;
+        }
+        verify_lane_image_file(
+            ctx,
+            api_url,
+            headers,
+            "ArtStyle",
+            id,
+            &thumbnail_file_id,
+            "thumbnail",
+        )?;
+
+        verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "reference_manifest", &reference_ids)?;
+        verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "proof_shots_manifest", &proof_ids)?;
+
         walk_lane_entity_to_published(
             ctx,
             api_url,
@@ -1846,6 +1917,403 @@ fn walk_lane_entity_to_published(
             "warn",
             &format!("facets: AttachComputedFacets failed for {set_name}('{entity_id}') (non-fatal)"),
         );
+    }
+    Ok(())
+}
+
+// --- Lane deep verification (ARN-148 / RFC-0002 §7) ---
+//
+// Art styles and palettes must never publish on a rubber stamp. Before
+// walk_lane_entity_to_published dispatches MarkQualityPassed, the finalizer
+// reads the actual artifact evidence: image file bodies (rejecting text,
+// markup, JSON, SVG, and base64 payloads), prompt-template holes, manifests
+// matching attached file ids, credits + model provenance, and palette color
+// data. Bodies arrive through the host's lossy UTF-8 http_call, so binary
+// image checks use the same negative-heuristic discipline as the
+// design-language thumbnail path rather than requiring magic bytes.
+
+fn verify_prompt_template_holes(
+    owner_id: &str,
+    template: &str,
+) -> Result<(), VerificationError> {
+    for hole in ["{subject}", "{palette}"] {
+        if !template.contains(hole) {
+            return Err(VerificationError::new(
+                "prompt_template_missing_hole",
+                format!(
+                    "ArtStyle '{owner_id}' prompt_template is missing its required '{hole}' hole"
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .field("prompt_template"));
+        }
+    }
+    Ok(())
+}
+
+fn lane_field<'a>(
+    fields: &'a serde_json::Value,
+    name: &str,
+) -> Option<&'a serde_json::Value> {
+    fields
+        .get(name)
+        .or_else(|| fields.get(pascal_case(name).as_str()))
+}
+
+fn require_lane_json_object(
+    owner_id: &str,
+    entity_label: &'static str,
+    fields: &serde_json::Value,
+    field_name: &'static str,
+) -> Result<serde_json::Value, VerificationError> {
+    match parse_json_field(lane_field(fields, field_name)) {
+        Some(serde_json::Value::Object(map)) if !map.is_empty() => {
+            Ok(serde_json::Value::Object(map))
+        }
+        _ => Err(VerificationError::new(
+            "lane_field_not_object",
+            format!(
+                "{entity_label} '{owner_id}' field '{field_name}' must be a non-empty JSON object"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .field(field_name)),
+    }
+}
+
+fn require_lane_json_array(
+    owner_id: &str,
+    entity_label: &'static str,
+    fields: &serde_json::Value,
+    field_name: &'static str,
+) -> Result<Vec<serde_json::Value>, VerificationError> {
+    match parse_json_field(lane_field(fields, field_name)) {
+        Some(serde_json::Value::Array(items)) if !items.is_empty() => Ok(items),
+        _ => Err(VerificationError::new(
+            "lane_field_not_array",
+            format!(
+                "{entity_label} '{owner_id}' field '{field_name}' must be a non-empty JSON array"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .field(field_name)),
+    }
+}
+
+fn verify_lane_manifest_files(
+    owner_id: &str,
+    entity_label: &'static str,
+    fields: &serde_json::Value,
+    manifest_field: &'static str,
+    file_ids: &[String],
+) -> Result<(), VerificationError> {
+    let manifest = require_lane_json_object(owner_id, entity_label, fields, manifest_field)?;
+    let items = manifest
+        .get("items")
+        .and_then(|value| value.as_array())
+        .cloned()
+        .unwrap_or_default();
+    if items.is_empty() {
+        return Err(VerificationError::new(
+            "lane_manifest_empty",
+            format!("{entity_label} '{owner_id}' {manifest_field} has no items"),
+        )
+        .entity(entity_label, owner_id)
+        .field(manifest_field));
+    }
+    let mut manifest_ids: Vec<String> = Vec::new();
+    for item in &items {
+        let file_id = item
+            .get("file_id")
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+            .to_string();
+        if file_id.is_empty() {
+            return Err(VerificationError::new(
+                "lane_manifest_item_missing_file_id",
+                format!(
+                    "{entity_label} '{owner_id}' {manifest_field} has an item without a file_id"
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .field(manifest_field));
+        }
+        manifest_ids.push(file_id);
+    }
+    let mut expected: Vec<String> = file_ids.to_vec();
+    expected.sort();
+    expected.dedup();
+    manifest_ids.sort();
+    manifest_ids.dedup();
+    if manifest_ids != expected {
+        return Err(VerificationError::new(
+            "lane_manifest_files_mismatch",
+            format!(
+                "{entity_label} '{owner_id}' {manifest_field} items do not match the attached file ids 1:1"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .field(manifest_field));
+    }
+    Ok(())
+}
+
+fn verify_lane_image_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    entity_label: &'static str,
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<(), VerificationError> {
+    let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "lane_file_missing",
+            format!(
+                "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' does not exist"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let file_status = entity_status_value(&file);
+    if file_status != "Ready" && file_status != "Locked" {
+        return Err(VerificationError::new(
+            "lane_file_not_ready",
+            format!(
+                "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' is in state '{file_status}', expected Ready or Locked"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    let file_fields = entity_fields(&file);
+    let mime_type = first_nonempty(&[
+        string_field_any(&file_fields, "mime_type", ""),
+        string_field_any(&file_fields, "MimeType", ""),
+    ]);
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
+    if size_bytes <= 0 {
+        return Err(VerificationError::new(
+            "lane_file_metadata_missing",
+            format!(
+                "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' is Ready but has no usable SizeBytes"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    let body = read_lane_file_value(
+        ctx,
+        api_url,
+        headers,
+        entity_label,
+        owner_id,
+        file_id,
+        artifact_kind,
+    )?;
+    if !lane_payload_plausible_image(&mime_type, &body) {
+        return Err(VerificationError::new(
+            "lane_file_not_image",
+            format!(
+                "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' does not look like image bytes (mime '{mime_type}'); text, markup, JSON, SVG, and base64 payloads are not publishable images"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    Ok(())
+}
+
+fn read_lane_file_value(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    entity_label: &'static str,
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<String, VerificationError> {
+    let resp = http_call(
+        ctx,
+        "GET",
+        &format!("{api_url}/tdata/Files('{file_id}')/$value"),
+        headers,
+        "",
+    )?;
+    if resp.status == 404 {
+        return Err(VerificationError::new(
+            "lane_file_value_missing",
+            format!(
+                "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' has no readable $value bytes"
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    if !(200..300).contains(&resp.status) {
+        return Err(VerificationError::new(
+            "lane_file_value_read_failed",
+            format!(
+                "Failed to read Files('{file_id}')/$value for {entity_label} '{owner_id}': HTTP {}: {}",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        )
+        .entity(entity_label, owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    Ok(resp.body)
+}
+
+fn lane_payload_plausible_image(mime_type: &str, body: &str) -> bool {
+    if body.len() < 64 {
+        return false;
+    }
+    if thumbnail_payload_looks_text_encoded_image(body) {
+        return false;
+    }
+    let prefix: String = body
+        .chars()
+        .take(4096)
+        .collect::<String>()
+        .to_ascii_lowercase();
+    let trimmed = prefix.trim_start();
+    let looks_textual = trimmed.starts_with("<!doctype")
+        || (trimmed.starts_with('<') && (prefix.contains("<html") || prefix.contains("<svg")))
+        || trimmed.starts_with('{')
+        || trimmed.starts_with('[')
+        || trimmed.starts_with("version:")
+        || trimmed.starts_with("---");
+    if looks_textual {
+        return false;
+    }
+    let normalized = mime_type.trim().to_ascii_lowercase();
+    if normalized.starts_with("image/") && normalized != "image/svg+xml" {
+        return true;
+    }
+    let binary_signal =
+        thumbnail_payload_looks_image_like(body) || body.starts_with('\u{FFFD}');
+    matches!(normalized.as_str(), "" | "application/octet-stream") && binary_signal
+}
+
+fn is_hex_color(value: &str) -> bool {
+    let v = value.trim();
+    if !matches!(v.len(), 4 | 7 | 9) {
+        return false;
+    }
+    let mut chars = v.chars();
+    if chars.next() != Some('#') {
+        return false;
+    }
+    chars.all(|c| c.is_ascii_hexdigit())
+}
+
+fn count_distinct_hex_colors(body: &str) -> usize {
+    let bytes = body.as_bytes();
+    let mut found: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'#' && i + 6 < bytes.len() {
+            let candidate = &bytes[i + 1..i + 7];
+            if candidate.iter().all(|b| b.is_ascii_hexdigit())
+                && bytes
+                    .get(i + 7)
+                    .map(|b| !b.is_ascii_hexdigit())
+                    .unwrap_or(true)
+            {
+                let hex = format!(
+                    "#{}",
+                    String::from_utf8_lossy(candidate).to_ascii_lowercase()
+                );
+                if !found.contains(&hex) {
+                    found.push(hex);
+                }
+                i += 7;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    found.len()
+}
+
+fn verify_palette_signature(
+    owner_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let items = require_lane_json_array(owner_id, "PaletteSystem", fields, "signature")?;
+    if items.len() > 4 {
+        return Err(VerificationError::new(
+            "palette_signature_invalid",
+            format!(
+                "PaletteSystem '{owner_id}' signature must carry 1-4 accent colors, found {}",
+                items.len()
+            ),
+        )
+        .entity("PaletteSystem", owner_id)
+        .field("signature"));
+    }
+    for item in &items {
+        let hex = item
+            .get("hex")
+            .and_then(|value| value.as_str())
+            .unwrap_or("");
+        if !is_hex_color(hex) {
+            return Err(VerificationError::new(
+                "palette_signature_invalid",
+                format!(
+                    "PaletteSystem '{owner_id}' signature entry '{hex}' is not a real hex color"
+                ),
+            )
+            .entity("PaletteSystem", owner_id)
+            .field("signature"));
+        }
+    }
+    Ok(())
+}
+
+fn verify_palette_role_map(
+    owner_id: &str,
+    fields: &serde_json::Value,
+    field_name: &'static str,
+) -> Result<(), VerificationError> {
+    let map = require_lane_json_object(owner_id, "PaletteSystem", fields, field_name)?;
+    let entries = map.as_object().cloned().unwrap_or_default();
+    for (role, value) in &entries {
+        let hex = value.as_str().unwrap_or("");
+        if !is_hex_color(hex) {
+            return Err(VerificationError::new(
+                "palette_role_not_hex",
+                format!(
+                    "PaletteSystem '{owner_id}' {field_name}.{role} is not a real hex color"
+                ),
+            )
+            .entity("PaletteSystem", owner_id)
+            .field(field_name));
+        }
+    }
+    Ok(())
+}
+
+fn verify_palette_tokens_export(
+    owner_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Result<(), VerificationError> {
+    let trimmed = body.trim();
+    let hex_count = count_distinct_hex_colors(trimmed);
+    if trimmed.len() < 200 || !trimmed.contains("--") || hex_count < 6 {
+        return Err(VerificationError::new(
+            "palette_tokens_export_invalid",
+            format!(
+                "PaletteSystem '{owner_id}' tokens export '{file_id}' must be a real CSS+DTCG document ({} chars, {hex_count} distinct hex colors); regenerate the export",
+                trimmed.len()
+            ),
+        )
+        .entity("PaletteSystem", owner_id)
+        .artifact("tokens_export", file_id));
     }
     Ok(())
 }
