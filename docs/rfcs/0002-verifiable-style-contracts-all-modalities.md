@@ -201,11 +201,19 @@ This is a class fix: one `verify_lane_artifacts` discipline for every current an
 
 ## 8. The design-language lane (ARN-134 — the firewall)
 
-Publish-time verification is already deep here; ARN-134 is about the **consumption side**: agent-generated UI checked against a published language.
+Publish-time verification is already deep here; ARN-134 is about the **consumption side**: agent-generated UI checked against a published language. Two complementary strategies — **prevent** off-language code where the consumer adopts our surface, **detect** it everywhere else.
+
+Detection (works on any artifact, any stack):
 
 - Compile a language into rung 2: a DTCG token export (typed `$value`/`$type`, aliases, OKLCH) alongside DESIGN.md.
 - Ship rung 3: a rule set + checker over output CSS/markup — WCAG contrast, border-radius ∈ {0, 16, 24, 9999}, token adherence (no hardcoded values off the token set), ≤3 accents, body ≥17px, spacing floors, hero placement, no borders. Terrazzo/Stylelint prove each check type is CI-viable; nobody has pointed them at a *language*.
 - Rung 4: a Temper conformance gate — a governed action that takes a candidate artifact, runs the checker, and records a pass/fail the consumer's pipeline can block on. Cedar-policied; humans set what blocks vs. warns.
+
+Prevention (works when the consumer adopts the language's surface at build time):
+
+- A **generated enforcement kit** per language: a typed token surface where only that language's decisions are expressible, plus a per-language ESLint/Stylelint rule package (allowed color tokens = the palette, radius from the language's set, spacing scale only, no raw hex, no off-token values), CI-ready. Polar's Orbit design system validates this approach in production for LLM-written UI: tokens as *decisions not values* (`padding="l"`, not `p-4`), a typed component API instead of an open className surface, raw HTML banned by lint, all enforced in CI — "anything you put in a doc is a probability, not a guarantee" is their conclusion too, arrived at independently ([polar.sh/blog/orbit-llm-safe-design-system](https://polar.sh/blog/orbit-llm-safe-design-system)). Off-language code becomes inexpressible, not just detectable.
+- This extends the export family we already generate per language (shadcn registry theme, components.md) with a constraint layer — cheap to derive from the same tokens. Borrow Orbit's `light-dark()` mechanic: embed both modes in one token value so a forgotten dark variant can't exist.
+- Honest scope: prevention is per-stack and requires buy-in. An agent emitting plain HTML, or using someone else's components, is untouched by the kit — that's why the checker and the gate stay necessary. And a typed vocabulary closes the *token* surface only; the holistic rules (hero placement, accents in actual use, composition) still belong to the checker and the human.
 
 Honest ceiling, stated in the product: automated a11y catches roughly half of issues by volume and only ~20–30% of WCAG criteria are fully machine-testable; composition and feel stay human. The firewall makes the checkable properties non-negotiable — that's all it claims.
 
@@ -245,7 +253,7 @@ Mapped to the Linear tree; each phase independently shippable, dependency order 
 - **Phase 0 — verify our own shelves** (§7; new issue under ARN-133): deep finalizer verification for art styles + palettes; credits/provenance into the ArtStyle publish guard; backfill pass over published styles. No new entities.
 - **Phase 1 — the writing modality** (ARN-137 + entity work from ARN-121): `writing_style.ioa.toml`, voice.md lint contract, `synthesize-writing-style`, deterministic bands checker in the finalizer, `/voice` UI, 3–5 seed voices through the pipeline (ARN-141 production half).
 - **Phase 2 — voice intake + soft layer** (ARN-138, ARN-139, ARN-140): find-your-style corpus intake with consent binding, extraction + naming flow, embedding similarity with confidence/abstain, consumer conformance endpoint for voices.
-- **Phase 3 — design firewall** (ARN-134): DTCG export, language rule-set checker, Temper conformance gate.
+- **Phase 3 — design firewall** (ARN-134): DTCG export, language rule-set checker, Temper conformance gate, generated per-language enforcement kit (typed token surface + lint rule package).
 - **Phase 4 — art-style verification definition** (ARN-135): definition + one-style prototype, then scope the build.
 - **Substrate (ARN-136)** threads through all phases — each phase contributes its piece to the shared schema rather than a parallel one.
 
