@@ -286,6 +286,7 @@ fn verify_typed_completion(
         })),
         "synthesize_palette" => verify_synthesized_palettes(ctx, api_url, headers, fields),
         "synthesize_art_style" => verify_synthesized_art_styles(ctx, api_url, headers, fields),
+        "synthesize_writing_style" => verify_synthesized_writing_styles(ctx, api_url, headers, fields),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
 }
@@ -2482,6 +2483,494 @@ fn verify_palette_tokens_export(
     Ok(())
 }
 
+
+// --- WritingStyle lane: consent attestation + bands self-consistency (RFC-0002 §5-6) ---
+//
+// A writing style publishes only as a CHECKED contract: the consent block must
+// be opt-in with author + license (-> AttestConsent), and every corpus file and
+// long-enough exemplar must pass the style's own mechanical bands
+// (-> MarkBandsSelfConsistent). Banned phrases/patterns are hard fails on every
+// text; statistical bands (sentence rhythm, punctuation, TTR, function-word
+// distance) evaluate only texts at or above min_words_to_evaluate — the abstain
+// discipline — and at least one text must be evaluable.
+
+fn verify_synthesized_writing_styles(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, VerificationError> {
+    let ids = lane_ids_from_job(fields, &["writing_style_ids", "writingstyle_ids"]);
+    if ids.is_empty() {
+        return Err(VerificationError::new(
+            "missing_writing_style_ids",
+            "synthesize_writing_style completed without writing_style_ids",
+        )
+        .field("writing_style_ids"));
+    }
+    for id in &ids {
+        let entity = load_required_entity(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "missing_writing_style",
+        )?;
+        let lane_fields = entity_fields(&entity);
+
+        let consent = require_lane_json_object(id, "WritingStyle", &lane_fields, "consent")?;
+        verify_voice_consent(id, &consent)?;
+        require_lane_json_array(id, "WritingStyle", &lane_fields, "credits")?;
+        require_lane_json_object(id, "WritingStyle", &lane_fields, "model_provenance")?;
+        require_lane_json_object(id, "WritingStyle", &lane_fields, "vocabulary")?;
+
+        let bands = require_lane_json_object(id, "WritingStyle", &lane_fields, "mechanical_bands")?;
+        if bands.get("schema").and_then(|v| v.as_str()) != Some("katagami:voice-bands/v1") {
+            return Err(VerificationError::new(
+                "voice_bands_schema_invalid",
+                format!(
+                    "WritingStyle '{id}' mechanical_bands must declare schema katagami:voice-bands/v1"
+                ),
+            )
+            .entity("WritingStyle", id)
+            .field("mechanical_bands"));
+        }
+
+        let corpus_ids = string_array_flexible(lane_fields.get("corpus_file_ids"));
+        if corpus_ids.is_empty() {
+            return Err(VerificationError::new(
+                "missing_corpus_file_ids",
+                format!("WritingStyle '{id}' has no corpus_file_ids"),
+            )
+            .entity("WritingStyle", id)
+            .field("corpus_file_ids"));
+        }
+        let exemplars = require_lane_json_array(id, "WritingStyle", &lane_fields, "exemplars")?;
+        if exemplars.len() < 3 {
+            return Err(VerificationError::new(
+                "insufficient_exemplars",
+                format!(
+                    "WritingStyle '{id}' needs at least 3 annotated exemplars, found {}",
+                    exemplars.len()
+                ),
+            )
+            .entity("WritingStyle", id)
+            .field("exemplars"));
+        }
+
+        let voice_md_file_id = required_string_field(id, &lane_fields, "voice_md_file_id")?;
+        let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
+
+        // Gather the texts the bands must hold over: every corpus file body plus
+        // every exemplar passage.
+        let mut texts: Vec<(String, String)> = Vec::new();
+        for file_id in &corpus_ids {
+            let body = read_lane_file_value(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyle",
+                id,
+                file_id,
+                "corpus",
+            )?;
+            texts.push((format!("corpus:{file_id}"), body));
+        }
+        for (index, exemplar) in exemplars.iter().enumerate() {
+            let passage = exemplar.get("text").and_then(|v| v.as_str()).unwrap_or("");
+            if passage.trim().is_empty() {
+                return Err(VerificationError::new(
+                    "exemplar_missing_text",
+                    format!("WritingStyle '{id}' exemplar {index} has no text"),
+                )
+                .entity("WritingStyle", id)
+                .field("exemplars"));
+            }
+            texts.push((format!("exemplar:{index}"), passage.to_string()));
+        }
+
+        if let Err(violation) = check_voice_bands(&bands, &texts) {
+            return Err(VerificationError::new(
+                "voice_bands_violation",
+                format!("WritingStyle '{id}' fails its own mechanical bands: {violation}"),
+            )
+            .entity("WritingStyle", id)
+            .field("mechanical_bands"));
+        }
+
+        let voice_md = read_lane_file_value(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyle",
+            id,
+            &voice_md_file_id,
+            "voice_md",
+        )?;
+        verify_voice_md_body(id, &voice_md_file_id, &voice_md)?;
+
+        verify_lane_image_file(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyle",
+            id,
+            &thumbnail_file_id,
+            "thumbnail",
+        )?;
+
+        // Evidence checks passed: flip the verifier-owned gates.
+        dispatch_action(ctx, api_url, headers, "WritingStyles", id, "AttestConsent", &json!({}))?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "MarkBandsSelfConsistent",
+            &json!({}),
+        )?;
+
+        if !entity_bool_any(&entity, "has_published_assets") {
+            let voice_md_asset = publish_lane_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyle",
+                "katagami/writing-styles",
+                id,
+                &voice_md_file_id,
+                "voice_md",
+            )?;
+            let thumbnail_asset = publish_lane_file_artifact(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyle",
+                "katagami/writing-styles",
+                id,
+                &thumbnail_file_id,
+                "thumbnail",
+            )?;
+            dispatch_action(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyles",
+                id,
+                "AttachPublishedAssets",
+                &json!({
+                    "voice_md_asset_id": voice_md_asset.0,
+                    "voice_md_asset_url": voice_md_asset.1,
+                    "thumbnail_asset_id": thumbnail_asset.0,
+                    "thumbnail_asset_url": thumbnail_asset.1,
+                }),
+            )?;
+        }
+
+        walk_lane_entity_to_published(ctx, api_url, headers, "WritingStyles", id, "Publish")?;
+    }
+    Ok(json!({
+        "validated": true,
+        "job_type": "synthesize_writing_style",
+        "published_writing_style_ids": ids,
+    }))
+}
+
+fn verify_voice_consent(
+    owner_id: &str,
+    consent: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let basis = consent.get("basis").and_then(|v| v.as_str()).unwrap_or("");
+    let author = consent.get("author").and_then(|v| v.as_str()).unwrap_or("");
+    let license = consent.get("license").and_then(|v| v.as_str()).unwrap_or("");
+    let provenance = consent
+        .get("provenance")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    // Three honest bases (RFC-0002 §5.1 as refined 2026-07-04):
+    //   opt_in        — a person/brand handed over their corpus (the intake gate;
+    //                   the ONLY basis the personal-voice track accepts)
+    //   public_domain — a verified-PD corpus; provenance must name the
+    //                   author/work/edition
+    //   original      — the pipeline authored the corpus in-register itself
+    let basis_ok = matches!(basis, "opt_in" | "public_domain" | "original");
+    let provenance_ok = basis != "public_domain" || !provenance.trim().is_empty();
+    if !basis_ok || !provenance_ok || author.trim().is_empty() || license.trim().is_empty() {
+        return Err(VerificationError::new(
+            "voice_consent_invalid",
+            format!(
+                "WritingStyle '{owner_id}' consent must carry basis opt_in | public_domain | original with author and license (public_domain also requires provenance naming the source work/edition); found basis '{basis}'"
+            ),
+        )
+        .entity("WritingStyle", owner_id)
+        .field("consent"));
+    }
+    Ok(())
+}
+
+fn verify_voice_md_body(
+    owner_id: &str,
+    file_id: &str,
+    body: &str,
+) -> Result<(), VerificationError> {
+    let trimmed = body.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    let mut problems: Vec<String> = Vec::new();
+    if !trimmed.starts_with("---") {
+        problems.push("missing YAML front matter".to_string());
+    }
+    if !lower.contains("kind: voice") {
+        problems.push("front matter missing kind: voice".to_string());
+    }
+    if !["consent: opt_in", "consent: public_domain", "consent: original"]
+        .iter()
+        .any(|marker| lower.contains(marker))
+    {
+        problems.push(
+            "front matter missing consent basis (opt_in | public_domain | original)".to_string(),
+        );
+    }
+    for heading in ["## Overview", "## Tone", "## Vocabulary", "## Moves", "## Register", "## Never"] {
+        if !trimmed.contains(heading) {
+            problems.push(format!("missing {heading}"));
+        }
+    }
+    if !trimmed.contains("katagami:voice-bands/v1") {
+        problems.push("missing katagami:voice-bands/v1 bands block".to_string());
+    }
+    for marker in ["TBD", "TODO", "lorem ipsum", "placeholder"] {
+        if lower.contains(&marker.to_ascii_lowercase()) {
+            problems.push(format!("placeholder text '{marker}'"));
+        }
+    }
+    if !problems.is_empty() {
+        return Err(VerificationError::new(
+            "voice_md_invalid",
+            format!("WritingStyle '{owner_id}' VOICE.md is not a valid contract projection: {}", problems.join("; ")),
+        )
+        .entity("WritingStyle", owner_id)
+        .artifact("voice_md", file_id));
+    }
+    Ok(())
+}
+
+// --- Deterministic voice-bands checker (katagami:voice-bands/v1) ---
+
+const FUNCTION_WORDS: [&str; 48] = [
+    "the", "a", "an", "and", "or", "but", "if", "then", "so", "of", "to", "in", "on", "at",
+    "by", "for", "with", "from", "as", "is", "are", "was", "were", "be", "been", "it", "its",
+    "this", "that", "these", "those", "i", "you", "we", "they", "he", "she", "not", "no",
+    "do", "does", "did", "have", "has", "had", "will", "would", "can",
+];
+
+fn words_of(text: &str) -> Vec<String> {
+    text.split(|c: char| !(c.is_alphanumeric() || c == '\''))
+        .filter(|w| !w.is_empty())
+        .map(|w| w.to_ascii_lowercase())
+        .collect()
+}
+
+fn sentences_of(text: &str) -> Vec<String> {
+    text.split(|c: char| c == '.' || c == '!' || c == '?')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+fn mean_stdev(values: &[f64]) -> (f64, f64) {
+    if values.is_empty() {
+        return (0.0, 0.0);
+    }
+    let mean = values.iter().sum::<f64>() / values.len() as f64;
+    let variance = values.iter().map(|v| (v - mean) * (v - mean)).sum::<f64>() / values.len() as f64;
+    (mean, variance.sqrt())
+}
+
+fn function_word_distribution(words: &[String]) -> Vec<f64> {
+    let mut counts = vec![0f64; FUNCTION_WORDS.len()];
+    for word in words {
+        if let Some(pos) = FUNCTION_WORDS.iter().position(|f| f == word) {
+            counts[pos] += 1.0;
+        }
+    }
+    let total: f64 = counts.iter().sum();
+    if total > 0.0 {
+        for count in counts.iter_mut() {
+            *count /= total;
+        }
+    }
+    counts
+}
+
+fn js_divergence(p: &[f64], q: &[f64]) -> f64 {
+    let kl = |a: &[f64], b: &[f64]| -> f64 {
+        a.iter()
+            .zip(b.iter())
+            .filter(|(x, _)| **x > 0.0)
+            .map(|(x, y)| x * (x / (y.max(1e-12))).ln())
+            .sum::<f64>()
+    };
+    let m: Vec<f64> = p.iter().zip(q.iter()).map(|(x, y)| 0.5 * (x + y)).collect();
+    (0.5 * kl(p, &m) + 0.5 * kl(q, &m)).max(0.0)
+}
+
+fn range_of(value: Option<&serde_json::Value>) -> Option<(f64, f64)> {
+    let arr = value?.as_array()?;
+    if arr.len() != 2 {
+        return None;
+    }
+    Some((arr[0].as_f64()?, arr[1].as_f64()?))
+}
+
+/// Check every text against the bands. Banned phrases and patterns are hard
+/// fails on every text; statistical bands evaluate only texts with at least
+/// min_words_to_evaluate words (default 150). At least one text must be
+/// evaluable, or there is no evidence the contract is satisfiable.
+fn check_voice_bands(
+    bands: &serde_json::Value,
+    texts: &[(String, String)],
+) -> Result<usize, String> {
+    let min_words = bands
+        .get("min_words_to_evaluate")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(150.0) as usize;
+
+    let banned_phrases: Vec<String> = bands
+        .get("banned_phrases")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_ascii_lowercase())
+                .collect()
+        })
+        .unwrap_or_default();
+    let banned_patterns: Vec<regex_lite::Regex> = bands
+        .get("banned_patterns")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .filter_map(|s| regex_lite::Regex::new(&format!("(?i){s}")).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // The corpus aggregate is the function-word reference for self-consistency.
+    let all_words: Vec<String> = texts.iter().flat_map(|(_, body)| words_of(body)).collect();
+    let reference_dist = function_word_distribution(&all_words);
+
+    let mut evaluated = 0usize;
+    for (label, body) in texts {
+        let lower = body.to_ascii_lowercase();
+        for phrase in &banned_phrases {
+            if lower.contains(phrase.as_str()) {
+                return Err(format!("{label}: banned phrase '{phrase}'"));
+            }
+        }
+        for pattern in &banned_patterns {
+            if pattern.is_match(body) {
+                return Err(format!("{label}: banned pattern '{}'", pattern.as_str()));
+            }
+        }
+
+        let words = words_of(body);
+        if words.len() < min_words {
+            continue; // abstain: too short for statistical bands
+        }
+        evaluated += 1;
+
+        if let Some(sentence_band) = bands.get("sentence_length") {
+            let lengths: Vec<f64> = sentences_of(body)
+                .iter()
+                .map(|s| words_of(s).len() as f64)
+                .collect();
+            let (mean, stdev) = mean_stdev(&lengths);
+            if let Some((lo, hi)) = range_of(sentence_band.get("mean")) {
+                if mean < lo || mean > hi {
+                    return Err(format!(
+                        "{label}: sentence mean {mean:.1} outside [{lo}, {hi}]"
+                    ));
+                }
+            }
+            if let Some(stdev_min) = sentence_band.get("stdev_min").and_then(|v| v.as_f64()) {
+                if stdev < stdev_min {
+                    return Err(format!(
+                        "{label}: sentence stdev {stdev:.1} below burstiness floor {stdev_min}"
+                    ));
+                }
+            }
+        }
+
+        if let Some(punct) = bands.get("punctuation").and_then(|v| v.as_object()) {
+            let per_1000 = |count: usize| count as f64 * 1000.0 / words.len() as f64;
+            for (key, range) in punct {
+                let needle = match key.as_str() {
+                    "em_dash_per_1000_words" => "—",
+                    "exclamations_per_1000_words" => "!",
+                    "semicolons_per_1000_words" => ";",
+                    _ => continue,
+                };
+                let rate = per_1000(body.matches(needle).count());
+                if let Some((lo, hi)) = range_of(Some(range)) {
+                    if rate < lo || rate > hi {
+                        return Err(format!(
+                            "{label}: {key} {rate:.2} outside [{lo}, {hi}]"
+                        ));
+                    }
+                }
+            }
+        }
+
+        if let Some(ttr_band) = bands.get("type_token_ratio") {
+            if let Some(ttr_min) = ttr_band.get("min").and_then(|v| v.as_f64()) {
+                // TTR decays with length, so evaluate over fixed windows
+                // (window_words, default 500) and average — the schema's shape.
+                let window = ttr_band
+                    .get("window_words")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(500.0)
+                    .max(1.0) as usize;
+                let mut ratios: Vec<f64> = Vec::new();
+                for chunk in words.chunks(window) {
+                    let mut distinct: Vec<&String> = chunk.iter().collect();
+                    distinct.sort();
+                    distinct.dedup();
+                    ratios.push(distinct.len() as f64 / chunk.len() as f64);
+                }
+                let (ttr, _) = mean_stdev(&ratios);
+                if ttr < ttr_min {
+                    return Err(format!(
+                        "{label}: windowed type-token ratio {ttr:.2} below {ttr_min}"
+                    ));
+                }
+            }
+        }
+
+        if let Some(max_distance) = bands
+            .get("function_words")
+            .and_then(|v| v.get("max_distance"))
+            .and_then(|v| v.as_f64())
+        {
+            let dist = js_divergence(&function_word_distribution(&words), &reference_dist);
+            if dist > max_distance {
+                return Err(format!(
+                    "{label}: function-word divergence {dist:.3} above {max_distance}"
+                ));
+            }
+        }
+    }
+
+    if evaluated == 0 {
+        return Err(format!(
+            "no text reached min_words_to_evaluate ({min_words}); the contract has no evaluable evidence"
+        ));
+    }
+    Ok(evaluated)
+}
+
 fn record_session_success(
     ctx: &Context,
     api_url: &str,
@@ -3288,5 +3777,195 @@ mod lane_verification_tests {
                 .code,
             "palette_role_not_hex"
         );
+    }
+}
+
+#[cfg(test)]
+mod voice_bands_tests {
+    use super::*;
+
+    fn bands(json_str: &str) -> serde_json::Value {
+        serde_json::from_str(json_str).unwrap()
+    }
+
+    // A plain, punchy register: short sentences with real variance.
+    fn on_voice_corpus() -> String {
+        let mut paragraphs = Vec::new();
+        let topics = [
+            ("deploy", "rollout", "latency"), ("cache", "eviction", "hit rate"),
+            ("queue", "backlog", "drain time"), ("schema", "migration", "row count"),
+            ("index", "rebuild", "scan cost"), ("alert", "paging", "noise floor"),
+            ("budget", "burn rate", "headroom"), ("retry", "backoff", "tail loss"),
+            ("shard", "rebalance", "skew"), ("batch", "windowing", "lag"),
+            ("probe", "timeout", "false alarm"), ("replica", "failover", "gap"),
+        ];
+        for (i, (noun, action, metric)) in topics.iter().enumerate() {
+            paragraphs.push(format!(
+                "Ship the {noun} change. Run {i} passed clean, and the {metric} held steady. \
+No drama here. We cut the flaky {action} path, measured everything twice, and watched \
+the {metric} drop by a third while the error budget stayed flat in each region. \
+Plain words win arguments. When a claim about the {noun} carries no number, either \
+count it honestly or delete the sentence before anyone reads it."
+            ));
+        }
+        paragraphs.join("\n\n")
+    }
+
+    #[test]
+    fn on_voice_corpus_passes_its_own_bands() {
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "sentence_length": {"mean": [3, 16], "stdev_min": 2.0},
+                "banned_phrases": ["delve", "leverage", "game-changer"],
+                "type_token_ratio": {"min": 0.15},
+                "function_words": {"max_distance": 0.2},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let texts = vec![
+            ("corpus:a".to_string(), on_voice_corpus()),
+            ("exemplar:0".to_string(), "Shipped. 3 bugs, 0 regressions.".to_string()),
+        ];
+        let evaluated = check_voice_bands(&b, &texts).expect("corpus must pass its own bands");
+        assert_eq!(evaluated, 1); // the short exemplar abstains
+    }
+
+    #[test]
+    fn banned_phrase_fails_even_in_short_texts() {
+        let b = bands(r#"{"schema": "katagami:voice-bands/v1", "banned_phrases": ["delve"], "min_words_to_evaluate": 100}"#);
+        let texts = vec![
+            ("corpus:a".to_string(), on_voice_corpus()),
+            ("exemplar:0".to_string(), "Let us Delve into this.".to_string()),
+        ];
+        let err = check_voice_bands(&b, &texts).unwrap_err();
+        assert!(err.contains("banned phrase 'delve'"), "{err}");
+    }
+
+    #[test]
+    fn banned_pattern_is_matched_case_insensitively() {
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "banned_patterns": ["not just \\w+, but"],
+                "min_words_to_evaluate": 100}"#,
+        );
+        let texts = vec![
+            ("corpus:a".to_string(), on_voice_corpus()),
+            ("exemplar:0".to_string(), "This is Not just speed, but craft.".to_string()),
+        ];
+        let err = check_voice_bands(&b, &texts).unwrap_err();
+        assert!(err.contains("banned pattern"), "{err}");
+    }
+
+    #[test]
+    fn droning_uniform_prose_fails_the_burstiness_floor() {
+        // Every sentence exactly the same length: stdev ~0.
+        let drone = std::iter::repeat("This sentence has exactly seven words total.")
+            .take(40)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "sentence_length": {"mean": [3, 16], "stdev_min": 2.0},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), drone)]).unwrap_err();
+        assert!(err.contains("burstiness floor"), "{err}");
+    }
+
+    #[test]
+    fn purple_long_sentences_fail_the_mean_band() {
+        let purple = std::iter::repeat(
+            "The luminous and endlessly unfolding evening, which had been gathering itself \
+across the low hills like a slow tide of amber light that no one in the valley could \
+quite bring themselves to ignore, settled over everything we had ever tried to name.",
+        )
+        .take(12)
+        .collect::<Vec<_>>()
+        .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "sentence_length": {"mean": [3, 16], "stdev_min": 0.0},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), purple)]).unwrap_err();
+        assert!(err.contains("sentence mean"), "{err}");
+    }
+
+    #[test]
+    fn exclamation_rate_band_enforced() {
+        let shouty = std::iter::repeat("We did it! The launch worked! Everyone cheered loudly!")
+            .take(30)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "punctuation": {"exclamations_per_1000_words": [0, 3]},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), shouty)]).unwrap_err();
+        assert!(err.contains("exclamations_per_1000_words"), "{err}");
+    }
+
+    #[test]
+    fn all_short_texts_mean_no_evidence() {
+        let b = bands(r#"{"schema": "katagami:voice-bands/v1", "min_words_to_evaluate": 150}"#);
+        let texts = vec![("exemplar:0".to_string(), "Too short to evaluate.".to_string())];
+        let err = check_voice_bands(&b, &texts).unwrap_err();
+        assert!(err.contains("no evaluable evidence"), "{err}");
+    }
+
+    #[test]
+    fn off_register_text_fails_function_word_distance() {
+        // Reference is dominated by the plain corpus; the off text is archaic/ornate
+        // with a very different function-word profile.
+        let ornate = std::iter::repeat(
+            "Whereupon yonder gentleman, being of the most agreeable disposition amongst \
+all whom fortune had thither conveyed, did graciously consent unto the proposal.",
+        )
+        .take(14)
+        .collect::<Vec<_>>()
+        .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "function_words": {"max_distance": 0.05},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let mut texts = Vec::new();
+        for i in 0..6 {
+            texts.push((format!("corpus:{i}"), on_voice_corpus()));
+        }
+        texts.push(("exemplar:0".to_string(), ornate));
+        let err = check_voice_bands(&b, &texts).unwrap_err();
+        assert!(err.contains("function-word divergence"), "{err}");
+    }
+
+    #[test]
+    fn consent_and_voice_md_checks() {
+        assert!(verify_voice_consent("ws-1", &serde_json::json!({
+            "basis": "opt_in", "author": "Rita", "license": "internal"
+        })).is_ok());
+        assert!(verify_voice_consent("ws-1", &serde_json::json!({
+            "basis": "original", "author": "katagami-curation", "license": "katagami-commons"
+        })).is_ok());
+        assert!(verify_voice_consent("ws-1", &serde_json::json!({
+            "basis": "public_domain", "author": "Jane Austen",
+            "license": "public domain",
+            "provenance": "Pride and Prejudice (1813), Project Gutenberg ebook 1342"
+        })).is_ok());
+        // public_domain without a named source is not attestable.
+        assert_eq!(
+            verify_voice_consent("ws-1", &serde_json::json!({
+                "basis": "public_domain", "author": "Jane Austen", "license": "public domain"
+            })).unwrap_err().code,
+            "voice_consent_invalid"
+        );
+        assert_eq!(
+            verify_voice_consent("ws-1", &serde_json::json!({"basis": "scraped", "author": "x", "license": "y"}))
+                .unwrap_err().code,
+            "voice_consent_invalid"
+        );
+        let good = "---\nversion: alpha\nkind: voice\nconsent: opt_in\n---\n## Overview\nx\n## Tone\nx\n## Vocabulary\nx\n## Moves\nx\n## Register\nx\n## Never\nx\n```json\n{\"schema\": \"katagami:voice-bands/v1\"}\n```\n";
+        assert!(verify_voice_md_body("ws-1", "f1", good).is_ok());
+        let err = verify_voice_md_body("ws-1", "f1", "just some text with TODO left in").unwrap_err();
+        assert_eq!(err.code, "voice_md_invalid");
     }
 }

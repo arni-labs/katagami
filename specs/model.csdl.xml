@@ -25,6 +25,7 @@
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ReviewInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="OrganizeInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="TasteRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
@@ -70,6 +71,7 @@
         <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
@@ -117,6 +119,7 @@
         <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="WorkspaceId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />

@@ -76,6 +76,11 @@ initial = "[]"
 name = "art_style_ids"
 type = "string"
 initial = "[]"
+[[state]]
+name = "writing_style_ids"
+type = "string"
+initial = "[]"
+
 
 [[state]]
 name = "review_input"
@@ -719,6 +724,44 @@ drop_ok = true
 
 [action.triggers.params_from]
 art_style_ids = "art_style_ids"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action]]
+name = "CompleteWritingStyleSynthesis"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["writing_style_ids", "output"]
+hint = "Writing-style synthesis completed. Finalizer attests consent, proves bands self-consistency against the corpus and exemplars, verifies VOICE.md, publishes public assets, and walks each WritingStyle to Published. Terminal lane (no quality_review/organize cascade)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action.triggers]]
+name = "writing_style_synthesis_completes_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "CompleteWritingStyle"
+# drop_ok: CompleteWritingStyle is from=[Synthesizing] on the direction. Same as the
+# palette and art-style lanes — if the direction already terminated before this job
+# committed, the complete harmlessly drops. Intentionally conditional.
+drop_ok = true
+
+[action.triggers.params_from]
+writing_style_ids = "writing_style_ids"
 
 [action.triggers.resolve_target]
 type = "field"
