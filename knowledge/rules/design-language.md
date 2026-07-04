@@ -84,22 +84,6 @@
 48. Credit the source. When an art style is recognizably attributable to a named artist, movement, studio, or tradition, name them — in a first-class `credits` property on the entity, never buried in prose. Credit *all* of them: a style an LLM produces is an aggregate of many influences, so `credits` is a list (Gekiga → Yoshihiro Tatsumi + Jirō Taniguchi + the gekiga movement; Benday Press → Roy Lichtenstein + Benjamin Day + golden-age comics). Each credit carries a `name`, a `kind` (artist / movement / studio / tradition), and a short note on how it informed the style. Never pass a recognizable style off as original — attribution is both courtesy and a correctness check. (Applies equally to design languages and palettes when they trace to a named hand.)
 
 ---
-## Folded in from the Pushpin → Chiclet curated iterations (2026-07-04) — tagged `·CHnnn`
-
-## Look (additions)
-49. Button and chip text never wraps — a control is never a blob; the layout shrinks or stacks instead. `·CH001`
-50. Links carry the language's own gesture — a sweep, a highlight, an ink-up — never a bare default underline. `·CH002`
-51. One strict type scale: every text size on the page belongs to the declared scale — no one-off sizes anywhere, headings to footers. `·CH003`
-52. Every typeface on the page has a declared role (display / body / mono at most) — no stray fonts outside them. `·CH004`
-53. Shadows follow their element's geometry — shape and softness agree with the corner radius. `·CH005`
-54. Copy and imagery never contest the same ground — text doesn't sit on busy artwork, and artwork never buries information. `·CH006`
-55. Balance density across the canvas — never a crowded cluster beside a starved void. `·CH007`
-56. Ornament forms one page-wide system: recurring elements, coherent through the entire page — never a one-off that appears once and vanishes. (Sharpens rule 18.) `·CH008`
-
-## Responsive (addition)
-57. Design the tablet band (~768–1024) as its own considered layout — never the mobile column stretched wide. `·CH009`
-
----
 ## Held — adopt after rewording (from the TR review)
 - **TR-028** (accent used consistently across all sections) — adopt, but reword to **exempt documented semantic / heat-scale roles**, so it doesn't fight an intentional scale like Civic Press's ink→amber→ember.
 - **TR-029** (layout-family diversity) — adopt the spirit (**4+ distinct families across 8 sections**), but **soften the absolute "each family at most once"** (three identical grids is the real smell, not a second principled reuse); N/A for dashboards / single-card artifacts.
