@@ -152,3 +152,16 @@ temper.done("synthesize_writing_style complete")
   are real lists — the cross-entity guards resolve arrays).
 - The bands checker is deterministic and unforgiving: derive, don't guess.
 - Do not fire finalizer-owned actions (see When to Use).
+
+## Exemplars — style, never subject (curator review, 2026-07-04)
+
+- Every exemplar demonstrates CONSTRUCTION — how the sentence moves — not what
+  it mentions. If the annotation describes content, pick a different passage.
+- The FIRST exemplar is the signature passage: it renders in quotes on the
+  catalog card, so the register must be assessable from it alone.
+- Public-domain registers quote the corpus VERBATIM (kind "corpus"), verified
+  against the source text; original registers quote their own corpus (kind
+  "authored"). "sent" is reserved for opt-in personal voices.
+- Annotations are one plain clause about the move, never workshop narration.
+- The corpus is displayed on the contract page ("how it reads") — it is the
+  style artifact. Excerpts must be long-form passages, not snippets.

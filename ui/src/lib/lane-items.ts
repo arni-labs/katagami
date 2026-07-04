@@ -64,12 +64,14 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
   const consent = parseJson<{ basis?: string }>(r.fields.consent) ?? {};
   const tone = parseJson<Record<string, unknown>>(r.fields.tone_scales) ?? {};
   const refusals = parseJson<string[]>(r.fields.refusals) ?? [];
+  const exemplars = parseJson<Array<{ text?: string }>>(r.fields.exemplars) ?? [];
   return {
     id: r.entity_id,
     name: r.fields.name ?? "",
     slug: r.fields.slug ?? "",
     status: r.status,
     persona: r.fields.persona ?? "",
+    signature: exemplars[0]?.text ?? "",
     basis: consent.basis ?? "",
     tone: Object.entries(tone)
       .filter(([, v]) => typeof v === "number" || typeof v === "string")

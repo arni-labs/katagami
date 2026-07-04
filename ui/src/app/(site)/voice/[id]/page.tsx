@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getWritingStyle, getFileUrl, parseJson } from "@/lib/odata";
+import { getWritingStyle, getFileUrl, getFileText, parseJson } from "@/lib/odata";
 import { isOwner } from "@/lib/owner";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
@@ -64,6 +64,30 @@ export default async function VoiceDetailPage({
       provenance?: string;
     }>(f.consent) ?? {};
   const tags = parseJson<string[]>(f.tags) ?? [];
+  const corpusIds = parseJson<string[]>(f.corpus_file_ids) ?? [];
+  const manifest =
+    parseJson<{ items?: Array<{ file_id?: string; source?: string; kind?: string }> }>(
+      f.corpus_manifest,
+    ) ?? {};
+  const sourceByFile = new Map(
+    (manifest.items ?? []).map((it) => [it.file_id ?? "", it.source ?? it.kind ?? ""]),
+  );
+  // The corpus IS the style artifact — fetch it and show real long-form prose.
+  // Cap the render per excerpt at a paragraph boundary near 1500 chars.
+  const excerpts = (
+    await Promise.all(
+      corpusIds.slice(0, 6).map(async (fid) => {
+        const body = (await getFileText(fid)).trim();
+        if (!body) return null;
+        let cut = body;
+        if (body.length > 1600) {
+          const at = body.lastIndexOf("\n\n", 1500);
+          cut = body.slice(0, at > 400 ? at : 1500);
+        }
+        return { source: sourceByFile.get(fid) ?? "", text: cut, truncated: cut.length < body.length };
+      }),
+    )
+  ).filter((e): e is { source: string; text: string; truncated: boolean } => e !== null);
   const voiceMdUrl =
     (f.voice_md_asset_url ?? "").trim() ||
     (f.voice_md_file_id ? getFileUrl(f.voice_md_file_id) : "");
@@ -113,6 +137,20 @@ export default async function VoiceDetailPage({
             </span>
           </div>
         </StickyNote>
+      ) : null}
+
+      {exemplars[0]?.text ? (
+        <blockquote
+          className="max-w-3xl text-[24px] font-medium leading-snug text-foreground sm:text-[28px]"
+          style={{ letterSpacing: "-0.02em" }}
+        >
+          &ldquo;{exemplars[0].text}&rdquo;
+          {exemplars[0].annotation ? (
+            <footer className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              {exemplars[0].annotation}
+            </footer>
+          ) : null}
+        </blockquote>
       ) : null}
 
       {/* The refusals lead — taste is what you reject. */}
@@ -274,23 +312,48 @@ export default async function VoiceDetailPage({
         </div>
       </StickyNote>
 
-      {/* Annotated exemplars — the gap is the voice */}
-      {exemplars.length ? (
+      {excerpts.length || exemplars.length > 1 ? (
         <section>
-          <SectionHeading eyebrow="ground truth" eyebrowColor="matcha">
-            annotated examples
+          <SectionHeading eyebrow="the artifact" eyebrowColor="matcha">
+            how it reads
           </SectionHeading>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {exemplars.map((ex, i) => (
-              <StickyNote key={i} className="p-4">
-                <p className="text-[15px] leading-relaxed text-foreground">
-                  &ldquo;{ex.text}&rdquo;
-                </p>
-                {ex.annotation ? (
-                  <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-                    {ex.annotation}
-                    {ex.kind ? ` · ${ex.kind}` : ""}
+          <p className="mb-5 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
+            The corpus this contract was derived from — real passages at
+            length, the same files the checker measures. Style lives in the
+            construction; read for how the sentences move, not what they
+            mention.
+          </p>
+          {exemplars.length > 1 ? (
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              {exemplars.slice(1).map((ex, i) => (
+                <StickyNote key={i} className="p-4">
+                  <p className="text-[16px] leading-relaxed text-foreground">
+                    &ldquo;{ex.text}&rdquo;
                   </p>
+                  {ex.annotation ? (
+                    <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+                      {ex.annotation}
+                    </p>
+                  ) : null}
+                </StickyNote>
+              ))}
+            </div>
+          ) : null}
+          <div className="space-y-4">
+            {excerpts.map((ex, i) => (
+              <StickyNote key={i} className="p-5 sm:p-6">
+                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {ex.source || `corpus excerpt ${i + 1}`}
+                </div>
+                <div className="max-w-3xl space-y-4 text-[17px] leading-relaxed text-foreground">
+                  {ex.text.split(/\n\n+/).map((p, j) => (
+                    <p key={j}>{p}</p>
+                  ))}
+                </div>
+                {ex.truncated ? (
+                  <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                    excerpt — the full file is in the corpus
+                  </div>
                 ) : null}
               </StickyNote>
             ))}
