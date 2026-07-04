@@ -175,7 +175,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role). The Publish/SubmitForReview cross_entity_state guards require every referenced image File to be Ready/Locked. Published styles must Revise first."
+hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role, and optionally the image model that produced it as {model, provider}). One style may carry samples from DIFFERENT image engines — that is ideal, not an error; record the engine per item so it can be displayed. The Publish/SubmitForReview cross_entity_state guards require every referenced image File to be Ready/Locked. Published styles must Revise first."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
@@ -185,7 +185,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects. The Publish cross_entity_state guard requires every referenced proof-shot File to be Ready/Locked."
+hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects. Manifest items may carry the producing image model as {model, provider}; mixed engines across shots are welcome and should be recorded per item. The Publish cross_entity_state guard requires every referenced proof-shot File to be Ready/Locked."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -257,7 +257,7 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
 params = ["model_provenance"]
-hint = "Record which AI models produced this art style. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the recipe, the model that sourced/identified the tradition, and the model that generated the sample images. Editable on Published without re-publishing."
+hint = "Record which AI models produced this art style. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the recipe, the LLM that sourced/identified the tradition, and the default engine for sample images. When samples come from multiple engines (ideal, not an error), the per-image truth lives in the reference/proof manifest items ({model, provider} per item); images here is the default/fallback engine. Editable on Published without re-publishing."
 
 [[action]]
 name = "SetFeatured"

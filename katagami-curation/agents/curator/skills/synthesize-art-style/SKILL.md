@@ -144,14 +144,19 @@ PY""")
 assert 'art images ok' in gen_log, gen_log
 ```
 
-Write each file to PawFS, then attach the id lists + manifests:
+Write each file to PawFS, then attach the id lists + manifests. Record the
+producing image engine per manifest item as `model: {model, provider}` — one
+style may (ideally!) carry samples from different image engines, and per-item
+attribution is what lets the catalog display which engine produced which
+sample. Use the real engine name when an image model generated the file; the
+PIL fallback records `procedural-pil`:
 
 ```python
 ref_ids, ref_manifest = [], []
 for nm in ["ref-1","ref-2","ref-3"]:
     b = sandbox.read(f'/tmp/{nm}.jpg', binary=True)
     r = temper.write(f'/katagami/art-styles/{slug}/{nm}.jpg', b, {'mime_type': 'image/jpeg'})
-    ref_ids.append(r['file_id']); ref_manifest.append({'file_id': r['file_id'], 'role': 'reference', 'aspect': '1:1'})
+    ref_ids.append(r['file_id']); ref_manifest.append({'file_id': r['file_id'], 'role': 'reference', 'aspect': '1:1', 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
 temper.action('ArtStyles', eid, 'AttachReferenceImages', {
     'reference_image_file_ids': json.dumps(ref_ids),
     'reference_manifest': json.dumps({'items': ref_manifest}, ensure_ascii=False)
@@ -161,7 +166,7 @@ proof_ids, proof_manifest = [], []
 for subj in ["portrait","landscape","object","pattern"]:
     b = sandbox.read(f'/tmp/proof-{subj}.jpg', binary=True)
     r = temper.write(f'/katagami/art-styles/{slug}/proof-{subj}.jpg', b, {'mime_type': 'image/jpeg'})
-    proof_ids.append(r['file_id']); proof_manifest.append({'file_id': r['file_id'], 'subject': subj})
+    proof_ids.append(r['file_id']); proof_manifest.append({'file_id': r['file_id'], 'subject': subj, 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
 temper.action('ArtStyles', eid, 'AttachProofShots', {
     'proof_shots_file_ids': json.dumps(proof_ids),
     'proof_shots_manifest': json.dumps({'items': proof_manifest}, ensure_ascii=False)
@@ -198,7 +203,9 @@ temper.action('ArtStyles', eid, 'SetCredits', {'credits': json.dumps(credits, en
 
 model_provenance = {
     "style": {"model": "<the model authoring this recipe>"},
-    "source": {"model": "<the model that sourced/identified the tradition>"},
+    "source": {"model": "<the LLM that sourced/identified the tradition>"},
+    # Default/fallback engine only — when samples come from multiple engines
+    # (welcome, not an error), the per-image truth lives in the manifest items.
     "images": {"model": "<image engine or 'procedural-pil'>", "provider": "<provider or 'sandbox'>", "tool": "<tool used>"}
 }
 temper.action('ArtStyles', eid, 'SetModelProvenance', {'model_provenance': json.dumps(model_provenance, ensure_ascii=False)})
