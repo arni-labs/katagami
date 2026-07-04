@@ -16,7 +16,7 @@
 #
 # Key invariants: can't Publish without medium + prompt template + verified
 # reference images + slot recipes + verified proof shots + verified thumbnail
-# + quality review + public assets.
+# + credits + model provenance + quality review + public assets.
 
 [automaton]
 name = "ArtStyle"
@@ -127,7 +127,9 @@ effect = [
   { type = "set_bool", var = "has_slot_recipes", value = "true" },
   { type = "set_bool", var = "has_reference_images", value = "true" },
   { type = "set_bool", var = "has_proof_shots", value = "true" },
-  { type = "set_bool", var = "has_thumbnail", value = "true" }
+  { type = "set_bool", var = "has_thumbnail", value = "true" },
+  { type = "set_bool", var = "has_credits", value = "true" },
+  { type = "set_bool", var = "has_model_provenance", value = "true" }
 ]
 params = ["name", "slug", "medium", "prompt_template", "negative_prompt", "engine_hints", "slot_recipes", "guidance", "reference_image_file_ids", "reference_manifest", "proof_shots_file_ids", "proof_shots_manifest", "thumbnail_file_id", "parent_ids", "lineage_type", "generation_number", "model_provenance", "credits", "tags", "direction_id", "curator_notes"]
 hint = "Contributor hot-path: author a COMPLETE art style in ONE call — name/medium/prompt_template (with {subject}+{palette})/slot_recipes/guidance + all image file ids (reference images + manifest, proof shots + manifest, thumbnail) + lineage + model_provenance + credits + direction_id (the bake-off round this belongs to). Sets every SubmitForReview guard var so the next call is SubmitForReview. Leaves the entity in Draft — contributors never self-publish; a curator reviews then Publishes. Files must already be uploaded and Ready (the SubmitForReview cross-entity guards still verify them). Mirrors SetSpec/SubmitDesignLanguage; collapses the author ladder into one."
@@ -173,7 +175,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_reference_images", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["reference_image_file_ids", "reference_manifest"]
-hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role). The Publish/SubmitForReview cross_entity_state guards require every referenced image File to be Ready/Locked. Published styles must Revise first."
+hint = "Attach reference image file ids (the style's look; also the mixer's zero-generation preview material) plus a manifest describing each (subject, aspect, role, and optionally the image model that produced it as {model, provider}). One style may carry samples from DIFFERENT image engines — that is ideal, not an error; record the engine per item so it can be displayed. The Publish/SubmitForReview cross_entity_state guards require every referenced image File to be Ready/Locked. Published styles must Revise first."
 
 # --- Actions: Proof Shots (canonical subjects rendered in-style) ---
 
@@ -183,7 +185,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects. The Publish cross_entity_state guard requires every referenced proof-shot File to be Ready/Locked."
+hint = "Attach the proof-shot set (portrait / landscape / object / pattern rendered in this style) demonstrating the recipe transfers across subjects. Manifest items may carry the producing image model as {model, provider}; mixed engines across shots are welcome and should be recorded per item. The Publish cross_entity_state guard requires every referenced proof-shot File to be Ready/Locked."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -255,7 +257,7 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_model_provenance", value = "true" }]
 params = ["model_provenance"]
-hint = "Record which AI models produced this art style. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the recipe, the model that sourced/identified the tradition, and the model that generated the sample images. Editable on Published without re-publishing."
+hint = "Record which AI models produced this art style. JSON {style:{model}, source:{model}, images:{model, provider, tool}}: the model that authored the recipe, the LLM that sourced/identified the tradition, and the default engine for sample images. When samples come from multiple engines (ideal, not an error), the per-image truth lives in the reference/proof manifest items ({model, provider} per item); images here is the default/fallback engine. Editable on Published without re-publishing."
 
 [[action]]
 name = "SetFeatured"
@@ -302,9 +304,9 @@ name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_slot_recipes" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "reference_image_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "proof_shots_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
+guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_slot_recipes" }, { type = "is_true", var = "has_reference_images" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_credits" }, { type = "is_true", var = "has_model_provenance" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "reference_image_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "proof_shots_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
 effect = [{ type = "increment", field = "version" }]
-hint = "Curator approves and publishes. Requires medium, prompt template, slot recipes, reference images, proof shots, thumbnail, quality review, and public assets. Cross-entity guards require every referenced reference-image and proof-shot File and the thumbnail File to be Ready/Locked so an unready/404 artifact cannot publish."
+hint = "Curator approves and publishes. Requires medium, prompt template, slot recipes, reference images, proof shots, thumbnail, credits, model provenance, quality review, and public assets. Credits and model provenance are publish requirements (ARN-148): a style must credit the tradition it descends from and record which models produced it. Cross-entity guards require every referenced reference-image and proof-shot File and the thumbnail File to be Ready/Locked so an unready/404 artifact cannot publish."
 
 [[action]]
 name = "Revise"
