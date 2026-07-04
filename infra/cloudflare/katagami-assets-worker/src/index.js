@@ -1,5 +1,7 @@
 const ALLOWED_PREFIXES = [
   "katagami/design-languages/",
+  "katagami/art-styles/",
+  "katagami/palettes/",
   "published-assets/",
 ];
 
