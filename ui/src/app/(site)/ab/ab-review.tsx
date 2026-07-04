@@ -129,16 +129,7 @@ function Pane({
       </div>
       <div className="sticker-card relative overflow-hidden">
         <TrioStrip height={3} />
-        {fileId ? (
-          <EmbodimentViewer fileId={fileId} />
-        ) : (
-          /* old-generation originals had no landing/dashboard composition */
-          <div className="grid min-h-[320px] place-items-center p-8 text-center">
-            <p className="max-w-[26ch] font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              the original had no composition for this surface
-            </p>
-          </div>
-        )}
+        <EmbodimentViewer fileId={fileId} />
       </div>
     </div>
   );
