@@ -59,6 +59,27 @@ function refImageUrls(fields: Record<string, string | undefined>): string[] {
   return ids.map((id) => getFileUrl(id));
 }
 
+/** A WritingStyle row -> the item the voice catalog renders. */
+export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-style-card").WritingStyleItem {
+  const consent = parseJson<{ basis?: string }>(r.fields.consent) ?? {};
+  const tone = parseJson<Record<string, unknown>>(r.fields.tone_scales) ?? {};
+  const refusals = parseJson<string[]>(r.fields.refusals) ?? [];
+  return {
+    id: r.entity_id,
+    name: r.fields.name ?? "",
+    slug: r.fields.slug ?? "",
+    status: r.status,
+    persona: r.fields.persona ?? "",
+    basis: consent.basis ?? "",
+    tone: Object.entries(tone)
+      .filter(([, v]) => typeof v === "number" || typeof v === "string")
+      .slice(0, 3)
+      .map(([k, v]) => `${k} ${v}${typeof v === "number" ? "/10" : ""}`),
+    refusal: refusals[0] ?? "",
+    tags: parseJson<string[]>(r.fields.tags) ?? [],
+  };
+}
+
 /** An ArtStyle row -> the item the art-style catalog renders. */
 export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
   return {

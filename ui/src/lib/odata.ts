@@ -938,6 +938,9 @@ export const getArtStyle = (id: string) =>
   getDemoArtStyle(id)
     ? Promise.resolve(getDemoArtStyle(id)!)
     : getLane("ArtStyles", id);
+export const listWritingStyles = (filter = "Status eq 'Published'") =>
+  listLane("WritingStyles", filter);
+export const getWritingStyle = (id: string) => getLane("WritingStyles", id);
 export const listRemixes = (filter?: string) => listLane("Remixes", filter);
 export const getRemix = (id: string) => getLane("Remixes", id);
 
@@ -1088,6 +1091,9 @@ async function countLane(set: string, demo: LaneEntity[]): Promise<number> {
 }
 export const countPaletteSystems = () => countLane("PaletteSystems", demoPaletteSystems());
 export const countArtStyles = () => countLane("ArtStyles", demoArtStyles());
+export const pageWritingStyles = (opts: PageOpts = {}) =>
+  pageLane("WritingStyles", [], opts);
+export const countWritingStyles = () => countLane("WritingStyles", []);
 
 // ── Curator's picks (owner-pinned `featured`) ────────────────────────────────
 // Keyset paging is newest-first, so pinned picks would otherwise scatter through

@@ -10,6 +10,7 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Gallery" },
   { href: "/palettes", label: "Palettes" },
   { href: "/art-styles", label: "Art Styles" },
+  { href: "/voice", label: "Voice" },
   { href: "/studio", label: "Studio" },
   { href: "/model-bake-off", label: "Bake-off" },
   { href: "/under-review", label: "Under Review" },
