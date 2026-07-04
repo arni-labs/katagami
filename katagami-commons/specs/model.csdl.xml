@@ -425,6 +425,63 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- Member: durable human account behind Google sign-in (roles, grants, attribution anchor) -->
+      <EntityType Name="Member">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Invited" />
+        <Property Name="Sub" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Email" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DisplayName" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AvatarUrl" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Role" Type="Edm.String" Nullable="false" DefaultValue="contributor" />
+        <Property Name="FeatureTags" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasIdentity" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- OAuthClient: dynamically registered agent client software (RFC 7591; zero privilege) -->
+      <EntityType Name="OAuthClient">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Pending" />
+        <Property Name="ClientId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ClientName" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RedirectUris" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="TokenEndpointAuthMethod" Type="Edm.String" Nullable="false" DefaultValue="none" />
+        <Property Name="ClientUri" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="LogoUri" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasMetadata" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- AgentGrant: a human's standing consent for one client to act as their agent -->
+      <EntityType Name="AgentGrant">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Pending" />
+        <Property Name="MemberSub" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="MemberEmail" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ClientId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ClientName" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Scopes" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="RefreshTokenHash" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="GrantKind" Type="Edm.String" Nullable="false" DefaultValue="consent" />
+        <Property Name="HasConsent" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="UseCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="Reason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <EntityContainer Name="KatagamiCommonsContainer">
         <EntitySet Name="DesignLanguages" EntityType="Katagami.DesignLanguage" />
         <EntitySet Name="DesignElements" EntityType="Katagami.DesignElement" />
@@ -436,6 +493,9 @@
         <EntitySet Name="WritingStyles" EntityType="Katagami.WritingStyle" />
         <EntitySet Name="Remixes" EntityType="Katagami.Remix" />
         <EntitySet Name="Directions" EntityType="Katagami.Direction" />
+        <EntitySet Name="Members" EntityType="Katagami.Member" />
+        <EntitySet Name="OAuthClients" EntityType="Katagami.OAuthClient" />
+        <EntitySet Name="AgentGrants" EntityType="Katagami.AgentGrant" />
       </EntityContainer>
 
     </Schema>

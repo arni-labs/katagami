@@ -1,0 +1,79 @@
+# AgentGrant — I/O Automaton Specification
+#
+# A human's standing consent for one OAuth client (agent) to act as their
+# agent on Katagami (ARN-151). The consent screen is the activation moment:
+# approving creates this entity; the "Agents & access" page lists and revokes
+# them. Access tokens are short-lived JWTs validated statelessly; the rotating
+# refresh token is anchored here (hash only), so revoking the grant cuts an
+# agent off within one access-token lifetime.
+#
+# "Agents act, humans own": member_sub is the owning human; every entity the
+# agent submits is attributed to that sub. A grant never carries publish
+# rights — Cedar refuses Publish/Verify* for contributor principals outright.
+#
+# Headless agents (CI/cron) use the same entity: the human pre-authorizes a
+# grant from the account page instead of clicking consent live — one model,
+# designed to transfer when the platform-native MCP surface (ARN-163) absorbs
+# the adapter.
+#
+# Lifecycle: Pending -> Active -> Revoked
+#                          (Pending -> Revoked also allowed: consent denied)
+
+[automaton]
+name = "AgentGrant"
+states = ["Pending", "Active", "Revoked"]
+initial = "Pending"
+
+allow_indefinite_states = ["Pending", "Active", "Revoked"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_consent"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "use_count"
+type = "counter"
+initial = 0
+
+# --- Actions ---
+
+[[action]]
+name = "Approve"
+kind = "input"
+from = ["Pending"]
+to = "Active"
+effect = [{ type = "set_bool", var = "has_consent", value = "true" }]
+params = ["member_sub", "member_email", "client_id", "client_name", "scopes", "refresh_token_hash", "grant_kind"]
+hint = "Record the human's consent: owning member (stable Google sub), the client it empowers, granted scopes (JSON array — native list; v1 is ['contribute']), the SHA-256 hash of the initial refresh token (never the token itself), and grant_kind ('consent' for the live browser flow, 'pre_authorized' for headless grants minted from the account page)."
+
+[[action]]
+name = "RotateRefreshToken"
+kind = "input"
+from = ["Active"]
+params = ["refresh_token_hash"]
+hint = "Refresh-token rotation (OAuth 2.1): each refresh replaces the stored hash. Presenting a stale refresh token means theft-or-replay — the caller must revoke the grant."
+
+[[action]]
+name = "RecordUse"
+kind = "input"
+from = ["Active"]
+effect = "increment use_count"
+hint = "Record a token refresh or notable use, for the 'last used' display on the Agents & access page."
+
+[[action]]
+name = "Revoke"
+kind = "input"
+from = ["Pending", "Active"]
+to = "Revoked"
+params = ["reason"]
+hint = "Kill the grant: human clicked revoke, consent was denied, or rotation detected replay. Refresh stops immediately; outstanding access tokens age out within their (short) lifetime."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "ActiveRequiresConsent"
+when = ["Active"]
+assert = "has_consent"
