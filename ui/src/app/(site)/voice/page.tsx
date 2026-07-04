@@ -38,6 +38,15 @@ export default async function VoicePage() {
         description="Writing styles as checkable contracts, not soft guidance: a consented corpus, tone with numbers, refusals that carry the weight, and mechanical bands the finalizer verifies before anything publishes."
         rightSlot={<HeroStat value={total} label="voices" accent="matcha" />}
       />
+      <div className="mt-8">
+        <a
+          href="/voice/intake"
+          className="rounded-[9999px] bg-foreground px-5 py-2 font-mono text-[11px] uppercase tracking-[0.14em] text-background transition-opacity hover:opacity-85"
+        >
+          Find your style
+        </a>
+      </div>
+
       {items.length ? (
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
