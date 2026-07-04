@@ -44,14 +44,18 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             effects,
         )
 
-    def test_no_published_requires_credits_invariant_yet(self):
-        # Existing published styles predate the requirement; a reactive
-        # invariant would flag them all at once. The guard blocks new
-        # publishes; the invariant lands only after the backfill
-        # (ARN-148 scope item 2).
+    def test_published_requires_credits_invariants(self):
+        # Landed after the 2026-07-04 backfill: all 155 published styles
+        # carry credits + model provenance, so the reactive invariants are
+        # safe (ARN-148 scope item 2 complete).
         invariants = self._by_name(self.art, "invariant")
-        self.assertNotIn("PublishedRequiresCredits", invariants)
-        self.assertNotIn("PublishedRequiresModelProvenance", invariants)
+        for name, var in [
+            ("PublishedRequiresCredits", "has_credits"),
+            ("PublishedRequiresModelProvenance", "has_model_provenance"),
+        ]:
+            self.assertIn(name, invariants)
+            self.assertEqual(invariants[name]["when"], ["Published"])
+            self.assertEqual(invariants[name]["assert"], var)
 
     # --- finalizer: deep evidence checks precede the stamp ---
 

@@ -416,3 +416,13 @@ assert = "has_published_assets"
 name = "PublishedRequiresQualityReview"
 when = ["Published"]
 assert = "quality_review_passed"
+
+[[invariant]]
+name = "PublishedRequiresCredits"
+when = ["Published"]
+assert = "has_credits"
+
+[[invariant]]
+name = "PublishedRequiresModelProvenance"
+when = ["Published"]
+assert = "has_model_provenance"
