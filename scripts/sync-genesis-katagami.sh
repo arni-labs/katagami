@@ -46,6 +46,27 @@ json_string() {
   python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$1"
 }
 
+# --- base tracking: the Genesis commit each app folder was last synced at.
+# Push uses it to rebase ONLY the local delta onto Genesis HEAD, so a stale
+# snapshot can never silently revert work someone else pushed in between. ---
+BASE_DIR="${ROOT}/.genesis-sync"
+
+base_file_for() {
+  printf '%s/%s.base' "$BASE_DIR" "$1"
+}
+
+record_base() {
+  local name="$1" hash="$2"
+  mkdir -p "$BASE_DIR"
+  printf '%s\n' "$hash" > "$(base_file_for "$name")"
+}
+
+read_base() {
+  local f
+  f="$(base_file_for "$1")"
+  [[ -f "$f" ]] && tr -d '[:space:]' < "$f" || true
+}
+
 genesis_get() {
   local path="$1"
   local headers=()
@@ -134,11 +155,9 @@ sync_app() {
   clean_generated_files "${ROOT}/${dest}"
 }
 
-push_app() {
-  local name="$1"
-  local source="$2"
-  local repo="$3"
-
+apply_snapshot() {
+  # rsync the local app folder over the clone's working tree + stage it
+  local source="$1" repo="$2"
   rsync -a --delete \
     --exclude='.git' \
     --exclude='__pycache__/' \
@@ -148,14 +167,70 @@ push_app() {
     "${ROOT}/${source}/" "${repo}/"
   clean_generated_files "$repo"
   git -C "$repo" add -A
+}
 
-  if git -C "$repo" diff --cached --quiet; then
-    echo "${name}: Genesis already matches ${source}/"
-  else
-    git -C "$repo" commit -m "Sync ${name} from katagami monorepo"
-    git -C "$repo" push origin main
+push_app() {
+  local name="$1"
+  local source="$2"
+  local repo="$3"
+  local remote_head base
+
+  remote_head="$(git -C "$repo" rev-parse HEAD)"
+  base="$(read_base "$name")"
+
+  if [[ -z "$base" ]]; then
+    echo "${name}: no recorded sync base (.genesis-sync/${name}.base missing)." >&2
+    echo "${name}: a blind snapshot push can silently revert concurrent Genesis work." >&2
+    echo "${name}: run 'scripts/sync-genesis-katagami.sh pull' first, re-apply your" >&2
+    echo "${name}: changes, then push — or set FORCE_SNAPSHOT=1 if you are CERTAIN" >&2
+    echo "${name}: this folder reflects Genesis HEAD plus only your changes." >&2
+    if [[ "${FORCE_SNAPSHOT:-0}" != "1" ]]; then
+      return 1
+    fi
+    echo "${name}: FORCE_SNAPSHOT=1 — proceeding with a snapshot replace of HEAD."
+    base="$remote_head"
   fi
 
+  if ! git -C "$repo" cat-file -e "${base}^{commit}" 2>/dev/null; then
+    echo "${name}: recorded base ${base} is not in the Genesis history — run pull, re-apply, retry." >&2
+    return 1
+  fi
+
+  if [[ "$base" == "$remote_head" ]]; then
+    # fast path: nobody pushed since our pull — commit the snapshot on HEAD
+    apply_snapshot "$source" "$repo"
+    if git -C "$repo" diff --cached --quiet; then
+      echo "${name}: Genesis already matches ${source}/"
+    else
+      git -C "$repo" commit -m "Sync ${name} from katagami monorepo"
+      git -C "$repo" push origin main
+    fi
+  else
+    # Genesis moved since our pull: commit the snapshot against the BASE so the
+    # commit holds ONLY our delta, then rebase that delta onto Genesis HEAD.
+    echo "${name}: Genesis moved (base ${base:0:12} -> head ${remote_head:0:12}); rebasing only the local delta."
+    git -C "$repo" checkout -q -b local-snapshot "$base"
+    apply_snapshot "$source" "$repo"
+    if git -C "$repo" diff --cached --quiet; then
+      echo "${name}: no local changes vs the sync base — adopting Genesis HEAD."
+      git -C "$repo" checkout -q main
+    else
+      git -C "$repo" commit -q -m "Sync ${name} from katagami monorepo"
+      if ! git -C "$repo" rebase main; then
+        git -C "$repo" rebase --abort || true
+        echo "${name}: rebase conflict — your changes overlap work pushed to Genesis since your pull." >&2
+        echo "${name}: run 'scripts/sync-genesis-katagami.sh pull', re-apply your changes on top, retry." >&2
+        return 1
+      fi
+      git -C "$repo" checkout -q main
+      git -C "$repo" merge -q --ff-only local-snapshot
+      git -C "$repo" push origin main
+      echo "${name}: pushed the rebased delta:"
+      git -C "$repo" show --stat --oneline HEAD | head -20
+    fi
+  fi
+
+  record_base "$name" "$(git -C "$repo" rev-parse HEAD)"
   publish_latest "$name" "$(git -C "$repo" rev-parse HEAD)"
 }
 
@@ -164,8 +239,12 @@ usage() {
 Usage: scripts/sync-genesis-katagami.sh [pull|push]
 
   pull  Refresh katagami-commons/ and katagami-curation/ from Genesis and stage them.
-  push  Commit the current folder states back to the two Genesis app repos,
-        publish/promote the pushed hashes, and verify Genesis latest.
+  push  Push the local folder states back to the two Genesis app repos as a
+        REBASED DELTA against the recorded sync base (.genesis-sync/<app>.base,
+        written by pull) — concurrent Genesis pushes are preserved, and an
+        overlapping edit aborts with instructions instead of clobbering.
+        Publishes/promotes the pushed hashes and verifies Genesis latest.
+        FORCE_SNAPSHOT=1 restores the old snapshot-replace behaviour (dangerous).
 
 Genesis is the source of truth for these two app folders. The script uses clean
 temporary clones with Git protocol v0 because direct non-empty fetches from the
@@ -208,6 +287,9 @@ clone_app "$CURATION_URL" "${WORK_DIR}/katagami-curation"
 if [[ "$MODE" == "pull" ]]; then
   sync_app "${WORK_DIR}/katagami-commons" "katagami-commons"
   sync_app "${WORK_DIR}/katagami-curation" "katagami-curation"
+
+  record_base "katagami-commons" "$(git -C "${WORK_DIR}/katagami-commons" rev-parse HEAD)"
+  record_base "katagami-curation" "$(git -C "${WORK_DIR}/katagami-curation" rev-parse HEAD)"
 
   git -C "$ROOT" add -A katagami-commons katagami-curation
   git -C "$ROOT" add -f katagami-curation/wasm/*/Cargo.lock
