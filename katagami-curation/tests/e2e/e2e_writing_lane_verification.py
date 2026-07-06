@@ -163,7 +163,29 @@ Never exclaim twice. Never hedge a measured claim.
 """
 
 
-def submit_style(label, corpus_docs, consent_basis="original", consent_extra=None, exemplars=None):
+def replication_text(corpus_docs):
+    """An e2e replica built from the corpus's own register: interleaved
+    sentences from the corpus docs until the sample clears the evaluation
+    floor. Keeps the fixture's function-word profile inside the bands by
+    construction — the machinery under test is verification, not prose."""
+    import re as _re
+    sentences = []
+    for doc in corpus_docs:
+        sentences.append([s.strip() for s in _re.split(r"(?<=[.!?]) ", doc.replace("\n\n", " ")) if s.strip()])
+    out, words, i = [], 0, 0
+    while words < 170:
+        for group in sentences:
+            if i < len(group):
+                out.append(group[i])
+                words += len(group[i].split())
+        i += 1
+        if i > 40:
+            break
+    return " ".join(out)
+
+
+
+def submit_style(label, corpus_docs, consent_basis="original", consent_extra=None, exemplars=None, replication=True):
     corpus_ids = [make_file(f"{label}-corpus-{i}.md", doc.encode(), "text/markdown") for i, doc in enumerate(corpus_docs)]
     voice_md = make_file(f"{label}-VOICE.md", VOICE_MD_TEMPLATE.replace("{basis}", consent_basis if consent_basis in ("opt_in", "public_domain", "original") else "opt_in").encode(), "text/markdown")
     thumb = make_file(f"{label}-thumb.jpg", jpeg_bytes(), "image/jpeg")
@@ -196,11 +218,20 @@ def submit_style(label, corpus_docs, consent_basis="original", consent_extra=Non
         "credits": json.dumps([{"name": "Plain-style operational register", "kind": "register", "note": "numbers-first technical prose"}]),
         "tags": json.dumps(["e2e"]), "direction_id": "", "curator_notes": "writing-lane e2e",
     })
+    if replication:
+        rep = make_file(f"{label}-replication-1.md", replication_text(corpus_docs).encode(), "text/markdown")
+        must_act("WritingStyles", ws, "AttachReplication", {
+            "replication_sample_file_ids": [rep],
+            "replication_manifest": json.dumps({"items": [{"file_id": rep, "model": "e2e-replication-model", "prompt_words": 300}]}),
+        })
     # settle barrier: submitted fields visible through the projection
     deadline = time.time() + 15
     while time.time() < deadline:
         fields = get_entity("WritingStyles", ws).get("fields") or {}
-        if fields.get("mechanical_bands") and fields.get("voice_md_file_id"):
+        settled = fields.get("mechanical_bands") and fields.get("voice_md_file_id")
+        if settled and replication and not fields.get("replication_sample_file_ids"):
+            settled = False
+        if settled:
             break
         time.sleep(0.5)
     return ws
@@ -251,6 +282,9 @@ def main():
     fields = w.get("fields") or {}
     report("writing/happy: job Completed", status == "Completed", f"job={status} err={err}")
     report("writing/happy: style stops at UnderReview (curator gate)", w.get("status") == "UnderReview", f"style={w.get('status')}")
+    report("writing/happy: replication verified (round-trip proof)", str(fields.get("replication_verified")).lower() in ("true", "1"), str(fields.get("replication_verified")))
+    vr = fields.get("verification_report") or ""
+    report("writing/happy: verification report recorded", "katagami:voice-verification/v1" in vr and "replication_samples" in vr, vr[:80])
     report("writing/happy: VOICE.md asset attached pre-publish", bool(fields.get("voice_md_asset_url")), str(fields.get("voice_md_asset_url"))[:80])
     st, _ = act("WritingStyles", ws, "Publish", {})
     report("writing/happy: curator Publish succeeds in one dispatch", 200 <= st < 300, f"HTTP {st}")
@@ -293,6 +327,13 @@ def main():
     report("writing/pd-vague: style NOT published", w5.get("status") != "Published", f"style={w5.get('status')}")
 
     print()
+    print("== stage 5: contract without replication is rejected ==")
+    ws5 = submit_style("norepl", corpus_texts(), replication=False)
+    status, w5, err = run_job(ws5)
+    report("writing/norepl: job Failed", status == "Failed", f"job={status}")
+    report("writing/norepl: missing_replication error", "missing_replication" in (err or ""), (err or "")[:100])
+    report("writing/norepl: style NOT review-ready", str((w5.get("fields") or {}).get("replication_verified")).lower() not in ("true", "1"), "")
+
     print(f"== RESULT: {len(PASS)} passed, {len(FAIL)} failed ==")
     for name in FAIL:
         print("  FAILED:", name)

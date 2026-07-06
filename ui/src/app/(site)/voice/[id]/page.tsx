@@ -101,6 +101,27 @@ export default async function VoiceDetailPage({
       }),
     )
   ).filter((p): p is { id: string; name: string } => p !== null);
+  const replicationIds = parseJson<string[]>(f.replication_sample_file_ids) ?? [];
+  const replicationManifest =
+    parseJson<{ items?: Array<{ file_id?: string; model?: string }> }>(f.replication_manifest) ?? {};
+  const modelByFile = new Map(
+    (replicationManifest.items ?? []).map((it) => [it.file_id ?? "", it.model ?? ""]),
+  );
+  const replications = (
+    await Promise.all(
+      replicationIds.slice(0, 3).map(async (fid) => {
+        const body = (await getFileText(fid)).trim();
+        return body ? { model: modelByFile.get(fid) ?? "unknown model", text: body } : null;
+      }),
+    )
+  ).filter((r): r is { model: string; text: string } => r !== null);
+  const verificationReport = parseJson<{
+    engine?: string;
+    texts?: Record<string, number>;
+    checks_passed?: string[];
+    replication?: { models?: string[] };
+  }>(f.verification_report);
+  const voiceMdBody = f.voice_md_file_id ? (await getFileText(f.voice_md_file_id)).trim() : "";
   const voiceMdUrl =
     (f.voice_md_asset_url ?? "").trim() ||
     (f.voice_md_file_id ? getFileUrl(f.voice_md_file_id) : "");
@@ -368,6 +389,84 @@ export default async function VoiceDetailPage({
               </StickyNote>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {/* The round-trip proof: an LLM given only the VOICE.md wrote these. */}
+      {replications.length ? (
+        <section>
+          <SectionHeading eyebrow="round-trip proof" eyebrowColor="graphite">
+            replicated from the contract
+          </SectionHeading>
+          <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
+            These passages were produced by an LLM given the VOICE.md alone —
+            no corpus, no other context. They are replicas, never the
+            author&apos;s text, and each one passed this voice&apos;s own
+            mechanical bands: the contract provably works as a prompt.
+          </p>
+          <div className="space-y-4">
+            {replications.map((r, i) => (
+              <StickyNote key={i} className="p-5 sm:p-6">
+                <div className="mb-3 flex flex-wrap items-baseline gap-3">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    replica — {r.model}
+                  </span>
+                  <span className="rounded-[9999px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+                    passed the bands
+                  </span>
+                </div>
+                <div className="max-w-3xl space-y-4 text-[16px] leading-relaxed text-foreground/90">
+                  {r.text.split(/\n\n+/).slice(0, 4).map((p, j) => (
+                    <p key={j}>{p}</p>
+                  ))}
+                </div>
+              </StickyNote>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* What was actually verified — the finalizer's record. */}
+      {verificationReport ? (
+        <StickyNote tint="matcha" className="p-5 sm:p-6">
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Verification record
+          </div>
+          <p className="mb-3 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+            {verificationReport.engine ?? "deterministic checks"} — written by
+            the finalizer at verification time.
+          </p>
+          {verificationReport.texts ? (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {Object.entries(verificationReport.texts).map(([k, v]) => (
+                <span key={k} className={`rounded-[3px] px-2.5 py-1.5 font-mono text-[11px] text-foreground ${CHIP}`}>
+                  {k.replaceAll("_", " ")} · {v}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {verificationReport.checks_passed?.length ? (
+            <ul className="grid gap-1 text-[13px] text-foreground sm:grid-cols-2">
+              {verificationReport.checks_passed.map((c) => (
+                <li key={c}>· {c.replaceAll("_", " ")}</li>
+              ))}
+            </ul>
+          ) : null}
+        </StickyNote>
+      ) : null}
+
+      {/* The portable artifact itself. */}
+      {voiceMdBody ? (
+        <section>
+          <SectionHeading eyebrow="the artifact" eyebrowColor="graphite">
+            VOICE.md
+          </SectionHeading>
+          <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
+            The portable contract file — what an agent or a person receives
+            when they use this voice. The replication above was produced from
+            exactly this text.
+          </p>
+          <pre className={`max-h-[480px] overflow-auto whitespace-pre-wrap rounded-[16px] p-4 font-mono text-[12.5px] leading-relaxed text-foreground ${CHIP}`}>{voiceMdBody}</pre>
         </section>
       ) : null}
 

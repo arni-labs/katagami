@@ -363,6 +363,10 @@
         <Property Name="Exemplars" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="HasExemplars" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- VOICE.md: the portable projection served at /voice/<id>/VOICE.md -->
+        <Property Name="ReplicationSampleFileIds" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReplicationManifest" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReplicationVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="VerificationReport" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="VoiceMdFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="VoiceMdLintResult" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="VoiceMdFormatVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
