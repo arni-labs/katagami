@@ -9,7 +9,7 @@ CURRENT_GENESIS_DEPS = {
     "temperpaw/paw-fs": "bff862b415505f5a563998265a2f6ac29472f899",
     "temperpaw/paw-agent": "81d8beb78923dc22aeda850828f510f3c6eab510",
     "temperpaw/paw-research": "910d01612b2632362fb5f537c4357a5fb6c7bcdd",
-    "katagami/katagami-commons": "596ee60790598db3963dfc7d6171f131f957876e",
+    "katagami/katagami-commons": "ad863ed91371f24c2283e3f1a7ec302b5f3815fe",
 }
 
 
