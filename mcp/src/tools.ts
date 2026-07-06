@@ -100,6 +100,16 @@ async function requireParent(id: Identity, kind: Kind, parentId: string): Promis
   return parent;
 }
 
+/** Agents act, humans own: stamp the owning human onto the entity so the
+ *  my-submissions page and withdraw checks can find it. */
+async function setCreator(id: Identity, set: string, entityId: string): Promise<void> {
+  await action(id, set, entityId, "SetCreator", {
+    creator_sub: id.sub,
+    creator_email: id.email,
+    creator_name: "",
+  });
+}
+
 export function buildServer(auth: AuthInfo): McpServer {
   const id = identityFromAuth(auth);
   const server = new McpServer({ name: "katagami", version: "0.1.0" });
@@ -199,6 +209,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         lineage_type: lineage_type ?? "remix",
         generation_number: parentGen + 1,
       });
+      await setCreator(id, set, draftId);
       return ok({
         entity_id: draftId,
         status: "Draft",
@@ -275,6 +286,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
       });
+      await setCreator(id, set, entityId);
       await action(id, set, entityId, "SubmitForReview", {});
       return ok({
         entity_id: entityId,
@@ -341,6 +353,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
       });
+      await setCreator(id, set, entityId);
       await action(id, set, entityId, "SubmitForReview", {});
       return ok({
         entity_id: entityId,
@@ -437,6 +450,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
       });
+      await setCreator(id, set, entityId);
       await action(id, set, entityId, "SubmitForReview", {});
       return ok({
         entity_id: entityId,
