@@ -74,6 +74,11 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "replication_verified"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "has_thumbnail"
 type = "bool"
 initial = "false"
@@ -171,6 +176,14 @@ params = ["exemplars"]
 hint = "Set 3-15 annotated example passages as JSON, each {text, annotation, kind}. Prefer drafted-vs-sent pairs ('the gap is the voice'). Exemplars are the calibration ground truth: every one must pass the style's own mechanical bands before publish (bands_self_consistent)."
 
 [[action]]
+name = "AttachReplication"
+kind = "input"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "replication_verified", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }]
+params = ["replication_sample_file_ids", "replication_manifest"]
+hint = "Attach the round-trip proof: texts produced by an LLM given ONLY the VOICE.md (no corpus, no other context), with per-sample model provenance in the manifest {items: [{file_id, model, prompt_words}]}. The finalizer re-runs this voice's own mechanical bands over every sample — a contract that cannot round-trip does not ship. Samples are displayed in the UI clearly labeled as replicated, never as the author's text."
+
+[[action]]
 name = "AttachVoiceMd"
 kind = "input"
 from = ["Draft", "UnderReview"]
@@ -220,6 +233,21 @@ from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "bands_self_consistent", value = "true" }]
 params = []
 hint = "Mark the mechanical bands as self-consistent: the finalizer ran the deterministic bands checker over every exemplar and all passed. This is the writing-lane analog of proof shots — a contract its own corpus cannot satisfy is miscalibrated and must not publish. Dispatched only by the curation finalizer."
+
+[[action]]
+name = "MarkReplicationVerified"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+effect = [{ type = "set_bool", var = "replication_verified", value = "true" }]
+params = []
+hint = "Verifier-owned: the finalizer verified replication samples exist, carry per-sample model provenance, and every sample passes this voice's own mechanical bands. The VOICE.md provably works as a prompt."
+
+[[action]]
+name = "RecordVerification"
+kind = "internal"
+from = ["Draft", "UnderReview"]
+params = ["verification_report"]
+hint = "Verifier-owned: persist the structured record of what was verified — texts evaluated (corpus/exemplars/replication), bands enforced with configured limits, measured aggregates, checks passed. Rendered in the UI so curators and consumers see exactly what was run."
 
 [[action]]
 name = "AttachPublishedAssets"
@@ -320,7 +348,7 @@ name = "Publish"
 kind = "internal"
 from = ["UnderReview"]
 to = "Published"
-guard = [{ type = "is_true", var = "has_corpus" }, { type = "is_true", var = "consent_attested" }, { type = "is_true", var = "has_voice_layer" }, { type = "is_true", var = "has_mechanical_bands" }, { type = "is_true", var = "has_exemplars" }, { type = "is_true", var = "bands_self_consistent" }, { type = "is_true", var = "has_voice_md" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_credits" }, { type = "is_true", var = "has_model_provenance" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "corpus_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "voice_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
+guard = [{ type = "is_true", var = "has_corpus" }, { type = "is_true", var = "consent_attested" }, { type = "is_true", var = "has_voice_layer" }, { type = "is_true", var = "has_mechanical_bands" }, { type = "is_true", var = "has_exemplars" }, { type = "is_true", var = "bands_self_consistent" }, { type = "is_true", var = "replication_verified" }, { type = "is_true", var = "has_voice_md" }, { type = "is_true", var = "has_thumbnail" }, { type = "is_true", var = "has_credits" }, { type = "is_true", var = "has_model_provenance" }, { type = "is_true", var = "quality_review_passed" }, { type = "is_true", var = "has_published_assets" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "corpus_file_ids", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "voice_md_file_id", required_status = ["Ready", "Locked"] }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
 effect = [{ type = "increment", field = "version" }]
 hint = "Curator approves and publishes. Requires the full contract: consented corpus (attested), voice layer, mechanical bands proven self-consistent against the exemplars, VOICE.md, thumbnail, credits, model provenance, quality review, and public assets. consent_attested and bands_self_consistent are verifier-owned — set only by finalizer evidence checks — so a writing style can never publish as soft guidance: it publishes as a checked contract or not at all."
 
@@ -422,6 +450,11 @@ assert = "has_exemplars"
 name = "PublishedRequiresBandsSelfConsistency"
 when = ["Published"]
 assert = "bands_self_consistent"
+
+[[invariant]]
+name = "PublishedRequiresReplication"
+when = ["Published"]
+assert = "replication_verified"
 
 [[invariant]]
 name = "PublishedRequiresVoiceMd"

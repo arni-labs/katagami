@@ -152,3 +152,44 @@ temper.done("synthesize_writing_style complete")
   are real lists — the cross-entity guards resolve arrays).
 - The bands checker is deterministic and unforgiving: derive, don't guess.
 - Do not fire finalizer-owned actions (see When to Use).
+
+## Replication — the round-trip proof (required, 2026-07-06)
+
+Every writing style MUST attach replication before it can pass verification:
+1. After the VOICE.md is final, produce 1-3 samples (150+ words each) from the
+   VOICE.md text ALONE — start a fresh reasoning pass with no corpus, no
+   research notes, only the contract file. The replica proves the contract
+   works as a prompt.
+2. Attach via AttachReplication with a manifest naming the producing model per
+   sample: {items: [{file_id, model, prompt_words}]}.
+3. The finalizer re-runs the voice's own mechanical bands over every replica
+   (corpus as the fingerprint reference). A contract that cannot round-trip
+   fails verification with missing_replication or voice_bands_violation.
+Replicas are displayed in the UI labeled as replicas — never as author text.
+
+## The two-level shape (curator decision, 2026-07-06)
+
+- A single-PD-author style is an AUTHOR VOICE: named for what it is
+  ("Samuel Pepys — diary (1660s)"), parent_ids [], generation 0. Never an
+  invented brand name. Author voices are the adherence calibration set.
+- A blend is a LINEAGE CHILD: parent_ids name the author voices it mixes,
+  lineage_type "blend", generation >= 1, its own merged corpus and derived
+  bands. Plain register names ("Ship's log"), never cute compounds.
+- tone_scales stays "{}" — numeric dials are never authored. Tone lives in
+  the persona prose, the exemplars, and the measured bands.
+
+## Exemplars — style, never subject (curator review, 2026-07-04)
+
+- Every exemplar demonstrates CONSTRUCTION — how the sentence moves — not what
+  it mentions. If the annotation describes content, pick a different passage.
+- The FIRST exemplar is the signature passage: it renders in quotes on the
+  catalog card, so the register must be assessable from it alone.
+- Public-domain registers quote the corpus VERBATIM (kind "corpus"), verified
+  against the source text; original registers quote their own corpus (kind
+  "authored"). "sent" is reserved for opt-in personal voices.
+- Annotations are one plain clause about the move, never workshop narration.
+- The contrast frame "X, not Y" ("numbered, not adjectives") is a banned
+  construction in ALL product prose — UI copy, VOICE.md, personas, annotations.
+  It reads as a generated tell. Say the positive thing and stop.
+- The corpus is displayed on the contract page ("how it reads") — it is the
+  style artifact. Excerpts must be long-form passages, not snippets.
