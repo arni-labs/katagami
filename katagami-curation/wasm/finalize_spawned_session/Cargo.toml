@@ -12,5 +12,10 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 temper-wasm-sdk = { git = "https://github.com/nerdsane/temper.git", branch = "main" }
-serde_json = "1"
+# preserve_order: JSON objects iterate in insertion order (like JS objects), so
+# the taste-doc builders emit palette `neutrals`/`signature` and writing-style
+# `register` in the same order as the TypeScript embed service. Without it,
+# serde_json's default BTreeMap sorts keys and the Rust doc would diverge from
+# the JS doc, putting finalizer- and backfill-computed vectors in different spaces.
+serde_json = { version = "1", features = ["preserve_order"] }
 regex-lite = "0.1"

@@ -128,6 +128,49 @@ export function buildArtStyleEmbeddingDocument(fields: {
   return lines.join("\n");
 }
 
+/** Canonical text a writing style is embedded from (taste-doc-v1).
+ *
+ *  A WritingStyle's identity lives in its human-legible voice layer, so the
+ *  document is built from the text-bearing fields: persona, refusals (taste is
+ *  what a voice rejects), rhetorical moves, per-channel register, and the
+ *  use/ban vocabulary. tone_scales is deliberately excluded — it is numeric and
+ *  carries little embedding signal, and raw numbers invite JS/Rust formatting
+ *  drift. register iterates in object insertion order (matched on the Rust side
+ *  by serde_json's preserve_order). */
+export function buildWritingStyleEmbeddingDocument(fields: {
+  name?: string;
+  tags?: string[];
+  persona?: string;
+  refusals?: string[];
+  moves?: string[];
+  register?: Record<string, unknown>;
+  vocabulary?: { use?: string[]; ban?: string[] };
+}): string {
+  const lines: string[] = [];
+  if (fields.name) lines.push(`writing style: ${fields.name}`);
+  const tags = (fields.tags ?? []).filter((t) => t !== "specimen");
+  if (tags.length > 0) lines.push(`qualities: ${tags.join(", ")}`);
+  if (fields.persona) lines.push(`persona: ${fields.persona.trim()}`);
+  const clean = (arr: unknown): string[] =>
+    (Array.isArray(arr) ? arr : [])
+      .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+      .map((v) => v.trim());
+  const refusals = clean(fields.refusals);
+  if (refusals.length > 0) lines.push(`refusals: ${refusals.join("; ")}`);
+  const moves = clean(fields.moves);
+  if (moves.length > 0) lines.push(`moves: ${moves.join("; ")}`);
+  const register = Object.entries(fields.register ?? {})
+    .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+    .map(([k, v]) => `${k}: ${(v as string).trim()}`)
+    .join("; ");
+  if (register) lines.push(`register: ${register}`);
+  const use = clean(fields.vocabulary?.use);
+  if (use.length > 0) lines.push(`prefers: ${use.join(", ")}`);
+  const ban = clean(fields.vocabulary?.ban);
+  if (ban.length > 0) lines.push(`avoids: ${ban.join(", ")}`);
+  return lines.join("\n");
+}
+
 type FeatureExtractor = (
   text: string,
   opts: { pooling: "mean"; normalize: boolean },

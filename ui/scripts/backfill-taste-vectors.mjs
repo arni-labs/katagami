@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Backfill semantic taste vectors onto existing DesignLanguages.
+// Backfill semantic taste vectors onto existing catalog entities (all four
+// lanes: DesignLanguages, PaletteSystems, ArtStyles, WritingStyles).
 //
-// For every published language missing a current-model taste_vector, this
+// For every published entity missing a current-model taste_vector, this
 // embeds its canonical taste document via the Katagami embed service
 // (single source of truth for the document format) and dispatches the
 // AttachTasteVector action on the Temper API.
@@ -72,6 +73,22 @@ const LANES = [
       medium: fields.medium ?? "",
       prompt_template: fields.prompt_template ?? "",
     }),
+  },
+  {
+    set: "WritingStyles",
+    embedBody: (fields) => {
+      const vocabulary = parseJson(fields.vocabulary) ?? {};
+      return {
+        kind: "writing-style",
+        name: fields.name,
+        tags: parseJson(fields.tags) ?? [],
+        persona: fields.persona ?? "",
+        refusals: parseJson(fields.refusals) ?? [],
+        moves: parseJson(fields.moves) ?? [],
+        register: parseJson(fields.register) ?? {},
+        vocabulary: { use: vocabulary.use ?? [], ban: vocabulary.ban ?? [] },
+      };
+    },
   },
 ];
 

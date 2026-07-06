@@ -3,6 +3,7 @@ import {
   buildArtStyleEmbeddingDocument,
   buildEmbeddingDocument,
   buildPaletteEmbeddingDocument,
+  buildWritingStyleEmbeddingDocument,
   embedDocument,
   TASTE_DOC_VERSION,
   TASTE_EMBEDDING_DIM,
@@ -24,12 +25,13 @@ function cleanEnv(value: string | undefined): string {
  * the Temper API (TEMPER_API_KEY), so no new secret is introduced.
  *
  * Body: either { doc: string } (pre-built canonical document) or raw field
- * inputs plus an optional kind ("language" default | "palette" |
- * "art-style") from which the matching canonical document is built
+ * inputs plus an optional kind ("language" default | "palette" | "art-style" |
+ * "writing-style") from which the matching canonical document is built
  * server-side:
- *   language:  { name, tags, philosophy_summary, heading_font, body_font, colors }
- *   palette:   { name, tags, signature, neutrals, semantic, mood }
- *   art-style: { name, tags, medium, prompt_template }
+ *   language:      { name, tags, philosophy_summary, heading_font, body_font, colors }
+ *   palette:       { name, tags, signature, neutrals, semantic, mood }
+ *   art-style:     { name, tags, medium, prompt_template }
+ *   writing-style: { name, tags, persona, refusals, moves, register, vocabulary }
  */
 export async function POST(request: Request) {
   const expected = cleanEnv(process.env.TEMPER_API_KEY);
@@ -84,6 +86,23 @@ export async function POST(request: Request) {
       promptTemplate:
         typeof body.prompt_template === "string"
           ? body.prompt_template
+          : undefined,
+    });
+  } else if (kind === "writing-style") {
+    doc = buildWritingStyleEmbeddingDocument({
+      name,
+      tags,
+      persona: typeof body.persona === "string" ? body.persona : undefined,
+      // The builder defensively filters non-strings, so raw arrays/objects are safe.
+      refusals: Array.isArray(body.refusals) ? (body.refusals as string[]) : undefined,
+      moves: Array.isArray(body.moves) ? (body.moves as string[]) : undefined,
+      register:
+        body.register && typeof body.register === "object"
+          ? (body.register as Record<string, unknown>)
+          : undefined,
+      vocabulary:
+        body.vocabulary && typeof body.vocabulary === "object"
+          ? (body.vocabulary as { use?: string[]; ban?: string[] })
           : undefined,
     });
   } else {
