@@ -102,7 +102,8 @@ const buildSearchIndex = unstable_cache(
     { name: "Studio", href: "/studio" },
     { name: "Taxonomy", href: "/taxonomy" },
     { name: "Model bake-off", href: "/model-bake-off" },
-    { name: "Under Review", href: "/under-review" },
+    // Under Review is the owner's desk — not in the public search index
+    // (owner-gated page + OWNER_NAV_LINKS entry).
     // Lineage + Compare hidden for now (see lib/nav.ts).
   ]) {
     items.push({

@@ -12,7 +12,6 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/art-styles", label: "Art Styles" },
   { href: "/studio", label: "Studio" },
   { href: "/model-bake-off", label: "Bake-off" },
-  { href: "/under-review", label: "Under Review" },
   // Lineage + Compare are hidden from the menu for now (routes still work via
   // direct URL); re-add here when they're ready to surface again.
 ];
@@ -22,6 +21,7 @@ export const NAV_LINKS: NavLink[] = [
 // so the public menu and the search index never advertise them.
 export const OWNER_NAV_LINKS: NavLink[] = [
   { href: "/voice", label: "Writing Styles" },
+  { href: "/under-review", label: "Under Review" },
 ];
 
 /** Is `href` the active section for the current pathname? */

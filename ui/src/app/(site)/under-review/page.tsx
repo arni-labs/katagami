@@ -10,6 +10,7 @@ import { WritingStyleCard } from "@/components/writing-style-card";
 import { ArtStyleCatalog, PaletteCatalog } from "@/components/lane-catalog";
 import { LanguageCard } from "@/components/language-card";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
+import { notFound } from "next/navigation";
 import { isOwner } from "@/lib/owner";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,9 @@ function NoneYet({ what }: { what: string }) {
 export default async function UnderReviewPage() {
   // UnderReview-only — the published catalog lives on the gallery pages; this is
   // the curation queue, kept deliberately separate so the two never mix.
+  // The whole curation queue is the owner's desk — not a public page.
   const owner = await isOwner();
+  if (!owner) notFound();
   const [languages, paletteRows, artRows, writingRows, taxFamily] = await Promise.all([
     listDesignLanguages(UNDER_REVIEW).catch(() => []),
     listPaletteSystems(UNDER_REVIEW).catch(() => []),
