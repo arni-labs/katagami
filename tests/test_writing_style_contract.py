@@ -234,6 +234,12 @@ class WritingLaneWiringContractTests(unittest.TestCase):
             "min_words_to_evaluate",
             "no evaluable evidence",
             "CURATOR GATE",
+            "missing_replication",
+            "replication_missing_model",
+            '"MarkReplicationVerified"',
+            '"RecordVerification"',
+            "katagami:voice-verification/v1",
+            "check_voice_bands_against",
             '"auto_publish": false',
             "char_trigrams",
             "sentence_openers",
@@ -241,6 +247,19 @@ class WritingLaneWiringContractTests(unittest.TestCase):
             "hapax_ratio",
         ]:
             self.assertIn(marker, self.FINALIZER)
+
+    def test_replication_contract_in_spec(self):
+        spec = (COMMONS / "specs" / "writing_style.ioa.toml").read_text()
+        self.assertIn('name = "AttachReplication"', spec)
+        self.assertIn('name = "MarkReplicationVerified"', spec)
+        self.assertIn('name = "RecordVerification"', spec)
+        self.assertIn('{ type = "is_true", var = "replication_verified" }', spec)
+        self.assertIn('name = "PublishedRequiresReplication"', spec)
+
+    def test_replication_properties_in_csdl(self):
+        csdl = (COMMONS / "specs" / "model.csdl.xml").read_text()
+        for prop in ["ReplicationSampleFileIds", "ReplicationManifest", "ReplicationVerified", "VerificationReport"]:
+            self.assertIn(prop, csdl)
 
     def test_writing_styles_never_auto_publish(self):
         src = self.FINALIZER

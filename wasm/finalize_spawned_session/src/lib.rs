@@ -2719,9 +2719,52 @@ fn verify_synthesized_writing_styles(
         let voice_md_file_id = required_string_field(id, &lane_fields, "voice_md_file_id")?;
         let thumbnail_file_id = required_string_field(id, &lane_fields, "thumbnail_file_id")?;
 
-        // Gather the texts the bands must hold over: every corpus file body plus
-        // every exemplar passage.
-        let mut texts: Vec<(String, String)> = Vec::new();
+        // The round-trip proof: texts an LLM produced from the VOICE.md alone.
+        // A contract that cannot replicate is descriptive, so it does not ship.
+        let replication_ids = string_array_flexible(lane_fields.get("replication_sample_file_ids"));
+        if replication_ids.is_empty() {
+            return Err(VerificationError::new(
+                "missing_replication",
+                format!(
+                    "WritingStyle '{id}' has no LLM replication samples — the VOICE.md is unproven as a prompt"
+                ),
+            )
+            .entity("WritingStyle", id)
+            .field("replication_sample_file_ids"));
+        }
+        let replication_manifest =
+            require_lane_json_object(id, "WritingStyle", &lane_fields, "replication_manifest")?;
+        let mut replication_models: std::collections::BTreeMap<String, String> =
+            std::collections::BTreeMap::new();
+        for item in replication_manifest
+            .get("items")
+            .and_then(|v| v.as_array())
+            .into_iter()
+            .flatten()
+        {
+            let file_id = item.get("file_id").and_then(|v| v.as_str()).unwrap_or("");
+            let model = item.get("model").and_then(|v| v.as_str()).unwrap_or("");
+            if !file_id.is_empty() && !model.is_empty() {
+                replication_models.insert(file_id.to_string(), model.to_string());
+            }
+        }
+        for file_id in &replication_ids {
+            if !replication_models.contains_key(file_id) {
+                return Err(VerificationError::new(
+                    "replication_missing_model",
+                    format!(
+                        "WritingStyle '{id}' replication sample {file_id} names no producing model in replication_manifest"
+                    ),
+                )
+                .entity("WritingStyle", id)
+                .field("replication_manifest"));
+            }
+        }
+
+        // Gather the texts the bands must hold over: every corpus file body,
+        // every exemplar passage, and every replication sample. The corpus
+        // alone is the fingerprint reference.
+        let mut corpus_texts: Vec<(String, String)> = Vec::new();
         for file_id in &corpus_ids {
             let body = read_lane_file_value(
                 ctx,
@@ -2732,8 +2775,9 @@ fn verify_synthesized_writing_styles(
                 file_id,
                 "corpus",
             )?;
-            texts.push((format!("corpus:{file_id}"), body));
+            corpus_texts.push((format!("corpus:{file_id}"), body));
         }
+        let mut texts: Vec<(String, String)> = corpus_texts.clone();
         for (index, exemplar) in exemplars.iter().enumerate() {
             let passage = exemplar.get("text").and_then(|v| v.as_str()).unwrap_or("");
             if passage.trim().is_empty() {
@@ -2746,15 +2790,64 @@ fn verify_synthesized_writing_styles(
             }
             texts.push((format!("exemplar:{index}"), passage.to_string()));
         }
-
-        if let Err(violation) = check_voice_bands(&bands, &texts) {
-            return Err(VerificationError::new(
-                "voice_bands_violation",
-                format!("WritingStyle '{id}' fails its own mechanical bands: {violation}"),
-            )
-            .entity("WritingStyle", id)
-            .field("mechanical_bands"));
+        let exemplar_count = exemplars.len();
+        let mut replication_words = 0usize;
+        for file_id in &replication_ids {
+            let body = read_lane_file_value(
+                ctx,
+                api_url,
+                headers,
+                "WritingStyle",
+                id,
+                file_id,
+                "replication",
+            )?;
+            replication_words += words_of(&body).len();
+            texts.push((format!("replication:{file_id}"), body));
         }
+
+        let evaluated = match check_voice_bands_against(&bands, &corpus_texts, &texts) {
+            Ok(count) => count,
+            Err(violation) => {
+                return Err(VerificationError::new(
+                    "voice_bands_violation",
+                    format!("WritingStyle '{id}' fails its own mechanical bands: {violation}"),
+                )
+                .entity("WritingStyle", id)
+                .field("mechanical_bands"));
+            }
+        };
+
+        // The verification record: what ran, over what, against which limits.
+        // Rendered in the UI so the checks are visible, not just asserted.
+        let corpus_words: usize = corpus_texts.iter().map(|(_, b)| words_of(b).len()).sum();
+        let verification_report = json!({
+            "schema": "katagami:voice-verification/v1",
+            "engine": "katagami-finalizer voice-bands (deterministic)",
+            "texts": {
+                "corpus_files": corpus_ids.len(),
+                "corpus_words": corpus_words,
+                "exemplars": exemplar_count,
+                "replication_samples": replication_ids.len(),
+                "replication_words": replication_words,
+                "evaluated_for_statistics": evaluated,
+            },
+            "bands_enforced": bands.clone(),
+            "replication": {
+                "models": replication_models.values().cloned().collect::<Vec<_>>(),
+                "checked_against": "the voice's own mechanical bands, corpus as reference",
+            },
+            "checks_passed": [
+                "consent_basis_and_provenance",
+                "credits_present",
+                "model_provenance_present",
+                "mechanical_bands_over_corpus",
+                "mechanical_bands_over_exemplars",
+                "mechanical_bands_over_replication",
+                "voice_md_structure",
+                "thumbnail_plausible_image",
+            ],
+        });
 
         let voice_md = read_lane_file_value(
             ctx,
@@ -2787,6 +2880,24 @@ fn verify_synthesized_writing_styles(
             id,
             "MarkBandsSelfConsistent",
             &json!({}),
+        )?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "MarkReplicationVerified",
+            &json!({}),
+        )?;
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            "RecordVerification",
+            &json!({ "verification_report": verification_report.to_string() }),
         )?;
 
         if !entity_bool_any(&entity, "has_published_assets") {
@@ -3091,6 +3202,19 @@ fn check_voice_bands(
     bands: &serde_json::Value,
     texts: &[(String, String)],
 ) -> Result<usize, String> {
+    check_voice_bands_against(bands, texts, texts)
+}
+
+/// Bands check with an explicit reference set: the function-word and
+/// char-trigram references come from `reference_texts` (the corpus), while
+/// every entry in `texts` (corpus + exemplars + LLM replication samples) is
+/// checked against them. Keeps replication samples from polluting the
+/// fingerprint they are measured against.
+fn check_voice_bands_against(
+    bands: &serde_json::Value,
+    reference_texts: &[(String, String)],
+    texts: &[(String, String)],
+) -> Result<usize, String> {
     let min_words = bands
         .get("min_words_to_evaluate")
         .and_then(|v| v.as_f64())
@@ -3119,9 +3243,9 @@ fn check_voice_bands(
 
     // The corpus aggregate is the reference for self-consistency: function
     // words and character trigrams both compare each text against the whole.
-    let all_words: Vec<String> = texts.iter().flat_map(|(_, body)| words_of(body)).collect();
+    let all_words: Vec<String> = reference_texts.iter().flat_map(|(_, body)| words_of(body)).collect();
     let reference_dist = function_word_distribution(&all_words);
-    let all_text: String = texts
+    let all_text: String = reference_texts
         .iter()
         .map(|(_, body)| body.as_str())
         .collect::<Vec<_>>()
