@@ -62,8 +62,6 @@ function refImageUrls(fields: Record<string, string | undefined>): string[] {
 /** A WritingStyle row -> the item the voice catalog renders. */
 export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-style-card").WritingStyleItem {
   const consent = parseJson<{ basis?: string }>(r.fields.consent) ?? {};
-  const tone = parseJson<Record<string, unknown>>(r.fields.tone_scales) ?? {};
-  const refusals = parseJson<string[]>(r.fields.refusals) ?? [];
   const exemplars = parseJson<Array<{ text?: string }>>(r.fields.exemplars) ?? [];
   return {
     id: r.entity_id,
@@ -73,11 +71,6 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
     persona: r.fields.persona ?? "",
     signature: exemplars[0]?.text ?? "",
     basis: consent.basis ?? "",
-    tone: Object.entries(tone)
-      .filter(([, v]) => typeof v === "number" || typeof v === "string")
-      .slice(0, 3)
-      .map(([k, v]) => `${k} ${v}${typeof v === "number" ? "/10" : ""}`),
-    refusal: refusals[0] ?? "",
     tags: parseJson<string[]>(r.fields.tags) ?? [],
   };
 }
