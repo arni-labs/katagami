@@ -363,6 +363,22 @@ from = ["Published"]
 effect = "increment fork_count"
 hint = "Record that a child art style was forked from this one."
 
+
+[[action]]
+name = "SetCreator"
+kind = "input"
+from = ["Draft", "UnderReview"]
+params = ["creator_sub", "creator_email", "creator_name"]
+hint = "Attribute this entity to the human account that owns the submission (Google identity from katagami.ai): stable subject id, email, display name. Set by the contribution front door on create — agents act, humans own."
+
+[[action]]
+name = "ReturnToDraft"
+kind = "input"
+from = ["UnderReview"]
+to = "Draft"
+params = ["curator_notes"]
+hint = "Send a submission back to Draft: a curator rejecting with feedback, or the owning human withdrawing it before review. Notes are readable by the contributor via submission_status."
+
 # --- Output Actions ---
 
 [[action]]

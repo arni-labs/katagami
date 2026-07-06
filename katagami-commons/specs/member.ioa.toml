@@ -1,0 +1,77 @@
+# Member — I/O Automaton Specification
+#
+# The durable human account behind katagami.ai's Google sign-in (ARN-145 /
+# ARN-151). Sessions stay stateless (the signed cookie is still the login);
+# a Member exists so roles, agent grants, and submissions have a durable
+# anchor keyed on the stable Google subject id. The sign-in callback upserts
+# one Member per sub; agent grants and contributor attribution reference
+# `member_sub`, never email (emails change, subs don't).
+#
+# Roles: owner | curator | contributor (default). Role changes are Temper
+# events — the audit trail env-var allowlists never had.
+#
+# Lifecycle: Invited -> Active -> Suspended
+#                         ^          |
+#                         └──────────┘ (Reinstate)
+
+[automaton]
+name = "Member"
+states = ["Invited", "Active", "Suspended"]
+initial = "Invited"
+
+allow_indefinite_states = ["Invited", "Active", "Suspended"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_identity"
+type = "bool"
+initial = "false"
+
+# --- Actions ---
+
+[[action]]
+name = "Register"
+kind = "input"
+from = ["Invited", "Active"]
+to = "Active"
+effect = [{ type = "set_bool", var = "has_identity", value = "true" }]
+params = ["sub", "email", "display_name", "avatar_url"]
+hint = "Upsert the member's Google identity at sign-in: stable subject id (the key — survives email/name changes), email, display name, avatar. Idempotent from Active so every sign-in can refresh the profile fields."
+
+[[action]]
+name = "SetRole"
+kind = "input"
+from = ["Active"]
+params = ["role"]
+hint = "Set the member's role: owner | curator | contributor. Contributor is the self-serve default; owner/curator are granted by an owner. Role changes are events — this is the audit trail."
+
+[[action]]
+name = "SetFeatureTags"
+kind = "input"
+from = ["Active"]
+params = ["feature_tags"]
+hint = "Set per-member feature tags (JSON array of strings) for gradual rollouts. Build-level toggles stay env vars; per-user visibility lives here."
+
+[[action]]
+name = "Suspend"
+kind = "internal"
+from = ["Active"]
+to = "Suspended"
+params = ["reason"]
+hint = "Suspend a member: sign-in keeps working (Google owns that) but grants stop resolving and contributor writes are refused upstream."
+
+[[action]]
+name = "Reinstate"
+kind = "input"
+from = ["Suspended"]
+to = "Active"
+guard = [{ type = "is_true", var = "has_identity" }]
+hint = "Reinstate a suspended member."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "ActiveRequiresIdentity"
+when = ["Active"]
+assert = "has_identity"
