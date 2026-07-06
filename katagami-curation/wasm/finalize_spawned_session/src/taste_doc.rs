@@ -179,7 +179,13 @@ pub fn build_palette_doc(fields: &Value) -> String {
         .as_object()
         .map(|obj| {
             obj.iter()
-                .map(|(role, hex)| format!("{role} {}", hex.as_str().unwrap_or("")))
+                // Drop non-string/empty values instead of coercing to "role " —
+                // the TS builder does the same, and the docs must stay identical.
+                .filter_map(|(role, hex)| {
+                    hex.as_str()
+                        .filter(|v| !v.is_empty())
+                        .map(|v| format!("{role} {v}"))
+                })
                 .collect()
         })
         .unwrap_or_default();
@@ -309,6 +315,20 @@ mod tests {
              movements and qualities: warm\n\
              typography: headings in Times\n\
              palette: accent #0000ff, text #000000"
+        );
+    }
+
+    #[test]
+    fn palette_malformed_neutrals_are_dropped() {
+        // Contract vector shared with taste-doc.test.mjs: empty-string and
+        // non-string neutral values are dropped, not coerced to "role ".
+        let fields = json!({
+            "name": "Patchy",
+            "neutrals": json!({"bg": "", "ink": "#000000", "paper": 7}).to_string(),
+        });
+        assert_eq!(
+            build_palette_doc(&fields),
+            "palette system: Patchy\nneutrals: ink #000000"
         );
     }
 

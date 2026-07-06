@@ -13,7 +13,9 @@ import {
 } from "../src/lib/embeddings.ts";
 
 let fails = 0;
+let total = 0;
 const eq = (got, want, msg) => {
+  total += 1;
   if (got !== want) {
     fails += 1;
     console.error(`FAIL ${msg}:\n  got:  ${JSON.stringify(got)}\n  want: ${JSON.stringify(want)}`);
@@ -96,6 +98,14 @@ eq(
   "palette system: Bare\nneutrals: muted #eeeeee",
   "palette no signature",
 );
+eq(
+  buildPaletteEmbeddingDocument({
+    name: "Patchy",
+    neutrals: { bg: "", ink: "#000000", paper: 7 },
+  }),
+  "palette system: Patchy\nneutrals: ink #000000",
+  "palette malformed neutrals dropped",
+);
 
 // --- art style ---
 eq(
@@ -159,4 +169,4 @@ if (fails) {
   console.error(`\n${fails} taste-doc contract vector(s) FAILED`);
   process.exit(1);
 }
-console.log("taste-doc: all 12 contract vectors pass");
+console.log(`taste-doc: all ${total} contract vectors pass`);
