@@ -13,8 +13,6 @@ export interface WritingStyleItem {
    *  register is assessable at a glance. */
   signature: string;
   basis: string;
-  tone: string[];
-  refusal: string;
   tags: string[];
 }
 
@@ -34,11 +32,6 @@ export function WritingStyleCard({ item }: { item: WritingStyleItem }) {
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           {BASIS_LABEL[item.basis] ?? "voice"}
         </span>
-        {item.tone[0] ? (
-          <span className="font-mono text-[10px] text-muted-foreground/80">
-            {item.tone[0]}
-          </span>
-        ) : null}
       </div>
       <h3
         className="mt-3 text-[26px] font-semibold leading-tight text-foreground"
@@ -57,14 +50,6 @@ export function WritingStyleCard({ item }: { item: WritingStyleItem }) {
         </p>
       ) : null}
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {item.tone.slice(1).map((t) => (
-          <span
-            key={t}
-            className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80"
-          >
-            {t}
-          </span>
-        ))}
         <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground/60 transition-colors group-hover:text-foreground">
           read the contract →
         </span>

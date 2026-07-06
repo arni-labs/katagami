@@ -47,7 +47,6 @@ export default async function VoiceDetailPage({
   const f = ws.fields;
   const name = f.name ?? "Untitled voice";
   const persona = f.persona ?? "";
-  const tone = parseJson<Record<string, unknown>>(f.tone_scales) ?? {};
   const vocabulary =
     parseJson<{ use?: string[]; ban?: string[] }>(f.vocabulary) ?? {};
   const moves = parseJson<string[]>(f.moves) ?? [];
@@ -155,30 +154,8 @@ export default async function VoiceDetailPage({
 
       {/* Tone + vocabulary + moves + register */}
       <StickyNote className="p-5 sm:p-6">
-        {Object.keys(tone).length ? (
-          <>
-            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Tone — authored calibration
-            </div>
-            <p className="mb-2 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
-              Dials set when the register was authored, like token values in a
-              DESIGN.md. The measured limits live in the mechanical bands below.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(tone).map(([k, v]) => (
-                <span
-                  key={k}
-                  className={`rounded-[3px] px-2.5 py-1.5 font-mono text-[12px] text-foreground ${CHIP}`}
-                >
-                  {k} · {cellText(v)}
-                  {typeof v === "number" ? "/10" : ""}
-                </span>
-              ))}
-            </div>
-          </>
-        ) : null}
         {vocabulary.use?.length || vocabulary.ban?.length ? (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {vocabulary.use?.length ? (
               <div>
                 <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
