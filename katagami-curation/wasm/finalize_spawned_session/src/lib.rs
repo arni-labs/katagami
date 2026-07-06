@@ -600,17 +600,19 @@ fn attach_taste_vector(
     };
     let dim = vector.as_array().map(Vec::len).unwrap_or(0);
     if dim != taste_doc::TASTE_EMBEDDING_DIM || model != taste_doc::TASTE_EMBEDDING_MODEL {
-        // Off-space vectors are ignored at read time (parseStoredTasteVector), so
-        // this is not fatal, but it means the service drifted from the finalizer's
-        // expected space — surface it loudly rather than store silently.
+        // Do NOT store an off-space vector: readers reject it (parseStoredTasteVector
+        // requires model + dim to match) while the backfill's candidate check would see
+        // a matching model and a non-empty field — a stored bad vector could never
+        // self-heal without --force. Skip the attach and surface the drift loudly.
         ctx.log(
             "warn",
             &format!(
-                "taste: embed returned model '{model}' dim {dim} (expected '{}' dim {}) for {set_name}('{entity_id}') — storing anyway",
+                "taste: embed returned model '{model}' dim {dim} (expected '{}' dim {}) for {set_name}('{entity_id}') — skipping attach",
                 taste_doc::TASTE_EMBEDDING_MODEL,
                 taste_doc::TASTE_EMBEDDING_DIM
             ),
         );
+        return;
     }
     let params = json!({
         "taste_vector": vector.to_string(),

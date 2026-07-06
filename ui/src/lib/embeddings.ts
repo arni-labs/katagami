@@ -75,7 +75,9 @@ export function buildEmbeddingDocument(input: EmbeddingDocInput): string {
   if (type.length > 0) lines.push(`typography: ${type.join(", ")}`);
   const c = input.colors ?? {};
   const palette = ["primary", "secondary", "accent", "background", "text"]
-    .map((role) => (c[role] ? `${role} ${c[role]}` : null))
+    .map((role) =>
+      typeof c[role] === "string" && c[role] ? `${role} ${c[role]}` : null,
+    )
     .filter(Boolean)
     .join(", ");
   if (palette) lines.push(`palette: ${palette}`);
@@ -106,6 +108,7 @@ export function buildPaletteEmbeddingDocument(fields: {
     .join(", ");
   if (signature) lines.push(`signature colors: ${signature}`);
   const neutrals = Object.entries(fields.neutrals ?? {})
+    .filter(([, hex]) => typeof hex === "string" && hex)
     .map(([role, hex]) => `${role} ${hex}`)
     .join(", ");
   if (neutrals) lines.push(`neutrals: ${neutrals}`);

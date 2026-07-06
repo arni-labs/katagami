@@ -19,6 +19,7 @@
 //        --force    recompute even when a current-model vector exists
 
 const EXPECTED_MODEL = "Xenova/all-MiniLM-L6-v2";
+const EXPECTED_DIM = 384;
 
 const apiUrl = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
 const apiKey = requiredEnv("TEMPER_API_KEY");
@@ -99,7 +100,7 @@ for (const lane of LANES) {
     const fields = entity.fields ?? {};
     if (!fields.name) return false;
     if (force) return true;
-    return fields.taste_vector_model !== EXPECTED_MODEL || !fields.taste_vector;
+    return !hasValidVector(fields);
   });
 
   console.log(`${lane.set}: ${entities.length} published, ${candidates.length} candidates`);
@@ -151,12 +152,28 @@ function requiredEnv(name) {
 }
 
 function parseJson(raw) {
+  // Either shape: backends may hand back native arrays/objects instead of JSON
+  // strings; pass those through so backfill docs match finalizer docs
+  // (the Rust side's parse_json_flex has the same contract).
+  if (raw && typeof raw === "object") return raw;
   if (!raw || typeof raw !== "string") return null;
   try {
     return JSON.parse(raw);
   } catch {
     return null;
   }
+}
+
+/** Same validity a reader applies (parseStoredTasteVector): matching model AND a
+ *  parseable array of EXPECTED_DIM numbers — anything else is a re-embed candidate. */
+function hasValidVector(fields) {
+  if (fields.taste_vector_model !== EXPECTED_MODEL) return false;
+  const vector = parseJson(fields.taste_vector);
+  return (
+    Array.isArray(vector) &&
+    vector.length === EXPECTED_DIM &&
+    vector.every((v) => typeof v === "number")
+  );
 }
 
 async function fetchPublished(set) {
@@ -189,7 +206,7 @@ function normalizeRow(row, set) {
       continue;
     }
     if (key.startsWith("@odata.")) continue;
-    if (typeof value === "string") fields[key] = value;
+    if (value !== null && value !== undefined) fields[key] = value;
   }
   if (!entityId && fields.Id) entityId = fields.Id;
   return { entity_id: entityId, fields };

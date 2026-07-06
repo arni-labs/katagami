@@ -35,45 +35,48 @@ export async function RelatedLanguages({
     candidates.find((l) => l.entity_id === currentId)?.fields ?? {},
   );
 
-  let scored: Array<{
-    lang: (typeof candidates)[number];
-    shared: string[];
-    score: number;
-  }>;
-  if (currentVector) {
-    scored = candidates
-      .filter((l) => l.entity_id !== currentId && l.fields.name)
-      .map((l) => {
-        const vector = parseStoredTasteVector(l.fields);
-        return {
-          lang: l,
-          shared: sharedTags(l),
-          score: vector ? cosineSimilarity(currentVector, vector) : -1,
-        };
-      })
-      .filter((r) => r.score > 0)
-      .sort(
-        (a, b) =>
-          b.score - a.score ||
-          a.lang.fields.name!.localeCompare(b.lang.fields.name!),
-      )
-      .slice(0, 6);
-  } else {
-    if (currentTags.length === 0) return null;
-    scored = candidates
-      .filter((l) => l.entity_id !== currentId && l.fields.name)
-      .map((l) => {
-        const shared = sharedTags(l);
-        return { lang: l, shared, score: shared.length };
-      })
-      .filter((r) => r.score > 0)
-      .sort(
-        (a, b) =>
-          b.score - a.score ||
-          a.lang.fields.name!.localeCompare(b.lang.fields.name!),
-      )
-      .slice(0, 6);
-  }
+  const siblings = candidates.filter(
+    (l) => l.entity_id !== currentId && l.fields.name,
+  );
+  const byScoreThenName = (
+    a: { score: number; lang: (typeof candidates)[number] },
+    b: { score: number; lang: (typeof candidates)[number] },
+  ) =>
+    b.score - a.score || a.lang.fields.name!.localeCompare(b.lang.fields.name!);
+
+  // Vector-ranked neighbors first; siblings without a stored vector (e.g.
+  // published while the embed service was down) still surface via tag overlap
+  // rather than disappearing from every "More like this" until a backfill.
+  const vectorRanked = currentVector
+    ? siblings
+        .map((l) => {
+          const vector = parseStoredTasteVector(l.fields);
+          return {
+            lang: l,
+            shared: sharedTags(l),
+            score: vector ? cosineSimilarity(currentVector, vector) : -1,
+          };
+        })
+        .filter((r) => r.score > 0)
+        .sort(byScoreThenName)
+    : [];
+  const inVectorList = new Set(vectorRanked.map((r) => r.lang.entity_id));
+  const tagRanked =
+    currentTags.length > 0
+      ? siblings
+          .filter(
+            (l) =>
+              !inVectorList.has(l.entity_id) &&
+              (!currentVector || !parseStoredTasteVector(l.fields)),
+          )
+          .map((l) => {
+            const shared = sharedTags(l);
+            return { lang: l, shared, score: shared.length };
+          })
+          .filter((r) => r.score > 0)
+          .sort(byScoreThenName)
+      : [];
+  const scored = [...vectorRanked, ...tagRanked].slice(0, 6);
 
   if (scored.length === 0) return null;
 

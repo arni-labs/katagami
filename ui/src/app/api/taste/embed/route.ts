@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   buildArtStyleEmbeddingDocument,
@@ -37,7 +38,9 @@ export async function POST(request: Request) {
   const expected = cleanEnv(process.env.TEMPER_API_KEY);
   if (expected) {
     const auth = request.headers.get("authorization") ?? "";
-    if (auth !== `Bearer ${expected}`) {
+    const want = Buffer.from(`Bearer ${expected}`);
+    const got = Buffer.from(auth);
+    if (got.length !== want.length || !timingSafeEqual(got, want)) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
@@ -50,8 +53,10 @@ export async function POST(request: Request) {
   }
 
   const name = typeof body.name === "string" ? body.name : undefined;
+  // Drop malformed (non-string) tags — the Rust builder does the same, and the
+  // docs must stay byte-identical across both producers.
   const tags = Array.isArray(body.tags)
-    ? body.tags.map((t) => String(t))
+    ? body.tags.filter((t): t is string => typeof t === "string")
     : undefined;
   const kind = typeof body.kind === "string" ? body.kind : "language";
 
