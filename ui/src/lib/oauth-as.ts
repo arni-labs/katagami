@@ -27,6 +27,20 @@ export function mcpResource(): string {
   return process.env.KATAGAMI_MCP_RESOURCE || "https://mcp.katagami.ai";
 }
 
+/** RFC 8707 resource indicators are honored only for known resources —
+ *  this AS mints tokens for the Katagami front door, not for whatever a
+ *  crafted authorize URL asks for. Extra entries (e.g. a localhost adapter
+ *  in development) come from KATAGAMI_EXTRA_RESOURCES, comma-separated. */
+export function resolveResource(requested: string): string {
+  const allowed = new Set(
+    [mcpResource(), ...(process.env.KATAGAMI_EXTRA_RESOURCES ?? "").split(",")]
+      .map((r) => r.trim().replace(/\/$/, ""))
+      .filter(Boolean),
+  );
+  const r = requested.trim().replace(/\/$/, "");
+  return allowed.has(r) ? r : mcpResource();
+}
+
 export function issuer(origin: string): string {
   return process.env.KATAGAMI_AS_ISSUER || origin;
 }

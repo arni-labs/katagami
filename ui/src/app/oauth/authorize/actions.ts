@@ -7,7 +7,7 @@ import {
   clientById,
   createGrant,
   issueAuthCode,
-  mcpResource,
+  resolveResource,
 } from "@/lib/oauth-as";
 
 async function requestOrigin(): Promise<string> {
@@ -29,7 +29,7 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
   const redirectUri = str(formData.get("redirect_uri"));
   const state = str(formData.get("state"));
   const codeChallenge = str(formData.get("code_challenge"));
-  const resource = str(formData.get("resource")) || mcpResource();
+  const resource = resolveResource(str(formData.get("resource")));
 
   // Re-validate against the registry — hidden form fields are attacker input.
   const client = await clientById(clientId);
