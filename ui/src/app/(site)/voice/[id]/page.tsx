@@ -153,32 +153,17 @@ export default async function VoiceDetailPage({
         </blockquote>
       ) : null}
 
-      {/* The refusals lead — taste is what you reject. */}
-      {refusals.length ? (
-        <StickyNote tint="sakura" className="p-5 sm:p-6">
-          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            This voice never
-          </div>
-          <ul className="space-y-2">
-            {refusals.map((r, i) => (
-              <li
-                key={i}
-                className="text-[17px] leading-relaxed text-foreground"
-              >
-                {r}
-              </li>
-            ))}
-          </ul>
-        </StickyNote>
-      ) : null}
-
       {/* Tone + vocabulary + moves + register */}
       <StickyNote className="p-5 sm:p-6">
         {Object.keys(tone).length ? (
           <>
             <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Tone — numbered, not adjectives
+              Tone — authored calibration
             </div>
+            <p className="mb-2 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
+              Dials set when the register was authored, like token values in a
+              DESIGN.md. The measured limits live in the mechanical bands below.
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(tone).map(([k, v]) => (
                 <span
@@ -229,6 +214,18 @@ export default async function VoiceDetailPage({
               </div>
             ) : null}
           </div>
+        ) : null}
+        {refusals.length ? (
+          <>
+            <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Never — the anti-prompt
+            </div>
+            <ul className="space-y-1.5 text-[14px] text-foreground">
+              {refusals.map((r, i) => (
+                <li key={i}>· {r}</li>
+              ))}
+            </ul>
+          </>
         ) : null}
         {moves.length ? (
           <>
@@ -320,8 +317,7 @@ export default async function VoiceDetailPage({
           <p className="mb-5 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
             The corpus this contract was derived from — real passages at
             length, the same files the checker measures. Style lives in the
-            construction; read for how the sentences move, not what they
-            mention.
+            construction, in how the sentences move.
           </p>
           {exemplars.length > 1 ? (
             <div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -361,7 +357,7 @@ export default async function VoiceDetailPage({
         </section>
       ) : null}
 
-      {/* Consent — first-class, not a policy page */}
+      {/* Consent — first-class page content */}
       <StickyNote className="p-5 sm:p-6">
         <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Corpus consent

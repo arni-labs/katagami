@@ -163,5 +163,8 @@ temper.done("synthesize_writing_style complete")
   against the source text; original registers quote their own corpus (kind
   "authored"). "sent" is reserved for opt-in personal voices.
 - Annotations are one plain clause about the move, never workshop narration.
+- The contrast frame "X, not Y" ("numbered, not adjectives") is a banned
+  construction in ALL product prose — UI copy, VOICE.md, personas, annotations.
+  It reads as a generated tell. Say the positive thing and stop.
 - The corpus is displayed on the contract page ("how it reads") — it is the
   style artifact. Excerpts must be long-form passages, not snippets.

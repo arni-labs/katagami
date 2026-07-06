@@ -35,7 +35,7 @@ export default async function VoicePage() {
             The <Marker color="matcha">voice</Marker> catalog
           </>
         }
-        description="Writing styles as checkable contracts, not soft guidance: a consented corpus, tone with numbers, refusals that carry the weight, and mechanical bands the finalizer verifies before anything publishes."
+        description="Writing styles as checkable contracts: a consented corpus, tone with numbers, refusals that carry the weight, and mechanical bands the finalizer verifies before anything publishes."
         rightSlot={<HeroStat value={total} label="voices" accent="matcha" />}
       />
       <div className="mt-8">
