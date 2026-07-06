@@ -153,6 +153,26 @@ temper.done("synthesize_writing_style complete")
 - The bands checker is deterministic and unforgiving: derive, don't guess.
 - Do not fire finalizer-owned actions (see When to Use).
 
+## VOICE.md format beta (2026-07-06)
+
+The file teaches by showing, and everything measurable is measured:
+- "How it reads": ONE full corpus excerpt (~300 words) — the strongest
+  conditioning signal an LLM gets. Quote it verbatim, source-labeled.
+- "Rhythm — write to these numbers": the bands translated into writer-facing
+  instructions (sentence means, spread, distinct-word floors, opener limits).
+- "Linguistic profile": derived stylometrics in prose — sentence stats,
+  punctuation per 1000 words, top openers, connective rate, lexis weight.
+  Measured from the corpus, never asserted.
+- "Known-good replica": the verified replica, model named, labeled a replica.
+- The six original sections (Overview/Tone/Vocabulary/Moves/Register/Never)
+  and the bands JSON remain required.
+Generate with the voicemd_v2 builder pattern; frontmatter version: beta.
+
+The verifier also computes a soft style-similarity score (per-voice Burrows's
+Delta over 500 most-frequent words; bake-off champion over StyleDistance and
+Wegmann embeddings on the PD catalog). It is REPORT-ONLY: it appears in the
+verification record and never gates a publish.
+
 ## Replication — the round-trip proof (required, 2026-07-06)
 
 Every writing style MUST attach replication before it can pass verification:

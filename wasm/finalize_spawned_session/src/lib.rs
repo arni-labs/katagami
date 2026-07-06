@@ -2818,6 +2818,15 @@ fn verify_synthesized_writing_styles(
             }
         };
 
+        // Soft style-similarity (report-only, never gates): score every
+        // replica against the voice's own Delta profile.
+        let replication_texts: Vec<(String, String)> = texts
+            .iter()
+            .filter(|(label, _)| label.starts_with("replication:"))
+            .cloned()
+            .collect();
+        let style_similarity = style_similarity_scores(&corpus_texts, &replication_texts);
+
         // The verification record: what ran, over what, against which limits.
         // Rendered in the UI so the checks are visible, not just asserted.
         let corpus_words: usize = corpus_texts.iter().map(|(_, b)| words_of(b).len()).sum();
@@ -2837,6 +2846,7 @@ fn verify_synthesized_writing_styles(
                 "models": replication_models.values().cloned().collect::<Vec<_>>(),
                 "checked_against": "the voice's own mechanical bands, corpus as reference",
             },
+            "style_similarity": style_similarity,
             "checks_passed": [
                 "consent_basis_and_provenance",
                 "credits_present",
@@ -3134,6 +3144,150 @@ fn js_divergence(p: &[f64], q: &[f64]) -> f64 {
 // connective overuse). These are the deterministic cousins of those signals —
 // no reference LM required — plus char-trigram distance, one of the strongest
 // classical authorship features.
+
+// ── Style similarity: per-voice Burrows's Delta (z-scored MFW cosine) ──
+// Champion of the 2026-07-06 bake-off on the 17 production voices:
+// Delta-500 AUC 0.960 vs StyleDistance 0.813 and Wegmann Style-Embedding
+// 0.789 (neural models transfer poorly to period literary registers).
+// Deterministic, so it runs here with no model weights. REPORT-ONLY by
+// contract (RFC-0002 §5.4): the soft score never hard-gates a publish.
+
+const STYLE_CHUNK_WORDS: usize = 220;
+const STYLE_MFW: usize = 500;
+
+fn style_chunks(corpus_texts: &[(String, String)]) -> Vec<Vec<String>> {
+    let mut chunks = Vec::new();
+    for (_, body) in corpus_texts {
+        let words = words_of(body);
+        let mut i = 0;
+        while i < words.len() {
+            let end = (i + STYLE_CHUNK_WORDS).min(words.len());
+            if end - i >= 140 {
+                chunks.push(words[i..end].to_vec());
+            }
+            i += STYLE_CHUNK_WORDS;
+        }
+    }
+    chunks
+}
+
+fn style_mfw(chunks: &[Vec<String>]) -> Vec<String> {
+    let mut counts: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for chunk in chunks {
+        for word in chunk {
+            *counts.entry(word.as_str()).or_insert(0) += 1;
+        }
+    }
+    let mut ranked: Vec<(&str, usize)> = counts.into_iter().collect();
+    // Deterministic order: count desc, then lexicographic.
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+    ranked.into_iter().take(STYLE_MFW).map(|(w, _)| w.to_string()).collect()
+}
+
+fn style_freq_vec(words: &[String], mfw_index: &std::collections::BTreeMap<&str, usize>) -> Vec<f64> {
+    let mut vec = vec![0.0; mfw_index.len()];
+    for word in words {
+        if let Some(&i) = mfw_index.get(word.as_str()) {
+            vec[i] += 1.0;
+        }
+    }
+    let n = words.len().max(1) as f64;
+    vec.iter_mut().for_each(|v| *v /= n);
+    vec
+}
+
+fn style_cosine(a: &[f64], b: &[f64]) -> f64 {
+    let dot: f64 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+    let na: f64 = a.iter().map(|x| x * x).sum::<f64>().sqrt();
+    let nb: f64 = b.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
+}
+
+/// Score candidate texts against the voice's corpus with per-voice Delta:
+/// z-normalize MFW frequencies by the corpus chunks' own mean/stdev, take
+/// cosine against the chunk centroid. Returns (per-candidate scores,
+/// leave-one-out positive min/mean — the corpus's own out-of-sample range).
+fn style_similarity_scores(
+    corpus_texts: &[(String, String)],
+    candidates: &[(String, String)],
+) -> Option<serde_json::Value> {
+    let chunks = style_chunks(corpus_texts);
+    if chunks.len() < 4 {
+        return None; // too little corpus for a stable profile — abstain
+    }
+    let mfw = style_mfw(&chunks);
+    let mfw_index: std::collections::BTreeMap<&str, usize> =
+        mfw.iter().enumerate().map(|(i, w)| (w.as_str(), i)).collect();
+    let freq: Vec<Vec<f64>> = chunks.iter().map(|c| style_freq_vec(c, &mfw_index)).collect();
+    let dim = mfw.len();
+    let n = freq.len() as f64;
+    let mut mu = vec![0.0; dim];
+    for row in &freq {
+        for (i, v) in row.iter().enumerate() {
+            mu[i] += v / n;
+        }
+    }
+    let mut sigma = vec![0.0; dim];
+    for row in &freq {
+        for (i, v) in row.iter().enumerate() {
+            sigma[i] += (v - mu[i]) * (v - mu[i]) / n;
+        }
+    }
+    sigma.iter_mut().for_each(|s| *s = s.sqrt() + 1e-9);
+    let z = |row: &[f64]| -> Vec<f64> {
+        row.iter().enumerate().map(|(i, v)| (v - mu[i]) / sigma[i]).collect()
+    };
+    let zrows: Vec<Vec<f64>> = freq.iter().map(|r| z(r)).collect();
+    let centroid_of = |exclude: Option<usize>| -> Vec<f64> {
+        let mut c = vec![0.0; dim];
+        let mut count: f64 = 0.0;
+        for (i, row) in zrows.iter().enumerate() {
+            if Some(i) == exclude { continue; }
+            count += 1.0;
+            for (j, v) in row.iter().enumerate() { c[j] += v; }
+        }
+        c.iter_mut().for_each(|v| *v /= count.max(1.0));
+        c
+    };
+    let centroid = centroid_of(None);
+    let mut pos: Vec<f64> = (0..zrows.len())
+        .map(|i| style_cosine(&zrows[i], &centroid_of(Some(i))))
+        .collect();
+    pos.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let pos_min = *pos.first().unwrap_or(&0.0);
+    let pos_mean = pos.iter().sum::<f64>() / pos.len().max(1) as f64;
+
+    let mut scored = Vec::new();
+    for (label, body) in candidates {
+        let words = words_of(body);
+        if words.len() < 120 {
+            scored.push(json!({ "text": label, "verdict": "abstain", "reason": "under 120 words" }));
+            continue;
+        }
+        let score = style_cosine(&z(&style_freq_vec(&words, &mfw_index)), &centroid);
+        let verdict = if score >= pos_min {
+            "within_corpus_range"
+        } else if score >= pos_min - (pos_mean - pos_min).abs().max(0.05) {
+            "near_range"
+        } else {
+            "outlier"
+        };
+        scored.push(json!({
+            "text": label,
+            "score": (score * 1000.0).round() / 1000.0,
+            "verdict": verdict,
+        }));
+    }
+    Some(json!({
+        "method": "burrows-delta zcos, 500 MFW, per-voice normalization",
+        "report_only": true,
+        "corpus_chunks": chunks.len(),
+        "corpus_range": { "loo_min": (pos_min * 1000.0).round() / 1000.0,
+                           "loo_mean": (pos_mean * 1000.0).round() / 1000.0 },
+        "bakeoff": "delta500 AUC 0.960 vs styledistance 0.813, wegmann 0.789 (2026-07-06, 17 voices)",
+        "candidates": scored,
+    }))
+}
 
 const CONNECTIVES: [&str; 14] = [
     "however", "moreover", "furthermore", "additionally", "thus", "therefore",
@@ -4526,6 +4680,42 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         let evaluated =
             check_voice_bands(&b, &[("corpus:a".to_string(), on_voice_corpus())]).unwrap();
         assert_eq!(evaluated, 1);
+    }
+
+    #[test]
+    fn style_similarity_scores_separate_on_voice_from_alien() {
+        let corpus: Vec<(String, String)> = (0..6)
+            .map(|i| (format!("corpus:{i}"), on_voice_corpus()))
+            .collect();
+        let on_voice = ("replication:a".to_string(), on_voice_corpus());
+        let alien = (
+            "replication:b".to_string(),
+            std::iter::repeat(
+                "Whereupon yonder gentleman, being of most agreeable disposition amongst all whom fortune had thither conveyed, did graciously consent unto the proposal forthwith.",
+            )
+            .take(12)
+            .collect::<Vec<_>>()
+            .join(" "),
+        );
+        let report = style_similarity_scores(&corpus, &[on_voice, alien]).expect("profile");
+        let candidates = report.get("candidates").and_then(|v| v.as_array()).unwrap();
+        let score_a = candidates[0].get("score").and_then(|v| v.as_f64()).unwrap();
+        let score_b = candidates[1].get("score").and_then(|v| v.as_f64()).unwrap();
+        assert!(score_a > score_b, "on-voice {score_a} must beat alien {score_b}");
+        assert_eq!(report.get("report_only").and_then(|v| v.as_bool()), Some(true));
+    }
+
+    #[test]
+    fn style_similarity_abstains_on_short_text_and_thin_corpus() {
+        let corpus: Vec<(String, String)> = (0..6)
+            .map(|i| (format!("corpus:{i}"), on_voice_corpus()))
+            .collect();
+        let short = ("replication:s".to_string(), "Too short to judge.".to_string());
+        let report = style_similarity_scores(&corpus, &[short]).expect("profile");
+        let verdict = report["candidates"][0]["verdict"].as_str().unwrap();
+        assert_eq!(verdict, "abstain");
+        let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
+        assert!(style_similarity_scores(&thin, &[]).is_none());
     }
 
     #[test]

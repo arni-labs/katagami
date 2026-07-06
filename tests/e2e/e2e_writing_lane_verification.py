@@ -285,6 +285,7 @@ def main():
     report("writing/happy: replication verified (round-trip proof)", str(fields.get("replication_verified")).lower() in ("true", "1"), str(fields.get("replication_verified")))
     vr = fields.get("verification_report") or ""
     report("writing/happy: verification report recorded", "katagami:voice-verification/v1" in vr and "replication_samples" in vr, vr[:80])
+    report("writing/happy: style similarity scored, report-only", "burrows-delta" in vr and '"report_only": true' in vr.replace(" ", "").replace('"report_only":true', '"report_only": true'), "delta" if "burrows-delta" in vr else vr[:60])
     report("writing/happy: VOICE.md asset attached pre-publish", bool(fields.get("voice_md_asset_url")), str(fields.get("voice_md_asset_url"))[:80])
     st, _ = act("WritingStyles", ws, "Publish", {})
     report("writing/happy: curator Publish succeeds in one dispatch", 200 <= st < 300, f"HTTP {st}")
