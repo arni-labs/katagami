@@ -153,6 +153,17 @@ temper.done("synthesize_writing_style complete")
 - The bands checker is deterministic and unforgiving: derive, don't guess.
 - Do not fire finalizer-owned actions (see When to Use).
 
+## The two-level shape (curator decision, 2026-07-06)
+
+- A single-PD-author style is an AUTHOR VOICE: named for what it is
+  ("Samuel Pepys — diary (1660s)"), parent_ids [], generation 0. Never an
+  invented brand name. Author voices are the adherence calibration set.
+- A blend is a LINEAGE CHILD: parent_ids name the author voices it mixes,
+  lineage_type "blend", generation >= 1, its own merged corpus and derived
+  bands. Plain register names ("Ship's log"), never cute compounds.
+- tone_scales stays "{}" — numeric dials are never authored. Tone lives in
+  the persona prose, the exemplars, and the measured bands.
+
 ## Exemplars — style, never subject (curator review, 2026-07-04)
 
 - Every exemplar demonstrates CONSTRUCTION — how the sentence moves — not what

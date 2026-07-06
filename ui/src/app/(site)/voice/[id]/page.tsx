@@ -88,6 +88,19 @@ export default async function VoiceDetailPage({
       }),
     )
   ).filter((e): e is { source: string; text: string; truncated: boolean } => e !== null);
+  const parentIds = parseJson<string[]>(f.parent_ids) ?? [];
+  const parents = (
+    await Promise.all(
+      parentIds.slice(0, 4).map(async (pid) => {
+        try {
+          const p = await getWritingStyle(pid);
+          return { id: pid, name: p.fields.name ?? pid };
+        } catch {
+          return null;
+        }
+      }),
+    )
+  ).filter((p): p is { id: string; name: string } => p !== null);
   const voiceMdUrl =
     (f.voice_md_asset_url ?? "").trim() ||
     (f.voice_md_file_id ? getFileUrl(f.voice_md_file_id) : "");
@@ -139,10 +152,27 @@ export default async function VoiceDetailPage({
         </StickyNote>
       ) : null}
 
-      {voiceComposition(f.credits, consent.basis ?? "") ? (
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          {voiceComposition(f.credits, consent.basis ?? "")}
-        </p>
+      {voiceComposition(f.credits, consent.basis ?? "") || parents.length ? (
+        <div className="space-y-1.5">
+          {voiceComposition(f.credits, consent.basis ?? "") ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              {voiceComposition(f.credits, consent.basis ?? "")}
+            </p>
+          ) : null}
+          {parents.length ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              lineage:{" "}
+              {parents.map((p, i) => (
+                <span key={p.id}>
+                  {i > 0 ? " + " : ""}
+                  <Link href={`/voice/${p.id}`} className="text-foreground underline decoration-dotted underline-offset-4">
+                    {p.name}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {exemplars[0]?.text ? (
