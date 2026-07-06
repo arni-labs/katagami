@@ -13,6 +13,7 @@ import { Marker, PageHero } from "@/components/page-hero";
 import { SectionHeading, StickyNote, WashiTape } from "@/components/scrapbook";
 import { UserAvatar } from "@/components/user-menu";
 import { KX_BTN_PAPER } from "@/lib/katagami-ui";
+import SubmissionsSection from "./submissions-section";
 
 export const dynamic = "force-dynamic";
 
@@ -175,6 +176,8 @@ export default async function AccountPage() {
           )}
         </StickyNote>
       </section>
+
+      <SubmissionsSection sub={user.sub} />
     </div>
   );
 }

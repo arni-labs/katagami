@@ -1,0 +1,59 @@
+# OAuthClient — I/O Automaton Specification
+#
+# A dynamically registered OAuth client (RFC 7591) — the agent-side software
+# (Claude Code, Codex, Cursor, the katagami CLI) that connects to the MCP
+# front door. Registration is open and mechanical, as the MCP spec expects:
+# a client record carries metadata and redirect URIs, never trust. Trust
+# arrives only when a human approves a grant (AgentGrant) for a client.
+#
+# Clients are public (PKCE, token_endpoint_auth_method=none) — MCP clients
+# cannot keep secrets.
+#
+# Lifecycle: Pending -> Registered -> Disabled
+
+[automaton]
+name = "OAuthClient"
+states = ["Pending", "Registered", "Disabled"]
+initial = "Pending"
+
+allow_indefinite_states = ["Pending", "Registered", "Disabled"]
+
+# --- State Variables ---
+
+[[state]]
+name = "has_metadata"
+type = "bool"
+initial = "false"
+
+# --- Actions ---
+
+[[action]]
+name = "Register"
+kind = "input"
+from = ["Pending"]
+to = "Registered"
+effect = [{ type = "set_bool", var = "has_metadata", value = "true" }]
+params = ["client_id", "client_name", "redirect_uris", "token_endpoint_auth_method", "client_uri", "logo_uri"]
+hint = "Record a dynamic client registration: server-minted client_id, human-readable client_name (shown on the consent screen), exact-match redirect_uris (JSON array — native list, not a string), auth method (public clients: 'none'). Registration carries zero privilege."
+
+[[action]]
+name = "UpdateMetadata"
+kind = "input"
+from = ["Registered"]
+params = ["client_name", "redirect_uris", "client_uri", "logo_uri"]
+hint = "Refresh client metadata on re-registration by the same client_id."
+
+[[action]]
+name = "Disable"
+kind = "internal"
+from = ["Registered"]
+to = "Disabled"
+params = ["reason"]
+hint = "Disable an abusive or retired client: authorize/token requests for it are refused; existing grants for it stop resolving."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "RegisteredRequiresMetadata"
+when = ["Registered"]
+assert = "has_metadata"

@@ -12,6 +12,7 @@ import { LanguageCard } from "@/components/language-card";
 import { PageHero, Marker, HeroStat } from "@/components/page-hero";
 import { notFound } from "next/navigation";
 import { isOwner } from "@/lib/owner";
+import ReviewQueuePanel, { type QueueItem } from "./review-queue-panel";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -161,6 +162,40 @@ export default async function UnderReviewPage() {
               <NoneYet what="art styles" />
             )}
           </section>
+
+          {owner ? (
+            <ReviewQueuePanel
+              items={[
+                ...langs.map(
+                  (l): QueueItem => ({
+                    kind: "language",
+                    id: l.entity_id,
+                    name: l.fields.name ?? "",
+                    creatorEmail: l.fields.creator_email ?? "",
+                    href: `/language/${l.entity_id}`,
+                  }),
+                ),
+                ...paletteRows.map(
+                  (p): QueueItem => ({
+                    kind: "palette",
+                    id: p.entity_id,
+                    name: p.fields.name ?? "",
+                    creatorEmail: p.fields.creator_email ?? "",
+                    href: `/palettes/${p.entity_id}`,
+                  }),
+                ),
+                ...artRows.map(
+                  (a): QueueItem => ({
+                    kind: "art_style",
+                    id: a.entity_id,
+                    name: a.fields.name ?? "",
+                    creatorEmail: a.fields.creator_email ?? "",
+                    href: `/art-styles/${a.entity_id}`,
+                  }),
+                ),
+              ]}
+            />
+          ) : null}
 
           {owner && writingStyles.length ? (
             <section className="space-y-5">

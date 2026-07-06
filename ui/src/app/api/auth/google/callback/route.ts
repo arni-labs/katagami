@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeGoogleCode } from "@/lib/google-oidc";
+import { upsertMember } from "@/lib/oauth-as";
 import {
   OAUTH_NEXT_COOKIE,
   OAUTH_NONCE_COOKIE,
@@ -36,6 +37,15 @@ export async function GET(req: NextRequest) {
   const token = user ? await signSession(user) : null;
   if (!token) {
     return NextResponse.redirect(new URL("/signin?error=google", origin));
+  }
+
+  // Durable account behind the stateless session (ARN-151): grants, roles,
+  // and submissions anchor on the Member. Best-effort — a backend hiccup
+  // must never block the sign-in itself.
+  try {
+    if (user) await upsertMember(user);
+  } catch (err) {
+    console.error("Member upsert failed at sign-in:", err);
   }
 
   const next = safeInternalPath(req.cookies.get(OAUTH_NEXT_COOKIE)?.value);
