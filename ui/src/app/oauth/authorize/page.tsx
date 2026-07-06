@@ -93,9 +93,8 @@ export default async function AuthorizePage({
           You are signed in as <span className="font-medium text-black">{user.name || user.email}</span>{" "}
           ({user.email}). If you approve, this agent can pull design languages,
           remix them, and submit work for review <span className="font-medium text-black">in your name</span>.
-          Everything it submits is attributed to you, lands in review — never
-          published directly — and you can revoke this access at any time from
-          your account.
+          Everything it submits is attributed to you and waits for curator
+          review. You can revoke this access at any time from your account.
         </p>
         <div className="flex gap-4">
           <form action={approveAuthorization}>
