@@ -43,7 +43,7 @@ async function signingKey(): Promise<{ key: CryptoKey; jwk: JWK; kid: string }> 
   if (keyCache) return keyCache;
   const pem = (process.env.KATAGAMI_AS_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
   if (!pem) throw new Error("KATAGAMI_AS_PRIVATE_KEY is not set — the authorization server is off.");
-  const key = await importPKCS8(pem, "ES256");
+  const key = await importPKCS8(pem, "ES256", { extractable: true });
   const privateJwk = await exportJWK(key);
   // Public half only: never expose d (or other private params) via JWKS.
   const jwk: JWK = { kty: privateJwk.kty, crv: privateJwk.crv, x: privateJwk.x, y: privateJwk.y };
@@ -107,7 +107,9 @@ export async function upsertMember(user: {
   name: string;
   picture: string;
 }): Promise<void> {
-  const existing = await queryEntities("Members", `Sub eq '${user.sub}'`);
+  // Temper's OData $filter matches raw (snake_case) field names, not the
+  // PascalCase CSDL projections — verified live 2026-07-06.
+  const existing = await queryEntities("Members", `sub eq '${user.sub}'`);
   const params = {
     sub: user.sub,
     email: user.email,
@@ -123,7 +125,7 @@ export async function upsertMember(user: {
 }
 
 export async function memberBySub(sub: string): Promise<EntityRow | null> {
-  const rows = await queryEntities("Members", `Sub eq '${sub}'`);
+  const rows = await queryEntities("Members", `sub eq '${sub}'`);
   return rows[0] ?? null;
 }
 
@@ -173,15 +175,22 @@ export async function registerClient(meta: {
 }
 
 export async function clientById(clientId: string): Promise<RegisteredClient | null> {
-  const rows = await queryEntities("OAuthClients", `ClientId eq '${clientId}'`);
+  const rows = await queryEntities("OAuthClients", `client_id eq '${clientId}'`);
   const row = rows.find((r) => (r.status ?? "") !== "Disabled");
   if (!row) return null;
+  // List-typed fields round-trip as native JSON arrays (the same engine
+  // behavior the SubmitForReview guards depend on) — handle both shapes.
+  const raw: unknown = row.fields?.["redirect_uris"];
   let uris: string[] = [];
-  try {
-    const parsed: unknown = JSON.parse(field(row, "redirect_uris") || "[]");
-    if (Array.isArray(parsed)) uris = parsed.filter((u): u is string => typeof u === "string");
-  } catch {
-    uris = [];
+  if (Array.isArray(raw)) {
+    uris = raw.filter((u): u is string => typeof u === "string");
+  } else if (typeof raw === "string") {
+    try {
+      const parsed: unknown = JSON.parse(raw || "[]");
+      if (Array.isArray(parsed)) uris = parsed.filter((u): u is string => typeof u === "string");
+    } catch {
+      uris = [];
+    }
   }
   return {
     client_id: clientId,
@@ -244,12 +253,12 @@ export async function grantById(grantId: string): Promise<GrantRow | null> {
 }
 
 export async function grantsForMember(sub: string): Promise<GrantRow[]> {
-  const rows = await queryEntities("AgentGrants", `MemberSub eq '${sub}'`);
+  const rows = await queryEntities("AgentGrants", `member_sub eq '${sub}'`);
   return rows.map(toGrant);
 }
 
 export async function grantByRefreshHash(hash: string): Promise<GrantRow | null> {
-  const rows = await queryEntities("AgentGrants", `RefreshTokenHash eq '${hash}'`);
+  const rows = await queryEntities("AgentGrants", `refresh_token_hash eq '${hash}'`);
   const active = rows.find((r) => (r.status ?? "") === "Active");
   return active ? toGrant(active) : null;
 }
