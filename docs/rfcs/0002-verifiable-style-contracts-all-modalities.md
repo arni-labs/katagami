@@ -68,6 +68,34 @@ A Katagami VOICE.md is not a fifth soft-prompt template. It is the soft layer ev
 
 Format: markdown with YAML front matter, published at `https://katagami.ai/voice/<id>/VOICE.md` — the prose sibling of `/language/<id>/DESIGN.md`. Katagami entity fields remain the source of truth; VOICE.md is the required portable projection, linted before attach exactly like DESIGN.md.
 
+### 5.0 The two-level shape (amended 2026-07-06)
+
+Writing styles come in two levels, and the level is structure (lineage), never
+an asserted label:
+
+**Level 0 — author voices.** One corpus, one voice. A public-domain author's
+works are a contributed voice whose contributor is openly named and long dead:
+same entity, same extraction, same adherence checks as a living contributor's
+opt-in voice — only the consent block differs. Author voices are named for
+what they are ("Samuel Pepys — diary (1660s)"), never given invented brands.
+They double as the calibration set for adherence verification: held-out
+passages from the same author must score high against their voice and low
+against others, giving the similarity layer (ARN-140) labeled ground truth
+before any living person contributes.
+
+**Level 1 — blends and registers.** A blend is a voice with parents:
+`parent_ids` names the author voices it mixes, `generation_number` >= 1,
+`lineage_type` "blend". It carries its own merged corpus and its own derived
+bands, and the checker's function-word/char-trigram self-consistency enforces
+that the mixture coheres. Original registers with no single source (authored
+in-register, opt-in personal voices) sit at the same level with empty or
+chosen parents. Blends and registers may carry names — plain register names
+preferred.
+
+Display rules: composition is derived from credits and lineage and stated up
+front; agent-authored subjective numbers (tone dials) are never posted —
+numeric dials return only when extraction can derive them from the corpus.
+
 ### 5.1 Front matter (identity + consent binding)
 
 ```yaml
