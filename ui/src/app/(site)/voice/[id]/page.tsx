@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getWritingStyle, getFileUrl, getFileText, parseJson } from "@/lib/odata";
+import { voiceComposition } from "@/lib/lane-items";
 import { isOwner } from "@/lib/owner";
 import { PageHero } from "@/components/page-hero";
 import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scrapbook";
@@ -136,6 +137,12 @@ export default async function VoiceDetailPage({
             </span>
           </div>
         </StickyNote>
+      ) : null}
+
+      {voiceComposition(f.credits, consent.basis ?? "") ? (
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          {voiceComposition(f.credits, consent.basis ?? "")}
+        </p>
       ) : null}
 
       {exemplars[0]?.text ? (

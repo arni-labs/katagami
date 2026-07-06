@@ -13,6 +13,8 @@ export interface WritingStyleItem {
    *  register is assessable at a glance. */
   signature: string;
   basis: string;
+  /** Derived from credits: single author or blend, named. */
+  composition: string;
   tags: string[];
 }
 
@@ -47,6 +49,11 @@ export function WritingStyleCard({ item }: { item: WritingStyleItem }) {
       {item.persona ? (
         <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
           {item.persona}
+        </p>
+      ) : null}
+      {item.composition ? (
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
+          {item.composition}
         </p>
       ) : null}
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
