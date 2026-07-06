@@ -96,6 +96,36 @@ Display rules: composition is derived from credits and lineage and stated up
 front; agent-authored subjective numbers (tone dials) are never posted —
 numeric dials return only when extraction can derive them from the corpus.
 
+### 5.0.1 The soft similarity layer — bake-off result (amended 2026-07-06)
+
+The similarity scorer was chosen empirically, not by reputation. Calibrated on
+the 17 production voices (leave-one-out corpus chunks as positives, cross-voice
+chunks as negatives, 17-way replica retrieval):
+
+| method | mean AUC | replica retrieval |
+|---|---|---|
+| Burrows's Delta, 500 MFW, z-cosine | **0.960** | 8/17 |
+| Delta 300 MFW + char-3gram hybrid | 0.955 | 7/17 |
+| StyleDistance (neural) | 0.813 | 5/17 |
+| Wegmann Style-Embedding (neural) | 0.789 | 3/17 |
+
+The neural models transfer poorly to period literary registers (they are
+trained on contemporary conversational text — the domain-shift caveat from the
+original research, confirmed on our own data). Production therefore runs
+**per-voice Delta** inside the finalizer WASM — deterministic, no weights, no
+service — as a REPORT-ONLY signal with per-voice thresholds derived from the
+corpus's own leave-one-out range, and abstention under 120 words. Retrieval
+misses concentrate in same-register families (blends vs their own parents),
+which is expected and correct. Neural embeddings remain the planned upgrade
+for contemporary and personal voices, where their training domain matches;
+the calibration harness re-runs in minutes when that catalog exists.
+
+VOICE.md format is **beta** as of the same date: a full corpus excerpt ("How
+it reads"), bands translated to writer-facing rhythm instructions, a derived
+linguistic profile, and the verified known-good replica join the contract —
+because measured one-shot replication (9/17 under format alpha) showed the
+description-only file under-taught rhythm.
+
 ### 5.1 Front matter (identity + consent binding)
 
 ```yaml
