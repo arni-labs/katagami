@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { isOwner } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -60,6 +61,11 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   } catch {
     notFound();
   }
+  // Non-published entries are the curator's queue: owner sees them (preview),
+  // everyone else gets a 404. The owner check runs ONLY on this branch, so
+  // Published renders never touch cookies() and stay cacheable.
+  if (art.status !== "Published" && !(await isOwner())) notFound();
+
   const f = art.fields;
   const name = artStyleDisplayName(f);
   const medium = f.medium ?? "mixed";

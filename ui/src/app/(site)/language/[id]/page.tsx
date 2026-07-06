@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { isOwner } from "@/lib/owner";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -98,6 +99,12 @@ export default async function LanguageDetailPage({
   } catch {
     notFound();
   }
+
+  // Non-published languages are the curator's queue: owner previews them,
+  // everyone else 404s. The check runs ONLY on this branch — Published
+  // renders never execute cookies(), preserving the full-route cache
+  // (the sign-in rollout invariant for this page).
+  if (lang.status !== "Published" && !(await isOwner())) notFound();
 
   // Lanes for the in-page remix (swap palette + art on this language).
   const [paletteRows, artRows] = await Promise.all([
