@@ -59,6 +59,22 @@ function refImageUrls(fields: Record<string, string | undefined>): string[] {
   return ids.map((id) => getFileUrl(id));
 }
 
+/** The composition line for a voice, derived from its credits: which
+ *  public-domain authors the corpus draws on, single or blend. */
+export function voiceComposition(creditsRaw: string | undefined, basis: string): string {
+  const credits =
+    parseJson<Array<{ name?: string; kind?: string }>>(creditsRaw) ?? [];
+  const writers = credits.filter((c) => c.kind === "writer").map((c) => c.name ?? "");
+  const translators = credits.filter((c) => c.kind === "translator").map((c) => c.name ?? "");
+  if (basis === "public_domain" && writers.length) {
+    const who = writers.join(" + ") + (translators.length ? ` (${translators.join(", ")}, translator)` : "");
+    return writers.length > 1 ? `a blend of ${who}` : `one author: ${who}`;
+  }
+  if (basis === "original") return "original corpus, authored in-register";
+  if (basis === "opt_in") return "personal corpus, contributed with consent";
+  return "";
+}
+
 /** A WritingStyle row -> the item the voice catalog renders. */
 export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-style-card").WritingStyleItem {
   const consent = parseJson<{ basis?: string }>(r.fields.consent) ?? {};
@@ -71,6 +87,7 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
     persona: r.fields.persona ?? "",
     signature: exemplars[0]?.text ?? "",
     basis: consent.basis ?? "",
+    composition: voiceComposition(r.fields.credits, consent.basis ?? ""),
     tags: parseJson<string[]>(r.fields.tags) ?? [],
   };
 }
