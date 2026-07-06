@@ -1,6 +1,7 @@
 use temper_wasm_sdk::prelude::*;
 
 mod facets;
+mod taste_doc;
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
 const SHADCN_COMPONENTS: [&str; 16] = [
@@ -499,6 +500,142 @@ fn attach_computed_facets(
     }
 }
 
+/// Embed-service endpoint + bearer, resolved the same way `temper_api_url` is:
+/// from the trigger's `[[integration]]` config, ignoring unresolved `{secret:…}`
+/// placeholders. The URL falls back to the production embed service; a missing
+/// bearer means the call cannot authenticate, so the caller skips (and logs).
+fn embed_config(ctx: &Context) -> Option<(String, String)> {
+    let url = ctx
+        .config
+        .get("katagami_embed_url")
+        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+        .cloned()
+        .unwrap_or_else(|| "https://katagami.ai/api/taste/embed".to_string());
+    let key = ctx
+        .config
+        .get("katagami_embed_key")
+        .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+        .cloned()?;
+    Some((url, key))
+}
+
+/// Compute a just-published entity's taste embedding and store it via
+/// AttachTasteVector (Temper governs the write). Best-effort by contract, exactly
+/// like `attach_computed_facets`: a failed embed or dispatch must never fail a
+/// publish — but every failure logs loudly (silent failure is itself a bug).
+///
+/// `doc` is the lane's canonical taste document (see `taste_doc`); the document
+/// format is the single source of truth shared with the TS embed service, so a
+/// vector computed here is comparable to one computed by the backfill.
+fn attach_taste_vector(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    set_name: &'static str,
+    entity_id: &str,
+    doc: &str,
+) {
+    if doc.trim().is_empty() {
+        return; // no embeddable content — nothing to store, nothing to log
+    }
+    let (embed_url, embed_key) = match embed_config(ctx) {
+        Some(cfg) => cfg,
+        None => {
+            ctx.log(
+                "warn",
+                &format!(
+                    "taste: no embed key configured (katagami_embed_key) — skipping taste vector for {set_name}('{entity_id}')"
+                ),
+            );
+            return;
+        }
+    };
+    let embed_headers = vec![
+        ("Content-Type".to_string(), "application/json".to_string()),
+        ("Authorization".to_string(), format!("Bearer {embed_key}")),
+    ];
+    let body = json!({ "doc": doc }).to_string();
+    let resp = match ctx.http_call("POST", &embed_url, &embed_headers, &body) {
+        Ok(resp) => resp,
+        Err(error) => {
+            ctx.log(
+                "warn",
+                &format!("taste: embed request failed for {set_name}('{entity_id}'): {error} (non-fatal)"),
+            );
+            return;
+        }
+    };
+    if !(200..300).contains(&resp.status) {
+        ctx.log(
+            "warn",
+            &format!(
+                "taste: embed service HTTP {} for {set_name}('{entity_id}'): {} (non-fatal)",
+                resp.status,
+                truncate(&resp.body)
+            ),
+        );
+        return;
+    }
+    let parsed = match serde_json::from_str::<serde_json::Value>(&resp.body) {
+        Ok(value) => value,
+        Err(error) => {
+            ctx.log(
+                "warn",
+                &format!("taste: embed response parse failed for {set_name}('{entity_id}'): {error} (non-fatal)"),
+            );
+            return;
+        }
+    };
+    let model = parsed.get("model").and_then(|v| v.as_str()).unwrap_or("");
+    let vector = parsed.get("vector").filter(|v| v.is_array());
+    let (model, vector) = match (model.is_empty(), vector) {
+        (false, Some(vector)) if !vector.as_array().unwrap().is_empty() => (model, vector),
+        _ => {
+            ctx.log(
+                "warn",
+                &format!("taste: embed response missing model/vector for {set_name}('{entity_id}') (non-fatal)"),
+            );
+            return;
+        }
+    };
+    let dim = vector.as_array().map(Vec::len).unwrap_or(0);
+    if dim != taste_doc::TASTE_EMBEDDING_DIM || model != taste_doc::TASTE_EMBEDDING_MODEL {
+        // Do NOT store an off-space vector: readers reject it (parseStoredTasteVector
+        // requires model + dim to match) while the backfill's candidate check would see
+        // a matching model and a non-empty field — a stored bad vector could never
+        // self-heal without --force. Skip the attach and surface the drift loudly.
+        ctx.log(
+            "warn",
+            &format!(
+                "taste: embed returned model '{model}' dim {dim} (expected '{}' dim {}) for {set_name}('{entity_id}') — skipping attach",
+                taste_doc::TASTE_EMBEDDING_MODEL,
+                taste_doc::TASTE_EMBEDDING_DIM
+            ),
+        );
+        return;
+    }
+    let params = json!({
+        "taste_vector": vector.to_string(),
+        "taste_vector_model": model,
+    });
+    if dispatch_action(
+        ctx,
+        api_url,
+        headers,
+        set_name,
+        entity_id,
+        "AttachTasteVector",
+        &params,
+    )
+    .is_err()
+    {
+        ctx.log(
+            "warn",
+            &format!("taste: AttachTasteVector failed for {set_name}('{entity_id}') (non-fatal)"),
+        );
+    }
+}
+
 fn verify_quality_reviewed_languages(
     ctx: &Context,
     api_url: &str,
@@ -553,6 +690,17 @@ fn verify_quality_reviewed_languages(
         // Derive + store gallery facets (compute here, Temper governs the write).
         // Best-effort: a facet write must never fail a publish.
         attach_computed_facets(ctx, api_url, headers, language_id, &verified_language, &tax_parents);
+        // Derive + store the semantic taste vector (embed here, Temper governs
+        // the write). Best-effort like facets — never fails a publish.
+        let empty = json!({});
+        attach_taste_vector(
+            ctx,
+            api_url,
+            headers,
+            "DesignLanguages",
+            language_id,
+            &taste_doc::build_language_doc(verified_language.get("fields").unwrap_or(&empty)),
+        );
         published.push(language_id.clone());
     }
 
@@ -1996,6 +2144,15 @@ fn walk_lane_entity_to_published(
             &format!("facets: AttachComputedFacets failed for {set_name}('{entity_id}') (non-fatal)"),
         );
     }
+    // Derive + store the semantic taste vector for the lane entity (embed here,
+    // Temper governs the write). Best-effort like facets — never fails a publish.
+    let lane_fields = entity.get("fields").unwrap_or(&empty);
+    let doc = match set_name {
+        "PaletteSystems" => taste_doc::build_palette_doc(lane_fields),
+        "ArtStyles" => taste_doc::build_art_style_doc(lane_fields),
+        _ => String::new(),
+    };
+    attach_taste_vector(ctx, api_url, headers, set_name, entity_id, &doc);
     Ok(())
 }
 
@@ -2702,6 +2859,18 @@ fn verify_synthesized_writing_styles(
             "MarkQualityPassed",
             &json!({}),
         )?;
+        // Derive + store the semantic taste vector from the voice layer (embed
+        // here, Temper governs the write). The style stays UnderReview for the
+        // curator; AttachTasteVector is allowed there. Best-effort — never blocks
+        // the review-ready handoff.
+        attach_taste_vector(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyles",
+            id,
+            &taste_doc::build_writing_style_doc(&lane_fields),
+        );
     }
     Ok(json!({
         "validated": true,

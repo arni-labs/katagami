@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Backfill semantic taste vectors onto existing DesignLanguages.
+// Backfill semantic taste vectors onto existing catalog entities (all four
+// lanes: DesignLanguages, PaletteSystems, ArtStyles, WritingStyles).
 //
-// For every published language missing a current-model taste_vector, this
+// For every published entity missing a current-model taste_vector, this
 // embeds its canonical taste document via the Katagami embed service
 // (single source of truth for the document format) and dispatches the
 // AttachTasteVector action on the Temper API.
@@ -18,6 +19,7 @@
 //        --force    recompute even when a current-model vector exists
 
 const EXPECTED_MODEL = "Xenova/all-MiniLM-L6-v2";
+const EXPECTED_DIM = 384;
 
 const apiUrl = requiredEnv("TEMPER_API_URL").replace(/\/+$/, "");
 const apiKey = requiredEnv("TEMPER_API_KEY");
@@ -73,6 +75,22 @@ const LANES = [
       prompt_template: fields.prompt_template ?? "",
     }),
   },
+  {
+    set: "WritingStyles",
+    embedBody: (fields) => {
+      const vocabulary = parseJson(fields.vocabulary) ?? {};
+      return {
+        kind: "writing-style",
+        name: fields.name,
+        tags: parseJson(fields.tags) ?? [],
+        persona: fields.persona ?? "",
+        refusals: parseJson(fields.refusals) ?? [],
+        moves: parseJson(fields.moves) ?? [],
+        register: parseJson(fields.register) ?? {},
+        vocabulary: { use: vocabulary.use ?? [], ban: vocabulary.ban ?? [] },
+      };
+    },
+  },
 ];
 
 let totalUpdated = 0;
@@ -82,7 +100,7 @@ for (const lane of LANES) {
     const fields = entity.fields ?? {};
     if (!fields.name) return false;
     if (force) return true;
-    return fields.taste_vector_model !== EXPECTED_MODEL || !fields.taste_vector;
+    return !hasValidVector(fields);
   });
 
   console.log(`${lane.set}: ${entities.length} published, ${candidates.length} candidates`);
@@ -134,6 +152,10 @@ function requiredEnv(name) {
 }
 
 function parseJson(raw) {
+  // Either shape: backends may hand back native arrays/objects instead of JSON
+  // strings; pass those through so backfill docs match finalizer docs
+  // (the Rust side's parse_json_flex has the same contract).
+  if (raw && typeof raw === "object") return raw;
   if (!raw || typeof raw !== "string") return null;
   try {
     return JSON.parse(raw);
@@ -142,9 +164,21 @@ function parseJson(raw) {
   }
 }
 
+/** Same validity a reader applies (parseStoredTasteVector): matching model AND a
+ *  parseable array of EXPECTED_DIM numbers — anything else is a re-embed candidate. */
+function hasValidVector(fields) {
+  if (fields.taste_vector_model !== EXPECTED_MODEL) return false;
+  const vector = parseJson(fields.taste_vector);
+  return (
+    Array.isArray(vector) &&
+    vector.length === EXPECTED_DIM &&
+    vector.every((v) => typeof v === "number")
+  );
+}
+
 async function fetchPublished(set) {
   const out = [];
-  let url = `${apiUrl}/tdata/${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=200`;
+  let url = `${apiUrl}/tdata/${set}?$filter=${encodeURIComponent("Status eq 'Published'")}&$top=1000`;
   while (url) {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`list ${set} failed: HTTP ${res.status}`);
@@ -172,7 +206,7 @@ function normalizeRow(row, set) {
       continue;
     }
     if (key.startsWith("@odata.")) continue;
-    if (typeof value === "string") fields[key] = value;
+    if (value !== null && value !== undefined) fields[key] = value;
   }
   if (!entityId && fields.Id) entityId = fields.Id;
   return { entity_id: entityId, fields };

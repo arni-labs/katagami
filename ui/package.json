@@ -4,16 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:gallery",
+    "prebuild": "npm run test:gallery && npm run test:contracts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "backfill:published-assets": "node scripts/backfill-published-assets.mjs",
     "backfill:taste-vectors": "node scripts/backfill-taste-vectors.mjs",
-    "test": "npm run test:gallery && npm run test:shadcn-export && npm run test:auth",
+    "test": "npm run test:gallery && npm run test:shadcn-export && npm run test:auth && npm run test:contracts",
     "test:gallery": "node scripts/check-gallery-renders-all-cards.mjs",
     "test:shadcn-export": "node scripts/check-shadcn-preview-contract.mjs",
-    "test:auth": "node scripts/check-auth-contract.mjs"
+    "test:auth": "node scripts/check-auth-contract.mjs",
+    "test:contracts": "node scripts/taste-doc.test.mjs && node scripts/facets.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
