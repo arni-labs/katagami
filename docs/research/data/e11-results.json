@@ -1,0 +1,250 @@
+{
+ "oneshot": [
+  {
+   "slug": "beeton-household-manual",
+   "bands_pass": true,
+   "delta": 0.05850665082998368,
+   "floor": 0.09930730292756344,
+   "in_range": false,
+   "margin": -0.09989019508836822,
+   "wegmann": 0.7758399248123169,
+   "wegmann_in": true
+  },
+  {
+   "slug": "naturalist-field-notes",
+   "bands_pass": true,
+   "delta": 0.08488567894042255,
+   "floor": 0.057376421801197244,
+   "in_range": true,
+   "margin": -0.01168782393183547,
+   "wegmann": 0.9388304948806763,
+   "wegmann_in": true
+  },
+  {
+   "slug": "darwin-voyage-journal",
+   "bands_pass": true,
+   "delta": 0.06770617283913336,
+   "floor": 0.0275574351741385,
+   "in_range": true,
+   "margin": -0.054496682754714976,
+   "wegmann": 0.9425045251846313,
+   "wegmann_in": true
+  },
+  {
+   "slug": "twain-travel-letters",
+   "bands_pass": true,
+   "delta": 0.06120534288308495,
+   "floor": 0.012804585439892322,
+   "in_range": true,
+   "margin": -0.05657364834950747,
+   "wegmann": 0.7934573888778687,
+   "wegmann_in": true
+  },
+  {
+   "slug": "grimm-fairy-tales-taylor",
+   "bands_pass": true,
+   "delta": 0.12231863868358436,
+   "floor": 0.1273896990265167,
+   "in_range": false,
+   "margin": 0.05183109451084529,
+   "wegmann": 0.5135433673858643,
+   "wegmann_in": false
+  },
+  {
+   "slug": "white-selborne-letters",
+   "bands_pass": true,
+   "delta": 0.1445719607339787,
+   "floor": 0.013692189270561046,
+   "in_range": true,
+   "margin": 0.06556262069319799,
+   "wegmann": 0.7581039667129517,
+   "wegmann_in": true
+  }
+ ],
+ "attr": [
+  {
+   "slug": "beeton-household-manual",
+   "bands_pass": true,
+   "delta": 0.09402039478203675,
+   "floor": 0.09930730292756344,
+   "in_range": false,
+   "margin": -0.035737716690966564,
+   "wegmann": 0.7780136466026306,
+   "wegmann_in": true
+  },
+  {
+   "slug": "naturalist-field-notes",
+   "bands_pass": true,
+   "delta": 0.10877240151956521,
+   "floor": 0.057376421801197244,
+   "in_range": true,
+   "margin": 0.014880953703562294,
+   "wegmann": 0.935760498046875,
+   "wegmann_in": true
+  },
+  {
+   "slug": "darwin-voyage-journal",
+   "bands_pass": true,
+   "delta": 0.10286680620144162,
+   "floor": 0.0275574351741385,
+   "in_range": true,
+   "margin": -0.02329017765128233,
+   "wegmann": 0.8581398129463196,
+   "wegmann_in": true
+  },
+  {
+   "slug": "twain-travel-letters",
+   "bands_pass": true,
+   "delta": 0.08388223169943294,
+   "floor": 0.012804585439892322,
+   "in_range": true,
+   "margin": -0.018955068733365,
+   "wegmann": 0.8953659534454346,
+   "wegmann_in": true
+  },
+  {
+   "slug": "grimm-fairy-tales-taylor",
+   "bands_pass": true,
+   "delta": 0.1748891903992135,
+   "floor": 0.1273896990265167,
+   "in_range": true,
+   "margin": 0.08695338410793743,
+   "wegmann": 0.5266798138618469,
+   "wegmann_in": false
+  },
+  {
+   "slug": "white-selborne-letters",
+   "bands_pass": true,
+   "delta": 0.23265706005604736,
+   "floor": 0.013692189270561046,
+   "in_range": true,
+   "margin": 0.13889685737217172,
+   "wegmann": 0.7601616382598877,
+   "wegmann_in": true
+  }
+ ],
+ "judge": [
+  {
+   "slug": "beeton-household-manual",
+   "bands_pass": true,
+   "delta": 0.06760367539828187,
+   "floor": 0.09930730292756344,
+   "in_range": false,
+   "margin": -0.09535281306034095,
+   "wegmann": 0.5439668297767639,
+   "wegmann_in": false
+  },
+  {
+   "slug": "naturalist-field-notes",
+   "bands_pass": true,
+   "delta": 0.016472711723001163,
+   "floor": 0.057376421801197244,
+   "in_range": false,
+   "margin": -0.10783876821775588,
+   "wegmann": 0.8898983001708984,
+   "wegmann_in": true
+  },
+  {
+   "slug": "darwin-voyage-journal",
+   "bands_pass": true,
+   "delta": 0.0919048947230065,
+   "floor": 0.0275574351741385,
+   "in_range": true,
+   "margin": -0.04054129291932565,
+   "wegmann": 0.8180609345436096,
+   "wegmann_in": true
+  },
+  {
+   "slug": "twain-travel-letters",
+   "bands_pass": true,
+   "delta": 0.03293746961163928,
+   "floor": 0.012804585439892322,
+   "in_range": true,
+   "margin": -0.05729926760708258,
+   "wegmann": 0.7939188480377197,
+   "wegmann_in": true
+  },
+  {
+   "slug": "grimm-fairy-tales-taylor",
+   "bands_pass": true,
+   "delta": 0.23514129618589558,
+   "floor": 0.1273896990265167,
+   "in_range": true,
+   "margin": 0.09040837950747946,
+   "wegmann": 0.43963000178337097,
+   "wegmann_in": false
+  },
+  {
+   "slug": "white-selborne-letters",
+   "bands_pass": true,
+   "delta": 0.13784525702831096,
+   "floor": 0.013692189270561046,
+   "in_range": true,
+   "margin": 0.09163528625565015,
+   "wegmann": 0.7876697182655334,
+   "wegmann_in": true
+  }
+ ],
+ "fused": [
+  {
+   "slug": "beeton-household-manual",
+   "bands_pass": true,
+   "delta": 0.09203715038969881,
+   "floor": 0.09930730292756344,
+   "in_range": false,
+   "margin": -0.08779941909368602,
+   "wegmann": 0.7717344760894775,
+   "wegmann_in": true
+  },
+  {
+   "slug": "naturalist-field-notes",
+   "bands_pass": false,
+   "delta": 0.06411603260719347,
+   "floor": 0.057376421801197244,
+   "in_range": true,
+   "margin": -0.03708552475350356,
+   "wegmann": 0.9255908727645874,
+   "wegmann_in": true
+  },
+  {
+   "slug": "darwin-voyage-journal",
+   "bands_pass": true,
+   "delta": 0.06876317750804159,
+   "floor": 0.0275574351741385,
+   "in_range": true,
+   "margin": -0.07531076953130705,
+   "wegmann": 0.8263030052185059,
+   "wegmann_in": true
+  },
+  {
+   "slug": "twain-travel-letters",
+   "bands_pass": true,
+   "delta": 0.05733338188058469,
+   "floor": 0.012804585439892322,
+   "in_range": true,
+   "margin": -0.07092027262785629,
+   "wegmann": 0.7679288387298584,
+   "wegmann_in": true
+  },
+  {
+   "slug": "grimm-fairy-tales-taylor",
+   "bands_pass": false,
+   "delta": 0.2882126562653553,
+   "floor": 0.1273896990265167,
+   "in_range": true,
+   "margin": 0.1857231663492214,
+   "wegmann": 0.4263593256473541,
+   "wegmann_in": false
+  },
+  {
+   "slug": "white-selborne-letters",
+   "bands_pass": true,
+   "delta": 0.1437699863500493,
+   "floor": 0.013692189270561046,
+   "in_range": true,
+   "margin": 0.08632655261861474,
+   "wegmann": 0.7472598552703857,
+   "wegmann_in": true
+  }
+ ]
+}

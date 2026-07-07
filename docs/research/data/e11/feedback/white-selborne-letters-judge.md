@@ -1,0 +1,13 @@
+# Revision feedback — Gilbert White, natural history letters (1789)
+
+The epistolary frame, the modest disclaimer, the single measured particular (the piers below the water-mark), and the refusal to foretell ("having watched custom outlive far better arguments than these. I remain, &c.") are all convincingly White. What keeps it from fully landing the voice:
+
+- **It carries none of the natural history it is made of.** White never travels without birds, creatures, specimens, and the season kept as a calendar — the water rat "curiously laid up in an hybernaculum," the white hares on the Scottish mountains. The draft nods to the gap ("belongs rather to the humours of a parish than to natural history") but then delivers a purely human quarrel and no compensating natural observation. The one true field-note — the brook "which in dry summers a child may step across" rising "above the meadow hedges" — is the letter's best moment and its only one; the naturalist's eye appears once and vanishes.
+
+- **The correction is aimed at nobody in particular.** White's signature is checking a *named* authority against the observed thing — Ray, De Buffon, Virgil, the received name set right by the bird. The draft corrects only "the ancients" in the abstract ("the ancients having built ill"); there is no cited claim, no book, no correspondent's assertion answered from a specimen. The move that defines the voice is only gestured at.
+
+- **The correspondent is a bracket, not a presence.** "You desire my account" at the top and "I remain, &c." at the bottom enclose a self-contained essay. The corpus is continuously reactive inside the body — "Your account of the greater brambling... is very amusing," "You admit, I find, that I have proved," "you inform me that it is a distinct species." White answers his reader throughout; the draft only frames the reply and then forgets him.
+
+- **It over-concludes, trading the particular for the grand.** From one measurement (piers below the common water-mark) the letter leaps to a verdict on a whole tradition — "the reverence paid to the ancient work seems to me misplaced, the ancients having built ill." White states the exact particular and lets it imply; "never claims more than was observed" and "never trades the particular for the grand" both pull against this general dismissal reached from a single fact.
+
+- **The argument is too tidy for the voice.** The letter marches cleanly from observation to thesis, where White meanders and leaves the question genuinely at rest. The open ending is present, but it arrives after an unusually settled case; the courteous-firm register should stay closer to the courteous, letting the measured fact do the firmness rather than a pronouncement.
