@@ -220,6 +220,51 @@ alone); Delta fingerprint = verification (validated on ground truth,
 resistant to targeting); curator = meaning and taste. A voice verifies only
 when all three agree.
 
+### 6.6 E6 — mirror-negative calibration (the Pangram import)
+
+For each voice, the mirror set is same-topic text NOT in its voice: its own
+numbers-only (gamed) generation plus every other voice's texts across all
+four conditions (~57–65 mirrors per voice, lineage excluded). Findings:
+
+- At the old noise floors, mirrors pass **19% overall** — with extreme
+  per-voice variance (Dana 53/61, Twain 41/65 falsely in; Aurelius, Pepys,
+  Plainhand 0). The permissive-floor soft spot, quantified per voice.
+- A `max+ε` mirror threshold is brittle (one style-adjacent mirror inflates
+  the bar — Slocum). The robust rule is the **P95 mirror threshold**: 12/17
+  current replicas clear a topic-controlled bar, and the five below it are
+  the same voices the catalog margins flagged. P95-mirror becomes the
+  recommended distinctiveness criterion, replacing raw floors for tier 3.
+
+### 6.7 E7 — what the feedback loop actually changes (standing metric)
+
+The system now records every revision as a before/after pair on both layers.
+First pairs: Aurelius — bands fail → pass AND fingerprint **+0.076** in one
+revision; Strunk — bands still failing, fingerprint +0.009 (consistent with
+its corpus-composition diagnosis: feedback cannot fix a contaminated target).
+Conclusion so far: numeric feedback improves genuine imitation, not just
+compliance, when the corpus is clean — the loop is substantive, not
+test-teaching. The metric runs on every future revision by default.
+
+### 6.8 E8 — instrument fusion (Delta × neural embedding)
+
+On the known-answer protocol (28 genuine held-out passages, 364 impostor
+trials), instruments alone and fused:
+
+| rule | genuine accept | impostor false-accept |
+|---|---|---|
+| Delta alone (production) | 25/28 (89%) | 55/364 (15%) |
+| Wegmann embedding alone | 27/28 (96%) | **189/364 (52%)** |
+| **AND fusion** | 24/28 (86%) | **39/364 (10.7%)** |
+| **agree-or-abstain** | 24 accept + 4 abstain | 39 accepted, **166 sent to abstain** |
+
+Even on the neural model's weak domain, fusion helps: AND-fusion cuts false
+accepts by ~29% relative for the cost of one genuine. **Agree-or-abstain is
+the curator-facing shape**: definitive verdicts only where two independent
+instrument families concur; everything contested abstains to the human. The
+fusion harness is committed (tools/e8_fusion.py); production adoption follows
+the embedding-service decision, and is expected to strengthen further on
+contemporary voices where the neural instrument is in-domain.
+
 ## 7. Honest limitations
 
 - **Small n.** 17 voices, 1 replica per voice per condition, one generator
@@ -240,7 +285,40 @@ when all three agree.
   versus excerpt-only (attention split between numbers and prose) — a format
   v3 hypothesis (lead harder with prose) for a controlled follow-up.
 
-## 8. Roadmap
+## 8. Related work — what this study builds on
+
+- **Function-word attribution**: Mosteller & Wallace (1964), *Inference and
+  Disputed Authorship: The Federalist*; Burrows (2002), "'Delta': a Measure
+  of Stylistic Difference" — our production scorer's lineage.
+- **Character n-grams**: Stamatatos (2009 survey; 2018 text-distortion /
+  content masking) — our trigram check; content masking is the queued fix
+  for topic residue.
+- **Verification methodology**: Koppel & Winter (2014), the impostor method —
+  the ancestor of our mirror-negative calibration; PAN authorship-verification
+  labs (Bevendorff et al., PAN 2023–2025) — c@1/abstention discipline and the
+  finding that pretrained-LM + contrastive methods now dominate.
+- **Neural style representations**: Rivera-Soto et al. (2021) LUAR; Wegmann
+  et al. (2022) style embeddings and the STEL-or-content caveat; Patel et al.
+  StyleDistance (synthetic controlled pairs) — our bake-off subjects.
+- **LLM style imitation**: "Catch Me If You Can? Not Yet" (arXiv 2509.14543,
+  EMNLP 2025): 400+ authors, ensemble metrics; finds LLMs approximate
+  structured registers well and informal implicit style poorly — matching our
+  period-register success. "How Well Do LLMs Imitate Human Writing Style?"
+  (arXiv 2509.24930). "Theory-Grounded Evaluation Exposes the Authorship Gap"
+  (arXiv 2604.26460): argues personalization evaluation must be grounded in
+  authorship-verification theory with validated instruments — the position
+  this stack implements. Patel et al. (2022) low-resource authorship style
+  transfer (arXiv 2212.08986).
+- **AI-text detection engineering**: Pangram technical report (Emi & Spero,
+  arXiv 2402.14873) — hard negative mining with synthetic mirrors, FPR-first
+  evaluation, fairness checks; Pangram Space interpretability probes. Our E6
+  mirrors and hard-case loop are direct imports.
+- **Style-transfer evaluation**: "Mind the Style Gap" (arXiv 2502.15022) —
+  meta-evaluation of style/content metrics; supports separating style
+  strength from content preservation, which our content-masking roadmap item
+  addresses.
+
+## 8b. Roadmap
 
 1. Topic-controlled E2 rerun + per-section ablation of the beta format.
 2. Neural instruments recalibrated when contemporary/personal voices exist
