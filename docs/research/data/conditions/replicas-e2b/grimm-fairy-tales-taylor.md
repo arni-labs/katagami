@@ -1,0 +1,5 @@
+There was once an old keeper who tended a light upon a rock at the edge of the sea, and he had kept it so long that no one in the town remembered another. Every night he wrote in his book what the night had been. But he wrote each thing twice: first as it happened, and then again in fine and golden words, as though a different man had lived the same night.
+
+When he died the town found his book, and they opened it, and they read. The mayor read the plain words and said, "Here was an honest man, and nothing more." The schoolmaster read the golden words and said, "Here was a poet, wasted on a rock." And the keeper's daughter read both and said nothing at all.
+
+Then the three of them fell to quarrelling, and the quarrel lasted a year and a day. The mayor tore out the golden pages to keep the honest ones clean. The schoolmaster gathered up the golden pages from the floor and carried them home. And the daughter took what was left, the plain and the dressed together, and threw the whole book into the sea, where her father had thrown forty years of nights, and she went away and was never troubled by any of them again.

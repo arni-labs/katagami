@@ -1,0 +1,189 @@
+[
+ {
+  "slug": "aurelius-meditations-casaubon",
+  "floor": 0.14949424345294066,
+  "mirror_threshold": 0.08936216601480693,
+  "mirror_fpr_at_floor": [
+   0,
+   65
+  ],
+  "replica": 0.2208708026091725,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "austen-novels",
+  "floor": 0.023009958228818565,
+  "mirror_threshold": 0.09942957217683991,
+  "mirror_fpr_at_floor": [
+   15,
+   65
+  ],
+  "replica": 0.12273759656985234,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "beeton-household-manual",
+  "floor": 0.09930730292756344,
+  "mirror_threshold": 0.13338201243134173,
+  "mirror_fpr_at_floor": [
+   1,
+   65
+  ],
+  "replica": 0.1393941735108264,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "chesterfield-letters",
+  "floor": 0.12853140897075682,
+  "mirror_threshold": 0.13404871377832375,
+  "mirror_fpr_at_floor": [
+   1,
+   65
+  ],
+  "replica": 0.15883116270046854,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "dana-sea-narrative",
+  "floor": -0.03003508475399279,
+  "mirror_threshold": 0.13835012307888755,
+  "mirror_fpr_at_floor": [
+   53,
+   61
+  ],
+  "replica": 0.14375800733245528,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "darwin-voyage-journal",
+  "floor": 0.0275574351741385,
+  "mirror_threshold": 0.095092923727178,
+  "mirror_fpr_at_floor": [
+   18,
+   61
+  ],
+  "replica": 0.023733635258450868,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "faraday-lectures",
+  "floor": 0.02303474357784245,
+  "mirror_threshold": 0.08023066986332113,
+  "mirror_fpr_at_floor": [
+   14,
+   65
+  ],
+  "replica": 0.12296259153372538,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "grimm-fairy-tales-taylor",
+  "floor": 0.1273896990265167,
+  "mirror_threshold": 0.16431870245573596,
+  "mirror_fpr_at_floor": [
+   2,
+   65
+  ],
+  "replica": 0.1345053143811204,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "naturalist-field-notes",
+  "floor": 0.057376421801197244,
+  "mirror_threshold": 0.014874566873786285,
+  "mirror_fpr_at_floor": [
+   0,
+   57
+  ],
+  "replica": -0.01843423049938258,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "pepys-diary",
+  "floor": 0.25443780539762684,
+  "mirror_threshold": 0.16220871528898348,
+  "mirror_fpr_at_floor": [
+   0,
+   65
+  ],
+  "replica": 0.1543702730882896,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "plainhand",
+  "floor": 0.31680098756809894,
+  "mirror_threshold": 0.25605535663760864,
+  "mirror_fpr_at_floor": [
+   0,
+   65
+  ],
+  "replica": 0.37275814834612303,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "post-etiquette",
+  "floor": 0.10454258478378142,
+  "mirror_threshold": 0.13427818126526556,
+  "mirror_fpr_at_floor": [
+   2,
+   65
+  ],
+  "replica": 0.07785765414132366,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "ships-log",
+  "floor": -0.00897344813683764,
+  "mirror_threshold": 0.15351563293468307,
+  "mirror_fpr_at_floor": [
+   37,
+   57
+  ],
+  "replica": 0.13375713281323268,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "slocum-voyage-narrative",
+  "floor": 0.07891924905413451,
+  "mirror_threshold": 0.2571293256897943,
+  "mirror_fpr_at_floor": [
+   13,
+   61
+  ],
+  "replica": 0.15714077959730238,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "strunk-style-manual",
+  "floor": 0.10121110647297912,
+  "mirror_threshold": 0.14023317862849097,
+  "mirror_fpr_at_floor": [
+   3,
+   65
+  ],
+  "replica": 0.07908819817804008,
+  "clears_mirror_thr": false
+ },
+ {
+  "slug": "twain-travel-letters",
+  "floor": 0.012804585439892322,
+  "mirror_threshold": 0.10721773279178128,
+  "mirror_fpr_at_floor": [
+   41,
+   65
+  ],
+  "replica": 0.1163336340307958,
+  "clears_mirror_thr": true
+ },
+ {
+  "slug": "white-selborne-letters",
+  "floor": 0.013692189270561046,
+  "mirror_threshold": 0.0576816484276431,
+  "mirror_fpr_at_floor": [
+   7,
+   61
+  ],
+  "replica": 0.0352723810739503,
+  "clears_mirror_thr": false
+ }
+]

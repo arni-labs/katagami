@@ -1,0 +1,143 @@
+[
+ {
+  "slug": "aurelius-meditations-casaubon",
+  "beta_pass": false,
+  "violations": [
+   "beta: char-trigram divergence 0.251 above 0.245"
+  ],
+  "alpha_delta": 0.31328076400535193,
+  "beta_delta": 0.14483531887088763,
+  "floor": 0.14949424345294066
+ },
+ {
+  "slug": "austen-novels",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.09908560704371112,
+  "beta_delta": 0.12273759656985234,
+  "floor": 0.023009958228818565
+ },
+ {
+  "slug": "beeton-household-manual",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.057639816013767234,
+  "beta_delta": 0.1393941735108264,
+  "floor": 0.09930730292756344
+ },
+ {
+  "slug": "chesterfield-letters",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.1121472210817805,
+  "beta_delta": 0.15883116270046854,
+  "floor": 0.12853140897075682
+ },
+ {
+  "slug": "dana-sea-narrative",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.18012400802440154,
+  "beta_delta": 0.14375800733245528,
+  "floor": -0.03003508475399279
+ },
+ {
+  "slug": "darwin-voyage-journal",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.039471427309560395,
+  "beta_delta": 0.023733635258450868,
+  "floor": 0.0275574351741385
+ },
+ {
+  "slug": "faraday-lectures",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.14510199260241613,
+  "beta_delta": 0.12296259153372538,
+  "floor": 0.02303474357784245
+ },
+ {
+  "slug": "grimm-fairy-tales-taylor",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.10514199020705142,
+  "beta_delta": 0.1345053143811204,
+  "floor": 0.1273896990265167
+ },
+ {
+  "slug": "naturalist-field-notes",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.038099625229322254,
+  "beta_delta": -0.01843423049938258,
+  "floor": 0.057376421801197244
+ },
+ {
+  "slug": "pepys-diary",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.4338536581122581,
+  "beta_delta": 0.1543702730882896,
+  "floor": 0.25443780539762684
+ },
+ {
+  "slug": "plainhand",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.25911597171983125,
+  "beta_delta": 0.37275814834612303,
+  "floor": 0.31680098756809894
+ },
+ {
+  "slug": "post-etiquette",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.1798839720157368,
+  "beta_delta": 0.07785765414132366,
+  "floor": 0.10454258478378142
+ },
+ {
+  "slug": "ships-log",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.1320973591189481,
+  "beta_delta": 0.13375713281323268,
+  "floor": -0.00897344813683764
+ },
+ {
+  "slug": "slocum-voyage-narrative",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.2078693711369421,
+  "beta_delta": 0.15714077959730238,
+  "floor": 0.07891924905413451
+ },
+ {
+  "slug": "strunk-style-manual",
+  "beta_pass": false,
+  "violations": [
+   "beta: function-word divergence 0.145 above 0.103",
+   "beta: char-trigram divergence 0.268 above 0.243"
+  ],
+  "alpha_delta": 0.06256755304318723,
+  "beta_delta": 0.07017377506778583,
+  "floor": 0.10121110647297912
+ },
+ {
+  "slug": "twain-travel-letters",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.04295322143348722,
+  "beta_delta": 0.1163336340307958,
+  "floor": 0.012804585439892322
+ },
+ {
+  "slug": "white-selborne-letters",
+  "beta_pass": true,
+  "violations": [],
+  "alpha_delta": 0.05407089109168381,
+  "beta_delta": 0.0352723810739503,
+  "floor": 0.013692189270561046
+ }
+]
