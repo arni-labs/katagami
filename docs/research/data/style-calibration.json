@@ -1,0 +1,274 @@
+{
+ "aurelius-meditations-casaubon": {
+  "chunks": 11,
+  "pos_min": 0.598,
+  "pos_mean": 0.891,
+  "neg_max": 0.839,
+  "neg_mean": 0.378,
+  "auc": 0.98,
+  "replica_score": 0.814,
+  "replica_rank_of_17": 1,
+  "thresholds": {
+   "match_at": 0.598,
+   "abstain_below": 0.598,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "austen-novels": {
+  "chunks": 21,
+  "pos_min": 0.681,
+  "pos_mean": 0.898,
+  "neg_max": 0.983,
+  "neg_mean": 0.671,
+  "auc": 0.859,
+  "replica_score": 0.609,
+  "replica_rank_of_17": 14,
+  "thresholds": {
+   "match_at": 0.681,
+   "abstain_below": 0.681,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "beeton-household-manual": {
+  "chunks": 14,
+  "pos_min": 0.751,
+  "pos_mean": 0.86,
+  "neg_max": 0.975,
+  "neg_mean": 0.692,
+  "auc": 0.799,
+  "replica_score": 0.751,
+  "replica_rank_of_17": 1,
+  "thresholds": {
+   "match_at": 0.751,
+   "abstain_below": 0.751,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "chesterfield-letters": {
+  "chunks": 13,
+  "pos_min": 0.858,
+  "pos_mean": 0.927,
+  "neg_max": 0.981,
+  "neg_mean": 0.786,
+  "auc": 0.772,
+  "replica_score": 0.81,
+  "replica_rank_of_17": 10,
+  "thresholds": {
+   "match_at": 0.858,
+   "abstain_below": 0.858,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "dana-sea-narrative": {
+  "chunks": 13,
+  "pos_min": 0.861,
+  "pos_mean": 0.929,
+  "neg_max": 0.972,
+  "neg_mean": 0.758,
+  "auc": 0.789,
+  "replica_score": 0.743,
+  "replica_rank_of_17": 12,
+  "thresholds": {
+   "match_at": 0.861,
+   "abstain_below": 0.861,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "darwin-voyage-journal": {
+  "chunks": 12,
+  "pos_min": 0.807,
+  "pos_mean": 0.936,
+  "neg_max": 0.984,
+  "neg_mean": 0.797,
+  "auc": 0.834,
+  "replica_score": 0.833,
+  "replica_rank_of_17": 5,
+  "thresholds": {
+   "match_at": 0.807,
+   "abstain_below": 0.807,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "faraday-lectures": {
+  "chunks": 11,
+  "pos_min": 0.673,
+  "pos_mean": 0.891,
+  "neg_max": 0.98,
+  "neg_mean": 0.803,
+  "auc": 0.723,
+  "replica_score": 0.861,
+  "replica_rank_of_17": 5,
+  "thresholds": {
+   "match_at": 0.673,
+   "abstain_below": 0.673,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "grimm-fairy-tales-taylor": {
+  "chunks": 11,
+  "pos_min": 0.899,
+  "pos_mean": 0.964,
+  "neg_max": 0.981,
+  "neg_mean": 0.601,
+  "auc": 0.964,
+  "replica_score": 0.092,
+  "replica_rank_of_17": 17,
+  "thresholds": {
+   "match_at": 0.899,
+   "abstain_below": 0.899,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "naturalist-field-notes": {
+  "chunks": 17,
+  "pos_min": 0.764,
+  "pos_mean": 0.91,
+  "neg_max": 0.985,
+  "neg_mean": 0.806,
+  "auc": 0.732,
+  "replica_score": 0.918,
+  "replica_rank_of_17": 5,
+  "thresholds": {
+   "match_at": 0.764,
+   "abstain_below": 0.764,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "pepys-diary": {
+  "chunks": 12,
+  "pos_min": 0.686,
+  "pos_mean": 0.914,
+  "neg_max": 0.98,
+  "neg_mean": 0.642,
+  "auc": 0.903,
+  "replica_score": 0.355,
+  "replica_rank_of_17": 14,
+  "thresholds": {
+   "match_at": 0.686,
+   "abstain_below": 0.686,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "plainhand": {
+  "chunks": 3,
+  "pos_min": 0.904,
+  "pos_mean": 0.938,
+  "neg_max": 0.937,
+  "neg_mean": 0.635,
+  "auc": 0.995,
+  "replica_score": 0.887,
+  "replica_rank_of_17": 1,
+  "thresholds": {
+   "match_at": 0.904,
+   "abstain_below": 0.904,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "post-etiquette": {
+  "chunks": 10,
+  "pos_min": 0.658,
+  "pos_mean": 0.836,
+  "neg_max": 0.978,
+  "neg_mean": 0.742,
+  "auc": 0.573,
+  "replica_score": 0.757,
+  "replica_rank_of_17": 3,
+  "thresholds": {
+   "match_at": 0.658,
+   "abstain_below": 0.658,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "ships-log": {
+  "chunks": 17,
+  "pos_min": 0.707,
+  "pos_mean": 0.928,
+  "neg_max": 0.985,
+  "neg_mean": 0.769,
+  "auc": 0.808,
+  "replica_score": 0.822,
+  "replica_rank_of_17": 5,
+  "thresholds": {
+   "match_at": 0.707,
+   "abstain_below": 0.707,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "slocum-voyage-narrative": {
+  "chunks": 11,
+  "pos_min": 0.675,
+  "pos_mean": 0.907,
+  "neg_max": 0.982,
+  "neg_mean": 0.763,
+  "auc": 0.755,
+  "replica_score": 0.722,
+  "replica_rank_of_17": 3,
+  "thresholds": {
+   "match_at": 0.675,
+   "abstain_below": 0.675,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "strunk-style-manual": {
+  "chunks": 9,
+  "pos_min": 0.778,
+  "pos_mean": 0.874,
+  "neg_max": 0.969,
+  "neg_mean": 0.749,
+  "auc": 0.726,
+  "replica_score": 0.776,
+  "replica_rank_of_17": 3,
+  "thresholds": {
+   "match_at": 0.778,
+   "abstain_below": 0.778,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "twain-travel-letters": {
+  "chunks": 10,
+  "pos_min": 0.694,
+  "pos_mean": 0.833,
+  "neg_max": 0.964,
+  "neg_mean": 0.801,
+  "auc": 0.525,
+  "replica_score": 0.806,
+  "replica_rank_of_17": 7,
+  "thresholds": {
+   "match_at": 0.694,
+   "abstain_below": 0.694,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ },
+ "white-selborne-letters": {
+  "chunks": 13,
+  "pos_min": 0.448,
+  "pos_mean": 0.865,
+  "neg_max": 0.976,
+  "neg_mean": 0.799,
+  "auc": 0.682,
+  "replica_score": 0.722,
+  "replica_rank_of_17": 11,
+  "thresholds": {
+   "match_at": 0.448,
+   "abstain_below": 0.448,
+   "note": "match >= pos_min; abstain in [neg_max, pos_min) when ranges overlap; no_match below"
+  },
+  "separated": false
+ }
+}

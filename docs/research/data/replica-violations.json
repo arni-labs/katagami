@@ -1,0 +1,40 @@
+{
+ "aurelius-meditations-casaubon": [
+  "replica: sentence mean 12.4 outside [12.5, 31.2]",
+  "replica: burstiness 7.1 below 9.6",
+  "replica: char-trigram divergence 0.248 above 0.245"
+ ],
+ "austen-novels": [],
+ "beeton-household-manual": [
+  "replica: sentence mean 10.4 outside [10.9, 29.0]"
+ ],
+ "chesterfield-letters": [],
+ "dana-sea-narrative": [],
+ "darwin-voyage-journal": [
+  "replica: function-word divergence 0.144 above 0.134"
+ ],
+ "faraday-lectures": [
+  "replica: burstiness 9.5 below 11.3"
+ ],
+ "grimm-fairy-tales-taylor": [
+  "replica: top opener share 0.38 above 0.33"
+ ],
+ "naturalist-field-notes": [],
+ "pepys-diary": [],
+ "plainhand": [
+  "replica: windowed hapax 0.44 below 0.45"
+ ],
+ "post-etiquette": [],
+ "ships-log": [],
+ "slocum-voyage-narrative": [
+  "replica: burstiness 5.7 below 6.6"
+ ],
+ "strunk-style-manual": [
+  "replica: sentence mean 9.5 outside [12.5, 34.1]",
+  "replica: burstiness 7.0 below 7.0",
+  "replica: function-word divergence 0.190 above 0.103",
+  "replica: char-trigram divergence 0.321 above 0.243"
+ ],
+ "twain-travel-letters": [],
+ "white-selborne-letters": []
+}
