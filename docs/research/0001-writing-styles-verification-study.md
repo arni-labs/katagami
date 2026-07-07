@@ -7,6 +7,24 @@ contract file carries, what is verified and how — and the experiments that
 back every claim. Where a number appears, it was measured on the production
 catalog; where a claim failed measurement, the failure is recorded here.
 
+## 0. Models and roles (experiment provenance)
+
+Every neural role in this study, explicitly:
+
+| role | model |
+|---|---|
+| writer — all replicas and all experiment conditions (A/B/C/D one-shots, E3/E7 revisions, E9 revisions, E10 fused) | claude-opus-4-8, fresh context per text |
+| judge (E9) | claude-opus-4-8 (blind to numbers; shared a context with its own reviser — E10's reviser was fresh) |
+| orchestrator — contract authoring, violation→direction interpretation, experiment design | claude-fable-5 |
+| verifier — all gates, scores, margins | none (symbolic WASM; no learned weights) |
+| corpus authors | human (public-domain, named per voice) |
+
+Per-sample provenance is recorded in each voice's `replication_manifest` in
+production. Family caveat: writer, judge, and orchestrator are one vendor
+family; the deciding instruments are symbolic and cannot prefer anyone, but
+generation-side results are single-family — cross-model replication is a
+queued control (roadmap; the harness is model-agnostic).
+
 ## 1. The shape
 
 **Level 0 — author voices.** One corpus, one named contributor. A
