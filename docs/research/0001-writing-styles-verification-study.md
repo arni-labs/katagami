@@ -127,9 +127,12 @@ two. A confirmation round on the two beta failures recovered Aurelius in one
 revision; Strunk improved (function-word distance 0.145 → 0.129) but stayed
 short of its limits. The consumer loop (write → check → revise) is
 demonstrably sufficient steering for the banded dimensions, with one
-diagnosed exception: Strunk's corpus excerpts include table-of-contents and
-numbered-rule matter that flowing prose cannot fingerprint-match — the fix is
-corpus curation for that voice, not more prompting (roadmap item).
+diagnosed exception: Strunk. The first diagnosis (table-of-contents matter in
+the corpus) was FALSIFIED by a corpus audit — the excerpts are clean prose,
+but one of three is the book's glossary section, a second in-book register
+whose dictionary-entry style pulls the fingerprint away from the teaching
+prose the contract asks for. The fix remains corpus-level (single-register
+excerpting), and the audit heuristics now exist to check every corpus.
 
 ### 6.3 Can LLMs emulate these styles at all?
 Yes — measured, not assumed. Under the *validated* scorer, 10/14 cold
@@ -138,6 +141,40 @@ under the hard bands, 15/17 replicate one-shot from the beta file. The gap
 that remains is fingerprint-level (function-word habits), which is also the
 dimension hardest to instruct in words — the strongest known lever is more
 verbatim corpus in the file (the beta excerpt), and E2 suggests it worked.
+
+### 6.4 E4 — is "author drift" real, or the instrument's shortcoming?
+
+Challenged by review ("are you sure real authors drift, and are you sure
+that's not our measuring method's shortcoming?"), decomposed directly:
+same-author scores laddered from same-works → unseen-works → other-authors,
+at three sample lengths, against the production profiles.
+
+Jane Austen (21-chunk profile):
+
+| sample | same-works | unseen works | other authors |
+|---|---|---|---|
+| 220 words | +0.203 ±0.060 | +0.252 ±0.066 | −0.060 ±0.029 |
+| 500 words | +0.265 ±0.049 | +0.313 ±0.055 | −0.040 ±0.026 |
+| 1000 words | +0.370 ±0.047 | +0.357 ±0.064 | −0.024 ±0.056 |
+
+**The reviewer was right.** Unseen-work scores are statistically
+indistinguishable from same-work scores at every length — detectable
+cross-work "drift" for Austen is approximately zero. The width of the
+"genuine band" is dominated by **short-sample noise**: scores rise and
+tighten monotonically with sample length (classic small-sample attenuation),
+so at 220 words the instrument under-measures similarity and adds variance.
+"Authors always drift a little" was the wrong explanation; "short samples
+always measure noisily" is the right one. Author *identity* separation is
+meanwhile robust at all lengths (gap ≈ +0.28 to +0.39). Twain (a weaker,
+single-work 10-chunk profile) shows the same shape with a thinner gap
+(+0.08 to +0.13) — corpus size matters.
+
+Design consequences: (1) the acceptance floor is honest **because it is
+noise-matched** — 220-word replicas are judged against 220-word chunk noise;
+(2) longer candidate texts deserve length-matched calibration (tighter floors
+at 500/1000 words) — roadmap for the conformance endpoint; (3) corpora below
+~20 chunks give weak profiles; grow thin corpora before trusting their soft
+scores.
 
 ## 7. Honest limitations
 
@@ -167,6 +204,6 @@ verbatim corpus in the file (the beta excerpt), and E2 suggests it worked.
 5. Background regeneration policy: `style_background_v1.json` is rebuilt by
    tool when the catalog composition shifts materially; version stamped in
    every report.
-6. Strunk corpus curation: re-excerpt without table-of-contents and numbered
-   headings so the fingerprint reflects the explanatory prose the voice
-   actually asks for.
+6. Strunk corpus curation: re-excerpt to a single in-book register (teaching
+   prose, excluding the glossary section) so the fingerprint matches what the
+   contract asks for.
