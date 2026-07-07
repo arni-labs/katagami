@@ -176,6 +176,43 @@ at 500/1000 words) — roadmap for the conformance endpoint; (3) corpora below
 ~20 chunks give weak profiles; grow thin corpora before trusting their soft
 scores.
 
+### 6.5 E5 — the Goodhart test: is the stack circular?
+
+Review put the sharpest question: "are the checks measuring the voice, or is
+the LLM just instructed to pass the checks, and passing is then declared
+emulation?" Tested with four generation conditions, all scored on BOTH layers
+(disclosed bands = compliance; hidden Delta fingerprint = verification):
+
+| condition | bands pass | fingerprint ≥ floor | mean margin |
+|---|---|---|---|
+| B checklist-only (numbers, no voice) | **15/17** | **7/17** | **−0.003** |
+| A full beta contract | 16/17 | 12/17 | +0.041 |
+| C excerpt-only (voice, no numbers) | 12/17 | **14/17** | **+0.078** |
+| D alpha contract, same topic | 7/17 | 10/17 | +0.033 |
+
+Findings:
+1. **The disclosed bands are gameable — confirmed.** Constraint-only text
+   passes them 15/17 with no voice guidance at all. Band-passing alone is
+   compliance, never emulation, and the system must never claim otherwise.
+2. **The hidden fingerprint is not gamed.** The same constraint-only texts
+   land at impostor-level fingerprint margins (−0.003, the worst condition).
+   The fingerprint target (500-MFW centroid under catalog normalization) is
+   not reproducible from the contract file, so the only strategy that moves
+   it is genuine imitation of the corpus's word-habits.
+3. **The voice lives in the prose.** Excerpt-only imitation produced the best
+   fingerprint results of any condition — stronger than the full contract —
+   while passing fewer disclosed checks. Verbatim corpus excerpts are the
+   primary carrier of style; the numbers are rails, not the voice.
+4. **The format effect survives topic control** (D): alpha on the identical
+   topic scores 7/17 bands vs beta's 16/17 — the E2 confound is closed and
+   the true effect is larger than first measured.
+
+Layer roles, restated from evidence: bands = disclosed compliance rails
+(gameable, and that is acceptable because nothing is claimed from them
+alone); Delta fingerprint = verification (validated on ground truth,
+resistant to targeting); curator = meaning and taste. A voice verifies only
+when all three agree.
+
 ## 7. Honest limitations
 
 - **Small n.** 17 voices, 1 replica per voice per condition, one generator
@@ -192,6 +229,9 @@ scores.
   corpora abstain rather than guess, by design.
 - Bands and Delta measure **mechanics**. Meaning, wit, and judgment are the
   curator's gate and, later, scored abstaining similarity layers beyond MFW.
+- E5 also suggests the full contract slightly *dilutes* fingerprint imitation
+  versus excerpt-only (attention split between numbers and prose) — a format
+  v3 hypothesis (lead harder with prose) for a controlled follow-up.
 
 ## 8. Roadmap
 
