@@ -293,6 +293,18 @@ orchestrating LLM's interpretation. Per-feature attribution — symbolically
 naming the over/under-used trigrams and words in the violation itself — is
 ledger item A5.
 
+### 6.10 E10 — fused feedback (numeric + judge)
+
+One reviser, both channels, restraint instructed. Four-way on the same draft:
+one-shot +0.145 (out) · numeric +0.221 (in, margin +0.064) · judge +0.122
+(out, −0.025) · **fused +0.178 (in, margin +0.039)**. Instrument ranking
+N > fused > one-shot > J: the judge's structural asks carry a measurable
+fingerprint cost even when fused, but fusion stays inside the author's range
+with positive distinctiveness. The trade: the numeric channel maximizes the
+measurable voice; the judge channel buys rhetorical properties the
+instrument does not price. Adjudicating that trade is the curator tier's
+job — the four texts are the first prepared hard-case item (D12).
+
 ## 7. Honest limitations
 
 - **Small n.** 17 voices, 1 replica per voice per condition, one generator
