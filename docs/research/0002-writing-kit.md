@@ -54,7 +54,7 @@ which is the technical skeleton; this file is the writer's index.
 | the texts themselves (all conditions + final replicas) | [data/conditions/](data/conditions/) — 85 generated passages across A/B/C/D + attached replicas |
 | the studied contracts (VOICE.md format beta, all 17) | [data/contracts/](data/contracts/) |
 | the instruments (source of truth) | `katagami-curation/wasm/finalize_spawned_session/src/lib.rs` + `style_background_v1.json` |
-| the harness (rerun anything) | `katagami-curation/tools/` — calibration, bake-off, mirror calibration, fusion, local checker, VOICE.md builder |
+| the harness (rerun anything) | `docs/research/harness/` — calibration, bake-off, mirror calibration, fusion, local checker, VOICE.md builder |
 | per-voice live verification records | production `WritingStyles.verification_report` + katagami.ai/voice/&lt;id&gt; |
 | the visual reference | the "Voice verification — every check, both paths" artifact (Galley) |
 | decision history | Linear ARN-121/ARN-133 thread; Aya goal journals |

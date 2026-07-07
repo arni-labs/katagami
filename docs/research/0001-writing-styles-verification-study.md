@@ -79,7 +79,7 @@ embeddings as *verifiers* on a catalog of period literary registers, far from
 their contemporary conversational training domains. It says nothing against
 LLM style *emulation* — which the same study measured as strong (§6.3). For
 contemporary and personal voices the neural instruments are expected to
-recover; the committed harness (`katagami-curation/tools/`) re-runs the
+recover; the committed harness (`docs/research/harness/`) re-runs the
 bake-off in minutes when that catalog exists. Retrieval misses concentrate in
 same-register families (blends vs their own parents) — expected, and arguably
 correct behavior for a register-based catalog.
@@ -261,7 +261,7 @@ Even on the neural model's weak domain, fusion helps: AND-fusion cuts false
 accepts by ~29% relative for the cost of one genuine. **Agree-or-abstain is
 the curator-facing shape**: definitive verdicts only where two independent
 instrument families concur; everything contested abstains to the human. The
-fusion harness is committed (tools/e8_fusion.py); production adoption follows
+fusion harness is committed (docs/research/harness/e8_fusion.py); production adoption follows
 the embedding-service decision, and is expected to strengthen further on
 contemporary voices where the neural instrument is in-domain.
 
