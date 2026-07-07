@@ -265,6 +265,34 @@ fusion harness is committed (docs/research/harness/e8_fusion.py); production ado
 the embedding-service decision, and is expected to strengthen further on
 contemporary voices where the neural instrument is in-domain.
 
+### 6.9 E9 — numeric band feedback vs an LLM judge (n=1, preregistered follow-up queued)
+
+Same failed Aurelius one-shot, two feedback channels. Numeric condition: the
+one-line band violation (magnitude symbolic; direction LLM-interpreted — see
+the pipeline-honesty note). Judge condition: a blind expert LLM judge (no
+access to any numbers) wrote six qualitatively excellent notes (dash
+discipline, stern closes, cascading questions, timeless-present maxims,
+image separation); a reviser applied them.
+
+| version | bands | hidden fingerprint (floor +0.149) |
+|---|---|---|
+| one-shot | fail (trigram 0.251) | +0.145, outside |
+| numeric feedback | pass | **+0.221, inside (+0.076)** |
+| judge feedback | pass | **+0.122, outside (−0.023)** |
+
+The judge's revision passed the disclosed bands while its fingerprint fell
+below the unrevised draft: expert-sounding feedback and instrument-moving
+feedback are different things, and a judge cannot know which notes move an
+instrument it cannot see. The channels are plausibly complementary (several
+judge notes address exactly what bands cannot measure); the fused-feedback
+condition and a larger-n replication are queued.
+
+**Pipeline honesty (from the same review):** the deployed bands emit only
+magnitudes ("0.251 > 0.245"); directional advice in E3/E7 was the
+orchestrating LLM's interpretation. Per-feature attribution — symbolically
+naming the over/under-used trigrams and words in the violation itself — is
+ledger item A5.
+
 ## 7. Honest limitations
 
 - **Small n.** 17 voices, 1 replica per voice per condition, one generator
