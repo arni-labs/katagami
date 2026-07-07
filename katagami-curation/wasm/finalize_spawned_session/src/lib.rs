@@ -2825,7 +2825,13 @@ fn verify_synthesized_writing_styles(
             .filter(|(label, _)| label.starts_with("replication:"))
             .cloned()
             .collect();
-        let style_similarity = style_similarity_scores(&corpus_texts, &replication_texts);
+        let entity_parent_ids = string_array_flexible(lane_fields.get("parent_ids"));
+        let style_similarity = style_similarity_scores_for(
+            &corpus_texts,
+            &replication_texts,
+            id,
+            &entity_parent_ids,
+        );
 
         // The verification record: what ran, over what, against which limits.
         // Rendered in the UI so the checks are visible, not just asserted.
@@ -3216,6 +3222,9 @@ struct StyleBackground {
     mu: Vec<f64>,
     sigma: Vec<f64>,
     version: String,
+    /// (slug, entity_id, unit z-centroid) per catalog voice — lets every score
+    /// carry a margin over the nearest OTHER voice, lineage excluded.
+    voices: Vec<(String, String, Vec<f64>)>,
 }
 
 fn style_background() -> Option<StyleBackground> {
@@ -3234,6 +3243,26 @@ fn style_background() -> Option<StyleBackground> {
     if mfw.is_empty() || mu.len() != mfw.len() || sigma.len() != mfw.len() {
         return None;
     }
+    let voices = parsed
+        .get("voices")
+        .and_then(|v| v.as_array())
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|row| {
+                    Some((
+                        row.get("slug")?.as_str()?.to_string(),
+                        row.get("entity_id")?.as_str()?.to_string(),
+                        row.get("centroid")?
+                            .as_array()?
+                            .iter()
+                            .filter_map(|x| x.as_f64())
+                            .collect::<Vec<f64>>(),
+                    ))
+                })
+                .filter(|(_, _, c)| c.len() == mu.len())
+                .collect()
+        })
+        .unwrap_or_default();
     Some(StyleBackground {
         mfw_index: mfw.iter().enumerate().map(|(i, w)| (w.clone(), i)).collect(),
         mu,
@@ -3243,6 +3272,7 @@ fn style_background() -> Option<StyleBackground> {
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string(),
+        voices,
     })
 }
 
@@ -3252,6 +3282,46 @@ fn style_background() -> Option<StyleBackground> {
 fn style_similarity_scores(
     corpus_texts: &[(String, String)],
     candidates: &[(String, String)],
+) -> Option<serde_json::Value> {
+    style_similarity_scores_for(corpus_texts, candidates, "", &[])
+}
+
+/// E4 lesson: floors are sampling-noise bands, so they must be matched to the
+/// candidate's length. Floors are computed per length bucket from the corpus's
+/// own chunks at that size. Every score also reports the margin over the
+/// nearest OTHER catalog voice (lineage excluded) — a discriminability
+/// statement, not just "within range".
+fn style_chunks_sized(corpus_texts: &[(String, String)], size: usize) -> Vec<Vec<String>> {
+    let mut chunks = Vec::new();
+    for (_, body) in corpus_texts {
+        let words = words_of(body);
+        let mut i = 0;
+        while i < words.len() {
+            let end = (i + size).min(words.len());
+            if end - i >= (size * 2) / 3 {
+                chunks.push(words[i..end].to_vec());
+            }
+            i += size;
+        }
+    }
+    chunks
+}
+
+fn length_bucket(words: usize) -> usize {
+    if words >= 750 {
+        1000
+    } else if words >= 360 {
+        500
+    } else {
+        220
+    }
+}
+
+fn style_similarity_scores_for(
+    corpus_texts: &[(String, String)],
+    candidates: &[(String, String)],
+    own_entity_id: &str,
+    parent_ids: &[String],
 ) -> Option<serde_json::Value> {
     let background = style_background()?;
     let chunks = style_chunks(corpus_texts);
@@ -3301,12 +3371,43 @@ fn style_similarity_scores(
         c
     };
     let centroid = centroid_of(None);
-    let mut pos: Vec<f64> = (0..zrows.len())
-        .map(|i| style_cosine(&zrows[i], &centroid_of(Some(i))))
-        .collect();
-    pos.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let pos_min = *pos.first().unwrap_or(&0.0);
-    let pos_mean = pos.iter().sum::<f64>() / pos.len().max(1) as f64;
+
+    // Length-bucketed floors: the corpus re-chunked at each bucket size gives
+    // that bucket's own leave-one-out noise band.
+    let mut floors: std::collections::BTreeMap<usize, (f64, f64)> = std::collections::BTreeMap::new();
+    for bucket in [220usize, 500, 1000] {
+        let sized = style_chunks_sized(corpus_texts, bucket);
+        if sized.len() < 4 {
+            continue;
+        }
+        let zb: Vec<Vec<f64>> = sized.iter().map(|c| zvec(c)).collect();
+        let cen_all = {
+            let mut c = vec![0.0; dim];
+            for row in &zb {
+                for (j, v) in row.iter().enumerate() {
+                    c[j] += v;
+                }
+            }
+            c
+        };
+        let mut lo = f64::MAX;
+        let mut sum = 0.0;
+        for (i, row) in zb.iter().enumerate() {
+            let mut c = cen_all.clone();
+            for (j, v) in row.iter().enumerate() {
+                c[j] -= v;
+            }
+            let norm: f64 = c.iter().map(|x| x * x).sum::<f64>().sqrt();
+            if norm > 0.0 {
+                c.iter_mut().for_each(|x| *x /= norm);
+            }
+            let s = style_cosine(&zb[i], &c);
+            lo = lo.min(s);
+            sum += s;
+        }
+        floors.insert(bucket, (lo, sum / zb.len() as f64));
+    }
+    let base_floor = floors.get(&220).copied();
 
     let mut scored = Vec::new();
     for (label, body) in candidates {
@@ -3315,7 +3416,27 @@ fn style_similarity_scores(
             scored.push(json!({ "text": label, "verdict": "abstain", "reason": "under 120 words" }));
             continue;
         }
-        let score = style_cosine(&zvec(&words), &centroid);
+        let bucket = length_bucket(words.len());
+        let (pos_min, pos_mean) = floors
+            .get(&bucket)
+            .copied()
+            .or(base_floor)
+            .unwrap_or((0.0, 0.0));
+        let z = zvec(&words);
+        let score = style_cosine(&z, &centroid);
+        // Margin over the nearest other catalog voice, lineage excluded.
+        let mut nearest_other = "";
+        let mut nearest_score = f64::MIN;
+        for (slug, entity_id, cen_other) in &background.voices {
+            if entity_id == own_entity_id || parent_ids.iter().any(|p| p == entity_id) {
+                continue;
+            }
+            let s = style_cosine(&z, cen_other);
+            if s > nearest_score {
+                nearest_score = s;
+                nearest_other = slug;
+            }
+        }
         let verdict = if score >= pos_min {
             "within_corpus_range"
         } else if score >= pos_min - ((pos_mean - pos_min).abs()).max(0.05) {
@@ -3323,12 +3444,21 @@ fn style_similarity_scores(
         } else {
             "outlier"
         };
-        scored.push(json!({
+        let mut entry = json!({
             "text": label,
             "score": (score * 1000.0).round() / 1000.0,
             "verdict": verdict,
-        }));
+            "length_bucket": bucket,
+            "floor": (pos_min * 1000.0).round() / 1000.0,
+        });
+        if !nearest_other.is_empty() && nearest_score > f64::MIN {
+            entry["nearest_other_voice"] = json!(nearest_other);
+            entry["margin_over_nearest_other"] =
+                json!(((score - nearest_score) * 1000.0).round() / 1000.0);
+        }
+        scored.push(entry);
     }
+    let (pos_min, pos_mean) = base_floor.unwrap_or((0.0, 0.0));
     Some(json!({
         "method": "burrows-delta zcos, 500 MFW, catalog-background normalization",
         "background": background.version,
@@ -3592,6 +3722,26 @@ fn check_voice_bands_against(
                         return Err(format!(
                             "{label}: {share:.0}% of sentences open with '{opener}' (ceiling {:.0}%) — evenness tell",
                             max_share * 100.0, share = share * 100.0
+                        ));
+                    }
+                }
+            }
+        }
+
+        if let Some(profile) = bands.get("punctuation_profile").and_then(|v| v.as_object()) {
+            let marks: [(&str, &[&str]); 4] = [
+                ("commas_per_1000", &[","]),
+                ("semicolons_per_1000", &[";"]),
+                ("dashes_per_1000", &["—", "–", "--"]),
+                ("questions_per_1000", &["?"]),
+            ];
+            for (key, needles) in marks {
+                if let Some((lo, hi)) = range_of(profile.get(key)) {
+                    let count: usize = needles.iter().map(|n| body.matches(n).count()).sum();
+                    let rate = count as f64 * 1000.0 / words.len() as f64;
+                    if rate < lo || rate > hi {
+                        return Err(format!(
+                            "{label}: {key} {rate:.1} outside [{lo}, {hi}] — punctuation-habit mismatch"
                         ));
                     }
                 }
@@ -4737,8 +4887,23 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
 
     #[test]
     fn style_similarity_scores_separate_on_voice_from_alien() {
+        // Vary each corpus doc: an all-identical corpus gives a floor of
+        // exactly 1.0 that no real candidate can meet.
+        let tails = [
+            "The rollout closed on schedule and the ledger matched.",
+            "Two counters drifted and both were reset before noon.",
+            "The export ran early and the partner confirmed receipt.",
+            "One retry cleared the queue and the alert closed itself.",
+            "The audit found nothing new and the window stayed quiet.",
+            "A single job lagged and finished inside the margin.",
+        ];
         let corpus: Vec<(String, String)> = (0..6)
-            .map(|i| (format!("corpus:{i}"), on_voice_corpus()))
+            .map(|i| {
+                (
+                    format!("corpus:{i}"),
+                    format!("{} {}", on_voice_corpus(), tails[i]),
+                )
+            })
             .collect();
         let on_voice = ("replication:a".to_string(), on_voice_corpus());
         let alien = (
@@ -4771,6 +4936,21 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert_eq!(verdict, "abstain");
         let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
         assert!(style_similarity_scores(&thin, &[]).is_none());
+    }
+
+    #[test]
+    fn punctuation_profile_band_rejects_habit_mismatch() {
+        let semicolon_free = (0..15)
+            .map(|i| format!("Case {i} closed on time. The count held. Nothing else moved that day."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "punctuation_profile": {"semicolons_per_1000": [8, 40]},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("corpus:a".to_string(), semicolon_free)]).unwrap_err();
+        assert!(err.contains("punctuation-habit mismatch"), "{err}");
     }
 
     #[test]
