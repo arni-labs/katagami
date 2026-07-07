@@ -109,9 +109,15 @@ chunks as negatives, 17-way replica retrieval):
 | StyleDistance (neural) | 0.813 | 5/17 |
 | Wegmann Style-Embedding (neural) | 0.789 | 3/17 |
 
-The neural models transfer poorly to period literary registers (they are
-trained on contemporary conversational text — the domain-shift caveat from the
-original research, confirmed on our own data). Production therefore runs
+The neural models underperformed **as measuring instruments on this specific
+catalog** of period literary registers, far from their contemporary
+conversational training domains (the domain-shift caveat from the original
+research, confirmed on our own data). This is a claim about verifiers, not
+about LLM style *emulation*, which the same study measured as strong — see
+docs/research/0001-writing-styles-verification-study.md (format beta: 15/17
+one-shot replication; 10/14 replicas inside the author's own held-out range
+under the validated scorer). Neural instruments are expected to recover on
+contemporary and personal voices. Production therefore runs
 **per-voice Delta** inside the finalizer WASM — deterministic, no weights, no
 service — as a REPORT-ONLY signal with per-voice thresholds derived from the
 corpus's own leave-one-out range, and abstention under 120 words. Retrieval
