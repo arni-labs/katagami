@@ -313,6 +313,25 @@ contemporary voices where the neural instrument is in-domain.
   arXiv 2402.14873) — hard negative mining with synthetic mirrors, FPR-first
   evaluation, fairness checks; Pangram Space interpretability probes. Our E6
   mirrors and hard-case loop are direct imports.
+- **The 2026 frontier**: Zeng & Nini (arXiv 2603.29454, March 2026),
+  "Authorship Impersonation via LLM Prompting" — a training-free verifier
+  (TF-IDF char n-grams + transformer embeddings + empirical distance
+  distributions, 97.5% in-domain) tested against LLM impersonation across
+  prompting strategies; headline finding: **prompting strategy matters more
+  than model size for style fidelity**, which is exactly the variable our
+  format experiments (E2/E5) manipulate — and their result that LLM mimicry
+  retains detectable artifacts parallels our nearest-other margins catching
+  residual model accent. "Theory-Grounded Evaluation Exposes the Authorship
+  Gap" (arXiv 2604.26460, April 2026) — personalization evaluation must be
+  grounded in authorship-verification theory with validated instruments and
+  calibrated baselines: the position this stack implements. "Measuring
+  Embedding Sensitivity to Authorial Style" (arXiv 2605.10606, May 2026) —
+  authorial signal in embeddings persists through LLM rewriting and carries
+  LLM-specific patterns, supporting both our fusion direction and the
+  model-accent reading of negative margins. "Attribution Quality in
+  AI-Generated Content: Benchmarking Style Embeddings and LLM Judges"
+  (arXiv 2510.13898) — benchmarks the exact instrument pair our fusion
+  study compares.
 - **Style-transfer evaluation**: "Mind the Style Gap" (arXiv 2502.15022) —
   meta-evaluation of style/content metrics; supports separating style
   strength from content preservation, which our content-masking roadmap item
