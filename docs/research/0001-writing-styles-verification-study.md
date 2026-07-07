@@ -323,6 +323,46 @@ measurable voice; the judge channel buys rhetorical properties the
 instrument does not price. Adjudicating that trade is the curator tier's
 job — the four texts are the first prepared hard-case item (D12).
 
+### 6.11 E11 — attributed feedback at n=6 (the scaled replication)
+
+Design: six voices (those with negative or weak catalog margins), fresh
+one-shots on a new topic (all six passed all 13 bands one-shot — format beta
+holding), three revision arms per voice: **attr** (fully computed feedback
+from the new per-feature attribution tool — under/over-used function words
+with rates, missing corpus-characteristic vocabulary, trigram over/under-
+production, rhythm and punctuation deltas; zero interpreted statements),
+**judge** (blind expert notes), **fused** (both, measured deviations
+prioritized). Writers/judges: claude-opus-4-8, fresh contexts. Scored on
+bands, Delta fingerprint vs floor, catalog margin (lineage-excluded), and
+the Wegmann embedding as a report column.
+
+| arm | bands | in-range | margin>0 | mean Δ−floor | mean margin |
+|---|---|---|---|---|---|
+| one-shot | 6/6 | 4/6 | 2/6 | +0.034 | −0.018 |
+| **attr** | **6/6** | **5/6** | **3/6** | **+0.076** | **+0.027** |
+| judge | 6/6 | 4/6 | 2/6 | +0.041 | −0.020 |
+| fused | 4/6 | 5/6 | 2/6 | +0.063 | +0.000 |
+
+Findings:
+1. **Attributed feedback improved the hidden fingerprint on 6 of 6 voices**
+   (sign test, two-sided p ≈ 0.031) — the first inferentially supported
+   claim of the feedback program, and it was the only arm with a positive
+   mean catalog margin. The E9/E10 ordering (numeric > fused > judge)
+   replicates on means at n=6.
+2. **Judge feedback is high-variance, not worthless**: it produced the
+   single largest per-voice gain (Grimm +0.113 over one-shot — narrative
+   registers reward its structural notes) and losses elsewhere
+   (naturalist −0.069). Register-dependent, unpredictable ex ante.
+3. **Fusion carries a compliance cost**: heavier combined edits broke bands
+   on 2/6 — restraint instructions do not fully prevent over-editing.
+4. The Wegmann column barely discriminates arms (in-range almost
+   everywhere) — consistent with its weak off-domain resolution.
+
+Consequence: the per-feature attribution report (harness:
+attribute_violations.py) is validated as the standard feedback content and
+is the implementation spec for ledger A5. Judge notes remain a curator-side
+enrichment, not a writer-side channel, pending a register-conditional rule.
+
 ## 7. Honest limitations
 
 - **Small n.** 17 voices, 1 replica per voice per condition, one generator
