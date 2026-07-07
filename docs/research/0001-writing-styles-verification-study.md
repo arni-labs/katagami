@@ -183,12 +183,19 @@ the LLM just instructed to pass the checks, and passing is then declared
 emulation?" Tested with four generation conditions, all scored on BOTH layers
 (disclosed bands = compliance; hidden Delta fingerprint = verification):
 
-| condition | bands pass | fingerprint ≥ floor | mean margin |
-|---|---|---|---|
-| B checklist-only (numbers, no voice) | **15/17** | **7/17** | **−0.003** |
-| A full beta contract | 16/17 | 12/17 | +0.041 |
-| C excerpt-only (voice, no numbers) | 12/17 | **14/17** | **+0.078** |
-| D alpha contract, same topic | 7/17 | 10/17 | +0.033 |
+| condition | tier 1 (bands) | tier 2 (≥ floor) | tier 3 (positive margin) | mean margin over floor |
+|---|---|---|---|---|
+| B checklist-only (numbers, no voice) | **15/17** | **7/17** | **2/17** | **−0.003** |
+| A full beta contract | 16/17 | 12/17 | 6/17 | +0.041 |
+| C excerpt-only (voice, no numbers) | 12/17 | **14/17** | **10/17** | **+0.078** |
+| D alpha contract, same topic | 7/17 | 10/17 | 6/17 | +0.033 |
+
+Tier-3 leakage for the gamed condition (2/17) is explained, not mysterious:
+its two wins are Grimm and Slocum, where the shared test topic (a lighthouse
+logbook tale) pulls default prose toward the told-tale and maritime-log
+registers — a measured residue of topic sensitivity in MFW-Delta, and the
+kind of case the curator tier exists for. Earlier phrasing "never reaches
+tiers 2–3" was over-strong and is corrected here.
 
 Findings:
 1. **The disclosed bands are gameable — confirmed.** Constraint-only text
