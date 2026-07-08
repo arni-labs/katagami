@@ -134,6 +134,53 @@ What we take (queued as experiments/features, see ledger F-series):
 5. **DragonClaw marker review**: mine their 47 markers for features our
    measured profile lacks.
 
+## The adherence-tool landscape (verification products, 2026-07-08, sourced by Rita)
+
+A full product category now sells exactly the primitive our conformance
+endpoint implements: reference voice in, new text scored against it,
+deviations flagged. How each actually verifies, by mechanism:
+
+| mechanism | tools | what it really is |
+|---|---|---|
+| shallow interpretable metrics | WriteBetter (sentence length, vocab complexity, formality, passive voice, pronoun frequency → 0–100%) | a 5-feature subset of our 13 bands, with **no calibration** — the percentage has no null distribution behind it |
+| opaque trained matcher | VoiceMoat ("trains on your profile", markets "90%+ match") | embedding- or judge-based similarity; the number is asserted, not validated |
+| LLM-judge with structured prompts | River (ghostwriter match + consistency), Agent.AI, PressMaster, SocialBu, Taskade, Lindy ("tone 78% on-brand"), ClickUp | confident percentages from an uncalibrated judge — our E9 measured exactly this failure mode: judge feedback sounded expert while moving the true fingerprint *down* |
+| detection + auto-rewrite loop | Hold Your Voice | our write→check→revise loop, productized without a validated instrument |
+| threshold/classifier pipeline | Oleno (voice-drift NLP pipeline) | the closest philosophical kin — measurable thresholds, build-it-yourself |
+| governance gating | CommsWith.AI | verifier-gates-before-publish — our verifier-owned-booleans pattern in enterprise form |
+
+**What the whole category lacks and we have, measured:** calibrated floors
+(noise-matched, length-matched), ground-truth validation (89% genuine /
+15%→1% impostor under fusion), game-resistance separation (the Goodhart
+tiers), abstention, and per-feature computed attribution. E4 is the killer
+critique of the category's headline numbers: similarity scores move with
+sample length alone, so an uncalibrated "90% match" is not a measurement.
+That contrast is a core argument for the writeup — and the commercial
+positioning of the conformance endpoint.
+
+**Imports queued from this batch (ledger):**
+1. **Windowed drift mode** for the conformance endpoint (River's consistency
+   checker / Oleno's pipeline, done right): slide the scorer over a long
+   manuscript in 220-word windows, flag drifting sections with attribution —
+   our chunk machinery already computes this shape.
+2. **Correction loop as product**: conformance verdicts + attribution feed an
+   auto-revise pass (Hold Your Voice's loop, with a validated instrument and
+   the E11-proven feedback content).
+3. **Brand-guidelines intake**: compile a contract from brand documents (the
+   Agent.AI/Taskade input mode) — an intake variant alongside samples-based
+   opt_in; guidelines become the authored layer, samples still required for
+   the measured layer.
+4. **E14 — competitive validity study**: run our known-answer protocol
+   (genuine held-out vs impostors) through the free tools (WriteBetter at
+   minimum) and compare false-accept behavior against ours, for the paper's
+   related-products section.
+
+Sources: voicemoat.com · writebetter.ai/tools/compare-texts ·
+rivereditor.com (client-voice-match, voice-consistency) · saasbranch.com
+(Hold Your Voice) · agent.ai brand-voice-consistency-checker · pressmaster.ai
+· socialbu.com · taskade.com · lindy.ai · commswith.ai · oleno.ai
+(voice-drift pipeline) · clickup.com brand-voice agent.
+
 ## Claims safe to make (each backed in-repo)
 
 - A description-only style file under-teaches rhythm; adding a verbatim
