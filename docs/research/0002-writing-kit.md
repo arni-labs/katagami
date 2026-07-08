@@ -149,6 +149,32 @@ deviations flagged. How each actually verifies, by mechanism:
 | threshold/classifier pipeline | Oleno (voice-drift NLP pipeline) | the closest philosophical kin — measurable thresholds, build-it-yourself |
 | governance gating | CommsWith.AI | verifier-gates-before-publish — our verifier-owned-booleans pattern in enterprise form |
 
+**Mechanism taxonomy (researched 2026-07-08):** (1) deterministic linguistic
+engines — Acrolinx (real engine, thousands of properties, hand-authored rules
+per company, score = length/(length+issues)), WriteBetter (5 shallow
+features); (2) semantic-embedding similarity — Oleno's DIY pipeline (USE/
+OpenAI cosine vs exemplar paragraphs + weighted rules + small classifier,
+precision SLOs) — real engineering, wrong instrument: semantic embeddings
+measure topic, the conflation our framework rejects; (3) trained tone
+classifiers — Grammarly (rules+ML over word choice/phrasing/punctuation/
+capitalization → 40+ tone labels; orgs mark tones on/off-brand) — genuine
+models, but tone-label granularity cannot distinguish authors; (4) custom
+fine-tuned LLMs — Writer.com trains two Palmyra-family models (voice-
+extraction LLM: samples → profile; voice-generation LLM: writes in-profile)
+— the real "we train models" tier, generation-side, profiles LLM-asserted;
+VoiceMoat's "90%+ match" likewise asserted; (5) LLM-judge prompt agents —
+Agent.AI/Taskade/Lindy/SocialBu/PressMaster/River/ClickUp/Jasper; (6)
+governance gating — CommsWith, Acrolinx scorecards, Writer guardrails.
+Field-wide: nobody derives thresholds from the author's own out-of-sample
+null, publishes known-answer validation, Goodhart-tests their own score, or
+uses authorship-science instruments. Writer's two-model pattern = our
+ARN-139 + replica pipeline with assertion where we put measurement.
+
+Additional sources: acrolinx.com (score formula, linguistic engine) ·
+writer.com/blog/voice-feature + superpath.co (Palmyra voice models) ·
+grammarly.com/blog/tone-detector + brand-tones PDF · jasper.ai/brand-voice ·
+oleno.ai voice-drift pipeline (full technical detail).
+
 **What the whole category lacks and we have, measured:** calibrated floors
 (noise-matched, length-matched), ground-truth validation (89% genuine /
 15%→1% impostor under fusion), game-resistance separation (the Goodhart
