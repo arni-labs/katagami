@@ -95,6 +95,45 @@ AI-text detection engineering
 Lexical richness
 - Yule, G. U. (1944). *The Statistical Study of Literary Vocabulary.* Herdan, G. (1960). *Type-token Mathematics.*
 
+## The VOICE.md ecosystem (practitioner survey, 2026-07-08, sourced by Rita)
+
+Seven real-world approaches to voice files exist in the wild; none share a
+standard, but nearly all converge on one principle — **concrete examples
+teach better than abstract rules** — which our E2/E5/E11 results measured
+independently (the excerpt is the strongest conditioning signal; excerpt-only
+imitation beat the full contract on the fingerprint). Independent folk
+convergence + our measurement = a strong opening argument for the writeup.
+
+| approach | shape | relation to ours |
+|---|---|---|
+| efeoncepro/voice.md | formal open spec, "VOICE.md is to copy what DESIGN.md is to visual identity" | our direct kin — interop/export target |
+| Frizelle (Claude Code) | rules + 5–10 "gold standard" samples | multi-example variant of our single excerpt — testable |
+| Sherrard-Smith | 5 sentences + 10 banned words + 1 length rule | the minimal folk baseline — a ladder floor condition |
+| Becoming with AI | voice.md + audience.md (platform tone split) | our register-by-channel matrix, externalized — consumer product idea |
+| Barger three-file | voice / structure / platform + checklist | maps to our voice layer / bands / register split |
+| OpenWriter Author's Voice | NEVER rules, fingerprints, sentence stats, coined terms | closest to ours: their NEVER = our anti-prompt; their stats = our measured profile; **coined terms** = a section we lack |
+| DragonClaw deep-voice-analysis | automated 47-marker profile | prompt-based cousin of ARN-139 extraction (ours is measured, theirs is LLM-asserted) |
+
+Sources: github.com/efeoncepro/voice.md · ryanfrizelle.com/guides/humanizer-claude-code ·
+Sherrard-Smith (LinkedIn post 7464948730048245760) · becomingwithai.net/p/ai-writing-workflow ·
+donbarger.com/p/give-claude-your-voice-the-three · openwriter.io/authors-voice ·
+skillsmp.com deep-voice-analysis.
+
+What we take (queued as experiments/features, see ledger F-series):
+1. **E13 — example-count ablation**: 1 long excerpt (ours) vs 5–10 short gold
+   samples (Frizelle) vs the Sherrard-Smith minimal baseline, on the standard
+   ladder. Answers "how much does our machinery buy over folk practice."
+2. **Coined-terms section** (OpenWriter): derivable symbolically — the
+   corpus's high-frequency author-specific content words are already computed
+   in the attribution tool; promote them into VOICE.md as signature
+   vocabulary.
+3. **efeoncepro interop**: an export mapping from our contract to their spec
+   (community reach for the commons).
+4. **audience.md companion** (consumer-side): platform tone adaptation atop a
+   voice — product feature, post-conformance-endpoint.
+5. **DragonClaw marker review**: mine their 47 markers for features our
+   measured profile lacks.
+
 ## Claims safe to make (each backed in-repo)
 
 - A description-only style file under-teaches rhythm; adding a verbatim
