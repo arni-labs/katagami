@@ -730,6 +730,26 @@ type = "field"
 field = "direction_id"
 
 [[action]]
+name = "CompleteConformanceCheck"
+kind = "input"
+from = ["Running"]
+to = "Finalizing"
+params = ["writing_style_ids", "output"]
+hint = "Conformance check: job_type check_conformance with input JSON {writing_style_id, text_file_id}. The finalizer runs the full adherence stack (bands + attribution + fingerprint + margins + verbatim-overlap) over the candidate text against the named voice and returns the report in success_result. Reads only — never mutates the WritingStyle. This is the consumer-facing 'check this draft against voice X' surface (RFC-0002 conformance endpoint)."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+
+[[action]]
 name = "CompleteWritingStyleSynthesis"
 kind = "input"
 from = ["Running"]
@@ -834,8 +854,8 @@ name = "FinalizeCompletion"
 kind = "internal"
 from = ["Finalizing"]
 to = "Completed"
-params = ["followup_job_id", "design_language_ids"]
-hint = "Finalize job completion after session recording and trigger-native follow-up dispatch."
+params = ["followup_job_id", "design_language_ids", "output"]
+hint = "Finalize job completion after session recording and trigger-native follow-up dispatch. For check_conformance jobs, output carries the full conformance report JSON (the job's product)."
 
 [[action]]
 name = "Fail"
