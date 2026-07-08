@@ -3346,7 +3346,15 @@ fn verify_voice_md_body(
             "front matter missing consent basis (opt_in | public_domain | original)".to_string(),
         );
     }
-    for heading in ["## Overview", "## Tone", "## Vocabulary", "## Moves", "## Register", "## Never"] {
+    // Format v3.2-lean (E22-gated, 2026-07-08): sample-led lean contracts
+    // declare themselves in frontmatter and carry a different required set.
+    let v32 = lower.contains("version: v3.2-lean");
+    let required: &[&str] = if v32 {
+        &["## Never", "## Gold standard samples", "## Signature vocabulary", "## Measured fingerprint"]
+    } else {
+        &["## Overview", "## Tone", "## Vocabulary", "## Moves", "## Register", "## Never"]
+    };
+    for heading in required {
         if !trimmed.contains(heading) {
             problems.push(format!("missing {heading}"));
         }
@@ -5502,6 +5510,15 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert_eq!(verdict, "abstain");
         let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
         assert!(style_similarity_scores(&thin, &[]).is_none());
+    }
+
+    #[test]
+    fn voice_md_v32_lean_format_accepted() {
+        let v32 = "---\nversion: v3.2-lean\nkind: voice\nname: T\ncorpus:\n  consent: public_domain\n---\n## Never\nx\n## Gold standard samples\n1. \"a\"\n## Signature vocabulary\nwords\n## Measured fingerprint\nstats\n```json\n{\"schema\": \"katagami:voice-bands/v1\"}\n```\n";
+        assert!(verify_voice_md_body("o", "f", v32).is_ok());
+        // beta-shaped file missing beta sections still rejected
+        let bad = v32.replace("version: v3.2-lean", "version: beta");
+        assert!(verify_voice_md_body("o", "f", &bad).is_err());
     }
 
     #[test]
