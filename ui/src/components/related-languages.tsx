@@ -1,14 +1,21 @@
 import { ArrowUpRight } from "lucide-react";
 import { TrackedLink } from "@/components/tracked-link";
-import { listDesignLanguages, parseJson } from "@/lib/odata";
-import { cosineSimilarity, parseStoredTasteVector } from "@/lib/embeddings";
+import {
+  type DesignLanguage,
+  listDesignLanguages,
+  nearestDesignLanguages,
+  parseJson,
+} from "@/lib/odata";
 
 interface TokensLite {
   colors?: Record<string, string | undefined>;
 }
 
-/** "More like this" — nearest neighbors in the stored taste-vector space when
- *  the current language carries one; tag overlap otherwise. Ships empty-safe. */
+const RELATED_LIMIT = 6;
+
+/** "More like this" — the design languages nearest in taste-vector space, ranked
+ *  by the kernel's Temper.Nearest over the declared `taste` vector path. Tag
+ *  overlap is the fallback for the pre-embed / no-vector case only. Empty-safe. */
 export async function RelatedLanguages({
   currentId,
   currentTags,
@@ -16,67 +23,33 @@ export async function RelatedLanguages({
   currentId: string;
   currentTags: string[];
 }) {
-  let candidates: Awaited<ReturnType<typeof listDesignLanguages>>;
-  try {
-    // Full canonical read (no $select) — the projected $select read omits some
-    // published languages, which would silently drop them from "related".
-    candidates = await listDesignLanguages("Status eq 'Published'");
-  } catch {
-    return null;
-  }
-
   const wanted = new Set(currentTags.map((t) => t.toLowerCase()));
-  const sharedTags = (l: (typeof candidates)[number]) =>
+  const sharedTags = (l: DesignLanguage) =>
     (parseJson<string[]>(l.fields.tags) ?? [])
       .map((t) => t.toLowerCase())
       .filter((t) => t !== "specimen" && wanted.has(t));
 
-  const currentVector = parseStoredTasteVector(
-    candidates.find((l) => l.entity_id === currentId)?.fields ?? {},
-  );
+  // Primary path: the kernel ranks the nearest published languages in taste
+  // space (deterministic, budgeted, governed) — the reference is excluded and
+  // the Published filter is applied server-side before ranking.
+  const neighbours = await nearestDesignLanguages({
+    to: currentId,
+    k: RELATED_LIMIT,
+    filter: "Status eq 'Published'",
+  });
 
-  const siblings = candidates.filter(
-    (l) => l.entity_id !== currentId && l.fields.name,
-  );
-  const byScoreThenName = (
-    a: { score: number; lang: (typeof candidates)[number] },
-    b: { score: number; lang: (typeof candidates)[number] },
-  ) =>
-    b.score - a.score || a.lang.fields.name!.localeCompare(b.lang.fields.name!);
-
-  // Vector-ranked neighbors first; siblings without a stored vector (e.g.
-  // published while the embed service was down) still surface via tag overlap
-  // rather than disappearing from every "More like this" until a backfill.
-  const vectorRanked = currentVector
-    ? siblings
-        .map((l) => {
-          const vector = parseStoredTasteVector(l.fields);
-          return {
-            lang: l,
-            shared: sharedTags(l),
-            score: vector ? cosineSimilarity(currentVector, vector) : -1,
-          };
-        })
-        .filter((r) => r.score > 0)
-        .sort(byScoreThenName)
-    : [];
-  const inVectorList = new Set(vectorRanked.map((r) => r.lang.entity_id));
-  const tagRanked =
-    currentTags.length > 0
-      ? siblings
-          .filter(
-            (l) =>
-              !inVectorList.has(l.entity_id) &&
-              (!currentVector || !parseStoredTasteVector(l.fields)),
-          )
-          .map((l) => {
-            const shared = sharedTags(l);
-            return { lang: l, shared, score: shared.length };
-          })
-          .filter((r) => r.score > 0)
-          .sort(byScoreThenName)
-      : [];
-  const scored = [...vectorRanked, ...tagRanked].slice(0, 6);
+  let scored: { lang: DesignLanguage; shared: string[] }[];
+  if (neighbours && neighbours.length > 0) {
+    scored = neighbours
+      .filter((l) => l.entity_id !== currentId && l.fields.name)
+      .map((l) => ({ lang: l, shared: sharedTags(l) }))
+      .slice(0, RELATED_LIMIT);
+  } else {
+    // Fallback (pre-embed / no-vector window only): a language carrying no taste
+    // vector yet still gets "More like this" via tag overlap, rather than an
+    // empty section until the backfill reaches it.
+    scored = await relatedByTagOverlap(currentId, currentTags, sharedTags);
+  }
 
   if (scored.length === 0) return null;
 
@@ -136,4 +109,33 @@ export async function RelatedLanguages({
       </div>
     </section>
   );
+}
+
+/** Tag-overlap ranking over the published catalog — the fallback used only when
+ *  the reference language carries no taste vector yet (the pre-embed window), so
+ *  it still gets a "More like this" until the backfill reaches it. */
+async function relatedByTagOverlap(
+  currentId: string,
+  currentTags: string[],
+  sharedTags: (l: DesignLanguage) => string[],
+): Promise<{ lang: DesignLanguage; shared: string[] }[]> {
+  if (currentTags.length === 0) return [];
+  let candidates: DesignLanguage[];
+  try {
+    // Full canonical read (no $select) — the projected $select read omits some
+    // published languages, which would silently drop them from "related".
+    candidates = await listDesignLanguages("Status eq 'Published'");
+  } catch {
+    return [];
+  }
+  return candidates
+    .filter((l) => l.entity_id !== currentId && l.fields.name)
+    .map((l) => ({ lang: l, shared: sharedTags(l) }))
+    .filter((r) => r.shared.length > 0)
+    .sort(
+      (a, b) =>
+        b.shared.length - a.shared.length ||
+        a.lang.fields.name!.localeCompare(b.lang.fields.name!),
+    )
+    .slice(0, RELATED_LIMIT);
 }

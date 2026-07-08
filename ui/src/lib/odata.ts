@@ -479,6 +479,56 @@ export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
   );
 }
 
+// ── Vector similarity — kernel-native kNN (ADR-0155 / Temper.Nearest) ─────────
+// Each commons spec declares a `[[vector]]` "taste" path; the kernel maintains an
+// exact-scan kNN index over the stored taste embedding and serves it through the
+// collection-bound `Temper.Nearest` function. "Related languages" ranks with this
+// instead of app-side cosine — one governed, budgeted, deterministic implementation.
+
+/** Rank published design languages nearest to `to` by the declared `taste`
+ *  vector path, via `GET .../DesignLanguages/Temper.Nearest(decl='taste',to=…,
+ *  k=…,filter=…)`. Rows come back in the kernel's rank order — nearest first, the
+ *  reference excluded, each already carrying `@temper.score`.
+ *
+ *  Returns `null` when the vector path cannot answer for this entity: the
+ *  reference carries no taste vector yet (the pre-embed window), the function is
+ *  unavailable, or the read failed — the caller falls back to tag overlap. An
+ *  empty array means the path answered but found no neighbours. */
+export async function nearestDesignLanguages({
+  to,
+  k,
+  filter,
+}: {
+  to: string;
+  k: number;
+  filter?: string;
+}): Promise<DesignLanguage[] | null> {
+  const args = [
+    "decl='taste'",
+    `to='${odataLiteral(to)}'`,
+    `k=${Math.max(1, Math.floor(k))}`,
+  ];
+  // The optional pre-ranking equality filter is itself an OData string literal
+  // argument, so its interior single quotes double (odataLiteral) and the whole
+  // thing is single-quoted: filter='Status eq ''Published'''.
+  if (filter) args.push(`filter='${odataLiteral(filter)}'`);
+  // Function arguments live in the path segment, not the query string. Encode the
+  // one reserved character these values carry — the space — as %20, leaving the
+  // OData structural quotes/parens/commas that delimit the call intact.
+  const path = `DesignLanguages/Temper.Nearest(${args.join(",")})`.replace(
+    / /g,
+    "%20",
+  );
+  try {
+    const resp = await odata<ODataResponse<Record<string, unknown>>>(path);
+    return resp.value.map(normalizeDesignLanguageRow);
+  } catch {
+    // A 400 ("reference has no usable vector" — not yet embedded), an unavailable
+    // function, or a transport error all mean "fall back", never "throw".
+    return null;
+  }
+}
+
 // ── Taxonomy ──
 
 export interface Taxonomy {
