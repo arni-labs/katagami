@@ -2663,6 +2663,78 @@ fn verify_palette_tokens_export(
 /// dispatches any action on the WritingStyle. Verdict granularity is
 /// deliberately coarse on the hidden layer (tiers, not raw scores are the
 /// consumer contract; raw scores appear only for the curator's report).
+/// Report-only STAR fusion (E12): embed the candidate via the style service,
+/// score against the voice's precomputed STAR centroid/floor, and fuse with
+/// the Delta verdict — agree = definitive, disagree = abstain-to-curator.
+/// Every failure is non-fatal: fusion is a report column, never a gate.
+fn star_fusion(
+    ctx: &Context,
+    own_entity_id: &str,
+    candidate: &str,
+    delta_in_range: Option<bool>,
+) -> serde_json::Value {
+    let (url, key) = match (
+        ctx.config.get("style_embed_url").filter(|s| !s.is_empty() && !s.contains("{secret:")),
+        ctx.config.get("style_embed_key").filter(|s| !s.is_empty() && !s.contains("{secret:")),
+    ) {
+        (Some(u), Some(k)) => (u.clone(), k.clone()),
+        _ => return json!({ "status": "unconfigured" }),
+    };
+    let background = match style_background() {
+        Some(b) => b,
+        None => return json!({ "status": "no_background" }),
+    };
+    let (star_centroid, star_floor) = match background
+        .voices
+        .iter()
+        .find(|(_, eid, _, _, _, _)| eid == own_entity_id)
+        .and_then(|(_, _, _, _, c, f)| c.clone().zip(*f))
+    {
+        Some(pair) => pair,
+        None => return json!({ "status": "abstain", "reason": "no STAR profile (thin corpus)" }),
+    };
+    let body = json!({ "model": "star", "texts": [candidate] }).to_string();
+    let headers = vec![
+        ("Content-Type".to_string(), "application/json".to_string()),
+        ("Authorization".to_string(), format!("Bearer {key}")),
+    ];
+    let resp = match ctx.http_call("POST", &format!("{url}/embed"), &headers, &body) {
+        Ok(r) if (200..300).contains(&r.status) => r,
+        Ok(r) => return json!({ "status": "service_error", "http": r.status }),
+        Err(e) => return json!({ "status": "service_error", "error": e.to_string() }),
+    };
+    let parsed: serde_json::Value = match serde_json::from_str(&resp.body) {
+        Ok(v) => v,
+        Err(_) => return json!({ "status": "service_error", "error": "bad json" }),
+    };
+    let vector: Vec<f64> = parsed
+        .get("vectors")
+        .and_then(|v| v.as_array())
+        .and_then(|a| a.first())
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_f64()).collect())
+        .unwrap_or_default();
+    if vector.len() != star_centroid.len() {
+        return json!({ "status": "service_error", "error": "dim mismatch" });
+    }
+    let score = style_cosine(&vector, &star_centroid);
+    let star_in = score >= star_floor;
+    let fusion = match delta_in_range {
+        Some(d) if d == star_in => if star_in { "accept" } else { "reject" },
+        Some(_) => "abstain_to_curator",
+        None => "delta_abstained",
+    };
+    json!({
+        "status": "ok",
+        "model": "AIDA-UPM/star",
+        "score": (score * 1000.0).round() / 1000.0,
+        "floor": star_floor,
+        "star_in_range": star_in,
+        "fusion_with_delta": fusion,
+        "basis": "E12: agree-or-abstain — definitive only when two instrument families concur",
+    })
+}
+
 fn run_conformance_check(
     ctx: &Context,
     api_url: &str,
@@ -2746,6 +2818,15 @@ fn run_conformance_check(
         &entity_parents,
     );
     // Consumer verdicts: coarse tiers from the similarity block.
+    let delta_in_range = similarity
+        .as_ref()
+        .and_then(|s| s.get("candidates"))
+        .and_then(|c| c.as_array())
+        .and_then(|c| c.first())
+        .and_then(|c| c.get("verdict"))
+        .and_then(|v| v.as_str())
+        .map(|v| v == "within_corpus_range");
+    let star = star_fusion(ctx, &style_id, &candidate, delta_in_range);
     let (tier2, tier3) = similarity
         .as_ref()
         .and_then(|s| s.get("candidates"))
@@ -2776,6 +2857,7 @@ fn run_conformance_check(
             "note": "tier1 is compliance only and never evidence of imitation; tiers 2-3 are coarse verdicts from game-resistant instruments",
         },
         "imitation_evidence_full": similarity,
+        "star_fusion": star,
     }))
 }
 
@@ -2980,6 +3062,18 @@ fn verify_synthesized_writing_styles(
             id,
             &entity_parent_ids,
         );
+        let delta_in_range = style_similarity
+            .as_ref()
+            .and_then(|s| s.get("candidates"))
+            .and_then(|c| c.as_array())
+            .and_then(|c| c.first())
+            .and_then(|c| c.get("verdict"))
+            .and_then(|v| v.as_str())
+            .map(|v| v == "within_corpus_range");
+        let star = replication_texts
+            .first()
+            .map(|(_, body)| star_fusion(ctx, id, body, delta_in_range))
+            .unwrap_or(json!({ "status": "no_replica" }));
 
         // The verification record, v2 shape (A2): compliance (bands — gate,
         // never imitation evidence) is structurally separate from
@@ -3050,6 +3144,7 @@ fn verify_synthesized_writing_styles(
             "imitation_evidence": {
                 "note": "game-resistant instruments only; scores are never returned to writers",
                 "style_similarity": style_similarity,
+                "star_fusion": star,
                 "attribution_for_next_revision": attribution,
                 "feedback_history": prior_history,
             },
@@ -3412,10 +3507,11 @@ struct StyleBackground {
     mu: Vec<f64>,
     sigma: Vec<f64>,
     version: String,
-    /// (slug, entity_id, unit z-centroid, mirror_p95) per catalog voice — the
-    /// margin base plus the topic-controlled distinctiveness bar (E6: the 95th
-    /// percentile of same-topic off-voice mirror scores).
-    voices: Vec<(String, String, Vec<f64>, Option<f64>)>,
+    /// Per catalog voice: (slug, entity_id, unit z-centroid, mirror_p95,
+    /// star_centroid, star_floor). STAR fields power the report-only fusion
+    /// column (E12: STAR strict 2% FA / Delta permissive 89% recall;
+    /// agree-or-abstain fused = 1% FA).
+    voices: Vec<(String, String, Vec<f64>, Option<f64>, Option<Vec<f64>>, Option<f64>)>,
 }
 
 fn style_background() -> Option<StyleBackground> {
@@ -3449,9 +3545,13 @@ fn style_background() -> Option<StyleBackground> {
                             .filter_map(|x| x.as_f64())
                             .collect::<Vec<f64>>(),
                         row.get("mirror_p95").and_then(|x| x.as_f64()),
+                        row.get("star_centroid").and_then(|v| v.as_array()).map(|a| {
+                            a.iter().filter_map(|x| x.as_f64()).collect::<Vec<f64>>()
+                        }),
+                        row.get("star_floor").and_then(|x| x.as_f64()),
                     ))
                 })
-                .filter(|(_, _, c, _)| c.len() == mu.len())
+                .filter(|(_, _, c, _, _, _)| c.len() == mu.len())
                 .collect()
         })
         .unwrap_or_default();
@@ -3620,7 +3720,7 @@ fn style_similarity_scores_for(
         let mut nearest_other = "";
         let mut nearest_score = f64::MIN;
         let mut own_mirror_p95: Option<f64> = None;
-        for (slug, entity_id, cen_other, mirror_p95) in &background.voices {
+        for (slug, entity_id, cen_other, mirror_p95, _, _) in &background.voices {
             if entity_id == own_entity_id {
                 own_mirror_p95 = *mirror_p95;
                 continue;
@@ -3789,6 +3889,27 @@ fn attribution_lines(corpus_text: &str, candidate: &str) -> Vec<String> {
             "rhythm: candidate sentences mean {tm:.1}/spread {td:.1}; corpus {cm:.1}/{cd:.1}"
         ));
     }
+    // v4 register-habit deltas.
+    for (name, cf, tf) in [
+        ("contractions", contractions_per_1000(&cw), contractions_per_1000(&tw)),
+        ("hedges", hedges_per_1000(&cw), hedges_per_1000(&tw)),
+        ("passive constructions", passive_per_1000(&cw), passive_per_1000(&tw)),
+    ] {
+        if (tf - cf).abs() > (cf * 0.5).max(3.0) {
+            lines.push(format!(
+                "register: {name} {tf:.1}/1000 vs corpus {cf:.1}/1000 — {}",
+                if tf > cf { "reduce" } else { "increase" }
+            ));
+        }
+    }
+    let cg = fk_grade(corpus_text);
+    let tg = fk_grade(candidate);
+    if (tg - cg).abs() > 2.5 {
+        lines.push(format!(
+            "readability: candidate grade {tg:.1} vs corpus {cg:.1} — {} sentence and word complexity",
+            if tg > cg { "reduce" } else { "raise" }
+        ));
+    }
     // Punctuation deltas per 1000 words.
     for (mark, name) in [(",", "commas"), (";", "semicolons"), (":", "colons"), ("?", "questions")] {
         let rc = corpus_text.matches(mark).count() as f64 * 1000.0 / nc;
@@ -3801,6 +3922,78 @@ fn attribution_lines(corpus_text: &str, candidate: &str) -> Vec<String> {
         }
     }
     lines
+}
+
+// ── Bands v4 (2026-07-08): market-audit imports, all count/lexicon-based ──
+const HEDGES: [&str; 16] = [
+    "seems", "seemed", "maybe", "perhaps", "might", "could", "possibly", "generally",
+    "often", "somewhat", "rather", "quite", "arguably", "likely", "probably", "apparently",
+];
+const CONTRACTION_SUFFIXES: [&str; 7] = ["n't", "'ll", "'re", "'ve", "'m", "'d", "'s"];
+const BE_FORMS: [&str; 8] = ["is", "are", "was", "were", "be", "been", "being", "am"];
+
+fn contractions_per_1000(words: &[String]) -> f64 {
+    let n = words.len().max(1) as f64;
+    let count = words
+        .iter()
+        .filter(|w| CONTRACTION_SUFFIXES.iter().any(|s| w.ends_with(s) && w.len() > s.len()))
+        .count() as f64;
+    count * 1000.0 / n
+}
+
+fn hedges_per_1000(words: &[String]) -> f64 {
+    let n = words.len().max(1) as f64;
+    words.iter().filter(|w| HEDGES.contains(&w.as_str())).count() as f64 * 1000.0 / n
+}
+
+/// Passive-voice approximation: a be-form followed within two tokens by a
+/// word ending -ed/-en (excluding common adjectives is out of scope — this is
+/// a rate band calibrated per corpus, so systematic approximation error
+/// cancels between corpus and candidate).
+fn passive_per_1000(words: &[String]) -> f64 {
+    let n = words.len().max(1) as f64;
+    let mut count = 0usize;
+    for i in 0..words.len() {
+        if BE_FORMS.contains(&words[i].as_str()) {
+            for j in (i + 1)..(i + 3).min(words.len()) {
+                let w = &words[j];
+                if (w.ends_with("ed") || w.ends_with("en")) && w.len() > 4 {
+                    count += 1;
+                    break;
+                }
+            }
+        }
+    }
+    count as f64 * 1000.0 / n
+}
+
+fn syllable_estimate(word: &str) -> usize {
+    let mut count = 0usize;
+    let mut prev_vowel = false;
+    for c in word.chars() {
+        let v = matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'y');
+        if v && !prev_vowel {
+            count += 1;
+        }
+        prev_vowel = v;
+    }
+    if word.ends_with('e') && count > 1 {
+        count -= 1;
+    }
+    count.max(1)
+}
+
+/// Flesch-Kincaid grade level (approximate syllables).
+fn fk_grade(text: &str) -> f64 {
+    let words = words_of(text);
+    let sentences = sentences_of(text);
+    if words.is_empty() || sentences.is_empty() {
+        return 0.0;
+    }
+    let syllables: usize = words.iter().map(|w| syllable_estimate(w)).sum();
+    0.39 * (words.len() as f64 / sentences.len() as f64)
+        + 11.8 * (syllables as f64 / words.len() as f64)
+        - 15.59
 }
 
 const CONNECTIVES: [&str; 14] = [
@@ -4029,6 +4222,28 @@ fn check_voice_bands_against(
             if dist > max_distance {
                 return Err(format!(
                     "{label}: char-trigram divergence {dist:.3} above {max_distance}"
+                ));
+            }
+        }
+
+        for (key, rate) in [
+            ("contractions_per_1000", contractions_per_1000(&words)),
+            ("hedges_per_1000", hedges_per_1000(&words)),
+            ("passive_per_1000", passive_per_1000(&words)),
+        ] {
+            if let Some((lo, hi)) = range_of(bands.get(key)) {
+                if rate < lo || rate > hi {
+                    return Err(format!(
+                        "{label}: {key} {rate:.1} outside [{lo}, {hi}] — register-habit mismatch"
+                    ));
+                }
+            }
+        }
+        if let Some((lo, hi)) = range_of(bands.get("readability_grade")) {
+            let grade = fk_grade(body);
+            if grade < lo || grade > hi {
+                return Err(format!(
+                    "{label}: readability grade {grade:.1} outside [{lo}, {hi}] — complexity mismatch"
                 ));
             }
         }
@@ -5287,6 +5502,64 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert_eq!(verdict, "abstain");
         let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
         assert!(style_similarity_scores(&thin, &[]).is_none());
+    }
+
+    #[test]
+    fn v4_register_bands_reject_habit_mismatches() {
+        // Contraction-free formal corpus vs contraction-heavy candidate.
+        let formal = (0..15)
+            .map(|i| format!("It is not the case that the ledger was mistaken in entry {i}; the record does not admit of doubt."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let casual = (0..15)
+            .map(|i| format!("It isn't the case that we'd got entry {i} wrong; you'll find we've not doubted it, don't worry."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "contractions_per_1000": [0, 5],
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("t".to_string(), casual.clone())]).unwrap_err();
+        assert!(err.contains("register-habit mismatch"), "{err}");
+        assert!(check_voice_bands(&b, &[("t".to_string(), formal)]).is_ok());
+
+        let hedgy = (0..15)
+            .map(|_| "It seems the bridge might perhaps be somewhat likely to fail, generally speaking, possibly quite often.".to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let bh = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "hedges_per_1000": [0, 10],
+                "min_words_to_evaluate": 100}"#,
+        );
+        assert!(check_voice_bands(&bh, &[("t".to_string(), hedgy)]).unwrap_err().contains("hedges_per_1000"));
+
+        let passive = (0..15)
+            .map(|i| format!("The bridge was rebuilt by the mason and the stones were carried by carts in year {i}; the plan was approved."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let bp = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "passive_per_1000": [0, 15],
+                "min_words_to_evaluate": 100}"#,
+        );
+        assert!(check_voice_bands(&bp, &[("t".to_string(), passive)]).unwrap_err().contains("passive_per_1000"));
+    }
+
+    #[test]
+    fn readability_band_rejects_complexity_mismatch() {
+        let simple = (0..25)
+            .map(|_| "The dog ran. The man saw it. The day was cold. We went home.".to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "readability_grade": [8, 16],
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands(&b, &[("t".to_string(), simple)]).unwrap_err();
+        assert!(err.contains("complexity mismatch"), "{err}");
     }
 
     #[test]
