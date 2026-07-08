@@ -103,7 +103,15 @@ export default async function VoiceDetailPage({
   ).filter((p): p is { id: string; name: string } => p !== null);
   const replicationIds = parseJson<string[]>(f.replication_sample_file_ids) ?? [];
   const replicationManifest =
-    parseJson<{ items?: Array<{ file_id?: string; model?: string }> }>(f.replication_manifest) ?? {};
+    parseJson<{ items?: Array<{ file_id?: string; model?: string; loop?: string; generated_at?: string }> }>(
+      f.replication_manifest,
+    ) ?? {};
+  const replicaProvenance = new Map(
+    (replicationManifest.items ?? []).map((it) => [
+      it.file_id ?? "",
+      [it.model, it.generated_at, it.loop ? `loop ${it.loop}` : ""].filter(Boolean).join(" · "),
+    ]),
+  );
   const modelByFile = new Map(
     (replicationManifest.items ?? []).map((it) => [it.file_id ?? "", it.model ?? ""]),
   );
@@ -111,7 +119,13 @@ export default async function VoiceDetailPage({
     await Promise.all(
       replicationIds.slice(0, 3).map(async (fid) => {
         const body = (await getFileText(fid)).trim();
-        return body ? { model: modelByFile.get(fid) ?? "unknown model", text: body } : null;
+        return body
+          ? {
+              model: modelByFile.get(fid) ?? "unknown model",
+              provenance: replicaProvenance.get(fid) ?? "",
+              text: body,
+            }
+          : null;
       }),
     )
   ).filter((r): r is { model: string; text: string } => r !== null);
@@ -419,7 +433,7 @@ export default async function VoiceDetailPage({
               <StickyNote key={i} className="p-5 sm:p-6">
                 <div className="mb-3 flex flex-wrap items-baseline gap-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    replica — {r.model}
+                    replica — {r.provenance || r.model}
                   </span>
                   <span className="rounded-[9999px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
                     passed the bands
