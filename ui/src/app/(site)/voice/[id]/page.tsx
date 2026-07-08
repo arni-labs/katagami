@@ -128,7 +128,7 @@ export default async function VoiceDetailPage({
           : null;
       }),
     )
-  ).filter((r): r is { model: string; text: string } => r !== null);
+  ).filter((r): r is { model: string; provenance: string; text: string } => r !== null);
   const rawReport = parseJson<{
     engine?: string;
     texts?: Record<string, number>;
