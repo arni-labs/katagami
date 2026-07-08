@@ -485,15 +485,29 @@ export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
 // collection-bound `Temper.Nearest` function. "Related languages" ranks with this
 // instead of app-side cosine — one governed, budgeted, deterministic implementation.
 
+/** One OData string-literal function argument, URL-safe for the path segment.
+ *  Interior single quotes are doubled per OData v4, then the whole quoted literal
+ *  is percent-encoded so ANY character (space, %, #, ?, &, …) survives — while
+ *  `encodeURIComponent` leaves the structural quotes/parens the OData path parser
+ *  needs literal (it never encodes `'`, `(`, `)`), and encodes an interior comma
+ *  so it can't be mistaken for an argument separator. For today's inputs (kernel
+ *  ULIDs, the "Status eq 'Published'" literal) this yields the same bytes the
+ *  kernel is already exercised with; the encoding just closes the footgun. */
+function odataFunctionLiteral(value: string): string {
+  return encodeURIComponent(`'${odataLiteral(value)}'`);
+}
+
 /** Rank published design languages nearest to `to` by the declared `taste`
  *  vector path, via `GET .../DesignLanguages/Temper.Nearest(decl='taste',to=…,
  *  k=…,filter=…)`. Rows come back in the kernel's rank order — nearest first, the
  *  reference excluded, each already carrying `@temper.score`.
  *
- *  Returns `null` when the vector path cannot answer for this entity: the
+ *  Returns `null` when the vector path cannot answer for this entity — the
  *  reference carries no taste vector yet (the pre-embed window), the function is
- *  unavailable, or the read failed — the caller falls back to tag overlap. An
- *  empty array means the path answered but found no neighbours. */
+ *  unavailable, or the read failed. It may also return an empty array (the path
+ *  answered, but found no neighbours). Callers treat both the same: no vector
+ *  result, fall back to tag overlap — the wanted behaviour during the
+ *  partial-embed window. */
 export async function nearestDesignLanguages({
   to,
   k,
@@ -503,22 +517,18 @@ export async function nearestDesignLanguages({
   k: number;
   filter?: string;
 }): Promise<DesignLanguage[] | null> {
+  // Function arguments live in the path segment, not the query string, so each
+  // string literal is OData-escaped then percent-encoded via odataFunctionLiteral;
+  // the `,` `(` `)` that delimit the call stay literal.
   const args = [
-    "decl='taste'",
-    `to='${odataLiteral(to)}'`,
+    `decl=${odataFunctionLiteral("taste")}`,
+    `to=${odataFunctionLiteral(to)}`,
     `k=${Math.max(1, Math.floor(k))}`,
   ];
   // The optional pre-ranking equality filter is itself an OData string literal
-  // argument, so its interior single quotes double (odataLiteral) and the whole
-  // thing is single-quoted: filter='Status eq ''Published'''.
-  if (filter) args.push(`filter='${odataLiteral(filter)}'`);
-  // Function arguments live in the path segment, not the query string. Encode the
-  // one reserved character these values carry — the space — as %20, leaving the
-  // OData structural quotes/parens/commas that delimit the call intact.
-  const path = `DesignLanguages/Temper.Nearest(${args.join(",")})`.replace(
-    / /g,
-    "%20",
-  );
+  // argument: filter='Status eq ''Published'''.
+  if (filter) args.push(`filter=${odataFunctionLiteral(filter)}`);
+  const path = `DesignLanguages/Temper.Nearest(${args.join(",")})`;
   try {
     const resp = await odata<ODataResponse<Record<string, unknown>>>(path);
     return resp.value.map(normalizeDesignLanguageRow);
