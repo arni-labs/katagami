@@ -141,6 +141,9 @@ fn run_inner(ctx: &Context) -> Result<(), String> {
                                 .get("design_language_ids")
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("[]"),
+                            // The job's product travels on the job: conformance
+                            // reports (and any typed validation) land in output.
+                            "output": validation.to_string(),
                         }),
                     );
                 }
@@ -288,6 +291,7 @@ fn verify_typed_completion(
         "synthesize_palette" => verify_synthesized_palettes(ctx, api_url, headers, fields),
         "synthesize_art_style" => verify_synthesized_art_styles(ctx, api_url, headers, fields),
         "synthesize_writing_style" => verify_synthesized_writing_styles(ctx, api_url, headers, fields),
+        "check_conformance" => run_conformance_check(ctx, api_url, headers, fields),
         _ => Ok(json!({"validated": true, "job_type": job_type})),
     }
 }
@@ -2651,6 +2655,130 @@ fn verify_palette_tokens_export(
 // distance) evaluate only texts at or above min_words_to_evaluate — the abstain
 // discipline — and at least one text must be evaluable.
 
+/// B5 — the conformance endpoint (RFC-0002): "check this text against voice X".
+/// job_type check_conformance; the job's `input` field carries JSON
+/// {"writing_style_id": "...", "text_file_id": "..."}. Runs bands +
+/// verbatim-overlap + attribution + Delta fingerprint with length-matched
+/// floors + nearest-other margins over the candidate. Read-only: never
+/// dispatches any action on the WritingStyle. Verdict granularity is
+/// deliberately coarse on the hidden layer (tiers, not raw scores are the
+/// consumer contract; raw scores appear only for the curator's report).
+fn run_conformance_check(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    fields: &serde_json::Value,
+) -> Result<serde_json::Value, VerificationError> {
+    let input: serde_json::Value = fields
+        .get("input")
+        .and_then(|v| v.as_str())
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(serde_json::Value::Null);
+    let style_id = input
+        .get("writing_style_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let text_file_id = input
+        .get("text_file_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if style_id.is_empty() || text_file_id.is_empty() {
+        return Err(VerificationError::new(
+            "conformance_input_invalid",
+            "check_conformance requires input JSON {writing_style_id, text_file_id}",
+        )
+        .field("input"));
+    }
+    let entity = load_required_entity(
+        ctx,
+        api_url,
+        headers,
+        "WritingStyles",
+        &style_id,
+        "missing_writing_style",
+    )?;
+    let lane_fields = entity_fields(&entity);
+    let bands = require_lane_json_object(&style_id, "WritingStyle", &lane_fields, "mechanical_bands")?;
+    let corpus_ids = string_array_flexible(lane_fields.get("corpus_file_ids"));
+    let mut corpus_texts: Vec<(String, String)> = Vec::new();
+    for file_id in &corpus_ids {
+        let body = read_lane_file_value(
+            ctx,
+            api_url,
+            headers,
+            "WritingStyle",
+            &style_id,
+            file_id,
+            "corpus",
+        )?;
+        corpus_texts.push((format!("corpus:{file_id}"), body));
+    }
+    let candidate = read_lane_file_value(
+        ctx,
+        api_url,
+        headers,
+        "WritingStyle",
+        &style_id,
+        &text_file_id,
+        "candidate",
+    )?;
+    let corpus_joined: String = corpus_texts
+        .iter()
+        .map(|(_, b)| b.as_str())
+        .collect::<Vec<_>>()
+        .join("\n\n");
+
+    // Compliance layer: bands + overlap, reported as pass/violations (not fatal).
+    let band_result = check_voice_bands_against(
+        &bands,
+        &corpus_texts,
+        &[("candidate".to_string(), candidate.clone())],
+    );
+    let overlap = shared_ngram(&corpus_joined, &candidate, 8);
+    let attribution = attribution_lines(&corpus_joined, &candidate);
+    let entity_parents = string_array_flexible(lane_fields.get("parent_ids"));
+    let similarity = style_similarity_scores_for(
+        &corpus_texts,
+        &[("candidate".to_string(), candidate.clone())],
+        &style_id,
+        &entity_parents,
+    );
+    // Consumer verdicts: coarse tiers from the similarity block.
+    let (tier2, tier3) = similarity
+        .as_ref()
+        .and_then(|s| s.get("candidates"))
+        .and_then(|c| c.as_array())
+        .and_then(|c| c.first())
+        .map(|c| {
+            let verdict = c.get("verdict").and_then(|v| v.as_str()).unwrap_or("abstain");
+            let margin = c
+                .get("margin_over_nearest_other")
+                .and_then(|v| v.as_f64());
+            (verdict.to_string(), margin.map(|m| m > 0.0))
+        })
+        .unwrap_or(("abstain".to_string(), None));
+    Ok(json!({
+        "validated": true,
+        "job_type": "check_conformance",
+        "writing_style_id": style_id,
+        "conformance": {
+            "tier1_compliant": band_result.is_ok() && overlap.is_none(),
+            "violations": match band_result {
+                Ok(_) => Vec::<String>::new(),
+                Err(v) => vec![v],
+            },
+            "verbatim_overlap": overlap,
+            "attribution": attribution,
+            "tier2_verdict": tier2,
+            "tier3_distinctive": tier3,
+            "note": "tier1 is compliance only and never evidence of imitation; tiers 2-3 are coarse verdicts from game-resistant instruments",
+        },
+        "imitation_evidence_full": similarity,
+    }))
+}
+
 fn verify_synthesized_writing_styles(
     ctx: &Context,
     api_url: &str,
@@ -2806,6 +2934,26 @@ fn verify_synthesized_writing_styles(
             texts.push((format!("replication:{file_id}"), body));
         }
 
+        // A3: replicas must not quote the corpus (instructed before; verified now).
+        let corpus_joined: String = corpus_texts
+            .iter()
+            .map(|(_, b)| b.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        for (label, body) in texts.iter().filter(|(l, _)| l.starts_with("replication:")) {
+            if let Some(gram) = shared_ngram(&corpus_joined, body, 8) {
+                return Err(VerificationError::new(
+                    "replica_quotes_corpus",
+                    format!(
+                        "WritingStyle '{id}' replica {label} shares a verbatim 8-word sequence with the corpus: '{}...'",
+                        &gram[..gram.len().min(60)]
+                    ),
+                )
+                .entity("WritingStyle", id)
+                .field("replication_sample_file_ids"));
+            }
+        }
+
         let evaluated = match check_voice_bands_against(&bands, &corpus_texts, &texts) {
             Ok(count) => count,
             Err(violation) => {
@@ -2833,11 +2981,44 @@ fn verify_synthesized_writing_styles(
             &entity_parent_ids,
         );
 
-        // The verification record: what ran, over what, against which limits.
-        // Rendered in the UI so the checks are visible, not just asserted.
+        // The verification record, v2 shape (A2): compliance (bands — gate,
+        // never imitation evidence) is structurally separate from
+        // imitation_evidence (fingerprint tiers, report-only). A4: the prior
+        // report's replica scores carry forward as feedback history so every
+        // revision's before/after accumulates automatically.
         let corpus_words: usize = corpus_texts.iter().map(|(_, b)| words_of(b).len()).sum();
+        // A5: computed attribution for the first replica — the standard
+        // writer-facing feedback content, validated by E11 (6/6, p≈.031).
+        let attribution: Vec<String> = texts
+            .iter()
+            .find(|(l, _)| l.starts_with("replication:"))
+            .map(|(_, b)| attribution_lines(&corpus_joined, b))
+            .unwrap_or_default();
+        let prior_history: Vec<serde_json::Value> = lane_fields
+            .get("verification_report")
+            .and_then(|v| v.as_str())
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .map(|prior| {
+                let mut hist: Vec<serde_json::Value> = prior
+                    .get("imitation_evidence")
+                    .and_then(|v| v.get("feedback_history"))
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                let prior_scores = prior
+                    .get("imitation_evidence")
+                    .and_then(|v| v.get("style_similarity"))
+                    .or_else(|| prior.get("style_similarity"))
+                    .and_then(|v| v.get("candidates"))
+                    .cloned();
+                if let Some(scores) = prior_scores {
+                    hist.push(json!({ "candidates": scores }));
+                }
+                hist.into_iter().rev().take(6).rev().collect()
+            })
+            .unwrap_or_default();
         let verification_report = json!({
-            "schema": "katagami:voice-verification/v1",
+            "schema": "katagami:voice-verification/v2",
             "engine": "katagami-finalizer voice-bands (deterministic)",
             "texts": {
                 "corpus_files": corpus_ids.len(),
@@ -2847,22 +3028,31 @@ fn verify_synthesized_writing_styles(
                 "replication_words": replication_words,
                 "evaluated_for_statistics": evaluated,
             },
-            "bands_enforced": bands.clone(),
+            "compliance": {
+                "note": "bands gate; they never grade — band results are not imitation evidence",
+                "bands_enforced": bands.clone(),
+                "checks_passed": [
+                    "consent_basis_and_provenance",
+                    "credits_present",
+                    "model_provenance_present",
+                    "mechanical_bands_over_corpus",
+                    "mechanical_bands_over_exemplars",
+                    "mechanical_bands_over_replication",
+                    "replica_verbatim_overlap_absent",
+                    "voice_md_structure",
+                    "thumbnail_plausible_image",
+                ],
+            },
             "replication": {
                 "models": replication_models.values().cloned().collect::<Vec<_>>(),
                 "checked_against": "the voice's own mechanical bands, corpus as reference",
             },
-            "style_similarity": style_similarity,
-            "checks_passed": [
-                "consent_basis_and_provenance",
-                "credits_present",
-                "model_provenance_present",
-                "mechanical_bands_over_corpus",
-                "mechanical_bands_over_exemplars",
-                "mechanical_bands_over_replication",
-                "voice_md_structure",
-                "thumbnail_plausible_image",
-            ],
+            "imitation_evidence": {
+                "note": "game-resistant instruments only; scores are never returned to writers",
+                "style_similarity": style_similarity,
+                "attribution_for_next_revision": attribution,
+                "feedback_history": prior_history,
+            },
         });
 
         let voice_md = read_lane_file_value(
@@ -3222,9 +3412,10 @@ struct StyleBackground {
     mu: Vec<f64>,
     sigma: Vec<f64>,
     version: String,
-    /// (slug, entity_id, unit z-centroid) per catalog voice — lets every score
-    /// carry a margin over the nearest OTHER voice, lineage excluded.
-    voices: Vec<(String, String, Vec<f64>)>,
+    /// (slug, entity_id, unit z-centroid, mirror_p95) per catalog voice — the
+    /// margin base plus the topic-controlled distinctiveness bar (E6: the 95th
+    /// percentile of same-topic off-voice mirror scores).
+    voices: Vec<(String, String, Vec<f64>, Option<f64>)>,
 }
 
 fn style_background() -> Option<StyleBackground> {
@@ -3257,9 +3448,10 @@ fn style_background() -> Option<StyleBackground> {
                             .iter()
                             .filter_map(|x| x.as_f64())
                             .collect::<Vec<f64>>(),
+                        row.get("mirror_p95").and_then(|x| x.as_f64()),
                     ))
                 })
-                .filter(|(_, _, c)| c.len() == mu.len())
+                .filter(|(_, _, c, _)| c.len() == mu.len())
                 .collect()
         })
         .unwrap_or_default();
@@ -3427,8 +3619,13 @@ fn style_similarity_scores_for(
         // Margin over the nearest other catalog voice, lineage excluded.
         let mut nearest_other = "";
         let mut nearest_score = f64::MIN;
-        for (slug, entity_id, cen_other) in &background.voices {
-            if entity_id == own_entity_id || parent_ids.iter().any(|p| p == entity_id) {
+        let mut own_mirror_p95: Option<f64> = None;
+        for (slug, entity_id, cen_other, mirror_p95) in &background.voices {
+            if entity_id == own_entity_id {
+                own_mirror_p95 = *mirror_p95;
+                continue;
+            }
+            if parent_ids.iter().any(|p| p == entity_id) {
                 continue;
             }
             let s = style_cosine(&z, cen_other);
@@ -3456,6 +3653,12 @@ fn style_similarity_scores_for(
             entry["margin_over_nearest_other"] =
                 json!(((score - nearest_score) * 1000.0).round() / 1000.0);
         }
+        if let Some(p95) = own_mirror_p95 {
+            // E6/A1: the topic-controlled distinctiveness bar — clears only if
+            // above the 95th percentile of same-topic off-voice mirror scores.
+            entry["mirror_p95"] = json!((p95 * 1000.0).round() / 1000.0);
+            entry["distinctive_topic_controlled"] = json!(score > p95 + 0.005);
+        }
         scored.push(entry);
     }
     let (pos_min, pos_mean) = base_floor.unwrap_or((0.0, 0.0));
@@ -3472,6 +3675,134 @@ fn style_similarity_scores_for(
 }
 
 #[allow(dead_code)]
+// ── D11: syntactic surface family — coarse POS trigrams ──
+// A deterministic approximation: closed-class lexicons + suffix heuristics
+// map each word to one of 10 coarse tags; the tag-trigram distribution is
+// compared to the corpus by JS divergence, chunk-null calibrated per voice
+// like every other band. Not a full parser — a frozen, symbolic surface
+// grammar fingerprint (word order habits independent of vocabulary).
+fn coarse_pos_tag(word: &str) -> &'static str {
+    const DET: [&str; 12] = ["the", "a", "an", "this", "that", "these", "those", "each", "every", "some", "any", "no"];
+    const PRON: [&str; 22] = ["i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "thou", "thee", "thy", "thyself", "his", "its", "their", "my", "your", "our"];
+    const PREP: [&str; 20] = ["of", "in", "on", "at", "by", "for", "with", "from", "to", "into", "upon", "under", "over", "through", "between", "against", "unto", "toward", "within", "without"];
+    const CONJ: [&str; 10] = ["and", "or", "but", "nor", "so", "yet", "if", "though", "because", "while"];
+    const AUX: [&str; 20] = ["is", "are", "was", "were", "be", "been", "being", "am", "do", "does", "did", "have", "has", "had", "will", "would", "shall", "should", "can", "may"];
+    const NEG: [&str; 4] = ["not", "never", "neither", "none"];
+    if DET.contains(&word) { return "D"; }
+    if PRON.contains(&word) { return "P"; }
+    if PREP.contains(&word) { return "R"; }
+    if CONJ.contains(&word) { return "C"; }
+    if AUX.contains(&word) { return "X"; }
+    if NEG.contains(&word) { return "G"; }
+    if word.ends_with("ly") { return "A"; }
+    if word.ends_with("ing") || word.ends_with("ed") || word.ends_with("eth") || word.ends_with("est") { return "V"; }
+    if word.ends_with("tion") || word.ends_with("ness") || word.ends_with("ment") || word.ends_with("ity") { return "N"; }
+    "O"
+}
+
+fn pos_trigram_distribution(text: &str) -> std::collections::BTreeMap<String, f64> {
+    let words = words_of(text);
+    let tags: Vec<&str> = words.iter().map(|w| coarse_pos_tag(w)).collect();
+    let mut counts: std::collections::BTreeMap<String, f64> = std::collections::BTreeMap::new();
+    for w in tags.windows(3) {
+        *counts.entry(w.concat()).or_insert(0.0) += 1.0;
+    }
+    let total: f64 = counts.values().sum();
+    if total > 0.0 {
+        for v in counts.values_mut() {
+            *v /= total;
+        }
+    }
+    counts
+}
+
+// ── A3: verbatim-overlap check — a replica must not quote the corpus ──
+fn shared_ngram(corpus_text: &str, candidate: &str, n: usize) -> Option<String> {
+    let cw = words_of(corpus_text);
+    let kw = words_of(candidate);
+    if kw.len() < n {
+        return None;
+    }
+    let corpus_grams: std::collections::BTreeSet<String> =
+        cw.windows(n).map(|w| w.join(" ")).collect();
+    for w in kw.windows(n) {
+        let g = w.join(" ");
+        if corpus_grams.contains(&g) {
+            return Some(g);
+        }
+    }
+    None
+}
+
+// ── A5: per-feature attribution — every directional statement computed ──
+fn attribution_lines(corpus_text: &str, candidate: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    let cw = words_of(corpus_text);
+    let tw = words_of(candidate);
+    if tw.is_empty() || cw.is_empty() {
+        return lines;
+    }
+    let nc = cw.len() as f64;
+    let nt = tw.len() as f64;
+    // Function-word deltas per 1000.
+    let mut deltas: Vec<(f64, &str)> = FUNCTION_WORDS
+        .iter()
+        .map(|w| {
+            let rc = cw.iter().filter(|x| x.as_str() == *w).count() as f64 / nc;
+            let rt = tw.iter().filter(|x| x.as_str() == *w).count() as f64 / nt;
+            ((rt - rc) * 1000.0, *w)
+        })
+        .collect();
+    deltas.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    let under: Vec<String> = deltas.iter().take(4).filter(|(d, _)| *d < -1.5)
+        .map(|(d, w)| format!("'{w}' ({d:+.1}/1000)")).collect();
+    let over: Vec<String> = deltas.iter().rev().take(4).filter(|(d, _)| *d > 1.5)
+        .map(|(d, w)| format!("'{w}' ({d:+.1}/1000)")).collect();
+    if !under.is_empty() {
+        lines.push(format!("underused function words vs corpus: {}", under.join(", ")));
+    }
+    if !over.is_empty() {
+        lines.push(format!("overused function words vs corpus: {}", over.join(", ")));
+    }
+    // Corpus-characteristic content words absent from the candidate.
+    let mut freq: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for w in &cw {
+        if w.len() > 3 && !FUNCTION_WORDS.contains(&w.as_str()) {
+            *freq.entry(w.as_str()).or_insert(0) += 1;
+        }
+    }
+    let tset: std::collections::BTreeSet<&str> = tw.iter().map(|s| s.as_str()).collect();
+    let mut ranked: Vec<(&str, usize)> = freq.into_iter().collect();
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+    let missing: Vec<&str> = ranked.iter().take(60).map(|(w, _)| *w)
+        .filter(|w| !tset.contains(w)).take(6).collect();
+    if !missing.is_empty() {
+        lines.push(format!("corpus-characteristic words absent: {}", missing.join(", ")));
+    }
+    // Rhythm deltas.
+    let cs: Vec<f64> = sentences_of(corpus_text).iter().map(|s| words_of(s).len() as f64).collect();
+    let ts: Vec<f64> = sentences_of(candidate).iter().map(|s| words_of(s).len() as f64).collect();
+    if !ts.is_empty() && !cs.is_empty() {
+        let (cm, cd) = mean_stdev(&cs);
+        let (tm, td) = mean_stdev(&ts);
+        lines.push(format!(
+            "rhythm: candidate sentences mean {tm:.1}/spread {td:.1}; corpus {cm:.1}/{cd:.1}"
+        ));
+    }
+    // Punctuation deltas per 1000 words.
+    for (mark, name) in [(",", "commas"), (";", "semicolons"), (":", "colons"), ("?", "questions")] {
+        let rc = corpus_text.matches(mark).count() as f64 * 1000.0 / nc;
+        let rt = candidate.matches(mark).count() as f64 * 1000.0 / nt;
+        if (rt - rc).abs() > (rc * 0.4).max(3.0) {
+            lines.push(format!(
+                "punctuation: {name} {rt:.0}/1000 vs corpus {rc:.0}/1000 — {}",
+                if rt > rc { "reduce" } else { "increase" }
+            ));
+        }
+    }
+    lines
+}
+
 const CONNECTIVES: [&str; 14] = [
     "however", "moreover", "furthermore", "additionally", "thus", "therefore",
     "indeed", "notably", "importantly", "crucially", "consequently",
@@ -3698,6 +4029,26 @@ fn check_voice_bands_against(
             if dist > max_distance {
                 return Err(format!(
                     "{label}: char-trigram divergence {dist:.3} above {max_distance}"
+                ));
+            }
+        }
+
+        if let Some(max_distance) = bands
+            .get("pos_trigrams")
+            .and_then(|v| v.get("max_distance"))
+            .and_then(|v| v.as_f64())
+        {
+            let reference_pos = pos_trigram_distribution(
+                &reference_texts
+                    .iter()
+                    .map(|(_, b)| b.as_str())
+                    .collect::<Vec<_>>()
+                    .join("\n\n"),
+            );
+            let dist = trigram_js_divergence(&pos_trigram_distribution(body), &reference_pos);
+            if dist > max_distance {
+                return Err(format!(
+                    "{label}: pos-trigram divergence {dist:.3} above {max_distance} — surface-grammar mismatch"
                 ));
             }
         }
@@ -4936,6 +5287,55 @@ all whom fortune had thither conveyed, did graciously consent unto the proposal.
         assert_eq!(verdict, "abstain");
         let thin: Vec<(String, String)> = vec![("corpus:0".to_string(), "tiny".to_string())];
         assert!(style_similarity_scores(&thin, &[]).is_none());
+    }
+
+    #[test]
+    fn pos_trigram_band_rejects_surface_grammar_mismatch() {
+        // Corpus: determiner-noun-preposition prose. Candidate: pronoun-aux chains.
+        let corpus = (0..20)
+            .map(|i| format!("The keeper of the light set the record of the night in the book of the station {i}."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let candidate = (0..20)
+            .map(|_| "I would have been doing it and they will have seen us doing that.".to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let b = bands(
+            r#"{"schema": "katagami:voice-bands/v1",
+                "pos_trigrams": {"max_distance": 0.15},
+                "min_words_to_evaluate": 100}"#,
+        );
+        let err = check_voice_bands_against(
+            &b,
+            &[("corpus:a".to_string(), corpus)],
+            &[("replica:x".to_string(), candidate)],
+        )
+        .unwrap_err();
+        assert!(err.contains("surface-grammar mismatch"), "{err}");
+    }
+
+    #[test]
+    fn shared_ngram_catches_verbatim_quotes() {
+        let corpus = "It is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife.";
+        let quoting = "As she said, it is a truth universally acknowledged that a single man in possession of money smiles.";
+        assert!(shared_ngram(corpus, quoting, 8).is_some());
+        let clean = "The village met at dawn to argue about the bridge and its stones.";
+        assert!(shared_ngram(corpus, clean, 8).is_none());
+    }
+
+    #[test]
+    fn attribution_lines_are_computed_and_directional() {
+        let corpus = (0..30)
+            .map(|i| format!("The wreck of the schooner lay in the mouth of the harbour, and the keeper set the lamp of the tower with care {i}."))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let candidate = (0..15)
+            .map(|_| "I think you would really just have it be quite modern here.".to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let lines = attribution_lines(&corpus, &candidate);
+        assert!(lines.iter().any(|l| l.starts_with("underused function words")), "{lines:?}");
+        assert!(lines.iter().any(|l| l.starts_with("corpus-characteristic words absent")), "{lines:?}");
     }
 
     #[test]

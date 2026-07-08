@@ -115,12 +115,22 @@ export default async function VoiceDetailPage({
       }),
     )
   ).filter((r): r is { model: string; text: string } => r !== null);
-  const verificationReport = parseJson<{
+  const rawReport = parseJson<{
     engine?: string;
     texts?: Record<string, number>;
     checks_passed?: string[];
+    compliance?: { checks_passed?: string[] };
+    imitation_evidence?: { style_similarity?: unknown; attribution_for_next_revision?: string[] };
     replication?: { models?: string[] };
   }>(f.verification_report);
+  const verificationReport = rawReport
+    ? {
+        engine: rawReport.engine,
+        texts: rawReport.texts,
+        checks_passed: rawReport.compliance?.checks_passed ?? rawReport.checks_passed,
+        replication: rawReport.replication,
+      }
+    : undefined;
   const voiceMdBody = f.voice_md_file_id ? (await getFileText(f.voice_md_file_id)).trim() : "";
   const voiceMdUrl =
     (f.voice_md_asset_url ?? "").trim() ||
