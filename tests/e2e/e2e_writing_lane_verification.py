@@ -301,6 +301,8 @@ def main():
     assert 200 <= st < 300
     for key, value in [
         ("temper_api_url", BASE),
+        ("style_embed_url", "http://127.0.0.1:8791"),
+        ("style_embed_key", "local-test-key"),
         ("published_blob_endpoint", "http://127.0.0.1:3910"),
         ("published_blob_bucket", "e2e-public"),
         ("published_blob_public_base_url", "http://127.0.0.1:3910/e2e-public"),
@@ -321,6 +323,7 @@ def main():
     report("writing/happy: style similarity scored, report-only", "burrows-delta" in vr, "delta" if "burrows-delta" in vr else vr[:60])
     report("writing/happy: report v2 split (compliance vs imitation_evidence)", '"compliance"' in vr and '"imitation_evidence"' in vr and "voice-verification/v2" in vr, vr[:60])
     report("writing/happy: attribution present for next revision", "attribution_for_next_revision" in vr, "")
+    report("writing/happy: STAR fusion column present", '"star_fusion"' in vr, vr[vr.find("star_fusion"):vr.find("star_fusion")+80] if "star_fusion" in vr else vr[:60])
     report("writing/happy: VOICE.md asset attached pre-publish", bool(fields.get("voice_md_asset_url")), str(fields.get("voice_md_asset_url"))[:80])
     st, _ = act("WritingStyles", ws, "Publish", {})
     report("writing/happy: curator Publish succeeds in one dispatch", 200 <= st < 300, f"HTTP {st}")
@@ -376,6 +379,13 @@ def main():
     st, body = req("POST", "/tdata/CurationJobs", {})
     cjob = entity_id_of(body)
     must_act("CurationJobs", cjob, "Configure", {"job_type": "check_conformance", "completion_contract": "typed-v1", "input": json.dumps({"writing_style_id": ws, "text_file_id": cf})})
+    # settle: the finalizer reads input from the projection — wait until visible
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        jf = get_entity("CurationJobs", cjob).get("fields") or {}
+        if jf.get("input") and jf.get("job_type") == "check_conformance":
+            break
+        time.sleep(1)
     must_act("CurationJobs", cjob, "Start", {})
     must_act("CurationJobs", cjob, "CompleteConformanceCheck", {"writing_style_ids": json.dumps([ws]), "output": "{}"})
     deadline = time.time() + 60
