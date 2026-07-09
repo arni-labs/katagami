@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { LabComparison as LabComparisonType, LabModel, LabView } from "./comparisons";
 
 const LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
-const VIEW_LABEL: Record<LabView, string> = {
+export const VIEW_LABEL: Record<LabView, string> = {
   embodiment: "Embodiment",
   landing: "Landing",
   dashboard: "Dashboard",
@@ -491,7 +491,7 @@ function LanguageLine({ m, center }: { m: LabModel; center?: boolean }) {
 }
 
 // segmented control shared by the view tabs + the variant toggle
-function Segmented({
+export function Segmented({
   options,
   value,
   onChange,
