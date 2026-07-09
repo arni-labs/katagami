@@ -15,7 +15,10 @@ export const TASTE_EMBEDDING_DIM = 384;
 export const TASTE_DOC_VERSION = "taste-doc-v1";
 
 /** A stored taste_vector is usable only when its model matches the current
- *  space — vectors from different models are not comparable. */
+ *  space — vectors from different models are not comparable. Used by the taste
+ *  API (/api/taste/vectors) to serve pipeline vectors to the taste-deck. Ranking
+ *  by similarity now lives in the kernel (Temper.Nearest), so there is no longer
+ *  an app-side cosineSimilarity here. */
 export function parseStoredTasteVector(fields: {
   taste_vector?: string;
   taste_vector_model?: string;
@@ -35,20 +38,6 @@ export function parseStoredTasteVector(fields: {
     // malformed stored vector — treat as absent
   }
   return null;
-}
-
-/** Stored vectors are L2-normalized at embed time, but don't assume it. */
-export function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0;
-  let na = 0;
-  let nb = 0;
-  for (let i = 0; i < a.length && i < b.length; i += 1) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
-  }
-  const denom = Math.sqrt(na) * Math.sqrt(nb);
-  return denom > 0 ? dot / denom : 0;
 }
 
 export interface EmbeddingDocInput {

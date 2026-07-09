@@ -479,6 +479,66 @@ export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
   );
 }
 
+// ── Vector similarity — kernel-native kNN (ADR-0155 / Temper.Nearest) ─────────
+// Each commons spec declares a `[[vector]]` "taste" path; the kernel maintains an
+// exact-scan kNN index over the stored taste embedding and serves it through the
+// collection-bound `Temper.Nearest` function. "Related languages" ranks with this
+// instead of app-side cosine — one governed, budgeted, deterministic implementation.
+
+/** One OData string-literal function argument, URL-safe for the path segment.
+ *  Interior single quotes are doubled per OData v4, then the whole quoted literal
+ *  is percent-encoded so ANY character (space, %, #, ?, &, …) survives — while
+ *  `encodeURIComponent` leaves the structural quotes/parens the OData path parser
+ *  needs literal (it never encodes `'`, `(`, `)`), and encodes an interior comma
+ *  so it can't be mistaken for an argument separator. For today's inputs (kernel
+ *  ULIDs, the "Status eq 'Published'" literal) this yields the same bytes the
+ *  kernel is already exercised with; the encoding just closes the footgun. */
+function odataFunctionLiteral(value: string): string {
+  return encodeURIComponent(`'${odataLiteral(value)}'`);
+}
+
+/** Rank published design languages nearest to `to` by the declared `taste`
+ *  vector path, via `GET .../DesignLanguages/Temper.Nearest(decl='taste',to=…,
+ *  k=…,filter=…)`. Rows come back in the kernel's rank order — nearest first, the
+ *  reference excluded, each already carrying `@temper.score`.
+ *
+ *  Returns `null` when the vector path cannot answer for this entity — the
+ *  reference carries no taste vector yet (the pre-embed window), the function is
+ *  unavailable, or the read failed. It may also return an empty array (the path
+ *  answered, but found no neighbours). Callers treat both the same: no vector
+ *  result, fall back to tag overlap — the wanted behaviour during the
+ *  partial-embed window. */
+export async function nearestDesignLanguages({
+  to,
+  k,
+  filter,
+}: {
+  to: string;
+  k: number;
+  filter?: string;
+}): Promise<DesignLanguage[] | null> {
+  // Function arguments live in the path segment, not the query string, so each
+  // string literal is OData-escaped then percent-encoded via odataFunctionLiteral;
+  // the `,` `(` `)` that delimit the call stay literal.
+  const args = [
+    `decl=${odataFunctionLiteral("taste")}`,
+    `to=${odataFunctionLiteral(to)}`,
+    `k=${Math.max(1, Math.floor(k))}`,
+  ];
+  // The optional pre-ranking equality filter is itself an OData string literal
+  // argument: filter='Status eq ''Published'''.
+  if (filter) args.push(`filter=${odataFunctionLiteral(filter)}`);
+  const path = `DesignLanguages/Temper.Nearest(${args.join(",")})`;
+  try {
+    const resp = await odata<ODataResponse<Record<string, unknown>>>(path);
+    return resp.value.map(normalizeDesignLanguageRow);
+  } catch {
+    // A 400 ("reference has no usable vector" — not yet embedded), an unavailable
+    // function, or a transport error all mean "fall back", never "throw".
+    return null;
+  }
+}
+
 // ── Taxonomy ──
 
 export interface Taxonomy {

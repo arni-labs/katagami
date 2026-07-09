@@ -179,6 +179,30 @@ name = "has_provenance"
 type = "bool"
 initial = "false"
 
+# Taste embedding — the semantic vector and the model tag that partitions its
+# space. Written by AttachTasteVector (the curation finalizer after quality
+# review, or the backfill job). Declared as state so the kernel's [[vector]]
+# access path can index them; empty until embedded.
+[[state]]
+name = "taste_vector"
+type = "string"
+initial = ""
+
+[[state]]
+name = "taste_vector_model"
+type = "string"
+initial = ""
+
+# ADR-0155: declared vector access path. The kernel maintains an exact-scan kNN
+# index over taste_vector, partitioned by taste_vector_model (only same-model
+# vectors ever compare), and serves it through Temper.Nearest(decl='taste',...).
+[[vector]]
+name = "taste"
+property = "taste_vector"
+model_property = "taste_vector_model"
+dims = 384
+metric = "cosine"
+
 # --- Actions: Spec Authoring (Draft & UnderReview) ---
 
 [[action]]
