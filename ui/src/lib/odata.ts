@@ -479,6 +479,17 @@ export async function getDesignLanguage(id: string): Promise<DesignLanguage> {
   );
 }
 
+export async function getPublishedDesignLanguage(
+  id: string,
+): Promise<DesignLanguage> {
+  const lang = await getDesignLanguage(id);
+  const status = lang.status ?? lang.fields?.Status;
+  if (status !== "Published") {
+    throw new Error(`DesignLanguage '${id}' is not published.`);
+  }
+  return lang;
+}
+
 // ── Taxonomy ──
 
 export interface Taxonomy {
