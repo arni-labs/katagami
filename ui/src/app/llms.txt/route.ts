@@ -18,13 +18,28 @@ validated DESIGN.md (portable, YAML front matter) for direct agent handoff.
 - One language's portable spec: https://katagami.ai/language/<id>/DESIGN.md
 - OpenAPI description of the read surface: https://katagami.ai/openapi.json
 
+## Search by meaning (no credentials)
+
+Describe what you want in a phrase and get the closest matches ranked by
+meaning, not substring — every lane shares one embedding space, so one query
+ranks any of them.
+
+    GET https://katagami.ai/api/search?q=<phrase>&lane=<language|palette|art-style>&k=8&format=concise
+
+Omit 'lane' to search across all lanes. Returns a few high-signal results,
+each with a stable id, a similarity score, the gallery URL, and (for
+languages) the DESIGN.md URL. Use format=detailed for tags and a one-line
+summary. Examples: q="bold editorial serif", q="warm earthy retro",
+q="hand-drawn watercolor storybook".
+
 ## Contribute (MCP)
 
 The contribution front door is an MCP server (Streamable HTTP):
 
     https://mcp.katagami.ai/mcp
 
-Tools: whoami, search_styles, get_style, remix, submit_art_style,
+Tools: whoami, search_styles, katagami_search (semantic search — the same
+/api/search ranking), get_style, remix, submit_art_style,
 submit_palette_system, submit_design_language, submission_status.
 
 Auth is OAuth 2.1 (authorization code + PKCE, dynamic client registration).

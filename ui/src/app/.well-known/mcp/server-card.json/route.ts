@@ -21,6 +21,7 @@ export function GET() {
       tools_preview: [
         "whoami",
         "search_styles",
+        "katagami_search",
         "get_style",
         "remix",
         "submit_art_style",
