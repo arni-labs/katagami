@@ -55,10 +55,29 @@ tighter for palettes:
 - **Palette Systems** (268): tightest — 16 pairs ≥ 0.90, 72 ≥ 0.85, and clear
   duplicate families (e.g. two "Soft Memory Future" at 0.961).
 
-## Stage 2 — visual embeddings (art styles)
+## Stage 2 — visual embeddings (art styles) — done
 
-Text vectors miss visually-identical-but-differently-worded styles. Stage 2 embeds
-the art styles' reference/proof images with a local open CLIP/SigLIP model
-(no paid key), re-runs the dedup on image vectors, and shows the delta. Images are
-served at `https://katagami.ai/api/file/<fileId>` (proof/reference ids are on each
-ArtStyle). See `embed_images.py` for status.
+Text vectors miss visually-identical-but-differently-worded styles, so Stage 2
+embeds each art style's rendered thumbnail with a **local** open model
+(`google/siglip2-base-patch16-224`, no paid key) and re-runs the dedup on the
+image vectors.
+
+```bash
+python3 embed_images.py         # -> data/image_vectors.json (downloads + embeds 156 thumbs)
+python3 build_visual_dedup.py   # -> out/visual_dedup.html + report + image atlas json
+python3 build_atlas.py          # now also emits the "Art Styles (visual)" lane
+python3 build_html.py
+```
+
+Result: the image vectors surface **far more** visual similarity than text —
+**36 art-style pairs ≥ 0.85 (vs 2 for text)**, 5 ≥ 0.90, and **34 look-alike pairs
+the text vectors miss** (image ≥ 0.85 while text < 0.75). Examples: *Marl ↔ Graticule*
+(0.924 image / 0.556 text), *Margin Press ↔ Quantize* (0.868 / 0.396).
+
+- `out/visual_dedup.html` — the look-alike pairs shown side by side (embedded
+  thumbnails), each labelled with image cosine, text cosine, and the Δ.
+- The main atlas gains an **Art Styles (visual)** tab laid out by the image vectors.
+- Future upgrade: a paid multimodal embedder (Voyage / Cohere) for higher fidelity.
+
+Image vectors are cached with their own model tag in `data/image_vectors.json`;
+images are served at `https://katagami.ai/api/file/<fileId>`.

@@ -30,6 +30,13 @@ LANE_LABEL = {
     "language": "Design Languages",
     "palette": "Palette Systems",
     "artstyle": "Art Styles",
+    "artstyle_visual": "Art Styles (visual)",
+}
+SIM_KIND = {
+    "language": "description text (MiniLM)",
+    "palette": "description text (MiniLM)",
+    "artstyle": "description text (MiniLM)",
+    "artstyle_visual": "rendered image (SigLIP)",
 }
 # nesting cut levels (max clusters) as a fraction of lane size, clamped.
 LEVELS = ["broad", "mid", "fine"]
@@ -245,11 +252,33 @@ def main():
     for r in records_all:
         by_lane[r["lane"]].append(r)
 
-    payload = {"lanes": {}, "lane_order": ["artstyle", "language", "palette"]}
-    for lane, recs in by_lane.items():
+    # optional 4th lane: art styles laid out by their SigLIP *image* vectors, so
+    # the atlas carries both the text map and the visual map for art styles.
+    img_path = DATA / "image_vectors.json"
+    if img_path.exists():
+        img_by_id = {r["id"]: r["vec"] for r in json.loads(img_path.read_text())}
+        visual_recs = []
+        for r in by_lane["artstyle"]:
+            v = img_by_id.get(r["id"])
+            if v and len(v) > 2:
+                vr = dict(r)
+                vr["vec"] = v
+                vr["lane"] = "artstyle_visual"
+                visual_recs.append(vr)
+        if visual_recs:
+            by_lane["artstyle_visual"] = visual_recs
+
+    lane_order = ["artstyle", "language", "palette"]
+    if "artstyle_visual" in by_lane:
+        lane_order.insert(1, "artstyle_visual")
+
+    payload = {"lanes": {}, "lane_order": lane_order}
+    for lane in lane_order:
+        recs = by_lane[lane]
         print(f"[{lane}] n={len(recs)} ...")
         payload["lanes"][lane] = {
             "label": LANE_LABEL[lane],
+            "sim_kind": SIM_KIND[lane],
             **process_lane(recs),
         }
         lp = payload["lanes"][lane]

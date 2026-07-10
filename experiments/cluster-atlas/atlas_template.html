@@ -213,7 +213,7 @@
 
         <section class="card">
           <h2>Near-duplicates</h2>
-          <p class="lead">Cosine similarity of description embeddings. Drag the threshold; matching pairs light up on the map.</p>
+          <p class="lead" id="dup-lead">Cosine similarity. Drag the threshold; matching pairs light up on the map.</p>
           <div class="dup-toggle">
             <label for="dup-switch" style="font-size:14px;font-weight:600;">Highlight on map</label>
             <span class="switch"><input type="checkbox" id="dup-switch" /><span class="track"></span><span class="knob"></span></span>
@@ -565,6 +565,8 @@ function renderLegend(){
 function renderDup(){
   const L = lane();
   const t = state.dupT;
+  const lead = document.getElementById('dup-lead');
+  if (lead) lead.textContent = `Cosine of ${L.sim_kind||'the vectors'}. Drag the threshold; matching pairs light up on the map.`;
   let count=0; for(const p of L.pairs){ if(p.sim>=t) count++; else break; }
   document.getElementById('dup-num').textContent = count;
   document.getElementById('dup-val').textContent = t.toFixed(3).replace(/0$/,'');

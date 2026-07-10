@@ -41,6 +41,48 @@ Similarity = cosine of the 384-d text embedding of each entity's description (na
 | 0.808 | Loam | Terrableed |
 | 0.808 | Suiboku | Sumi |
 
+## Art Styles (visual)  (156 published)
+
+- pairs with cosine ≥ 0.95: **1**
+- pairs with cosine ≥ 0.92: **3**
+- pairs with cosine ≥ 0.9: **5**
+- pairs with cosine ≥ 0.85: **36**
+- pairs with cosine ≥ 0.8: **158**
+
+### Exact same-name duplicates — 4 names, 6 redundant entities
+
+- **Overprint** ×3
+- **Misprint** ×3
+- **Sumi** ×2
+- **Kasumi** ×2
+
+### Near-duplicate clusters (cosine ≥ 0.9) — 4 groups
+
+- **3** items: Graphite Plate · Marginalia · Silverpoint
+- **2** items: Toner Press · Réglure
+- **2** items: Kasanezuri · Knockout
+- **2** items: Marl · Graticule
+
+### Strongest pairs (top 15 by cosine, any threshold)
+
+| cosine | A | B |
+|---|---|---|
+| 0.952 | Graphite Plate | Silverpoint |
+| 0.924 | Marl | Graticule |
+| 0.921 | Marginalia | Silverpoint |
+| 0.913 | Kasanezuri | Knockout |
+| 0.904 | Toner Press | Réglure |
+| 0.897 | Graphite Plate | Veil Optics |
+| 0.897 | Margin Press | Lavis |
+| 0.889 | Graphite Plate | Marginalia |
+| 0.885 | Suiboku | Feibai Brushwork |
+| 0.884 | Collodion | Platine |
+| 0.884 | Toner Press | Silverpoint |
+| 0.880 | Plakat | Werkblock |
+| 0.880 | Screentone Press | Splash |
+| 0.873 | Graphite Plate | Toner Press |
+| 0.872 | Plakat | Hanga Cut |
+
 ## Design Languages  (219 published)
 
 - pairs with cosine ≥ 0.95: **0**
