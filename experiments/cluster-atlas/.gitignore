@@ -1,0 +1,5 @@
+# regenerable caches / large intermediates (rebuild with the scripts)
+data/
+out/atlas_data.json
+out/atlas.artifact.html
+image_data/
