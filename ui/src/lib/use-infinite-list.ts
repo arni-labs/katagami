@@ -23,6 +23,10 @@ export function useInfiniteList<T>(
   initialItems: T[],
   initialCursor: string | null,
   loadPage: LoadPage<T>,
+  // When false, this list is dormant: it holds its state but issues no reads
+  // (search-change fetch, load-more, sentinel). Used so meaning-mode search
+  // doesn't fire a keyword OData read per keystroke it will never render.
+  enabled = true,
 ) {
   const [items, setItems] = useState<T[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -59,6 +63,7 @@ export function useInfiniteList<T>(
       skipFirst.current = false; // the SSR first page already covers the empty query
       return;
     }
+    if (!enabled) return; // dormant: another mode owns the query
     const mine = ++seq.current;
     setLoading(true);
     const t = setTimeout(async () => {
@@ -69,10 +74,10 @@ export function useInfiniteList<T>(
       setLoading(false);
     }, 300);
     return () => clearTimeout(t);
-  }, [search, facets, loadPage, paramsFor]);
+  }, [search, facets, loadPage, paramsFor, enabled]);
 
   const loadMore = useCallback(async () => {
-    if (loading || cursor === null) return;
+    if (!enabled || loading || cursor === null) return;
     const mine = seq.current;
     setLoading(true);
     try {
@@ -83,12 +88,12 @@ export function useInfiniteList<T>(
     } finally {
       if (mine === seq.current) setLoading(false);
     }
-  }, [loading, cursor, loadPage, paramsFor]);
+  }, [enabled, loading, cursor, loadPage, paramsFor]);
 
   // Infinite scroll: fetch the next page when the sentinel nears the viewport.
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el || cursor === null) return;
+    if (!enabled || !el || cursor === null) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) loadMore();
@@ -97,7 +102,7 @@ export function useInfiniteList<T>(
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore, cursor]);
+  }, [loadMore, cursor, enabled]);
 
   return { items, search, setSearch, facets, setFacet, loading, cursor, sentinelRef };
 }

@@ -532,9 +532,12 @@ export async function nearestDesignLanguages({
   try {
     const resp = await odata<ODataResponse<Record<string, unknown>>>(path);
     return resp.value.map(normalizeDesignLanguageRow);
-  } catch {
+  } catch (err) {
     // A 400 ("reference has no usable vector" — not yet embedded), an unavailable
-    // function, or a transport error all mean "fall back", never "throw".
+    // function, or a transport error all mean "fall back", never "throw". Log it,
+    // though — a silent null makes a real kernel 500 indistinguishable from the
+    // benign "no vector yet" case in prod.
+    console.error(`nearestDesignLanguages(to=${to}) failed:`, err);
     return null;
   }
 }
@@ -591,7 +594,10 @@ export async function nearestByVector({
           : 0,
       raw,
     }));
-  } catch {
+  } catch (err) {
+    // Fall back (null), never throw — but log first: a silent null turns a kernel
+    // 500 / transport error into an indistinguishable empty result in prod.
+    console.error(`nearestByVector(${set}) failed:`, err);
     return null;
   }
 }

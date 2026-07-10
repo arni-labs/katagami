@@ -266,6 +266,7 @@ export function InfiniteLanguages({
   initialCursor: string | null;
   canDelete?: boolean;
 }) {
+  const [mode, setMode] = useState<SearchMode>("keyword");
   const {
     items,
     search,
@@ -279,8 +280,8 @@ export function InfiniteLanguages({
     initialItems,
     initialCursor,
     loadLanguagePage,
+    mode === "keyword",
   );
-  const [mode, setMode] = useState<SearchMode>("keyword");
   const sem = useSemanticSearch<DesignLanguage>(
     searchLanguagesByMeaning,
     search,
@@ -383,9 +384,14 @@ export function InfinitePalettes({
   initialCursor: string | null;
   canArchive?: boolean;
 }) {
-  const { items, search, setSearch, loading, cursor, sentinelRef } =
-    useInfiniteList<PaletteItem>(initialItems, initialCursor, loadPalettePage);
   const [mode, setMode] = useState<SearchMode>("keyword");
+  const { items, search, setSearch, loading, cursor, sentinelRef } =
+    useInfiniteList<PaletteItem>(
+      initialItems,
+      initialCursor,
+      loadPalettePage,
+      mode === "keyword",
+    );
   const sem = useSemanticSearch<PaletteItem>(
     searchPalettesByMeaning,
     search,
@@ -435,9 +441,14 @@ export function InfiniteArtStyles({
   initialCursor: string | null;
   canArchive?: boolean;
 }) {
-  const { items, search, setSearch, loading, cursor, sentinelRef } =
-    useInfiniteList<ArtStyleItem>(initialItems, initialCursor, loadArtStylePage);
   const [mode, setMode] = useState<SearchMode>("keyword");
+  const { items, search, setSearch, loading, cursor, sentinelRef } =
+    useInfiniteList<ArtStyleItem>(
+      initialItems,
+      initialCursor,
+      loadArtStylePage,
+      mode === "keyword",
+    );
   const sem = useSemanticSearch<ArtStyleItem>(
     searchArtStylesByMeaning,
     search,

@@ -189,15 +189,31 @@ async function getExtractor(): Promise<FeatureExtractor> {
   return extractorPromise;
 }
 
+// Bounded LRU. Before free-text search this cache only saw a fixed set of
+// canonical documents (one per entity), so it was naturally bounded. The public
+// /api/search surface now feeds it ARBITRARY query text, so an unbounded Map
+// would grow process memory without limit on a long-lived server. Cap it and
+// evict least-recently-used; the ceiling is generous (repeat queries stay warm)
+// but finite. Map iteration order is insertion order, so re-inserting on hit
+// marks an entry most-recently-used and `keys().next()` is the oldest.
+const VECTOR_CACHE_MAX = 2000;
 const vectorCache = new Map<string, number[]>();
 
-/** Embed one document. Cached per process by document text. */
+/** Embed one document. Cached per process by document text (bounded LRU). */
 export async function embedDocument(doc: string): Promise<number[]> {
   const cached = vectorCache.get(doc);
-  if (cached) return cached;
+  if (cached) {
+    vectorCache.delete(doc);
+    vectorCache.set(doc, cached);
+    return cached;
+  }
   const extractor = await getExtractor();
   const output = await extractor(doc, { pooling: "mean", normalize: true });
   const vector = Array.from(output.data).map((v) => Number(v.toFixed(6)));
   vectorCache.set(doc, vector);
+  if (vectorCache.size > VECTOR_CACHE_MAX) {
+    const oldest = vectorCache.keys().next().value;
+    if (oldest !== undefined) vectorCache.delete(oldest);
+  }
   return vector;
 }
