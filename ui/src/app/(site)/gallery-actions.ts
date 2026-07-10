@@ -7,11 +7,19 @@ import {
   type DesignLanguage,
   type PageResult,
 } from "@/lib/odata";
+import {
+  searchArtStyleCards,
+  searchLanguageCards,
+  searchPaletteCards,
+} from "@/lib/search";
 import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
 
 const LIMIT = 48;
+// Semantic search returns one ranked, un-paginated set — a generous first-page
+// worth of the most relevant matches (the kernel clamps to its own budget).
+const MEANING_LIMIT = 48;
 
 // Each loads ONE bounded keyset page (cursor) with optional server-side search —
 // called by the infinite-scroll galleries as the user scrolls or searches. None
@@ -54,4 +62,31 @@ export async function loadArtStylePage(input: {
     limit: LIMIT,
   });
   return { items: page.items.map(toArtStyleItem), nextCursor: page.nextCursor };
+}
+
+// ── Search by meaning (ARN-244) ──────────────────────────────────────────────
+// The "meaning" mode of the gallery search box: the typed phrase is embedded and
+// the lane's stored taste vectors are ranked against it in the kernel. Same card
+// items as keyword browse, so the two modes render identically — only the order
+// (and what counts as a match) differs.
+
+export async function searchLanguagesByMeaning(input: {
+  query: string;
+  k?: number;
+}): Promise<DesignLanguage[]> {
+  return searchLanguageCards(input.query, input.k ?? MEANING_LIMIT);
+}
+
+export async function searchPalettesByMeaning(input: {
+  query: string;
+  k?: number;
+}): Promise<PaletteItem[]> {
+  return searchPaletteCards(input.query, input.k ?? MEANING_LIMIT);
+}
+
+export async function searchArtStylesByMeaning(input: {
+  query: string;
+  k?: number;
+}): Promise<ArtStyleItem[]> {
+  return searchArtStyleCards(input.query, input.k ?? MEANING_LIMIT);
 }

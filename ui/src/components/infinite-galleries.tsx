@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { useState } from "react";
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useInfiniteList } from "@/lib/use-infinite-list";
+import { useSemanticSearch } from "@/lib/use-semantic-search";
 import {
   loadArtStylePage,
   loadLanguagePage,
   loadPalettePage,
+  searchArtStylesByMeaning,
+  searchLanguagesByMeaning,
+  searchPalettesByMeaning,
 } from "@/app/(site)/gallery-actions";
 import { LanguageCard } from "@/components/language-card";
 import { PaletteCard, type PaletteItem } from "@/components/palette-card";
@@ -23,10 +28,52 @@ const CARD_CV: CSSProperties = {
 const LANE_GRID =
   "grid grid-cols-2 items-start gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4";
 
+export type SearchMode = "keyword" | "meaning";
+
+/** keyword ↔ meaning switch. keyword matches names/tags (substring); meaning
+ *  ranks by the taste vectors (ARN-244). No borders — active state is a filled
+ *  chip, matching the hue/family controls in this file. */
+function SearchModeToggle({
+  mode,
+  setMode,
+}: {
+  mode: SearchMode;
+  setMode: (m: SearchMode) => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-1"
+      role="group"
+      aria-label="Search mode"
+    >
+      {(["keyword", "meaning"] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => setMode(m)}
+          data-on={mode === m}
+          aria-pressed={mode === m}
+          title={
+            m === "meaning"
+              ? "Rank by meaning — describe the vibe, not the name"
+              : "Match names and tags"
+          }
+          className="rounded-none px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground data-[on=true]:bg-foreground data-[on=true]:text-background"
+        >
+          {m}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function InfiniteShell({
   search,
   setSearch,
   placeholder,
+  meaningPlaceholder,
+  mode,
+  setMode,
   toolbar,
   loading,
   exhausted,
@@ -37,6 +84,10 @@ function InfiniteShell({
   search: string;
   setSearch: (v: string) => void;
   placeholder: string;
+  /** Placeholder shown in meaning mode; falls back to `placeholder`. */
+  meaningPlaceholder?: string;
+  mode: SearchMode;
+  setMode: (m: SearchMode) => void;
   toolbar?: ReactNode;
   loading: boolean;
   exhausted: boolean;
@@ -44,26 +95,41 @@ function InfiniteShell({
   sentinelRef: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 }) {
+  const meaning = mode === "meaning";
+  const field = meaning ? (meaningPlaceholder ?? placeholder) : placeholder;
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={placeholder}
-            aria-label={placeholder}
-            className={`${KX_FIELD} h-9 pl-7`}
-          />
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative w-full max-w-sm sm:w-72">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={field}
+              aria-label={field}
+              className={`${KX_FIELD} h-9 pl-7`}
+            />
+          </div>
+          <SearchModeToggle mode={mode} setMode={setMode} />
         </div>
         {toolbar}
       </div>
 
+      {meaning && search.trim() !== "" && !empty ? (
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          ranked by meaning
+        </p>
+      ) : null}
+
       {empty && !loading ? (
         <div className="sticker-card mx-auto max-w-md p-8 text-center text-sm text-muted-foreground">
           Nothing found.
-          <div className="mt-1 font-mono text-[11px]">try a different search</div>
+          <div className="mt-1 font-mono text-[11px]">
+            {meaning
+              ? "try describing the vibe differently"
+              : "try a different search"}
+          </div>
         </div>
       ) : (
         children
@@ -72,7 +138,7 @@ function InfiniteShell({
       {!exhausted ? <div ref={sentinelRef} aria-hidden className="h-8" /> : null}
       {loading ? (
         <div className="py-4 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          loading…
+          {meaning ? "ranking…" : "loading…"}
         </div>
       ) : null}
     </div>
@@ -214,31 +280,50 @@ export function InfiniteLanguages({
     initialCursor,
     loadLanguagePage,
   );
-  // Curator's picks lead only the unfiltered browse view.
-  const filtering = search.trim() !== "" || !!facets.hue || !!facets.family;
-  const browsing = !filtering && featured.length > 0;
+  const [mode, setMode] = useState<SearchMode>("keyword");
+  const sem = useSemanticSearch<DesignLanguage>(
+    searchLanguagesByMeaning,
+    search,
+    mode === "meaning",
+  );
+  const querying = search.trim() !== "";
+  const meaningActive = mode === "meaning" && querying;
+  // Curator's picks lead only the unfiltered keyword browse view. Facets and
+  // meaning-ranking don't compose in v1, so meaning mode hides the facet bar.
+  const keywordFiltering = querying || !!facets.hue || !!facets.family;
+  const browsing = !meaningActive && !keywordFiltering && featured.length > 0;
   const pinnedIds = new Set(featured.map((f) => f.entity_id));
-  const gridItems = browsing
+  const keywordGrid = browsing
     ? items.filter((l) => !pinnedIds.has(l.entity_id))
     : items;
+  const gridItems = meaningActive ? sem.results : keywordGrid;
   return (
     <InfiniteShell
       search={search}
       setSearch={setSearch}
       placeholder="Search languages…"
+      meaningPlaceholder="Describe a vibe — “warm editorial serif”"
+      mode={mode}
+      setMode={setMode}
       toolbar={
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <HueBar active={facets.hue} onPick={(h) => setFacet("hue", h)} />
-          <FamilySelect
-            families={families}
-            active={facets.family}
-            onPick={(id) => setFacet("family", id)}
-          />
-        </div>
+        mode === "meaning" ? null : (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <HueBar active={facets.hue} onPick={(h) => setFacet("hue", h)} />
+            <FamilySelect
+              families={families}
+              active={facets.family}
+              onPick={(id) => setFacet("family", id)}
+            />
+          </div>
+        )
       }
-      loading={loading}
-      exhausted={cursor === null}
-      empty={(browsing ? featured.length : 0) + gridItems.length === 0}
+      loading={meaningActive ? sem.loading : loading}
+      exhausted={meaningActive ? true : cursor === null}
+      empty={
+        meaningActive
+          ? sem.results.length === 0
+          : (browsing ? featured.length : 0) + keywordGrid.length === 0
+      }
       sentinelRef={sentinelRef}
     >
       {browsing ? (
@@ -300,17 +385,35 @@ export function InfinitePalettes({
 }) {
   const { items, search, setSearch, loading, cursor, sentinelRef } =
     useInfiniteList<PaletteItem>(initialItems, initialCursor, loadPalettePage);
-  const browsing = search.trim() === "" && featured.length > 0;
+  const [mode, setMode] = useState<SearchMode>("keyword");
+  const sem = useSemanticSearch<PaletteItem>(
+    searchPalettesByMeaning,
+    search,
+    mode === "meaning",
+  );
+  const querying = search.trim() !== "";
+  const meaningActive = mode === "meaning" && querying;
+  const browsing = !meaningActive && !querying && featured.length > 0;
   const pinnedIds = new Set(featured.map((f) => f.id));
-  const gridItems = browsing ? items.filter((p) => !pinnedIds.has(p.id)) : items;
+  const keywordGrid = browsing
+    ? items.filter((p) => !pinnedIds.has(p.id))
+    : items;
+  const gridItems = meaningActive ? sem.results : keywordGrid;
   return (
     <InfiniteShell
       search={search}
       setSearch={setSearch}
       placeholder="Search palettes by name or tag…"
-      loading={loading}
-      exhausted={cursor === null}
-      empty={(browsing ? featured.length : 0) + gridItems.length === 0}
+      meaningPlaceholder="Describe a mood — “warm earthy retro”"
+      mode={mode}
+      setMode={setMode}
+      loading={meaningActive ? sem.loading : loading}
+      exhausted={meaningActive ? true : cursor === null}
+      empty={
+        meaningActive
+          ? sem.results.length === 0
+          : (browsing ? featured.length : 0) + keywordGrid.length === 0
+      }
       sentinelRef={sentinelRef}
     >
       {browsing ? (
@@ -334,18 +437,29 @@ export function InfiniteArtStyles({
 }) {
   const { items, search, setSearch, loading, cursor, sentinelRef } =
     useInfiniteList<ArtStyleItem>(initialItems, initialCursor, loadArtStylePage);
+  const [mode, setMode] = useState<SearchMode>("keyword");
+  const sem = useSemanticSearch<ArtStyleItem>(
+    searchArtStylesByMeaning,
+    search,
+    mode === "meaning",
+  );
+  const meaningActive = mode === "meaning" && search.trim() !== "";
+  const gridItems = meaningActive ? sem.results : items;
   return (
     <InfiniteShell
       search={search}
       setSearch={setSearch}
       placeholder="Search art styles by name or tag…"
-      loading={loading}
-      exhausted={cursor === null}
-      empty={items.length === 0}
+      meaningPlaceholder="Describe a look — “hand-drawn watercolor”"
+      mode={mode}
+      setMode={setMode}
+      loading={meaningActive ? sem.loading : loading}
+      exhausted={meaningActive ? true : cursor === null}
+      empty={meaningActive ? sem.results.length === 0 : items.length === 0}
       sentinelRef={sentinelRef}
     >
       <div className={LANE_GRID}>
-        {items.map((a) => (
+        {gridItems.map((a) => (
           <Link
             key={a.id}
             href={`/art-styles/${a.id}`}
