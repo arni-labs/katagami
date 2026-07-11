@@ -246,17 +246,35 @@ def process_lane(records):
     }
 
 
+def load_image_vectors():
+    """Return (id -> vec, human label) for the art-style visual lane.
+
+    Prefers the multi-proof-averaged SigLIP vectors (dict keyed by id -> {name, vec})
+    exported by the task-#18 experiment; falls back to the single-thumbnail vectors.
+    """
+    multi = DATA / "style_vectors_siglip2_base_224_multi.json"
+    if multi.exists():
+        d = json.loads(multi.read_text())
+        return {k: v["vec"] for k, v in d.items()}, "rendered image (multi-proof SigLIP2)"
+    single = DATA / "image_vectors.json"
+    if single.exists():
+        return ({r["id"]: r["vec"] for r in json.loads(single.read_text())},
+                "rendered image (SigLIP, single thumbnail)")
+    return None, None
+
+
 def main():
     records_all = json.loads((DATA / "entities.json").read_text())
     by_lane = {"language": [], "palette": [], "artstyle": []}
     for r in records_all:
         by_lane[r["lane"]].append(r)
 
-    # optional 4th lane: art styles laid out by their SigLIP *image* vectors, so
-    # the atlas carries both the text map and the visual map for art styles.
-    img_path = DATA / "image_vectors.json"
-    if img_path.exists():
-        img_by_id = {r["id"]: r["vec"] for r in json.loads(img_path.read_text())}
+    # optional 4th lane: art styles laid out by their *image* vectors, so the atlas
+    # carries both the text map and the visual map. Prefer the multi-proof-averaged
+    # SigLIP vectors (task #18 winning config: 2/6 -> 5/6 in-group NN on the hard
+    # benchmark) and fall back to the single-thumbnail vectors.
+    img_by_id, visual_kind = load_image_vectors()
+    if img_by_id:
         visual_recs = []
         for r in by_lane["artstyle"]:
             v = img_by_id.get(r["id"])
@@ -267,6 +285,7 @@ def main():
                 visual_recs.append(vr)
         if visual_recs:
             by_lane["artstyle_visual"] = visual_recs
+            SIM_KIND["artstyle_visual"] = visual_kind
 
     lane_order = ["artstyle", "language", "palette"]
     if "artstyle_visual" in by_lane:

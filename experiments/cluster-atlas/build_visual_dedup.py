@@ -181,7 +181,7 @@ def write_html(pairs, missed, counts, ids, names, model, n):
   .card{{background:var(--panel);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;padding:12px}}
   .imgs{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
   figure{{margin:0}}
-  figure img{{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;display:block;background:var(--faint)}}
+  figure img{{width:100%;height:auto;border-radius:14px;display:block;background:var(--faint)}}
   figcaption{{font-size:13px;font-weight:600;letter-spacing:-.01em;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
   .metrics{{display:flex;gap:8px;padding:12px 4px 4px}}
   .m{{flex:1;text-align:center;background:var(--faint);border-radius:12px;padding:8px 4px}}
