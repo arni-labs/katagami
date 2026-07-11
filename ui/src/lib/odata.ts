@@ -297,7 +297,7 @@ const ODATA_ENVELOPE_KEYS = new Set([
 // of the nested {entity_id, status, fields:{...}, booleans:{...}, counters:{...}}
 // shape the rest of this codebase reads. Normalize so callers see the
 // nested shape regardless of how OData chose to project.
-function normalizeDesignLanguageRow(
+export function normalizeDesignLanguageRow(
   raw: Record<string, unknown>,
 ): DesignLanguage {
   if (raw && typeof raw.fields === "object" && raw.fields !== null) {
@@ -532,9 +532,72 @@ export async function nearestDesignLanguages({
   try {
     const resp = await odata<ODataResponse<Record<string, unknown>>>(path);
     return resp.value.map(normalizeDesignLanguageRow);
-  } catch {
+  } catch (err) {
     // A 400 ("reference has no usable vector" — not yet embedded), an unavailable
-    // function, or a transport error all mean "fall back", never "throw".
+    // function, or a transport error all mean "fall back", never "throw". Log it,
+    // though — a silent null makes a real kernel 500 indistinguishable from the
+    // benign "no vector yet" case in prod.
+    console.error(`nearestDesignLanguages(to=${to}) failed:`, err);
+    return null;
+  }
+}
+
+/** One ranked row from a vector search: the materialized entity row (unnormalized —
+ *  callers pick the right normalizer for the set) and its kernel similarity score. */
+export interface VectorHit {
+  score: number;
+  raw: Record<string, unknown>;
+}
+
+/** Rank any set's declared `taste` vector nearest to a RAW query vector via the
+ *  `vector=` form of `Temper.Nearest` — the free-text search path (ARN-244).
+ *
+ *  Where `nearestDesignLanguages` seeds the ranking from another entity's stored
+ *  vector (`to=`), this seeds it from a query embedding the caller supplies
+ *  (MiniLM 384-float) plus its model tag; the kernel ranks the set's stored taste
+ *  vectors in that same model partition, newest-first excluded is N/A here (no
+ *  reference to exclude). Rows come back nearest-first, each carrying
+ *  `@temper.score`.
+ *
+ *  Returns `null` when the path cannot answer — the function is unavailable, the
+ *  model partition is empty, the vector is the wrong width, or the read failed —
+ *  so the search surface can degrade to keyword search instead of erroring. This
+ *  read is deliberately uncached: the query vector makes every call unique, so the
+ *  read cache would only fill with single-use entries. */
+export async function nearestByVector({
+  set,
+  vector,
+  model,
+  k,
+  filter = "Status eq 'Published'",
+}: {
+  set: string;
+  vector: number[];
+  model: string;
+  k: number;
+  filter?: string;
+}): Promise<VectorHit[] | null> {
+  const args = [
+    `decl=${odataFunctionLiteral("taste")}`,
+    `vector=${odataFunctionLiteral(JSON.stringify(vector))}`,
+    `model=${odataFunctionLiteral(model)}`,
+    `k=${Math.max(1, Math.floor(k))}`,
+  ];
+  if (filter) args.push(`filter=${odataFunctionLiteral(filter)}`);
+  const path = `${set}/Temper.Nearest(${args.join(",")})`;
+  try {
+    const resp = await odataFetch<ODataResponse<Record<string, unknown>>>(path);
+    return resp.value.map((raw) => ({
+      score:
+        typeof raw["@temper.score"] === "number"
+          ? (raw["@temper.score"] as number)
+          : 0,
+      raw,
+    }));
+  } catch (err) {
+    // Fall back (null), never throw — but log first: a silent null turns a kernel
+    // 500 / transport error into an indistinguishable empty result in prod.
+    console.error(`nearestByVector(${set}) failed:`, err);
     return null;
   }
 }
@@ -919,7 +982,7 @@ function normalizeLaneFields(
   return fields;
 }
 
-function normalizeLaneRow(raw: Record<string, unknown>, set: string): LaneEntity {
+export function normalizeLaneRow(raw: Record<string, unknown>, set: string): LaneEntity {
   if (raw && typeof raw.fields === "object" && raw.fields !== null) {
     const row = raw as unknown as LaneEntity;
     const f = normalizeLaneFields(row.fields as Record<string, unknown>);

@@ -30,6 +30,33 @@ const KINDS = {
 type Kind = keyof typeof KINDS;
 const kindSchema = z.enum(["language", "palette", "art_style"]);
 
+// The public semantic-search surface (ARN-244) lives in the Next app; the MCP
+// tool is a thin wrapper over it, so ranking has exactly one implementation.
+// `search` uses the design-commons lane names (language | palette | art-style),
+// which differ from the `kind` enum's `art_style`.
+const searchLaneSchema = z.enum(["language", "palette", "art-style"]);
+
+async function searchCommons(params: {
+  query: string;
+  lane?: string;
+  k?: number;
+  detailed?: boolean;
+}): Promise<unknown> {
+  const url = new URL(`${config.galleryUrl}/api/search`);
+  url.searchParams.set("q", params.query);
+  if (params.lane) url.searchParams.set("lane", params.lane);
+  if (params.k) url.searchParams.set("k", String(params.k));
+  url.searchParams.set("format", params.detailed ? "detailed" : "concise");
+  const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  if (!res.ok) {
+    throw new TemperError(
+      `search failed (${res.status}): ${(await res.text()).slice(0, 300)}`,
+      res.status,
+    );
+  }
+  return res.json();
+}
+
 function galleryUrl(kind: Kind, id: string): string {
   return `${config.galleryUrl}/${KINDS[kind].path}/${id}`;
 }
@@ -160,6 +187,47 @@ export function buildServer(auth: AuthInfo): McpServer {
         )
         .slice(0, limit ?? 20);
       return ok({ count: hits.length, results: hits });
+    },
+  );
+
+  server.registerTool(
+    "katagami_search",
+    {
+      title: "Search the commons by meaning",
+      description:
+        "Free-text semantic search over published design languages, palette systems, and art styles. Describe what you want in a phrase ('warm editorial serif', 'playful geometric', 'hand-drawn watercolor') and get the closest matches ranked by meaning — not substring. Returns a few high-signal results, each with a stable id, a similarity score, the gallery URL, and (for languages) the DESIGN.md URL to pull the full spec with get_style or a fetch. Omit 'lane' to search across all three lanes at once.",
+      inputSchema: {
+        query: z.string().min(1).describe("What you're looking for, in plain words"),
+        lane: searchLaneSchema
+          .optional()
+          .describe("Restrict to one lane; omit to search all lanes"),
+        k: z
+          .number()
+          .int()
+          .min(1)
+          .max(25)
+          .optional()
+          .describe("How many results (default 8)"),
+        response_format: z
+          .enum(["concise", "detailed"])
+          .optional()
+          .describe(
+            "concise (default): id, name, score, links. detailed: adds tags, medium, and a one-line summary.",
+          ),
+      },
+    },
+    async ({ query, lane, k, response_format }) => {
+      try {
+        const data = await searchCommons({
+          query,
+          lane,
+          k,
+          detailed: response_format === "detailed",
+        });
+        return ok(data);
+      } catch (err) {
+        return fail(err instanceof Error ? err.message : "search failed");
+      }
     },
   );
 
