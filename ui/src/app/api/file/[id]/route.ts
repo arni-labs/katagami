@@ -197,6 +197,31 @@ export async function GET(
   const body = isImage
     ? decodeBase64ImageValue(upstreamBody, contentType)
     : upstreamBody;
+
+  // Incident class (2026-07-17): three times today `/api/file/<idA>` transiently
+  // served id B's bytes, each self-healing on a cache-busted refetch. This route
+  // keeps NO app-level cache (the upstream fetch above is `no-store`), so the
+  // wrong bytes originate either upstream — `/tdata/Files('id')/$value`
+  // (openpaw/temper) returning the wrong file under heavy concurrent load — or in
+  // the Vercel CDN, and then get held for the short HTML cache window below. The
+  // root cause is NOT in this route, so we don't "fix" it here; we (1) shrink the
+  // wrongness window by dropping stale-while-revalidate for mutable HTML, and (2)
+  // log a cheap integrity fingerprint so any recurrence is traceable in Vercel
+  // logs — grep `[file-proxy]` and match the served title against the requested
+  // id. Do NOT add an app cache here to "help"; that would only lengthen the
+  // window an anomaly persists.
+  if (!isImage && contentType.toLowerCase().startsWith("text/html")) {
+    const head = new TextDecoder("utf-8", { fatal: false }).decode(
+      new Uint8Array(body).subarray(0, 4096),
+    );
+    const titleMatch = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch) {
+      const title = titleMatch[1].trim();
+      console.log(
+        `[file-proxy] id=${id} titleLen=${title.length} byteLength=${body.byteLength}`,
+      );
+    }
+  }
   // Images are content-addressed and immutable, safe to cache for a day. HTML
   // compositions (landing/embodiment/dashboard) are MUTABLE — they're re-PUT in
   // place during curation — so a 24h CDN cache makes every fix invisible for a
@@ -204,9 +229,16 @@ export async function GET(
   const browserCache = isImage
     ? ASSET_BROWSER_CACHE_CONTROL
     : "public, max-age=0, must-revalidate";
+  // For mutable HTML, drop stale-while-revalidate: `stale-while-revalidate=60`
+  // means the CDN may keep serving an already-cached (possibly wrong-bytes)
+  // response for up to 60s past its 30s freshness while it revalidates in the
+  // background — up to a 90s window in which a transient cross-id serve stays
+  // visible. `must-revalidate` forces a fresh upstream check the moment the 30s
+  // lapses, so the wrongness window is at most ~30s and never extended by stale
+  // serving. Images are immutable/content-addressed, so their long SWR stays.
   const cdnCache = isImage
     ? ASSET_CDN_CACHE_CONTROL
-    : "public, s-maxage=30, stale-while-revalidate=60";
+    : "public, s-maxage=30, must-revalidate";
   const responseHeaders = new Headers({
     "Content-Type": contentType,
     // These are design artifacts meant to render in-browser / inside iframes —
