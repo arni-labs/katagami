@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/user-auth";
 import { grantsForMember } from "@/lib/oauth-as";
-import { revokeAgentGrant } from "./actions";
+import { revokeAgentGrant, signOutEverywhere } from "./actions";
 import HeadlessMint from "./HeadlessMint";
 
 // Agents & access — the human agency surface for identity (ARN-151): every
@@ -91,6 +91,25 @@ export default async function AgentsPage() {
           </ul>
         </div>
       )}
+
+      <div className="mt-16 pt-8">
+        <h2 className="text-xl font-semibold tracking-tight mb-2">
+          Sign out everywhere
+        </h2>
+        <p className="text-[15px] text-neutral-500 mb-5 max-w-xl">
+          Ends every active session — yours and every agent acting for you — on
+          all devices. New sign-ins are unaffected. Takes effect within a
+          minute.
+        </p>
+        <form action={signOutEverywhere}>
+          <button
+            type="submit"
+            className="rounded-full bg-black text-white text-[15px] font-medium px-5 py-2.5 hover:bg-neutral-800 transition-colors"
+          >
+            Sign out everywhere
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
