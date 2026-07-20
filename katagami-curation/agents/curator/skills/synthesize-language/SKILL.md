@@ -44,6 +44,10 @@ Accepted TasteRules are the authoritative reusable design tests. The knowledge
 files provide orientation and hard artifact context; do not recreate parallel
 anti-slop checklists from prose.
 
+## Landing = scroll-cinematic film (the Katagami standard)
+
+The landing page is NOT a static hero + sections. Read `agents/curator/skills/immersive-landing/SKILL.md` IN FULL before the landing phase and build to every floor it defines: the seven derivation questions (answers into curator_notes), the cinematic floor (700–1100vh pinned scrubbed film, full-bleed full-screen hero image with display type composed over it, geometry-transforming transitions), the craft floor (pacing enter≤25%/hold≥50%/exit≤25%, filmstrip self-critique at four breakpoints, ≥50fps budget), the scroll-feel floor (continuous perceived motion, persistent progress), in-scene choreography, concept-expressive shaders, twin-plate overlay slots, desktop scale discipline, the image-swap contract (var(--plate-N, url(...)) + plate-manifest), pacing calibration, and PRAISE IS NOT A PATTERN. A landing that fails those floors fails quality review regardless of how good the embodiment is.
+
 ## Execution Discipline
 
 - NEVER create, modify, or delete Taxonomy entities.
