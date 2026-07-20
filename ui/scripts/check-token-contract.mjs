@@ -19,6 +19,10 @@ function read(path) {
 const as = read("src/lib/oauth-as.ts");
 const mcp = read("../mcp/src/temper.ts");
 const agentsActions = read("src/app/(site)/account/agents/actions.ts");
+const humanBearer = read("src/lib/human-bearer.ts");
+const mutations = read("src/lib/odata-mutations.ts");
+const remixActions = read("src/app/remix-actions.ts");
+const remixSpec = read("../katagami-commons/specs/remix.ioa.toml");
 
 // Isolate each mint function so a claim in one is not credited to the other.
 function fnBody(source, name) {
@@ -60,6 +64,17 @@ const required = [
   // Adapter forwards the caller's own token when the rollout flag is on, and
   // drops the self-asserted principal headers on that path.
   ["adapter can forward the caller token", mcp, /forwardCallerToken && id\.token/],
+
+  // Human-write routing: per-user mutations can carry the human's Customer
+  // token (flag-gated), minted from the session — not the shared service key.
+  ["human bearer is flag-gated", humanBearer, /KATAGAMI_HUMAN_TOKENS/],
+  ["human bearer is minted from the session via issueHumanToken", humanBearer, /getUser\(\)[\s\S]*issueHumanToken/],
+  ["mutations accept a per-call bearer override", mutations, /function authHeaders\(bearer/],
+  ["public reads stay on the service key (routing note present)", humanBearer, /does NOT touch public catalog reads/],
+  ["rateRemix carries the human bearer", remixActions, /humanBearer\(\)[\s\S]*dispatchAction\("Remixes", id, "Rate"/],
+
+  // Spec-declared authorization is actually used on a real action (reference).
+  ["remix Rate declares requires = creator", remixSpec, /name = "Rate"[\s\S]*?requires = "creator"/],
 ];
 
 let failed = 0;

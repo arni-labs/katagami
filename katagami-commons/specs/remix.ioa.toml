@@ -91,6 +91,11 @@ kind = "input"
 from = ["Saved"]
 effect = [{ type = "set_bool", var = "has_rating", value = "true" }]
 params = ["rating"]
+# Spec-declared authorization (RFC-0002, ARN-255): only the mix's creator may
+# rate it. The platform compiles this to a Cedar `forbid Rate unless
+# resource.creator_sub == principal.id` overlay at install; enforced once human
+# tokens carry the principal to the kernel. Reference example of `requires`.
+requires = "creator"
 hint = "Record a 1-5 rating for this mix. Feeds the remix-compatibility taste loop via RemixRatedEvent."
 
 [[action]]
