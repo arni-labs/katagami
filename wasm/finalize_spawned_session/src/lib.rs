@@ -148,7 +148,26 @@ fn run_inner(ctx: &Context) -> Result<(), String> {
                     );
                 }
                 Err(error) => {
-                    set_failed_job_callback(ctx, &job_id, &job_type, &error);
+                    let repair_job_id = if error.repairable {
+                        maybe_spawn_repair_job(
+                            ctx,
+                            &api_url,
+                            &headers,
+                            &job_id,
+                            &job_type,
+                            &finalizing_fields,
+                            &error,
+                        )
+                    } else {
+                        None
+                    };
+                    set_failed_job_callback_with_repair(
+                        ctx,
+                        &job_id,
+                        &job_type,
+                        &error,
+                        repair_job_id.as_deref(),
+                    );
                 }
             }
         }
@@ -259,12 +278,170 @@ fn set_terminal_job_callback(ctx: &Context, job_id: &str, action: &str, params: 
 }
 
 fn set_failed_job_callback(ctx: &Context, job_id: &str, job_type: &str, error: &VerificationError) {
-    let payload = error.payload(job_id, job_type);
+    set_failed_job_callback_with_repair(ctx, job_id, job_type, error, None);
+}
+
+fn set_failed_job_callback_with_repair(
+    ctx: &Context,
+    job_id: &str,
+    job_type: &str,
+    error: &VerificationError,
+    repair_job_id: Option<&str>,
+) {
+    let mut payload = error.payload(job_id, job_type);
+    if let Some(repair_id) = repair_job_id {
+        payload["repair_job_id"] = json!(repair_id);
+    }
     ctx.log(
         "warn",
         &format!("finalize_spawned_session: verification failed for job '{job_id}': {payload}"),
     );
     set_success_result("Fail", &json!({"error_message": payload.to_string()}));
+}
+
+/// Maximum number of chained repair sessions per original job before the
+/// failure is left for a human. Counted via `repair_attempt` in the job input.
+const MAX_REPAIR_ATTEMPTS: i64 = 2;
+
+/// Spawn a follow-up repair job for a repairable verification failure so
+/// imperfect runs self-heal instead of dying (ARN-269). The repair job runs
+/// the same synthesize-language skill against the EXISTING language, under the
+/// same model/provider as the failed job (contestant integrity for bake-offs),
+/// and re-enters full finalizer verification via CompleteRegeneration.
+fn maybe_spawn_repair_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    error: &VerificationError,
+) -> Option<String> {
+    if !matches!(
+        job_type,
+        "synthesize" | "regenerate_embodiment" | "evolve_language"
+    ) {
+        return None;
+    }
+
+    let input_raw = string_field_any(fields, "input", "{}");
+    let input_json: serde_json::Value = serde_json::from_str(&input_raw).unwrap_or(json!({}));
+    let attempt = input_json
+        .get("repair_attempt")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    if attempt >= MAX_REPAIR_ATTEMPTS {
+        ctx.log(
+            "warn",
+            &format!(
+                "finalize_spawned_session: repair budget exhausted for job '{job_id}' (attempt {attempt}); leaving failure for a human"
+            ),
+        );
+        return None;
+    }
+
+    let language_id = match error.entity_type {
+        Some("DesignLanguage") => error.entity_id.clone().unwrap_or_default(),
+        _ => design_language_ids_from_job(fields)
+            .into_iter()
+            .next()
+            .unwrap_or_default(),
+    };
+    if language_id.is_empty() {
+        ctx.log(
+            "warn",
+            &format!(
+                "finalize_spawned_session: no language id resolvable for repair of job '{job_id}'; skipping auto-repair"
+            ),
+        );
+        return None;
+    }
+
+    let model = string_field_any(fields, "model", "");
+    let provider = string_field_any(fields, "provider", "");
+    let direction_id = string_field_any(fields, "direction_id", "");
+    let next_attempt = attempt + 1;
+    let payload = error.payload(job_id, job_type);
+
+    let repair_input = json!({
+        "task": format!(
+            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS}: a previous {job_type} session produced DesignLanguage '{language_id}', which FAILED finalizer verification. The exact failure: {payload}. Load the existing language with temper.get, fix ONLY what the error indicates (do not recreate the language; leave already-valid artifacts untouched), re-run any checks the skill requires for that artifact (e.g. the DESIGN.md lint), drive the language back to UnderReview, then complete via the typed completion action referencing this same language."
+        ),
+        "repair_attempt": next_attempt,
+        "repaired_job_id": job_id,
+        "existing_language_id": language_id,
+        "finalizer_error": payload,
+        "original_input": input_raw,
+    });
+
+    // Create → Configure → Submit, mirroring the operator flow.
+    let create = match ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs"),
+        headers,
+        "{}",
+    ) {
+        Ok(resp) if (200..300).contains(&resp.status) => resp,
+        other => {
+            ctx.log(
+                "warn",
+                &format!("finalize_spawned_session: repair job create failed for '{job_id}': {other:?}"),
+            );
+            return None;
+        }
+    };
+    let repair_id = serde_json::from_str::<serde_json::Value>(&create.body)
+        .ok()
+        .and_then(|v| {
+            v.get("entity_id")
+                .and_then(|id| id.as_str())
+                .map(str::to_string)
+        })?;
+
+    let mut configure = json!({
+        "job_type": "regenerate_embodiment",
+        "design_language_id": language_id,
+        "input": repair_input.to_string(),
+    });
+    if !model.is_empty() {
+        configure["model"] = json!(model);
+    }
+    if !provider.is_empty() {
+        configure["provider"] = json!(provider);
+    }
+    if !direction_id.is_empty() {
+        configure["direction_id"] = json!(direction_id);
+    }
+    for (action, body) in [
+        ("Configure", configure.to_string()),
+        ("Submit", "{}".to_string()),
+    ] {
+        match ctx.http_call(
+            "POST",
+            &format!("{api_url}/tdata/CurationJobs('{repair_id}')/KatagamiCuration.{action}"),
+            headers,
+            &body,
+        ) {
+            Ok(resp) if (200..300).contains(&resp.status) => {}
+            other => {
+                ctx.log(
+                    "warn",
+                    &format!(
+                        "finalize_spawned_session: repair job {action} failed for '{repair_id}': {other:?}"
+                    ),
+                );
+                return None;
+            }
+        }
+    }
+
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: spawned repair job '{repair_id}' (attempt {next_attempt}/{MAX_REPAIR_ATTEMPTS}) for failed job '{job_id}' targeting language '{language_id}'"
+        ),
+    );
+    Some(repair_id)
 }
 
 fn verify_typed_completion(
