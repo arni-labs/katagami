@@ -312,6 +312,11 @@ temper.done("{job_type} failed")
             "tools_enabled": tools_enabled,
             "max_turns": max_turns,
             "workspace_id": workspace_id,
+            // ARN-269: curation sessions terminate ONLY via their typed completion
+            // action, so the provider must never return a tool-less turn (which
+            // silently completes the session and orphans the job). max_turns bounds
+            // the loop.
+            "tool_choice": "required",
         });
 
         if !parent_session_id.is_empty() {
