@@ -365,7 +365,7 @@ fn maybe_spawn_repair_job(
 
     let repair_input = json!({
         "task": format!(
-            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS}: a previous {job_type} session produced DesignLanguage '{language_id}', which FAILED finalizer verification. The exact failure: {payload}. Load the existing language with temper.get, fix ONLY what the error indicates (do not recreate the language; leave already-valid artifacts untouched), re-run any checks the skill requires for that artifact (e.g. the DESIGN.md lint), drive the language back to UnderReview, then complete via the typed completion action referencing this same language."
+            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS}: a previous {job_type} session produced DesignLanguage '{language_id}', which FAILED finalizer verification. The exact failure: {payload}. Load the existing language with temper.get and fix the named artifact. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact against the full checklist before completing: all three composition files (landing, dashboard, embodiment) use var(--...) tokens; the landing has the --hero-image slot; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Fix everything that fails in THIS run — do not recreate the language and leave already-valid artifacts untouched — then complete via the typed completion action referencing this same language."
         ),
         "repair_attempt": next_attempt,
         "repaired_job_id": job_id,
