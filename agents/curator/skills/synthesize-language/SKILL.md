@@ -86,13 +86,12 @@ does not save time: the job fails and a repair session replays everything.
 
 ## Token & Turn Efficiency (mandatory)
 
-Efficiency means large coherent steps — it NEVER means skipping the render loop,
-the phase docs, or shipping a first draft. A cheap failed run is the most
-expensive run possible.
+Efficiency means large coherent steps — it NEVER means skipping the render loop
+or shipping a first draft. A cheap failed run is the most expensive run
+possible.
 
 - Work in FEW LARGE steps: write complete files in one sandbox.write / temper.write; NEVER patch files line-by-line through repeated read-modify-write cycles.
 - Never re-read a file you just wrote to "verify" its text — trust the write result; verification is visual (screenshots) and gate-based (finalizer).
-- Read each phase doc exactly once, when entering that phase — but ALWAYS read it. The phase docs carry the standards quality review judges against; skipping them produces pages that fail review.
 - Prefer one action call that does more (AuthorComplete) over ladders of small calls.
 
 ## SPEC PHASE
@@ -200,23 +199,292 @@ If any check fails, rewrite that section immediately.
 
 ## DESIGN.md PHASE
 
-MANDATORY before starting this phase: `temper.read('/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/phases/design-md.md')` and follow it exactly.
-Gate summary (finalizer-enforced): DESIGN.md has front matter with `version:` and components; run the no-network lint checker from a script FILE; `design_md_lint_result` must be the checker's JSON with zero errors AND zero warnings; attach via AttachDesignMd with design_md_file_id + design_md_lint_result + design_md_format_version.
+Generate the portable DESIGN.md artifact from the same native Katagami fields
+you just wrote. The finalizer verifies the attached file and lint metadata; it
+does not generate or repair DESIGN.md for you.
+
+The DESIGN.md must start with YAML frontmatter containing `version:`, `name:`,
+`description:`, `colors:`, `typography:`, `rounded:`, `spacing:`, and
+`components:`; include the sections `## Overview`, `## Colors`,
+`## Typography`, `## Layout`, `## Components`, `## Do's and Don'ts`, and
+`## shadcn/ui Usage`; reference `/language/{language_id}/DESIGN.with-shadcn.md`,
+`/shadcn.json`, `/shadcn-components.md`, `/shadcn-shots.json`, and
+`@/components/ui/*`; contain at least eight concrete hex color tokens and the
+production Google Fonts URL; and contain no TBD/TODO/placeholder text.
+
+Write it to `/tmp/DESIGN.md` in the sandbox, then run the no-network Katagami
+contract checker with `python3` from a script FILE (no npx, no installs). The
+checker validates exactly the requirements above and prints one JSON object:
+
+```python
+sandbox.write('/tmp/DESIGN.md', design_md)
+sandbox.write('/tmp/katagami_design_md_lint.py', lint_script)  # the checker
+lint_output = sandbox.bash('python3 /tmp/katagami_design_md_lint.py')
+lint_result = json.loads(lint_output[lint_output.find('{'):lint_output.rfind('}')+1])
+```
+
+Warnings are blocking. Parse only the JSON object emitted by the checker; never
+store the shell transcript or any string containing `exit code`, `STDERR`, or
+`command not found` in `design_md_lint_result`. If `summary.errors > 0` or
+`summary.warnings > 0`, rewrite the DESIGN.md and rerun the checker before
+attaching. Attach only the exact markdown that passed lint:
+
+```python
+design_md_result = temper.write('/katagami/design-md/' + slug + '/DESIGN.md', design_md)
+temper.action('DesignLanguages', eid, 'AttachDesignMd', {
+    'design_md_file_id': design_md_result['file_id'],
+    'design_md_lint_result': json.dumps(lint_result, ensure_ascii=False),
+    'design_md_format_version': 'design-md-v1'
+})
+```
 
 ## EMBODIMENT PHASE
 
-MANDATORY before starting this phase: `temper.read('/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/phases/embodiment.md')` and follow it exactly.
-Gate summary: self-contained HTML manifesting every visual_character trait and signature_pattern, 15+ explicitly styled elements, zero browser defaults; render desktop/tablet/mobile from a script FILE, sandbox.read the screenshots and LOOK, >=2 full render->read->fix cycles; page under ~25 KB is almost certainly underbuilt (reference 35-60 KB); scroll-state verification: full_page + 25/50/75/100% scroll shots, emptiness below the first viewport = fail; then generate and verify the JPEG thumbnail from the final embodiment.
+Generate a self-contained HTML file that manifests every `visual_character`
+trait, every `signature_pattern`, and uses the surfaces/borders/motion tokens.
+15+ explicitly styled elements, zero browser defaults (reset appearance on
+select/input/textarea/button), all layout in classes, responsive via media
+queries. Scene-first: a real application screen, not a component inventory.
+
+### Step 1 — Write HTML to sandbox
+
+```python
+sandbox.write('/tmp/embodiment.html', html_code)
+```
+
+### Step 2 — Screenshot at three viewports
+
+Chromium, Playwright, and Pillow are PREINSTALLED in the sandbox image — never
+run pip or apt. Write render scripts to files with sandbox.write, then execute
+the file (fast and reliable for scripts of any size):
+
+```python
+shot_script = """
+from playwright.sync_api import sync_playwright
+viewports = [
+    {'name': 'desktop', 'width': 1440, 'height': 960},
+    {'name': 'tablet',  'width': 768,  'height': 1024},
+    {'name': 'mobile',  'width': 375,  'height': 812},
+]
+p = sync_playwright().start()
+b = p.chromium.launch(args=['--disable-dev-shm-usage'])
+for vp in viewports:
+    pg = b.new_page(viewport={'width': vp['width'], 'height': vp['height']})
+    pg.goto('file:///tmp/embodiment.html')
+    pg.wait_for_timeout(1500)
+    pg.screenshot(path=f"/tmp/shot_{vp['name']}.png", full_page=True)
+    pg.close()
+b.close()
+p.stop()
+print('shots ok')
+"""
+sandbox.write('/tmp/shots.py', shot_script)
+shot_log = sandbox.bash('python3 /tmp/shots.py')
+assert '[exit code: 0]' in shot_log and 'shots ok' in shot_log, shot_log
+```
+
+### Step 3 — Evaluate
+
+```python
+desktop_shot = sandbox.read('/tmp/shot_desktop.png')
+tablet_shot = sandbox.read('/tmp/shot_tablet.png')
+mobile_shot = sandbox.read('/tmp/shot_mobile.png')
+```
+
+Check each viewport: layout integrity, all 15+ elements styled,
+visual_character and signature_patterns visible, typography hierarchy clear,
+tokens applied, responsive reflow correct, no browser defaults, professional
+quality.
+
+### Step 4 — Iterate until polished
+
+Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three
+viewports look polished.
+
+Scroll-state verification is mandatory for every page: capture full_page
+screenshots AND viewport screenshots at 25/50/75/100% scroll positions
+(page.evaluate scrollTo, then screenshot). A page that is empty below the
+first viewport in the full_page shot FAILS — this catches pinned-scroll
+films whose scenes never render without JS scrubbing. If you build a
+scrolltelling landing, every scene must be verifiably visible in these
+scrolled screenshots; otherwise build a statement page: full-bleed hero
+plus 4-6 complete, content-rich sections that read without any JS.
+
+This step is NOT optional and has a floor: complete AT LEAST TWO full
+render -> read -> fix cycles per page before attaching anything — a first
+draft is never attachment-quality. You are judged on what the page LOOKS
+like, not on whether it passes gates. Density comes from real designed
+content — complete sections, working navigation, full data in dashboards,
+imagery — NEVER from repeated or numbered filler (that fails
+composition_padded mechanically). Never skip rendering: if a render command
+fails, fix the command (write it to a file and run the file) — do not fall
+back to designing blind.
+
+### Step 5 — Generate and verify the gallery thumbnail
+
+After the final embodiment HTML passes all visual checks, generate a static
+desktop thumbnail from the same `/tmp/embodiment.html`. Mandatory for
+`synthesize`, `regenerate_embodiment`, and `evolve_language`. Capture a
+1440x960 viewport (NOT full-page), disable animations/transitions with an
+injected style tag first, resize to exactly 600x400 JPEG quality ~74 with
+Pillow, save `/tmp/thumbnail_desktop.jpg`, verify size and format with an
+assert, then:
+
+```python
+thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
+assert isinstance(thumbnail_bytes, dict) and thumbnail_bytes.get('__temperpaw_image') is True
+assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
+```
+
+If thumbnail generation, resizing, or verification fails, fix the embodiment or
+the screenshot command and retry. Do not attach a missing, blank, wrong-size,
+or non-JPEG thumbnail. Do not call `VerifyThumbnail` directly; the finalizer
+reads the attached `thumbnail_file_id` and rejects base64 text payloads.
 
 ### Publish artifacts (including shadcn)
 
-MANDATORY before publishing: `temper.read('/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/phases/artifacts.md')` and follow it exactly.
-For a NEW language, publish everything in ONE AuthorComplete call (the phase doc has the exact params); use per-slot Attach* actions only for repairs. Gate summary: every slot its OWN Ready file; shadcn export contains "registry:theme", "cssVars", "componentManifest"; landing --hero-image references a REAL generated image via https://katagami.ai/api/file/<file_id>.
+**PREFERRED for a NEW language: one-call publish via AuthorComplete** once you
+have BUILT AND VERIFIED every artifact (all files uploaded via temper.write and
+confirmed Ready). Use the per-slot Attach* ladder only when repairing
+individual artifacts on an existing language.
+
+```python
+temper.action('DesignLanguages', eid, 'AuthorComplete', {
+    'name': name, 'slug': slug,
+    'philosophy': json.dumps(philosophy), 'tokens': json.dumps(tokens),
+    'rules': json.dumps(rules), 'layout_principles': json.dumps(layout),
+    'guidance': json.dumps(guidance), 'tags': json.dumps(tags),
+    'imagery_direction': json.dumps(imagery_direction),
+    'embodiment_file_id': embodiment_id, 'embodiment_format': 'html',
+    'element_count': '18', 'composition_count': '5',
+    'landing_file_id': landing_id, 'dashboard_file_id': dashboard_id,
+    'design_md_file_id': design_md_id,
+    'design_md_lint_result': json.dumps(lint_result),
+    'design_md_format_version': 'design-md-v1',
+    'shadcn_export_file_id': shadcn_export_id,
+    'shadcn_export_format_version': 'registry-item-v1',
+    'shadcn_export_manifest': json.dumps(shadcn_export_manifest),
+    'shadcn_component_spec_file_id': component_spec_id,
+    'shadcn_component_spec_format_version': 'katagami:shadcn-component-recipes/v1',
+    'shadcn_component_spec_manifest': json.dumps(component_spec_manifest),
+    'shadcn_preview_shots_file_id': preview_shots_id,
+    'shadcn_preview_shots_format_version': 'katagami:shadcn-preview-shots/renderable-v1',
+    'shadcn_preview_shots_manifest': json.dumps(preview_shots_manifest),
+    'thumbnail_file_id': thumbnail_id,
+    'model_provenance': model_provenance_json,
+    'direction_id': direction_id,
+    'curator_notes': curator_notes,
+})
+```
+
+It sets every SubmitForReview guard, so the very next call is SubmitForReview.
+
+**Ready-file discipline** (applies to both paths): before attaching any file id,
+`temper.get('Files', file_id)` and assert status == 'Ready' with usable Path,
+Name, MimeType, SizeBytes metadata. If a write returns anything else, retry the
+write or fail the job with the file response as evidence.
+
+**Per-slot ladder (repairs)**: AttachEmbodiment (embodiment_file_id,
+element_count, composition_count, embodiment_format) → AttachThumbnail →
+SetLineage (parent_ids '[]', lineage_type 'original', generation_number '0';
+for evolve_language read the parent, inherit base tokens, lineage_type
+'evolution'). `AttachEmbodiment` invalidates DESIGN.md verification booleans —
+after it, rerun the DESIGN.md checker and `AttachDesignMd` again with the
+latest markdown and lint JSON; that post-embodiment attach is mandatory.
+
+**shadcn artifacts** (all three required, agent-authored, designed not
+token-mapped):
+
+1. `/katagami/shadcn/{slug}/registry-theme.json` — a shadcn `registry:theme`
+   payload derived from the native tokens. MUST contain the literal
+   `"type": "registry:theme"`, plus `cssVars` and `componentManifest` keys.
+   Attach via AttachShadcnExport with format version `registry-theme-v1` and a
+   manifest `{'artifact': 'katagami:shadcn-registry-theme', 'version': ...,
+   'author': 'katagami-agent', 'type': 'registry:theme',
+   'requiresComponentManifest': True}`.
+2. `/katagami/shadcn/{slug}/components.md` — headings: `# {Name} shadcn/ui
+   Components`, `## Intent`, `## Required primitives`, `## Token cues`,
+   `## Visual character to preserve`, `## ShadSync visual profile`,
+   `## Signature component recipes`, `## Preview shots`, `## Implementation
+   contract`, `## Copy-paste component example`. Recipes must cover button,
+   card, input, textarea, select, dialog, sheet, tabs, badge, separator,
+   checkbox, switch, slider, tooltip, dropdown-menu, table — translating the
+   language's actual visual_character/signature_patterns into shadcn usage.
+   Attach via AttachShadcnComponentSpec; manifest artifact
+   `katagami:shadcn-component-recipes` with the full `components` list.
+3. `/katagami/shadcn/{slug}/preview-shots.json` — artifact
+   `katagami:shadcn-preview-shots`, `renderable: true`, ≥3 shots
+   (`application-shell`, `detail-editor`, `data-operations`), each with a
+   renderable `scene` object (`eyebrow`, `headline`, `description`, action
+   labels, concrete `stats`/`fields`/`rows` data), plus a top-level
+   `visualProfile` (family, material, contour, border, underlay, grain,
+   stickerBadges, motion, density, accents — derived from the language) and a
+   `componentRecipes` array covering every required primitive. The language
+   page renders these directly — polished product screenshots, not prose
+   notes or component inventory walls; one coherent shape scale.
+   Attach via AttachShadcnPreviewShots; manifest schema
+   `katagami:shadcn-preview-shots/renderable-v1`, `renderable: True`, the
+   shot ids and full components list.
+
+Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
+`VerifyShadcnPreviewShots` directly — the finalizer marks those after reading
+the attached files.
 
 ## COMPOSITION EMBODIMENTS PHASE (Landing + Dashboard) — required & gated
 
-MANDATORY before starting this phase: `temper.read('/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/phases/compositions.md')` and follow it exactly.
-Gate summary (finalizer-enforced): both compositions are self-contained HTML using var(--...) tokens throughout; the landing has ONE full-bleed hero with --hero-image referencing a REAL generated image URL and large display type composed over it; same >=2 render->read->fix rigor and scroll-state verification as the embodiment; attach via AttachCompositions (params: landing_file_id, dashboard_file_id).
+Every design language ships **three** embodiments: the element embodiment
+(above) plus TWO bespoke full-screen composition embodiments **unique to this
+language**, following the same visual_character, signature_patterns, taste
+rules, type, layout, density, and tokens. They give each language a real
+landing and a real dashboard a human can click through, and they are what the
+Remix Studio recolors and fills.
+
+- **Landing** (`/katagami/compositions/{slug}/landing.html`) — a real marketing
+  landing screen. Lead with a **full-bleed hero image** at the top: a section
+  whose `background-image: var(--hero-image)` covers the viewport top, the
+  `--hero-image` default pointing at the REAL generated image
+  (`url(https://katagami.ai/api/file/<file_id>)`), with the headline/CTA
+  composed over a scrim. The hero must be VISIBLE in your screenshots. Then
+  distinct designed scenes that tell the product story in the brief's world.
+- **Dashboard** (`/katagami/compositions/{slug}/dashboard.html`) — a real app
+  dashboard (sidebar nav, stat cards, a chart, a table or empty-state).
+  UI-led; no hero image required.
+
+These are **remixable**, so they MUST be tokenized — bake the language's
+identity (type, layout, density, treatment) into the HTML, but read every
+COLOR from CSS custom properties so the studio can recolor with any palette:
+
+```
+:root{ --bg --surface --text --muted --border --accent --on-accent
+       --success --warning --error --info --hero-image }
+```
+
+Define sensible defaults in `:root` (the language's own colors), use only
+those vars for color. Self-contained HTML, same safety rules as the element
+embodiment.
+
+### Visual verification (same rigor as the element embodiment)
+
+Write each composition to the sandbox, screenshot at all three viewports plus
+scroll states, and evaluate the same way — ≥2 render→read→fix cycles. The
+landing's hero must read full-bleed; the dashboard must look like a real
+product screen, not a wireframe. A Swiss-grid landing and a warm-editorial
+landing must look like **different products**, not one template recolored —
+and the three pages of THIS language must be three different artifacts.
+
+```python
+landing = temper.write('/katagami/compositions/' + slug + '/landing.html', landing_html)
+dashboard = temper.write('/katagami/compositions/' + slug + '/dashboard.html', dashboard_html)
+temper.action('DesignLanguages', eid, 'AttachCompositions', {
+    'landing_file_id': landing['file_id'],
+    'dashboard_file_id': dashboard['file_id'],
+})
+```
+
+`VerifyCompositions` is finalizer-owned — do NOT call it. The finalizer reads
+both files and rejects non-HTML, untokenized, hero-less, underbuilt, padded,
+or duplicate pages; `SubmitForReview` and `Publish` guard on
+has_compositions + compositions_verified.
 
 ## DRIVE-TO-REVIEW PHASE (self-heal loop)
 
