@@ -301,7 +301,7 @@ fn set_failed_job_callback_with_repair(
 
 /// Maximum number of chained repair sessions per original job before the
 /// failure is left for a human. Counted via `repair_attempt` in the job input.
-const MAX_REPAIR_ATTEMPTS: i64 = 2;
+const MAX_REPAIR_ATTEMPTS: i64 = 4;
 
 /// Spawn a follow-up repair job for a repairable verification failure so
 /// imperfect runs self-heal instead of dying (ARN-269). The repair job runs
@@ -928,102 +928,143 @@ fn verify_complete_language_artifacts(
     job_fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
     let fields = entity_fields(language);
-    verify_required_sections(language_id, language, &fields)?;
 
+    // Collect EVERY failing gate instead of short-circuiting on the first.
+    // First-fail-stop turned repair into gate-whack-a-mole: each repair
+    // session fixed the one named gate, re-rolled the others, and chains
+    // exhausted their budget converging one gate per session.
     let embodiment_format = string_field_any(&fields, "embodiment_format", "html");
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "embodiment_file_id",
-        "embodiment",
-        Some(&embodiment_format),
-    )?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "landing_file_id",
-        "composition_landing",
-        None,
-    )?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "dashboard_file_id",
-        "composition_dashboard",
-        None,
-    )?;
-
-    verify_composition_distinctness(ctx, api_url, headers, language_id, &fields)?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "thumbnail_file_id",
-        "thumbnail",
-        None,
-    )?;
-
-    verify_design_md_metadata(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "design_md_file_id",
-        "design_md",
-        None,
-    )?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_export_file_id",
-        "shadcn_export",
-        None,
-    )?;
-
-    verify_shadcn_component_manifest(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_component_spec_file_id",
-        "shadcn_component_spec",
-        None,
-    )?;
-
-    verify_shadcn_preview_manifest(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_preview_shots_file_id",
-        "shadcn_preview_shots",
-        None,
-    )?;
-
-    verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
+    let checks: Vec<Box<dyn Fn() -> Result<(), VerificationError>>> = vec![
+        Box::new(|| verify_required_sections(language_id, language, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "embodiment_file_id",
+                "embodiment",
+                Some(&embodiment_format),
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "landing_file_id",
+                "composition_landing",
+                None,
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "dashboard_file_id",
+                "composition_dashboard",
+                None,
+            )
+        }),
+        Box::new(|| verify_composition_distinctness(ctx, api_url, headers, language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "thumbnail_file_id",
+                "thumbnail",
+                None,
+            )
+        }),
+        Box::new(|| verify_design_md_metadata(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "design_md_file_id",
+                "design_md",
+                None,
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_export_file_id",
+                "shadcn_export",
+                None,
+            )
+        }),
+        Box::new(|| verify_shadcn_component_manifest(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_component_spec_file_id",
+                "shadcn_component_spec",
+                None,
+            )
+        }),
+        Box::new(|| verify_shadcn_preview_manifest(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_preview_shots_file_id",
+                "shadcn_preview_shots",
+                None,
+            )
+        }),
+        Box::new(|| verify_forced_shadcn_refresh(language_id, job_fields, &fields)),
+    ];
+    let mut failures: Vec<VerificationError> = Vec::new();
+    for check in checks {
+        if let Err(e) = check() {
+            failures.push(e);
+        }
+    }
+    if failures.len() == 1 {
+        return Err(failures.remove(0));
+    }
+    if failures.len() > 1 {
+        let listing = failures
+            .iter()
+            .map(|e| format!("[{}] {}", e.code, e.message))
+            .collect::<Vec<_>>()
+            .join("; ");
+        let repairable = failures.iter().all(|e| e.repairable);
+        let first_code = failures[0].code;
+        return Err(VerificationError::new(
+            first_code,
+            format!(
+                "{} gates failed — fix ALL of them in one run: {listing}",
+                failures.len()
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(repairable));
+    }
     // Re-load so the caller keeps a current snapshot after the byte-level
     // verification above; readiness is now enforced by the spec's
     // cross_entity_state File guards, not by WASM-set *_verified booleans.
