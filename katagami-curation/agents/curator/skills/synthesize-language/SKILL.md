@@ -65,12 +65,18 @@ does not save time: the job fails and a repair session replays everything.
    working product screen. The finalizer rejects any two pages with identical
    `<title>` or near-identical markup (`composition_duplicate`). Never attach
    one file into two slots, never derive one page by lightly editing another.
-2. **No sketches.** Each of the three pages must be at least 18 KB of real
-   markup (`composition_underbuilt`); finished Katagami pages run 35-60 KB.
-   If a page comes out near the floor, it is missing sections — build it out.
-3. **Landing hero is a real image.** `--hero-image` must reference a generated
-   image via `https://katagami.ai/api/file/<file_id>` — never a gradient or
-   placeholder (`landing_hero_not_generated_image`).
+2. **No sketches, and NO FILLER.** Pages under 9 KB fail
+   (`composition_underbuilt`). But bytes are not the target: the finalizer
+   also measures repeated structure with digits folded, so stamped or
+   counter-numbered filler sections ("note 27", "module 04", "depth 29")
+   fail `composition_padded` no matter how large the file is. Every section
+   must be designed, distinct content — the reference pages in the library
+   are 10-16 KB+ of dense bespoke CSS with zero repeated modules.
+3. **Landing hero is a real image and must RENDER.** `--hero-image` must
+   reference a generated image via `https://katagami.ai/api/file/<file_id>`
+   (`landing_hero_not_generated_image`) and the hero must actually be visible
+   in your screenshots — a token reference buried in an unused rule is a
+   failed hero.
 4. **The render loop is NON-NEGOTIABLE.** For EACH page: write it complete,
    render desktop/tablet/mobile from a script file, `sandbox.read` the
    screenshots and LOOK at them, fix what you see, re-render. Minimum 2 full
