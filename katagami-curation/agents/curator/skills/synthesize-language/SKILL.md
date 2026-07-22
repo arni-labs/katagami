@@ -318,6 +318,15 @@ Check each viewport: layout integrity, all 15+ elements styled, visual_character
 
 Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three viewports look polished.
 
+Scroll-state verification is mandatory for every page: capture full_page
+screenshots AND viewport screenshots at 25/50/75/100% scroll positions
+(page.evaluate scrollTo, then screenshot). A page that is empty below the
+first viewport in the full_page shot FAILS — this catches pinned-scroll
+films whose scenes never render without JS scrubbing. If you build a
+scrolltelling landing, every scene must be verifiably visible in these
+scrolled screenshots; otherwise build a statement page: full-bleed hero
+plus 4-6 complete, content-rich sections that read without any JS.
+
 This step is NOT optional and has a floor: complete AT LEAST TWO full
 render -> read -> fix cycles per page before attaching anything — a first
 draft is never attachment-quality. You are judged on what the page LOOKS
