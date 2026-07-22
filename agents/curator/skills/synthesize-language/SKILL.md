@@ -275,22 +275,12 @@ sandbox.write('/tmp/embodiment.html', html_code)
 
 ### Step 2 — Screenshot at three viewports
 
-```python
-browser_setup_log = sandbox.bash("""set -eu
-python3 -m pip install --quiet playwright pillow
-python3 -m playwright install chromium >/dev/null
-python3 - <<'PY'
-from playwright.sync_api import sync_playwright
-p = sync_playwright().start()
-b = p.chromium.launch()
-b.close()
-p.stop()
-print('playwright ready')
-PY
-""")
-assert '[exit code: 0]' in browser_setup_log and 'playwright ready' in browser_setup_log, browser_setup_log
+Chromium, Playwright, and Pillow are PREINSTALLED in the sandbox image — never
+run pip or apt. Write render scripts to files with sandbox.write, then execute
+the file (fast and reliable for scripts of any size):
 
-shot_log = sandbox.bash("""python3 - <<'PY'
+```python
+shot_script = """
 from playwright.sync_api import sync_playwright
 viewports = [
     {'name': 'desktop', 'width': 1440, 'height': 960},
@@ -298,18 +288,19 @@ viewports = [
     {'name': 'mobile',  'width': 375,  'height': 812},
 ]
 p = sync_playwright().start()
-b = p.chromium.launch()
+b = p.chromium.launch(args=['--disable-dev-shm-usage'])
 for vp in viewports:
     pg = b.new_page(viewport={'width': vp['width'], 'height': vp['height']})
     pg.goto('file:///tmp/embodiment.html')
-    pg.wait_for_timeout(2000)
-    pg.screenshot(path=f'/tmp/shot_{vp["name"]}.png', full_page=True)
+    pg.wait_for_timeout(1500)
+    pg.screenshot(path=f"/tmp/shot_{vp['name']}.png", full_page=True)
     pg.close()
 b.close()
 p.stop()
 print('shots ok')
-PY
-""")
+"""
+sandbox.write('/tmp/shots.py', shot_script)
+shot_log = sandbox.bash('python3 /tmp/shots.py')
 assert '[exit code: 0]' in shot_log and 'shots ok' in shot_log, shot_log
 ```
 
@@ -326,6 +317,18 @@ Check each viewport: layout integrity, all 15+ elements styled, visual_character
 ### Step 4 — Iterate until polished
 
 Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three viewports look polished.
+
+This step is NOT optional and has a floor: complete AT LEAST TWO full
+render -> read -> fix cycles per page before attaching anything — a first
+draft is never attachment-quality. You are judged on what the page LOOKS
+like, not on whether it passes gates. Concrete density check: reference-grade
+landings and embodiments run 35-60 KB of HTML with rich, real content
+(complete sections, working navigation, full data in dashboards, imagery);
+if your page is under ~25 KB it is almost certainly underbuilt — add real
+sections and content until the rendered page reads as a finished product
+screen, not a sketch. Never skip rendering: if a render command fails, fix
+the command (write it to a file and run the file) — do not fall back to
+designing blind.
 
 ### Step 5 — Generate and verify the gallery thumbnail
 
