@@ -936,6 +936,8 @@ fn verify_complete_language_artifacts(
         None,
     )?;
 
+    verify_composition_distinctness(ctx, api_url, headers, language_id, &fields)?;
+
     verify_file_field(
         ctx,
         api_url,
@@ -1553,6 +1555,118 @@ fn read_file_value(
     Ok(resp.body)
 }
 
+/// Minimum byte size for the three HTML pages (embodiment, landing, dashboard).
+/// Finished Katagami pages run 35-60 KB; the 8-12 KB class is a gate-satisfying
+/// sketch produced without a render loop, which quality review always rejects.
+const PAGE_BYTE_FLOOR: usize = 18_000;
+
+/// Similarity above which two of the three pages count as the same page.
+/// The pages legitimately share token/CSS blocks (~0.1-0.3); a copied page
+/// scores near 1.0.
+const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
+
+/// The element showcase, landing, and dashboard must be three DIFFERENT pages.
+/// A repair session once attached the dashboard into the embodiment slot and
+/// every per-file gate passed; this cross-file check makes that class of
+/// mix-up non-completable.
+fn verify_composition_distinctness(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let mut pages: Vec<(&'static str, String, String)> = Vec::new();
+    for (field_name, kind) in [
+        ("embodiment_file_id", "embodiment"),
+        ("landing_file_id", "landing"),
+        ("dashboard_file_id", "dashboard"),
+    ] {
+        let file_id = string_field_any(fields, field_name, "");
+        if file_id.is_empty() {
+            continue;
+        }
+        let body = read_file_value(ctx, api_url, headers, &file_id, language_id, "embodiment")?;
+        pages.push((kind, file_id, body));
+    }
+    for i in 0..pages.len() {
+        for j in (i + 1)..pages.len() {
+            let (kind_a, file_a, body_a) = &pages[i];
+            let (kind_b, file_b, body_b) = &pages[j];
+            let title_a = extract_html_title(body_a);
+            let title_b = extract_html_title(body_b);
+            let same_title = !title_a.is_empty() && title_a == title_b;
+            let similarity = html_similarity(body_a, body_b);
+            if same_title || similarity > PAGE_DUPLICATE_SIMILARITY {
+                return Err(VerificationError::new(
+                    "composition_duplicate",
+                    format!(
+                        "DesignLanguage '{language_id}' {kind_a} ('{file_a}') and {kind_b} ('{file_b}') are the same page ({}% identical markup{}); the element showcase, landing, and dashboard must be three different artifacts",
+                        (similarity * 100.0).round() as i64,
+                        if same_title { ", identical <title>" } else { "" },
+                    ),
+                )
+                .entity("DesignLanguage", language_id)
+                .artifact(kind_b, file_b));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn extract_html_title(body: &str) -> String {
+    let lower = body.to_ascii_lowercase();
+    let Some(open) = lower.find("<title") else {
+        return String::new();
+    };
+    let Some(gt) = lower[open..].find('>') else {
+        return String::new();
+    };
+    let start = open + gt + 1;
+    let Some(end) = lower[start..].find("</title>") else {
+        return String::new();
+    };
+    lower[start..start + end].trim().to_string()
+}
+
+/// Jaccard similarity over 64-byte shingles sampled every 16 bytes.
+fn html_similarity(a: &str, b: &str) -> f64 {
+    use std::collections::HashSet;
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    fn shingles(s: &str) -> HashSet<u64> {
+        const WINDOW: usize = 64;
+        const STRIDE: usize = 16;
+        let bytes = s.as_bytes();
+        let mut set = HashSet::new();
+        if bytes.len() <= WINDOW {
+            let mut h = DefaultHasher::new();
+            bytes.hash(&mut h);
+            set.insert(h.finish());
+            return set;
+        }
+        let mut i = 0;
+        while i + WINDOW <= bytes.len() {
+            let mut h = DefaultHasher::new();
+            bytes[i..i + WINDOW].hash(&mut h);
+            set.insert(h.finish());
+            i += STRIDE;
+        }
+        set
+    }
+    let sa = shingles(a);
+    let sb = shingles(b);
+    if sa.is_empty() || sb.is_empty() {
+        return 0.0;
+    }
+    let inter = sa.intersection(&sb).count();
+    let union = sa.len() + sb.len() - inter;
+    if union == 0 {
+        return 1.0;
+    }
+    inter as f64 / union as f64
+}
+
 fn verify_file_body(
     language_id: &str,
     file_id: &str,
@@ -1585,6 +1699,15 @@ fn verify_file_body(
                     "embodiment file is not self-contained HTML",
                 );
             }
+            "html" if trimmed.len() < PAGE_BYTE_FLOOR => {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "composition_underbuilt",
+                    "embodiment HTML is a sketch, not a finished page; finished Katagami pages run 35-60 KB — build it out with real sections and re-render",
+                );
+            }
             "tsx" if !trimmed.contains("export") && !trimmed.contains("function") => {
                 return artifact_error(
                     language_id,
@@ -1597,6 +1720,15 @@ fn verify_file_body(
             _ => {}
         },
         "composition_landing" | "composition_dashboard" => {
+            if trimmed.len() < PAGE_BYTE_FLOOR {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "composition_underbuilt",
+                    "composition HTML is a sketch, not a finished page; finished Katagami pages run 35-60 KB — build it out with real sections and re-render",
+                );
+            }
             if !lower.contains("<html") && !lower.contains("<!doctype") {
                 return artifact_error(
                     language_id,
@@ -5114,6 +5246,61 @@ mod host_stubs {
         ) -> i32 {
             -1
         }
+}
+
+#[cfg(test)]
+mod page_quality_tests {
+    use super::*;
+
+    fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
+        let mut body = format!(
+            "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff}}</style></head><body style=\"background:var(--bg)\">"
+        );
+        let mut i = 0usize;
+        while body.len() < bytes {
+            body.push_str(&format!("<section id=\"{filler_seed}-{i}\"><p>{filler_seed} content block {i} with enough prose to matter.</p></section>"));
+            i += 1;
+        }
+        body.push_str("</body></html>");
+        body
+    }
+
+    #[test]
+    fn sketch_size_page_fails_the_byte_floor() {
+        let body = page("Sketch", "sk", 8_000);
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("an 8 KB page must fail composition_underbuilt");
+        assert_eq!(err.code, "composition_underbuilt");
+        let emb = verify_file_body("lang", "file", "embodiment", Some("html"), "text/html", &body)
+            .expect_err("an 8 KB embodiment must fail composition_underbuilt");
+        assert_eq!(emb.code, "composition_underbuilt");
+    }
+
+    #[test]
+    fn built_out_page_passes_the_byte_floor() {
+        let mut body = page("Full Landing", "fl", 30_000);
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect("a 30 KB tokenized landing with a real hero must pass");
+    }
+
+    #[test]
+    fn identical_pages_score_as_duplicates() {
+        let a = page("Dawn Dashboard", "dash", 20_000);
+        assert!(html_similarity(&a, &a) > PAGE_DUPLICATE_SIMILARITY);
+        assert_eq!(extract_html_title(&a), "dawn dashboard");
+    }
+
+    #[test]
+    fn distinct_pages_sharing_a_token_block_are_not_duplicates() {
+        let a = page("Landing", "landing-scene", 25_000);
+        let b = page("Dashboard", "dash-panel", 25_000);
+        assert!(html_similarity(&a, &b) < PAGE_DUPLICATE_SIMILARITY);
+        assert_ne!(extract_html_title(&a), extract_html_title(&b));
+    }
 }
 
 #[cfg(test)]
