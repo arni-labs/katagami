@@ -49,6 +49,14 @@ export function EmbodimentTabs({
             {cur.note}
           </span>
         ) : null}
+        <a
+          href={cur.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+        >
+          open full page ↗
+        </a>
       </div>
 
       <div className="relative min-w-0">
