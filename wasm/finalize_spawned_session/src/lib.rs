@@ -1565,6 +1565,10 @@ const PAGE_BYTE_FLOOR: usize = 18_000;
 /// scores near 1.0.
 const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
 
+/// Minimum fraction of unique sampled windows within a single page. Below
+/// this, the page is repeated filler stamped to beat the byte floor.
+const PAGE_UNIQUE_CONTENT_FLOOR: f64 = 0.5;
+
 /// The element showcase, landing, and dashboard must be three DIFFERENT pages.
 /// A repair session once attached the dashboard into the embodiment slot and
 /// every per-file gate passed; this cross-file check makes that class of
@@ -1587,6 +1591,18 @@ fn verify_composition_distinctness(
             continue;
         }
         let body = read_file_value(ctx, api_url, headers, &file_id, language_id, "embodiment")?;
+        let unique_ratio = html_unique_content_ratio(&body);
+        if unique_ratio < PAGE_UNIQUE_CONTENT_FLOOR {
+            return Err(VerificationError::new(
+                "composition_padded",
+                format!(
+                    "DesignLanguage '{language_id}' {kind} ('{file_id}') is {}% repeated filler blocks; pages must be built out with real, distinct sections, not stamped copies of one module",
+                    ((1.0 - unique_ratio) * 100.0).round() as i64,
+                ),
+            )
+            .entity("DesignLanguage", language_id)
+            .artifact(kind, &file_id));
+        }
         pages.push((kind, file_id, body));
     }
     for i in 0..pages.len() {
@@ -1629,33 +1645,49 @@ fn extract_html_title(body: &str) -> String {
     lower[start..start + end].trim().to_string()
 }
 
-/// Jaccard similarity over 64-byte shingles sampled every 16 bytes.
-fn html_similarity(a: &str, b: &str) -> f64 {
+/// Content-defined 64-byte shingles: every window position is hashed and a
+/// window is KEPT when its hash lands in a 1-in-16 bucket. Selection depends
+/// only on window content, never on byte offset, so identical blocks match
+/// regardless of alignment. (A fixed-stride sampler shipped first and missed
+/// a 20 KB identical tail offset by 5 bytes — offset-sensitive sampling is
+/// exactly wrong for this job.)
+fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
     use std::collections::HashSet;
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    fn shingles(s: &str) -> HashSet<u64> {
-        const WINDOW: usize = 64;
-        const STRIDE: usize = 16;
-        let bytes = s.as_bytes();
-        let mut set = HashSet::new();
-        if bytes.len() <= WINDOW {
-            let mut h = DefaultHasher::new();
-            bytes.hash(&mut h);
-            set.insert(h.finish());
-            return set;
-        }
-        let mut i = 0;
-        while i + WINDOW <= bytes.len() {
-            let mut h = DefaultHasher::new();
-            bytes[i..i + WINDOW].hash(&mut h);
-            set.insert(h.finish());
-            i += STRIDE;
-        }
-        set
+    const WINDOW: usize = 64;
+    const KEEP_ONE_IN: u64 = 16;
+    let bytes = s.as_bytes();
+    let mut set = HashSet::new();
+    let mut kept = 0usize;
+    if bytes.len() <= WINDOW {
+        let mut h = DefaultHasher::new();
+        bytes.hash(&mut h);
+        set.insert(h.finish());
+        return (set, 1);
     }
-    let sa = shingles(a);
-    let sb = shingles(b);
+    for i in 0..=(bytes.len() - WINDOW) {
+        let mut h = DefaultHasher::new();
+        bytes[i..i + WINDOW].hash(&mut h);
+        let digest = h.finish();
+        if digest % KEEP_ONE_IN == 0 {
+            set.insert(digest);
+            kept += 1;
+        }
+    }
+    if set.is_empty() {
+        let mut h = DefaultHasher::new();
+        bytes.hash(&mut h);
+        set.insert(h.finish());
+        kept = 1;
+    }
+    (set, kept)
+}
+
+/// Jaccard similarity over content-defined shingles.
+fn html_similarity(a: &str, b: &str) -> f64 {
+    let (sa, _) = content_shingles(a);
+    let (sb, _) = content_shingles(b);
     if sa.is_empty() || sb.is_empty() {
         return 0.0;
     }
@@ -1665,6 +1697,17 @@ fn html_similarity(a: &str, b: &str) -> f64 {
         return 1.0;
     }
     inter as f64 / union as f64
+}
+
+/// Fraction of a page's sampled windows that are unique. A page padded by
+/// stamping the same block repeatedly (the cheapest way to beat the byte
+/// floor) collapses toward 0; genuine content stays near 1.
+fn html_unique_content_ratio(s: &str) -> f64 {
+    let (set, kept) = content_shingles(s);
+    if kept == 0 {
+        return 1.0;
+    }
+    set.len() as f64 / kept as f64
 }
 
 fn verify_file_body(
@@ -5253,12 +5296,24 @@ mod page_quality_tests {
     use super::*;
 
     fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
+        const WORDS: [&str; 12] = [
+            "horizon", "instrument", "threshold", "luminous", "hairline", "aperture",
+            "silence", "meridian", "calibrated", "translucent", "vermilion", "graticule",
+        ];
         let mut body = format!(
             "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff}}</style></head><body style=\"background:var(--bg)\">"
         );
         let mut i = 0usize;
         while body.len() < bytes {
-            body.push_str(&format!("<section id=\"{filler_seed}-{i}\"><p>{filler_seed} content block {i} with enough prose to matter.</p></section>"));
+            // Vary every sentence so windows differ like real prose does.
+            let w1 = WORDS[i % WORDS.len()];
+            let w2 = WORDS[(i * 5 + 3) % WORDS.len()];
+            let w3 = WORDS[(i * 7 + 1) % WORDS.len()];
+            body.push_str(&format!(
+                "<section id=\"{filler_seed}-{i}\"><h3>{w1} {w2} {i}</h3><p>The {w1} panel {i} of {filler_seed} reads {w2} against a {w3} field, holding value {} at offset {}.</p></section>",
+                i * 17 % 997,
+                i * 31 % 89,
+            ));
             i += 1;
         }
         body.push_str("</body></html>");
@@ -5292,6 +5347,42 @@ mod page_quality_tests {
         let a = page("Dawn Dashboard", "dash", 20_000);
         assert!(html_similarity(&a, &a) > PAGE_DUPLICATE_SIMILARITY);
         assert_eq!(extract_html_title(&a), "dawn dashboard");
+    }
+
+    #[test]
+    fn shared_tail_at_different_offsets_scores_as_duplicate() {
+        // The first shipped sampler used fixed-stride offsets and missed a
+        // 20 KB identical tail shifted by 5 bytes. Content-defined sampling
+        // must catch shared blocks regardless of alignment.
+        let tail = page("x", "shared-tail", 20_000);
+        let a = format!("<title>Page A</title><p>unique intro alpha</p>{tail}");
+        let b = format!("<title>Page B</title><p>a different intro beta about other things</p>{tail}");
+        assert!(
+            html_similarity(&a, &b) > PAGE_DUPLICATE_SIMILARITY,
+            "shared 20 KB tail at misaligned offsets must score as duplicate, got {}",
+            html_similarity(&a, &b)
+        );
+    }
+
+    #[test]
+    fn stamped_filler_page_fails_the_unique_content_floor() {
+        let block = "<section class=\"m\"><h2>Silence budget</h2><p>Each surface stays cool and nearly unfilled; detail is carried by leader rules and aligned small text.</p></section>";
+        let mut body = String::from("<!doctype html><html><head><title>Padded</title></head><body>");
+        while body.len() < 30_000 {
+            body.push_str(block);
+        }
+        body.push_str("</body></html>");
+        assert!(
+            html_unique_content_ratio(&body) < PAGE_UNIQUE_CONTENT_FLOOR,
+            "a page of stamped copies must fail, got {}",
+            html_unique_content_ratio(&body)
+        );
+        let real = page("Real", "varied-real-content", 30_000);
+        assert!(
+            html_unique_content_ratio(&real) >= PAGE_UNIQUE_CONTENT_FLOOR,
+            "varied content must pass, got {}",
+            html_unique_content_ratio(&real)
+        );
     }
 
     #[test]
