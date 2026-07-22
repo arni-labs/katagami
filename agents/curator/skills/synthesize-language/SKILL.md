@@ -55,11 +55,38 @@ The landing page is NOT a static hero + sections. Read `agents/curator/skills/im
 - EVERY tool call must create or populate a DesignLanguage. No exploration turns.
 - You MUST create ALL languages listed in the scope before stopping.
 
+## Quality floors (finalizer-enforced — a violation fails the job)
+
+These are hard gates checked mechanically by the finalizer. A run that skips them
+does not save time: the job fails and a repair session replays everything.
+
+1. **Three pages, three DIFFERENT artifacts.** The embodiment is an element
+   showcase; the landing is a scroll-cinematic statement; the dashboard is a
+   working product screen. The finalizer rejects any two pages with identical
+   `<title>` or near-identical markup (`composition_duplicate`). Never attach
+   one file into two slots, never derive one page by lightly editing another.
+2. **No sketches.** Each of the three pages must be at least 18 KB of real
+   markup (`composition_underbuilt`); finished Katagami pages run 35-60 KB.
+   If a page comes out near the floor, it is missing sections — build it out.
+3. **Landing hero is a real image.** `--hero-image` must reference a generated
+   image via `https://katagami.ai/api/file/<file_id>` — never a gradient or
+   placeholder (`landing_hero_not_generated_image`).
+4. **The render loop is NON-NEGOTIABLE.** For EACH page: write it complete,
+   render desktop/tablet/mobile from a script file, `sandbox.read` the
+   screenshots and LOOK at them, fix what you see, re-render. Minimum 2 full
+   render→read→fix cycles per page. Also capture full-page plus 25/50/75/100%
+   scroll-position shots — emptiness below the first viewport is a failure.
+   A first draft you never looked at is not a finished page.
+
 ## Token & Turn Efficiency (mandatory)
+
+Efficiency means large coherent steps — it NEVER means skipping the render loop,
+the phase docs, or shipping a first draft. A cheap failed run is the most
+expensive run possible.
 
 - Work in FEW LARGE steps: write complete files in one sandbox.write / temper.write; NEVER patch files line-by-line through repeated read-modify-write cycles.
 - Never re-read a file you just wrote to "verify" its text — trust the write result; verification is visual (screenshots) and gate-based (finalizer).
-- Read each phase doc exactly once, when entering that phase.
+- Read each phase doc exactly once, when entering that phase — but ALWAYS read it. The phase docs carry the standards quality review judges against; skipping them produces pages that fail review.
 - Prefer one action call that does more (AuthorComplete) over ladders of small calls.
 
 ## SPEC PHASE
