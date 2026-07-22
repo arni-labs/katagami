@@ -363,9 +363,36 @@ fn maybe_spawn_repair_job(
     let next_attempt = attempt + 1;
     let payload = error.payload(job_id, job_type);
 
+    // Lead with the ORIGINAL design brief, not the gate code. Gate-centric
+    // repair prompts turn the model into a gate-satisfier: it ships numbered
+    // filler that passes string checks instead of designing. The brief is the
+    // job; the gates are constraints.
+    // In a repair chain the failed job's input is itself a repair input whose
+    // "task" is the previous repair prompt; the true brief lives at the bottom
+    // of the nested original_input chain. Walk down to it.
+    let mut brief_source = input_json.clone();
+    for _ in 0..MAX_REPAIR_ATTEMPTS + 1 {
+        let Some(inner_raw) = brief_source.get("original_input").and_then(|v| v.as_str()) else {
+            break;
+        };
+        let Ok(inner) = serde_json::from_str::<serde_json::Value>(inner_raw) else {
+            break;
+        };
+        brief_source = inner;
+    }
+    let original_brief = brief_source
+        .get("task")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let brief_line = if original_brief.is_empty() {
+        String::new()
+    } else {
+        format!("THE DESIGN BRIEF (this is the job — everything you produce serves it): {original_brief} ")
+    };
     let repair_input = json!({
         "task": format!(
-            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS}: a previous {job_type} session produced DesignLanguage '{language_id}', which FAILED finalizer verification. The exact failure: {payload}. Load the existing language with temper.get and fix the named artifact. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact against the full checklist before completing: all three composition files (landing, dashboard, embodiment) use var(--...) tokens; the landing has the --hero-image slot; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Fix everything that fails in THIS run — do not recreate the language and leave already-valid artifacts untouched — then complete via the typed completion action referencing this same language."
+            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — repeated or numbered filler sections ('note 27', 'module 04') are detected mechanically (digits folded) and fail composition_padded; near-identical pages fail composition_duplicate. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
         ),
         "repair_attempt": next_attempt,
         "repaired_job_id": job_id,
@@ -1556,18 +1583,20 @@ fn read_file_value(
 }
 
 /// Minimum byte size for the three HTML pages (embodiment, landing, dashboard).
-/// Finished Katagami pages run 35-60 KB; the 8-12 KB class is a gate-satisfying
-/// sketch produced without a render loop, which quality review always rejects.
-const PAGE_BYTE_FLOOR: usize = 18_000;
+/// A safety net for the empty-sketch class only — reference bake-off pages run
+/// 10-16 KB of dense bespoke CSS, so bytes must NOT be the quality bar (a byte
+/// target invites padding; the unique-content gate is the real enforcement).
+const PAGE_BYTE_FLOOR: usize = 9_000;
 
 /// Similarity above which two of the three pages count as the same page.
 /// The pages legitimately share token/CSS blocks (~0.1-0.3); a copied page
 /// scores near 1.0.
 const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
 
-/// Minimum fraction of unique sampled windows within a single page. Below
-/// this, the page is repeated filler stamped to beat the byte floor.
-const PAGE_UNIQUE_CONTENT_FLOOR: f64 = 0.5;
+/// Minimum fraction of unique sampled windows within a single page (digits
+/// folded). Measured: real bake-off pages score 0.90-0.95; stamped or
+/// counter-numbered filler scores 0.2-0.5.
+const PAGE_UNIQUE_CONTENT_FLOOR: f64 = 0.7;
 
 /// The element showcase, landing, and dashboard must be three DIFFERENT pages.
 /// A repair session once attached the dashboard into the embodiment slot and
@@ -1657,7 +1686,13 @@ fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
     use std::hash::{Hash, Hasher};
     const WINDOW: usize = 64;
     const KEEP_ONE_IN: u64 = 16;
-    let bytes = s.as_bytes();
+    // Fold digits before hashing: filler stamped with an incrementing counter
+    // ("note 27", "note 28", ...) poisons every window that touches the digit
+    // and would otherwise launder pure repetition into "unique" content.
+    let bytes: Vec<u8> = s
+        .bytes()
+        .map(|b| if b.is_ascii_digit() { b'0' } else { b })
+        .collect();
     let mut set = HashSet::new();
     let mut kept = 0usize;
     if bytes.len() <= WINDOW {
@@ -5295,6 +5330,20 @@ mod host_stubs {
 mod page_quality_tests {
     use super::*;
 
+    /// Base-26 alphabetic index so generated blocks stay unique even with the
+    /// gate's digit folding (real prose varies in letters, not just counters).
+    fn alpha(mut i: usize) -> String {
+        let mut s = String::new();
+        loop {
+            s.push((b'a' + (i % 26) as u8) as char);
+            i /= 26;
+            if i == 0 {
+                break;
+            }
+        }
+        s
+    }
+
     fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
         const WORDS: [&str; 12] = [
             "horizon", "instrument", "threshold", "luminous", "hairline", "aperture",
@@ -5305,14 +5354,13 @@ mod page_quality_tests {
         );
         let mut i = 0usize;
         while body.len() < bytes {
-            // Vary every sentence so windows differ like real prose does.
+            // Vary every sentence in LETTERS so windows differ like real prose.
             let w1 = WORDS[i % WORDS.len()];
             let w2 = WORDS[(i * 5 + 3) % WORDS.len()];
-            let w3 = WORDS[(i * 7 + 1) % WORDS.len()];
+            let a1 = alpha(i * 131 + 7);
+            let a2 = alpha(i * 977 + 3);
             body.push_str(&format!(
-                "<section id=\"{filler_seed}-{i}\"><h3>{w1} {w2} {i}</h3><p>The {w1} panel {i} of {filler_seed} reads {w2} against a {w3} field, holding value {} at offset {}.</p></section>",
-                i * 17 % 997,
-                i * 31 % 89,
+                "<section id=\"{filler_seed}-{a1}\"><h3>{w1} {a1} against {w2}</h3><p>The {a1} panel of {filler_seed} reads {w2} across the {a2} field while {w1} holds the {a2} rim in a distinct register.</p></section>",
             ));
             i += 1;
         }
@@ -5382,6 +5430,27 @@ mod page_quality_tests {
             html_unique_content_ratio(&real) >= PAGE_UNIQUE_CONTENT_FLOOR,
             "varied content must pass, got {}",
             html_unique_content_ratio(&real)
+        );
+    }
+
+    #[test]
+    fn counter_numbered_filler_fails_despite_changing_digits() {
+        // The exact Goodhart observed in prod: identical sentences with an
+        // incrementing counter ("Calibrated landing note 27 / 28 / 29").
+        // Digit folding must collapse them back into repeats.
+        let mut body = String::from("<!doctype html><html><head><title>Notes</title></head><body>");
+        let mut i = 0usize;
+        while body.len() < 30_000 {
+            body.push_str(&format!(
+                "<section><span>landing depth {i}</span><h2>Calibrated landing note {i}</h2><p>A distinct authored passage about landing threshold behavior, hairline alignment, luminous restraint, and the single warm east rim used for active state {i}.</p></section>"
+            ));
+            i += 1;
+        }
+        body.push_str("</body></html>");
+        assert!(
+            html_unique_content_ratio(&body) < PAGE_UNIQUE_CONTENT_FLOOR,
+            "counter-stamped filler must fail, got {}",
+            html_unique_content_ratio(&body)
         );
     }
 
