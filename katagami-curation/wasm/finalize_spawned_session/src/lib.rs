@@ -1624,6 +1624,18 @@ fn verify_file_body(
                     "landing composition is missing the --hero-image slot",
                 );
             }
+            // The hero slot must reference REAL generated imagery served from
+            // the commons, not a CSS gradient stand-in. Placeholder heroes
+            // passed the slot check and shipped twice before this gate.
+            if artifact_kind == "composition_landing" && !lower.contains("/api/file/") {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "landing_hero_not_generated_image",
+                    "landing --hero-image must reference a generated image via https://katagami.ai/api/file/<file_id>, not a gradient or placeholder",
+                );
+            }
         }
         "thumbnail" => {
             if thumbnail_payload_looks_text_encoded_image(trimmed)
