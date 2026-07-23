@@ -202,6 +202,10 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         // --- Build user_message ---
         let completion_params_block =
             completion_params_block(&template.completion_action, &job_type, &entity_id);
+        // Accepted taste rules are the authoritative design tests. The skill
+        // used to say "load accepted taste rules" — LLMobs showed zero
+        // sessions ever did, so the rules are now fetched here and inlined.
+        let taste_rules_block = render_taste_rules_block(&ctx, &api_url, &headers, skill);
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
@@ -219,6 +223,8 @@ Workspace ID: {workspace_id}
 {reference_instruction_block}
 
 {loaded_reference_block}
+
+{taste_rules_block}
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
@@ -978,13 +984,109 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
         ),
     ];
 
+    // The landing standard MUST be in context for language synthesis. It used
+    // to be a "read this skill IN FULL" instruction in SKILL.md — LLMobs
+    // showed zero sessions ever read it, which is why landings came out as
+    // timid hero-less pages instead of the bake-off statement class.
+    const SYNTHESIS_KNOWLEDGE: &[(&str, &str)] = &[
+        (
+            "/system/knowledge/design-principles.md",
+            "embodiment standards",
+        ),
+        (
+            "/system/knowledge/quality-standards.md",
+            "quality thresholds",
+        ),
+        (
+            "/system/knowledge/feedback-log.md",
+            "human feedback to incorporate",
+        ),
+        (
+            "/agents/sl-bootstrap-agent-soul-curator/skills/immersive-landing/SKILL.md",
+            "the landing standard — every landing is built to these floors",
+        ),
+    ];
+
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
         "research-direction" => &[],
+        "synthesize-language" => SYNTHESIS_KNOWLEDGE,
         _ => FULL_CURATION_KNOWLEDGE,
     }
+}
+
+/// Fetch every Accepted TasteRule and render it into the prompt. Best-effort:
+/// a fetch failure logs and returns an empty block rather than failing the
+/// spawn — but the normal path ALWAYS inlines, because instruction-to-go-fetch
+/// proved to be instruction-to-never-see.
+fn render_taste_rules_block(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    skill: &str,
+) -> String {
+    if skill != "synthesize-language" {
+        return String::new();
+    }
+    let url = format!("{api_url}/tdata/TasteRules?$filter=Status eq 'Accepted'");
+    let resp = match ctx.http_call("GET", &url, headers, "") {
+        Ok(resp) if resp.status == 200 => resp,
+        other => {
+            ctx.log(
+                "warn",
+                &format!("build_session_message: taste rules fetch failed: {other:?}"),
+            );
+            return String::new();
+        }
+    };
+    let parsed: serde_json::Value = match serde_json::from_str(&resp.body) {
+        Ok(v) => v,
+        Err(err) => {
+            ctx.log(
+                "warn",
+                &format!("build_session_message: taste rules parse failed: {err}"),
+            );
+            return String::new();
+        }
+    };
+    let empty = vec![];
+    let rules = parsed
+        .get("value")
+        .and_then(|v| v.as_array())
+        .unwrap_or(&empty);
+    if rules.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from(
+        "## Accepted taste rules (authoritative design tests — your output is judged against every one)\n\n\
+         Positive rules describe patterns to preserve or amplify; negative rules are archive-derived anti-patterns to avoid.\n\n",
+    );
+    let mut count = 0usize;
+    for rule in rules {
+        let fields = rule.get("fields").unwrap_or(rule);
+        let title = fields.get("title").and_then(|v| v.as_str()).unwrap_or("");
+        let text = fields
+            .get("rule_text")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let polarity = fields
+            .get("polarity")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if title.is_empty() && text.is_empty() {
+            continue;
+        }
+        let sign = if polarity == "negative" { "AVOID" } else { "KEEP" };
+        out.push_str(&format!("- [{sign}] {title}: {text}\n"));
+        count += 1;
+    }
+    ctx.log(
+        "info",
+        &format!("build_session_message: inlined {count} accepted taste rules"),
+    );
+    out
 }
 
 fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> String {
