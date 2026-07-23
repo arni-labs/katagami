@@ -392,7 +392,7 @@ fn maybe_spawn_repair_job(
     };
     let repair_input = json!({
         "task": format!(
-            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — repeated or numbered filler sections ('note 27', 'module 04') are detected mechanically (digits folded) and fail composition_padded; near-identical pages fail composition_duplicate. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
+            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — systematic filler of any kind is detected by compression analysis and fails composition_padded; near-identical pages fail composition_duplicate. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
         ),
         "repair_attempt": next_attempt,
         "repaired_job_id": job_id,
@@ -1634,10 +1634,13 @@ const PAGE_BYTE_FLOOR: usize = 9_000;
 /// scores near 1.0.
 const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
 
-/// Minimum fraction of unique sampled windows within a single page (digits
-/// folded). Measured: real bake-off pages score 0.90-0.95; stamped or
-/// counter-numbered filler scores 0.2-0.5.
-const PAGE_UNIQUE_CONTENT_FLOOR: f64 = 0.7;
+/// Maximum deflate compression ratio (raw bytes / compressed bytes) for a
+/// page. Repetition is exactly what compression measures, so this catches ANY
+/// systematic filler — stamped blocks, incrementing counters, rotated word
+/// lists — with no pattern-specific tricks. Measured on the real corpus:
+/// genuine bake-off pages compress 2.7-3.8x; stamped/templated filler
+/// 6.0-9.2x; pure counter-filler 22.7x.
+const PAGE_REDUNDANCY_CEILING: f64 = 4.5;
 
 /// The element showcase, landing, and dashboard must be three DIFFERENT pages.
 /// A repair session once attached the dashboard into the embodiment slot and
@@ -1661,13 +1664,12 @@ fn verify_composition_distinctness(
             continue;
         }
         let body = read_file_value(ctx, api_url, headers, &file_id, language_id, "embodiment")?;
-        let unique_ratio = html_unique_content_ratio(&body);
-        if unique_ratio < PAGE_UNIQUE_CONTENT_FLOOR {
+        let redundancy = page_redundancy_ratio(&body);
+        if redundancy > PAGE_REDUNDANCY_CEILING {
             return Err(VerificationError::new(
                 "composition_padded",
                 format!(
-                    "DesignLanguage '{language_id}' {kind} ('{file_id}') is {}% repeated filler blocks; pages must be built out with real, distinct sections, not stamped copies of one module",
-                    ((1.0 - unique_ratio) * 100.0).round() as i64,
+                    "DesignLanguage '{language_id}' {kind} ('{file_id}') compresses {redundancy:.1}x (genuine pages compress under {PAGE_REDUNDANCY_CEILING}x) — the page is systematic filler, not designed content; build real, distinct sections",
                 ),
             )
             .entity("DesignLanguage", language_id)
@@ -1726,13 +1728,7 @@ fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
     const WINDOW: usize = 64;
     const KEEP_ONE_IN: u64 = 16;
     const BASE: u64 = 1_000_003;
-    // Fold digits before hashing: filler stamped with an incrementing counter
-    // ("note 27", "note 28", ...) poisons every window that touches the digit
-    // and would otherwise launder pure repetition into "unique" content.
-    let bytes: Vec<u8> = s
-        .bytes()
-        .map(|b| if b.is_ascii_digit() { b'0' } else { b })
-        .collect();
+    let bytes = s.as_bytes();
     // splitmix64 finalizer — the raw polynomial hash has poor low-bit
     // distribution, which would bias the 1-in-16 selection.
     fn mix(mut x: u64) -> u64 {
@@ -1745,7 +1741,7 @@ fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
     let mut kept = 0usize;
     if bytes.len() <= WINDOW {
         let mut h = 0u64;
-        for &b in &bytes {
+        for &b in bytes {
             h = h.wrapping_mul(BASE).wrapping_add(b as u64);
         }
         set.insert(mix(h));
@@ -1799,15 +1795,20 @@ fn html_similarity(a: &str, b: &str) -> f64 {
     inter as f64 / union as f64
 }
 
-/// Fraction of a page's sampled windows that are unique. A page padded by
-/// stamping the same block repeatedly (the cheapest way to beat the byte
-/// floor) collapses toward 0; genuine content stays near 1.
-fn html_unique_content_ratio(s: &str) -> f64 {
-    let (set, kept) = content_shingles(s);
-    if kept == 0 {
+/// Deflate compression ratio of a page: raw bytes / compressed bytes.
+/// Repetition IS what compression measures, so any systematic filler —
+/// stamped blocks, incrementing counters, rotated wordlists — scores high
+/// with no pattern-specific handling.
+fn page_redundancy_ratio(s: &str) -> f64 {
+    let raw = s.as_bytes();
+    if raw.is_empty() {
         return 1.0;
     }
-    set.len() as f64 / kept as f64
+    let compressed = miniz_oxide::deflate::compress_to_vec(raw, 6);
+    if compressed.is_empty() {
+        return 1.0;
+    }
+    raw.len() as f64 / compressed.len() as f64
 }
 
 fn verify_file_body(
@@ -5395,38 +5396,41 @@ mod host_stubs {
 mod page_quality_tests {
     use super::*;
 
-    /// Base-26 alphabetic index so generated blocks stay unique even with the
-    /// gate's digit folding (real prose varies in letters, not just counters).
-    fn alpha(mut i: usize) -> String {
+    /// Pseudo-random word from a simple LCG — high-entropy text that deflate
+    /// cannot squeeze, mimicking genuinely varied prose and CSS.
+    fn lcg_word(state: &mut u64, len: usize) -> String {
         let mut s = String::new();
-        loop {
-            s.push((b'a' + (i % 26) as u8) as char);
-            i /= 26;
-            if i == 0 {
-                break;
-            }
+        for _ in 0..len {
+            *state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s.push((b'a' + ((*state >> 33) % 26) as u8) as char);
         }
         s
     }
 
+    /// A page of genuinely varied content: rotating sentence structures with
+    /// mostly-unique tokens, the way real designed pages mix bespoke CSS,
+    /// copy, and data. Compresses like the real corpus (~3x), not like filler.
     fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
-        const WORDS: [&str; 12] = [
-            "horizon", "instrument", "threshold", "luminous", "hairline", "aperture",
-            "silence", "meridian", "calibrated", "translucent", "vermilion", "graticule",
-        ];
         let mut body = format!(
             "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff}}</style></head><body style=\"background:var(--bg)\">"
         );
+        let mut st: u64 = filler_seed.bytes().map(|b| b as u64).sum::<u64>() + 7;
         let mut i = 0usize;
         while body.len() < bytes {
-            // Vary every sentence in LETTERS so windows differ like real prose.
-            let w1 = WORDS[i % WORDS.len()];
-            let w2 = WORDS[(i * 5 + 3) % WORDS.len()];
-            let a1 = alpha(i * 131 + 7);
-            let a2 = alpha(i * 977 + 3);
-            body.push_str(&format!(
-                "<section id=\"{filler_seed}-{a1}\"><h3>{w1} {a1} against {w2}</h3><p>The {a1} panel of {filler_seed} reads {w2} across the {a2} field while {w1} holds the {a2} rim in a distinct register.</p></section>",
-            ));
+            let (w1, w2, w3, w4) = (
+                lcg_word(&mut st, 7),
+                lcg_word(&mut st, 9),
+                lcg_word(&mut st, 6),
+                lcg_word(&mut st, 8),
+            );
+            let sentence = match i % 5 {
+                0 => format!("<section id=\"{w1}\"><h3>{w2} {w3}</h3><p>{w4} carries the {w1} line toward a {w2} field.</p></section>"),
+                1 => format!("<div class=\"{w3}\"><p>Between {w1} and {w4}, the {w2} panel keeps its own register.</p></div>"),
+                2 => format!("<article data-k=\"{w2}\"><h4>{w4}</h4><p>{w1} reads as {w3} until the rim warms.</p></article>"),
+                3 => format!("<aside><span>{w3}</span><p>A {w1} measure of {w2}, held against {w4}.</p></aside>"),
+                _ => format!("<figure class=\"{w4}\"><figcaption>{w1} over {w2}</figcaption><p>{w3} settles the edge.</p></figure>"),
+            };
+            body.push_str(&sentence);
             i += 1;
         }
         body.push_str("</body></html>");
@@ -5478,7 +5482,7 @@ mod page_quality_tests {
     }
 
     #[test]
-    fn stamped_filler_page_fails_the_unique_content_floor() {
+    fn stamped_filler_page_fails_the_redundancy_ceiling() {
         let block = "<section class=\"m\"><h2>Silence budget</h2><p>Each surface stays cool and nearly unfilled; detail is carried by leader rules and aligned small text.</p></section>";
         let mut body = String::from("<!doctype html><html><head><title>Padded</title></head><body>");
         while body.len() < 30_000 {
@@ -5486,23 +5490,24 @@ mod page_quality_tests {
         }
         body.push_str("</body></html>");
         assert!(
-            html_unique_content_ratio(&body) < PAGE_UNIQUE_CONTENT_FLOOR,
+            page_redundancy_ratio(&body) > PAGE_REDUNDANCY_CEILING,
             "a page of stamped copies must fail, got {}",
-            html_unique_content_ratio(&body)
+            page_redundancy_ratio(&body)
         );
         let real = page("Real", "varied-real-content", 30_000);
         assert!(
-            html_unique_content_ratio(&real) >= PAGE_UNIQUE_CONTENT_FLOOR,
+            page_redundancy_ratio(&real) <= PAGE_REDUNDANCY_CEILING,
             "varied content must pass, got {}",
-            html_unique_content_ratio(&real)
+            page_redundancy_ratio(&real)
         );
     }
 
     #[test]
     fn counter_numbered_filler_fails_despite_changing_digits() {
-        // The exact Goodhart observed in prod: identical sentences with an
+        // A Goodhart observed in prod: identical sentences with an
         // incrementing counter ("Calibrated landing note 27 / 28 / 29").
-        // Digit folding must collapse them back into repeats.
+        // Deflate matches the repeated skeleton regardless of the digits —
+        // no pattern-specific handling required.
         let mut body = String::from("<!doctype html><html><head><title>Notes</title></head><body>");
         let mut i = 0usize;
         while body.len() < 30_000 {
@@ -5513,9 +5518,9 @@ mod page_quality_tests {
         }
         body.push_str("</body></html>");
         assert!(
-            html_unique_content_ratio(&body) < PAGE_UNIQUE_CONTENT_FLOOR,
+            page_redundancy_ratio(&body) > PAGE_REDUNDANCY_CEILING,
             "counter-stamped filler must fail, got {}",
-            html_unique_content_ratio(&body)
+            page_redundancy_ratio(&body)
         );
     }
 

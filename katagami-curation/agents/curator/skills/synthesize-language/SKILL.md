@@ -62,9 +62,9 @@ does not save time: the job fails and a repair session replays everything.
    one file into two slots, never derive one page by lightly editing another.
 2. **No sketches, and NO FILLER.** Pages under 9 KB fail
    (`composition_underbuilt`). But bytes are not the target: the finalizer
-   also measures repeated structure with digits folded, so stamped or
-   counter-numbered filler sections ("note 27", "module 04", "depth 29")
-   fail `composition_padded` no matter how large the file is. Every section
+   compression-analyzes every page, so systematic filler of ANY kind —
+   stamped blocks, numbered variants, rotated boilerplate — fails
+   `composition_padded` no matter how large the file is. Every section
    must be designed, distinct content — the reference pages in the library
    are 10-16 KB+ of dense bespoke CSS with zero repeated modules.
 3. **Landing hero is a real image and must RENDER.** `--hero-image` must
