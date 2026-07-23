@@ -340,6 +340,33 @@ temper.done("{job_type} failed")
                     .as_object_mut()
                     .unwrap()
                     .insert("sandbox_provider".to_string(), json!(sandbox_provider));
+                // Pin the render image as a LITERAL on the Session entity.
+                // Resolving {secret:sandbox_image} inside paw-agent's trigger
+                // config proved non-deterministic across sessions — some
+                // sandboxes booted the provider's bare default image (no
+                // Playwright/Chromium after Tensorlake's 2026-07-22 migration)
+                // and agents designed blind.
+                let sandbox_image = ctx
+                    .config
+                    .get("sandbox_image")
+                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                    .cloned()
+                    .unwrap_or_default();
+                if !sandbox_image.is_empty() {
+                    config_body
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("sandbox_image".to_string(), json!(sandbox_image));
+                    ctx.log(
+                        "info",
+                        &format!("build_session_message: pinning sandbox_image='{sandbox_image}' for {skill}"),
+                    );
+                } else {
+                    ctx.log(
+                        "warn",
+                        "build_session_message: no sandbox_image configured — sandbox may boot the provider default image without the render stack",
+                    );
+                }
                 ctx.log(
                     "info",
                     &format!("build_session_message: enabling sandbox_provider='{sandbox_provider}' for {skill}"),
