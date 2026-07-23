@@ -1639,8 +1639,10 @@ const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
 /// systematic filler — stamped blocks, incrementing counters, rotated word
 /// lists — with no pattern-specific tricks. Measured on the real corpus:
 /// genuine bake-off pages compress 2.7-3.8x; stamped/templated filler
-/// 6.0-9.2x; pure counter-filler 22.7x.
-const PAGE_REDUNDANCY_CEILING: f64 = 4.5;
+/// 6.0-9.2x; pure counter-filler 22.7x; LLM-tuned semantic filler (repeated
+/// sentence skeletons with rotated prefixes) 4.2x. Real-page maximum observed
+/// is 3.82x, so 4.0 splits the distributions.
+const PAGE_REDUNDANCY_CEILING: f64 = 4.0;
 
 /// The element showcase, landing, and dashboard must be three DIFFERENT pages.
 /// A repair session once attached the dashboard into the embodiment slot and
