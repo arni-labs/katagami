@@ -1723,10 +1723,9 @@ fn extract_html_title(body: &str) -> String {
 /// exactly wrong for this job.)
 fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
     use std::collections::HashSet;
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
     const WINDOW: usize = 64;
     const KEEP_ONE_IN: u64 = 16;
+    const BASE: u64 = 1_000_003;
     // Fold digits before hashing: filler stamped with an incrementing counter
     // ("note 27", "note 28", ...) poisons every window that touches the digit
     // and would otherwise launder pure repetition into "unique" content.
@@ -1734,27 +1733,52 @@ fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
         .bytes()
         .map(|b| if b.is_ascii_digit() { b'0' } else { b })
         .collect();
+    // splitmix64 finalizer — the raw polynomial hash has poor low-bit
+    // distribution, which would bias the 1-in-16 selection.
+    fn mix(mut x: u64) -> u64 {
+        x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        x = (x ^ (x >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        x ^ (x >> 31)
+    }
     let mut set = HashSet::new();
     let mut kept = 0usize;
     if bytes.len() <= WINDOW {
-        let mut h = DefaultHasher::new();
-        bytes.hash(&mut h);
-        set.insert(h.finish());
+        let mut h = 0u64;
+        for &b in &bytes {
+            h = h.wrapping_mul(BASE).wrapping_add(b as u64);
+        }
+        set.insert(mix(h));
         return (set, 1);
     }
-    for i in 0..=(bytes.len() - WINDOW) {
-        let mut h = DefaultHasher::new();
-        bytes[i..i + WINDOW].hash(&mut h);
-        let digest = h.finish();
+    // Rolling Rabin fingerprint: O(1) per window. A per-window full hash blew
+    // the WASM instruction budget on real 40 KB pages (fuel exhaustion).
+    let mut pow = 1u64; // BASE^(WINDOW-1)
+    for _ in 0..WINDOW - 1 {
+        pow = pow.wrapping_mul(BASE);
+    }
+    let mut h = 0u64;
+    for &b in &bytes[..WINDOW] {
+        h = h.wrapping_mul(BASE).wrapping_add(b as u64);
+    }
+    let mut i = 0usize;
+    loop {
+        let digest = mix(h);
         if digest % KEEP_ONE_IN == 0 {
             set.insert(digest);
             kept += 1;
         }
+        if i + WINDOW >= bytes.len() {
+            break;
+        }
+        h = h
+            .wrapping_sub(pow.wrapping_mul(bytes[i] as u64))
+            .wrapping_mul(BASE)
+            .wrapping_add(bytes[i + WINDOW] as u64);
+        i += 1;
     }
     if set.is_empty() {
-        let mut h = DefaultHasher::new();
-        bytes.hash(&mut h);
-        set.insert(h.finish());
+        set.insert(mix(h));
         kept = 1;
     }
     (set, kept)
