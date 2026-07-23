@@ -202,6 +202,10 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         // --- Build user_message ---
         let completion_params_block =
             completion_params_block(&template.completion_action, &job_type, &entity_id);
+        // Accepted taste rules are the authoritative design tests. The skill
+        // used to say "load accepted taste rules" — LLMobs showed zero
+        // sessions ever did, so the rules are now fetched here and inlined.
+        let taste_rules_block = render_taste_rules_block(&ctx, &api_url, &headers, skill);
         let user_message = format!(
             r#"You are executing a CurationJob ({job_type}).
 Job ID: {entity_id}
@@ -219,6 +223,8 @@ Workspace ID: {workspace_id}
 {reference_instruction_block}
 
 {loaded_reference_block}
+
+{taste_rules_block}
 
 When done, dispatch `{completion_action}` on this CurationJob with the params
 specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
@@ -312,6 +318,11 @@ temper.done("{job_type} failed")
             "tools_enabled": tools_enabled,
             "max_turns": max_turns,
             "workspace_id": workspace_id,
+            // ARN-269: curation sessions terminate ONLY via their typed completion
+            // action, so the provider must never return a tool-less turn (which
+            // silently completes the session and orphans the job). max_turns bounds
+            // the loop.
+            "tool_choice": "required",
         });
 
         if !parent_session_id.is_empty() {
@@ -335,6 +346,33 @@ temper.done("{job_type} failed")
                     .as_object_mut()
                     .unwrap()
                     .insert("sandbox_provider".to_string(), json!(sandbox_provider));
+                // Pin the render image as a LITERAL on the Session entity.
+                // Resolving {secret:sandbox_image} inside paw-agent's trigger
+                // config proved non-deterministic across sessions — some
+                // sandboxes booted the provider's bare default image (no
+                // Playwright/Chromium after Tensorlake's 2026-07-22 migration)
+                // and agents designed blind.
+                let sandbox_image = ctx
+                    .config
+                    .get("sandbox_image")
+                    .filter(|s| !s.is_empty() && !s.contains("{secret:"))
+                    .cloned()
+                    .unwrap_or_default();
+                if !sandbox_image.is_empty() {
+                    config_body
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("sandbox_image".to_string(), json!(sandbox_image));
+                    ctx.log(
+                        "info",
+                        &format!("build_session_message: pinning sandbox_image='{sandbox_image}' for {skill}"),
+                    );
+                } else {
+                    ctx.log(
+                        "warn",
+                        "build_session_message: no sandbox_image configured — sandbox may boot the provider default image without the render stack",
+                    );
+                }
                 ctx.log(
                     "info",
                     &format!("build_session_message: enabling sandbox_provider='{sandbox_provider}' for {skill}"),
@@ -946,13 +984,90 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
         ),
     ];
 
+    // The landing standard MUST be in context for language synthesis. It used
+    // to be a "read this skill IN FULL" instruction in SKILL.md — LLMobs
+    // showed zero sessions ever read it, which is why landings came out as
+    // timid hero-less pages instead of the bake-off statement class.
+    const SYNTHESIS_KNOWLEDGE: &[(&str, &str)] = &[
+        (
+            "/system/knowledge/design-principles.md",
+            "embodiment standards",
+        ),
+        (
+            "/system/knowledge/quality-standards.md",
+            "quality thresholds",
+        ),
+        (
+            "/system/knowledge/feedback-log.md",
+            "human feedback to incorporate",
+        ),
+        (
+            "/agents/sl-bootstrap-agent-soul-curator/skills/immersive-landing/SKILL.md",
+            "the landing standard — every landing is built to these floors",
+        ),
+    ];
+
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
         "research-direction" => &[],
+        "synthesize-language" => SYNTHESIS_KNOWLEDGE,
         _ => FULL_CURATION_KNOWLEDGE,
     }
+}
+
+/// The master taste rulebook, compiled into the module from the app repo so
+/// the prompt can NEVER lack it. The runtime copy in the docs workspace is
+/// preferred (it may carry newer edits); this is the same-app-version
+/// fallback. The per-rule TasteRules ENTITIES are outdated and must not be
+/// loaded — the rulebook file is the single authority (owner decision,
+/// 2026-07-23).
+const TASTE_RULEBOOK_FALLBACK: &str = include_str!("../../../knowledge/rules/design-language.md");
+
+/// Inline the master taste rulebook into the prompt. Tries the docs-workspace
+/// copy first, falls back to the compiled-in copy — the normal path ALWAYS
+/// inlines, because instruction-to-go-fetch proved to be
+/// instruction-to-never-see.
+fn render_taste_rules_block(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    skill: &str,
+) -> String {
+    if skill != "synthesize-language" {
+        return String::new();
+    }
+    const CANDIDATE_PATHS: [&str; 2] = [
+        "/knowledge/rules/design-language.md",
+        "/system/knowledge/rules/design-language.md",
+    ];
+    let mut content: Option<String> = None;
+    for path in CANDIDATE_PATHS {
+        match load_doc_file(ctx, api_url, headers, path, true) {
+            Ok(doc) => {
+                if let Some(body) = doc.content {
+                    ctx.log(
+                        "info",
+                        &format!("build_session_message: inlined taste rulebook from '{path}'"),
+                    );
+                    content = Some(body);
+                    break;
+                }
+            }
+            Err(_) => continue,
+        }
+    }
+    let body = content.unwrap_or_else(|| {
+        ctx.log(
+            "info",
+            "build_session_message: taste rulebook not resolvable in docs workspace; inlining compiled-in copy",
+        );
+        TASTE_RULEBOOK_FALLBACK.to_string()
+    });
+    format!(
+        "## The taste rulebook (authoritative — your output is judged against every rule)\n\n````markdown\n{body}\n````\n"
+    )
 }
 
 fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> String {

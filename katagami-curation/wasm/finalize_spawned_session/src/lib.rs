@@ -148,7 +148,26 @@ fn run_inner(ctx: &Context) -> Result<(), String> {
                     );
                 }
                 Err(error) => {
-                    set_failed_job_callback(ctx, &job_id, &job_type, &error);
+                    let repair_job_id = if error.repairable {
+                        maybe_spawn_repair_job(
+                            ctx,
+                            &api_url,
+                            &headers,
+                            &job_id,
+                            &job_type,
+                            &finalizing_fields,
+                            &error,
+                        )
+                    } else {
+                        None
+                    };
+                    set_failed_job_callback_with_repair(
+                        ctx,
+                        &job_id,
+                        &job_type,
+                        &error,
+                        repair_job_id.as_deref(),
+                    );
                 }
             }
         }
@@ -259,12 +278,197 @@ fn set_terminal_job_callback(ctx: &Context, job_id: &str, action: &str, params: 
 }
 
 fn set_failed_job_callback(ctx: &Context, job_id: &str, job_type: &str, error: &VerificationError) {
-    let payload = error.payload(job_id, job_type);
+    set_failed_job_callback_with_repair(ctx, job_id, job_type, error, None);
+}
+
+fn set_failed_job_callback_with_repair(
+    ctx: &Context,
+    job_id: &str,
+    job_type: &str,
+    error: &VerificationError,
+    repair_job_id: Option<&str>,
+) {
+    let mut payload = error.payload(job_id, job_type);
+    if let Some(repair_id) = repair_job_id {
+        payload["repair_job_id"] = json!(repair_id);
+    }
     ctx.log(
         "warn",
         &format!("finalize_spawned_session: verification failed for job '{job_id}': {payload}"),
     );
     set_success_result("Fail", &json!({"error_message": payload.to_string()}));
+}
+
+/// Maximum number of chained repair sessions per original job before the
+/// failure is left for a human. Counted via `repair_attempt` in the job input.
+const MAX_REPAIR_ATTEMPTS: i64 = 4;
+
+/// Spawn a follow-up repair job for a repairable verification failure so
+/// imperfect runs self-heal instead of dying (ARN-269). The repair job runs
+/// the same synthesize-language skill against the EXISTING language, under the
+/// same model/provider as the failed job (contestant integrity for bake-offs),
+/// and re-enters full finalizer verification via CompleteRegeneration.
+fn maybe_spawn_repair_job(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    job_id: &str,
+    job_type: &str,
+    fields: &serde_json::Value,
+    error: &VerificationError,
+) -> Option<String> {
+    if !matches!(
+        job_type,
+        "synthesize" | "regenerate_embodiment" | "evolve_language"
+    ) {
+        return None;
+    }
+
+    let input_raw = string_field_any(fields, "input", "{}");
+    let input_json: serde_json::Value = serde_json::from_str(&input_raw).unwrap_or(json!({}));
+    let attempt = input_json
+        .get("repair_attempt")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    if attempt >= MAX_REPAIR_ATTEMPTS {
+        ctx.log(
+            "warn",
+            &format!(
+                "finalize_spawned_session: repair budget exhausted for job '{job_id}' (attempt {attempt}); leaving failure for a human"
+            ),
+        );
+        return None;
+    }
+
+    let language_id = match error.entity_type {
+        Some("DesignLanguage") => error.entity_id.clone().unwrap_or_default(),
+        _ => design_language_ids_from_job(fields)
+            .into_iter()
+            .next()
+            .unwrap_or_default(),
+    };
+    if language_id.is_empty() {
+        ctx.log(
+            "warn",
+            &format!(
+                "finalize_spawned_session: no language id resolvable for repair of job '{job_id}'; skipping auto-repair"
+            ),
+        );
+        return None;
+    }
+
+    let model = string_field_any(fields, "model", "");
+    let provider = string_field_any(fields, "provider", "");
+    let direction_id = string_field_any(fields, "direction_id", "");
+    let next_attempt = attempt + 1;
+    let payload = error.payload(job_id, job_type);
+
+    // Lead with the ORIGINAL design brief, not the gate code. Gate-centric
+    // repair prompts turn the model into a gate-satisfier: it ships numbered
+    // filler that passes string checks instead of designing. The brief is the
+    // job; the gates are constraints.
+    // In a repair chain the failed job's input is itself a repair input whose
+    // "task" is the previous repair prompt; the true brief lives at the bottom
+    // of the nested original_input chain. Walk down to it.
+    let mut brief_source = input_json.clone();
+    for _ in 0..MAX_REPAIR_ATTEMPTS + 1 {
+        let Some(inner_raw) = brief_source.get("original_input").and_then(|v| v.as_str()) else {
+            break;
+        };
+        let Ok(inner) = serde_json::from_str::<serde_json::Value>(inner_raw) else {
+            break;
+        };
+        brief_source = inner;
+    }
+    let original_brief = brief_source
+        .get("task")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let brief_line = if original_brief.is_empty() {
+        String::new()
+    } else {
+        format!("THE DESIGN BRIEF (this is the job — everything you produce serves it): {original_brief} ")
+    };
+    let repair_input = json!({
+        "task": format!(
+            "REPAIR RUN {next_attempt}/{MAX_REPAIR_ATTEMPTS} for DesignLanguage '{language_id}'. {brief_line}You are a designer finishing this language to the standard of the best pages in the Katagami library: dense bespoke CSS, real designed content in every section, the hero image actually visible. A previous {job_type} session failed finalizer verification: {payload}. Load the existing language with temper.get and fix it by DESIGNING, never by padding — systematic filler of any kind is detected by compression analysis and fails composition_padded; near-identical pages fail composition_duplicate. The finalizer reports only the FIRST failing gate, so after fixing it, audit EVERY artifact before completing: landing, dashboard, and embodiment are three genuinely different pages using var(--...) tokens; the landing's --hero-image references a real generated image and renders; design_md_format_version and a clean design_md_lint_result are set; the shadcn export has registry:theme, cssVars, and componentManifest; every slot points at its OWN Ready file. Render each page and LOOK at the screenshots before attaching. Fix everything that fails in THIS run, keep already-valid artifacts untouched, then complete via the typed completion action referencing this same language."
+        ),
+        "repair_attempt": next_attempt,
+        "repaired_job_id": job_id,
+        "existing_language_id": language_id,
+        "finalizer_error": payload,
+        "original_input": input_raw,
+    });
+
+    // Create → Configure → Submit, mirroring the operator flow.
+    let create = match ctx.http_call(
+        "POST",
+        &format!("{api_url}/tdata/CurationJobs"),
+        headers,
+        "{}",
+    ) {
+        Ok(resp) if (200..300).contains(&resp.status) => resp,
+        other => {
+            ctx.log(
+                "warn",
+                &format!("finalize_spawned_session: repair job create failed for '{job_id}': {other:?}"),
+            );
+            return None;
+        }
+    };
+    let repair_id = serde_json::from_str::<serde_json::Value>(&create.body)
+        .ok()
+        .and_then(|v| {
+            v.get("entity_id")
+                .and_then(|id| id.as_str())
+                .map(str::to_string)
+        })?;
+
+    let mut configure = json!({
+        "job_type": "regenerate_embodiment",
+        "design_language_id": language_id,
+        "input": repair_input.to_string(),
+    });
+    if !model.is_empty() {
+        configure["model"] = json!(model);
+    }
+    if !provider.is_empty() {
+        configure["provider"] = json!(provider);
+    }
+    if !direction_id.is_empty() {
+        configure["direction_id"] = json!(direction_id);
+    }
+    for (action, body) in [
+        ("Configure", configure.to_string()),
+        ("Submit", "{}".to_string()),
+    ] {
+        match ctx.http_call(
+            "POST",
+            &format!("{api_url}/tdata/CurationJobs('{repair_id}')/KatagamiCuration.{action}"),
+            headers,
+            &body,
+        ) {
+            Ok(resp) if (200..300).contains(&resp.status) => {}
+            other => {
+                ctx.log(
+                    "warn",
+                    &format!(
+                        "finalize_spawned_session: repair job {action} failed for '{repair_id}': {other:?}"
+                    ),
+                );
+                return None;
+            }
+        }
+    }
+
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: spawned repair job '{repair_id}' (attempt {next_attempt}/{MAX_REPAIR_ATTEMPTS}) for failed job '{job_id}' targeting language '{language_id}'"
+        ),
+    );
+    Some(repair_id)
 }
 
 fn verify_typed_completion(
@@ -724,100 +928,143 @@ fn verify_complete_language_artifacts(
     job_fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
     let fields = entity_fields(language);
-    verify_required_sections(language_id, language, &fields)?;
 
+    // Collect EVERY failing gate instead of short-circuiting on the first.
+    // First-fail-stop turned repair into gate-whack-a-mole: each repair
+    // session fixed the one named gate, re-rolled the others, and chains
+    // exhausted their budget converging one gate per session.
     let embodiment_format = string_field_any(&fields, "embodiment_format", "html");
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "embodiment_file_id",
-        "embodiment",
-        Some(&embodiment_format),
-    )?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "landing_file_id",
-        "composition_landing",
-        None,
-    )?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "dashboard_file_id",
-        "composition_dashboard",
-        None,
-    )?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "thumbnail_file_id",
-        "thumbnail",
-        None,
-    )?;
-
-    verify_design_md_metadata(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "design_md_file_id",
-        "design_md",
-        None,
-    )?;
-
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_export_file_id",
-        "shadcn_export",
-        None,
-    )?;
-
-    verify_shadcn_component_manifest(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_component_spec_file_id",
-        "shadcn_component_spec",
-        None,
-    )?;
-
-    verify_shadcn_preview_manifest(language_id, &fields)?;
-    verify_file_field(
-        ctx,
-        api_url,
-        headers,
-        language_id,
-        &fields,
-        "shadcn_preview_shots_file_id",
-        "shadcn_preview_shots",
-        None,
-    )?;
-
-    verify_forced_shadcn_refresh(language_id, job_fields, &fields)?;
+    let checks: Vec<Box<dyn Fn() -> Result<(), VerificationError>>> = vec![
+        Box::new(|| verify_required_sections(language_id, language, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "embodiment_file_id",
+                "embodiment",
+                Some(&embodiment_format),
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "landing_file_id",
+                "composition_landing",
+                None,
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "dashboard_file_id",
+                "composition_dashboard",
+                None,
+            )
+        }),
+        Box::new(|| verify_composition_distinctness(ctx, api_url, headers, language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "thumbnail_file_id",
+                "thumbnail",
+                None,
+            )
+        }),
+        Box::new(|| verify_design_md_metadata(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "design_md_file_id",
+                "design_md",
+                None,
+            )
+        }),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_export_file_id",
+                "shadcn_export",
+                None,
+            )
+        }),
+        Box::new(|| verify_shadcn_component_manifest(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_component_spec_file_id",
+                "shadcn_component_spec",
+                None,
+            )
+        }),
+        Box::new(|| verify_shadcn_preview_manifest(language_id, &fields)),
+        Box::new(|| {
+            verify_file_field(
+                ctx,
+                api_url,
+                headers,
+                language_id,
+                &fields,
+                "shadcn_preview_shots_file_id",
+                "shadcn_preview_shots",
+                None,
+            )
+        }),
+        Box::new(|| verify_forced_shadcn_refresh(language_id, job_fields, &fields)),
+    ];
+    let mut failures: Vec<VerificationError> = Vec::new();
+    for check in checks {
+        if let Err(e) = check() {
+            failures.push(e);
+        }
+    }
+    if failures.len() == 1 {
+        return Err(failures.remove(0));
+    }
+    if failures.len() > 1 {
+        let listing = failures
+            .iter()
+            .map(|e| format!("[{}] {}", e.code, e.message))
+            .collect::<Vec<_>>()
+            .join("; ");
+        let repairable = failures.iter().all(|e| e.repairable);
+        let first_code = failures[0].code;
+        return Err(VerificationError::new(
+            first_code,
+            format!(
+                "{} gates failed — fix ALL of them in one run: {listing}",
+                failures.len()
+            ),
+        )
+        .entity("DesignLanguage", language_id)
+        .repairable(repairable));
+    }
     // Re-load so the caller keeps a current snapshot after the byte-level
     // verification above; readiness is now enforced by the spec's
     // cross_entity_state File guards, not by WASM-set *_verified booleans.
@@ -1376,6 +1623,196 @@ fn read_file_value(
     Ok(resp.body)
 }
 
+/// Minimum byte size for the three HTML pages (embodiment, landing, dashboard).
+/// A safety net for the empty-sketch class only — reference bake-off pages run
+/// 10-16 KB of dense bespoke CSS, so bytes must NOT be the quality bar (a byte
+/// target invites padding; the unique-content gate is the real enforcement).
+const PAGE_BYTE_FLOOR: usize = 9_000;
+
+/// Similarity above which two of the three pages count as the same page.
+/// The pages legitimately share token/CSS blocks (~0.1-0.3); a copied page
+/// scores near 1.0.
+const PAGE_DUPLICATE_SIMILARITY: f64 = 0.55;
+
+/// Maximum deflate compression ratio (raw bytes / compressed bytes) for a
+/// page. Repetition is exactly what compression measures, so this catches ANY
+/// systematic filler — stamped blocks, incrementing counters, rotated word
+/// lists — with no pattern-specific tricks. Measured on the real corpus:
+/// genuine bake-off pages compress 2.7-3.8x; stamped/templated filler
+/// 6.0-9.2x; pure counter-filler 22.7x; LLM-tuned semantic filler (repeated
+/// sentence skeletons with rotated prefixes) 4.2x. Real-page maximum observed
+/// is 3.82x, so 4.0 splits the distributions.
+const PAGE_REDUNDANCY_CEILING: f64 = 4.0;
+
+/// The element showcase, landing, and dashboard must be three DIFFERENT pages.
+/// A repair session once attached the dashboard into the embodiment slot and
+/// every per-file gate passed; this cross-file check makes that class of
+/// mix-up non-completable.
+fn verify_composition_distinctness(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    language_id: &str,
+    fields: &serde_json::Value,
+) -> Result<(), VerificationError> {
+    let mut pages: Vec<(&'static str, String, String)> = Vec::new();
+    for (field_name, kind) in [
+        ("embodiment_file_id", "embodiment"),
+        ("landing_file_id", "landing"),
+        ("dashboard_file_id", "dashboard"),
+    ] {
+        let file_id = string_field_any(fields, field_name, "");
+        if file_id.is_empty() {
+            continue;
+        }
+        let body = read_file_value(ctx, api_url, headers, &file_id, language_id, "embodiment")?;
+        let redundancy = page_redundancy_ratio(&body);
+        if redundancy > PAGE_REDUNDANCY_CEILING {
+            return Err(VerificationError::new(
+                "composition_padded",
+                format!(
+                    "DesignLanguage '{language_id}' {kind} ('{file_id}') compresses {redundancy:.1}x (genuine pages compress under {PAGE_REDUNDANCY_CEILING}x) — the page is systematic filler, not designed content; build real, distinct sections",
+                ),
+            )
+            .entity("DesignLanguage", language_id)
+            .artifact(kind, &file_id));
+        }
+        pages.push((kind, file_id, body));
+    }
+    for i in 0..pages.len() {
+        for j in (i + 1)..pages.len() {
+            let (kind_a, file_a, body_a) = &pages[i];
+            let (kind_b, file_b, body_b) = &pages[j];
+            let title_a = extract_html_title(body_a);
+            let title_b = extract_html_title(body_b);
+            let same_title = !title_a.is_empty() && title_a == title_b;
+            let similarity = html_similarity(body_a, body_b);
+            if same_title || similarity > PAGE_DUPLICATE_SIMILARITY {
+                return Err(VerificationError::new(
+                    "composition_duplicate",
+                    format!(
+                        "DesignLanguage '{language_id}' {kind_a} ('{file_a}') and {kind_b} ('{file_b}') are the same page ({}% identical markup{}); the element showcase, landing, and dashboard must be three different artifacts",
+                        (similarity * 100.0).round() as i64,
+                        if same_title { ", identical <title>" } else { "" },
+                    ),
+                )
+                .entity("DesignLanguage", language_id)
+                .artifact(kind_b, file_b));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn extract_html_title(body: &str) -> String {
+    let lower = body.to_ascii_lowercase();
+    let Some(open) = lower.find("<title") else {
+        return String::new();
+    };
+    let Some(gt) = lower[open..].find('>') else {
+        return String::new();
+    };
+    let start = open + gt + 1;
+    let Some(end) = lower[start..].find("</title>") else {
+        return String::new();
+    };
+    lower[start..start + end].trim().to_string()
+}
+
+/// Content-defined 64-byte shingles: every window position is hashed and a
+/// window is KEPT when its hash lands in a 1-in-16 bucket. Selection depends
+/// only on window content, never on byte offset, so identical blocks match
+/// regardless of alignment. (A fixed-stride sampler shipped first and missed
+/// a 20 KB identical tail offset by 5 bytes — offset-sensitive sampling is
+/// exactly wrong for this job.)
+fn content_shingles(s: &str) -> (std::collections::HashSet<u64>, usize) {
+    use std::collections::HashSet;
+    const WINDOW: usize = 64;
+    const KEEP_ONE_IN: u64 = 16;
+    const BASE: u64 = 1_000_003;
+    let bytes = s.as_bytes();
+    // splitmix64 finalizer — the raw polynomial hash has poor low-bit
+    // distribution, which would bias the 1-in-16 selection.
+    fn mix(mut x: u64) -> u64 {
+        x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        x = (x ^ (x >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        x = (x ^ (x >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        x ^ (x >> 31)
+    }
+    let mut set = HashSet::new();
+    let mut kept = 0usize;
+    if bytes.len() <= WINDOW {
+        let mut h = 0u64;
+        for &b in bytes {
+            h = h.wrapping_mul(BASE).wrapping_add(b as u64);
+        }
+        set.insert(mix(h));
+        return (set, 1);
+    }
+    // Rolling Rabin fingerprint: O(1) per window. A per-window full hash blew
+    // the WASM instruction budget on real 40 KB pages (fuel exhaustion).
+    let mut pow = 1u64; // BASE^(WINDOW-1)
+    for _ in 0..WINDOW - 1 {
+        pow = pow.wrapping_mul(BASE);
+    }
+    let mut h = 0u64;
+    for &b in &bytes[..WINDOW] {
+        h = h.wrapping_mul(BASE).wrapping_add(b as u64);
+    }
+    let mut i = 0usize;
+    loop {
+        let digest = mix(h);
+        if digest % KEEP_ONE_IN == 0 {
+            set.insert(digest);
+            kept += 1;
+        }
+        if i + WINDOW >= bytes.len() {
+            break;
+        }
+        h = h
+            .wrapping_sub(pow.wrapping_mul(bytes[i] as u64))
+            .wrapping_mul(BASE)
+            .wrapping_add(bytes[i + WINDOW] as u64);
+        i += 1;
+    }
+    if set.is_empty() {
+        set.insert(mix(h));
+        kept = 1;
+    }
+    (set, kept)
+}
+
+/// Jaccard similarity over content-defined shingles.
+fn html_similarity(a: &str, b: &str) -> f64 {
+    let (sa, _) = content_shingles(a);
+    let (sb, _) = content_shingles(b);
+    if sa.is_empty() || sb.is_empty() {
+        return 0.0;
+    }
+    let inter = sa.intersection(&sb).count();
+    let union = sa.len() + sb.len() - inter;
+    if union == 0 {
+        return 1.0;
+    }
+    inter as f64 / union as f64
+}
+
+/// Deflate compression ratio of a page: raw bytes / compressed bytes.
+/// Repetition IS what compression measures, so any systematic filler —
+/// stamped blocks, incrementing counters, rotated wordlists — scores high
+/// with no pattern-specific handling.
+fn page_redundancy_ratio(s: &str) -> f64 {
+    let raw = s.as_bytes();
+    if raw.is_empty() {
+        return 1.0;
+    }
+    let compressed = miniz_oxide::deflate::compress_to_vec(raw, 6);
+    if compressed.is_empty() {
+        return 1.0;
+    }
+    raw.len() as f64 / compressed.len() as f64
+}
+
 fn verify_file_body(
     language_id: &str,
     file_id: &str,
@@ -1408,6 +1845,15 @@ fn verify_file_body(
                     "embodiment file is not self-contained HTML",
                 );
             }
+            "html" if trimmed.len() < PAGE_BYTE_FLOOR => {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "composition_underbuilt",
+                    "embodiment HTML is a sketch, not a finished page; finished Katagami pages run 35-60 KB — build it out with real sections and re-render",
+                );
+            }
             "tsx" if !trimmed.contains("export") && !trimmed.contains("function") => {
                 return artifact_error(
                     language_id,
@@ -1420,6 +1866,15 @@ fn verify_file_body(
             _ => {}
         },
         "composition_landing" | "composition_dashboard" => {
+            if trimmed.len() < PAGE_BYTE_FLOOR {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "composition_underbuilt",
+                    "composition HTML is a sketch, not a finished page; finished Katagami pages run 35-60 KB — build it out with real sections and re-render",
+                );
+            }
             if !lower.contains("<html") && !lower.contains("<!doctype") {
                 return artifact_error(
                     language_id,
@@ -1445,6 +1900,18 @@ fn verify_file_body(
                     artifact_kind,
                     "landing_missing_hero_slot",
                     "landing composition is missing the --hero-image slot",
+                );
+            }
+            // The hero slot must reference REAL generated imagery served from
+            // the commons, not a CSS gradient stand-in. Placeholder heroes
+            // passed the slot check and shipped twice before this gate.
+            if artifact_kind == "composition_landing" && !lower.contains("/api/file/") {
+                return artifact_error(
+                    language_id,
+                    file_id,
+                    artifact_kind,
+                    "landing_hero_not_generated_image",
+                    "landing --hero-image must reference a generated image via https://katagami.ai/api/file/<file_id>, not a gradient or placeholder",
                 );
             }
         }
@@ -4925,6 +5392,147 @@ mod host_stubs {
         ) -> i32 {
             -1
         }
+}
+
+#[cfg(test)]
+mod page_quality_tests {
+    use super::*;
+
+    /// Pseudo-random word from a simple LCG — high-entropy text that deflate
+    /// cannot squeeze, mimicking genuinely varied prose and CSS.
+    fn lcg_word(state: &mut u64, len: usize) -> String {
+        let mut s = String::new();
+        for _ in 0..len {
+            *state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s.push((b'a' + ((*state >> 33) % 26) as u8) as char);
+        }
+        s
+    }
+
+    /// A page of genuinely varied content: rotating sentence structures with
+    /// mostly-unique tokens, the way real designed pages mix bespoke CSS,
+    /// copy, and data. Compresses like the real corpus (~3x), not like filler.
+    fn page(title: &str, filler_seed: &str, bytes: usize) -> String {
+        let mut body = format!(
+            "<!doctype html><html><head><title>{title}</title><style>:root{{--bg:#fff}}</style></head><body style=\"background:var(--bg)\">"
+        );
+        let mut st: u64 = filler_seed.bytes().map(|b| b as u64).sum::<u64>() + 7;
+        let mut i = 0usize;
+        while body.len() < bytes {
+            let (w1, w2, w3, w4) = (
+                lcg_word(&mut st, 7),
+                lcg_word(&mut st, 9),
+                lcg_word(&mut st, 6),
+                lcg_word(&mut st, 8),
+            );
+            let sentence = match i % 5 {
+                0 => format!("<section id=\"{w1}\"><h3>{w2} {w3}</h3><p>{w4} carries the {w1} line toward a {w2} field.</p></section>"),
+                1 => format!("<div class=\"{w3}\"><p>Between {w1} and {w4}, the {w2} panel keeps its own register.</p></div>"),
+                2 => format!("<article data-k=\"{w2}\"><h4>{w4}</h4><p>{w1} reads as {w3} until the rim warms.</p></article>"),
+                3 => format!("<aside><span>{w3}</span><p>A {w1} measure of {w2}, held against {w4}.</p></aside>"),
+                _ => format!("<figure class=\"{w4}\"><figcaption>{w1} over {w2}</figcaption><p>{w3} settles the edge.</p></figure>"),
+            };
+            body.push_str(&sentence);
+            i += 1;
+        }
+        body.push_str("</body></html>");
+        body
+    }
+
+    #[test]
+    fn sketch_size_page_fails_the_byte_floor() {
+        let body = page("Sketch", "sk", 8_000);
+        let err = verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect_err("an 8 KB page must fail composition_underbuilt");
+        assert_eq!(err.code, "composition_underbuilt");
+        let emb = verify_file_body("lang", "file", "embodiment", Some("html"), "text/html", &body)
+            .expect_err("an 8 KB embodiment must fail composition_underbuilt");
+        assert_eq!(emb.code, "composition_underbuilt");
+    }
+
+    #[test]
+    fn built_out_page_passes_the_byte_floor() {
+        let mut body = page("Full Landing", "fl", 30_000);
+        body = body.replace(
+            "</head>",
+            "<style>.hero{background-image:var(--hero-image,url(https://katagami.ai/api/file/fl-x))}</style></head>",
+        );
+        verify_file_body("lang", "file", "composition_landing", None, "text/html", &body)
+            .expect("a 30 KB tokenized landing with a real hero must pass");
+    }
+
+    #[test]
+    fn identical_pages_score_as_duplicates() {
+        let a = page("Dawn Dashboard", "dash", 20_000);
+        assert!(html_similarity(&a, &a) > PAGE_DUPLICATE_SIMILARITY);
+        assert_eq!(extract_html_title(&a), "dawn dashboard");
+    }
+
+    #[test]
+    fn shared_tail_at_different_offsets_scores_as_duplicate() {
+        // The first shipped sampler used fixed-stride offsets and missed a
+        // 20 KB identical tail shifted by 5 bytes. Content-defined sampling
+        // must catch shared blocks regardless of alignment.
+        let tail = page("x", "shared-tail", 20_000);
+        let a = format!("<title>Page A</title><p>unique intro alpha</p>{tail}");
+        let b = format!("<title>Page B</title><p>a different intro beta about other things</p>{tail}");
+        assert!(
+            html_similarity(&a, &b) > PAGE_DUPLICATE_SIMILARITY,
+            "shared 20 KB tail at misaligned offsets must score as duplicate, got {}",
+            html_similarity(&a, &b)
+        );
+    }
+
+    #[test]
+    fn stamped_filler_page_fails_the_redundancy_ceiling() {
+        let block = "<section class=\"m\"><h2>Silence budget</h2><p>Each surface stays cool and nearly unfilled; detail is carried by leader rules and aligned small text.</p></section>";
+        let mut body = String::from("<!doctype html><html><head><title>Padded</title></head><body>");
+        while body.len() < 30_000 {
+            body.push_str(block);
+        }
+        body.push_str("</body></html>");
+        assert!(
+            page_redundancy_ratio(&body) > PAGE_REDUNDANCY_CEILING,
+            "a page of stamped copies must fail, got {}",
+            page_redundancy_ratio(&body)
+        );
+        let real = page("Real", "varied-real-content", 30_000);
+        assert!(
+            page_redundancy_ratio(&real) <= PAGE_REDUNDANCY_CEILING,
+            "varied content must pass, got {}",
+            page_redundancy_ratio(&real)
+        );
+    }
+
+    #[test]
+    fn counter_numbered_filler_fails_despite_changing_digits() {
+        // A Goodhart observed in prod: identical sentences with an
+        // incrementing counter ("Calibrated landing note 27 / 28 / 29").
+        // Deflate matches the repeated skeleton regardless of the digits —
+        // no pattern-specific handling required.
+        let mut body = String::from("<!doctype html><html><head><title>Notes</title></head><body>");
+        let mut i = 0usize;
+        while body.len() < 30_000 {
+            body.push_str(&format!(
+                "<section><span>landing depth {i}</span><h2>Calibrated landing note {i}</h2><p>A distinct authored passage about landing threshold behavior, hairline alignment, luminous restraint, and the single warm east rim used for active state {i}.</p></section>"
+            ));
+            i += 1;
+        }
+        body.push_str("</body></html>");
+        assert!(
+            page_redundancy_ratio(&body) > PAGE_REDUNDANCY_CEILING,
+            "counter-stamped filler must fail, got {}",
+            page_redundancy_ratio(&body)
+        );
+    }
+
+    #[test]
+    fn distinct_pages_sharing_a_token_block_are_not_duplicates() {
+        let a = page("Landing", "landing-scene", 25_000);
+        let b = page("Dashboard", "dash-panel", 25_000);
+        assert!(html_similarity(&a, &b) < PAGE_DUPLICATE_SIMILARITY);
+        assert_ne!(extract_html_title(&a), extract_html_title(&b));
+    }
 }
 
 #[cfg(test)]
