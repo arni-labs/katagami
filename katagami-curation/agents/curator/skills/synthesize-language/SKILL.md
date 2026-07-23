@@ -33,16 +33,11 @@ existing = temper.list('DesignLanguages', '')
 ```
 Note existing typefaces, palettes, scene types, and structural approaches. Your language must be distinct from all of them.
 
-Load accepted taste rules:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
-Use only Accepted rules. Positive rules describe patterns to preserve or amplify;
-negative rules describe archive-derived anti-patterns to avoid. Ignore Proposed,
-Rejected, and Superseded rules entirely.
-Accepted TasteRules are the authoritative reusable design tests. The knowledge
-files provide orientation and hard artifact context; do not recreate parallel
-anti-slop checklists from prose.
+The taste rulebook is inlined into this prompt (see "The taste rulebook"
+section) — it is the authoritative set of design tests and every rule applies
+to your output. Do NOT load TasteRules entities; they are superseded by the
+rulebook file. The knowledge files provide orientation and hard artifact
+context; do not recreate parallel anti-slop checklists from prose.
 
 ## Landing = scroll-cinematic film (the Katagami standard)
 
@@ -184,8 +179,8 @@ system.
 
 ### Spec Validation Gate
 
-This gate checks structural completeness before visual work. Apply Accepted
-TasteRules separately as the reusable taste and anti-slop test set.
+This gate checks structural completeness before visual work. Apply the inlined
+taste rulebook separately as the reusable taste and anti-slop test set.
 
 Do NOT proceed to embodiment until every check passes:
 

@@ -1017,10 +1017,18 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
     }
 }
 
-/// Fetch every Accepted TasteRule and render it into the prompt. Best-effort:
-/// a fetch failure logs and returns an empty block rather than failing the
-/// spawn — but the normal path ALWAYS inlines, because instruction-to-go-fetch
-/// proved to be instruction-to-never-see.
+/// The master taste rulebook, compiled into the module from the app repo so
+/// the prompt can NEVER lack it. The runtime copy in the docs workspace is
+/// preferred (it may carry newer edits); this is the same-app-version
+/// fallback. The per-rule TasteRules ENTITIES are outdated and must not be
+/// loaded — the rulebook file is the single authority (owner decision,
+/// 2026-07-23).
+const TASTE_RULEBOOK_FALLBACK: &str = include_str!("../../../knowledge/rules/design-language.md");
+
+/// Inline the master taste rulebook into the prompt. Tries the docs-workspace
+/// copy first, falls back to the compiled-in copy — the normal path ALWAYS
+/// inlines, because instruction-to-go-fetch proved to be
+/// instruction-to-never-see.
 fn render_taste_rules_block(
     ctx: &Context,
     api_url: &str,
@@ -1030,63 +1038,36 @@ fn render_taste_rules_block(
     if skill != "synthesize-language" {
         return String::new();
     }
-    let url = format!("{api_url}/tdata/TasteRules?$filter=Status eq 'Accepted'");
-    let resp = match ctx.http_call("GET", &url, headers, "") {
-        Ok(resp) if resp.status == 200 => resp,
-        other => {
-            ctx.log(
-                "warn",
-                &format!("build_session_message: taste rules fetch failed: {other:?}"),
-            );
-            return String::new();
+    const CANDIDATE_PATHS: [&str; 2] = [
+        "/knowledge/rules/design-language.md",
+        "/system/knowledge/rules/design-language.md",
+    ];
+    let mut content: Option<String> = None;
+    for path in CANDIDATE_PATHS {
+        match load_doc_file(ctx, api_url, headers, path, true) {
+            Ok(doc) => {
+                if let Some(body) = doc.content {
+                    ctx.log(
+                        "info",
+                        &format!("build_session_message: inlined taste rulebook from '{path}'"),
+                    );
+                    content = Some(body);
+                    break;
+                }
+            }
+            Err(_) => continue,
         }
-    };
-    let parsed: serde_json::Value = match serde_json::from_str(&resp.body) {
-        Ok(v) => v,
-        Err(err) => {
-            ctx.log(
-                "warn",
-                &format!("build_session_message: taste rules parse failed: {err}"),
-            );
-            return String::new();
-        }
-    };
-    let empty = vec![];
-    let rules = parsed
-        .get("value")
-        .and_then(|v| v.as_array())
-        .unwrap_or(&empty);
-    if rules.is_empty() {
-        return String::new();
     }
-    let mut out = String::from(
-        "## Accepted taste rules (authoritative design tests — your output is judged against every one)\n\n\
-         Positive rules describe patterns to preserve or amplify; negative rules are archive-derived anti-patterns to avoid.\n\n",
-    );
-    let mut count = 0usize;
-    for rule in rules {
-        let fields = rule.get("fields").unwrap_or(rule);
-        let title = fields.get("title").and_then(|v| v.as_str()).unwrap_or("");
-        let text = fields
-            .get("rule_text")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let polarity = fields
-            .get("polarity")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if title.is_empty() && text.is_empty() {
-            continue;
-        }
-        let sign = if polarity == "negative" { "AVOID" } else { "KEEP" };
-        out.push_str(&format!("- [{sign}] {title}: {text}\n"));
-        count += 1;
-    }
-    ctx.log(
-        "info",
-        &format!("build_session_message: inlined {count} accepted taste rules"),
-    );
-    out
+    let body = content.unwrap_or_else(|| {
+        ctx.log(
+            "info",
+            "build_session_message: taste rulebook not resolvable in docs workspace; inlining compiled-in copy",
+        );
+        TASTE_RULEBOOK_FALLBACK.to_string()
+    });
+    format!(
+        "## The taste rulebook (authoritative — your output is judged against every rule)\n\n````markdown\n{body}\n````\n"
+    )
 }
 
 fn render_read_commands(paths: &[(&str, &str)], loaded_docs: &[LoadedDoc]) -> String {
