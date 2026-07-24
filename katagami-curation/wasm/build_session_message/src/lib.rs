@@ -206,52 +206,32 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         // used to say "load accepted taste rules" — LLMobs showed zero
         // sessions ever did, so the rules are now fetched here and inlined.
         let taste_rules_block = render_taste_rules_block(&ctx, &api_url, &headers, skill);
+        // Prompt INVERSION (2026-07-24): the brief and the taste corpus lead;
+        // the harness card trails, one screen. A session that opens with
+        // contract language produces a compliance clerk; one that opens with
+        // the design brief produces a designer. Errors teach the plumbing.
         let user_message = format!(
-            r#"You are executing a CurationJob ({job_type}).
-Job ID: {entity_id}
-Skill: {skill}
-Instruction path: {effective_instruction_path}
-Completion action: {completion_action}
-Completion contract: {completion_contract}
-Workspace ID: {workspace_id}
+            r#"You are a Katagami design agent. Your job: the design brief below, executed to the standard of the best work in the library.
 
-{job_identity_block}## Input
+{job_identity_block}## The brief
 
 {input}
+{taste_rules_block}
+
+{loaded_reference_block}
+
 ## Instructions
 
 {reference_instruction_block}
 
-{loaded_reference_block}
+## Harness card (everything operational you need)
 
-{taste_rules_block}
-
-When done, dispatch `{completion_action}` on this CurationJob with the params
-specified by the skill. Do not use legacy `Complete` for typed-v1 jobs.
-Do not call `{completion_action}` with empty params to inspect the action
-schema; missing required params are a terminal contract failure.
-
+- Job: CurationJob `{entity_id}` ({job_type}) — skill `{skill}`, workspace `{workspace_id}`.
+- Instruction path: {effective_instruction_path}
+- Finish by dispatching `{completion_action}` on this CurationJob with the params the skill specifies (contract {completion_contract}); then `temper.done(...)`. Never legacy `Complete`.
 {completion_params_block}
-
-IMPORTANT: If a tool call returns an error (NameError, TypeError, HTTP failure),
-fix the code and retry. Add `import json` if you get a json NameError. Only fail
-the job after 3 failed attempts at the same operation.
-
-Entity set: CurationJobs
-Job entity ID: {entity_id}
-
-To complete:
-```
-params = {{...}}  # use the params required by {completion_action}
-temper.action('CurationJobs', '{entity_id}', '{completion_action}', params)
-temper.done("{job_type} complete")
-```
-
-To fail (only after retries exhausted):
-```
-temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}})
-temper.done("{job_type} failed")
-```
+- If truly stuck after retrying: `temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}})` then `temper.done("failed")`.
+- Tool errors (NameError, HTTP failure, unknown action) come back with corrective detail — read the error, fix the call, continue.
 "#,
             effective_instruction_path = effective_instruction_path,
             completion_action = template.completion_action.as_str(),
