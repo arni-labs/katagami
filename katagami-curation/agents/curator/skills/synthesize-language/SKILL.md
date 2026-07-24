@@ -481,6 +481,35 @@ both files and rejects non-HTML, untokenized, hero-less, underbuilt, padded,
 or duplicate pages; `SubmitForReview` and `Publish` guard on
 has_compositions + compositions_verified.
 
+## PRE-COMPLETION SELF-AUDIT (mandatory — one command, saves a whole repair session)
+
+The finalizer will mechanically verify everything you attach. A failed gate
+costs an ENTIRE repair session (hundreds of thousands of tokens). Before you
+attach artifacts, run this audit in the sandbox and fix anything it flags:
+
+```python
+audit = sandbox.bash("""python3 - <<'PY'
+import zlib, re
+paths = ['/tmp/landing.html', '/tmp/embodiment.html', '/tmp/dashboard.html']
+titles = []
+for p in paths:
+    b = open(p, 'rb').read()
+    ratio = len(b) / len(zlib.compress(b, 6))
+    t = re.search(rb'<title>([^<]*)</title>', b)
+    titles.append(t.group(1) if t else b'MISSING TITLE ' + p.encode())
+    print(p, len(b), 'bytes | compression %.2fx' % ratio,
+          '| OK' if len(b) >= 9000 and ratio <= 4.0 else '| FAIL: need >=9000 bytes and <=4.0x compression (no repeated filler)')
+print('distinct titles:', 'OK' if len(set(titles)) == 3 else 'FAIL ' + repr(titles))
+lb = open('/tmp/landing.html','rb').read()
+print('hero image ref:', 'OK' if b'/api/file/' in lb else 'FAIL: --hero-image must reference a generated /api/file/ image')
+dm = open('/tmp/DESIGN.md','rb').read()
+print('DESIGN.md front matter:', 'OK' if dm.startswith(b'---') and b'version:' in dm and b'components' in dm else 'FAIL: needs YAML front matter with version: and components')
+PY""")
+```
+
+Every line must say OK before you attach. This is the same math the finalizer
+runs — passing it locally means passing the gates on the first try.
+
 ## DRIVE-TO-REVIEW PHASE (self-heal loop)
 
 You own `SubmitForReview`. Before completing a `synthesize` job you MUST drive
