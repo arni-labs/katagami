@@ -33,16 +33,11 @@ existing = temper.list('DesignLanguages', '')
 ```
 Note existing typefaces, palettes, scene types, and structural approaches. Your language must be distinct from all of them.
 
-Load accepted taste rules:
-```python
-accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")
-```
-Use only Accepted rules. Positive rules describe patterns to preserve or amplify;
-negative rules describe archive-derived anti-patterns to avoid. Ignore Proposed,
-Rejected, and Superseded rules entirely.
-Accepted TasteRules are the authoritative reusable design tests. The knowledge
-files provide orientation and hard artifact context; do not recreate parallel
-anti-slop checklists from prose.
+The taste rulebook is inlined into this prompt (see "The taste rulebook"
+section) — it is the authoritative set of design tests and every rule applies
+to your output. Do NOT load TasteRules entities; they are superseded by the
+rulebook file. The knowledge files provide orientation and hard artifact
+context; do not recreate parallel anti-slop checklists from prose.
 
 ## Landing = scroll-cinematic film (the Katagami standard)
 
@@ -54,6 +49,45 @@ The landing page is NOT a static hero + sections. Read `agents/curator/skills/im
 - Each session creates ONE language.
 - EVERY tool call must create or populate a DesignLanguage. No exploration turns.
 - You MUST create ALL languages listed in the scope before stopping.
+
+## Quality floors (finalizer-enforced — a violation fails the job)
+
+These are hard gates checked mechanically by the finalizer. A run that skips them
+does not save time: the job fails and a repair session replays everything.
+
+1. **Three pages, three DIFFERENT artifacts.** The embodiment is an element
+   showcase; the landing is a scroll-cinematic statement; the dashboard is a
+   working product screen. The finalizer rejects any two pages with identical
+   `<title>` or near-identical markup (`composition_duplicate`). Never attach
+   one file into two slots, never derive one page by lightly editing another.
+2. **No sketches, and NO FILLER.** Pages under 9 KB fail
+   (`composition_underbuilt`). But bytes are not the target: the finalizer
+   compression-analyzes every page, so systematic filler of ANY kind —
+   stamped blocks, numbered variants, rotated boilerplate — fails
+   `composition_padded` no matter how large the file is. Every section
+   must be designed, distinct content — the reference pages in the library
+   are 10-16 KB+ of dense bespoke CSS with zero repeated modules.
+3. **Landing hero is a real image and must RENDER.** `--hero-image` must
+   reference a generated image via `https://katagami.ai/api/file/<file_id>`
+   (`landing_hero_not_generated_image`) and the hero must actually be visible
+   in your screenshots — a token reference buried in an unused rule is a
+   failed hero.
+4. **The render loop is NON-NEGOTIABLE.** For EACH page: write it complete,
+   render desktop/tablet/mobile from a script file, `sandbox.read` the
+   screenshots and LOOK at them, fix what you see, re-render. Minimum 2 full
+   render→read→fix cycles per page. Also capture full-page plus 25/50/75/100%
+   scroll-position shots — emptiness below the first viewport is a failure.
+   A first draft you never looked at is not a finished page.
+
+## Token & Turn Efficiency (mandatory)
+
+Efficiency means large coherent steps — it NEVER means skipping the render loop
+or shipping a first draft. A cheap failed run is the most expensive run
+possible.
+
+- Work in FEW LARGE steps: write complete files in one sandbox.write / temper.write; NEVER patch files line-by-line through repeated read-modify-write cycles.
+- Never re-read a file you just wrote to "verify" its text — trust the write result; verification is visual (screenshots) and gate-based (finalizer).
+- Prefer one action call that does more (AuthorComplete) over ladders of small calls.
 
 ## SPEC PHASE
 
@@ -145,8 +179,8 @@ system.
 
 ### Spec Validation Gate
 
-This gate checks structural completeness before visual work. Apply Accepted
-TasteRules separately as the reusable taste and anti-slop test set.
+This gate checks structural completeness before visual work. Apply the inlined
+taste rulebook separately as the reusable taste and anti-slop test set.
 
 Do NOT proceed to embodiment until every check passes:
 
@@ -164,69 +198,24 @@ Generate the portable DESIGN.md artifact from the same native Katagami fields
 you just wrote. The finalizer verifies the attached file and lint metadata; it
 does not generate or repair DESIGN.md for you.
 
-The DESIGN.md must include valid frontmatter, token references, component
-semantics, and the `## shadcn/ui Usage` section described above. Write it to
-`/tmp/DESIGN.md` in the sandbox, then run the no-network Katagami contract
-checker with `python3`. Do not use `npx`, package installs, or networked lint
-tools in production sessions:
+The DESIGN.md must start with YAML frontmatter containing `version:`, `name:`,
+`description:`, `colors:`, `typography:`, `rounded:`, `spacing:`, and
+`components:`; include the sections `## Overview`, `## Colors`,
+`## Typography`, `## Layout`, `## Components`, `## Do's and Don'ts`, and
+`## shadcn/ui Usage`; reference `/language/{language_id}/DESIGN.with-shadcn.md`,
+`/shadcn.json`, `/shadcn-components.md`, `/shadcn-shots.json`, and
+`@/components/ui/*`; contain at least eight concrete hex color tokens and the
+production Google Fonts URL; and contain no TBD/TODO/placeholder text.
+
+Write it to `/tmp/DESIGN.md` in the sandbox, then run the no-network Katagami
+contract checker with `python3` from a script FILE (no npx, no installs). The
+checker validates exactly the requirements above and prints one JSON object:
 
 ```python
-lint_script = r'''
-json_module = __import__('json')
-pathlib = __import__('pathlib')
-re = __import__('re')
-
-path = pathlib.Path('/tmp/DESIGN.md')
-text = path.read_text(encoding='utf-8') if path.exists() else ''
-errors = []
-warnings = []
-
-def error(code, message):
-    errors.append({'code': code, 'message': message})
-
-if not text.strip():
-    error('empty_design_md', 'DESIGN.md is empty')
-elif not text.startswith('---\n'):
-    error('missing_frontmatter', 'DESIGN.md must start with YAML frontmatter')
-else:
-    close = text.find('\n---', 4)
-    if close == -1:
-        error('missing_frontmatter_close', 'YAML frontmatter must be closed')
-        frontmatter = ''
-    else:
-        frontmatter = text[4:close]
-    for key in ['version:', 'name:', 'description:', 'colors:', 'typography:', 'rounded:', 'spacing:', 'components:']:
-        if key not in frontmatter:
-            error('missing_frontmatter_key', f'frontmatter missing {key}')
-
-for heading in ['## Overview', '## Colors', '## Typography', '## Layout', '## Components', "## Do's and Don'ts", '## shadcn/ui Usage']:
-    if heading not in text:
-        error('missing_section', f'missing {heading}')
-
-for ref in ['/language/{language_id}/DESIGN.with-shadcn.md', '/shadcn.json', '/shadcn-components.md', '/shadcn-shots.json', '@/components/ui/*']:
-    if ref not in text:
-        error('missing_shadcn_reference', f'missing {ref}')
-
-if len(re.findall(r'#[0-9a-fA-F]{6}\b', text)) < 8:
-    error('insufficient_color_tokens', 'include at least eight concrete hex color tokens')
-if 'fonts.googleapis.com' not in text:
-    error('missing_google_fonts_url', 'include the production Google Fonts URL')
-if re.search(r'\b(TBD|TODO|lorem ipsum|placeholder)\b', text, re.IGNORECASE):
-    error('placeholder_text', 'remove placeholder text before attaching DESIGN.md')
-
-print(json_module.dumps({
-    'tool': 'katagami-design-md-contract',
-    'format': 'json',
-    'summary': {'errors': len(errors), 'warnings': len(warnings)},
-    'errors': errors,
-    'warnings': warnings,
-}, ensure_ascii=False))
-'''.replace('\n     ', '\n').lstrip()
-sandbox.write('/tmp/katagami_design_md_lint.py', lint_script)
+sandbox.write('/tmp/DESIGN.md', design_md)
+sandbox.write('/tmp/katagami_design_md_lint.py', lint_script)  # the checker
 lint_output = sandbox.bash('python3 /tmp/katagami_design_md_lint.py')
-start = lint_output.find('{')
-end = lint_output.rfind('}') + 1
-lint_result = json.loads(lint_output[start:end])
+lint_result = json.loads(lint_output[lint_output.find('{'):lint_output.rfind('}')+1])
 ```
 
 Warnings are blocking. Parse only the JSON object emitted by the checker; never
@@ -240,57 +229,32 @@ design_md_result = temper.write('/katagami/design-md/' + slug + '/DESIGN.md', de
 temper.action('DesignLanguages', eid, 'AttachDesignMd', {
     'design_md_file_id': design_md_result['file_id'],
     'design_md_lint_result': json.dumps(lint_result, ensure_ascii=False),
-    'design_md_format_version': 'alpha'
+    'design_md_format_version': 'design-md-v1'
 })
 ```
 
 ## EMBODIMENT PHASE
 
-Generate a self-contained HTML file that manifests every `visual_character` trait, every `signature_pattern`, and uses the surfaces/borders/motion tokens.
+Generate a self-contained HTML file that manifests every `visual_character`
+trait, every `signature_pattern`, and uses the surfaces/borders/motion tokens.
+15+ explicitly styled elements, zero browser defaults (reset appearance on
+select/input/textarea/button), all layout in classes, responsive via media
+queries. Scene-first: a real application screen, not a component inventory.
 
 ### Step 1 — Write HTML to sandbox
 
 ```python
-html_code = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="..." rel="stylesheet">
-  <title>Language Name</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    select, input, textarea, button { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; border: none; background: none; outline: none; }
-    /* Design language CSS — all layout in classes, responsive via media queries */
-  </style>
-</head>
-<body>
-  <!-- Scene-first: a real application screen -->
-</body>
-</html>'''
 sandbox.write('/tmp/embodiment.html', html_code)
 ```
 
 ### Step 2 — Screenshot at three viewports
 
-```python
-browser_setup_log = sandbox.bash("""set -eu
-python3 -m pip install --quiet playwright pillow
-python3 -m playwright install chromium >/dev/null
-python3 - <<'PY'
-from playwright.sync_api import sync_playwright
-p = sync_playwright().start()
-b = p.chromium.launch()
-b.close()
-p.stop()
-print('playwright ready')
-PY
-""")
-assert '[exit code: 0]' in browser_setup_log and 'playwright ready' in browser_setup_log, browser_setup_log
+Chromium, Playwright, and Pillow are PREINSTALLED in the sandbox image — never
+run pip or apt. Write render scripts to files with sandbox.write, then execute
+the file (fast and reliable for scripts of any size):
 
-shot_log = sandbox.bash("""python3 - <<'PY'
+```python
+shot_script = """
 from playwright.sync_api import sync_playwright
 viewports = [
     {'name': 'desktop', 'width': 1440, 'height': 960},
@@ -298,18 +262,19 @@ viewports = [
     {'name': 'mobile',  'width': 375,  'height': 812},
 ]
 p = sync_playwright().start()
-b = p.chromium.launch()
+b = p.chromium.launch(args=['--disable-dev-shm-usage'])
 for vp in viewports:
     pg = b.new_page(viewport={'width': vp['width'], 'height': vp['height']})
     pg.goto('file:///tmp/embodiment.html')
-    pg.wait_for_timeout(2000)
-    pg.screenshot(path=f'/tmp/shot_{vp["name"]}.png', full_page=True)
+    pg.wait_for_timeout(1500)
+    pg.screenshot(path=f"/tmp/shot_{vp['name']}.png", full_page=True)
     pg.close()
 b.close()
 p.stop()
 print('shots ok')
-PY
-""")
+"""
+sandbox.write('/tmp/shots.py', shot_script)
+shot_log = sandbox.bash('python3 /tmp/shots.py')
 assert '[exit code: 0]' in shot_log and 'shots ok' in shot_log, shot_log
 ```
 
@@ -321,306 +286,186 @@ tablet_shot = sandbox.read('/tmp/shot_tablet.png')
 mobile_shot = sandbox.read('/tmp/shot_mobile.png')
 ```
 
-Check each viewport: layout integrity, all 15+ elements styled, visual_character and signature_patterns visible, typography hierarchy clear, tokens applied, responsive reflow correct, no browser defaults, professional quality.
+Check each viewport: layout integrity, all 15+ elements styled,
+visual_character and signature_patterns visible, typography hierarchy clear,
+tokens applied, responsive reflow correct, no browser defaults, professional
+quality.
 
 ### Step 4 — Iterate until polished
 
-Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three viewports look polished.
+Fix issues, rewrite, re-screenshot, re-evaluate. Repeat until all three
+viewports look polished.
+
+Scroll-state verification is mandatory for every page: capture full_page
+screenshots AND viewport screenshots at 25/50/75/100% scroll positions
+(page.evaluate scrollTo, then screenshot). A page that is empty below the
+first viewport in the full_page shot FAILS — this catches pinned-scroll
+films whose scenes never render without JS scrubbing. If you build a
+scrolltelling landing, every scene must be verifiably visible in these
+scrolled screenshots; otherwise build a statement page: full-bleed hero
+plus 4-6 complete, content-rich sections that read without any JS.
+
+This step is NOT optional and has a floor: complete AT LEAST TWO full
+render -> read -> fix cycles per page before attaching anything — a first
+draft is never attachment-quality. You are judged on what the page LOOKS
+like, not on whether it passes gates. Density comes from real designed
+content — complete sections, working navigation, full data in dashboards,
+imagery — NEVER from repeated or numbered filler (that fails
+composition_padded mechanically). Never skip rendering: if a render command
+fails, fix the command (write it to a file and run the file) — do not fall
+back to designing blind.
 
 ### Step 5 — Generate and verify the gallery thumbnail
 
 After the final embodiment HTML passes all visual checks, generate a static
-desktop thumbnail from the same `/tmp/embodiment.html`. This is mandatory for
-`synthesize`, `regenerate_embodiment`, and `evolve_language`.
-
-The thumbnail must be a stable desktop viewport crop, not a full-page strip:
-
-- Capture viewport: `1440x960`
-- Output file: `/tmp/thumbnail_desktop.jpg`
-- Output dimensions: `600x400`
-- Output format: JPEG, quality around `74`
-- Stored PawFS file MIME metadata: `image/jpeg`
-- Safety: disable animations/transitions before capture so the gallery image is
-  deterministic.
+desktop thumbnail from the same `/tmp/embodiment.html`. Mandatory for
+`synthesize`, `regenerate_embodiment`, and `evolve_language`. Capture a
+1440x960 viewport (NOT full-page), disable animations/transitions with an
+injected style tag first, resize to exactly 600x400 JPEG quality ~74 with
+Pillow, save `/tmp/thumbnail_desktop.jpg`, verify size and format with an
+assert, then:
 
 ```python
-thumb_log = sandbox.bash("""python3 - <<'PY'
-from playwright.sync_api import sync_playwright
-from PIL import Image
-
-safety_css = '''
-*, *::before, *::after {
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0s !important;
-  transition-delay: 0s !important;
-}
-html, body {
-  max-height: 1800px !important;
-  overflow: hidden !important;
-}
-'''
-
-p = sync_playwright().start()
-b = p.chromium.launch()
-pg = b.new_page(viewport={'width': 1440, 'height': 960})
-pg.goto('file:///tmp/embodiment.html')
-pg.add_style_tag(content=safety_css)
-pg.wait_for_timeout(1000)
-pg.screenshot(path='/tmp/thumbnail_source.jpg', type='jpeg', quality=84, full_page=False)
-pg.close()
-b.close()
-p.stop()
-
-img = Image.open('/tmp/thumbnail_source.jpg')
-img = img.resize((600, 400), Image.Resampling.LANCZOS)
-img.save('/tmp/thumbnail_desktop.jpg', 'JPEG', quality=74, optimize=True)
-
-check = Image.open('/tmp/thumbnail_desktop.jpg')
-assert check.size == (600, 400), check.size
-assert check.format == 'JPEG', check.format
-print('thumbnail ok: 600x400 JPEG')
-PY
-""")
-assert '[exit code: 0]' in thumb_log and 'thumbnail ok: 600x400 JPEG' in thumb_log, thumb_log
 thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
-assert isinstance(thumbnail_bytes, dict) and thumbnail_bytes.get('__temperpaw_image') is True, 'thumbnail read must return a sandbox image result'
+assert isinstance(thumbnail_bytes, dict) and thumbnail_bytes.get('__temperpaw_image') is True
 assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
 ```
 
 If thumbnail generation, resizing, or verification fails, fix the embodiment or
-the screenshot command and retry. Do not attach a missing, blank, wrong-size, or
-non-JPEG thumbnail. Do not call `VerifyThumbnail` directly; the CurationJob
-finalizer reads the attached `thumbnail_file_id`, rejects base64 text payloads,
-and marks `VerifyThumbnail`. You DO own `SubmitForReview` — see the
-**DRIVE-TO-REVIEW PHASE** below: after every artifact is attached you drive each
-language to `UnderReview` yourself, repairing whatever its guard names as
-missing, before completing the job.
+the screenshot command and retry. Do not attach a missing, blank, wrong-size,
+or non-JPEG thumbnail. Do not call `VerifyThumbnail` directly; the finalizer
+reads the attached `thumbnail_file_id` and rejects base64 text payloads.
 
-### Step 6 — Publish artifacts
+### Publish artifacts (including shadcn)
+
+**PREFERRED for a NEW language: one-call publish via AuthorComplete** once you
+have BUILT AND VERIFIED every artifact (all files uploaded via temper.write and
+confirmed Ready). Use the per-slot Attach* ladder only when repairing
+individual artifacts on an existing language.
 
 ```python
-def require_ready_file(write_result, artifact_kind):
-    file_id = write_result['file_id']
-    file = temper.get('Files', file_id)
-    fields = file.get('fields', file)
-    status = file.get('status') or file.get('Status') or fields.get('Status')
-    path = fields.get('Path') or fields.get('path')
-    name = fields.get('Name') or fields.get('name')
-    mime_type = fields.get('MimeType') or fields.get('mime_type')
-    size_bytes = fields.get('SizeBytes') or fields.get('size_bytes')
-    assert status == 'Ready', f'{artifact_kind} file {file_id} is {status}, expected Ready'
-    assert path and name and mime_type and size_bytes, file
-    return file_id
-
-result = temper.write({
-    'path': '/katagami/embodiments/' + slug + '.html',
-    'content': html_code,
-    'mime_type': 'text/html'
-})
-embodiment_file_id = require_ready_file(result, 'embodiment')
-temper.action('DesignLanguages', eid, 'AttachEmbodiment', {
-    'embodiment_file_id': embodiment_file_id,
-    'element_count': '15',
-    'composition_count': '5',
-    'embodiment_format': 'html'
-})
-thumbnail_result = temper.write({
-    'path': '/katagami/thumbnails/' + slug + '/desktop.jpg',
-    'content': thumbnail_bytes,
-    'mime_type': 'image/jpeg'
-})
-thumbnail_file_id = require_ready_file(thumbnail_result, 'thumbnail')
-temper.action('DesignLanguages', eid, 'AttachThumbnail', {
-    'thumbnail_file_id': thumbnail_file_id
-})
-temper.action('DesignLanguages', eid, 'SetLineage', {
-    'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'
+temper.action('DesignLanguages', eid, 'AuthorComplete', {
+    'name': name, 'slug': slug,
+    'philosophy': json.dumps(philosophy), 'tokens': json.dumps(tokens),
+    'rules': json.dumps(rules), 'layout_principles': json.dumps(layout),
+    'guidance': json.dumps(guidance), 'tags': json.dumps(tags),
+    'imagery_direction': json.dumps(imagery_direction),
+    'embodiment_file_id': embodiment_id, 'embodiment_format': 'html',
+    'element_count': '18', 'composition_count': '5',
+    'landing_file_id': landing_id, 'dashboard_file_id': dashboard_id,
+    'design_md_file_id': design_md_id,
+    'design_md_lint_result': json.dumps(lint_result),
+    'design_md_format_version': 'design-md-v1',
+    'shadcn_export_file_id': shadcn_export_id,
+    'shadcn_export_format_version': 'registry-item-v1',
+    'shadcn_export_manifest': json.dumps(shadcn_export_manifest),
+    'shadcn_component_spec_file_id': component_spec_id,
+    'shadcn_component_spec_format_version': 'katagami:shadcn-component-recipes/v1',
+    'shadcn_component_spec_manifest': json.dumps(component_spec_manifest),
+    'shadcn_preview_shots_file_id': preview_shots_id,
+    'shadcn_preview_shots_format_version': 'katagami:shadcn-preview-shots/renderable-v1',
+    'shadcn_preview_shots_manifest': json.dumps(preview_shots_manifest),
+    'thumbnail_file_id': thumbnail_id,
+    'model_provenance': model_provenance_json,
+    'direction_id': direction_id,
+    'curator_notes': curator_notes,
 })
 ```
 
-Do not attach a file ID until `require_ready_file(...)` passes. If a write
-returns anything other than a Ready File with usable metadata, retry the write or
-fail the job with the file response as evidence.
+It sets every SubmitForReview guard, so the very next call is SubmitForReview.
 
-`AttachEmbodiment` invalidates DESIGN.md verification booleans because the
-portable projection must represent the final language state. After
-`AttachEmbodiment`, `AttachThumbnail`, and `SetLineage` have succeeded, rerun the
-DESIGN.md checker and call `AttachDesignMd` again with the latest markdown and
-lint JSON. This post-embodiment DESIGN.md attachment is mandatory; do not rely on
-the earlier sandbox validation attachment.
+**Ready-file discipline** (applies to both paths): before attaching any file id,
+`temper.get('Files', file_id)` and assert status == 'Ready' with usable Path,
+Name, MimeType, SizeBytes metadata. If a write returns anything else, retry the
+write or fail the job with the file response as evidence.
 
-For `evolve_language`: read the parent first, inherit base tokens, apply modifications, set lineage_type to 'evolution'.
+**Per-slot ladder (repairs)**: AttachEmbodiment (embodiment_file_id,
+element_count, composition_count, embodiment_format) → AttachThumbnail →
+SetLineage (parent_ids '[]', lineage_type 'original', generation_number '0';
+for evolve_language read the parent, inherit base tokens, lineage_type
+'evolution'). `AttachEmbodiment` invalidates DESIGN.md verification booleans —
+after it, rerun the DESIGN.md checker and `AttachDesignMd` again with the
+latest markdown and lint JSON; that post-embodiment attach is mandatory.
 
-### Step 7 — Publish shadcn/ui component artifacts
+**shadcn artifacts** (all three required, agent-authored, designed not
+token-mapped):
 
-The shadcn registry theme, component recipes, and preview shots are
-first-class, agent-authored language artifacts. They should make the shadcn
-preview feel designed, not merely token-mapped. The finalizer only reads and
-verifies the attached files.
-
-Create `/katagami/shadcn/{slug}/registry-theme.json` with a shadcn
-`registry:theme` payload derived from the native Katagami tokens. The JSON must
-include `type: "registry:theme"`, `cssVars`, and `componentManifest`, and it
-must preserve enough manifest metadata for the UI preview to explain the
-projection.
-
-Create `/katagami/shadcn/{slug}/components.md` with:
-
-- `# {Language Name} shadcn/ui Components`
-- `## Intent`
-- `## Required primitives`
-- `## Token cues`
-- `## Visual character to preserve`
-- `## ShadSync visual profile`
-- `## Signature component recipes`
-- `## Preview shots`
-- `## Implementation contract`
-- `## Copy-paste component example`
-
-The recipes must cover `button`, `card`, `input`, `textarea`, `select`,
-`dialog`, `sheet`, `tabs`, `badge`, `separator`, `checkbox`, `switch`,
-`slider`, `tooltip`, `dropdown-menu`, and `table`. It must include a
-`ShadSync visual profile` section. The recipes must translate the language's
-actual `visual_character`, `signature_patterns`, surfaces, borders, density,
-focus, and motion into shadcn component usage.
-
-Create `/katagami/shadcn/{slug}/preview-shots.json` with artifact
-`katagami:shadcn-preview-shots`, version `preview-shots-v1`, schema
-`katagami:shadcn-preview-shots/renderable-v1`, `renderable: true`, at least
-three shots (`application-shell`, `detail-editor`, `data-operations`), a
-top-level `visualProfile` object, and a `componentRecipes` array covering every
-required primitive. Each shot must name the shadcn primitives used, composition,
-must-show states, avoid rules, and a renderable `scene` object with `eyebrow`,
-`headline`, `description`, action labels, and concrete `stats`, `fields`, or
-`rows` data. The language page renders these scene objects and the
-`visualProfile` directly on local shadcn-style primitives, so do not leave
-preview shots as generic prose-only notes.
-
-`visualProfile` is required art direction data, not documentation. Use values
-derived from the actual language: `family`, `material`, `contour`, `border`,
-`underlay`, `grain`, `stickerBadges`, `motion`, `density`, and `accents`.
-Example for a collage language: `family: "paper-collage"`,
-`material: "paper"`, `contour: "blob"`, `border: "dashed"`,
-`underlay: true`, `grain: true`, `stickerBadges: true`,
-`motion: "lift-rotate"`, `density: "balanced"`.
-Keep the rendered shots clean. `contour` is decorative art direction, not a
-license to make every card, sheet, and table a novelty shape. Define one
-coherent shape scale in the recipes: container/card radius, control/field
-radius, and pill/badge radius. The three preview shots must look like polished
-product screenshots, not shadcn component inventory walls: use realistic
-content, stable spacing, hierarchy, and one or two distinctive signature
-patterns from the language.
-
-```python
-registry_theme_result = temper.write('/katagami/shadcn/' + slug + '/registry-theme.json', json.dumps(registry_theme, ensure_ascii=False, indent=2))
-temper.action('DesignLanguages', eid, 'AttachShadcnExport', {
-    'shadcn_export_file_id': registry_theme_result['file_id'],
-    'shadcn_export_format_version': 'registry-theme-v1',
-    'shadcn_export_manifest': json.dumps({
-        'artifact': 'katagami:shadcn-registry-theme',
-        'version': 'registry-theme-v1',
-        'author': 'katagami-agent',
-        'generatedBy': 'katagami-agent',
-        'type': 'registry:theme',
-        'requiresComponentManifest': True
-    }, ensure_ascii=False)
-})
-
-component_result = temper.write({
-    'path': '/katagami/shadcn/' + slug + '/components.md',
-    'content': shadcn_components_md,
-    'mime_type': 'text/markdown',
-})
-component_spec_file_id = require_ready_file(component_result, 'shadcn_component_spec')
-temper.action('DesignLanguages', eid, 'AttachShadcnComponentSpec', {
-    'shadcn_component_spec_file_id': component_spec_file_id,
-    'shadcn_component_spec_format_version': 'component-recipes-v1',
-    'shadcn_component_spec_manifest': json.dumps({
-        'artifact': 'katagami:shadcn-component-recipes',
-        'version': 'component-recipes-v1',
-        'author': 'katagami-agent',
-        'generatedBy': 'katagami-agent',
-        'requiresVisualProfile': True,
-        'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table'],
-        'shots': ['application-shell', 'detail-editor', 'data-operations']
-    }, ensure_ascii=False)
-})
-
-shots_result = temper.write({
-    'path': '/katagami/shadcn/' + slug + '/preview-shots.json',
-    'content': json.dumps(preview_shots, ensure_ascii=False, indent=2),
-    'mime_type': 'application/json',
-})
-preview_shots_file_id = require_ready_file(shots_result, 'shadcn_preview_shots')
-temper.action('DesignLanguages', eid, 'AttachShadcnPreviewShots', {
-    'shadcn_preview_shots_file_id': preview_shots_file_id,
-    'shadcn_preview_shots_format_version': 'preview-shots-v1',
-    'shadcn_preview_shots_manifest': json.dumps({
-        'artifact': 'katagami:shadcn-preview-shots',
-        'version': 'preview-shots-v1',
-        'author': 'katagami-agent',
-        'generatedBy': 'katagami-agent',
-        'schema': 'katagami:shadcn-preview-shots/renderable-v1',
-        'renderable': True,
-        'requiresVisualProfile': True,
-        'shotIds': ['application-shell', 'detail-editor', 'data-operations'],
-        'components': ['button', 'card', 'input', 'textarea', 'select', 'dialog', 'sheet', 'tabs', 'badge', 'separator', 'checkbox', 'switch', 'slider', 'tooltip', 'dropdown-menu', 'table']
-    }, ensure_ascii=False)
-})
-```
+1. `/katagami/shadcn/{slug}/registry-theme.json` — a shadcn `registry:theme`
+   payload derived from the native tokens. MUST contain the literal
+   `"type": "registry:theme"`, plus `cssVars` and `componentManifest` keys.
+   Attach via AttachShadcnExport with format version `registry-theme-v1` and a
+   manifest `{'artifact': 'katagami:shadcn-registry-theme', 'version': ...,
+   'author': 'katagami-agent', 'type': 'registry:theme',
+   'requiresComponentManifest': True}`.
+2. `/katagami/shadcn/{slug}/components.md` — headings: `# {Name} shadcn/ui
+   Components`, `## Intent`, `## Required primitives`, `## Token cues`,
+   `## Visual character to preserve`, `## ShadSync visual profile`,
+   `## Signature component recipes`, `## Preview shots`, `## Implementation
+   contract`, `## Copy-paste component example`. Recipes must cover button,
+   card, input, textarea, select, dialog, sheet, tabs, badge, separator,
+   checkbox, switch, slider, tooltip, dropdown-menu, table — translating the
+   language's actual visual_character/signature_patterns into shadcn usage.
+   Attach via AttachShadcnComponentSpec; manifest artifact
+   `katagami:shadcn-component-recipes` with the full `components` list.
+3. `/katagami/shadcn/{slug}/preview-shots.json` — artifact
+   `katagami:shadcn-preview-shots`, `renderable: true`, ≥3 shots
+   (`application-shell`, `detail-editor`, `data-operations`), each with a
+   renderable `scene` object (`eyebrow`, `headline`, `description`, action
+   labels, concrete `stats`/`fields`/`rows` data), plus a top-level
+   `visualProfile` (family, material, contour, border, underlay, grain,
+   stickerBadges, motion, density, accents — derived from the language) and a
+   `componentRecipes` array covering every required primitive. The language
+   page renders these directly — polished product screenshots, not prose
+   notes or component inventory walls; one coherent shape scale.
+   Attach via AttachShadcnPreviewShots; manifest schema
+   `katagami:shadcn-preview-shots/renderable-v1`, `renderable: True`, the
+   shot ids and full components list.
 
 Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
-`VerifyShadcnPreviewShots` directly. The finalizer marks those verifier-owned
-states after it reads the attached files.
+`VerifyShadcnPreviewShots` directly — the finalizer marks those after reading
+the attached files.
 
 ## COMPOSITION EMBODIMENTS PHASE (Landing + Dashboard) — required & gated
 
-This is a **first-class, required phase**, gated identically to the element
-embodiment. A `synthesize` / `evolve_language` job that does not attach a valid
-Landing **and** Dashboard cannot pass review or publish — see the gate below.
-
-Every design language ships **three** embodiments: the element embodiment (the
-canonical-elements showcase, above) plus TWO bespoke full-screen composition
-embodiments **unique to this language**, following the same `visual_character`,
-`signature_patterns`, taste rules, type, layout, density, and tokens. They give
-each language a real landing and a real dashboard a human can click through, and
-they are what the Remix Studio recolors + fills.
+Every design language ships **three** embodiments: the element embodiment
+(above) plus TWO bespoke full-screen composition embodiments **unique to this
+language**, following the same visual_character, signature_patterns, taste
+rules, type, layout, density, and tokens. They give each language a real
+landing and a real dashboard a human can click through, and they are what the
+Remix Studio recolors and fills.
 
 - **Landing** (`/katagami/compositions/{slug}/landing.html`) — a real marketing
-  landing screen. Lead with a **full-bleed hero image** at the top (today's
-  trend): a section whose `background-image: var(--hero-image)` covers the
-  viewport top, with the headline/CTA overlaid on a scrim. This is the priority
-  placement for the single large image.
+  landing screen. Lead with a **full-bleed hero image** at the top: a section
+  whose `background-image: var(--hero-image)` covers the viewport top, the
+  `--hero-image` default pointing at the REAL generated image
+  (`url(https://katagami.ai/api/file/<file_id>)`), with the headline/CTA
+  composed over a scrim. The hero must be VISIBLE in your screenshots. Then
+  distinct designed scenes that tell the product story in the brief's world.
 - **Dashboard** (`/katagami/compositions/{slug}/dashboard.html`) — a real app
-  dashboard (sidebar nav, stat cards, a chart, a table or empty-state). UI-led;
-  no hero image required.
+  dashboard (sidebar nav, stat cards, a chart, a table or empty-state).
+  UI-led; no hero image required.
 
 These are **remixable**, so they MUST be tokenized — bake the language's
-identity (type, layout, density, treatment) into the HTML, but read every COLOR
-from CSS custom properties so the studio can recolor with any palette and inject
-any art image:
+identity (type, layout, density, treatment) into the HTML, but read every
+COLOR from CSS custom properties so the studio can recolor with any palette:
 
 ```
 :root{ --bg --surface --text --muted --border --accent --on-accent
        --success --warning --error --info --hero-image }
 ```
 
-Define sensible defaults in `:root` (the language's own colors), use only those
-vars (`var(--…)`) for color, and use `var(--hero-image)` for the landing's
-full-bleed hero. Self-contained HTML, same safety rules as the element
+Define sensible defaults in `:root` (the language's own colors), use only
+those vars for color. Self-contained HTML, same safety rules as the element
 embodiment.
 
 ### Visual verification (same rigor as the element embodiment)
 
-Before attaching, write each composition to the sandbox, screenshot it at desktop
-width, and **evaluate** it the same way you evaluated the element embodiment:
-the landing's hero must read full-bleed; type, spacing, and treatment must match
-this language's `visual_character`; the dashboard must look like a real product
-screen, not a wireframe. Iterate until both are polished. A Swiss-grid landing
-and a warm-editorial landing must look like **different products**, not one
-template recolored.
+Write each composition to the sandbox, screenshot at all three viewports plus
+scroll states, and evaluate the same way — ≥2 render→read→fix cycles. The
+landing's hero must read full-bleed; the dashboard must look like a real
+product screen, not a wireframe. A Swiss-grid landing and a warm-editorial
+landing must look like **different products**, not one template recolored —
+and the three pages of THIS language must be three different artifacts.
 
 ```python
 landing = temper.write('/katagami/compositions/' + slug + '/landing.html', landing_html)
@@ -631,21 +476,10 @@ temper.action('DesignLanguages', eid, 'AttachCompositions', {
 })
 ```
 
-### Gate (finalizer-enforced — do not skip)
-
-`AttachCompositions` is an `input` you fire; **`VerifyCompositions` is
-finalizer-owned — do NOT call it.** On job completion the CurationJob finalizer:
-
-1. Reads **both** the `landing_file_id` and `dashboard_file_id` files.
-2. Rejects either that is not self-contained HTML, or that is **not tokenized**
-   (no `var(--…)` color usage), or a Landing **missing the `--hero-image`** slot.
-3. Dispatches `VerifyCompositions`, flipping `compositions_verified` true.
-
-`SubmitForReview` and `Publish` both now guard on `has_compositions` +
-`compositions_verified`, and the `Published` state asserts both invariants
-(`PublishedRequiresCompositions`, `PublishedRequiresVerifiedCompositions`). So a
-language with a missing, untokenized, or hero-less composition is held back for
-remediation exactly like a bad element embodiment — it will not publish.
+`VerifyCompositions` is finalizer-owned — do NOT call it. The finalizer reads
+both files and rejects non-HTML, untokenized, hero-less, underbuilt, padded,
+or duplicate pages; `SubmitForReview` and `Publish` guard on
+has_compositions + compositions_verified.
 
 ## DRIVE-TO-REVIEW PHASE (self-heal loop)
 
