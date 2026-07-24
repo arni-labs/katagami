@@ -28,6 +28,7 @@ engine can be swapped into this step later without changing the entity shape.
 ## Before Starting
 
 - Read `/system/knowledge/design-principles.md` and `/system/knowledge/quality-standards.md`.
+- Read `/knowledge/rules/art-style.md` and apply it as the entity-specific rulebook.
 - `existing = temper.list('ArtStyles', '')` — your style must be distinct in medium and treatment.
 - `accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")` — apply only `Accepted`.
 
