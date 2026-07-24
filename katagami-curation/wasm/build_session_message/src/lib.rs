@@ -964,35 +964,17 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
         ),
     ];
 
-    // The landing standard MUST be in context for language synthesis. It used
-    // to be a "read this skill IN FULL" instruction in SKILL.md — LLMobs
-    // showed zero sessions ever read it, which is why landings came out as
-    // timid hero-less pages instead of the bake-off statement class.
-    const SYNTHESIS_KNOWLEDGE: &[(&str, &str)] = &[
-        (
-            "/system/knowledge/design-principles.md",
-            "embodiment standards",
-        ),
-        (
-            "/system/knowledge/quality-standards.md",
-            "quality thresholds",
-        ),
-        (
-            "/system/knowledge/feedback-log.md",
-            "human feedback to incorporate",
-        ),
-        (
-            "/agents/sl-bootstrap-agent-soul-curator/skills/immersive-landing/SKILL.md",
-            "the landing standard — every landing is built to these floors",
-        ),
-    ];
-
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
         "research-direction" => &[],
-        "synthesize-language" => SYNTHESIS_KNOWLEDGE,
+        // Instruction PARITY with the native bake-off harnesses (owner
+        // decision, 2026-07-24): synthesis gets exactly what a bake-off model
+        // gets — the brief, the taste rulebook, and the skill. No auxiliary
+        // corpus compensating for harness limits; harness flaws are fixed in
+        // the harness.
+        "synthesize-language" => &[],
         _ => FULL_CURATION_KNOWLEDGE,
     }
 }
@@ -1321,9 +1303,13 @@ mod tests {
     }
 
     #[test]
-    fn source_search_uses_only_skill_doc_by_default() {
+    fn synthesis_prompt_has_instruction_parity_with_bakeoff_harnesses() {
+        // Owner decision 2026-07-24: synthesis gets brief + rulebook + skill,
+        // nothing else — the same instruction surface the native bake-off
+        // harnesses give. Review/other skills keep the curation corpus.
         assert!(knowledge_read_specs_for_skill("research-direction").is_empty());
-        assert!(knowledge_read_specs_for_skill("synthesize-language")
+        assert!(knowledge_read_specs_for_skill("synthesize-language").is_empty());
+        assert!(knowledge_read_specs_for_skill("review-language")
             .iter()
             .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
     }
