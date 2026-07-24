@@ -204,6 +204,15 @@ async function languagesForRound(id: string): Promise<DesignLanguage[]> {
   return rows.filter(isLive);
 }
 
+// Rounds hidden from non-owners: work-in-progress directions whose submissions
+// are not ready for public eyes. The owner (allowlisted identity) still sees
+// them everywhere; everyone else gets a 404 on the round page and no entries
+// in the index. Add/remove ids here as rounds move in and out of drafting.
+export const HIDDEN_ROUND_IDS = new Set<string>([
+  // "first light" working round (2026-07) — active harness-quality iteration.
+  "en-019f7fd3-338a-7de0-aed8-d8302b7e0198",
+]);
+
 export interface BakeoffRoundSummary {
   id: string;
   title: string;
