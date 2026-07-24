@@ -825,11 +825,15 @@ fn load_instruction_doc(
 }
 
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
-    let mut candidates = Vec::new();
+    // The app-shipped skill comes FIRST: it is refreshed on every app install,
+    // so sessions always read the deployed version. The per-soul bootstrap
+    // copy is a one-time snapshot that installs never update — preferring it
+    // had every session reading a stale skill long after the app moved on.
+    // It remains only as a fallback for skills the app does not ship.
+    let mut candidates = vec![configured_path.to_string()];
     if let Some(rest) = configured_path.strip_prefix("/agents/curator/") {
         candidates.push(format!("/agents/{stable_soul_id}/{rest}"));
     }
-    candidates.push(configured_path.to_string());
     candidates.dedup();
     candidates
 }
@@ -1288,16 +1292,18 @@ mod tests {
     }
 
     #[test]
-    fn instruction_path_candidates_include_stable_bootstrap_agent_path() {
+    fn instruction_path_candidates_prefer_app_shipped_skill_over_soul_snapshot() {
+        // The app copy is refreshed on install; the soul-bootstrap copy is a
+        // stale one-time snapshot and must only be a fallback.
         assert_eq!(
             instruction_path_candidates(
                 "/agents/curator/skills/research-direction/SKILL.md",
                 "sl-bootstrap-agent-soul-curator"
             ),
             vec![
+                "/agents/curator/skills/research-direction/SKILL.md".to_string(),
                 "/agents/sl-bootstrap-agent-soul-curator/skills/research-direction/SKILL.md"
                     .to_string(),
-                "/agents/curator/skills/research-direction/SKILL.md".to_string(),
             ]
         );
     }
