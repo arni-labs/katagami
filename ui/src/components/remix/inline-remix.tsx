@@ -41,7 +41,6 @@ export interface ArtOpt {
   medium: string;
   hero: string;
   promptTemplate: string;
-  negativePrompt: string;
   slotRecipes: string;
   refs: string[];
   tags?: string[];
@@ -192,7 +191,6 @@ export function InlineRemix({
         name: sel.name,
         medium: sel.medium,
         promptTemplate: sel.promptTemplate,
-        negativePrompt: sel.negativePrompt,
         slotRecipes: safeParse(sel.slotRecipes) as Record<string, string>,
         referenceUrls: sel.refs,
       },

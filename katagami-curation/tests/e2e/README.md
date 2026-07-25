@@ -14,8 +14,8 @@ end to end the way production uses it, before anything deploys.
 
 | Case | Expected |
 |---|---|
-| Art style with real JPEG references | job `Completed`, style `Published`, asset URLs + search blob attached |
-| Art style with HTML posing as a reference image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
+| Art style with six real JPEG portability proofs and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
+| Art style with HTML posing as a portability proof image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
 | Palette with real tokens export + thumbnail | job `Completed`, palette `Published` |
 | Palette with garbage tokens export | job `Failed` with `palette_tokens_export_invalid`, palette stays `Draft` |
 

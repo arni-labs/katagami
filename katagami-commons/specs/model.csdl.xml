@@ -262,7 +262,7 @@
         <Property Name="SearchBlob" Type="Edm.String" Nullable="false" DefaultValue="" />
       </EntityType>
 
-      <!-- ArtStyle: an engine-agnostic style-transfer recipe (prompt template + reference images + slot recipes + proof shots) -->
+      <!-- ArtStyle: one portable aesthetic prompt + optional examples + verified cross-model proof -->
       <EntityType Name="ArtStyle">
         <Key>
           <PropertyRef Name="Id" />
@@ -275,6 +275,7 @@
         <!-- Recipe -->
         <Property Name="Medium" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="PromptTemplate" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <!-- Legacy read compatibility only; new publication stores exclusions inline in PromptTemplate. -->
         <Property Name="NegativePrompt" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="EngineHints" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="SlotRecipes" Type="Edm.String" Nullable="false" DefaultValue="{}" />
@@ -307,6 +308,14 @@
         <Property Name="HasCredits" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ModelProvenance" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="HasModelProvenance" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <!-- Governed prompt, rights, and cross-model evidence. Candidate JSON is
+             contributor-authored; Has* booleans are finalizer-only attestations. -->
+        <Property Name="SourceBasis" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="PromptReview" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="PortabilityReport" Type="Edm.String" Nullable="false" DefaultValue="{}" />
+        <Property Name="HasSourceBasisReview" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPromptReview" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPortabilityEvidence" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <!-- Taste embedding: semantic vector for discovery. JSON float array + model id. -->
         <Property Name="TasteVector" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TasteVectorModel" Type="Edm.String" Nullable="false" DefaultValue="" />

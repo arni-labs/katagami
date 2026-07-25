@@ -1,5 +1,6 @@
 use temper_wasm_sdk::prelude::*;
 
+mod art_style_review;
 mod facets;
 mod taste_doc;
 
@@ -2432,22 +2433,15 @@ fn verify_synthesized_art_styles(
         let entity =
             load_required_entity(ctx, api_url, headers, "ArtStyles", id, "missing_art_style")?;
         let lane_fields = entity_fields(&entity);
+        let style_name = required_string_field(id, &lane_fields, "name")?;
         let prompt_template = required_string_field(id, &lane_fields, "prompt_template")?;
-        verify_prompt_template_holes(id, &prompt_template)?;
+        art_style_review::verify_portable_prompt(id, &style_name, &prompt_template)?;
 
         require_lane_json_object(id, "ArtStyle", &lane_fields, "slot_recipes")?;
         require_lane_json_array(id, "ArtStyle", &lane_fields, "credits")?;
         require_lane_json_object(id, "ArtStyle", &lane_fields, "model_provenance")?;
 
         let reference_ids = string_array_flexible(lane_fields.get("reference_image_file_ids"));
-        if reference_ids.is_empty() {
-            return Err(VerificationError::new(
-                "missing_reference_image_file_ids",
-                format!("ArtStyle '{id}' has no reference_image_file_ids"),
-            )
-            .entity("ArtStyle", id)
-            .field("reference_image_file_ids"));
-        }
         let proof_ids = string_array_flexible(lane_fields.get("proof_shots_file_ids"));
         if proof_ids.is_empty() {
             return Err(VerificationError::new(
@@ -2483,8 +2477,40 @@ fn verify_synthesized_art_styles(
             "thumbnail",
         )?;
 
-        verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "reference_manifest", &reference_ids)?;
+        if !reference_ids.is_empty() {
+            verify_lane_manifest_files(
+                id,
+                "ArtStyle",
+                &lane_fields,
+                "reference_manifest",
+                &reference_ids,
+            )?;
+        }
         verify_lane_manifest_files(id, "ArtStyle", &lane_fields, "proof_shots_manifest", &proof_ids)?;
+        let source_basis =
+            art_style_review::verify_source_basis(id, &lane_fields, &prompt_template)?;
+        let prompt_review =
+            art_style_review::verify_prompt_review(id, &lane_fields, &prompt_template)?;
+        let portability_report = art_style_review::verify_portability_report(
+            id,
+            &lane_fields,
+            &prompt_template,
+            &proof_ids,
+        )?;
+
+        dispatch_action(
+            ctx,
+            api_url,
+            headers,
+            "ArtStyles",
+            id,
+            "AttachArtStyleReview",
+            &json!({
+                "source_basis": source_basis.to_string(),
+                "prompt_review": prompt_review.to_string(),
+                "portability_report": portability_report.to_string(),
+            }),
+        )?;
 
         if !entity_bool_any(&entity, "has_published_assets") {
             let thumbnail_asset = publish_lane_file_artifact(
@@ -2562,9 +2588,10 @@ fn walk_lane_entity_to_published(
     if status == "Published" {
         return Ok(());
     }
-    // Readiness of the lane's artifact Files is now enforced by the spec's
-    // cross_entity_state guards on SubmitForReview/Publish (Files must be
-    // Ready/Locked), not by WASM-dispatched Verify* actions.
+    // Singular artifact readiness is enforced by cross_entity_state guards.
+    // Variable-length proof collections are verified above in WASM because
+    // the valid ArtStyle matrix starts at six files, beyond Temper's bounded
+    // cross-entity lookup budget. No copyable Verify* booleans are trusted.
     if status == "Draft" {
         dispatch_action(
             ctx,
@@ -2632,30 +2659,11 @@ fn walk_lane_entity_to_published(
 // Art styles and palettes must never publish on a rubber stamp. Before
 // walk_lane_entity_to_published dispatches MarkQualityPassed, the finalizer
 // reads the actual artifact evidence: image file bodies (rejecting text,
-// markup, JSON, SVG, and base64 payloads), prompt-template holes, manifests
-// matching attached file ids, credits + model provenance, and palette color
-// data. Bodies arrive through the host's lossy UTF-8 http_call, so binary
-// image checks use the same negative-heuristic discipline as the
+// markup, JSON, SVG, and base64 payloads), portable-prompt review evidence,
+// manifests matching attached file ids, credits + rights basis, model provenance,
+// and palette color data. Bodies arrive through the host's lossy UTF-8 http_call,
+// so binary image checks use the same negative-heuristic discipline as the
 // design-language thumbnail path rather than requiring magic bytes.
-
-fn verify_prompt_template_holes(
-    owner_id: &str,
-    template: &str,
-) -> Result<(), VerificationError> {
-    for hole in ["{subject}", "{palette}"] {
-        if !template.contains(hole) {
-            return Err(VerificationError::new(
-                "prompt_template_missing_hole",
-                format!(
-                    "ArtStyle '{owner_id}' prompt_template is missing its required '{hole}' hole"
-                ),
-            )
-            .entity("ArtStyle", owner_id)
-            .field("prompt_template"));
-        }
-    }
-    Ok(())
-}
 
 fn lane_field<'a>(
     fields: &'a serde_json::Value,
@@ -5629,19 +5637,6 @@ mod lane_verification_tests {
     fn tiny_bodies_are_rejected() {
         assert!(!lane_payload_plausible_image("image/jpeg", "x"));
         assert!(!lane_payload_plausible_image("image/jpeg", ""));
-    }
-
-    #[test]
-    fn prompt_template_holes_are_required() {
-        assert!(verify_prompt_template_holes(
-            "as-1",
-            "{subject}, two-color Risograph print, {palette}, coarse halftone grain"
-        )
-        .is_ok());
-        let err = verify_prompt_template_holes("as-1", "{subject} without palette").unwrap_err();
-        assert_eq!(err.code, "prompt_template_missing_hole");
-        assert!(verify_prompt_template_holes("as-1", "{palette} without subject").is_err());
-        assert!(verify_prompt_template_holes("as-1", "no holes at all").is_err());
     }
 
     #[test]

@@ -70,19 +70,27 @@ export function toPaletteOpts(rows: Row[]): PaletteOpt[] {
 }
 
 export function toArtOpts(rows: Row[]): ArtOpt[] {
-  return rows.map((a) => {
-    const refs = refUrls(a.fields.reference_image_file_ids);
-    const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
-    return {
-      id: a.entity_id,
-      name: artStyleDisplayName(a.fields),
-      medium: a.fields.medium ?? "",
-      hero: refs[0] || thumb || "",
-      promptTemplate: a.fields.prompt_template ?? "",
-      negativePrompt: a.fields.negative_prompt ?? "",
-      slotRecipes: a.fields.slot_recipes ?? "{}",
-      refs,
-      tags: parseJson<string[]>(a.fields.tags) ?? [],
-    };
-  });
+  return rows
+    .filter(
+      (a) =>
+        a.fields.has_source_basis_review === "true" &&
+        a.fields.has_prompt_review === "true" &&
+        a.fields.has_portability_evidence === "true" &&
+        parseJson<{ verdict?: string }>(a.fields.portability_report)?.verdict === "pass",
+    )
+    .map((a) => {
+      const refs = refUrls(a.fields.reference_image_file_ids);
+      const proofs = refUrls(a.fields.proof_shots_file_ids);
+      const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
+      return {
+        id: a.entity_id,
+        name: artStyleDisplayName(a.fields),
+        medium: a.fields.medium ?? "",
+        hero: proofs[0] || refs[0] || thumb || "",
+        promptTemplate: a.fields.prompt_template ?? "",
+        slotRecipes: a.fields.slot_recipes ?? "{}",
+        refs,
+        tags: parseJson<string[]>(a.fields.tags) ?? [],
+      };
+    });
 }
