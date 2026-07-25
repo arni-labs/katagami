@@ -22,7 +22,7 @@ const agentsActions = read("src/app/(site)/account/agents/actions.ts");
 const humanBearer = read("src/lib/human-bearer.ts");
 const mutations = read("src/lib/odata-mutations.ts");
 const remixActions = read("src/app/remix-actions.ts");
-const remixSpec = read("../katagami-commons/specs/remix.ioa.toml");
+const session = read("src/lib/user-auth.ts");
 
 // Isolate each mint function so a claim in one is not credited to the other.
 function fnBody(source, name) {
@@ -73,8 +73,13 @@ const required = [
   ["public reads stay on the service key (routing note present)", humanBearer, /does NOT touch public catalog reads/],
   ["rateRemix carries the human bearer", remixActions, /humanBearer\(\)[\s\S]*dispatchAction\("Remixes", id, "Rate"/],
 
-  // Spec-declared authorization is actually used on a real action (reference).
-  ["remix Rate declares requires = creator", remixSpec, /name = "Rate"[\s\S]*?requires = "creator"/],
+  // Sign-out-everywhere must actually end sessions AND stop agents — the
+  // generation bump alone leaves the session cookie live and lets agents
+  // refresh straight back in.
+  ["the session carries the generation it was minted at", session, /gen,/],
+  ["session verification rejects an out-of-date generation", session, /sessionGen < \(await currentGenerationCached/],
+  ["sign-out-everywhere also revokes live grants", agentsActions, /signOutEverywhere[\s\S]*grantsForMember[\s\S]*revokeGrant/],
+  ["revoking a grant propagates to the kernel", as, /revokeGrant[\s\S]*?bumpGeneration\(grantId\)/],
 ];
 
 let failed = 0;

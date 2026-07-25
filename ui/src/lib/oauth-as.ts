@@ -326,6 +326,12 @@ export async function issueRefreshToken(grantId: string): Promise<string> {
 
 export async function revokeGrant(grantId: string, reason: string): Promise<void> {
   await dispatchAction("AgentGrants", grantId, "Revoke", { reason });
+  // Propagate to the kernel: it checks the same monotonic counter keyed by
+  // grant_id, so any bump means revoked. Without this, an already-issued access
+  // token would keep working directly against OData until it expired — the MCP
+  // front door alone can no longer be the only place revocation is enforced
+  // (ARN-255).
+  await bumpGeneration(grantId);
 }
 
 // --- Tokens -----------------------------------------------------------------

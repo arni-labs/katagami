@@ -97,9 +97,9 @@ export default async function AgentsPage() {
           Sign out everywhere
         </h2>
         <p className="text-[15px] text-neutral-500 mb-5 max-w-xl">
-          Ends every active session — yours and every agent acting for you — on
-          all devices. New sign-ins are unaffected. Takes effect within a
-          minute.
+          Ends your sessions on every device and revokes every agent acting for
+          you. Agents you still want will need authorizing again. Takes effect
+          within a minute.
         </p>
         <form action={signOutEverywhere}>
           <button
