@@ -1,22 +1,8 @@
 import assert from "node:assert/strict";
-import {
-  artStyleGallerySources,
-  artStylePromptLabel,
-  artStylePromptState,
-} from "../src/lib/art-style-prompt-state.ts";
+import { artStyleGallerySources } from "../src/lib/art-style-prompt-state.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-assert.equal(artStylePromptState("Published", true), "verified");
-assert.equal(artStylePromptState("UnderReview", true), "verified");
-assert.equal(artStylePromptState("Published", false), "published-legacy");
-assert.equal(artStylePromptState("UnderReview", false), "owner-review");
-assert.equal(artStylePromptState("Draft", false), "owner-review");
-
-assert.equal(artStylePromptLabel("verified"), "Canonical aesthetic prompt");
-assert.equal(artStylePromptLabel("published-legacy"), "Published legacy prompt");
-assert.equal(artStylePromptLabel("owner-review"), "Draft prompt · owner review");
 
 const privateGallery = artStyleGallerySources({
   status: "UnderReview",
@@ -56,6 +42,10 @@ const detailPage = fs.readFileSync(
   path.join(here, "../src/app/(site)/art-styles/[id]/page.tsx"),
   "utf8",
 );
+const demoCatalog = fs.readFileSync(
+  path.join(here, "../src/lib/demo-catalog.ts"),
+  "utf8",
+);
 assert.match(detailPage, /rounded-\[2px\]/);
 assert.match(detailPage, /rounded-\[3px\] p-3 font-mono text-\[12px\]/);
 assert.match(detailPage, /space-y-1\.5 text-\[13px\]/);
@@ -69,5 +59,15 @@ assert.match(detailPage, /label="Copy recipe"/);
 assert.match(detailPage, /label="Copy prompt only"/);
 assert.doesNotMatch(detailPage, /ArtStyleEvidence/);
 assert.doesNotMatch(detailPage, /artStylePromptLabel/);
+assert.doesNotMatch(detailPage, /negative_prompt/);
+assert.doesNotMatch(detailPage, /engine_hints/);
+assert.doesNotMatch(detailPage, />Negative prompt</);
+assert.doesNotMatch(detailPage, />Engine hints</);
+assert.doesNotMatch(demoCatalog, /\{subject\}|\{palette\}/);
+assert.equal(
+  (demoCatalog.match(/prompt: "Reconstruct the supplied subject entirely/g) ?? [])
+    .length,
+  8,
+);
 
 console.log("art-style prompt presentation states: pass");
