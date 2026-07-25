@@ -5173,7 +5173,7 @@ fn string_array_flexible(value: Option<&serde_json::Value>) -> Vec<String> {
     if let Some(raw) = value.as_str().map(str::trim).filter(|raw| !raw.is_empty()) {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
             let parsed_ids = string_array_flexible(Some(&parsed));
-            if !parsed_ids.is_empty() {
+            if parsed.is_array() || parsed.is_null() || !parsed_ids.is_empty() {
                 return parsed_ids;
             }
         }
@@ -5554,6 +5554,20 @@ mod lane_verification_tests {
 
     fn lossy(bytes: &[u8]) -> String {
         String::from_utf8_lossy(bytes).to_string()
+    }
+
+    #[test]
+    fn flexible_string_array_preserves_an_encoded_empty_list() {
+        assert!(string_array_flexible(Some(&json!("[]"))).is_empty());
+        assert!(string_array_flexible(Some(&json!("null"))).is_empty());
+        assert_eq!(
+            string_array_flexible(Some(&json!(r#"["fl-one","fl-two"]"#))),
+            vec!["fl-one".to_string(), "fl-two".to_string()]
+        );
+        assert_eq!(
+            string_array_flexible(Some(&json!("fl-one"))),
+            vec!["fl-one".to_string()]
+        );
     }
 
     #[test]

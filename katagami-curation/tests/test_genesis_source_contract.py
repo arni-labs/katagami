@@ -9,7 +9,7 @@ CURRENT_GENESIS_DEPS = {
     "temperpaw/paw-fs": "bff862b415505f5a563998265a2f6ac29472f899",
     "temperpaw/paw-agent": "81d8beb78923dc22aeda850828f510f3c6eab510",
     "temperpaw/paw-research": "910d01612b2632362fb5f537c4357a5fb6c7bcdd",
-    "katagami/katagami-commons": "ad863ed91371f24c2283e3f1a7ec302b5f3815fe",
+    "katagami/katagami-commons": "7c158eef96be6a326ca9c83b7908ee4975a8b4c7",
 }
 
 
@@ -52,6 +52,12 @@ class GenesisSourceContractTest(unittest.TestCase):
         self.assertIn("--exclude='__pycache__/'", script)
         self.assertIn("--exclude='*.py[co]'", script)
         self.assertIn("--exclude='target/'", script)
+        self.assertIn("pin_curation_commons_dependency", script)
+        self.assertIn('local commons_hash="${4:-}"', script)
+        self.assertIn(
+            'push_app "katagami-curation" "katagami-curation" "${WORK_DIR}/katagami-curation" "$commons_hash"',
+            script,
+        )
         self.assertNotIn("mapfile", script)
         self.assertNotIn("App.PublishNewVersion", script)
         self.assertLess(
