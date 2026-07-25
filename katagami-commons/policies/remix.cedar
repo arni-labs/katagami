@@ -2,6 +2,10 @@
 permit(principal, action, resource is Remix);
 
 // Contributor boundary (ARN-255): agents build and save their own mixes.
+// Ownership matches either the human acting directly (principal.id) or an
+// agent acting for that human (context.actingFor) — an agent's own id is
+// its client id, so comparing only principal.id would deny an agent every
+// action on the very mixes its owner created.
 // Destructive and judgment actions belong to the mix's creator — ownership is
 // the stable Google subject id on the verified principal. Reads stay open.
 forbid(
@@ -14,7 +18,7 @@ forbid(
   ],
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" }
-unless { resource has creator_sub && resource.creator_sub == principal.id };
+unless { (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
 
 // Ownership is claimed once, never reassigned: a contributor may set the
 // creator on a mix that has none, and never on one that belongs to someone else.
@@ -23,7 +27,7 @@ forbid(
   action == Action::"SetCreator",
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" }
-unless { !(resource has creator_sub) || resource.creator_sub == "" || resource.creator_sub == principal.id };
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
 
 // Generic OData writes bypass the action ladder entirely: PATCH and DELETE are
 // authorized as the lowercase `update` / `delete` actions, which no named-action
