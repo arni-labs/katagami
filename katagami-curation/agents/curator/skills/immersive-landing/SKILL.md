@@ -148,3 +148,14 @@ Mobile is a CO-EQUAL experience, not the last breakpoint on a checklist. A film 
 4. **Phone performance budget.** Mid-range phone, not the dev box: canvas DPR ≤2 (prefer 1.5), particle/scrap counts at the mobile tier (roughly ½ desktop), shaders cheap enough for a 4× CPU-throttled emulation to hold ~60fps scripted scroll with zero long tasks >120ms. Heavy plates get mobile-appropriate sizes (≤~1200px longest edge served to portrait) where the pipeline allows.
 5. **Ergonomics.** Tap targets ≥44px; the finale CTA lands in thumb reach; `env(safe-area-inset-*)` respected on fixed chrome (notch/home-bar); text selection/zoom not hijacked.
 6. **Verify like a phone.** True portrait viewports (390×844 + spot-checks 360×800 and 414×896), device emulation with touch, both address-bar states, ≥24-frame touch-scroll filmstrip, first-paint composed at zero scroll. "Desktop okayish" was declared a fail in §RESPONSIVE; "mobile okayish" is equally a fail now.
+
+## 7. THE BEAT (curator doctrine, 2026-07-24 — verbatim: "1) keep the cinematic pages high performance 2) no part of it stalls 3) the scroll is always felt 4) no part is so quick it flickers before I can see or read — there's gotta be a proper beat not too fast not too slow")
+
+The four failure modes of rhythm, each with its measure:
+
+1. **High performance, always.** The perf budget (§scroll-feel + §6.4) is not a launch gate only — every added effect re-tests it. rAF median ≥50fps desktop / ~60fps under 4× CPU throttle mobile, zero long tasks >120ms, physics/effect loops idle at rest.
+2. **Nothing stalls.** No scroll range where the frame sits static while the user keeps scrolling: consecutive-frame diffs across the WHOLE film (≥24 frames/breakpoint) must never flatline — a pin that has finished its choreography ends; dead tail ranges get trimmed. Instruments/progress always advance.
+3. **The scroll is always felt.** Every wheel tick / touch gesture produces visible, proportional motion the user can attribute to their input — never a range where the page eats scroll silently (over-long pins, saturated scrubs, laggy smoothing). Lenis lerp ≥0.12, scrub 0.5–0.8, no pin >~250vh without new composition entering.
+4. **Nothing flickers past.** Every element that appears must be READABLE at natural scroll speed: each beat gets ≥60vh of dwell after its entrance completes; entrances ≤25% of a beat's range, hold ≥50%; no content whose entire lifetime (in→out) is <60vh of travel; test by scrolling at a brisk-but-human rate (~1000px/s) and confirming every headline and line of copy was on-screen legible for ≥0.6s equivalent. A transition too fast to watch is as much a fail as one that drags.
+
+The target feel: a film you can conduct with your finger — each gesture moves the story exactly one felt step, each scene lands, holds long enough to be read and enjoyed, then hands off while the next is already arriving.
