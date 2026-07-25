@@ -137,3 +137,14 @@ These are now hard gates. Every one is MEASURED with numbers before submit — n
 - **Trajectories are designed.** Anything that travels follows a deliberate smooth path (C1-continuous curves, no kinks); the drawn path and the traveling element share ONE geometry source so they never diverge.
 
 **Verifier practice (hard-won):** use your OWN Playwright context, never a shared browser (viewport locks + cross-agent clobbering produced false findings); discount SwiftShader fps numbers (audit shader cost in code instead); on suspected occlusion/contrast, measure rects and pixel-sample — screenshots alone under-detect; verify the file the ENTITY currently serves, cache-busted, not the fid in your brief.
+
+## 6. MOBILE FIRST-CLASS (curator doctrine, 2026-07-24: "desktop and mobile both first class — right now mobile is hit and miss")
+
+Mobile is a CO-EQUAL experience, not the last breakpoint on a checklist. A film that is stellar at 1440 and merely "works" at 390 fails. Concretely:
+
+1. **Portrait is its own film.** Recompose every scene for 390–430×~844 portrait: hero art-directed for the portrait crop (per-scene `background-position`, and shader offsets follow it), display type still ≥18vw, scenes re-choreographed for a tall narrow stage — never the desktop composition squeezed. The mobile filmstrip must read as a designed contact sheet in its own right.
+2. **Use dvh/svh, never bare vh, for pinned scenes and full-height stages.** Mobile browser chrome collapse/expand makes `100vh` jump mid-film — a top cause of "hit and miss." Pin heights and hero stages use `100svh` (stable) or `100dvh` deliberately; test with the address bar in both states.
+3. **Touch physics are sacred.** Native momentum scrolling always works: no scroll-jacking that fights touch, no `preventDefault` on passive scroll paths, interactive elements claim gestures only on deliberate press-and-move and release the page instantly otherwise. Prove with real touch-drag traversal (touchscreen context), not scrollTo.
+4. **Phone performance budget.** Mid-range phone, not the dev box: canvas DPR ≤2 (prefer 1.5), particle/scrap counts at the mobile tier (roughly ½ desktop), shaders cheap enough for a 4× CPU-throttled emulation to hold ~60fps scripted scroll with zero long tasks >120ms. Heavy plates get mobile-appropriate sizes (≤~1200px longest edge served to portrait) where the pipeline allows.
+5. **Ergonomics.** Tap targets ≥44px; the finale CTA lands in thumb reach; `env(safe-area-inset-*)` respected on fixed chrome (notch/home-bar); text selection/zoom not hijacked.
+6. **Verify like a phone.** True portrait viewports (390×844 + spot-checks 360×800 and 414×896), device emulation with touch, both address-bar states, ≥24-frame touch-scroll filmstrip, first-paint composed at zero scroll. "Desktop okayish" was declared a fail in §RESPONSIVE; "mobile okayish" is equally a fail now.
