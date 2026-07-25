@@ -202,6 +202,13 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
         // --- Build user_message ---
         let completion_params_block =
             completion_params_block(&template.completion_action, &job_type, &entity_id);
+        // Code Mode: a typed API reference generated from the LIVE specs.
+        // The kernel's /observe/specs/{entity} carries each action's params
+        // and hint (temper PR #413); rendering them as call signatures gives
+        // the model an accurate API instead of hand-maintained procedure
+        // prose. Renders empty (and costs nothing) on kernels that predate
+        // the field, so this deploy is not coupled to the kernel deploy.
+        let typed_api_block = render_typed_api_block(&ctx, &api_url, &headers, skill);
         // Accepted taste rules are the authoritative design tests. The skill
         // used to say "load accepted taste rules" — LLMobs showed zero
         // sessions ever did, so the rules are now fetched here and inlined.
@@ -228,6 +235,7 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
 
 - Job: CurationJob `{entity_id}` ({job_type}) — skill `{skill}`, workspace `{workspace_id}`.
 - Instruction path: {effective_instruction_path}
+{typed_api_block}
 - Finish by dispatching `{completion_action}` on this CurationJob with the params the skill specifies (contract {completion_contract}); then `temper.done(...)`. Never legacy `Complete`.
 {completion_params_block}
 - If truly stuck after retrying: `temper.action('CurationJobs', '{entity_id}', 'Fail', {{'error_message': reason}})` then `temper.done("failed")`.
@@ -1033,6 +1041,102 @@ fn render_taste_rules_block(
     });
     format!(
         "## The taste rulebook (authoritative — your output is judged against every rule)\n\n````markdown\n{body}\n````\n"
+    )
+}
+
+/// Entities whose action APIs a synthesis session actually drives. Kept
+/// deliberately small: the typed reference is a working API surface, not a
+/// platform catalog.
+fn typed_api_entities_for_skill(skill: &str) -> &'static [&'static str] {
+    match skill {
+        "synthesize-language" => &["DesignLanguages", "CurationJobs", "MediaGenerationRequests"],
+        _ => &[],
+    }
+}
+
+/// Render a typed action-call reference generated from the LIVE specs via
+/// /observe/specs/{entity}. Each action becomes one signature line with its
+/// typed params and the spec's own hint. Kernels that predate the params
+/// field (temper PR #413) yield no param data — the block renders empty and
+/// the prompt falls back to the prose contracts alone.
+fn render_typed_api_block(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    skill: &str,
+) -> String {
+    let entities = typed_api_entities_for_skill(skill);
+    if entities.is_empty() {
+        return String::new();
+    }
+    let mut sections = Vec::new();
+    for entity in entities {
+        // The observe registry keys entity types in singular form; try the
+        // configured name first, then a trailing-s singularization.
+        let mut detail: Option<serde_json::Value> = None;
+        let singular = entity.strip_suffix('s').unwrap_or(entity);
+        for candidate in [*entity, singular] {
+            let resp = match ctx.http_call(
+                "GET",
+                &format!("{api_url}/observe/specs/{candidate}"),
+                headers,
+                "",
+            ) {
+                Ok(resp) if (200..300).contains(&resp.status) => resp,
+                _ => continue,
+            };
+            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&resp.body) {
+                detail = Some(parsed);
+                break;
+            }
+        }
+        let Some(detail) = detail else { continue };
+        let Some(actions) = detail.get("actions").and_then(|a| a.as_array()) else {
+            continue;
+        };
+        let mut lines = Vec::new();
+        for action in actions {
+            let name = action.get("name").and_then(|v| v.as_str()).unwrap_or("");
+            // Input actions are the agent-callable surface; system/timeout
+            // actions in the spec are engine-driven and only add noise.
+            let kind = action.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+            if name.is_empty() || kind != "input" {
+                continue;
+            }
+            let Some(params) = action.get("params").and_then(|p| p.as_array()) else {
+                // Kernel predates params exposure: no data to render.
+                continue;
+            };
+            let sig = params
+                .iter()
+                .filter_map(|p| {
+                    let pname = p.get("name")?.as_str()?;
+                    let ptype = p.get("type").and_then(|t| t.as_str()).unwrap_or("string");
+                    Some(if ptype == "string" {
+                        pname.to_string()
+                    } else {
+                        format!("{pname}: {ptype}")
+                    })
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            let hint = action.get("hint").and_then(|v| v.as_str()).unwrap_or("");
+            if hint.is_empty() {
+                lines.push(format!("- `{name}({sig})`"));
+            } else {
+                lines.push(format!("- `{name}({sig})` — {hint}"));
+            }
+        }
+        if !lines.is_empty() {
+            sections.push(format!("### {entity}\n{}", lines.join("\n")));
+        }
+    }
+    if sections.is_empty() {
+        return String::new();
+    }
+    format!(
+        "\n## Typed action reference (generated from the live specs — authoritative signatures)\n\nCall with `temper.action('<Entity>', id, '<Action>', {{...params}})`; array/object params as `json.dumps(...)` strings.\n\n{}\n",
+        sections.join("\n\n")
     )
 }
 
