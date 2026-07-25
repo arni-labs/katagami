@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLink } from "lucide-react";
 import { getFileUrl } from "@/lib/odata";
 import { ScaledFrame } from "@/components/scaled-frame";
 
@@ -11,7 +10,7 @@ const DEFAULT_HEIGHT = 900;
 /**
  * Fetches a self-contained embodiment (by file id or URL) and renders it via the
  * shared ScaledFrame — the same desktop-render-then-scale path the studio uses,
- * so nothing overflows or crops. Adds an "open full" escape hatch to the source.
+ * so nothing overflows or crops.
  */
 export function EmbodimentViewer({
   fileId,
@@ -60,16 +59,6 @@ export function EmbodimentViewer({
   return (
     <div className="relative">
       <ScaledFrame html={fresh.html} title="Design language embodiment" />
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group absolute right-2 top-2 inline-flex items-center gap-1 rounded-none bg-card/90 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground shadow-[0_1px_3px_rgba(30,35,45,0.16)] backdrop-blur-[2px] transition-all hover:-translate-y-[1px] hover:text-foreground"
-      >
-        <span className="hidden sm:inline">open full</span>
-        <span className="sm:hidden">full</span>
-        <ExternalLink className="h-3 w-3" />
-      </a>
     </div>
   );
 }
