@@ -65,7 +65,10 @@ prompt_template = (
 
 The prompt must remain useful for arbitrary portraits, objects, landscapes,
 architecture, animals, and abstract compositions. Do not tailor it to the
-current source image or the example above.
+current source image or the example above. It must also work from any source
+medium. Never assume that the input is a photograph, painting, watercolor,
+drawing, collage, render, or other particular medium; refer generically to
+`source-medium surface treatment` when the transformation needs to replace it.
 
 ## 2. Independent LLM review, one repair maximum
 
@@ -85,6 +88,7 @@ prompt_review = {
     "reviewer": {"provider": "<provider>", "model": "<different LLM>"},
     "reference_independent": True,
     "subject_independent": True,
+    "source_medium_independent": True,
     "model_agnostic": True,
     "style_name_independent": True,
     "contradictions": [],
@@ -149,21 +153,51 @@ Allowed `source_basis.sources[].kind` values are `tradition`, `movement`,
 
 ## 4. Cross-model behavioral proof
 
-Text review cannot prove image behavior. Test the exact prompt on at least two
-distinct edit-capable image models. For each model:
+Text review cannot prove image behavior. Test the exact prompt on the two
+governed edit models using a style-specific 2×4 matrix. Every style needs these
+four semantic roles:
 
-- use at least three unrelated subjects;
-- use source images from at least three media across the matrix (for example:
-  photograph, watercolor/painting, line drawing, collage, or digital/3D);
-- use the source only for content/composition;
-- provide no style reference;
-- do not add model-specific aesthetic wording;
-- preserve the exact prompt string in every case;
-- record a reproducible seed or request id.
+1. `human_portrait`
+2. `nonhuman_living`
+3. `still_life_object`
+4. `landscape_environment`
+
+Choose the concrete subject and composition deliberately for the style under
+review. Do not reuse a house list of props or one recurring composition. The
+role is fixed for comparable coverage; the thing depicted is not. Across the
+four roles, rotate exactly one each of `documentary photograph`, `black-ink
+line drawing`, `neutral synthetic 3d render`, and `flat vector illustration`,
+so portrait never implicitly means photograph and landscape never implicitly
+means one stock horizon.
+
+Call `generate_art_style_proof_matrix` with those four structured cases. The
+governed service:
+
+- generates four style-neutral sources itself and accepts no external/user
+  image URL;
+- locks the exact source and output bytes in PawFS;
+- sends the same four sources and byte-for-byte canonical aesthetic prompt to
+  `openai/gpt-image-2/edit` and `fal-ai/nano-banana-2/edit`;
+- supplies no style reference and adds no model-specific aesthetic wording;
+- returns eight proof records with execution-layer HMAC receipts binding the
+  exact style slug, role, subject, composition, source medium, source file/hash,
+  source request/prompt hash, output model/request/prompt hash/seed, and output
+  file/hash.
+
+Do not upload, substitute, or hand-author proof records. A receipt signed by the
+governed generator is required in both the proof manifest and portability
+report. The finalizer verifies the signature, streams all four Locked sources
+and eight Locked outputs, checks every signed SHA-256, and proves both models received
+the identical source quartet. This makes private or user-supplied media
+structurally unavailable to catalog proof generation rather than trusting a
+curator's provenance label.
 
 Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
-Every dimension must score at least 1, every case average at least 1.5, and each
-model average at least 1.5. A strong model cannot hide a weak model.
+The subject/content must remain recognizable, the source medium must be fully
+replaced, `medium_material` must score 2, every other dimension must score at
+least 1, every case average at least 1.5, and each model average at least 1.5.
+A strong model cannot hide a weak model, and a lightly tinted or cleaned-up
+source image cannot pass as a transfer.
 
 ```python
 portability_report = {
@@ -179,12 +213,17 @@ portability_report = {
             "cases": [
                 {
                     "file_id": "<proof File id>",
+                    "category": "human_portrait",
                     "subject": "<content, not a style description>",
-                    "source_medium": "photograph",
+                    "composition": "<specific spatial arrangement>",
+                    "source_medium": "documentary photograph",
                     "mode": "image_edit",
                     "seed": "<seed or request id>",
                     "prompt": prompt_template,
                     "style_reference_used": False,
+                    "content_preserved": True,
+                    "source_medium_replaced": True,
+                    "generation_receipt": proof["generation_receipt"],
                     "scores": {
                         "medium_material": 2,
                         "marks_edges": 2,
@@ -195,10 +234,10 @@ portability_report = {
                         "exclusions": 1,
                     },
                 },
-                # at least two more unrelated cases
+                # the other three semantic roles, each using a distinct source medium
             ],
         },
-        # at least one more distinct model with its own >=3 cases
+        # the second governed model with the exact same four source chains
     ],
 }
 ```
@@ -209,10 +248,14 @@ prompt and rerun the failed model; never add a per-model prompt.
 ## 5. Write files and submit once
 
 Write every proof image to PawFS. `proof_shots_manifest.items` must mirror the
-proof file ids and record model/provider, subject, source medium, mode, seed, and
-`style_reference_used: false`. A thumbnail may reuse/crop one proof. Optional
-example references use `reference_image_file_ids` and `reference_manifest`; pass
-`[]` and `{"items":[]}` when none exist.
+eight governed proof records exactly, including category, subject, composition,
+source medium, mode, seed, model/provider, `style_reference_used: false`, and
+the unmodified `generation_receipt`. Choose the strongest of those exact eight
+governed proof Files as the thumbnail; do not force the same role across styles
+and do not upload a separate or cropped thumbnail through this workflow.
+Optional example references use
+`reference_image_file_ids` and `reference_manifest`; pass `[]` and
+`{"items":[]}` when none exist.
 
 ```python
 slot_recipes = {
@@ -249,7 +292,10 @@ temper.action("ArtStyles", eid, "SubmitArtStyle", {
     "reference_image_file_ids": json.dumps(reference_ids),
     "reference_manifest": json.dumps({"items": reference_manifest}, ensure_ascii=False),
     "proof_shots_file_ids": json.dumps(proof_ids),
-    "proof_shots_manifest": json.dumps({"items": proof_manifest}, ensure_ascii=False),
+    "proof_shots_manifest": json.dumps(
+        {"schema_version": "2", "items": proof_manifest},
+        ensure_ascii=False,
+    ),
     "thumbnail_file_id": thumbnail_file_id,
     "parent_ids": "[]",
     "lineage_type": "original",
@@ -281,4 +327,7 @@ temper.done("synthesize_art_style complete")
 - Each session creates one style.
 - Batch/catalog revalidation jobs process at most 10 styles.
 - Procedural placeholders do not count as proof.
+- Never promote a private or user-supplied validation input into proof shots,
+  thumbnails, references, or published assets. Catalog proof sources come only
+  from `generate_art_style_proof_matrix`; it accepts no image input.
 - Missing model access is a visible failed/blocked review, never a silent pass.

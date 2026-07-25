@@ -1,4 +1,6 @@
+use hmac::{Hmac, Mac};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
 
 use super::{lane_json_value, VerificationError};
@@ -12,6 +14,51 @@ const DIMENSIONS: [&str; 7] = [
     "signature_details",
     "exclusions",
 ];
+
+const PROOF_CATEGORIES: [&str; 4] = [
+    "human_portrait",
+    "nonhuman_living",
+    "still_life_object",
+    "landscape_environment",
+];
+
+const SOURCE_MEDIA: [&str; 4] = [
+    "documentary photograph",
+    "black-ink line drawing",
+    "neutral synthetic 3d render",
+    "flat vector illustration",
+];
+
+const SOURCE_ENDPOINT: &str = "fal-ai/flux/schnell";
+const EDIT_ENDPOINTS: [&str; 2] = [
+    "openai/gpt-image-2/edit",
+    "fal-ai/nano-banana-2/edit",
+];
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(super) struct VerifiedProofReceipt {
+    pub category: String,
+    pub subject: String,
+    pub composition: String,
+    pub source_medium: String,
+    pub source_file_id: String,
+    pub source_sha256: String,
+    pub source_endpoint: String,
+    pub source_request_id: String,
+    pub source_prompt_sha256: String,
+    pub output_file_id: String,
+    pub output_sha256: String,
+    pub output_endpoint: String,
+    pub output_request_id: String,
+    pub output_prompt_sha256: String,
+    pub seed: String,
+}
+
+#[derive(Debug)]
+pub(super) struct VerifiedPortabilityReport {
+    pub report: Value,
+    pub proof_receipts: Vec<VerifiedProofReceipt>,
+}
 
 fn art_error(
     owner_id: &str,
@@ -405,6 +452,7 @@ pub(super) fn verify_prompt_review(
         || text(&review, "prompt") != prompt.trim()
         || !bool_field(&review, "reference_independent")
         || !bool_field(&review, "subject_independent")
+        || !bool_field(&review, "source_medium_independent")
         || !bool_field(&review, "model_agnostic")
         || !bool_field(&review, "style_name_independent")
     {
@@ -413,7 +461,7 @@ pub(super) fn verify_prompt_review(
             "art_style_prompt_review_invalid",
             "prompt_review",
             format!(
-                "ArtStyle '{owner_id}' prompt_review must attest the exact prompt as reference-, subject-, model-, and catalog-name-independent"
+                "ArtStyle '{owner_id}' prompt_review must attest the exact prompt as reference-, subject-, source-medium-, model-, and catalog-name-independent"
             ),
         ));
     }
@@ -573,9 +621,229 @@ fn score_case(owner_id: &str, scores: &Value) -> Result<f64, VerificationError> 
                 ),
             ));
         }
+        if dimension == "medium_material" && score < 2.0 {
+            return Err(art_error(
+                owner_id,
+                "art_style_portability_source_medium_preserved",
+                "portability_report",
+                format!(
+                    "ArtStyle '{owner_id}' portability case did not fully replace the source medium with the target material"
+                ),
+            ));
+        }
         total += score;
     }
     Ok(total / DIMENSIONS.len() as f64)
+}
+
+fn exact_object_keys(value: &Value, keys: &[&str]) -> bool {
+    value
+        .as_object()
+        .map(|object| {
+            object.len() == keys.len() && keys.iter().all(|key| object.contains_key(*key))
+        })
+        .unwrap_or(false)
+}
+
+fn sha256_hex(value: &str) -> String {
+    format!("{:x}", Sha256::digest(value.as_bytes()))
+}
+
+fn decode_hex_32(value: &str) -> Option<[u8; 32]> {
+    if value.len() != 64 {
+        return None;
+    }
+    let mut output = [0_u8; 32];
+    for (index, pair) in value.as_bytes().chunks_exact(2).enumerate() {
+        let pair = std::str::from_utf8(pair).ok()?;
+        output[index] = u8::from_str_radix(pair, 16).ok()?;
+    }
+    Some(output)
+}
+
+fn generation_receipt(
+    owner_id: &str,
+    value: &Value,
+    field: &'static str,
+    style_slug: &str,
+    prompt: &str,
+    model: &(String, String),
+    receipt_key: &str,
+) -> Result<VerifiedProofReceipt, VerificationError> {
+    let receipt = value
+        .get("generation_receipt")
+        .unwrap_or(&Value::Null);
+    let source = receipt.get("source").unwrap_or(&Value::Null);
+    let output = receipt.get("output").unwrap_or(&Value::Null);
+    if !exact_object_keys(
+        receipt,
+        &[
+            "schema_version",
+            "issuer",
+            "kind",
+            "style_slug",
+            "category",
+            "subject",
+            "composition",
+            "source_medium",
+            "source",
+            "output",
+            "signature",
+        ],
+    ) || !exact_object_keys(
+        source,
+        &[
+            "file_id",
+            "sha256",
+            "endpoint",
+            "request_id",
+            "prompt_sha256",
+        ],
+    ) || !exact_object_keys(
+        output,
+        &[
+            "file_id",
+            "sha256",
+            "endpoint",
+            "request_id",
+            "prompt_sha256",
+            "seed",
+        ],
+    ) {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_receipt_invalid",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' proof generation receipt has an invalid shape"
+            ),
+        ));
+    }
+    let category = text(receipt, "category");
+    let subject = text(receipt, "subject");
+    let composition = text(receipt, "composition");
+    let source_medium = text(receipt, "source_medium");
+    let source_file_id = text(source, "file_id");
+    let source_sha256 = text(source, "sha256");
+    let source_endpoint = text(source, "endpoint");
+    let source_request_id = text(source, "request_id");
+    let source_prompt_sha256 = text(source, "prompt_sha256");
+    let output_file_id = text(output, "file_id");
+    let output_sha256 = text(output, "sha256");
+    let output_endpoint = text(output, "endpoint");
+    let output_request_id = text(output, "request_id");
+    let output_prompt_sha256 = text(output, "prompt_sha256");
+    let seed = text(output, "seed");
+    let signature = text(receipt, "signature");
+
+    if text(receipt, "schema_version") != "1"
+        || text(receipt, "issuer") != "katagami-mcp"
+        || text(receipt, "kind") != "art_style_proof"
+        || text(receipt, "style_slug") != style_slug
+        || !PROOF_CATEGORIES.contains(&category)
+        || subject.is_empty()
+        || composition.is_empty()
+        || !SOURCE_MEDIA.contains(&source_medium)
+        || source_endpoint != SOURCE_ENDPOINT
+        || !EDIT_ENDPOINTS.contains(&output_endpoint)
+        || model.0 != "fal"
+        || model.1 != output_endpoint
+        || text(value, "category") != category
+        || text(value, "subject") != subject
+        || text(value, "composition") != composition
+        || text(value, "source_medium") != source_medium
+        || text(value, "file_id") != output_file_id
+        || text(value, "seed") != seed
+        || text(value, "mode") != "image_edit"
+        || bool_field(value, "style_reference_used")
+        || output_prompt_sha256 != sha256_hex(prompt.trim())
+        || source_file_id.is_empty()
+        || source_request_id.is_empty()
+        || output_file_id.is_empty()
+        || output_request_id.is_empty()
+        || seed.is_empty()
+        || subject.contains(['\n', '\r'])
+        || composition.contains(['\n', '\r'])
+        || decode_hex_32(source_sha256).is_none()
+        || decode_hex_32(source_prompt_sha256).is_none()
+        || decode_hex_32(output_sha256).is_none()
+        || decode_hex_32(output_prompt_sha256).is_none()
+    {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_receipt_mismatch",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' proof receipt does not bind the exact style, role, source, prompt, model, seed, and output file"
+            ),
+        ));
+    }
+    let message = [
+        "1",
+        "katagami-mcp",
+        "art_style_proof",
+        style_slug,
+        category,
+        subject,
+        composition,
+        source_medium,
+        source_file_id,
+        source_sha256,
+        source_endpoint,
+        source_request_id,
+        source_prompt_sha256,
+        output_file_id,
+        output_sha256,
+        output_endpoint,
+        output_request_id,
+        output_prompt_sha256,
+        seed,
+    ]
+    .join("\n");
+    let signature_bytes = decode_hex_32(signature).ok_or_else(|| {
+        art_error(
+            owner_id,
+            "art_style_proof_receipt_signature_invalid",
+            field,
+            format!("ArtStyle '{owner_id}' proof receipt signature is not valid hex"),
+        )
+    })?;
+    let mut mac = Hmac::<Sha256>::new_from_slice(receipt_key.as_bytes()).map_err(|_| {
+        art_error(
+            owner_id,
+            "art_style_proof_receipt_key_invalid",
+            field,
+            format!("ArtStyle '{owner_id}' proof receipt verifier key is invalid"),
+        )
+    })?;
+    mac.update(message.as_bytes());
+    mac.verify_slice(&signature_bytes).map_err(|_| {
+        art_error(
+            owner_id,
+            "art_style_proof_receipt_signature_invalid",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' proof receipt was not issued by the governed generation service"
+            ),
+        )
+    })?;
+    Ok(VerifiedProofReceipt {
+        category: category.to_string(),
+        subject: subject.to_string(),
+        composition: composition.to_string(),
+        source_medium: source_medium.to_string(),
+        source_file_id: source_file_id.to_string(),
+        source_sha256: source_sha256.to_string(),
+        source_endpoint: source_endpoint.to_string(),
+        source_request_id: source_request_id.to_string(),
+        source_prompt_sha256: source_prompt_sha256.to_string(),
+        output_file_id: output_file_id.to_string(),
+        output_sha256: output_sha256.to_string(),
+        output_endpoint: output_endpoint.to_string(),
+        output_request_id: output_request_id.to_string(),
+        output_prompt_sha256: output_prompt_sha256.to_string(),
+        seed: seed.to_string(),
+    })
 }
 
 pub(super) fn verify_portability_report(
@@ -583,7 +851,27 @@ pub(super) fn verify_portability_report(
     fields: &Value,
     prompt: &str,
     proof_ids: &[String],
-) -> Result<Value, VerificationError> {
+    receipt_key: &str,
+) -> Result<VerifiedPortabilityReport, VerificationError> {
+    if receipt_key.is_empty() || receipt_key.contains("{secret:") {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_receipt_key_missing",
+            "portability_report",
+            format!(
+                "ArtStyle '{owner_id}' cannot be verified without the governed proof-receipt key"
+            ),
+        ));
+    }
+    let style_slug = text(fields, "slug");
+    if style_slug.is_empty() {
+        return Err(art_error(
+            owner_id,
+            "art_style_slug_missing",
+            "slug",
+            format!("ArtStyle '{owner_id}' is missing its slug"),
+        ));
+    }
     let report = lane_json_value(fields, "portability_report").ok_or_else(|| {
         art_error(
             owner_id,
@@ -619,22 +907,134 @@ pub(super) fn verify_portability_report(
     let models = report
         .get("models")
         .and_then(Value::as_array)
-        .filter(|items| items.len() >= 2)
+        .filter(|items| items.len() == 2)
         .ok_or_else(|| {
             art_error(
                 owner_id,
                 "art_style_portability_models_missing",
                 "portability_report",
-                format!("ArtStyle '{owner_id}' portability report needs at least two image models"),
+                format!("ArtStyle '{owner_id}' portability report needs exactly two image models"),
             )
         })?;
 
     let proof_set: BTreeSet<&str> = proof_ids.iter().map(String::as_str).collect();
+    if proof_ids.len() != 8 || proof_set.len() != 8 {
+        return Err(art_error(
+            owner_id,
+            "art_style_portability_matrix_incomplete",
+            "proof_shots_file_ids",
+            format!(
+                "ArtStyle '{owner_id}' needs exactly eight unique proofs: two models by four semantic roles"
+            ),
+        ));
+    }
+    let proof_manifest = lane_json_value(fields, "proof_shots_manifest").ok_or_else(|| {
+        art_error(
+            owner_id,
+            "art_style_proof_manifest_missing",
+            "proof_shots_manifest",
+            format!("ArtStyle '{owner_id}' has no proof-shot manifest"),
+        )
+    })?;
+    if text(&proof_manifest, "schema_version") != "2" {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_manifest_invalid",
+            "proof_shots_manifest",
+            format!("ArtStyle '{owner_id}' proof-shot manifest must use schema v2"),
+        ));
+    }
+    let manifest_items = proof_manifest
+        .get("items")
+        .and_then(Value::as_array)
+        .filter(|items| items.len() == 8)
+        .ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_proof_manifest_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof-shot manifest must describe every attached proof"
+                ),
+            )
+        })?;
+    let mut manifest_receipts: HashMap<String, VerifiedProofReceipt> = HashMap::new();
+    for item in manifest_items {
+        if !exact_object_keys(
+            item,
+            &[
+                "file_id",
+                "category",
+                "subject",
+                "composition",
+                "source_medium",
+                "mode",
+                "seed",
+                "style_reference_used",
+                "model",
+                "generation_receipt",
+            ],
+        ) {
+            return Err(art_error(
+                owner_id,
+                "art_style_proof_manifest_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof manifest items must contain only the governed proof fields"
+                ),
+            ));
+        }
+        let file_id = text(item, "file_id");
+        let model = nonempty_model(item.get("model").unwrap_or(&Value::Null)).ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_portability_model_invalid",
+                "proof_shots_manifest",
+                format!("ArtStyle '{owner_id}' proof manifest item has no image model"),
+            )
+        })?;
+        if !proof_set.contains(file_id)
+            || manifest_receipts.contains_key(file_id)
+            || bool_field(item, "style_reference_used")
+            || text(item, "mode") != "image_edit"
+        {
+            return Err(art_error(
+                owner_id,
+                "art_style_proof_manifest_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof manifest has an absent/duplicate file, invalid mode, or style-reference dependency"
+                ),
+            ));
+        }
+        let receipt = generation_receipt(
+            owner_id,
+            item,
+            "proof_shots_manifest",
+            style_slug,
+            prompt,
+            &model,
+            receipt_key,
+        )?;
+        manifest_receipts.insert(file_id.to_string(), receipt);
+    }
+
     let mut tested_models = BTreeSet::new();
-    let mut source_media = BTreeSet::new();
     let mut used_files = BTreeSet::new();
-    let mut edit_models = 0usize;
-    let mut expected_edit_matrix: Option<BTreeSet<(String, String)>> = None;
+    let mut verified_receipts = Vec::new();
+    let mut expected_source_matrix: Option<
+        BTreeSet<(
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+        )>,
+    > = None;
     for model in models {
         let model_key = nonempty_model(model).ok_or_else(|| {
             art_error(
@@ -644,6 +1044,16 @@ pub(super) fn verify_portability_report(
                 format!("ArtStyle '{owner_id}' portability model lacks provider/model"),
             )
         })?;
+        if model_key.0 != "fal" || !EDIT_ENDPOINTS.contains(&model_key.1.as_str()) {
+            return Err(art_error(
+                owner_id,
+                "art_style_portability_model_invalid",
+                "portability_report",
+                format!(
+                    "ArtStyle '{owner_id}' portability proofs must come from the two governed edit endpoints"
+                ),
+            ));
+        }
         if model_key == evaluator {
             return Err(art_error(
                 owner_id,
@@ -652,31 +1062,71 @@ pub(super) fn verify_portability_report(
                 format!("ArtStyle '{owner_id}' evaluator must differ from every image model"),
             ));
         }
-        tested_models.insert(model_key);
+        if !tested_models.insert(model_key.clone()) {
+            return Err(art_error(
+                owner_id,
+                "art_style_portability_model_invalid",
+                "portability_report",
+                format!("ArtStyle '{owner_id}' repeats the same image model"),
+            ));
+        }
         let cases = model
             .get("cases")
             .and_then(Value::as_array)
-            .filter(|items| items.len() >= 3)
+            .filter(|items| items.len() == 4)
             .ok_or_else(|| {
                 art_error(
                     owner_id,
                     "art_style_portability_cases_missing",
                     "portability_report",
-                    format!("ArtStyle '{owner_id}' needs at least three cases per image model"),
+                    format!(
+                        "ArtStyle '{owner_id}' needs exactly four semantic-role cases per image model"
+                    ),
                 )
             })?;
-        let mut subjects = BTreeSet::new();
-        let mut edit_matrix = BTreeSet::new();
+        let mut categories = BTreeSet::new();
+        let mut source_media = BTreeSet::new();
+        let mut source_matrix = BTreeSet::new();
         let mut model_total = 0.0;
-        let mut has_edit = false;
         for case in cases {
-            if text(case, "prompt") != prompt.trim() || bool_field(case, "style_reference_used") {
+            if !exact_object_keys(
+                case,
+                &[
+                    "file_id",
+                    "category",
+                    "subject",
+                    "composition",
+                    "source_medium",
+                    "mode",
+                    "seed",
+                    "prompt",
+                    "style_reference_used",
+                    "content_preserved",
+                    "source_medium_replaced",
+                    "generation_receipt",
+                    "scores",
+                ],
+            ) {
+                return Err(art_error(
+                    owner_id,
+                    "art_style_portability_case_invalid",
+                    "portability_report",
+                    format!(
+                        "ArtStyle '{owner_id}' portability cases must contain only the governed evidence fields"
+                    ),
+                ));
+            }
+            if text(case, "prompt") != prompt.trim()
+                || bool_field(case, "style_reference_used")
+                || !bool_field(case, "content_preserved")
+                || !bool_field(case, "source_medium_replaced")
+            {
                 return Err(art_error(
                     owner_id,
                     "art_style_portability_prompt_changed",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' portability cases must use the exact canonical prompt and no style reference"
+                        "ArtStyle '{owner_id}' portability cases must use the exact canonical prompt, preserve subject content, fully replace source medium, and use no style reference"
                     ),
                 ));
             }
@@ -692,38 +1142,58 @@ pub(super) fn verify_portability_report(
                 ));
             }
             let subject = text(case, "subject");
+            let composition = text(case, "composition");
+            let category = text(case, "category");
+            let source_medium = text(case, "source_medium");
             let seed = text(case, "seed");
-            let mode = text(case, "mode");
             if subject.is_empty()
+                || composition.is_empty()
                 || seed.is_empty()
-                || !matches!(mode, "text_to_image" | "image_edit")
+                || text(case, "mode") != "image_edit"
+                || !PROOF_CATEGORIES.contains(&category)
+                || !SOURCE_MEDIA.contains(&source_medium)
             {
                 return Err(art_error(
                     owner_id,
                     "art_style_portability_case_invalid",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' portability cases need subject, seed, and a valid mode"
+                        "ArtStyle '{owner_id}' portability cases need a valid semantic role, subject, composition, source medium, seed, and image-edit mode"
                     ),
                 ));
             }
-            subjects.insert(normalized_words(subject));
-            if mode == "image_edit" {
-                has_edit = true;
-                let medium = normalized_words(text(case, "source_medium"));
-                if medium.is_empty() || medium == "none" {
-                    return Err(art_error(
-                        owner_id,
-                        "art_style_portability_source_medium_missing",
-                        "portability_report",
-                        format!(
-                            "ArtStyle '{owner_id}' image-edit case is missing its source medium"
-                        ),
-                    ));
-                }
-                source_media.insert(medium.clone());
-                edit_matrix.insert((normalized_words(subject), medium));
+            categories.insert(category.to_string());
+            source_media.insert(source_medium.to_string());
+            let receipt = generation_receipt(
+                owner_id,
+                case,
+                "portability_report",
+                style_slug,
+                prompt,
+                &model_key,
+                receipt_key,
+            )?;
+            if manifest_receipts.get(file_id) != Some(&receipt) {
+                return Err(art_error(
+                    owner_id,
+                    "art_style_proof_receipt_mismatch",
+                    "portability_report",
+                    format!(
+                        "ArtStyle '{owner_id}' proof '{file_id}' receipt differs between its manifest and portability report"
+                    ),
+                ));
             }
+            source_matrix.insert((
+                receipt.category.clone(),
+                receipt.subject.clone(),
+                receipt.composition.clone(),
+                receipt.source_medium.clone(),
+                receipt.source_file_id.clone(),
+                receipt.source_sha256.clone(),
+                receipt.source_endpoint.clone(),
+                receipt.source_request_id.clone(),
+                receipt.source_prompt_sha256.clone(),
+            ));
             let average = score_case(owner_id, case.get("scores").unwrap_or(&Value::Null))?;
             if average < 1.5 {
                 return Err(art_error(
@@ -736,68 +1206,158 @@ pub(super) fn verify_portability_report(
                 ));
             }
             model_total += average;
+            verified_receipts.push(receipt);
         }
-        if subjects.len() < 3 || model_total / (cases.len() as f64) < 1.5 {
+        let expected_categories = PROOF_CATEGORIES
+            .iter()
+            .map(|value| value.to_string())
+            .collect::<BTreeSet<_>>();
+        let expected_media = SOURCE_MEDIA
+            .iter()
+            .map(|value| value.to_string())
+            .collect::<BTreeSet<_>>();
+        if categories != expected_categories
+            || source_media != expected_media
+            || source_matrix.len() != 4
+            || model_total / 4.0 < 1.5
+        {
             return Err(art_error(
                 owner_id,
                 "art_style_portability_model_below_threshold",
                 "portability_report",
-                format!("ArtStyle '{owner_id}' failed the per-model subject/score threshold"),
+                format!(
+                    "ArtStyle '{owner_id}' failed the per-model four-role, four-medium, source, or score threshold"
+                ),
             ));
         }
-        if has_edit {
-            if edit_matrix.len() < 3 {
+        if let Some(expected) = &expected_source_matrix {
+            if expected != &source_matrix {
                 return Err(art_error(
                     owner_id,
-                    "art_style_portability_edit_matrix_incomplete",
+                    "art_style_portability_matrix_mismatch",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' needs three distinct subject/source-medium edits on every image model"
+                        "ArtStyle '{owner_id}' must test the exact same four generated sources on both image models"
                     ),
                 ));
             }
-            if let Some(expected) = &expected_edit_matrix {
-                if expected != &edit_matrix {
-                    return Err(art_error(
-                        owner_id,
-                        "art_style_portability_matrix_mismatch",
-                        "portability_report",
-                        format!(
-                            "ArtStyle '{owner_id}' must test the same subject/source-medium edit matrix on every image model"
-                        ),
-                    ));
-                }
-            } else {
-                expected_edit_matrix = Some(edit_matrix);
-            }
-            edit_models += 1;
+        } else {
+            expected_source_matrix = Some(source_matrix);
         }
     }
 
-    if tested_models.len() < 2
-        || edit_models < 2
-        || source_media.len() < 3
-        || used_files.len() != proof_set.len()
+    let expected_models = EDIT_ENDPOINTS
+        .iter()
+        .map(|endpoint| ("fal".to_string(), endpoint.to_string()))
+        .collect::<BTreeSet<_>>();
+    if tested_models != expected_models
+        || used_files.len() != 8
+        || verified_receipts.len() != 8
     {
         return Err(art_error(
             owner_id,
             "art_style_portability_matrix_incomplete",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' needs two distinct edit-capable models, at least three source media, and a score for every attached proof"
+                "ArtStyle '{owner_id}' needs the governed two-model by four-role matrix and a score for every attached proof"
             ),
         ));
     }
-    Ok(report)
+    Ok(VerifiedPortabilityReport {
+        report,
+        proof_receipts: verified_receipts,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hmac::{Hmac, Mac};
     use serde_json::json;
 
+    const RECEIPT_KEY: &str = "katagami-test-proof-receipt-key";
+    const STYLE_SLUG: &str = "archive-ember";
+    const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
+
+    const SUBJECTS: [&str; 4] = [
+        "a night-shift printer beside a blank paper stack",
+        "an urban pigeon lifting into flight",
+        "a cassette player with headphones and tape cases",
+        "a hillside neighborhood with stairs and water tanks",
+    ];
+    const COMPOSITIONS: [&str; 4] = [
+        "waist-up three-quarter portrait with an open side",
+        "diagonal wings-spread view with clear negative space",
+        "overhead product grouping with deliberate gaps",
+        "wide cityscape rising diagonally across the frame",
+    ];
+
+    fn receipt_message(receipt: &Value) -> String {
+        let source = &receipt["source"];
+        let output = &receipt["output"];
+        [
+            text(receipt, "schema_version"),
+            text(receipt, "issuer"),
+            text(receipt, "kind"),
+            text(receipt, "style_slug"),
+            text(receipt, "category"),
+            text(receipt, "subject"),
+            text(receipt, "composition"),
+            text(receipt, "source_medium"),
+            text(source, "file_id"),
+            text(source, "sha256"),
+            text(source, "endpoint"),
+            text(source, "request_id"),
+            text(source, "prompt_sha256"),
+            text(output, "file_id"),
+            text(output, "sha256"),
+            text(output, "endpoint"),
+            text(output, "request_id"),
+            text(output, "prompt_sha256"),
+            text(output, "seed"),
+        ]
+        .join("\n")
+    }
+
+    fn sign_receipt(receipt: &mut Value) {
+        let message = receipt_message(receipt);
+        let mut mac = Hmac::<Sha256>::new_from_slice(RECEIPT_KEY.as_bytes()).unwrap();
+        mac.update(message.as_bytes());
+        receipt["signature"] = json!(format!("{:x}", mac.finalize().into_bytes()));
+    }
+
+    fn proof_receipt(model: &str, index: usize, output_file_id: &str) -> Value {
+        let mut receipt = json!({
+            "schema_version": "1",
+            "issuer": "katagami-mcp",
+            "kind": "art_style_proof",
+            "style_slug": STYLE_SLUG,
+            "category": PROOF_CATEGORIES[index],
+            "subject": SUBJECTS[index],
+            "composition": COMPOSITIONS[index],
+            "source_medium": SOURCE_MEDIA[index],
+            "source": {
+                "file_id": format!("source-file-{index}"),
+                "sha256": sha256_hex(&format!("source-bytes-{index}")),
+                "endpoint": SOURCE_ENDPOINT,
+                "request_id": format!("source-request-{index}"),
+                "prompt_sha256": sha256_hex(&format!("neutral-source-prompt-{index}"))
+            },
+            "output": {
+                "file_id": output_file_id,
+                "sha256": sha256_hex(&format!("output-bytes-{model}-{index}")),
+                "endpoint": model,
+                "request_id": format!("output-request-{model}-{index}"),
+                "prompt_sha256": sha256_hex(PROMPT),
+                "seed": format!("{model}-{index}")
+            },
+            "signature": ""
+        });
+        sign_receipt(&mut receipt);
+        receipt
+    }
+
     fn valid_fields() -> Value {
-        let prompt = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
         let dims = json!({
             "medium_material": "two-ink relief print on fibrous matte paper",
             "marks_edges": "blunt carved contours and visibly broken edges",
@@ -808,23 +1368,40 @@ mod tests {
             "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry"
         });
         let mut proof_ids = Vec::new();
+        let mut proof_manifest = Vec::new();
         let mut models = Vec::new();
-        for (provider, model) in [("fal", "flux-kontext"), ("google", "gemini-image")] {
+        for model in EDIT_ENDPOINTS {
             let mut cases = Vec::new();
-            for (index, medium) in ["watercolor", "photograph", "line drawing"]
-                .iter()
-                .enumerate()
-            {
-                let file_id = format!("{model}-{index}");
+            for index in 0..4 {
+                let file_id = format!("proof-{model}-{index}");
+                let receipt = proof_receipt(model, index, &file_id);
+                let seed = text(&receipt["output"], "seed").to_string();
                 proof_ids.push(file_id.clone());
+                proof_manifest.push(json!({
+                    "file_id": file_id.clone(),
+                    "category": PROOF_CATEGORIES[index],
+                    "subject": SUBJECTS[index],
+                    "composition": COMPOSITIONS[index],
+                    "source_medium": SOURCE_MEDIA[index],
+                    "mode": "image_edit",
+                    "seed": seed,
+                    "style_reference_used": false,
+                    "model": {"provider": "fal", "model": model},
+                    "generation_receipt": receipt.clone()
+                }));
                 cases.push(json!({
                     "file_id": file_id,
-                    "subject": format!("subject {index}"),
-                    "source_medium": medium,
+                    "category": PROOF_CATEGORIES[index],
+                    "subject": SUBJECTS[index],
+                    "composition": COMPOSITIONS[index],
+                    "source_medium": SOURCE_MEDIA[index],
                     "mode": "image_edit",
-                    "seed": format!("{index}"),
-                    "prompt": prompt,
+                    "seed": seed,
+                    "prompt": PROMPT,
                     "style_reference_used": false,
+                    "content_preserved": true,
+                    "source_medium_replaced": true,
+                    "generation_receipt": receipt,
                     "scores": {
                         "medium_material": 2, "marks_edges": 2, "tonal_shading": 1,
                         "color_roles": 2, "composition": 1, "signature_details": 2,
@@ -832,11 +1409,12 @@ mod tests {
                     }
                 }));
             }
-            models.push(json!({"provider": provider, "model": model, "cases": cases}));
+            models.push(json!({"provider": "fal", "model": model, "cases": cases}));
         }
         json!({
             "name": "Archive Ember",
-            "prompt_template": prompt,
+            "slug": STYLE_SLUG,
+            "prompt_template": PROMPT,
             "model_provenance": {"style": {"provider": "openai", "model": "gpt-author"}},
             "credits": [{"name": "European relief print tradition", "kind": "tradition"}],
             "source_basis": {
@@ -848,19 +1426,21 @@ mod tests {
                 }]
             },
             "prompt_review": {
-                "schema_version": "1", "verdict": "pass", "prompt": prompt,
+                "schema_version": "1", "verdict": "pass", "prompt": PROMPT,
                 "reviewer": {"provider": "anthropic", "model": "reviewer"},
                 "reference_independent": true, "subject_independent": true,
+                "source_medium_independent": true,
                 "model_agnostic": true, "style_name_independent": true,
                 "contradictions": [], "revision_count": 1,
                 "observable_dimensions": dims
             },
             "portability_report": {
-                "schema_version": "1", "verdict": "pass", "prompt": prompt,
+                "schema_version": "1", "verdict": "pass", "prompt": PROMPT,
                 "blind_evaluation": true,
                 "evaluator": {"provider": "openai", "model": "vision-reviewer"},
                 "models": models
             },
+            "proof_shots_manifest": {"schema_version": "2", "items": proof_manifest},
             "proof_ids": proof_ids
         })
     }
@@ -879,7 +1459,18 @@ mod tests {
         assert!(verify_portable_prompt("as-1", text(&fields, "name"), prompt).is_ok());
         assert!(verify_source_basis("as-1", &fields, prompt).is_ok());
         assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
-        assert!(verify_portability_report("as-1", &fields, prompt, &proof_ids).is_ok());
+        assert!(
+            verify_portability_report("as-1", &fields, prompt, &proof_ids, RECEIPT_KEY).is_ok()
+        );
+    }
+
+    #[test]
+    fn prompt_review_must_attest_source_medium_independence() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["source_medium_independent"] = json!(false);
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_review_invalid");
     }
 
     #[test]
@@ -1019,18 +1610,17 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
+            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_dimension_failed");
     }
 
     #[test]
-    fn every_attached_proof_must_be_scored() {
+    fn preserving_subject_does_not_allow_preserving_source_medium() {
         let mut fields = valid_fields();
-        fields["proof_ids"]
-            .as_array_mut()
-            .unwrap()
-            .push(json!("unscored-proof"));
+        fields["portability_report"]["models"][0]["cases"][0]["source_medium_replaced"] =
+            json!(false);
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1043,13 +1633,43 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
+            RECEIPT_KEY,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_prompt_changed");
+    }
+
+    #[test]
+    fn every_attached_proof_must_be_scored() {
+        let mut fields = valid_fields();
+        fields["proof_ids"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("unscored-proof"));
+        fields["proof_shots_manifest"]["items"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"file_id": "unscored-proof"}));
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_matrix_incomplete");
     }
 
     #[test]
-    fn models_must_run_the_same_edit_matrix() {
+    fn signed_source_medium_cannot_be_relabelled() {
         let mut fields = valid_fields();
         fields["portability_report"]["models"][1]["cases"][2]["source_medium"] =
             json!("oil painting");
@@ -1065,8 +1685,134 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
+            RECEIPT_KEY,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_case_invalid");
+    }
+
+    #[test]
+    fn caller_authored_or_forged_receipt_fails() {
+        let mut fields = valid_fields();
+        fields["proof_shots_manifest"]["items"][0]["generation_receipt"]["signature"] =
+            json!("00".repeat(32));
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            RECEIPT_KEY,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_proof_receipt_signature_invalid");
+    }
+
+    #[test]
+    fn text_to_image_is_not_a_portability_proof() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][0]["cases"][0]["mode"] = json!("text_to_image");
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            RECEIPT_KEY,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_case_invalid");
+    }
+
+    #[test]
+    fn both_models_must_receive_the_identical_four_sources() {
+        let mut fields = valid_fields();
+        let manifest_index = 4;
+        let mut receipt =
+            fields["proof_shots_manifest"]["items"][manifest_index]["generation_receipt"].clone();
+        receipt["source"]["file_id"] = json!("different-generated-source");
+        sign_receipt(&mut receipt);
+        fields["proof_shots_manifest"]["items"][manifest_index]["generation_receipt"] =
+            receipt.clone();
+        fields["portability_report"]["models"][1]["cases"][0]["generation_receipt"] = receipt;
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_matrix_mismatch");
+    }
+
+    #[test]
+    fn every_model_needs_all_four_roles_and_all_four_media() {
+        let mut fields = valid_fields();
+        let mut receipt =
+            fields["proof_shots_manifest"]["items"][1]["generation_receipt"].clone();
+        receipt["category"] = json!(PROOF_CATEGORIES[0]);
+        sign_receipt(&mut receipt);
+        fields["proof_shots_manifest"]["items"][1]["category"] = json!(PROOF_CATEGORIES[0]);
+        fields["proof_shots_manifest"]["items"][1]["generation_receipt"] = receipt.clone();
+        fields["portability_report"]["models"][0]["cases"][1]["category"] =
+            json!(PROOF_CATEGORIES[0]);
+        fields["portability_report"]["models"][0]["cases"][1]["generation_receipt"] = receipt;
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            RECEIPT_KEY,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_model_below_threshold");
+    }
+
+    #[test]
+    fn verifier_fails_closed_without_receipt_key() {
+        let fields = valid_fields();
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+            "",
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_proof_receipt_key_missing");
     }
 }

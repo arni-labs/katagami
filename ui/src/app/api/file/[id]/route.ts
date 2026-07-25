@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isPubliclyReadableFile } from "@/lib/file-visibility";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -174,6 +175,33 @@ export async function GET(
 
   const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
   if (API_KEY) fetchHeaders["Authorization"] = `Bearer ${API_KEY}`;
+
+  // PawFS retains archived bytes for governed recovery, but Archived is a
+  // terminal public-revocation state. Always resolve the current projection
+  // before fetching bytes and fail closed for Created, Archived, malformed, or
+  // unavailable records. An authenticated server-side proxy must not turn
+  // backend retention into public access.
+  const metadataRes = await fetch(`${API_BASE}/tdata/Files('${id}')`, {
+    headers: fetchHeaders,
+    cache: "no-store",
+  });
+  let metadata: unknown;
+  if (metadataRes.ok) {
+    try {
+      metadata = await metadataRes.json();
+    } catch {
+      metadata = null;
+    }
+  }
+  if (!metadataRes.ok || !isPubliclyReadableFile(metadata)) {
+    return NextResponse.json(
+      { error: "File not found" },
+      {
+        status: 404,
+        headers: { "Cache-Control": "private, no-store" },
+      },
+    );
+  }
 
   const res = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
     headers: fetchHeaders,

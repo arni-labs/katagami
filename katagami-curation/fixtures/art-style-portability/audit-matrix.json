@@ -1,0 +1,272 @@
+{
+  "schema_version": "2",
+  "purpose": "Style-specific, consent-safe subject matrices for ArtStyle cross-model portability audits",
+  "rules": {
+    "required_categories": [
+      "human_portrait",
+      "nonhuman_living",
+      "still_life_object",
+      "landscape_environment"
+    ],
+    "required_source_media": [
+      "documentary photograph",
+      "black-ink line drawing",
+      "neutral synthetic 3d render",
+      "flat vector illustration"
+    ],
+    "same_inputs_across_models_within_style": true,
+    "same_inputs_across_styles": false,
+    "user_media_allowed": false,
+    "style_references_allowed": false
+  },
+  "styles": [
+    {
+      "style_id": "en-019ef0b7-1be3-7710-8268-ddc60cd2c42c",
+      "slug": "risograph-ember",
+      "selection_rationale": "Print-room, street-life, portable-electronics, and dense-city subjects expose ink separation and registration behavior while spanning people, motion, hard products, and layered depth.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "night-shift newspaper printer wearing an ink apron",
+          "composition": "waist-up three-quarter portrait beside a stack of blank paper",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "urban pigeon lifting into flight",
+          "composition": "single bird crossing the frame diagonally with wings fully spread",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "portable cassette player, headphones, and two tape cases",
+          "composition": "overhead product arrangement with clear gaps between objects",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "dense hillside neighborhood with stairways and rooftop water tanks",
+          "composition": "wide layered cityscape rising from lower left to upper right",
+          "source_medium": "flat vector illustration"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019ef63d-c464-7de1-8eb1-67a65263b683",
+      "slug": "cyanotype",
+      "selection_rationale": "Field observation, translucency, glass, and tidal terrain suit cyanotype's contact-print logic while testing whether it can resolve a person, a soft animal, reflective objects, and deep space.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "coastal field researcher holding an empty specimen tray",
+          "composition": "standing three-quarter portrait with windblown coat and open space to one side",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "moon jellyfish drifting with four trailing tentacles",
+          "composition": "single translucent animal suspended off-center in open water",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "glass bottles, brass dividers, and folded cotton cloth",
+          "composition": "shallow tabletop arrangement with overlapping silhouettes",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "rocky tidal cove at low tide beneath an open sky",
+          "composition": "wide view with exposed pools leading toward a distant headland",
+          "source_medium": "neutral synthetic 3d render"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019ef726-f4e5-7052-bd9e-5ae2ab1ab703",
+      "slug": "decoupage",
+      "selection_rationale": "Carried baskets, crossing grasses, overlapping tabletop silhouettes, and a curving street create natural layer boundaries without asking the source generator for collage styling.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "street-food vendor carrying a shallow basket",
+          "composition": "frontal half-length portrait with basket cutting across the lower frame",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "red fox stepping through tall grass",
+          "composition": "full animal in profile with grasses crossing its legs",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "ceramic kettle, three lemons, and a striped dish towel",
+          "composition": "casual tabletop still life with one lemon separated in front",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "tram curving through a steep neighborhood",
+          "composition": "street-level view with tracks sweeping from foreground into clustered buildings",
+          "source_medium": "black-ink line drawing"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019ef7e2-bd69-7352-be66-8458156801bc",
+      "slug": "hardline",
+      "selection_rationale": "Angular human balance and rigid products are sympathetic tests; radial agave growth and a sparse salt-flat horizon are stress tests for preserving decisive geometry across organic and open scenes.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "contemporary dancer in structured rehearsal clothes holding an angular balance pose",
+          "composition": "full-length studio portrait with the figure reaching across a tall off-center frame",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "agave rosette with a small beetle on one blade",
+          "composition": "low close view with pointed leaves radiating beyond the frame",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "folding chair, adjustable desk lamp, and rectangular book",
+          "composition": "three objects meeting as a compact asymmetric product group",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "salt flat with a distant mesa and one utility tower",
+          "composition": "very wide horizon with the tower isolated in the right third",
+          "source_medium": "documentary photograph"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
+      "slug": "dawnvapor-cel",
+      "selection_rationale": "Radio equipment and a pre-sunrise platform exercise the style's technical-dawn vocabulary, while a human face and turning koi test whether cel reconstruction works on skin, hair, and organic motion without a reference image.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "overnight radio operator wearing headphones",
+          "composition": "off-center shoulders-up portrait with a console edge in the foreground",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "two koi turning in opposite directions beneath rippled water",
+          "composition": "overhead circular movement with open water at the center",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "portable field radio, coiled cable, and signal meter",
+          "composition": "low three-quarter product view with the cable crossing the foreground",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "elevated railway platform just before sunrise",
+          "composition": "long one-point perspective with tracks exiting toward the horizon",
+          "source_medium": "flat vector illustration"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019efd9f-293b-7423-abb4-cecf6689aeac",
+      "slug": "softbody",
+      "selection_rationale": "A stretched athlete and segmented animal test living anatomy; a rigid espresso machine and repeated turbine landscape deliberately test whether soft volumetric treatment transfers beyond naturally rounded subjects.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "youth goalkeeper in padded kit holding a ball overhead",
+          "composition": "full-length environmental portrait in front of a goal net with the body stretched diagonally",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "armadillo walking with its segmented shell visible",
+          "composition": "ground-level side view with the full animal and a long cast shadow",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "compact espresso machine, cup, and tamper",
+          "composition": "straight-on product group with rigid verticals and small gaps",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "wind turbines along a ridge above farm fields",
+          "composition": "deep panoramic view with repeating towers receding into distance",
+          "source_medium": "neutral synthetic 3d render"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019efd9f-3328-7d92-9a46-c86dcf3929f1",
+      "slug": "wetwash",
+      "selection_rationale": "A musician, diving bird, transparent bottle, and rainy street supply gesture, speed, overlap, reflection, and depth without embedding watercolor or wash cues in the source content.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "violinist pausing between phrases",
+          "composition": "seated half-length portrait with bow angled across the frame",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "kingfisher diving toward water with wings tucked",
+          "composition": "small bird descending through a tall frame toward one ripple",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "clear medicine bottle, brass key, and folded blue ribbon",
+          "composition": "close tabletop still life with transparent overlaps and narrow negative spaces",
+          "source_medium": "documentary photograph"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "rainy open-air market street with awnings and reflections",
+          "composition": "eye-level street view leading between stalls toward a bright distant opening",
+          "source_medium": "black-ink line drawing"
+        }
+      ]
+    },
+    {
+      "style_id": "en-019efdcd-404d-7233-a8d4-9fd2ba595389",
+      "slug": "sampler",
+      "selection_rationale": "Workshop portraiture, a small armored animal, navigation objects, and an alpine route provide varied seams, scales, and surface divisions while ensuring the style is not tested only on textile-friendly subjects.",
+      "cases": [
+        {
+          "category": "human_portrait",
+          "subject": "instrument repairer holding calipers beside a workbench",
+          "composition": "three-quarter standing portrait framed by two partially open instrument cases",
+          "source_medium": "flat vector illustration"
+        },
+        {
+          "category": "nonhuman_living",
+          "subject": "stag beetle among oak leaves and two acorns",
+          "composition": "close overhead cluster with the beetle crossing a diagonal twig",
+          "source_medium": "neutral synthetic 3d render"
+        },
+        {
+          "category": "still_life_object",
+          "subject": "enamel camping mug, compass, and folded map",
+          "composition": "overhead arrangement with the map creating an irregular ground shape",
+          "source_medium": "black-ink line drawing"
+        },
+        {
+          "category": "landscape_environment",
+          "subject": "alpine footpath leading to a small stone shelter",
+          "composition": "wide view with the path entering low and bending toward the shelter",
+          "source_medium": "documentary photograph"
+        }
+      ]
+    }
+  ]
+}
