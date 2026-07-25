@@ -373,6 +373,8 @@ def run_art_style_case(
             "verdict": "pass",
             "reviewer": {"provider": "local", "model": "fixture-reviewer"},
             "all_named_people_checked": True,
+            "no_living_artist_target": True,
+            "tradition_level_description": True,
             "sources": [{"name": "E2E tradition", "kind": "tradition", "evidence_url": "https://example.test/e2e"}],
         }),
         "prompt_review": json.dumps({

@@ -271,22 +271,38 @@ pub(super) fn verify_source_basis(
         || !version_is_one(&basis)
         || text(&basis, "verdict") != "pass"
         || !bool_field(&basis, "all_named_people_checked")
+        || !bool_field(&basis, "no_living_artist_target")
+        || !bool_field(&basis, "tradition_level_description")
     {
         return Err(art_error(
             owner_id,
             "art_style_source_basis_invalid",
             "source_basis",
             format!(
-                "ArtStyle '{owner_id}' source_basis must use schema v1, verdict=pass, and all_named_people_checked=true"
+                "ArtStyle '{owner_id}' source_basis must use schema v1, verdict=pass, check every named person, reject any living-artist target, and attest a tradition-level description"
             ),
         ));
     }
-    if nonempty_model(basis.get("reviewer").unwrap_or(&Value::Null)).is_none() {
+    let reviewer =
+        nonempty_model(basis.get("reviewer").unwrap_or(&Value::Null)).ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_source_reviewer_missing",
+                "source_basis",
+                format!("ArtStyle '{owner_id}' source_basis is missing reviewer provider/model"),
+            )
+        })?;
+    if prompt_author(fields)
+        .map(|author| author == reviewer)
+        .unwrap_or(false)
+    {
         return Err(art_error(
             owner_id,
-            "art_style_source_reviewer_missing",
+            "art_style_source_review_not_independent",
             "source_basis",
-            format!("ArtStyle '{owner_id}' source_basis is missing reviewer provider/model"),
+            format!(
+                "ArtStyle '{owner_id}' source-basis reviewer must differ from the prompt author"
+            ),
         ));
     }
 
@@ -1235,6 +1251,7 @@ mod tests {
             "credits": [{"name": "European relief print tradition", "kind": "tradition"}],
             "source_basis": {
                 "schema_version": "1", "verdict": "pass", "all_named_people_checked": true,
+                "no_living_artist_target": true, "tradition_level_description": true,
                 "reviewer": {"provider": "anthropic", "model": "reviewer"},
                 "sources": [{
                     "name": "European relief print tradition", "kind": "tradition",
@@ -1285,6 +1302,24 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_review_invalid");
+    }
+
+    #[test]
+    fn source_review_must_reject_a_living_artist_target() {
+        let mut fields = valid_fields();
+        fields["source_basis"]["no_living_artist_target"] = json!(false);
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_source_basis("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_source_basis_invalid");
+    }
+
+    #[test]
+    fn source_review_must_be_independent_from_prompt_author() {
+        let mut fields = valid_fields();
+        fields["source_basis"]["reviewer"] = fields["model_provenance"]["style"].clone();
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_source_basis("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_source_review_not_independent");
     }
 
     #[test]

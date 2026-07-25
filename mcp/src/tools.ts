@@ -428,7 +428,9 @@ export function buildServer(auth: AuthInfo): McpServer {
           ),
         source_basis: z
           .record(z.string(), z.unknown())
-          .describe("Schema-v1 source and rights review"),
+          .describe(
+            "Schema-v1 independent source and rights review; it must check every named person, reject named or hidden living-artist targeting, and attest that the recipe is described at tradition level",
+          ),
         prompt_review: z
           .record(z.string(), z.unknown())
           .describe(

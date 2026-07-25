@@ -129,6 +129,8 @@ source_basis = {
     "verdict": "pass",
     "reviewer": {"provider": "<provider>", "model": "<review model>"},
     "all_named_people_checked": True,
+    "no_living_artist_target": True,
+    "tradition_level_description": True,
     "sources": [
         {
             "name": "European relief print tradition",
@@ -148,6 +150,9 @@ Allowed `source_basis.sources[].kind` values are `tradition`, `movement`,
 - `licensed_artist` / `licensed_source` requires `license_url` or `permission`.
 - Every credit must have a matching source-basis entry.
 - Every artist credit must be public-domain or licensed.
+- The source reviewer must differ from the prompt author and must explicitly
+  reject hidden targeting of a living artist, including an unnamed but
+  recognizably practitioner-specific recipe.
 - Do not name an artist in the operative prompt, even when public-domain; encode
   the observable technique.
 
