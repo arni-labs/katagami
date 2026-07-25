@@ -5,6 +5,7 @@ mod facets;
 mod taste_doc;
 
 const ERROR_CONTRACT: &str = "katagami.finalizer.verification.v1";
+const IMAGE_SNIFF_BYTES: usize = 4096;
 const SHADCN_COMPONENTS: [&str; 16] = [
     "button",
     "card",
@@ -2661,9 +2662,9 @@ fn walk_lane_entity_to_published(
 // reads the actual artifact evidence: image file bodies (rejecting text,
 // markup, JSON, SVG, and base64 payloads), portable-prompt review evidence,
 // manifests matching attached file ids, credits + rights basis, model provenance,
-// and palette color data. Bodies arrive through the host's lossy UTF-8 http_call,
-// so binary image checks use the same negative-heuristic discipline as the
-// design-language thumbnail path rather than requiring magic bytes.
+// and palette color data. Image evidence uses the host's streaming HTTP path:
+// inspect at most IMAGE_SNIFF_BYTES and require a real raster signature, so
+// verification is independent of total file size and never buffers a full image.
 
 fn lane_field<'a>(
     fields: &'a serde_json::Value,
@@ -2829,7 +2830,7 @@ fn verify_lane_image_file(
         .entity(entity_label, owner_id)
         .artifact(artifact_kind, file_id));
     }
-    let body = read_lane_file_value(
+    let body_prefix = read_lane_image_prefix(
         ctx,
         api_url,
         headers,
@@ -2838,7 +2839,7 @@ fn verify_lane_image_file(
         file_id,
         artifact_kind,
     )?;
-    if !lane_payload_plausible_image(&mime_type, &body) {
+    if !lane_payload_plausible_image(&mime_type, &body_prefix) {
         return Err(VerificationError::new(
             "lane_file_not_image",
             format!(
@@ -2849,6 +2850,136 @@ fn verify_lane_image_file(
         .artifact(artifact_kind, file_id));
     }
     Ok(())
+}
+
+fn read_lane_image_prefix(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    entity_label: &'static str,
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<Vec<u8>, VerificationError> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = ctx;
+        let url = format!("{api_url}/tdata/Files('{file_id}')/$value");
+        let stream_headers: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let (request_body, mut response_body, response_head) =
+            temper_wasm_sdk::http_stream::streaming_call("GET", &url, &stream_headers)
+                .map_err(|error| {
+                    VerificationError::new(
+                        "lane_file_value_read_failed",
+                        format!(
+                            "Failed to open bounded image read for Files('{file_id}')/$value: {error}"
+                        ),
+                    )
+                    .entity(entity_label, owner_id)
+                    .artifact(artifact_kind, file_id)
+                    .repairable(false)
+                })?;
+        request_body.finish().map_err(|error| {
+            VerificationError::new(
+                "lane_file_value_read_failed",
+                format!(
+                    "Failed to finish bounded image request for Files('{file_id}')/$value: {error}"
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        let head = response_head().map_err(|error| {
+            VerificationError::new(
+                "lane_file_value_read_failed",
+                format!(
+                    "Failed to read response head for Files('{file_id}')/$value: {error}"
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        if head.status == 404 {
+            let _ = response_body.close();
+            return Err(VerificationError::new(
+                "lane_file_value_missing",
+                format!(
+                    "{entity_label} '{owner_id}' {artifact_kind} file '{file_id}' has no readable $value bytes"
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .artifact(artifact_kind, file_id));
+        }
+        if !(200..300).contains(&head.status) {
+            let _ = response_body.close();
+            return Err(VerificationError::new(
+                "lane_file_value_read_failed",
+                format!(
+                    "Failed to read Files('{file_id}')/$value for {entity_label} '{owner_id}': HTTP {}",
+                    head.status
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .artifact(artifact_kind, file_id));
+        }
+
+        let read_result = (|| -> Result<Vec<u8>, VerificationError> {
+            let mut prefix = vec![0_u8; IMAGE_SNIFF_BYTES];
+            let mut bytes_read = 0;
+            while bytes_read < prefix.len() {
+                match response_body.read_next_chunk(&mut prefix[bytes_read..]) {
+                    Ok(Some(0)) | Ok(None) => break,
+                    Ok(Some(count)) => bytes_read += count,
+                    Err(error) => {
+                        return Err(VerificationError::new(
+                            "lane_file_value_read_failed",
+                            format!(
+                                "Failed during bounded image read for Files('{file_id}')/$value: {error}"
+                            ),
+                        )
+                        .entity(entity_label, owner_id)
+                        .artifact(artifact_kind, file_id)
+                        .repairable(false));
+                    }
+                }
+            }
+            prefix.truncate(bytes_read);
+            Ok(prefix)
+        })();
+        let close_result = response_body.close();
+        let prefix = read_result?;
+        close_result.map_err(|error| {
+            VerificationError::new(
+                "lane_file_value_read_failed",
+                format!(
+                    "Failed to close bounded image read for Files('{file_id}')/$value: {error}"
+                ),
+            )
+            .entity(entity_label, owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        Ok(prefix)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        read_lane_file_value(
+            ctx,
+            api_url,
+            headers,
+            entity_label,
+            owner_id,
+            file_id,
+            artifact_kind,
+        )
+        .map(|body| body.into_bytes().into_iter().take(IMAGE_SNIFF_BYTES).collect())
+    }
 }
 
 fn read_lane_file_value(
@@ -2968,16 +3099,17 @@ fn publish_lane_file_artifact(
     Ok((asset_id, canonicalize_public_asset_url(&public_url)))
 }
 
-fn lane_payload_plausible_image(mime_type: &str, body: &str) -> bool {
+fn lane_payload_plausible_image(mime_type: &str, body: &[u8]) -> bool {
     if body.len() < 64 {
         return false;
     }
-    if thumbnail_payload_looks_text_encoded_image(body) {
+    let text_prefix = String::from_utf8_lossy(body);
+    if thumbnail_payload_looks_text_encoded_image(&text_prefix) {
         return false;
     }
-    let prefix: String = body
+    let prefix: String = text_prefix
         .chars()
-        .take(4096)
+        .take(IMAGE_SNIFF_BYTES)
         .collect::<String>()
         .to_ascii_lowercase();
     let trimmed = prefix.trim_start();
@@ -2991,12 +3123,35 @@ fn lane_payload_plausible_image(mime_type: &str, body: &str) -> bool {
         return false;
     }
     let normalized = mime_type.trim().to_ascii_lowercase();
-    if normalized.starts_with("image/") && normalized != "image/svg+xml" {
-        return true;
-    }
-    let binary_signal =
-        thumbnail_payload_looks_image_like(body) || body.starts_with('\u{FFFD}');
-    matches!(normalized.as_str(), "" | "application/octet-stream") && binary_signal
+    let acceptable_mime = (normalized.starts_with("image/")
+        && normalized != "image/svg+xml")
+        || matches!(normalized.as_str(), "" | "application/octet-stream");
+    acceptable_mime && lane_payload_has_supported_raster_magic(body)
+}
+
+fn lane_payload_has_supported_raster_magic(body: &[u8]) -> bool {
+    body.starts_with(&[0xff, 0xd8, 0xff])
+        || body.starts_with(b"\x89PNG\r\n\x1a\n")
+        || body.starts_with(b"GIF87a")
+        || body.starts_with(b"GIF89a")
+        || body.starts_with(b"BM")
+        || body.starts_with(b"II*\0")
+        || body.starts_with(b"MM\0*")
+        || body.starts_with(&[0, 0, 1, 0])
+        || (body.len() >= 12 && &body[..4] == b"RIFF" && &body[8..12] == b"WEBP")
+        || (body.len() >= 12
+            && &body[4..8] == b"ftyp"
+            && matches!(
+                &body[8..12],
+                b"avif"
+                    | b"avis"
+                    | b"heic"
+                    | b"heix"
+                    | b"hevc"
+                    | b"hevx"
+                    | b"mif1"
+                    | b"msf1"
+            ))
 }
 
 fn is_hex_color(value: &str) -> bool {
@@ -5547,14 +5702,10 @@ mod page_quality_tests {
 mod lane_verification_tests {
     use super::*;
 
-    // Real image files generated with PIL (testdata/). The production body
-    // path is reqwest `.text()` = lossy UTF-8 decoding; reproduce it exactly.
+    // Real image files generated with PIL (testdata/). Production image
+    // verification streams only this bounded binary prefix.
     const REAL_JPEG: &[u8] = include_bytes!("../testdata/real.jpg");
     const REAL_PNG: &[u8] = include_bytes!("../testdata/real.png");
-
-    fn lossy(bytes: &[u8]) -> String {
-        String::from_utf8_lossy(bytes).to_string()
-    }
 
     #[test]
     fn flexible_string_array_preserves_an_encoded_empty_list() {
@@ -5571,29 +5722,28 @@ mod lane_verification_tests {
     }
 
     #[test]
-    fn real_jpeg_lossy_body_passes_the_image_gate() {
-        let body = lossy(REAL_JPEG);
-        assert!(
-            body.starts_with('\u{FFFD}'),
-            "lossy-decoded JPEG must start with the replacement char"
-        );
-        assert!(lane_payload_plausible_image("image/jpeg", &body));
-        assert!(lane_payload_plausible_image("", &body));
-        assert!(lane_payload_plausible_image("application/octet-stream", &body));
+    fn real_jpeg_prefix_passes_the_image_gate() {
+        assert!(lane_payload_plausible_image("image/jpeg", REAL_JPEG));
+        assert!(lane_payload_plausible_image("", REAL_JPEG));
+        assert!(lane_payload_plausible_image(
+            "application/octet-stream",
+            REAL_JPEG
+        ));
     }
 
     #[test]
-    fn real_png_lossy_body_passes_the_image_gate() {
-        let body = lossy(REAL_PNG);
-        assert!(body.starts_with('\u{FFFD}'));
-        assert!(lane_payload_plausible_image("image/png", &body));
-        assert!(lane_payload_plausible_image("application/octet-stream", &body));
+    fn real_png_prefix_passes_the_image_gate() {
+        assert!(lane_payload_plausible_image("image/png", REAL_PNG));
+        assert!(lane_payload_plausible_image(
+            "application/octet-stream",
+            REAL_PNG
+        ));
     }
 
     #[test]
     fn ascii_magic_gif_passes_without_mime() {
-        let mut body = String::from("GIF89a");
-        body.push_str(&"\u{FFFD}x".repeat(64));
+        let mut body = b"GIF89a".to_vec();
+        body.extend_from_slice(&[0xff; 128]);
         assert!(lane_payload_plausible_image("", &body));
     }
 
@@ -5603,9 +5753,12 @@ mod lane_verification_tests {
             "<!doctype html><html><body>{}</body></html>",
             "broken render ".repeat(16)
         );
-        assert!(!lane_payload_plausible_image("image/jpeg", &body));
+        assert!(!lane_payload_plausible_image("image/jpeg", body.as_bytes()));
         let body2 = format!("  <html><head></head><body>{}</body></html>", "x".repeat(128));
-        assert!(!lane_payload_plausible_image("image/png", &body2));
+        assert!(!lane_payload_plausible_image(
+            "image/png",
+            body2.as_bytes()
+        ));
     }
 
     #[test]
@@ -5614,23 +5767,29 @@ mod lane_verification_tests {
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"600\" height=\"400\">{}</svg>",
             "<rect width=\"10\" height=\"10\"/>".repeat(8)
         );
-        assert!(!lane_payload_plausible_image("image/jpeg", &body));
-        assert!(!lane_payload_plausible_image("", &body));
+        assert!(!lane_payload_plausible_image("image/jpeg", body.as_bytes()));
+        assert!(!lane_payload_plausible_image("", body.as_bytes()));
     }
 
     #[test]
     fn svg_mime_is_rejected_even_with_binary_body() {
-        assert!(!lane_payload_plausible_image("image/svg+xml", &lossy(REAL_JPEG)));
+        assert!(!lane_payload_plausible_image("image/svg+xml", REAL_JPEG));
     }
 
     #[test]
     fn base64_and_data_url_payloads_are_rejected() {
         let b64 = format!("/9j/{}", "4AAQSkZJRgABAQAA".repeat(16));
-        assert!(!lane_payload_plausible_image("image/jpeg", &b64));
+        assert!(!lane_payload_plausible_image("image/jpeg", b64.as_bytes()));
         let data_url = format!("data:image/jpeg;base64,/9j/{}", "4AAQSkZJRg".repeat(16));
-        assert!(!lane_payload_plausible_image("image/jpeg", &data_url));
+        assert!(!lane_payload_plausible_image(
+            "image/jpeg",
+            data_url.as_bytes()
+        ));
         let png_b64 = format!("iVBORw0KGgo{}", "AAAANSUhEUg".repeat(16));
-        assert!(!lane_payload_plausible_image("image/png", &png_b64));
+        assert!(!lane_payload_plausible_image(
+            "image/png",
+            png_b64.as_bytes()
+        ));
     }
 
     #[test]
@@ -5639,18 +5798,30 @@ mod lane_verification_tests {
             "{{\"error\": \"file not found\", \"detail\": \"{}\"}}",
             "x".repeat(80)
         );
-        assert!(!lane_payload_plausible_image("application/octet-stream", &json_err));
-        assert!(!lane_payload_plausible_image("image/jpeg", &json_err));
+        assert!(!lane_payload_plausible_image(
+            "application/octet-stream",
+            json_err.as_bytes()
+        ));
+        assert!(!lane_payload_plausible_image(
+            "image/jpeg",
+            json_err.as_bytes()
+        ));
         let yaml = format!("version: alpha\nname: fake\ncomponents:\n  - {}", "x".repeat(80));
-        assert!(!lane_payload_plausible_image("image/jpeg", &yaml));
+        assert!(!lane_payload_plausible_image(
+            "image/jpeg",
+            yaml.as_bytes()
+        ));
         let front_matter = format!("---\nname: fake\n---\n{}", "body ".repeat(32));
-        assert!(!lane_payload_plausible_image("image/jpeg", &front_matter));
+        assert!(!lane_payload_plausible_image(
+            "image/jpeg",
+            front_matter.as_bytes()
+        ));
     }
 
     #[test]
     fn tiny_bodies_are_rejected() {
-        assert!(!lane_payload_plausible_image("image/jpeg", "x"));
-        assert!(!lane_payload_plausible_image("image/jpeg", ""));
+        assert!(!lane_payload_plausible_image("image/jpeg", b"x"));
+        assert!(!lane_payload_plausible_image("image/jpeg", b""));
     }
 
     #[test]

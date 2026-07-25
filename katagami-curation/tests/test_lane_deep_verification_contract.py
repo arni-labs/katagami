@@ -79,10 +79,21 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             '"reference_manifest"',
             '"proof_shots_manifest"',
             "fn verify_lane_image_file",
+            "fn read_lane_image_prefix",
+            "temper_wasm_sdk::http_stream::streaming_call",
+            "IMAGE_SNIFF_BYTES",
             "fn lane_payload_plausible_image",
+            "fn lane_payload_has_supported_raster_magic",
             "fn verify_lane_manifest_files",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
+
+        image_verifier = FINALIZER_SRC[
+            FINALIZER_SRC.index("fn verify_lane_image_file") :
+            FINALIZER_SRC.index("fn read_lane_image_prefix")
+        ]
+        self.assertIn("read_lane_image_prefix", image_verifier)
+        self.assertNotIn("read_lane_file_value(", image_verifier)
 
     def test_prompt_is_one_paste_ready_model_agnostic_field(self):
         actions = self._by_name(self.art, "action")
