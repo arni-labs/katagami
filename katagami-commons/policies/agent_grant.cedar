@@ -5,4 +5,4 @@
 // promote themselves to owner and mint an owner token on their next sign-in.
 permit(principal, action, resource is AgentGrant);
 forbid(principal, action, resource is AgentGrant)
-when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer };
+unless { principal is System || principal is Admin || (principal has agent_type && principal.agent_type == "operator") };

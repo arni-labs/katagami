@@ -29,8 +29,7 @@ forbid(
   ],
   resource is DesignLanguage
 )
-when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer }
-unless { principal has role && ["owner", "curator"].contains(principal.role) };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal has role && ["owner", "curator"].contains(principal.role)) };
 
 // Generic OData writes bypass the action ladder: PATCH and DELETE authorize
 // as `update`/`delete` and match no named list above. `create` stays open —
@@ -43,4 +42,4 @@ forbid(
   ],
   resource is DesignLanguage
 )
-when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal has role && ["owner", "curator"].contains(principal.role)) };

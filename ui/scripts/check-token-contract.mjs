@@ -37,7 +37,7 @@ const CURATED = ["design_language","art_style","palette_system","writing_style",
 const humanChecks = CURATED.map((stem) => [
   `${stem}.cedar gates curator actions on the human's role`,
   read(`../katagami-commons/policies/${stem}.cedar`),
-  /principal is Customer[\s\S]*?\["owner", "curator"\]\.contains\(principal\.role\)/,
+  /unless \{[\s\S]*?\["owner", "curator"\]\.contains\(principal\.role\)/,
 ]).concat([
   // The identity substrate must be unreachable by humans and contributor
   // agents: a human who could invoke Member.SetRole would simply promote
@@ -45,27 +45,46 @@ const humanChecks = CURATED.map((stem) => [
   ...["member","agent_grant","oauth_client"].map((stem) => [
     `${stem}.cedar is closed to humans and contributor agents`,
     read(`../katagami-commons/policies/${stem}.cedar`),
-    /agent_type == "contributor"\) \|\| principal is Customer/,
+    /unless \{ principal is System \|\| principal is Admin \|\| \(principal has agent_type && principal\.agent_type == "operator"\) \}/,
   ]),
   // Curation is pipeline/curator work, not open to every verified principal.
   ...["taste_rule","curation_job","curation_direction","curation_query"].map((stem) => [
     `${stem}.cedar is closed to humans and contributor agents`,
     read(`../katagami-curation/policies/${stem}.cedar`),
-    /principal is Customer[\s\S]*?action == Action::"read"/,
+    /unless \{ action == Action::"read"[\s\S]*?principal is System/,
   ]),
   ["remix.cedar gates human ownership",
    read("../katagami-commons/policies/remix.cedar"),
-   /principal is Customer[\s\S]*?resource\.creator_sub == principal\.id/],
+   /resource\.creator_sub == principal\.id/],
   ["owner actions carry the acting human to the kernel",
    read("src/lib/owner.ts"), /assertOwnerBearer[\s\S]*humanBearer/],
   ["curator server actions use assertOwnerBearer",
    read("src/app/actions.ts"), /assertOwnerBearer\(\)[\s\S]*\{ bearer \}/],
 ]);
 
+// THE RECURRING BUG CLASS, made unrepeatable: a boundary written as
+// `forbid ... when { <list of forbidden principals> }` permits every principal
+// nobody thought to name — a typeless agent, a new principal kind, tomorrow's
+// service. Twice in this effort that shape leaked (contributor-only lists let
+// humans through; then human+contributor lists let a typeless agent through).
+// Every boundary must instead be `forbid ... unless { <list of ALLOWED
+// principals> }`, so an unnamed principal is denied by default.
+const ALL_POLICIES = [
+  ...GOVERNED.map((s) => `../katagami-commons/policies/${s}.cedar`),
+  ...["member","agent_grant","oauth_client"].map((s) => `../katagami-commons/policies/${s}.cedar`),
+  ...["taste_rule","curation_job","curation_direction","curation_query","curation_job_template"]
+      .map((s) => `../katagami-curation/policies/${s}.cedar`),
+];
+const denyByDefaultChecks = ALL_POLICIES.map((rel) => [
+  `${rel.split("/").pop()} states who is ALLOWED, never who is forbidden`,
+  read(rel),
+  /^(?![\s\S]*\nwhen \{)[\s\S]*$/,
+]);
+
 const crudChecks = GOVERNED.map((stem) => [
-  `${stem}.cedar closes generic update/delete to contributors`,
+  `${stem}.cedar closes generic update/delete to all but privileged principals`,
   read(`../katagami-commons/policies/${stem}.cedar`),
-  /Action::"update",\s*\n?\s*Action::"delete"[\s\S]*?agent_type == "contributor"/,
+  /Action::"update",\s*\n?\s*Action::"delete"[\s\S]*?unless \{[\s\S]*?principal is System/,
 ]);
 
 // Isolate each mint function so a claim in one is not credited to the other.
@@ -130,6 +149,7 @@ const required = [
   ["revoking a grant propagates to the kernel", as, /revokeGrant[\s\S]*?bumpGeneration\(grantId\)/],
   ...crudChecks,
   ...humanChecks,
+  ...denyByDefaultChecks,
 ];
 
 let failed = 0;

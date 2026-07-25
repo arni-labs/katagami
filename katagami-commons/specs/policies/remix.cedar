@@ -12,7 +12,7 @@ forbid(
   ],
   resource is Remix
 )
-when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal has role && ["owner", "curator"].contains(principal.role)) };
 
 // Contributor boundary (ARN-255): agents build and save their own mixes.
 // Ownership matches either the human acting directly (principal.id) or an
