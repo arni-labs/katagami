@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+import hashlib
 import json
 import tomllib
 
@@ -199,8 +200,16 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)
 
     def test_audit_matrix_balances_roles_media_and_style_specific_subjects(self):
-        self.assertEqual(AUDIT_MATRIX["schema_version"], "2")
+        self.assertEqual(AUDIT_MATRIX["schema_version"], "3")
         self.assertEqual(len(AUDIT_MATRIX["styles"]), 8)
+        self.assertIn(
+            "Contributor-created outside Katagami",
+            AUDIT_MATRIX["rules"]["source_fixture_policy"],
+        )
+        self.assertIn(
+            "does not invoke or pay",
+            AUDIT_MATRIX["rules"]["source_fixture_policy"],
+        )
         expected_categories = {
             "human_portrait",
             "nonhuman_living",
@@ -215,6 +224,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         }
         seen_subject_compositions = set()
         seen_prompts = set()
+        seen_source_files = set()
         assignments = set()
         for style in AUDIT_MATRIX["styles"]:
             prompt = style["canonical_prompt"]
@@ -243,7 +253,28 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
                 key = (case["subject"], case["composition"])
                 self.assertNotIn(key, seen_subject_compositions)
                 seen_subject_compositions.add(key)
+                source_file = FIXTURE_ROOT / case["source_file"]
+                self.assertTrue(source_file.is_file(), source_file)
+                self.assertEqual(source_file.suffix, ".webp")
+                self.assertNotIn(source_file, seen_source_files)
+                seen_source_files.add(source_file)
+                source_bytes = source_file.read_bytes()
+                self.assertEqual(source_bytes[:4], b"RIFF")
+                self.assertEqual(source_bytes[8:12], b"WEBP")
+                self.assertEqual(
+                    hashlib.sha256(source_bytes).hexdigest(),
+                    case["source_sha256"],
+                )
+                self.assertNotRegex(
+                    case["source_file"].lower(),
+                    r"photo[-_ ]?[123]|user|upload|painting",
+                )
         self.assertGreaterEqual(len(assignments), 4)
+        self.assertEqual(len(seen_source_files), 32)
+        self.assertEqual(
+            seen_source_files,
+            set((FIXTURE_ROOT / "sources").rglob("*.webp")),
+        )
         self.assertFalse(AUDIT_MATRIX["rules"]["user_media_allowed"])
         self.assertFalse(AUDIT_MATRIX["rules"]["style_references_allowed"])
 

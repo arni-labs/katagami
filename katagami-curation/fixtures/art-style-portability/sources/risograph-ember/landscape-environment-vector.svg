@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" role="img" aria-label="Flat vector hillside neighborhood with stairways and rooftop water tanks">
+  <rect width="1536" height="1024" fill="#d9e7ef"/>
+  <path d="M0 824 1536 214v810H0Z" fill="#b6aa96"/>
+
+  <g fill="#f4efe5">
+    <path d="M0 728h256v296H0Z"/>
+    <path d="M202 590h256v434H202Z"/>
+    <path d="M416 442h250v582H416Z"/>
+    <path d="M638 312h238v712H638Z"/>
+    <path d="M846 188h240v836H846Z"/>
+  </g>
+  <g fill="#c87558">
+    <path d="M90 814h264v210H90Z"/>
+    <path d="M316 690h246v334H316Z"/>
+    <path d="M536 554h258v470H536Z"/>
+    <path d="M760 420h250v604H760Z"/>
+    <path d="M986 288h246v736H986Z"/>
+  </g>
+  <g fill="#637984">
+    <path d="M286 850h262v174H286Z"/>
+    <path d="M520 734h266v290H520Z"/>
+    <path d="M748 602h266v422H748Z"/>
+    <path d="M974 474h270v550H974Z"/>
+    <path d="M1208 340h328v684h-328Z"/>
+  </g>
+
+  <g fill="#263943">
+    <path d="M42 780h34v74H42Zm76 0h34v74h-34Zm112-144h34v74h-34Zm76 0h34v74h-34Z"/>
+    <path d="M256 744h34v74h-34Zm76 0h34v74h-34Zm112-166h34v74h-34Zm76 0h34v74h-34Z"/>
+    <path d="M474 618h34v74h-34Zm76 0h34v74h-34Zm112-174h34v74h-34Zm76 0h34v74h-34Z"/>
+    <path d="M690 492h34v74h-34Zm76 0h34v74h-34Zm112-168h34v74h-34Zm76 0h34v74h-34Z"/>
+    <path d="M914 366h34v74h-34Zm76 0h34v74h-34Zm112-166h34v74h-34Zm76 0h34v74h-34Z"/>
+    <path d="M1150 526h34v74h-34Zm76 0h34v74h-34Zm112-174h34v74h-34Zm76 0h34v74h-34Z"/>
+  </g>
+
+  <g fill="#f0d9a8">
+    <path d="M154 928h48v96h-48Zm226-96h48v192h-48Zm222-128h48v320h-48Zm224-134h48v454h-48Zm224-134h48v588h-48Zm228-130h48v718h-48Z"/>
+  </g>
+
+  <g fill="#263943">
+    <path d="M118 698h82v70h-82Z"/>
+    <path d="M108 682h102v16H108Z"/>
+    <path d="M126 768h12v30h-12Zm52 0h12v30h-12Z"/>
+
+    <path d="M382 548h82v70h-82Z"/>
+    <path d="M372 532h102v16H372Z"/>
+    <path d="M390 618h12v30h-12Zm52 0h12v30h-12Z"/>
+
+    <path d="M654 408h82v70h-82Z"/>
+    <path d="M644 392h102v16H644Z"/>
+    <path d="M662 478h12v30h-12Zm52 0h12v30h-12Z"/>
+
+    <path d="M912 266h82v70h-82Z"/>
+    <path d="M902 250h102v16H902Z"/>
+    <path d="M920 336h12v30h-12Zm52 0h12v30h-12Z"/>
+
+    <path d="M1196 410h82v70h-82Z"/>
+    <path d="M1186 394h102v16h-102Z"/>
+    <path d="M1204 480h12v30h-12Zm52 0h12v30h-12Z"/>
+  </g>
+
+  <g fill="#f4efe5">
+    <path d="M246 872h44v-28h44v-28h44v-28h44v-28h44v44h-44v28h-44v28h-44v28h-44v28h-44Z"/>
+    <path d="M570 660h44v-28h44v-28h44v-28h44v-28h44v44h-44v28h-44v28h-44v28h-44v28h-44Z"/>
+    <path d="M884 458h44v-28h44v-28h44v-28h44v-28h44v44h-44v28h-44v28h-44v28h-44v28h-44Z"/>
+    <path d="M1186 668h44v-28h44v-28h44v-28h44v-28h44v44h-44v28h-44v28h-44v28h-44v28h-44Z"/>
+  </g>
+</svg>
