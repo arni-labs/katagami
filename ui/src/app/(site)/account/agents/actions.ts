@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/user-auth";
 import {
+  bumpGeneration,
   createGrant,
   grantById,
   issueRefreshToken,
@@ -55,5 +56,14 @@ export async function revokeAgentGrant(formData: FormData): Promise<void> {
   if (!grant || grant.memberSub !== user.sub) return;
 
   await revokeGrant(grantId, "revoked by owner from Agents & access");
+  revalidatePath("/account/agents");
+}
+
+/** Sign out everywhere: advance this human's kernel generation, invalidating
+ *  every token issued before now — their own sessions and every agent acting
+ *  for them — within the kernel's cache window (ARN-255, option A). */
+export async function signOutEverywhere(): Promise<void> {
+  const user = await requireUser();
+  await bumpGeneration(user.sub);
   revalidatePath("/account/agents");
 }

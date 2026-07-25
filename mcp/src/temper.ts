@@ -1,7 +1,9 @@
-// Temper backend client. Every call is made AS the contributor: the
-// principal headers carry the owning human's sub and the acting agent's
-// client id, and agent_type=contributor puts the request behind the Cedar
-// contributor boundary (author and submit; never verify or publish).
+// Temper backend client. Every call is made AS the contributor. With
+// forwardCallerToken on, the caller's own access token goes through and the
+// kernel verifies it against the registered TrustedIssuer — the contributor
+// boundary is enforced by the kernel, not by headers this adapter stamps
+// (RFC-0002 step 2). The legacy branch swaps to the shared TEMPER_API_KEY
+// plus self-asserted principal headers, and is retired with the header path.
 
 import { config } from "./config.js";
 
@@ -10,6 +12,8 @@ export type Identity = {
   email: string;
   clientId: string;
   grantId: string;
+  /** The caller's raw access token (ES256 JWT from the katagami.ai AS). */
+  token: string;
 };
 
 export type EntityRow = {
@@ -23,6 +27,15 @@ export function principalId(id: Identity): string {
 }
 
 function headers(id: Identity): Record<string, string> {
+  if (config.forwardCallerToken && id.token) {
+    // The kernel resolves identity (human sub, acting agent, agent_type)
+    // from the verified token itself; no self-asserted principal headers.
+    return {
+      "Content-Type": "application/json",
+      "X-Tenant-Id": config.temperTenant,
+      Authorization: `Bearer ${id.token}`,
+    };
+  }
   return {
     "Content-Type": "application/json",
     "X-Tenant-Id": config.temperTenant,

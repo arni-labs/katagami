@@ -143,6 +143,43 @@ export async function memberBySub(sub: string): Promise<EntityRow | null> {
   return rows[0] ?? null;
 }
 
+/** The member's role (owner | curator | contributor), defaulting to
+ *  contributor. Stamped into tokens as the `role` claim so the kernel can put
+ *  it on the principal for Cedar (ARN-255). */
+export async function roleForSub(sub: string): Promise<string> {
+  const member = await memberBySub(sub);
+  const role = member ? field(member, "role") : "";
+  return role || "contributor";
+}
+
+// --- Sign-out-everywhere generation (kernel-owned; ARN-255 option A) ---------
+
+/** The principal's current kernel-side generation (0 if never signed out
+ *  everywhere). Read at mint time so a token carries the value it was born
+ *  with; the kernel rejects any token older than the current value. */
+export async function currentGeneration(sub: string): Promise<number> {
+  const res = await fetch(
+    `${API_BASE}/tdata/PrincipalGenerations('${encodeURIComponent(sub)}')`,
+    { headers, cache: "no-store" },
+  );
+  if (res.status === 404) return 0; // never bumped
+  if (!res.ok) {
+    throw new Error(`Read PrincipalGeneration failed ${res.status}: ${await res.text()}`);
+  }
+  const row = (await res.json()) as EntityRow & { generation?: unknown };
+  const raw = row.fields?.generation ?? (row as Record<string, unknown>).generation;
+  const n = typeof raw === "number" ? raw : Number(raw ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Sign out everywhere: advance the principal's kernel generation so every
+ *  token issued before now stops verifying (within the kernel's cache window),
+ *  including tokens of agents acting for this human. Dispatching on a fresh id
+ *  auto-creates the entity in Active, then increments. */
+export async function bumpGeneration(sub: string): Promise<void> {
+  await dispatchAction("PrincipalGenerations", sub, "BumpGeneration", {});
+}
+
 // --- Clients (RFC 7591 dynamic registration) --------------------------------
 
 export type RegisteredClient = {
@@ -351,6 +388,12 @@ export async function issueAccessToken(
   p: { sub: string; email: string; name: string; client_id: string; grant_id: string; resource: string },
 ): Promise<{ token: string; expiresIn: number }> {
   const { key, kid } = await signingKey();
+  // Stamp the owning human's role and current generation so the kernel can put
+  // the role on the principal (Cedar) and enforce sign-out-everywhere (ARN-255).
+  const [role, generation] = await Promise.all([
+    roleForSub(p.sub),
+    currentGeneration(p.sub),
+  ]);
   const token = await new SignJWT({
     email: p.email,
     name: p.name,
@@ -358,6 +401,38 @@ export async function issueAccessToken(
     grant_id: p.grant_id,
     scope: SCOPE_CONTRIBUTE,
     agent_type: "contributor",
+    role,
+    auth_generation: generation,
+  })
+    .setProtectedHeader({ alg: "ES256", kid })
+    .setSubject(p.sub)
+    .setIssuer(issuer(origin))
+    .setAudience(p.resource || mcpResource())
+    .setIssuedAt()
+    .setExpirationTime(`${ACCESS_TOKEN_TTL_SECONDS}s`)
+    .sign(key);
+  return { token, expiresIn: ACCESS_TOKEN_TTL_SECONDS };
+}
+
+/** Mint a short-lived Customer token for a signed-in human (option i,
+ *  ARN-255): the AS mints it directly at sign-in, since the AS already reads
+ *  Member (for the role) and holds the signing key. It carries `sub` + `role`
+ *  + `auth_generation` and — unlike an agent token — no `client_id`/
+ *  `agent_type`, so the kernel resolves it to a Customer principal. */
+export async function issueHumanToken(
+  origin: string,
+  p: { sub: string; email: string; name: string; resource?: string },
+): Promise<{ token: string; expiresIn: number }> {
+  const { key, kid } = await signingKey();
+  const [role, generation] = await Promise.all([
+    roleForSub(p.sub),
+    currentGeneration(p.sub),
+  ]);
+  const token = await new SignJWT({
+    email: p.email,
+    name: p.name,
+    role,
+    auth_generation: generation,
   })
     .setProtectedHeader({ alg: "ES256", kid })
     .setSubject(p.sub)
