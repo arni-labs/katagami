@@ -512,27 +512,21 @@ pub(super) fn verify_prompt_review(
                 ),
             ));
         }
-        let Some(start) = normalized_prompt.find(&normalized_evidence) else {
-            return Err(art_error(
-                owner_id,
-                "art_style_prompt_dimension_unproven",
-                "prompt_review",
-                format!(
-                    "ArtStyle '{owner_id}' prompt review does not quote prompt evidence for '{dimension}'"
-                ),
-            ));
-        };
-        let end = start + normalized_evidence.len();
-        if start < last_evidence_end {
+        let Some(relative_start) = normalized_prompt
+            .get(last_evidence_end..)
+            .and_then(|remaining| remaining.find(&normalized_evidence))
+        else {
             return Err(art_error(
                 owner_id,
                 "art_style_prompt_dimension_evidence_out_of_order",
                 "prompt_review",
                 format!(
-                    "ArtStyle '{owner_id}' prompt evidence for '{dimension}' is outside the canonical medium-to-exclusions order"
+                    "ArtStyle '{owner_id}' prompt review has no evidence for '{dimension}' after the preceding canonical dimension"
                 ),
             ));
-        }
+        };
+        let start = last_evidence_end + relative_start;
+        let end = start + normalized_evidence.len();
         if let Some((_, _, prior_dimension)) = evidence_spans
             .iter()
             .find(|(prior_start, prior_end, _)| start < *prior_end && *prior_start < end)
@@ -946,6 +940,19 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_dimension_evidence_out_of_order");
+    }
+
+    #[test]
+    fn later_evidence_can_repeat_words_from_an_earlier_preamble() {
+        let mut fields = valid_fields();
+        let prompt = format!(
+            "Generous bare paper frames this recipe. {}",
+            text(&fields, "prompt_template")
+        );
+        fields["prompt_template"] = json!(prompt);
+        fields["prompt_review"]["prompt"] = fields["prompt_template"].clone();
+        let prompt = text(&fields, "prompt_template");
+        assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
     }
 
     #[test]
