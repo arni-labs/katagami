@@ -352,6 +352,20 @@ def run_palette_case(label, tokens_payload, expect_published):
         report(f"palette/{label}: palette NOT published", pal_status != "Published", f"palette={pal_status}")
 
 
+def verify_non_system_cannot_forge_attestation(art_id):
+    st, body = act("ArtStyles", art_id, "AttachArtStyleReview", {
+        "source_basis": json.dumps({"verdict": "forged"}),
+        "prompt_review": json.dumps({"verdict": "forged"}),
+        "portability_report": json.dumps({"verdict": "forged"}),
+    })
+    detail = json.dumps(body)[:300]
+    report(
+        "art_style/security: non-system principal cannot forge review attestation",
+        st in (401, 403),
+        f"http={st} body={detail}",
+    )
+
+
 def main():
     wasm_dir = os.path.join(os.path.dirname(__file__), "..", "..", "wasm")
     print("== stage 0: wasm modules + secrets ==")
@@ -363,7 +377,10 @@ def main():
     set_secret("published_blob_public_base_url", "http://127.0.0.1:3910/public")
 
     print("== stage 1: art style happy path (no reference images) ==")
-    run_art_style_case("good", expect_published=True)
+    _, good_art_id = run_art_style_case("good", expect_published=True)
+
+    print("== stage 1b: forged attestation is denied to non-system principals ==")
+    verify_non_system_cannot_forge_attestation(good_art_id)
 
     print("== stage 2: art style rejection (HTML posing as a proof image) ==")
     run_art_style_case("fake", expect_published=False, fake_proof_index=1)

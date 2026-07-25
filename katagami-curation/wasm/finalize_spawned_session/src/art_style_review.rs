@@ -63,6 +63,52 @@ fn contains_ci(haystack: &str, needle: &str) -> bool {
     haystack.to_lowercase().contains(&needle.to_lowercase())
 }
 
+fn has_substantive_evidence(value: &str) -> bool {
+    const GENERIC_WORDS: [&str; 31] = [
+        "the",
+        "and",
+        "with",
+        "from",
+        "into",
+        "onto",
+        "over",
+        "under",
+        "for",
+        "not",
+        "use",
+        "using",
+        "make",
+        "render",
+        "subject",
+        "supplied",
+        "image",
+        "style",
+        "look",
+        "visual",
+        "composition",
+        "detail",
+        "details",
+        "form",
+        "forms",
+        "add",
+        "keep",
+        "build",
+        "map",
+        "show",
+        "avoid",
+    ];
+    let normalized = normalized_words(value);
+    if normalized.len() < 10 {
+        return false;
+    }
+    normalized
+        .split_whitespace()
+        .filter(|word| word.len() >= 3 && !GENERIC_WORDS.contains(word))
+        .collect::<BTreeSet<_>>()
+        .len()
+        >= 2
+}
+
 fn nonempty_model(value: &Value) -> Option<(String, String)> {
     let provider = text(value, "provider").to_lowercase();
     let model = text(value, "model").to_lowercase();
@@ -427,7 +473,7 @@ pub(super) fn verify_prompt_review(
             .and_then(Value::as_str)
             .unwrap_or("")
             .trim();
-        if evidence.len() < 3 || !contains_ci(prompt, evidence) {
+        if !has_substantive_evidence(evidence) || !contains_ci(prompt, evidence) {
             return Err(art_error(
                 owner_id,
                 "art_style_prompt_dimension_unproven",
@@ -774,6 +820,16 @@ mod tests {
         ] {
             assert!(verify_portable_prompt("as-1", "Archive Ember", prompt).is_err());
         }
+    }
+
+    #[test]
+    fn generic_prompt_dimension_evidence_fails() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["observable_dimensions"]["marks_edges"] =
+            json!("the supplied subject");
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_dimension_unproven");
     }
 
     #[test]

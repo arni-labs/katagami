@@ -148,16 +148,17 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             actions["SetModelProvenance"]["from"], ["Draft", "UnderReview"]
         )
 
-    def test_finalizer_callbacks_are_dispatchable_but_contributor_denied(self):
+    def test_finalizer_callbacks_are_dispatchable_and_system_only(self):
         actions = self._by_name(self.art, "action")
-        for action_name in [
+        service_actions = [
             "AttachArtStyleReview",
             "AttachPublishedAssets",
             "SubmitForReview",
             "MarkQualityPassed",
             "Publish",
             "AttachComputedFacets",
-        ]:
+        ]
+        for action_name in service_actions:
             self.assertEqual(
                 actions[action_name]["kind"],
                 "input",
@@ -167,6 +168,17 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
                 f'Action::"{action_name}"',
                 ART_POLICY,
                 f"{action_name} must remain denied to contributor principals",
+            )
+        self.assertIn('principal != Agent::"system"', ART_POLICY)
+        system_only = ART_POLICY[
+            ART_POLICY.index("// The finalizer calls these OData actions")
+            : ART_POLICY.index("// Contributor boundary")
+        ]
+        for action_name in service_actions:
+            self.assertIn(
+                f'Action::"{action_name}"',
+                system_only,
+                f"{action_name} must be denied to every non-system principal",
             )
 
     def test_finalizer_verifies_palette_evidence(self):
