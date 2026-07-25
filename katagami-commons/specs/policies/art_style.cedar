@@ -1,56 +1,44 @@
-// ArtStyle — open access for local development
+// ArtStyle — base grant; the boundaries below narrow it.
 permit(principal, action, resource is ArtStyle);
 
-// Contributor boundary (ARN-151): agents submit, humans/pipeline publish.
-// Contributor principals may author (create, Set*, Attach* artifacts,
-// SetLineage, SetCredits/SetModelProvenance, SubmitForReview) but never
-// verify, publish, curate, or mint public assets.
+// Curator/pipeline-owned actions. Contributor agents never invoke these;
+// a human may only if their verified role is owner or curator. Scoped so
+// the pipeline and operator key (no role, no agent_type) keep working.
 forbid(
   principal,
   action in [
-    Action::"Publish", Action::"Revise", Action::"Archive", Action::"Restore",
-    Action::"MarkQualityPassed", Action::"UpdateQuality",
-    Action::"AttachPublishedAssets", Action::"AttachVerifiedThumbnail",
-    Action::"AttachTasteVector", Action::"AttachComputedFacets",
-    Action::"SetFeatured", Action::"SetTaxonomy", Action::"AddCuratorNotes"
-  ],
-  resource is ArtStyle
-) when { principal has agent_type && principal.agent_type == "contributor" };
-
-// Generic OData writes bypass the action ladder entirely: PATCH and DELETE are
-// authorized as the lowercase `update` / `delete` actions, which no named-action
-// forbid above covers. Without this, a contributor could PATCH a published
-// entity's fields or DELETE it outright and never touch a governed action.
-// `create` stays open — submissions legitimately create their draft.
-forbid(
-  principal,
-  action in [Action::"update", Action::"delete"],
-  resource is ArtStyle
-) when { principal has agent_type && principal.agent_type == "contributor" };
-
-// Human curator boundary (ARN-255): a signed-in human reaching the kernel with
-// their own token is a Customer principal, which no agent_type forbid above
-// ever matches — so without this a signed-in contributor could publish or archive any ArtStyle. Scoped
-// to `principal is Customer` so the curation pipeline and the operator key,
-// which carry no role, are unaffected.
-forbid(
-  principal,
-  action in [
-    Action::"Publish",
-    Action::"Revise",
+    Action::"AddCuratorNotes",
     Action::"Archive",
-    Action::"Restore",
-    Action::"MarkQualityPassed",
-    Action::"UpdateQuality",
-    Action::"AttachPublishedAssets",
-    Action::"AttachVerifiedThumbnail",
-    Action::"AttachTasteVector",
     Action::"AttachComputedFacets",
+    Action::"AttachPublishedAssets",
+    Action::"AttachTasteVector",
+    Action::"AttachVerifiedThumbnail",
+    Action::"IncrementFork",
+    Action::"IncrementUsage",
+    Action::"MarkQualityPassed",
+    Action::"Publish",
+    Action::"Restore",
+    Action::"ReturnToDraft",
+    Action::"Revise",
+    Action::"SetCreator",
     Action::"SetFeatured",
     Action::"SetTaxonomy",
-    Action::"AddCuratorNotes",
-    Action::"ReturnToDraft"
+    Action::"UpdateQuality"
   ],
   resource is ArtStyle
-) when { principal is Customer }
+)
+when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer }
 unless { principal has role && ["owner", "curator"].contains(principal.role) };
+
+// Generic OData writes bypass the action ladder: PATCH and DELETE authorize
+// as `update`/`delete` and match no named list above. `create` stays open —
+// submissions legitimately create their draft. Reads stay open.
+forbid(
+  principal,
+  action in [
+    Action::"update",
+    Action::"delete"
+  ],
+  resource is ArtStyle
+)
+when { (principal has agent_type && principal.agent_type == "contributor") || principal is Customer };

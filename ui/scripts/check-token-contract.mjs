@@ -39,6 +39,20 @@ const humanChecks = CURATED.map((stem) => [
   read(`../katagami-commons/policies/${stem}.cedar`),
   /principal is Customer[\s\S]*?\["owner", "curator"\]\.contains\(principal\.role\)/,
 ]).concat([
+  // The identity substrate must be unreachable by humans and contributor
+  // agents: a human who could invoke Member.SetRole would simply promote
+  // themselves to owner and mint an owner token on their next sign-in.
+  ...["member","agent_grant","oauth_client"].map((stem) => [
+    `${stem}.cedar is closed to humans and contributor agents`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /agent_type == "contributor"\) \|\| principal is Customer/,
+  ]),
+  // Curation is pipeline/curator work, not open to every verified principal.
+  ...["taste_rule","curation_job","curation_direction","curation_query"].map((stem) => [
+    `${stem}.cedar is closed to humans and contributor agents`,
+    read(`../katagami-curation/policies/${stem}.cedar`),
+    /principal is Customer[\s\S]*?action == Action::"read"/,
+  ]),
   ["remix.cedar gates human ownership",
    read("../katagami-commons/policies/remix.cedar"),
    /principal is Customer[\s\S]*?resource\.creator_sub == principal\.id/],
