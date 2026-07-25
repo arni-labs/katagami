@@ -64,5 +64,10 @@ assert.match(
   detailPage,
   /An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable prompt\./,
 );
+assert.match(detailPage, />Prompt template</);
+assert.match(detailPage, /label="Copy recipe"/);
+assert.match(detailPage, /label="Copy prompt only"/);
+assert.doesNotMatch(detailPage, /ArtStyleEvidence/);
+assert.doesNotMatch(detailPage, /artStylePromptLabel/);
 
 console.log("art-style prompt presentation states: pass");
