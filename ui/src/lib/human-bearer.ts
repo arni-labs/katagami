@@ -5,8 +5,8 @@ import { issueHumanToken } from "@/lib/oauth-as";
 
 // Human-write routing (RFC-0002, ARN-255): a signed-in human's per-user
 // mutations can carry a short-lived Customer token minted from their session,
-// so the kernel verifies their identity + role and enforces per-user Cedar
-// (the generated requires_role / requires="creator" overlays). Off by default —
+// so the kernel verifies their identity + role and Cedar enforces the
+// per-user boundaries in katagami-commons/policies/. Off by default —
 // flip on only after the kernel that verifies these tokens is deployed; until
 // then per-user writes stay on the shared service key (current behavior).
 //

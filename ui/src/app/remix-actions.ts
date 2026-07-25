@@ -54,9 +54,10 @@ export async function rateRemix(id: string, rating: number): Promise<void> {
     throw new Error("Only the mix's creator can rate it.");
   }
   const clamped = Math.max(1, Math.min(5, Math.round(rating)));
-  // Carry the human's own token when enabled so the kernel enforces the
-  // generated `requires = "creator"` overlay on Rate; falls back to the shared
-  // key (and the check above) until the kernel deploy lands (ARN-255).
+  // Carry the human's own token when enabled, so the kernel sees who is rating
+  // and Cedar enforces the creator boundary in katagami-commons/policies/
+  // remix.cedar. Falls back to the shared key (and the check above) until the
+  // kernel deploy lands (ARN-255).
   const bearer = (await humanBearer()) ?? undefined;
   await dispatchAction("Remixes", id, "Rate", { rating: clamped }, { bearer });
   revalidatePath("/studio");
