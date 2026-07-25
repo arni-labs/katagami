@@ -480,6 +480,8 @@ pub(super) fn verify_prompt_review(
     let normalized_prompt = normalized_words(prompt);
     let mut evidence_spans: Vec<(usize, usize, &str)> = Vec::new();
     let mut evidence_phrases: Vec<(String, &str)> = Vec::new();
+    let mut last_evidence_end = 0;
+    let mut covered_words = 0;
     for dimension in DIMENSIONS {
         let evidence = dimensions
             .get(dimension)
@@ -521,6 +523,16 @@ pub(super) fn verify_prompt_review(
             ));
         };
         let end = start + normalized_evidence.len();
+        if start < last_evidence_end {
+            return Err(art_error(
+                owner_id,
+                "art_style_prompt_dimension_evidence_out_of_order",
+                "prompt_review",
+                format!(
+                    "ArtStyle '{owner_id}' prompt evidence for '{dimension}' is outside the canonical medium-to-exclusions order"
+                ),
+            ));
+        }
         if let Some((_, _, prior_dimension)) = evidence_spans
             .iter()
             .find(|(prior_start, prior_end, _)| start < *prior_end && *prior_start < end)
@@ -534,8 +546,21 @@ pub(super) fn verify_prompt_review(
                 ),
             ));
         }
+        last_evidence_end = end;
+        covered_words += normalized_evidence.split_whitespace().count();
         evidence_spans.push((start, end, dimension));
         evidence_phrases.push((normalized_evidence, dimension));
+    }
+    let prompt_words = normalized_prompt.split_whitespace().count();
+    if prompt_words == 0 || covered_words * 100 < prompt_words * 45 {
+        return Err(art_error(
+            owner_id,
+            "art_style_prompt_dimension_evidence_too_thin",
+            "prompt_review",
+            format!(
+                "ArtStyle '{owner_id}' prompt review must bind the seven semantic dimensions to substantial prompt clauses, not isolated fragments"
+            ),
+        ));
     }
     Ok(review)
 }
@@ -909,6 +934,35 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_dimension_evidence_reused");
+    }
+
+    #[test]
+    fn unique_excerpts_cannot_be_assigned_to_wrong_dimensions() {
+        let mut fields = valid_fields();
+        let medium = fields["prompt_review"]["observable_dimensions"]["medium_material"].clone();
+        fields["prompt_review"]["observable_dimensions"]["medium_material"] =
+            fields["prompt_review"]["observable_dimensions"]["marks_edges"].clone();
+        fields["prompt_review"]["observable_dimensions"]["marks_edges"] = medium;
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_dimension_evidence_out_of_order");
+    }
+
+    #[test]
+    fn isolated_fragments_do_not_establish_semantic_coverage() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["observable_dimensions"] = json!({
+            "medium_material": "fibrous matte paper",
+            "marks_edges": "visibly broken edges",
+            "tonal_shading": "broad unprinted highlights",
+            "color_roles": "vermilion for small focal accents",
+            "composition": "generous bare paper",
+            "signature_details": "irregular hand pressure",
+            "exclusions": "smooth vector geometry"
+        });
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_dimension_evidence_too_thin");
     }
 
     #[test]

@@ -342,7 +342,9 @@ export function buildServer(auth: AuthInfo): McpServer {
           .describe("Schema-v1 source and rights review"),
         prompt_review: z
           .record(z.string(), z.unknown())
-          .describe("Schema-v1 independent semantic review of this exact prompt"),
+          .describe(
+            "Schema-v1 independent semantic review of this exact prompt; quote substantive clauses for medium/material, marks/edges, tonal/shading, color roles, composition, signature details, and exclusions in that canonical order",
+          ),
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(

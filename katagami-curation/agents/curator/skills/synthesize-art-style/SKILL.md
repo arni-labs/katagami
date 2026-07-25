@@ -21,6 +21,9 @@ An ArtStyle is one prompt, not an adapter system.
 - The prompt is paste-ready prose: no `{subject}`, `{palette}`, or other holes.
 - Describe observable treatment: medium/material, marks/edges, tonal treatment,
   color roles, composition, signature details, and exclusions.
+- Present those seven concerns in that canonical order. The wording remains free
+  prose, but the stable order lets the finalizer bind the independent review's
+  semantic labels to the actual prompt without a style-specific keyword list.
 - Put exclusions in the prompt itself. Do not create a negative-prompt field.
 - Do not create engine hints or model-specific aesthetic variants.
 - Do not write `in the style of ...`.
@@ -70,6 +73,9 @@ Give another LLM only the candidate prompt, catalog name, and this universal
 review schema. It must quote the exact prompt fragment supporting each dimension.
 It may identify intentional scoped contrast, but `contradictions` must be empty
 before publication. If it fails, revise once and re-review; do not loop.
+The seven quotes must be substantive clauses, appear in the same canonical order
+as the keys below, and collectively cover the prompt rather than cherry-picking
+isolated words.
 
 ```python
 prompt_review = {
@@ -96,9 +102,11 @@ prompt_review = {
 }
 ```
 
-This LLM review is the semantic contradiction check. The finalizer performs only
-universal mechanical checks and cross-checks the quoted evidence against the
-actual prompt; there is no story-specific rule list and no SMT encoding.
+This LLM review is the semantic contradiction and dimension-assignment check.
+The finalizer performs universal mechanical checks: independent reviewer
+identity, exact prompt identity, canonical dimension order, distinct
+non-overlapping clauses, and substantial prompt coverage. There is no
+style-specific keyword list and no SMT encoding.
 
 ## 3. Source and living-artist safety
 

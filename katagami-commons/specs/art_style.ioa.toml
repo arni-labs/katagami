@@ -195,7 +195,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_prompt_template", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }, { type = "set_bool", var = "has_prompt_review", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["prompt_template"]
-hint = "Set the one canonical, paste-ready aesthetic prompt. It must use observable instructions, contain no placeholders or catalog-name imitation, include exclusions inline, and remain unchanged across image models. Changing it invalidates prompt review and portability evidence."
+hint = "Set the one canonical, paste-ready aesthetic prompt. It must use observable instructions in the universal medium/material -> marks/edges -> tonal/shading -> color roles -> composition -> signature details -> exclusions order, contain no placeholders or catalog-name imitation, include exclusions inline, and remain unchanged across image models. Changing it invalidates prompt review and portability evidence."
 
 [[action]]
 name = "SetSlotRecipes"
@@ -311,7 +311,7 @@ kind = "input"
 from = ["Draft", "UnderReview", "Published"]
 effect = [{ type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "has_prompt_review", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["source_basis", "prompt_review", "portability_report"]
-hint = "Store candidate structured review evidence and clear prior attestations. Only the finalizer may call AttachArtStyleReview after deterministic verification; Published records remain visible but their prompt/remix is quarantined during revalidation."
+hint = "Store candidate structured review evidence and clear prior attestations. The independent LLM performs semantic contradiction and dimension-assignment review; its seven substantive prompt clauses must follow the canonical dimension order. Only the finalizer may call AttachArtStyleReview after universal mechanical verification; Published records remain visible but their prompt/remix is quarantined during revalidation."
 
 [[action]]
 name = "AttachArtStyleReview"
