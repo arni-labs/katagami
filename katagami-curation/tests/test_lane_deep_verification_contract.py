@@ -113,6 +113,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("engine_hints", submit_params)
         self.assertIn("prompt_review", submit_params)
         self.assertIn("portability_report", submit_params)
+        self.assertIn('"source_medium_independent"', ART_REVIEW_SRC)
 
     def test_committed_wasm_imports_the_bounded_streaming_host_abi(self):
         # The live local E2E executes this committed module. These binary-level

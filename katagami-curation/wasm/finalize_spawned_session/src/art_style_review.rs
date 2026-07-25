@@ -458,6 +458,7 @@ pub(super) fn verify_prompt_review(
         || text(&review, "prompt") != prompt.trim()
         || !bool_field(&review, "reference_independent")
         || !bool_field(&review, "subject_independent")
+        || !bool_field(&review, "source_medium_independent")
         || !bool_field(&review, "model_agnostic")
         || !bool_field(&review, "style_name_independent")
     {
@@ -466,7 +467,7 @@ pub(super) fn verify_prompt_review(
             "art_style_prompt_review_invalid",
             "prompt_review",
             format!(
-                "ArtStyle '{owner_id}' prompt_review must attest the exact prompt as reference-, subject-, model-, and catalog-name-independent"
+                "ArtStyle '{owner_id}' prompt_review must attest the exact prompt as reference-, subject-, source-medium-, model-, and catalog-name-independent"
             ),
         ));
     }
@@ -1060,6 +1061,7 @@ mod tests {
                 "schema_version": "1", "verdict": "pass", "prompt": prompt,
                 "reviewer": {"provider": "anthropic", "model": "reviewer"},
                 "reference_independent": true, "subject_independent": true,
+                "source_medium_independent": true,
                 "model_agnostic": true, "style_name_independent": true,
                 "contradictions": [], "revision_count": 1,
                 "observable_dimensions": dims
@@ -1152,6 +1154,15 @@ mod tests {
         assert!(verify_source_basis("as-1", &fields, prompt).is_ok());
         assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
         assert!(verify_portability_report("as-1", &fields, prompt, &proof_ids).is_ok());
+    }
+
+    #[test]
+    fn prompt_review_must_attest_source_medium_independence() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["source_medium_independent"] = json!(false);
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_review_invalid");
     }
 
     #[test]

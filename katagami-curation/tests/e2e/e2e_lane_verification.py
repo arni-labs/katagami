@@ -157,7 +157,14 @@ def make_file(name, payload, mime, lock=False):
         current = entity_status(ent)
         if current in ("Ready", "Locked"):
             if lock and current == "Ready":
-                must_act("Files", fid, "Lock")
+                st, body = act("Files", fid, "Lock")
+                if not 200 <= st < 300:
+                    # Blob finalization can race this read and make the File
+                    # Locked before the explicit action is dispatched.
+                    raced = get_entity("Files", fid)
+                    assert entity_status(raced) == "Locked", (
+                        f"Files({fid}).Lock -> {st}: {json.dumps(body)[:400]}"
+                    )
                 continue
             if not lock or current == "Locked":
                 return fid
@@ -359,6 +366,7 @@ def run_art_style_case(
             "reviewer": {"provider": "local", "model": "fixture-reviewer"},
             "reference_independent": True,
             "subject_independent": True,
+            "source_medium_independent": True,
             "model_agnostic": True,
             "style_name_independent": True,
             "contradictions": [],

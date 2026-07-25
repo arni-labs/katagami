@@ -65,7 +65,10 @@ prompt_template = (
 
 The prompt must remain useful for arbitrary portraits, objects, landscapes,
 architecture, animals, and abstract compositions. Do not tailor it to the
-current source image or the example above.
+current source image or the example above. It must also work from any source
+medium. Never assume that the input is a photograph, painting, watercolor,
+drawing, collage, render, or other particular medium; refer generically to
+`source-medium surface treatment` when the transformation needs to replace it.
 
 ## 2. Independent LLM review, one repair maximum
 
@@ -85,6 +88,7 @@ prompt_review = {
     "reviewer": {"provider": "<provider>", "model": "<different LLM>"},
     "reference_independent": True,
     "subject_independent": True,
+    "source_medium_independent": True,
     "model_agnostic": True,
     "style_name_independent": True,
     "contradictions": [],
