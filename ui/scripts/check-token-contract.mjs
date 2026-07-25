@@ -30,6 +30,24 @@ const session = read("src/lib/user-auth.ts");
 // delete content without ever invoking a governed action.
 const GOVERNED = ["design_language","art_style","palette_system","writing_style","remix",
                   "taxonomy","direction","design_source","element_manifest","design_element"];
+// Humans reaching the kernel are Customer principals, which no agent_type
+// forbid ever matches — each curator-owned entity must gate them on role, and
+// owner actions must carry the human's token so the kernel sees who is acting.
+const CURATED = ["design_language","art_style","palette_system","writing_style","taxonomy","direction"];
+const humanChecks = CURATED.map((stem) => [
+  `${stem}.cedar gates curator actions on the human's role`,
+  read(`../katagami-commons/policies/${stem}.cedar`),
+  /principal is Customer[\s\S]*?\["owner", "curator"\]\.contains\(principal\.role\)/,
+]).concat([
+  ["remix.cedar gates human ownership",
+   read("../katagami-commons/policies/remix.cedar"),
+   /principal is Customer[\s\S]*?resource\.creator_sub == principal\.id/],
+  ["owner actions carry the acting human to the kernel",
+   read("src/lib/owner.ts"), /assertOwnerBearer[\s\S]*humanBearer/],
+  ["curator server actions use assertOwnerBearer",
+   read("src/app/actions.ts"), /assertOwnerBearer\(\)[\s\S]*\{ bearer \}/],
+]);
+
 const crudChecks = GOVERNED.map((stem) => [
   `${stem}.cedar closes generic update/delete to contributors`,
   read(`../katagami-commons/policies/${stem}.cedar`),
@@ -97,6 +115,7 @@ const required = [
   ["sign-out-everywhere also revokes live grants", agentsActions, /signOutEverywhere[\s\S]*grantsForMember[\s\S]*revokeGrant/],
   ["revoking a grant propagates to the kernel", as, /revokeGrant[\s\S]*?bumpGeneration\(grantId\)/],
   ...crudChecks,
+  ...humanChecks,
 ];
 
 let failed = 0;

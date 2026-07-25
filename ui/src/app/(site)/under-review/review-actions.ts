@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertOwner } from "@/lib/owner";
+import { assertOwnerBearer } from "@/lib/owner";
 import { dispatchAction } from "@/lib/odata-mutations";
 
 const SETS: Record<string, string> = {
@@ -13,7 +13,7 @@ const SETS: Record<string, string> = {
 /** Curator rejection with feedback: back to Draft, notes readable by the
  *  contributor via submission_status (ARN-154). */
 export async function rejectSubmission(formData: FormData): Promise<void> {
-  await assertOwner();
+  const bearer = await assertOwnerBearer();
   const kind = formData.get("kind");
   const id = formData.get("id");
   const notes = formData.get("notes");
@@ -25,7 +25,7 @@ export async function rejectSubmission(formData: FormData): Promise<void> {
       typeof notes === "string" && notes.trim()
         ? notes.trim().slice(0, 2000)
         : "Returned to draft by a curator.",
-  });
+  }, { bearer });
   revalidatePath("/under-review");
   revalidatePath("/account");
 }

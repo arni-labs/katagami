@@ -39,3 +39,19 @@ forbid(
   action in [Action::"update", Action::"delete"],
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" };
+
+// Human ownership (ARN-255): the contributor forbid above never matches a
+// Customer principal, so a signed-in human could otherwise archive or rate any
+// mix. Same rule, expressed for humans acting with their own token.
+forbid(
+  principal,
+  action in [
+    Action::"Archive",
+    Action::"Restore",
+    Action::"Rate",
+    Action::"IncrementUsage",
+    Action::"SetCreator"
+  ],
+  resource is Remix
+) when { principal is Customer }
+unless { resource has creator_sub && resource.creator_sub == principal.id };

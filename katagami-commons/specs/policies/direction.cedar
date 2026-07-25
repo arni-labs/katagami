@@ -25,3 +25,19 @@ forbid(
   action in [Action::"update", Action::"delete"],
   resource is Direction
 ) when { principal has agent_type && principal.agent_type == "contributor" };
+
+// Human curator boundary (ARN-255): a signed-in human reaching the kernel with
+// their own token is a Customer principal, which no agent_type forbid above
+// ever matches — so without this a signed-in contributor could publish or archive any Direction. Scoped
+// to `principal is Customer` so the curation pipeline and the operator key,
+// which carry no role, are unaffected.
+forbid(
+  principal,
+  action in [
+    Action::"SetDirection",
+    Action::"Close",
+    Action::"Reopen"
+  ],
+  resource is Direction
+) when { principal is Customer }
+unless { principal has role && ["owner", "curator"].contains(principal.role) };
