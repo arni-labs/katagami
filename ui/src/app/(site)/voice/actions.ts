@@ -65,11 +65,12 @@ export async function submitVoiceIntake(
           `/katagami/writing-styles/intake/${slug}/sample-${i + 1}.md`,
           "text/markdown",
           samples[i],
+          { bearer },
         ),
       );
     }
 
-    const created = await createEntity("WritingStyles", {});
+    const created = await createEntity("WritingStyles", {}, { bearer });
     const id = created.entity_id;
     await dispatchAction("WritingStyles", id, "AttachCorpus", {
       corpus_file_ids: fileIds,

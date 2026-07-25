@@ -92,7 +92,7 @@ export async function addCuratorNotes(
 
 export async function deleteTaxonomy(id: string): Promise<void> {
   const bearer = await assertOwnerBearer();
-  await deleteEntity("Taxonomies", id);
+  await deleteEntity("Taxonomies", id, { bearer });
   revalidatePath("/taxonomy");
 }
 
