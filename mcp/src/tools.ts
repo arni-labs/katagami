@@ -20,6 +20,11 @@ import {
   type EntityRow,
   type Identity,
 } from "./temper.js";
+import {
+  ART_STYLE_PROOF_CATEGORIES,
+  ART_STYLE_SOURCE_MEDIA,
+  generateArtStyleProofMatrix,
+} from "./art-style-proofs.js";
 
 const KINDS = {
   language: { set: "DesignLanguages", path: "language" },
@@ -69,26 +74,6 @@ function asJsonString(v: unknown): string {
   return typeof v === "string" ? v : JSON.stringify(v);
 }
 
-/** Evidence is authored before upload, so portability cases may identify a
- * proof by its source URL. Replace those exact strings with the governed File
- * ids returned by ingestImage; aesthetic prompt text is never rewritten. */
-function remapUploadedFileReferences(
-  value: unknown,
-  fileIdsByUrl: ReadonlyMap<string, string>,
-): unknown {
-  if (typeof value === "string") return fileIdsByUrl.get(value) ?? value;
-  if (Array.isArray(value))
-    return value.map((item) => remapUploadedFileReferences(item, fileIdsByUrl));
-  if (value && typeof value === "object")
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        remapUploadedFileReferences(item, fileIdsByUrl),
-      ]),
-    );
-  return value;
-}
-
 function summarize(row: EntityRow) {
   const f = row.fields ?? {};
   return {
@@ -113,38 +98,53 @@ function fail(message: string) {
   };
 }
 
-const imageInput = z.object({
-  url: z.string().describe("https URL of the image; fetched and stored by the server"),
-  subject: z.string().describe("What the image shows"),
-  aspect: z.string().optional(),
-  role: z.string().optional(),
-  model: z.string().optional().describe("Image model that produced it, if generated"),
-  provider: z.string().optional(),
-});
-
-const trustedArtStyleInputFixture = z
+const artStyleGenerationReceipt = z
   .object({
-    fixture_id: z.enum([
-      "katagami.synthetic.bicycle-photo.v1",
-      "katagami.synthetic.lighthouse-line-drawing.v1",
-      "katagami.synthetic.teapot-pear-3d.v1",
-    ]),
-    file_id: z
-      .string()
-      .min(1)
-      .describe("Locked PawFS copy of the exact verifier-owned fixture bytes"),
+    schema_version: z.literal("1"),
+    issuer: z.literal("katagami-mcp"),
+    kind: z.literal("art_style_proof"),
+    style_slug: z.string(),
+    category: z.enum(ART_STYLE_PROOF_CATEGORIES),
+    subject: z.string(),
+    composition: z.string(),
+    source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
+    source: z
+      .object({
+        file_id: z.string(),
+        sha256: z.string().regex(/^[a-f0-9]{64}$/),
+        endpoint: z.string(),
+        request_id: z.string(),
+        prompt_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict(),
+    output: z
+      .object({
+        file_id: z.string(),
+        sha256: z.string().regex(/^[a-f0-9]{64}$/),
+        endpoint: z.string(),
+        request_id: z.string(),
+        prompt_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+        seed: z.string(),
+      })
+      .strict(),
+    signature: z.string().regex(/^[a-f0-9]{64}$/),
   })
   .strict();
 
-const artStyleProofInput = imageInput.extend({
-  source_medium: z.string().min(1),
+const artStyleProofInput = z.object({
+  file_id: z.string().min(1),
+  category: z.enum(ART_STYLE_PROOF_CATEGORIES),
+  subject: z.string().min(1),
+  composition: z.string().min(1),
+  source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
   mode: z.literal("image_edit"),
   seed: z.string().min(1),
   style_reference_used: z.literal(false),
-  input_source: trustedArtStyleInputFixture.describe(
-    "Verifier-owned edit fixture. The finalizer streams the Locked PawFS bytes and checks their compiled SHA-256; private, user-supplied, and self-attested inputs are unsupported.",
+  model: z.object({ provider: z.literal("fal"), model: z.string().min(1) }).strict(),
+  generation_receipt: artStyleGenerationReceipt.describe(
+    "Execution-layer HMAC receipt binding the exact prompt, generated source, model request, and output bytes. Caller-authored or externally uploaded proofs are unsupported.",
   ),
-});
+}).strict();
 
 const lineageInput = {
   parent_ids: z.array(z.string()).optional().describe("Katagami entity ids this derives from"),
@@ -332,11 +332,60 @@ export function buildServer(auth: AuthInfo): McpServer {
   );
 
   server.registerTool(
+    "generate_art_style_proof_matrix",
+    {
+      title: "Generate governed ArtStyle proofs",
+      description:
+        "Generate the consent-safe 2×4 portability matrix server-side. The tool creates one human portrait, one non-human living subject, one still-life/object, and one landscape/environment across four distinct neutral source media, then edits the same four sources with GPT Image and Nano Banana using the exact prompt. It returns HMAC-bound PawFS proof records for submit_art_style; no external or user image URL is accepted.",
+      inputSchema: {
+        style_slug: z.string().regex(/^[a-z0-9-]+$/),
+        prompt_template: z
+          .string()
+          .trim()
+          .min(1)
+          .max(4000)
+          .describe("The exact canonical aesthetic prompt; sent unchanged to both edit models"),
+        cases: z
+          .array(
+            z
+              .object({
+                category: z.enum(ART_STYLE_PROOF_CATEGORIES),
+                subject: z.string().min(3).max(180),
+                composition: z.string().min(3).max(220),
+                source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
+              })
+              .strict(),
+          )
+          .length(4),
+      },
+    },
+    async ({ style_slug, prompt_template, cases }) => {
+      try {
+        const proofShots = await generateArtStyleProofMatrix(
+          id,
+          style_slug,
+          prompt_template,
+          cases,
+        );
+        return ok({
+          style_slug,
+          prompt_template,
+          proof_shots: proofShots,
+          next:
+            "Blind-score every output on the seven observable dimensions. Every case must record content_preserved=true only when the subject remains recognizable and source_medium_replaced=true only when the original medium is fully rebuilt; medium_material must score 2. Build prompt_review and portability_report around these exact file ids/receipts, then call submit_art_style.",
+        });
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : "ArtStyle proof generation failed");
+      }
+    },
+  );
+
+  server.registerTool(
     "submit_art_style",
     {
       title: "Submit an art style",
       description:
-        "Author a complete art-style Draft using one portable aesthetic prompt plus structured source, prompt-review, and cross-model proof evidence. Images are fetched from https URLs and stored server-side. A curator finalizer independently verifies and advances the Draft.",
+        "Author a complete art-style Draft using one portable aesthetic prompt plus structured source, prompt-review, and governed cross-model proof evidence. Proofs must come unchanged from generate_art_style_proof_matrix. A curator finalizer independently verifies and advances the Draft.",
       inputSchema: {
         entity_id: z.string().optional().describe("Existing draft (e.g. from remix); omit to create"),
         name: z.string(),
@@ -344,25 +393,26 @@ export function buildServer(auth: AuthInfo): McpServer {
         medium: z.string().describe("Short medium noun: illustration | photography | painting | print | 3d | collage | mixed"),
         prompt_template: z
           .string()
+          .trim()
           .min(1)
+          .max(4000)
           .describe(
             "One paste-ready prompt made only of observable aesthetic facts and inline exclusions; no placeholders, catalog name, artist imitation, reference dependency, or model-specific variants",
           ),
         slot_recipes: z.record(z.string(), z.unknown()).describe("Per-slot prompt recipes"),
         guidance: z.string().optional(),
-        reference_images: z
-          .array(imageInput)
-          .max(8)
-          .optional()
-          .describe("Optional examples only; never used as style references"),
         proof_shots: z
           .array(artStyleProofInput)
-          .min(6)
-          .max(10)
+          .length(8)
           .describe(
-            "At least two image models × the three verifier-owned, hash-checked Katagami input fixtures",
+            "The exact HMAC-bound output of generate_art_style_proof_matrix: two image models × four role/media cases",
           ),
-        thumbnail_url: z.string().describe("https URL; 600x400-ish JPEG of the style"),
+        thumbnail_file_id: z
+          .string()
+          .min(1)
+          .describe(
+            "Choose the strongest thumbnail from the eight governed proof file_ids; external thumbnails are rejected and no semantic role is forced across styles",
+          ),
         source_basis: z
           .record(z.string(), z.unknown())
           .describe("Schema-v1 source and rights review"),
@@ -374,7 +424,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 blind cross-model scores. A case file_id may be the corresponding proof image URL; the server replaces it with the uploaded File id.",
+            "Schema-v1 blind cross-model scores over the exact eight governed File ids and generation receipts.",
           ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
@@ -410,21 +460,10 @@ export function buildServer(auth: AuthInfo): McpServer {
         return fail(`Draft '${a.entity_id}' does not exist.`);
       const entityId = a.entity_id ?? (await createEntity(id, set));
 
-      const fileIdsByUrl = new Map<string, string>();
-      const refIds: string[] = [];
-      const referenceImages = a.reference_images ?? [];
-      for (const [i, img] of referenceImages.entries()) {
-        const fileId = await ingestImage(id, img.url, `${a.slug}-ref-${i + 1}`);
-        refIds.push(fileId);
-        fileIdsByUrl.set(img.url, fileId);
-      }
-      const proofIds: string[] = [];
-      for (const [i, img] of a.proof_shots.entries()) {
-        const fileId = await ingestImage(id, img.url, `${a.slug}-proof-${i + 1}`);
-        proofIds.push(fileId);
-        fileIdsByUrl.set(img.url, fileId);
-      }
-      const thumbId = await ingestImage(id, a.thumbnail_url, `${a.slug}-thumb`);
+      const proofIds = a.proof_shots.map((proof) => proof.file_id);
+      if (!proofIds.includes(a.thumbnail_file_id))
+        return fail("thumbnail_file_id must identify one of the eight governed proof shots.");
+      const thumbId = a.thumbnail_file_id;
 
       await action(id, set, entityId, "SubmitArtStyle", {
         name: a.name,
@@ -433,20 +472,13 @@ export function buildServer(auth: AuthInfo): McpServer {
         prompt_template: a.prompt_template,
         slot_recipes: asJsonString(a.slot_recipes),
         guidance: a.guidance ?? "",
-        reference_image_file_ids: refIds,
-        reference_manifest: asJsonString(
-          referenceImages.map(({ url: _url, ...meta }, index) => ({
-            file_id: refIds[index],
-            ...meta,
-          })),
-        ),
+        reference_image_file_ids: [],
+        reference_manifest: asJsonString({ items: [] }),
         proof_shots_file_ids: proofIds,
-        proof_shots_manifest: asJsonString(
-          a.proof_shots.map(({ url: _url, ...meta }, index) => ({
-            file_id: proofIds[index],
-            ...meta,
-          })),
-        ),
+        proof_shots_manifest: asJsonString({
+          schema_version: "2",
+          items: a.proof_shots,
+        }),
         thumbnail_file_id: thumbId,
         parent_ids: a.parent_ids ?? [],
         lineage_type: a.lineage_type ?? (a.parent_ids?.length ? "remix" : "original"),
@@ -455,9 +487,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         credits: asJsonString(a.credits),
         source_basis: asJsonString(a.source_basis),
         prompt_review: asJsonString(a.prompt_review),
-        portability_report: asJsonString(
-          remapUploadedFileReferences(a.portability_report, fileIdsByUrl),
-        ),
+        portability_report: asJsonString(a.portability_report),
         tags: a.tags ?? [],
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
@@ -468,7 +498,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         status: "Draft",
         attributed_to: id.email,
         url: galleryUrl("art_style", entityId),
-        uploaded_files: { reference_images: refIds, proof_shots: proofIds, thumbnail: thumbId },
+        governed_files: { proof_shots: proofIds, thumbnail: thumbId },
         next:
           "The curator finalizer must independently verify the exact prompt, rights basis, and proof matrix before advancing this Draft.",
       });

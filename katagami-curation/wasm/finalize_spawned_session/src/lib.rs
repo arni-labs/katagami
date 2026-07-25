@@ -2424,6 +2424,18 @@ fn verify_synthesized_art_styles(
     headers: &[(String, String)],
     fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
+    let receipt_key = ctx
+        .config
+        .get("art_style_proof_receipt_key")
+        .filter(|value| !value.is_empty() && !value.contains("{secret:"))
+        .ok_or_else(|| {
+            VerificationError::new(
+                "art_style_proof_receipt_key_missing",
+                "ArtStyle finalization requires the governed proof-receipt verifier key",
+            )
+            .field("art_style_proof_receipt_key")
+            .repairable(false)
+        })?;
     let ids = lane_ids_from_job(fields, &["art_style_ids", "artstyle_ids"]);
     if ids.is_empty() {
         return Err(VerificationError::new(
@@ -2499,10 +2511,15 @@ fn verify_synthesized_art_styles(
             &lane_fields,
             &prompt_template,
             &proof_ids,
+            receipt_key,
         )?;
-        for fixture in &verified_portability.input_fixtures {
-            verify_art_style_input_fixture(ctx, api_url, headers, id, fixture)?;
-        }
+        verify_art_style_proof_receipt_files(
+            ctx,
+            api_url,
+            headers,
+            id,
+            &verified_portability.proof_receipts,
+        )?;
 
         dispatch_action(
             ctx,
@@ -2857,77 +2874,124 @@ fn verify_lane_image_file(
     Ok(())
 }
 
-fn verify_art_style_input_fixture(
+fn verify_art_style_proof_receipt_files(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     owner_id: &str,
-    fixture: &art_style_review::TrustedProofInput,
+    receipts: &[art_style_review::VerifiedProofReceipt],
 ) -> Result<(), VerificationError> {
-    let file = load_entity(ctx, api_url, headers, "Files", &fixture.file_id)?.ok_or_else(|| {
-        VerificationError::new(
-            "art_style_proof_input_fixture_missing",
-            format!(
-                "ArtStyle '{owner_id}' trusted input fixture '{}' points to missing file '{}'",
-                fixture.fixture_id, fixture.file_id
-            ),
-        )
-        .entity("ArtStyle", owner_id)
-        .artifact("proof_input", &fixture.file_id)
-    })?;
-    let file_status = entity_status_value(&file);
-    if file_status != "Locked" {
-        return Err(VerificationError::new(
-            "art_style_proof_input_fixture_not_immutable",
-            format!(
-                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' is in state '{file_status}', expected Locked",
-                fixture.fixture_id, fixture.file_id
-            ),
-        )
-        .entity("ArtStyle", owner_id)
-        .artifact("proof_input", &fixture.file_id));
+    let mut verified_sources = std::collections::BTreeSet::new();
+    let mut verified_outputs = std::collections::BTreeSet::new();
+    for receipt in receipts {
+        if verified_sources.insert(receipt.source_file_id.clone()) {
+            verify_art_style_receipt_file(
+                ctx,
+                api_url,
+                headers,
+                owner_id,
+                &receipt.source_file_id,
+                &receipt.source_sha256,
+                true,
+                "proof_source",
+            )?;
+        }
+        if !verified_outputs.insert(receipt.output_file_id.clone()) {
+            return Err(VerificationError::new(
+                "art_style_proof_output_duplicate",
+                format!(
+                    "ArtStyle '{owner_id}' proof receipt repeats output file '{}'",
+                    receipt.output_file_id
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_output", &receipt.output_file_id));
+        }
+        verify_art_style_receipt_file(
+            ctx,
+            api_url,
+            headers,
+            owner_id,
+            &receipt.output_file_id,
+            &receipt.output_sha256,
+            true,
+            "proof_output",
+        )?;
     }
-    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
-    if size_bytes != fixture.size_bytes {
+    if verified_sources.len() != 4 || verified_outputs.len() != 8 {
         return Err(VerificationError::new(
-            "art_style_proof_input_fixture_hash_mismatch",
+            "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' has {size_bytes} bytes, expected {}",
-                fixture.fixture_id, fixture.file_id, fixture.size_bytes
+                "ArtStyle '{owner_id}' receipts must resolve to four immutable sources and eight unique outputs"
             ),
         )
         .entity("ArtStyle", owner_id)
-        .artifact("proof_input", &fixture.file_id));
-    }
-    let actual_sha256 = read_locked_fixture_sha256(
-        ctx,
-        api_url,
-        headers,
-        owner_id,
-        fixture.fixture_id,
-        &fixture.file_id,
-    )?;
-    if actual_sha256 != fixture.sha256 {
-        return Err(VerificationError::new(
-            "art_style_proof_input_fixture_hash_mismatch",
-            format!(
-                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' does not match the verifier-owned SHA-256",
-                fixture.fixture_id, fixture.file_id
-            ),
-        )
-        .entity("ArtStyle", owner_id)
-        .artifact("proof_input", &fixture.file_id));
+        .field("proof_shots_manifest"));
     }
     Ok(())
 }
 
-fn read_locked_fixture_sha256(
+fn verify_art_style_receipt_file(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     owner_id: &str,
-    fixture_id: &str,
     file_id: &str,
+    expected_sha256: &str,
+    require_locked: bool,
+    artifact_kind: &'static str,
+) -> Result<(), VerificationError> {
+    let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "art_style_proof_receipt_file_missing",
+            format!("ArtStyle '{owner_id}' proof receipt points to missing file '{file_id}'"),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let status = entity_status_value(&file);
+    let status_valid = if require_locked {
+        status == "Locked"
+    } else {
+        matches!(status.as_str(), "Ready" | "Locked")
+    };
+    if !status_valid {
+        return Err(VerificationError::new(
+            "art_style_proof_receipt_file_state_invalid",
+            format!(
+                "ArtStyle '{owner_id}' receipt file '{file_id}' is in state '{status}'{}",
+                if require_locked {
+                    ", expected immutable Locked file"
+                } else {
+                    ", expected Ready or Locked output"
+                }
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    let actual_sha256 =
+        read_art_style_receipt_file_sha256(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
+    if actual_sha256 != expected_sha256 {
+        return Err(VerificationError::new(
+            "art_style_proof_receipt_file_hash_mismatch",
+            format!(
+                "ArtStyle '{owner_id}' receipt file '{file_id}' does not match its signed SHA-256"
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    Ok(())
+}
+
+fn read_art_style_receipt_file_sha256(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
 ) -> Result<String, VerificationError> {
     #[cfg(target_arch = "wasm32")]
     {
@@ -2941,48 +3005,41 @@ fn read_locked_fixture_sha256(
             temper_wasm_sdk::http_stream::streaming_call("GET", &url, &stream_headers)
                 .map_err(|error| {
                     VerificationError::new(
-                        "art_style_proof_input_fixture_read_failed",
-                        format!(
-                            "Failed to open trusted fixture '{fixture_id}' file '{file_id}': {error}"
-                        ),
+                        "art_style_proof_receipt_file_read_failed",
+                        format!("Failed to open proof receipt file '{file_id}': {error}"),
                     )
                     .entity("ArtStyle", owner_id)
-                    .artifact("proof_input", file_id)
+                    .artifact(artifact_kind, file_id)
                     .repairable(false)
                 })?;
         request_body.finish().map_err(|error| {
             VerificationError::new(
-                "art_style_proof_input_fixture_read_failed",
-                format!(
-                    "Failed to finish trusted fixture '{fixture_id}' request for '{file_id}': {error}"
-                ),
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to finish proof receipt request for '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
-            .artifact("proof_input", file_id)
+            .artifact(artifact_kind, file_id)
             .repairable(false)
         })?;
         let head = response_head().map_err(|error| {
             VerificationError::new(
-                "art_style_proof_input_fixture_read_failed",
-                format!(
-                    "Failed to read trusted fixture '{fixture_id}' response head for '{file_id}': {error}"
-                ),
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to read proof receipt response head for '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
-            .artifact("proof_input", file_id)
+            .artifact(artifact_kind, file_id)
             .repairable(false)
         })?;
         if !(200..300).contains(&head.status) {
             let _ = response_body.close();
             return Err(VerificationError::new(
-                "art_style_proof_input_fixture_read_failed",
+                "art_style_proof_receipt_file_read_failed",
                 format!(
-                    "Trusted fixture '{fixture_id}' file '{file_id}' returned HTTP {}",
-                    head.status
+                    "Proof receipt file '{file_id}' returned HTTP {}", head.status
                 ),
             )
             .entity("ArtStyle", owner_id)
-            .artifact("proof_input", file_id));
+            .artifact(artifact_kind, file_id));
         }
 
         let hash_result = (|| -> Result<String, VerificationError> {
@@ -2994,13 +3051,11 @@ fn read_locked_fixture_sha256(
                     Ok(Some(count)) => hasher.update(&buffer[..count]),
                     Err(error) => {
                         return Err(VerificationError::new(
-                            "art_style_proof_input_fixture_read_failed",
-                            format!(
-                                "Failed while hashing trusted fixture '{fixture_id}' file '{file_id}': {error}"
-                            ),
+                            "art_style_proof_receipt_file_read_failed",
+                            format!("Failed while hashing proof receipt file '{file_id}': {error}"),
                         )
                         .entity("ArtStyle", owner_id)
-                        .artifact("proof_input", file_id)
+                        .artifact(artifact_kind, file_id)
                         .repairable(false));
                     }
                 }
@@ -3011,13 +3066,11 @@ fn read_locked_fixture_sha256(
         let hash = hash_result?;
         close_result.map_err(|error| {
             VerificationError::new(
-                "art_style_proof_input_fixture_read_failed",
-                format!(
-                    "Failed to close trusted fixture '{fixture_id}' file '{file_id}': {error}"
-                ),
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to close proof receipt file '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
-            .artifact("proof_input", file_id)
+            .artifact(artifact_kind, file_id)
             .repairable(false)
         })?;
         Ok(hash)
@@ -3027,13 +3080,13 @@ fn read_locked_fixture_sha256(
     {
         let _ = (ctx, api_url, headers);
         Err(VerificationError::new(
-            "art_style_proof_input_fixture_read_failed",
+            "art_style_proof_receipt_file_read_failed",
             format!(
-                "Trusted fixture hashing for '{fixture_id}' file '{file_id}' runs in the deployed WASM finalizer"
+                "Proof receipt hashing for file '{file_id}' runs in the deployed WASM finalizer"
             ),
         )
         .entity("ArtStyle", owner_id)
-        .artifact("proof_input", file_id)
+        .artifact(artifact_kind, file_id)
         .repairable(false))
     }
 }

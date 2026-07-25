@@ -60,9 +60,14 @@ deeply empty specs should fail with a concrete error.
   dimensions and resolve contradictions in at most one revision.
 - `source_basis` must qualify every credit. A living person requires explicit
   license/permission; attribution alone never passes.
-- Behavioral proof uses the exact prompt, no style references, at least two
-  edit-capable image models, at least three cases per model, and at least three
-  source media across the matrix.
-- Score models separately: every dimension ≥1/2 and every case/model average
-  ≥1.5/2. Missing provider access is a visible failure, not an exemption.
+- Behavioral proof uses the exact prompt and exact same four governed sources on
+  both edit models: human portrait, another living subject,
+  still-life/product/object, and landscape/environment, rotated across four
+  neutral source media. Concrete subjects and compositions are style-specific,
+  never a recurring house fixture set. The generator accepts no user/external
+  image URL and signs the full source/prompt/model/output chain.
+- Score models separately: subject/content remains recognizable, source medium
+  is fully replaced, medium/material = 2/2, every other dimension ≥1/2, and
+  every case/model average ≥1.5/2. Missing provider access is a visible failure,
+  not an exemption.
 - Optional reference images remain gallery examples and never satisfy proof.

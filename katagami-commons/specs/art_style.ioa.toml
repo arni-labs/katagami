@@ -231,7 +231,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach the proof-shot set demonstrating the recipe across unrelated subjects and source media. Manifest items must record the producing model/provider. Every public image-edit proof must use one of Katagami's verifier-owned input fixtures and include only input_source {fixture_id, file_id}. The WASM finalizer requires the source File to be Locked, streams its complete bytes, and matches its size and SHA-256 against the reviewed fixture registry. Private, user-supplied, and self-attested validation inputs can never be public catalog proofs. The finalizer also verifies every proof File is Ready/Locked because the minimum six-file portability matrix exceeds Temper's bounded cross-entity lookup budget."
+hint = "Attach exactly eight governed proof shots: two edit models times human portrait, non-human living subject, still-life/product/object, and landscape/environment, with the four roles rotated across documentary photograph, black-ink line drawing, neutral synthetic 3D render, and flat vector illustration. Concrete subjects and compositions are chosen per style, never from a recurring house fixture list. Every item must carry the generator-issued receipt binding the exact source, prompt, model request, seed, output, and byte hashes. The WASM finalizer verifies the HMAC receipt, requires all four source and eight output Files Locked, streams and hashes all 12 files, and requires the identical source quartet on both models. Every scored case must preserve recognizable content while fully replacing source medium, with medium/material scoring 2/2. The governed generator accepts no user/external image URL; caller-authored provenance cannot become catalog proof."
 
 # --- Actions: Thumbnail / Public Assets ---
 
@@ -363,7 +363,7 @@ kind = "input"
 from = ["Draft"]
 to = "UnderReview"
 guard = [{ type = "is_true", var = "has_medium" }, { type = "is_true", var = "has_prompt_template" }, { type = "is_true", var = "has_proof_shots" }, { type = "is_true", var = "has_thumbnail" }, { type = "cross_entity_state", entity_type = "File", entity_id_source = "thumbnail_file_id", required_status = ["Ready", "Locked"] }]
-hint = "Curation-service callback after the WASM finalizer verifies every proof file and report. Requires medium, one portable prompt, proof shots, and a Ready/Locked thumbnail. Cedar denies contributors. Optional example references are not a prerequisite. Proof readiness stays in WASM because a valid portability matrix has at least six Files, beyond Temper's bounded cross-entity guard lookup budget."
+hint = "Curation-service callback after the WASM finalizer verifies every proof file, signed generation chain, and report. Requires medium, one portable prompt, eight proof shots, and a Ready/Locked thumbnail. Cedar denies contributors. Optional example references are not a prerequisite. Proof readiness stays in WASM because the matrix includes four source Files plus eight output Files, beyond Temper's bounded cross-entity guard lookup budget."
 
 [[action]]
 name = "Publish"

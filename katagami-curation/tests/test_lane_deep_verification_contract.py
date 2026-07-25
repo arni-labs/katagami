@@ -1,6 +1,5 @@
 import unittest
 from pathlib import Path
-import hashlib
 import json
 import tomllib
 
@@ -20,8 +19,12 @@ ART_SKILL = (
 ).read_text()
 ART_POLICY = (COMMONS / "policies" / "art_style.cedar").read_text()
 MCP_TOOLS = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "tools.ts").read_text()
+PROOF_GENERATOR = (
+    Path(__file__).resolve().parents[2] / "mcp" / "src" / "art-style-proofs.ts"
+).read_text()
 FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
-FIXTURE_MANIFEST = json.loads((FIXTURE_ROOT / "manifest.json").read_text())
+AUDIT_MATRIX = json.loads((FIXTURE_ROOT / "audit-matrix.json").read_text())
+CURATION_JOB_SPEC = (ROOT / "specs" / "curation_job.ioa.toml").read_text()
 
 
 class LaneDeepVerificationContractTests(unittest.TestCase):
@@ -135,7 +138,8 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("source_basis", submit)
         self.assertIn("prompt_review", submit)
         self.assertIn("portability_report", submit)
-        self.assertIn(".min(6)", submit)
+        self.assertIn(".length(8)", submit)
+        self.assertIn("generate_art_style_proof_matrix", MCP_TOOLS)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):
@@ -149,44 +153,94 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     def test_private_validation_inputs_cannot_become_catalog_proofs(self):
         for marker in [
-            "art_style_proof_input_not_trusted",
-            "trusted_input_source",
-            "TRUSTED_PROOF_FIXTURES",
-            "art_style_proof_input_clearance_mismatch",
+            "generation_receipt",
+            "art_style_proof_receipt_signature_invalid",
+            "content_preserved",
+            "source_medium_replaced",
+            "art_style_portability_source_medium_preserved",
+            "Hmac::<Sha256>",
+            "source_file_id",
+            "output_file_id",
         ]:
             self.assertIn(marker, ART_REVIEW_SRC)
         for marker in [
-            "fn verify_art_style_input_fixture",
-            "fn read_locked_fixture_sha256",
-            'file_status != "Locked"',
+            "fn verify_art_style_proof_receipt_files",
+            "fn read_art_style_receipt_file_sha256",
+            "expected immutable Locked file",
             "Sha256::new()",
-            "art_style_proof_input_fixture_hash_mismatch",
+            "art_style_proof_receipt_file_hash_mismatch",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
-        self.assertIn("private, user-supplied, and self-attested", ART_REVIEW_SRC)
         self.assertIn("private or user-supplied", ART_SKILL)
         attach_hint = self._by_name(self.art, "action")["AttachProofShots"]["hint"]
-        self.assertIn("input_source", attach_hint)
-        self.assertIn("user-supplied", attach_hint)
-        self.assertIn("trustedArtStyleInputFixture", MCP_TOOLS)
-        self.assertIn("katagami.synthetic.bicycle-photo.v1", MCP_TOOLS)
-        self.assertIn("katagami.synthetic.lighthouse-line-drawing.v1", MCP_TOOLS)
-        self.assertIn("katagami.synthetic.teapot-pear-3d.v1", MCP_TOOLS)
+        self.assertIn("generator-issued receipt", attach_hint)
+        self.assertIn("no user/external image URL", attach_hint)
+        generator_tool = MCP_TOOLS[
+            MCP_TOOLS.index('"generate_art_style_proof_matrix"') :
+            MCP_TOOLS.index('"submit_art_style"')
+        ]
+        self.assertNotIn("image_url:", generator_tool)
+        self.assertNotIn("reference_url", generator_tool)
+        self.assertIn("generation_receipt", MCP_TOOLS)
+        self.assertIn("createHmac", PROOF_GENERATOR)
+        self.assertIn("ART_STYLE_PROOF_RECEIPT_KEY", PROOF_GENERATOR)
+        self.assertIn("image_urls: [sourceUrl]", PROOF_GENERATOR)
+        self.assertEqual(
+            PROOF_GENERATOR.count("await lockGeneratedFile(id, image.fileId);"),
+            2,
+        )
+        self.assertIn("`${config.galleryUrl}/api/file/${source.fileId}`", PROOF_GENERATOR)
+        self.assertIn('image_size: "auto"', PROOF_GENERATOR)
+        self.assertIn('aspect_ratio: "auto"', PROOF_GENERATOR)
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
+        self.assertIn(
+            "thumbnail_file_id must identify one of the eight governed proof shots",
+            MCP_TOOLS,
+        )
+        self.assertIn(
+            'art_style_proof_receipt_key = "{secret:art_style_proof_receipt_key}"',
+            CURATION_JOB_SPEC,
+        )
 
-    def test_trusted_fixture_manifest_matches_committed_bytes(self):
-        self.assertEqual(FIXTURE_MANIFEST["schema_version"], "1")
-        self.assertEqual(len(FIXTURE_MANIFEST["fixtures"]), 3)
-        for fixture in FIXTURE_MANIFEST["fixtures"]:
-            payload = (FIXTURE_ROOT / fixture["file"]).read_bytes()
-            self.assertEqual(len(payload), fixture["size_bytes"])
-            self.assertEqual(hashlib.sha256(payload).hexdigest(), fixture["sha256"])
-            self.assertEqual(fixture["origin_kind"], "synthetic")
-            self.assertFalse(fixture["generator"]["user_media_supplied"])
-            self.assertFalse(fixture["generator"]["style_reference_supplied"])
-            self.assertIn(fixture["fixture_id"], ART_REVIEW_SRC)
-            self.assertIn(fixture["sha256"], ART_REVIEW_SRC)
+    def test_audit_matrix_balances_roles_media_and_style_specific_subjects(self):
+        self.assertEqual(AUDIT_MATRIX["schema_version"], "2")
+        self.assertEqual(len(AUDIT_MATRIX["styles"]), 8)
+        expected_categories = {
+            "human_portrait",
+            "nonhuman_living",
+            "still_life_object",
+            "landscape_environment",
+        }
+        expected_media = {
+            "documentary photograph",
+            "black-ink line drawing",
+            "neutral synthetic 3d render",
+            "flat vector illustration",
+        }
+        seen_subject_compositions = set()
+        assignments = set()
+        for style in AUDIT_MATRIX["styles"]:
+            self.assertEqual(len(style["cases"]), 4)
+            self.assertEqual(
+                {case["category"] for case in style["cases"]},
+                expected_categories,
+            )
+            self.assertEqual(
+                {case["source_medium"] for case in style["cases"]},
+                expected_media,
+            )
+            assignment = tuple(
+                (case["category"], case["source_medium"]) for case in style["cases"]
+            )
+            assignments.add(assignment)
+            for case in style["cases"]:
+                key = (case["subject"], case["composition"])
+                self.assertNotIn(key, seen_subject_compositions)
+                seen_subject_compositions.add(key)
+        self.assertGreaterEqual(len(assignments), 4)
+        self.assertFalse(AUDIT_MATRIX["rules"]["user_media_allowed"])
+        self.assertFalse(AUDIT_MATRIX["rules"]["style_references_allowed"])
 
     def test_evidence_inputs_invalidate_the_attestations_they_can_change(self):
         actions = self._by_name(self.art, "action")

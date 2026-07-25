@@ -4,6 +4,7 @@
 // contributor boundary (author and submit; never verify or publish).
 
 import { config } from "./config.js";
+import { createHash } from "node:crypto";
 
 export type Identity = {
   sub: string;
@@ -99,6 +100,22 @@ export async function action(
   );
 }
 
+export async function temperAction(
+  id: Identity,
+  set: string,
+  entityId: string,
+  name: string,
+  params: Record<string, unknown> = {},
+): Promise<void> {
+  await check(
+    await fetch(
+      `${config.temperUrl}/tdata/${set}('${encodeURIComponent(entityId)}')/Temper.${name}`,
+      { method: "POST", headers: headers(id), body: JSON.stringify(params) },
+    ),
+    `${name} on ${set}('${entityId}')`,
+  );
+}
+
 /** Upload one file through the proven ladder: create → PUT $value → poll Ready. */
 export async function uploadFile(
   id: Identity,
@@ -140,16 +157,38 @@ export async function uploadFile(
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
-/** Fetch a contributor-supplied https image URL and store it as a File. */
-export async function ingestImage(id: Identity, url: string, label: string): Promise<string> {
+export type IngestedImage = {
+  fileId: string;
+  sha256: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+/** Fetch a generated https image, hash the exact bytes, and store them. */
+export async function ingestImageWithDigest(
+  id: Identity,
+  url: string,
+  label: string,
+): Promise<IngestedImage> {
   const u = new URL(url);
   if (u.protocol !== "https:") throw new TemperError(`Image URLs must be https (${label})`, 400);
-  const res = await fetch(u, { signal: AbortSignal.timeout(30_000), redirect: "follow" });
+  const res = await fetch(u, { signal: AbortSignal.timeout(60_000), redirect: "follow" });
   if (!res.ok) throw new TemperError(`Fetching ${label} failed (${res.status})`, 502);
   const mime = (res.headers.get("content-type") ?? "").split(";")[0].trim();
   if (!mime.startsWith("image/")) throw new TemperError(`${label} is not an image (${mime})`, 400);
   const buf = new Uint8Array(await res.arrayBuffer());
   if (buf.byteLength > MAX_IMAGE_BYTES) throw new TemperError(`${label} exceeds 8MB`, 400);
   const ext = mime.split("/")[1]?.split("+")[0] || "img";
-  return uploadFile(id, `${label}-${Date.now()}.${ext}`, mime, buf);
+  const fileId = await uploadFile(id, `${label}-${Date.now()}.${ext}`, mime, buf);
+  return {
+    fileId,
+    sha256: createHash("sha256").update(buf).digest("hex"),
+    mimeType: mime,
+    sizeBytes: buf.byteLength,
+  };
+}
+
+/** Fetch a contributor-supplied https image URL and store it as a File. */
+export async function ingestImage(id: Identity, url: string, label: string): Promise<string> {
+  return (await ingestImageWithDigest(id, url, label)).fileId;
 }
