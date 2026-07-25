@@ -24,6 +24,18 @@ const mutations = read("src/lib/odata-mutations.ts");
 const remixActions = read("src/app/remix-actions.ts");
 const session = read("src/lib/user-auth.ts");
 
+// Every governed commons entity must close generic OData writes to contributors:
+// PATCH/DELETE are authorized as the lowercase `update`/`delete` actions, which
+// no named-action forbid covers, so without these a contributor could rewrite or
+// delete content without ever invoking a governed action.
+const GOVERNED = ["design_language","art_style","palette_system","writing_style","remix",
+                  "taxonomy","direction","design_source","element_manifest","design_element"];
+const crudChecks = GOVERNED.map((stem) => [
+  `${stem}.cedar closes generic update/delete to contributors`,
+  read(`../katagami-commons/policies/${stem}.cedar`),
+  /Action::"update",\s*\n?\s*Action::"delete"[\s\S]*?agent_type == "contributor"/,
+]);
+
 // Isolate each mint function so a claim in one is not credited to the other.
 function fnBody(source, name) {
   const start = source.indexOf(`export async function ${name}`);
@@ -77,9 +89,14 @@ const required = [
   // generation bump alone leaves the session cookie live and lets agents
   // refresh straight back in.
   ["the session carries the generation it was minted at", session, /gen,/],
-  ["session verification rejects an out-of-date generation", session, /sessionGen < \(await currentGenerationCached/],
+  // Rejects an out-of-date generation AND refuses when the counter cannot be
+  // read — an unreadable revocation check must never read as "not revoked".
+  ["session verification rejects an out-of-date generation", session, /currentGen === null \|\| sessionGen < currentGen/],
+  ["sign-out drops the cached generation immediately", agentsActions, /forgetCachedGeneration\(user\.sub\)/],
+  ["a failed user-token mint does not fall back to the service key", humanBearer, /throw new Error\([\s\S]*Could not verify your identity/],
   ["sign-out-everywhere also revokes live grants", agentsActions, /signOutEverywhere[\s\S]*grantsForMember[\s\S]*revokeGrant/],
   ["revoking a grant propagates to the kernel", as, /revokeGrant[\s\S]*?bumpGeneration\(grantId\)/],
+  ...crudChecks,
 ];
 
 let failed = 0;

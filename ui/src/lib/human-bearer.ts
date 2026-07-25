@@ -30,23 +30,40 @@ async function requestOrigin(): Promise<string> {
   return host ? `${proto}://${host}` : "";
 }
 
-/** Mint a short-lived Customer bearer for the signed-in human, or null when
- *  the flag is off or nobody is signed in (callers then fall back to the
- *  shared service key). Never throws to the mutation path. */
+/** Mint a short-lived Customer bearer for the signed-in human.
+ *
+ *  Returns null only when this routing is genuinely not in play: the flag is
+ *  off, or nobody is signed in. Callers then use the shared service key, which
+ *  is the pre-existing behaviour.
+ *
+ *  It deliberately does NOT swallow mint failures. Falling back to the shared
+ *  key would run the write with SERVICE authority instead of the caller's own,
+ *  quietly skipping the kernel's ownership and role checks — a failure that
+ *  grants more access than intended. When human routing is on and a human is
+ *  signed in, a mint failure fails the write instead.
+ */
 export async function humanBearer(): Promise<string | null> {
   if (!humanTokensEnabled()) return null;
+
+  const user = await getUser();
+  if (!user) return null;
+
+  const origin = await requestOrigin();
+  if (!origin) {
+    throw new Error(
+      "Cannot establish the request origin to mint a user token. Set KATAGAMI_ISSUER_ORIGIN.",
+    );
+  }
+
   try {
-    const user = await getUser();
-    if (!user) return null;
-    const origin = await requestOrigin();
-    if (!origin) return null;
     const { token } = await issueHumanToken(origin, {
       sub: user.sub,
       email: user.email,
       name: user.name ?? "",
     });
     return token;
-  } catch {
-    return null;
+  } catch (err) {
+    console.error("[auth] failed to mint a user token", err);
+    throw new Error("Could not verify your identity for this action. Try again.");
   }
 }

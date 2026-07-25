@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/user-auth";
+import { forgetCachedGeneration, requireUser } from "@/lib/user-auth";
 import {
   bumpGeneration,
   createGrant,
@@ -73,6 +73,9 @@ export async function signOutEverywhere(): Promise<void> {
   const user = await requireUser();
 
   await bumpGeneration(user.sub);
+  // Drop the cached counter so this process stops honouring the old sessions
+  // now, rather than trailing the cache window.
+  forgetCachedGeneration(user.sub);
 
   const grants = await grantsForMember(user.sub);
   for (const grant of grants.filter((g) => g.status === "Active")) {

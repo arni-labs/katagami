@@ -47,7 +47,7 @@ export function isAuthConfigured(): boolean {
 const GEN_CACHE_MS = 30_000;
 const genCache = new Map<string, { gen: number; at: number }>();
 
-async function currentGenerationCached(sub: string): Promise<number> {
+async function currentGenerationCached(sub: string): Promise<number | null> {
   const hit = genCache.get(sub);
   if (hit && Date.now() - hit.at < GEN_CACHE_MS) return hit.gen;
   try {
@@ -55,17 +55,28 @@ async function currentGenerationCached(sub: string): Promise<number> {
     genCache.set(sub, { gen, at: Date.now() });
     return gen;
   } catch (err) {
-    // Availability over strictness: a kernel read failure must not sign the
-    // whole site out. Fall back to the last known value, surfaced not silent.
-    console.error("[auth] generation read failed; using last known value", err);
-    return hit?.gen ?? 0;
+    // A failed read must not read as "never revoked". Prefer the last known
+    // value; with none, refuse the session rather than accept a possibly
+    // revoked one — the kernel is unreachable, so the request cannot be served
+    // meaningfully anyway.
+    console.error("[auth] generation read failed", err);
+    return hit?.gen ?? null;
   }
+}
+
+/** Drop a human's cached generation so a bump takes effect immediately in this
+ *  process, instead of trailing the cache window. */
+export function forgetCachedGeneration(sub: string): void {
+  genCache.delete(sub);
 }
 
 export async function signSession(user: SessionUser): Promise<string | null> {
   const secret = sessionSecret();
   if (!secret) return null;
+  // A fresh sign-in must not mint below the current generation, so an
+  // unreadable counter fails the sign-in rather than issuing a stale session.
   const gen = await currentGenerationCached(user.sub);
+  if (gen === null) return null;
   return new SignJWT({
     email: user.email,
     name: user.name,
@@ -95,7 +106,8 @@ export async function verifySession(
     // generation is dead. Sessions predating this claim count as generation 0,
     // so a single bump ends them too.
     const sessionGen = typeof payload.gen === "number" ? payload.gen : 0;
-    if (sessionGen < (await currentGenerationCached(payload.sub))) return null;
+    const currentGen = await currentGenerationCached(payload.sub);
+    if (currentGen === null || sessionGen < currentGen) return null;
 
     return {
       sub: payload.sub,
