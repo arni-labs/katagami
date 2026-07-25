@@ -15,6 +15,7 @@ finalize_spawned_session WASM registered:
 import io
 import os
 import json
+import random
 import sys
 import time
 import urllib.error
@@ -155,9 +156,25 @@ def jpeg_bytes():
     return buf.getvalue()
 
 
+def sizable_png_bytes():
+    """A deterministic, megabyte-scale proof that exercises the streaming
+    verifier while remaining below disposable servers' ordinary upload cap."""
+    from PIL import Image
+
+    width = height = 720
+    pixels = random.Random(148).randbytes(width * height * 3)
+    img = Image.frombytes("RGB", (width, height), pixels)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    payload = buf.getvalue()
+    assert 1_000_000 < len(payload) < 1_900_000, len(payload)
+    return payload
+
+
 def run_art_style_case(label, expect_published, fake_proof_index=None):
     """Exercise reference-free publication, optionally corrupting one proof image."""
     jpg = jpeg_bytes()
+    sizable_png = sizable_png_bytes()
     fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
     prompt = (
         "Render the supplied subject as a two-ink relief print on fibrous matte paper. "
@@ -187,9 +204,18 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
     ]
     proof_ids = []
     for index, (model, subject, _) in enumerate(proof_specs):
-        payload = fake_html if index == fake_proof_index else jpg
+        if index == fake_proof_index:
+            payload, extension, mime = fake_html, "jpg", "image/jpeg"
+        elif index == 0:
+            payload, extension, mime = sizable_png, "png", "image/png"
+        else:
+            payload, extension, mime = jpg, "jpg", "image/jpeg"
         proof_ids.append(
-            make_file(f"{label}-proof-{model}-{subject}.jpg", payload, "image/jpeg")
+            make_file(
+                f"{label}-proof-{model}-{subject}.{extension}",
+                payload,
+                mime,
+            )
         )
     thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
     cases_by_model = {}

@@ -7,6 +7,9 @@ COMMONS = Path(__file__).resolve().parents[2] / "katagami-commons"
 FINALIZER_SRC = (
     ROOT / "wasm" / "finalize_spawned_session" / "src" / "lib.rs"
 ).read_text()
+FINALIZER_WASM = (
+    ROOT / "wasm" / "finalize_spawned_session" / "finalize_spawned_session.wasm"
+).read_bytes()
 ART_SKILL = (
     ROOT / "agents" / "curator" / "skills" / "synthesize-art-style" / "SKILL.md"
 ).read_text()
@@ -79,10 +82,21 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             '"reference_manifest"',
             '"proof_shots_manifest"',
             "fn verify_lane_image_file",
+            "fn read_lane_image_prefix",
+            "temper_wasm_sdk::http_stream::streaming_call",
+            "IMAGE_SNIFF_BYTES",
             "fn lane_payload_plausible_image",
+            "fn lane_payload_has_supported_raster_magic",
             "fn verify_lane_manifest_files",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
+
+        image_verifier = FINALIZER_SRC[
+            FINALIZER_SRC.index("fn verify_lane_image_file") :
+            FINALIZER_SRC.index("fn read_lane_image_prefix")
+        ]
+        self.assertIn("read_lane_image_prefix", image_verifier)
+        self.assertNotIn("read_lane_file_value(", image_verifier)
 
     def test_prompt_is_one_paste_ready_model_agnostic_field(self):
         actions = self._by_name(self.art, "action")
@@ -92,6 +106,18 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("engine_hints", submit_params)
         self.assertIn("prompt_review", submit_params)
         self.assertIn("portability_report", submit_params)
+
+    def test_committed_wasm_imports_the_bounded_streaming_host_abi(self):
+        # The live local E2E executes this committed module. These binary-level
+        # assertions additionally keep CI from accepting a stale WASM artifact
+        # rebuilt before the streaming verifier was introduced.
+        for symbol in [
+            b"host_http_stream_begin_outbound",
+            b"host_http_stream_response_head",
+            b"host_http_stream_read",
+            b"host_http_stream_close",
+        ]:
+            self.assertIn(symbol, FINALIZER_WASM)
 
     def test_mcp_uses_the_same_prompt_first_contract(self):
         submit = MCP_TOOLS[MCP_TOOLS.index('"submit_art_style"') :]
