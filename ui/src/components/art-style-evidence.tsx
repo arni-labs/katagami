@@ -46,11 +46,11 @@ export function ArtStyleEvidence({
 
   if (!attested || !portability || portability.verdict !== "pass") {
     return (
-      <StickyNote className="p-5">
+      <StickyNote className="p-4">
         <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Portability evidence
         </div>
-        <p className="mt-2 text-[17px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
           Legacy catalog record — its prompt and existing images have not yet passed the
           cross-model, prompt-only portability gate.
         </p>
@@ -64,11 +64,11 @@ export function ArtStyleEvidence({
   );
 
   return (
-    <StickyNote tint="matcha" className="p-5">
+    <StickyNote tint="matcha" className="p-4">
       <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
         Verified portability
       </div>
-      <p className="mt-2 text-[17px] leading-relaxed text-foreground">
+      <p className="mt-2 text-[13px] leading-relaxed text-foreground">
         The same prompt passed {caseCount} blind-scored edits across {models.length} image
         models{usesStyleReference ? "." : ", without style-reference images."}
       </p>
