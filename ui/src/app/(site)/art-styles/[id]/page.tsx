@@ -18,6 +18,10 @@ import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
 import { ArtStyleEvidence } from "@/components/art-style-evidence";
 import { InlineRemix } from "@/components/remix/inline-remix";
+import {
+  artStylePromptLabel,
+  artStylePromptState,
+} from "@/lib/art-style-prompt-state";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +69,9 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   // Non-published entries are the curator's queue: owner sees them (preview),
   // everyone else gets a 404. The owner check runs ONLY on this branch, so
   // Published renders never touch cookies() and stay cacheable.
-  if (art.status !== "Published" && !(await isOwner())) notFound();
+  const isPublished = art.status === "Published";
+  const ownerPreview = !isPublished && (await isOwner());
+  if (!isPublished && !ownerPreview) notFound();
 
   const f = art.fields;
   const name = artStyleDisplayName(f);
@@ -77,6 +83,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
     f.has_prompt_review === "true" &&
     f.has_portability_evidence === "true" &&
     portability?.verdict === "pass";
+  const promptState = artStylePromptState(art.status, promptVerified);
   const slotRecipes = parseJson<Record<string, unknown>>(f.slot_recipes) ?? {};
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
@@ -120,9 +127,23 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="One reference-independent aesthetic prompt, with per-model evidence showing how consistently it transforms unrelated subjects."
+        description={
+          promptState === "verified"
+            ? "One reference-independent aesthetic prompt, with per-model evidence showing how consistently it transforms unrelated subjects."
+            : promptState === "published-legacy"
+              ? "A published art-style recipe whose cross-model portability evidence is still being backfilled."
+              : "A private owner preview for reviewing the prompt and its portability evidence before publication."
+        }
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
+
+      {ownerPreview ? (
+        <div className="rounded-2xl bg-[color-mix(in_srgb,var(--sakura)_18%,var(--card))] px-4 py-3 text-[17px] text-foreground">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Owner preview · Under review · Not public
+          </span>
+        </div>
+      ) : null}
 
       {/* hero + proof gallery */}
       <StickyNote tint="sakura" className="p-3">
@@ -148,10 +169,14 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         </div>
       </StickyNote>
 
-      {/* one canonical prompt; legacy prompts are never offered as usable */}
-      {promptVerified ? (
+      {/* Keep the existing published commons usable while its evidence is
+          backfilled. New records still cannot publish without the verified
+          evidence gate enforced by Temper. */}
+      {promptTemplate ? (
         <StickyNote className="p-5 sm:p-6">
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Canonical aesthetic prompt</div>
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {artStylePromptLabel(promptState)}
+          </div>
           <pre className={`overflow-x-auto whitespace-pre-wrap rounded-2xl p-4 font-mono text-[17px] leading-relaxed text-foreground ${CHIP}`}>{promptTemplate}</pre>
           {Object.keys(slotRecipes).length ? (
             <>
@@ -176,12 +201,21 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
               </span>
             ) : null}
           </div>
+          {promptState === "published-legacy" ? (
+            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+              This published catalog prompt remains available while its source-basis and cross-model portability evidence are backfilled.
+            </p>
+          ) : promptState === "owner-review" ? (
+            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+              Private review copy. Publication remains blocked until its source-basis, prompt, and cross-model evidence all pass.
+            </p>
+          ) : null}
         </StickyNote>
       ) : (
         <StickyNote className="p-5 sm:p-6">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt under review</div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt unavailable</div>
           <p className="mt-2 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
-            This legacy recipe is not offered for copying or remixing until one reference-independent prompt passes the cross-model gate.
+            This record does not contain a prompt yet.
           </p>
         </StickyNote>
       )}
@@ -222,7 +256,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
           Apply <span className="text-foreground">{name}</span> to any UI language and palette. The prompt is primary; attached images are optional examples.
         </p>
-        {promptVerified && langOpts.length && palOpts.length && artOpts.length ? (
+        {(promptVerified || isPublished) && langOpts.length && palOpts.length && artOpts.length ? (
           <InlineRemix
             languages={langOpts}
             palettes={palOpts}
