@@ -171,3 +171,5 @@ The target feel: a film you can conduct with your finger — each gesture moves 
 Verifiers judge this aesthetically as well as numerically: a page can pass contrast math and still fail because the fix is a slapped panel.
 
 **Cross-artifact consistency is a gate.** The DESIGN.md is the single source: radius set, materials, and signature gestures must match across landing, embodiment, and dashboard. A landing that art-directs a different geometry than its own DESIGN.md (or an embodiment that ignores the landing's) fails — whichever direction the curator rules, the spec and all three artifacts move together.
+
+**Patterns never fight the type (recurred: batch-3 Shuin/Suzuri, batch-6 Komon — "busy background lines make it hard to read").** Decorative pattern fields (stencil repeats, line fields, dot grids, scan textures) drop to near-quiet — faded, thinned, or replaced by solid ground — wherever copy sits, via reserved quiet zones that read as the pattern's own negative space. Full-density pattern belongs to non-text areas: bands, plates, transitions. Audit every text placement against its background pattern in all three artifacts.
