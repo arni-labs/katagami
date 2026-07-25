@@ -16,6 +16,7 @@ import { StickyNote, SectionHeading, Stamp, Perforation } from "@/components/scr
 import { CopyButton } from "@/components/copy-button";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
+import { ArtStyleEvidence } from "@/components/art-style-evidence";
 import { InlineRemix } from "@/components/remix/inline-remix";
 
 export const dynamic = "force-dynamic";
@@ -36,8 +37,8 @@ function refImageUrls(fields: Record<string, string | undefined>): string[] {
   const add = (id: unknown) => {
     if (typeof id === "string" && id.startsWith("fl-") && !ids.includes(id)) ids.push(id);
   };
-  const manifest = parseJson<{ items?: Array<{ file?: string }>; references?: Array<{ file?: string }> }>(fields.reference_manifest);
-  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file));
+  const manifest = parseJson<{ items?: Array<{ file?: string; file_id?: string }>; references?: Array<{ file?: string; file_id?: string }> }>(fields.reference_manifest);
+  (manifest?.items ?? manifest?.references ?? []).forEach((it) => add(it?.file_id ?? it?.file));
   const assets = parseJson<Record<string, unknown>>(fields.reference_assets);
   if (assets && typeof assets === "object" && !Array.isArray(assets)) Object.keys(assets).forEach(add);
   (parseJson<string[]>(fields.reference_image_file_ids) ?? []).forEach(add);
@@ -70,8 +71,12 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const name = artStyleDisplayName(f);
   const medium = f.medium ?? "mixed";
   const promptTemplate = f.prompt_template ?? "";
-  const negativePrompt = f.negative_prompt ?? "";
-  const engineHints = parseJson<Record<string, unknown>>(f.engine_hints) ?? {};
+  const portability = parseJson<{ verdict?: string }>(f.portability_report);
+  const promptVerified =
+    f.has_source_basis_review === "true" &&
+    f.has_prompt_review === "true" &&
+    f.has_portability_evidence === "true" &&
+    portability?.verdict === "pass";
   const slotRecipes = parseJson<Record<string, unknown>>(f.slot_recipes) ?? {};
   const guidance = parseJson<{ do?: string[]; dont?: string[] }>(f.guidance);
   const tags = parseJson<string[]>(f.tags) ?? [];
@@ -79,17 +84,10 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const refs = refImageUrls(f);
   const proofs = refUrls(f.proof_shots_file_ids);
   const thumb = f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "";
-  const hero = refs[0] || thumb || "";
-  const gallery = (proofs.length ? proofs : refs.slice(1)).filter((s) => s && s !== hero);
-
-  const recipe =
-    `${name} — Katagami art-style recipe (${medium})\n\n` +
-    `PROMPT TEMPLATE\n${promptTemplate}\n\n` +
-    (negativePrompt ? `NEGATIVE\n${negativePrompt}\n\n` : "") +
-    (Object.keys(engineHints).length
-      ? `ENGINE HINTS\n${Object.entries(engineHints).map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\n`
-      : "") +
-    `Fill {subject} from your composition's image slot and {palette} from a palette system, then generate with any engine.`;
+  const hero = proofs[0] || refs[0] || thumb || "";
+  const gallery = [...proofs.slice(1), ...refs].filter(
+    (src, index, all) => src && src !== hero && all.indexOf(src) === index,
+  );
 
   const [languages, palettes] = await Promise.all([
     listDesignLanguages("Status eq 'Published'").catch(() => []),
@@ -117,18 +115,18 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             {name}
             <span
               aria-hidden
-              className="absolute -bottom-1.5 left-0 h-[3px] w-12 rounded-[2px]"
+              className="absolute -bottom-1.5 left-0 h-[3px] w-12"
               style={{ background: "var(--graphite)" }}
             />
           </span>
         }
-        description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable subject/palette prompt."
+        description="One reference-independent aesthetic prompt, with per-model evidence showing how consistently it transforms unrelated subjects."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
       {/* hero + proof gallery */}
       <StickyNote tint="sakura" className="p-3">
-        <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "16/9" }}>
+        <div className="overflow-hidden bg-muted" style={{ aspectRatio: "16/9" }}>
           {hero ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={hero} alt={`${name} hero`} className="h-full w-full object-cover" />
@@ -137,7 +135,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         {gallery.length > 0 ? (
           <div className="mt-2 grid grid-cols-3 gap-2">
             {gallery.slice(0, 3).map((src, i) => (
-              <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
+              <div key={i} className="overflow-hidden bg-muted" style={{ aspectRatio: "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />
               </div>
@@ -145,57 +143,55 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
           </div>
         ) : null}
         <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} proof{gallery.length === 1 ? "" : "s"}
+          1 hero · {Math.max(0, proofs.length - 1)} more proof{proofs.length === 2 ? "" : "s"}
+          {refs.length ? ` · ${refs.length} optional example${refs.length === 1 ? "" : "s"}` : ""}
         </div>
       </StickyNote>
 
-      {/* recipe */}
-      <StickyNote className="p-5 sm:p-6">
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt template</div>
-        <pre className={`overflow-x-auto whitespace-pre-wrap rounded-[3px] p-3 font-mono text-[12px] leading-relaxed text-foreground ${CHIP}`}>{promptTemplate}</pre>
-        {negativePrompt ? (
-          <>
-            <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Negative prompt</div>
-            <pre className={`overflow-x-auto whitespace-pre-wrap rounded-[3px] p-3 font-mono text-[12px] leading-relaxed text-muted-foreground ${CHIP}`}>{negativePrompt}</pre>
-          </>
-        ) : null}
-        {Object.keys(slotRecipes).length ? (
-          <>
-            <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Slot recipes</div>
-            <div className="grid gap-1.5 sm:grid-cols-2">
-              {Object.entries(slotRecipes).map(([k, v]) => (
-                <div key={k} className={`rounded-[3px] px-2.5 py-1.5 text-[12px] text-foreground ${CHIP}`}>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{k}</span> — {cellText(v)}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : null}
-        {Object.keys(engineHints).length ? (
-          <>
-            <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Engine hints</div>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(engineHints).map(([k, v]) => (
-                <span key={k} className="rounded-[2px] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
-                  <span className="text-foreground">{k}</span> · {cellText(v)}
-                </span>
-              ))}
-            </div>
-          </>
-        ) : null}
-        <Perforation className="my-4" />
-        <div className="flex flex-wrap items-center gap-2">
-          <CopyButton text={recipe} label="Copy recipe" variant="ink" artifact="recipe" />
-          <CopyButton text={promptTemplate} label="Copy prompt only" artifact="prompt" />
-          {tags.length > 0 ? (
-            <span className="ml-auto flex flex-wrap gap-x-3 gap-y-1">
-              {tags.slice(0, 5).map((t) => (
-                <span key={t} className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/80">{t}</span>
-              ))}
-            </span>
+      {/* one canonical prompt; legacy prompts are never offered as usable */}
+      {promptVerified ? (
+        <StickyNote className="p-5 sm:p-6">
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Canonical aesthetic prompt</div>
+          <pre className={`overflow-x-auto whitespace-pre-wrap rounded-2xl p-4 font-mono text-[17px] leading-relaxed text-foreground ${CHIP}`}>{promptTemplate}</pre>
+          {Object.keys(slotRecipes).length ? (
+            <>
+              <div className="mb-2 mt-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Slot recipes</div>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {Object.entries(slotRecipes).map(([k, v]) => (
+                  <div key={k} className={`rounded-2xl px-3 py-2 text-[17px] text-foreground ${CHIP}`}>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{k}</span> — {cellText(v)}
+                  </div>
+                ))}
+              </div>
+            </>
           ) : null}
-        </div>
-      </StickyNote>
+          <Perforation className="my-4" />
+          <div className="flex flex-wrap items-center gap-2">
+            <CopyButton text={promptTemplate} label="Copy prompt" variant="ink" artifact="prompt" />
+            {tags.length > 0 ? (
+              <span className="ml-auto flex flex-wrap gap-x-3 gap-y-1">
+                {tags.slice(0, 5).map((t) => (
+                  <span key={t} className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/80">{t}</span>
+                ))}
+              </span>
+            ) : null}
+          </div>
+        </StickyNote>
+      ) : (
+        <StickyNote className="p-5 sm:p-6">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Prompt under review</div>
+          <p className="mt-2 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+            This legacy recipe is not offered for copying or remixing until one reference-independent prompt passes the cross-model gate.
+          </p>
+        </StickyNote>
+      )}
+
+      <ArtStyleEvidence
+        portabilityRaw={f.portability_report}
+        promptReviewRaw={f.prompt_review}
+        sourceBasisRaw={f.source_basis}
+        attested={promptVerified}
+      />
 
       <Credits raw={f.credits} />
 
@@ -206,13 +202,13 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
           {guidance.do?.length ? (
             <StickyNote tint="matcha" className="p-4">
               <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--matcha), black 35%)" }}>Do</div>
-              <ul className="space-y-1.5 text-[13px] text-foreground">{guidance.do.map((d, i) => <li key={i}>· {d}</li>)}</ul>
+              <ul className="space-y-1.5 text-[17px] text-foreground">{guidance.do.map((d, i) => <li key={i}>· {d}</li>)}</ul>
             </StickyNote>
           ) : null}
           {guidance.dont?.length ? (
             <StickyNote tint="sakura" className="p-4">
               <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--beni), black 10%)" }}>Don&apos;t</div>
-              <ul className="space-y-1.5 text-[13px] text-foreground">{guidance.dont.map((d, i) => <li key={i}>· {d}</li>)}</ul>
+              <ul className="space-y-1.5 text-[17px] text-foreground">{guidance.dont.map((d, i) => <li key={i}>· {d}</li>)}</ul>
             </StickyNote>
           ) : null}
         </div>
@@ -223,10 +219,10 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         <SectionHeading eyebrow="try it" eyebrowColor="graphite">
           remix with this style
         </SectionHeading>
-        <p className="mb-4 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
-          Apply <span className="text-foreground">{name}</span> to any UI language and swap the palette — the preview takes this style&apos;s hero image.
+        <p className="mb-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+          Apply <span className="text-foreground">{name}</span> to any UI language and palette. The prompt is primary; attached images are optional examples.
         </p>
-        {langOpts.length && palOpts.length && artOpts.length ? (
+        {promptVerified && langOpts.length && palOpts.length && artOpts.length ? (
           <InlineRemix
             languages={langOpts}
             palettes={palOpts}

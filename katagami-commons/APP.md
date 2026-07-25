@@ -39,9 +39,11 @@ thumbnail evidence, and publication verification flags.
 
 ### ArtStyle
 
-A portable image-style recipe for remix lanes. Stores medium, prompt template
-with `{subject}` and `{palette}` holes, negative prompt, engine hints, slot
-recipes, usage guidance, preview evidence, and publication verification flags.
+A portable image-style recipe for remix lanes. Stores one paste-ready,
+reference-independent aesthetic prompt, slot recipes, usage guidance, optional
+example references, structured source/rights review, and multi-model
+portability evidence. Subject and palette facts are supplied by the consumer
+without changing the canonical aesthetic prompt.
 
 **States:** `Draft` -> `UnderReview` -> `Published` -> `Archived`
 

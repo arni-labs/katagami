@@ -3,13 +3,15 @@ permit(principal, action, resource is ArtStyle);
 
 // Contributor boundary (ARN-151): agents submit, humans/pipeline publish.
 // Contributor principals may author (create, Set*, Attach* artifacts,
-// SetLineage, SetCredits/SetModelProvenance, SubmitForReview) but never
-// verify, publish, curate, or mint public assets.
+// SetLineage, SetCredits/SetModelProvenance) but never attest, advance the
+// review lifecycle, publish, curate, or mint public assets.
 forbid(
   principal,
   action in [
-    Action::"Publish", Action::"Revise", Action::"Archive", Action::"Restore",
+    Action::"SubmitForReview", Action::"Publish",
+    Action::"Revise", Action::"Archive", Action::"Restore",
     Action::"MarkQualityPassed", Action::"UpdateQuality",
+    Action::"SetReviewEvidence", Action::"AttachArtStyleReview",
     Action::"AttachPublishedAssets", Action::"AttachVerifiedThumbnail",
     Action::"AttachTasteVector", Action::"AttachComputedFacets",
     Action::"SetFeatured", Action::"SetTaxonomy", Action::"AddCuratorNotes"

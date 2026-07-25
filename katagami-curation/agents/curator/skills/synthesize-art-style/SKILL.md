@@ -1,229 +1,276 @@
 # Synthesize Art Style
 
-Create a complete `ArtStyle` entity: a **medium**, a portable **prompt template**
-carrying `{subject}` and `{palette}` holes, a **negative prompt**, **engine hints**,
-per-slot **subject recipes**, **reference images** (the look + the mixer's
-zero-generation preview material), **proof shots** (canonical subjects rendered
-in-style), and a **thumbnail**.
+Create one complete `ArtStyle`: a medium, one canonical aesthetic prompt,
+slot-specific subject recipes, optional example images, multi-model proof shots,
+a thumbnail, source/rights evidence, and structured review evidence.
 
-## When to Use
+## When to use
 
-Job type: `synthesize_art_style`
+Job type: `synthesize_art_style`.
 
-Terminal sourcing lane. You ATTACH artifacts; the CurationJob finalizer verifies
-them and walks the ArtStyle to `Published`. Do NOT call `VerifyReferenceImages`,
-`VerifyProofShots`, `VerifyThumbnail`, `SubmitForReview`, `MarkQualityPassed`,
-`AttachPublishedAssets`, or `Publish` — those are finalizer-owned.
+This is a terminal lane. The finalizer reads the real fields and file bytes,
+verifies every report, internally attests the result, and alone may submit,
+mark quality, publish assets, or publish. Never call `SubmitForReview`,
+`AttachArtStyleReview`, `MarkQualityPassed`, `AttachPublishedAssets`, or `Publish`.
 
-## The portable recipe is the primary artifact
+## Non-negotiable contract
 
-An ArtStyle is a **recipe**, not a folder of images. The downstream consumer's
-agent fills `{subject}` (from a UI image slot) and `{palette}` (from a PaletteSystem)
-and generates the real art with whatever engine it has. So the **prompt template**
-must be the highest-quality, most transferable part. The reference images and proof
-shots are in-product PREVIEW material: for v1 they are rendered procedurally (PIL)
-to convey the medium's grain / texture / palette discipline. A higher-fidelity image
-engine can be swapped into this step later without changing the entity shape.
+An ArtStyle is one prompt, not an adapter system.
 
-## Before Starting
+- Every image model receives the exact same aesthetic prompt.
+- The prompt is paste-ready prose: no `{subject}`, `{palette}`, or other holes.
+- Describe observable treatment: medium/material, marks/edges, tonal treatment,
+  color roles, composition, signature details, and exclusions.
+- Put exclusions in the prompt itself. Do not create a negative-prompt field.
+- Do not create engine hints or model-specific aesthetic variants.
+- Do not write `in the style of ...`.
+- Do not put the invented catalog name in the operative prompt.
+- Do not require a reference image. References are optional gallery examples.
+- A supplied content image may be edited, but it is not a style reference.
 
-- Read `/system/knowledge/design-principles.md` and `/system/knowledge/quality-standards.md`.
-- `existing = temper.list('ArtStyles', '')` — your style must be distinct in medium and treatment.
-- `accepted_taste_rules = temper.list('TasteRules', "Status eq 'Accepted'")` — apply only `Accepted`.
+## Before starting
 
-## Execution Discipline
+1. Read `/system/knowledge/design-principles.md`,
+   `/system/knowledge/quality-standards.md`, and all accepted `TasteRules`.
+2. List existing `ArtStyles`; the new treatment must be distinct.
+3. Research every named influence and record its eligibility:
+   - collective tradition or movement;
+   - public-domain artist, with death year and jurisdiction/date basis;
+   - licensed/opt-in artist or source, with permission or license URL;
+   - original synthesis.
+4. A named living person without an explicit license is a hard stop. Attribution
+   does not make imitation permissible.
 
-- Each session creates ONE art style.
-- Use the returned `entity_id`; keep the slug only in `slug`.
+## 1. Draft the one prompt
 
-## SPEC PHASE
+Use this shape as a pattern, not as fixed wording:
 
 ```python
-created_ids = []
-slug = 'risograph-spot-print'
-name = 'Risograph Spot Print'
-art = temper.create('ArtStyles', {})
-eid = art['entity_id']
-created_ids.append(eid)
-
-temper.action('ArtStyles', eid, 'SetName', {'name': name, 'slug': slug})
-temper.action('ArtStyles', eid, 'SetMedium', {'medium': 'print'})  # illustration|photography|painting|print|3d|collage|mixed
+name = "Archive Ember"  # catalog label only
+slug = "archive-ember"
+medium = "print"
+prompt_template = (
+    "Render the supplied subject as a two-ink relief print on fibrous matte paper. "
+    "Use blunt carved contours and visibly broken edges. Build volume with sparse "
+    "directional hatching and broad unprinted highlights. Reserve deep indigo for "
+    "structural masses and vermilion for small focal accents. Keep a centered, "
+    "compressed composition with generous bare paper. Add slight ink spread and "
+    "irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, "
+    "and smooth vector geometry."
+)
 ```
 
-**Prompt template** — MUST contain the literal holes `{subject}` and `{palette}`.
-Keep it engine-agnostic; put engine-specific knobs in `engine_hints`.
+The prompt must remain useful for arbitrary portraits, objects, landscapes,
+architecture, animals, and abstract compositions. Do not tailor it to the
+current source image or the example above.
+
+## 2. Independent LLM review, one repair maximum
+
+Give another LLM only the candidate prompt, catalog name, and this universal
+review schema. It must quote the exact prompt fragment supporting each dimension.
+It may identify intentional scoped contrast, but `contradictions` must be empty
+before publication. If it fails, revise once and re-review; do not loop.
 
 ```python
-prompt_template = "{subject}, two-color Risograph print, {palette}, coarse halftone grain, slight misregistration, matte recycled paper, flat spot inks, limited tonal range"
-negative_prompt = "photorealistic, gradients, glossy, 3d render, drop shadows, busy background"
-engine_hints = {
-    "midjourney": "--style raw --stylize 200",
-    "recraft": "style: print/risograph",
-    "nano-banana": "emphasize grain + misregistration; keep to 2 spot inks from palette",
-    "replicate": "low cfg, add film grain LoRA if available"
+prompt_review = {
+    "schema_version": "1",
+    "verdict": "pass",
+    "prompt": prompt_template,
+    "reviewer": {"provider": "<provider>", "model": "<different LLM>"},
+    "reference_independent": True,
+    "subject_independent": True,
+    "model_agnostic": True,
+    "style_name_independent": True,
+    "contradictions": [],
+    "intentional_tensions": [],
+    "revision_count": 0,  # 0 or 1
+    "observable_dimensions": {
+        "medium_material": "<exact quote from prompt>",
+        "marks_edges": "<exact quote from prompt>",
+        "tonal_shading": "<exact quote from prompt>",
+        "color_roles": "<exact quote from prompt>",
+        "composition": "<exact quote from prompt>",
+        "signature_details": "<exact quote from prompt>",
+        "exclusions": "<exact quote from prompt>",
+    },
 }
-temper.action('ArtStyles', eid, 'SetPromptTemplate', {
-    'prompt_template': prompt_template,
-    'negative_prompt': negative_prompt,
-    'engine_hints': json.dumps(engine_hints, ensure_ascii=False)
-})
 ```
 
-**Slot recipes** — per UI image-slot subject guidance (keys match the manifest
-`image_slots`: `hero`, `feature-1..3`, `avatar`/`testimonial-avatar-*`,
-`empty-state`, `illustration`, `brand-illustration`, `background`, `footer-bg`).
+This LLM review is the semantic contradiction check. The finalizer performs only
+universal mechanical checks and cross-checks the quoted evidence against the
+actual prompt; there is no story-specific rule list and no SMT encoding.
 
-```python
-slot_recipes = {
-    "hero": "wide establishing scene, generous negative space",
-    "feature": "single concept object, centered, iconographic",
-    "avatar": "portrait bust, friendly, shoulders up",
-    "empty-state": "single small object implying emptiness",
-    "illustration": "single motif, clear silhouette",
-    "background": "loose ambient texture, very low contrast"
-}
-temper.action('ArtStyles', eid, 'SetSlotRecipes', {'slot_recipes': json.dumps(slot_recipes, ensure_ascii=False)})
+## 3. Source and living-artist safety
 
-temper.action('ArtStyles', eid, 'SetGuidance', {'guidance': json.dumps({
-    "do": ["limit to 2-3 spot inks", "let grain show", "embrace misregistration"],
-    "dont": ["smooth gradients", "photoreal detail", "more than 3 inks"]
-}, ensure_ascii=False)})
-```
-
-## ARTIFACT PHASE — reference + proof images (real generation)
-
-Generate **real, on-style images** with the curator's image engine — do NOT ship
-procedural placeholders. Produce one **wide hero** (full-bleed; used as the
-landing's `--hero-image`) plus 3–4 **proof shots** across subjects (portrait,
-landscape, object, pattern) that prove the style transfers. Build each prompt from
-the recipe: `{subject}` per shot + the medium + a representative palette + the
-negative prompt. Write each to PawFS and attach the file ids (hero first in the
-reference list). Only if no image engine is available in the sandbox, fall back to
-the procedural PIL renderer below:
-
-```python
-sandbox.bash("python3 -m pip install --quiet pillow")
-gen_log = sandbox.bash("""python3 - <<'PY'
-import random, math
-from PIL import Image, ImageDraw, ImageFilter
-random.seed(7)
-INKS = [(40,52,84), (196,84,73)]   # two spot inks
-PAPER = (244, 240, 230)
-
-def grain(img, amt=22):
-    px = img.load(); w,h = img.size
-    for _ in range((w*h)//6):
-        x,y = random.randint(0,w-1), random.randint(0,h-1)
-        r,g,b = px[x,y]
-        d = random.randint(-amt, amt)
-        px[x,y] = (max(0,min(255,r+d)), max(0,min(255,g+d)), max(0,min(255,b+d)))
-    return img
-
-def tile(subject, w=512, h=512):
-    img = Image.new("RGB",(w,h),PAPER); d = ImageDraw.Draw(img)
-    if subject=="portrait":
-        d.ellipse([w*.3,h*.25,w*.7,h*.7], fill=INKS[0]); d.ellipse([w*.32,h*.6,w*.68,h*1.1], fill=INKS[1])
-    elif subject=="landscape":
-        d.rectangle([0,h*.6,w,h], fill=INKS[0]); d.ellipse([w*.6,h*.12,w*.85,h*.37], fill=INKS[1])
-    elif subject=="object":
-        d.rectangle([w*.3,h*.3,w*.7,h*.7], fill=INKS[1]); d.ellipse([w*.4,h*.18,w*.6,h*.38], fill=INKS[0])
-    else:  # pattern / reference swatch
-        for gx in range(0,w,46):
-            for gy in range(0,h,46):
-                d.ellipse([gx,gy,gx+30,gy+30], fill=INKS[(gx//46+gy//46)%2])
-    # misregistration: offset one ink channel slightly
-    img = grain(img, 18)
-    return img
-
-for nm in ["ref-1","ref-2","ref-3"]:
-    tile("pattern").save(f"/tmp/{nm}.jpg","JPEG",quality=82)
-for subj in ["portrait","landscape","object","pattern"]:
-    tile(subj).save(f"/tmp/proof-{subj}.jpg","JPEG",quality=82)
-print("art images ok")
-PY""")
-assert 'art images ok' in gen_log, gen_log
-```
-
-Write each file to PawFS, then attach the id lists + manifests. Record the
-producing image engine per manifest item as `model: {model, provider}` — one
-style may (ideally!) carry samples from different image engines, and per-item
-attribution is what lets the catalog display which engine produced which
-sample. Use the real engine name when an image model generated the file; the
-PIL fallback records `procedural-pil`:
-
-```python
-ref_ids, ref_manifest = [], []
-for nm in ["ref-1","ref-2","ref-3"]:
-    b = sandbox.read(f'/tmp/{nm}.jpg', binary=True)
-    r = temper.write(f'/katagami/art-styles/{slug}/{nm}.jpg', b, {'mime_type': 'image/jpeg'})
-    ref_ids.append(r['file_id']); ref_manifest.append({'file_id': r['file_id'], 'role': 'reference', 'aspect': '1:1', 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
-temper.action('ArtStyles', eid, 'AttachReferenceImages', {
-    'reference_image_file_ids': json.dumps(ref_ids),
-    'reference_manifest': json.dumps({'items': ref_manifest}, ensure_ascii=False)
-})
-
-proof_ids, proof_manifest = [], []
-for subj in ["portrait","landscape","object","pattern"]:
-    b = sandbox.read(f'/tmp/proof-{subj}.jpg', binary=True)
-    r = temper.write(f'/katagami/art-styles/{slug}/proof-{subj}.jpg', b, {'mime_type': 'image/jpeg'})
-    proof_ids.append(r['file_id']); proof_manifest.append({'file_id': r['file_id'], 'subject': subj, 'model': {'model': 'procedural-pil', 'provider': 'sandbox'}})
-temper.action('ArtStyles', eid, 'AttachProofShots', {
-    'proof_shots_file_ids': json.dumps(proof_ids),
-    'proof_shots_manifest': json.dumps({'items': proof_manifest}, ensure_ascii=False)
-})
-
-# Thumbnail: reuse the first reference, resized to 600x400
-thumb_log = sandbox.bash("""python3 - <<'PY'
-from PIL import Image
-Image.open('/tmp/ref-1.jpg').resize((600,400)).save('/tmp/art_thumb.jpg','JPEG',quality=80)
-print('thumb ok')
-PY""")
-assert 'thumb ok' in thumb_log, thumb_log
-tb = sandbox.read('/tmp/art_thumb.jpg', binary=True)
-tr = temper.write(f'/katagami/art-styles/{slug}/thumbnail.jpg', tb, {'mime_type': 'image/jpeg'})
-temper.action('ArtStyles', eid, 'AttachThumbnail', {'thumbnail_file_id': tr['file_id']})
-
-temper.action('ArtStyles', eid, 'SetLineage', {'parent_ids': '[]', 'lineage_type': 'original', 'generation_number': '0'})
-```
-
-## Credits + Model Provenance (publish requirements)
-
-The `Publish` guard requires `has_credits` and `has_model_provenance` (ARN-148).
-Credit ALL influences — an LLM-produced style is an aggregate of many hands; credit
-the movements, studios, or traditions it descends from, never a living artist's
-signature. Record which models produced the recipe and the images. The finalizer
-rejects the style if either field is missing or empty.
+The source review is first-class data, not prose buried in notes:
 
 ```python
 credits = [
-    {"name": "Risograph print culture", "kind": "tradition", "note": "duplicator spot-ink aesthetics"},
-    {"name": "Mid-century two-color poster printing", "kind": "movement", "note": "limited-ink discipline"}
+    {
+        "name": "European relief print tradition",
+        "kind": "tradition",
+        "note": "carved contour, unprinted highlights, and pressure variation",
+    }
 ]
-temper.action('ArtStyles', eid, 'SetCredits', {'credits': json.dumps(credits, ensure_ascii=False)})
-
-model_provenance = {
-    "style": {"model": "<the model authoring this recipe>"},
-    "source": {"model": "<the LLM that sourced/identified the tradition>"},
-    # Default/fallback engine only — when samples come from multiple engines
-    # (welcome, not an error), the per-image truth lives in the manifest items.
-    "images": {"model": "<image engine or 'procedural-pil'>", "provider": "<provider or 'sandbox'>", "tool": "<tool used>"}
+source_basis = {
+    "schema_version": "1",
+    "verdict": "pass",
+    "reviewer": {"provider": "<provider>", "model": "<review model>"},
+    "all_named_people_checked": True,
+    "sources": [
+        {
+            "name": "European relief print tradition",
+            "kind": "tradition",
+            "evidence_url": "https://<authoritative-source>",
+        }
+    ],
 }
-temper.action('ArtStyles', eid, 'SetModelProvenance', {'model_provenance': json.dumps(model_provenance, ensure_ascii=False)})
 ```
 
-## Final Tool Call
+Allowed `source_basis.sources[].kind` values are `tradition`, `movement`,
+`public_domain_artist`, `licensed_artist`, `licensed_source`, and
+`original_synthesis`.
+
+- `public_domain_artist` requires `death_year`, `public_domain_basis`, and
+  `evidence_url`.
+- `licensed_artist` / `licensed_source` requires `license_url` or `permission`.
+- Every credit must have a matching source-basis entry.
+- Every artist credit must be public-domain or licensed.
+- Do not name an artist in the operative prompt, even when public-domain; encode
+  the observable technique.
+
+## 4. Cross-model behavioral proof
+
+Text review cannot prove image behavior. Test the exact prompt on at least two
+distinct edit-capable image models. For each model:
+
+- use at least three unrelated subjects;
+- use source images from at least three media across the matrix (for example:
+  photograph, watercolor/painting, line drawing, collage, or digital/3D);
+- use the source only for content/composition;
+- provide no style reference;
+- do not add model-specific aesthetic wording;
+- preserve the exact prompt string in every case;
+- record a reproducible seed or request id.
+
+Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
+Every dimension must score at least 1, every case average at least 1.5, and each
+model average at least 1.5. A strong model cannot hide a weak model.
 
 ```python
-temper.action('CurationJobs', job_id, 'CompleteArtStyleSynthesis', {
-    'art_style_ids': json.dumps(created_ids),
-    'output': json.dumps({'art_style_ids': created_ids}, ensure_ascii=False)
+portability_report = {
+    "schema_version": "1",
+    "verdict": "pass",
+    "prompt": prompt_template,
+    "blind_evaluation": True,
+    "evaluator": {"provider": "<provider>", "model": "<vision model, not an image producer>"},
+    "models": [
+        {
+            "provider": "<image provider>",
+            "model": "<image model>",
+            "cases": [
+                {
+                    "file_id": "<proof File id>",
+                    "subject": "<content, not a style description>",
+                    "source_medium": "photograph",
+                    "mode": "image_edit",
+                    "seed": "<seed or request id>",
+                    "prompt": prompt_template,
+                    "style_reference_used": False,
+                    "scores": {
+                        "medium_material": 2,
+                        "marks_edges": 2,
+                        "tonal_shading": 1,
+                        "color_roles": 2,
+                        "composition": 1,
+                        "signature_details": 2,
+                        "exclusions": 1,
+                    },
+                },
+                # at least two more unrelated cases
+            ],
+        },
+        # at least one more distinct model with its own >=3 cases
+    ],
+}
+```
+
+If any model misses a threshold, the style is not portable. Improve the one
+prompt and rerun the failed model; never add a per-model prompt.
+
+## 5. Write files and submit once
+
+Write every proof image to PawFS. `proof_shots_manifest.items` must mirror the
+proof file ids and record model/provider, subject, source medium, mode, seed, and
+`style_reference_used: false`. A thumbnail may reuse/crop one proof. Optional
+example references use `reference_image_file_ids` and `reference_manifest`; pass
+`[]` and `{"items":[]}` when none exist.
+
+```python
+slot_recipes = {
+    "hero": "wide establishing scene with room for interface copy",
+    "feature": "single concept object with a clear silhouette",
+    "avatar": "portrait bust, shoulders up",
+    "empty-state": "one small object implying absence",
+    "background": "low-information ambient field",
+}
+guidance = {
+    "do": ["keep the treatment legible across unrelated subjects"],
+    "dont": ["add model-specific wording", "depend on a style reference"],
+}
+model_provenance = {
+    "style": {"provider": "<provider>", "model": "<prompt author model>"},
+    "source": {"provider": "<provider>", "model": "<research model>"},
+    "images": [
+        {"provider": "<provider 1>", "model": "<model 1>"},
+        {"provider": "<provider 2>", "model": "<model 2>"},
+    ],
+}
+
+art = temper.create("ArtStyles", {})
+eid = art["entity_id"]
+created_ids = [eid]
+temper.action('ArtStyles', eid, 'SetName', {'name': name, 'slug': slug})
+temper.action("ArtStyles", eid, "SubmitArtStyle", {
+    "name": name,
+    "slug": slug,
+    "medium": medium,
+    "prompt_template": prompt_template,
+    "slot_recipes": json.dumps(slot_recipes, ensure_ascii=False),
+    "guidance": json.dumps(guidance, ensure_ascii=False),
+    "reference_image_file_ids": json.dumps(reference_ids),
+    "reference_manifest": json.dumps({"items": reference_manifest}, ensure_ascii=False),
+    "proof_shots_file_ids": json.dumps(proof_ids),
+    "proof_shots_manifest": json.dumps({"items": proof_manifest}, ensure_ascii=False),
+    "thumbnail_file_id": thumbnail_file_id,
+    "parent_ids": "[]",
+    "lineage_type": "original",
+    "generation_number": "0",
+    "model_provenance": json.dumps(model_provenance, ensure_ascii=False),
+    "credits": json.dumps(credits, ensure_ascii=False),
+    "source_basis": json.dumps(source_basis, ensure_ascii=False),
+    "prompt_review": json.dumps(prompt_review, ensure_ascii=False),
+    "portability_report": json.dumps(portability_report, ensure_ascii=False),
+    "tags": json.dumps(tags, ensure_ascii=False),
+    "direction_id": direction_id,
+    "curator_notes": "One-prompt portability contract v1",
+})
+```
+
+Complete only after reads confirm every field and File is visible:
+
+```python
+temper.action("CurationJobs", job_id, "CompleteArtStyleSynthesis", {
+    "art_style_ids": json.dumps(created_ids),
+    "output": json.dumps({"art_style_ids": created_ids}, ensure_ascii=False),
 })
 temper.done("synthesize_art_style complete")
 ```
 
-## Tooling Rules
+## Tooling rules
 
-- `json` is preloaded; use it without importing. All array/object params via `json.dumps`.
-- `prompt_template` MUST contain the literal substrings `{subject}` and `{palette}`.
-- Do not fire finalizer-owned actions (Verify*, SubmitForReview, MarkQualityPassed,
-  AttachPublishedAssets, Publish).
+- `json` is preloaded; use `json.dumps` for every array/object parameter without importing it.
+- Each session creates one style.
+- Batch/catalog revalidation jobs process at most 10 styles.
+- Procedural placeholders do not count as proof.
+- Missing model access is a visible failed/blocked review, never a silent pass.

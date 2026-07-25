@@ -53,7 +53,6 @@ export async function GET(req: NextRequest) {
         name: art.fields.name ?? "Untitled",
         medium: art.fields.medium ?? "",
         promptTemplate: art.fields.prompt_template ?? "",
-        negativePrompt: art.fields.negative_prompt,
         slotRecipes: (parseJson<Record<string, string>>(art.fields.slot_recipes) ?? {}) as Record<string, string>,
         referenceUrls: (parseJson<string[]>(art.fields.reference_image_file_ids) ?? []).map(getFileUrl),
       },

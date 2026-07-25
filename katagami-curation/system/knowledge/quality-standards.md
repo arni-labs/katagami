@@ -51,3 +51,18 @@ deeply empty specs should fail with a concrete error.
   requires repair.
 - Never archive a language from `quality_review`; archive remains an owner
   signal.
+
+## ArtStyle Publication Gates
+
+- Store one paste-ready, reference-independent aesthetic prompt. Subject and
+  palette are consumer facts; no model receives different aesthetic facts.
+- Independent LLM review must quote prompt evidence for all seven observable
+  dimensions and resolve contradictions in at most one revision.
+- `source_basis` must qualify every credit. A living person requires explicit
+  license/permission; attribution alone never passes.
+- Behavioral proof uses the exact prompt, no style references, at least two
+  edit-capable image models, at least three cases per model, and at least three
+  source media across the matrix.
+- Score models separately: every dimension ≥1/2 and every case/model average
+  ≥1.5/2. Missing provider access is a visible failure, not an exemption.
+- Optional reference images remain gallery examples and never satisfy proof.

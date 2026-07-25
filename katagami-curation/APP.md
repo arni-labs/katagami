@@ -18,7 +18,7 @@ declared as Temper reactions.
 - `source_search` — Research design movements and index compact authoritative source metadata
 - `synthesize` — Create DesignLanguage specs with embodiments and first-class shadcn/ui component artifacts
 - `synthesize_palette` — Create one PaletteSystem lane with signature colors, proof scenes, portable tokens, usage guidance, thumbnail evidence, and deterministic finalizer checks
-- `synthesize_art_style` — Create one ArtStyle lane with subject/palette prompt holes, negative prompts, engine hints, slot recipes, guidance, and preview evidence
+- `synthesize_art_style` — Create one ArtStyle lane with a paste-ready model-agnostic aesthetic prompt, optional examples, source/rights review, and reference-free proof across multiple image models and source media
 - `quality_review` — Validate DESIGN.md, derive shadcn/ui export, author/verify shadcn/ui component recipes and preview shots, fix embodiment fidelity against the spec, then publish
 - `organize_taxonomy` — Taxonomy maintenance and cross-referencing
 - `regenerate_embodiment` — Rebuild embodiment HTML for an existing language

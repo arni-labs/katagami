@@ -69,6 +69,26 @@ function asJsonString(v: unknown): string {
   return typeof v === "string" ? v : JSON.stringify(v);
 }
 
+/** Evidence is authored before upload, so portability cases may identify a
+ * proof by its source URL. Replace those exact strings with the governed File
+ * ids returned by ingestImage; aesthetic prompt text is never rewritten. */
+function remapUploadedFileReferences(
+  value: unknown,
+  fileIdsByUrl: ReadonlyMap<string, string>,
+): unknown {
+  if (typeof value === "string") return fileIdsByUrl.get(value) ?? value;
+  if (Array.isArray(value))
+    return value.map((item) => remapUploadedFileReferences(item, fileIdsByUrl));
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        remapUploadedFileReferences(item, fileIdsByUrl),
+      ]),
+    );
+  return value;
+}
+
 function summarize(row: EntityRow) {
   const f = row.fields ?? {};
   return {
@@ -292,25 +312,68 @@ export function buildServer(auth: AuthInfo): McpServer {
     {
       title: "Submit an art style",
       description:
-        "Author a complete art style and submit it for curator review. Images are fetched from https URLs and stored server-side. Lands UnderReview — publishing is the curator's call.",
+        "Author a complete art-style Draft using one portable aesthetic prompt plus structured source, prompt-review, and cross-model proof evidence. Images are fetched from https URLs and stored server-side. A curator finalizer independently verifies and advances the Draft.",
       inputSchema: {
         entity_id: z.string().optional().describe("Existing draft (e.g. from remix); omit to create"),
         name: z.string(),
         slug: z.string().regex(/^[a-z0-9-]+$/),
         medium: z.string().describe("Short medium noun: illustration | photography | painting | print | 3d | collage | mixed"),
-        prompt_template: z.string().describe("Must contain {subject} and {palette} slots"),
-        negative_prompt: z.string().optional(),
-        engine_hints: z.record(z.string(), z.unknown()).optional(),
+        prompt_template: z
+          .string()
+          .min(1)
+          .describe(
+            "One paste-ready prompt made only of observable aesthetic facts and inline exclusions; no placeholders, catalog name, artist imitation, reference dependency, or model-specific variants",
+          ),
         slot_recipes: z.record(z.string(), z.unknown()).describe("Per-slot prompt recipes"),
         guidance: z.string().optional(),
-        reference_images: z.array(imageInput).min(1).max(8),
-        proof_shots: z.array(imageInput).optional(),
+        reference_images: z
+          .array(imageInput)
+          .max(8)
+          .optional()
+          .describe("Optional examples only; never used as style references"),
+        proof_shots: z
+          .array(imageInput)
+          .min(6)
+          .max(10)
+          .describe("At least two image models × three unrelated edit cases"),
         thumbnail_url: z.string().describe("https URL; 600x400-ish JPEG of the style"),
+        source_basis: z
+          .record(z.string(), z.unknown())
+          .describe("Schema-v1 source and rights review"),
+        prompt_review: z
+          .record(z.string(), z.unknown())
+          .describe("Schema-v1 independent semantic review of this exact prompt"),
+        portability_report: z
+          .record(z.string(), z.unknown())
+          .describe(
+            "Schema-v1 blind cross-model scores. A case file_id may be the corresponding proof image URL; the server replaces it with the uploaded File id.",
+          ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
         curator_notes: z.string().optional(),
         ...lineageInput,
-        ...provenanceInput,
+        model_provenance: z.object({
+          style: z.object({ model: z.string(), provider: z.string() }),
+          source: z.object({ model: z.string(), provider: z.string() }),
+          images: z
+            .object({
+              model: z.string(),
+              provider: z.string(),
+              tool: z.string().optional(),
+            })
+            .passthrough(),
+        }),
+        credits: z
+          .array(
+            z
+              .object({
+                name: z.string(),
+                kind: z.string(),
+                note: z.string().optional(),
+              })
+              .passthrough(),
+          )
+          .min(1),
       },
     },
     async (a) => {
@@ -319,13 +382,19 @@ export function buildServer(auth: AuthInfo): McpServer {
         return fail(`Draft '${a.entity_id}' does not exist.`);
       const entityId = a.entity_id ?? (await createEntity(id, set));
 
+      const fileIdsByUrl = new Map<string, string>();
       const refIds: string[] = [];
-      for (const [i, img] of a.reference_images.entries()) {
-        refIds.push(await ingestImage(id, img.url, `${a.slug}-ref-${i + 1}`));
+      const referenceImages = a.reference_images ?? [];
+      for (const [i, img] of referenceImages.entries()) {
+        const fileId = await ingestImage(id, img.url, `${a.slug}-ref-${i + 1}`);
+        refIds.push(fileId);
+        fileIdsByUrl.set(img.url, fileId);
       }
       const proofIds: string[] = [];
-      for (const [i, img] of (a.proof_shots ?? []).entries()) {
-        proofIds.push(await ingestImage(id, img.url, `${a.slug}-proof-${i + 1}`));
+      for (const [i, img] of a.proof_shots.entries()) {
+        const fileId = await ingestImage(id, img.url, `${a.slug}-proof-${i + 1}`);
+        proofIds.push(fileId);
+        fileIdsByUrl.set(img.url, fileId);
       }
       const thumbId = await ingestImage(id, a.thumbnail_url, `${a.slug}-thumb`);
 
@@ -334,34 +403,46 @@ export function buildServer(auth: AuthInfo): McpServer {
         slug: a.slug,
         medium: a.medium,
         prompt_template: a.prompt_template,
-        negative_prompt: a.negative_prompt ?? "",
-        engine_hints: asJsonString(a.engine_hints ?? {}),
         slot_recipes: asJsonString(a.slot_recipes),
         guidance: a.guidance ?? "",
         reference_image_file_ids: refIds,
         reference_manifest: asJsonString(
-          a.reference_images.map(({ url: _url, ...meta }) => meta),
+          referenceImages.map(({ url: _url, ...meta }, index) => ({
+            file_id: refIds[index],
+            ...meta,
+          })),
         ),
         proof_shots_file_ids: proofIds,
-        proof_shots_manifest: asJsonString((a.proof_shots ?? []).map(({ url: _url, ...meta }) => meta)),
+        proof_shots_manifest: asJsonString(
+          a.proof_shots.map(({ url: _url, ...meta }, index) => ({
+            file_id: proofIds[index],
+            ...meta,
+          })),
+        ),
         thumbnail_file_id: thumbId,
         parent_ids: a.parent_ids ?? [],
         lineage_type: a.lineage_type ?? (a.parent_ids?.length ? "remix" : "original"),
         generation_number: a.generation_number ?? (a.parent_ids?.length ? 1 : 0),
-        model_provenance: asJsonString(a.model_provenance ?? {}),
-        credits: asJsonString(a.credits ?? {}),
+        model_provenance: asJsonString(a.model_provenance),
+        credits: asJsonString(a.credits),
+        source_basis: asJsonString(a.source_basis),
+        prompt_review: asJsonString(a.prompt_review),
+        portability_report: asJsonString(
+          remapUploadedFileReferences(a.portability_report, fileIdsByUrl),
+        ),
         tags: a.tags ?? [],
         direction_id: a.direction_id ?? "",
         curator_notes: a.curator_notes ?? "",
       });
       await setCreator(id, set, entityId);
-      await action(id, set, entityId, "SubmitForReview", {});
       return ok({
         entity_id: entityId,
-        status: "UnderReview",
+        status: "Draft",
         attributed_to: id.email,
         url: galleryUrl("art_style", entityId),
         uploaded_files: { reference_images: refIds, proof_shots: proofIds, thumbnail: thumbId },
+        next:
+          "The curator finalizer must independently verify the exact prompt, rights basis, and proof matrix before advancing this Draft.",
       });
     },
   );
