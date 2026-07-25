@@ -3,10 +3,10 @@ description = "Agent work layer for katagami — CurationJob queue, curator sess
 version = "0.1.0"
 startup_install = "core"
 dependencies = [
-  "temperpaw/paw-fs@bff862b415505f5a563998265a2f6ac29472f899",
+  "temperpaw/paw-fs@b34556cefbff8d0c81de1ef8fb71ccf2300ffec9",
   "temperpaw/paw-agent@81d8beb78923dc22aeda850828f510f3c6eab510",
   "temperpaw/paw-research@910d01612b2632362fb5f537c4357a5fb6c7bcdd",
-  "katagami/katagami-commons@ad863ed91371f24c2283e3f1a7ec302b5f3815fe",
+  "katagami/katagami-commons@7c158eef96be6a326ca9c83b7908ee4975a8b4c7",
 ]
 
 # These declarations are REQUIRED — the installer only uploads WASM

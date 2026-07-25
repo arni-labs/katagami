@@ -7,16 +7,20 @@ COMMONS = Path(__file__).resolve().parents[2] / "katagami-commons"
 FINALIZER_SRC = (
     ROOT / "wasm" / "finalize_spawned_session" / "src" / "lib.rs"
 ).read_text()
+FINALIZER_WASM = (
+    ROOT / "wasm" / "finalize_spawned_session" / "finalize_spawned_session.wasm"
+).read_bytes()
 ART_SKILL = (
     ROOT / "agents" / "curator" / "skills" / "synthesize-art-style" / "SKILL.md"
 ).read_text()
+ART_POLICY = (COMMONS / "policies" / "art_style.cedar").read_text()
+MCP_TOOLS = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "tools.ts").read_text()
 
 
 class LaneDeepVerificationContractTests(unittest.TestCase):
-    """ARN-148 / RFC-0002 §7: art styles and palettes never publish on a rubber
-    stamp. The finalizer must verify artifact evidence (image bodies, prompt
-    holes, manifests, credits, palette color data) before any MarkQualityPassed,
-    and the ArtStyle Publish guard must require credits + model provenance."""
+    """Art styles and palettes never publish on a rubber stamp. ArtStyle
+    publication requires one portable prompt plus prompt/source/behavioral
+    evidence, and the Rust finalizer must verify it before quality is marked."""
 
     def setUp(self):
         self.art = tomllib.loads((COMMONS / "specs" / "art_style.ioa.toml").read_text())
@@ -27,11 +31,17 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     # --- spec: credits + provenance are publish requirements ---
 
-    def test_art_style_publish_requires_credits_and_model_provenance(self):
+    def test_art_style_publish_requires_provenance_and_review_attestations(self):
         actions = self._by_name(self.art, "action")
         publish = actions["Publish"]["guard"]
-        self.assertIn({"type": "is_true", "var": "has_credits"}, publish)
-        self.assertIn({"type": "is_true", "var": "has_model_provenance"}, publish)
+        for var in [
+            "has_credits",
+            "has_model_provenance",
+            "has_source_basis_review",
+            "has_prompt_review",
+            "has_portability_evidence",
+        ]:
+            self.assertIn({"type": "is_true", "var": var}, publish)
 
     def test_submit_art_style_sets_credit_guard_vars(self):
         actions = self._by_name(self.art, "action")
@@ -61,21 +71,141 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     def test_finalizer_verifies_art_style_evidence(self):
         for marker in [
-            "fn verify_prompt_template_holes",
+            "art_style_review::verify_portable_prompt",
+            "art_style_review::verify_source_basis",
+            "art_style_review::verify_prompt_review",
+            "art_style_review::verify_portability_report",
+            '"AttachArtStyleReview"',
             'require_lane_json_array(id, "ArtStyle", &lane_fields, "credits")',
             'require_lane_json_object(id, "ArtStyle", &lane_fields, "model_provenance")',
             'require_lane_json_object(id, "ArtStyle", &lane_fields, "slot_recipes")',
             '"reference_manifest"',
             '"proof_shots_manifest"',
             "fn verify_lane_image_file",
+            "fn read_lane_image_prefix",
+            "temper_wasm_sdk::http_stream::streaming_call",
+            "IMAGE_SNIFF_BYTES",
             "fn lane_payload_plausible_image",
+            "fn lane_payload_has_supported_raster_magic",
             "fn verify_lane_manifest_files",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
 
-    def test_finalizer_checks_template_holes(self):
-        self.assertIn('"{subject}"', FINALIZER_SRC)
-        self.assertIn('"{palette}"', FINALIZER_SRC)
+        image_verifier = FINALIZER_SRC[
+            FINALIZER_SRC.index("fn verify_lane_image_file") :
+            FINALIZER_SRC.index("fn read_lane_image_prefix")
+        ]
+        self.assertIn("read_lane_image_prefix", image_verifier)
+        self.assertNotIn("read_lane_file_value(", image_verifier)
+
+    def test_prompt_is_one_paste_ready_model_agnostic_field(self):
+        actions = self._by_name(self.art, "action")
+        self.assertEqual(actions["SetPromptTemplate"]["params"], ["prompt_template"])
+        submit_params = actions["SubmitArtStyle"]["params"]
+        self.assertNotIn("negative_prompt", submit_params)
+        self.assertNotIn("engine_hints", submit_params)
+        self.assertIn("prompt_review", submit_params)
+        self.assertIn("portability_report", submit_params)
+
+    def test_committed_wasm_imports_the_bounded_streaming_host_abi(self):
+        # The live local E2E executes this committed module. These binary-level
+        # assertions additionally keep CI from accepting a stale WASM artifact
+        # rebuilt before the streaming verifier was introduced.
+        for symbol in [
+            b"host_http_stream_begin_outbound",
+            b"host_http_stream_response_head",
+            b"host_http_stream_read",
+            b"host_http_stream_close",
+        ]:
+            self.assertIn(symbol, FINALIZER_WASM)
+
+    def test_mcp_uses_the_same_prompt_first_contract(self):
+        submit = MCP_TOOLS[MCP_TOOLS.index('"submit_art_style"') :]
+        submit = submit[: submit.index('"submit_palette_system"')]
+        self.assertNotIn("negative_prompt", submit)
+        self.assertNotIn("engine_hints", submit)
+        self.assertIn("source_basis", submit)
+        self.assertIn("prompt_review", submit)
+        self.assertIn("portability_report", submit)
+        self.assertIn(".min(6)", submit)
+        self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
+
+    def test_reference_images_are_optional_but_proof_is_required(self):
+        actions = self._by_name(self.art, "action")
+        for action_name in ["SubmitForReview", "Publish"]:
+            guard = actions[action_name]["guard"]
+            self.assertNotIn(
+                {"type": "is_true", "var": "has_reference_images"}, guard
+            )
+            self.assertIn({"type": "is_true", "var": "has_proof_shots"}, guard)
+
+    def test_evidence_inputs_invalidate_the_attestations_they_can_change(self):
+        actions = self._by_name(self.art, "action")
+        expected = {
+            "SubmitArtStyle": [
+                "has_source_basis_review",
+                "has_prompt_review",
+                "has_portability_evidence",
+            ],
+            "AttachReferenceImages": ["has_source_basis_review"],
+            "AttachProofShots": [
+                "has_source_basis_review",
+                "has_portability_evidence",
+            ],
+            "SetModelProvenance": [
+                "has_prompt_review",
+                "has_portability_evidence",
+            ],
+            "SetReviewEvidence": [
+                "has_source_basis_review",
+                "has_prompt_review",
+                "has_portability_evidence",
+            ],
+        }
+        for action_name, vars_ in expected.items():
+            effects = actions[action_name]["effect"]
+            for var in vars_:
+                self.assertIn(
+                    {"type": "set_bool", "var": var, "value": "false"},
+                    effects,
+                    f"{action_name} must invalidate {var}",
+                )
+        self.assertEqual(
+            actions["SetModelProvenance"]["from"], ["Draft", "UnderReview"]
+        )
+
+    def test_finalizer_callbacks_are_dispatchable_and_system_only(self):
+        actions = self._by_name(self.art, "action")
+        service_actions = [
+            "AttachArtStyleReview",
+            "AttachPublishedAssets",
+            "SubmitForReview",
+            "MarkQualityPassed",
+            "Publish",
+            "AttachComputedFacets",
+        ]
+        for action_name in service_actions:
+            self.assertEqual(
+                actions[action_name]["kind"],
+                "input",
+                f"{action_name} must be reachable by the WASM finalizer over OData",
+            )
+            self.assertIn(
+                f'Action::"{action_name}"',
+                ART_POLICY,
+                f"{action_name} must remain denied to contributor principals",
+            )
+        self.assertIn('principal != Agent::"system"', ART_POLICY)
+        system_only = ART_POLICY[
+            ART_POLICY.index("// The finalizer calls these OData actions")
+            : ART_POLICY.index("// Contributor boundary")
+        ]
+        for action_name in service_actions:
+            self.assertIn(
+                f'Action::"{action_name}"',
+                system_only,
+                f"{action_name} must be denied to every non-system principal",
+            )
 
     def test_finalizer_verifies_palette_evidence(self):
         for marker in [
@@ -126,8 +256,13 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
     # --- skill: pipeline styles set credits + provenance ---
 
     def test_synthesize_art_style_skill_sets_credits_and_provenance(self):
-        self.assertIn("SetCredits", ART_SKILL)
-        self.assertIn("SetModelProvenance", ART_SKILL)
+        self.assertIn('"credits": json.dumps(credits', ART_SKILL)
+        self.assertIn('"model_provenance": json.dumps(model_provenance', ART_SKILL)
+        self.assertIn("source_basis", ART_SKILL)
+        self.assertIn("prompt_review", ART_SKILL)
+        self.assertIn("portability_report", ART_SKILL)
+        self.assertIn("same aesthetic prompt", ART_SKILL)
+        self.assertNotIn("MUST contain the literal substrings `{subject}`", ART_SKILL)
 
 
 if __name__ == "__main__":

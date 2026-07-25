@@ -5,15 +5,17 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  real image Files (PUT $value) -> ArtStyle (SubmitArtStyle)
+  real image Files (PUT $value) -> ArtStyle (SubmitArtStyle, no references)
   -> CurationJob Start -> CompleteArtStyleSynthesis (fires the finalizer WASM)
-  -> assert ArtStyle Published (happy) / job Failed + style unpublished (fake image)
+  -> assert ArtStyle Published (happy) / job Failed + style unpublished
+     (HTML posing as one portability proof image)
 
   plus the PaletteSystem happy/reject pair.
 """
 import io
 import os
 import json
+import random
 import sys
 import time
 import urllib.error
@@ -64,6 +66,19 @@ def entity_id_of(body):
         if isinstance(body, dict) and body.get(key):
             return body[key]
     raise AssertionError(f"no id in {json.dumps(body)[:300]}")
+
+
+def create_entity(set_name, payload=None, timeout=90):
+    """Wait out Temper's background formal-verification gate on fresh boots."""
+    deadline = time.time() + timeout
+    while True:
+        st, body = req("POST", f"/tdata/{set_name}", payload or {})
+        if 200 <= st < 300:
+            return entity_id_of(body)
+        code = body.get("error", {}).get("code") if isinstance(body, dict) else ""
+        if st != 423 or code != "VerificationRequired" or time.time() >= deadline:
+            raise AssertionError((set_name, st, body))
+        time.sleep(1)
 
 
 def get_entity(set_name, eid):
@@ -141,37 +156,143 @@ def jpeg_bytes():
     return buf.getvalue()
 
 
-def run_art_style_case(label, ref_payloads, expect_published):
-    """ref_payloads: list of (bytes, mime) used as reference images."""
-    jpg = jpeg_bytes()
-    ref_ids = [make_file(f"{label}-ref-{i}.jpg", p, m) for i, (p, m) in enumerate(ref_payloads)]
-    proof_ids = [make_file(f"{label}-proof-{s}.jpg", jpg, "image/jpeg") for s in ("portrait", "landscape", "object", "pattern")]
-    thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
+def sizable_png_bytes():
+    """A deterministic, megabyte-scale proof that exercises the streaming
+    verifier while remaining below disposable servers' ordinary upload cap."""
+    from PIL import Image
 
-    st, body = req("POST", "/tdata/ArtStyles", {})
-    assert 200 <= st < 300, (st, body)
-    art_id = entity_id_of(body)
+    width = height = 720
+    pixels = random.Random(148).randbytes(width * height * 3)
+    img = Image.frombytes("RGB", (width, height), pixels)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    payload = buf.getvalue()
+    assert 1_000_000 < len(payload) < 1_900_000, len(payload)
+    return payload
+
+
+def run_art_style_case(label, expect_published, fake_proof_index=None):
+    """Exercise reference-free publication, optionally corrupting one proof image."""
+    jpg = jpeg_bytes()
+    sizable_png = sizable_png_bytes()
+    fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
+    prompt = (
+        "Render the supplied subject as a two-ink relief print on fibrous matte paper. "
+        "Use blunt carved contours and visibly broken edges. Build volume with sparse "
+        "directional hatching and broad unprinted highlights. Reserve deep indigo for "
+        "structural masses and vermilion for small focal accents. Keep a centered, "
+        "compressed composition with generous bare paper. Add slight ink spread and "
+        "irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, "
+        "and smooth vector geometry."
+    )
+    dimensions = {
+        "medium_material": "two-ink relief print on fibrous matte paper",
+        "marks_edges": "blunt carved contours and visibly broken edges",
+        "tonal_shading": "sparse directional hatching and broad unprinted highlights",
+        "color_roles": "deep indigo for structural masses and vermilion for small focal accents",
+        "composition": "centered, compressed composition with generous bare paper",
+        "signature_details": "slight ink spread and irregular hand pressure",
+        "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
+    }
+    proof_specs = [
+        ("fixture-a", "portrait", "watercolor"),
+        ("fixture-a", "landscape", "photograph"),
+        ("fixture-a", "object", "line drawing"),
+        ("fixture-b", "portrait", "watercolor"),
+        ("fixture-b", "landscape", "photograph"),
+        ("fixture-b", "object", "line drawing"),
+    ]
+    proof_ids = []
+    for index, (model, subject, _) in enumerate(proof_specs):
+        if index == fake_proof_index:
+            payload, extension, mime = fake_html, "jpg", "image/jpeg"
+        elif index == 0:
+            payload, extension, mime = sizable_png, "png", "image/png"
+        else:
+            payload, extension, mime = jpg, "jpg", "image/jpeg"
+        proof_ids.append(
+            make_file(
+                f"{label}-proof-{model}-{subject}.{extension}",
+                payload,
+                mime,
+            )
+        )
+    thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
+    cases_by_model = {}
+    for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs):
+        cases_by_model.setdefault(model, []).append({
+            "file_id": file_id,
+            "subject": subject,
+            "source_medium": source_medium,
+            "mode": "image_edit",
+            "seed": f"{label}-{model}-{subject}",
+            "prompt": prompt,
+            "style_reference_used": False,
+            "scores": {dimension: 2 for dimension in dimensions},
+        })
+    portability_report = {
+        "schema_version": "1",
+        "verdict": "pass",
+        "prompt": prompt,
+        "blind_evaluation": True,
+        "evaluator": {"provider": "local", "model": "fixture-vision-reviewer"},
+        "models": [
+            {"provider": "local", "model": model, "cases": cases}
+            for model, cases in cases_by_model.items()
+        ],
+    }
+
+    art_id = create_entity("ArtStyles")
     must_act("ArtStyles", art_id, "SubmitArtStyle", {
         "name": f"E2E {label}",
         "slug": f"e2e-{label}",
         "medium": "print",
-        "prompt_template": "{subject}, two-color e2e print, {palette}, coarse grain",
-        "negative_prompt": "photorealistic",
-        "engine_hints": json.dumps({"recraft": "style: print"}),
+        "prompt_template": prompt,
         "slot_recipes": json.dumps({"hero": "wide establishing scene", "avatar": "portrait bust"}),
         "guidance": "e2e guidance",
-        "reference_image_file_ids": ref_ids,
-        "reference_manifest": json.dumps({"items": [{"file_id": i, "role": "reference", "aspect": "1:1"} for i in ref_ids]}),
+        "reference_image_file_ids": [],
+        "reference_manifest": json.dumps({"items": []}),
         "proof_shots_file_ids": proof_ids,
         "proof_shots_manifest": json.dumps({"items": [
-            {"file_id": i, "subject": s} for i, s in zip(proof_ids, ("portrait", "landscape", "object", "pattern"))
+            {
+                "file_id": file_id,
+                "subject": subject,
+                "source_medium": source_medium,
+                "mode": "image_edit",
+                "seed": f"{label}-{model}-{subject}",
+                "style_reference_used": False,
+                "model": {"model": model, "provider": "local"},
+            }
+            for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs)
         ]}),
         "thumbnail_file_id": thumb_id,
         "parent_ids": [],
         "lineage_type": "original",
         "generation_number": "0",
-        "model_provenance": json.dumps({"style": {"model": "e2e"}, "images": {"model": "procedural-pil", "provider": "local", "tool": "PIL"}}),
+        "model_provenance": json.dumps({"style": {"provider": "local", "model": "fixture-author"}, "images": [{"model": model, "provider": "local"} for model in cases_by_model]}),
         "credits": json.dumps([{"name": "E2E tradition", "kind": "tradition", "note": "local run"}]),
+        "source_basis": json.dumps({
+            "schema_version": "1",
+            "verdict": "pass",
+            "reviewer": {"provider": "local", "model": "fixture-reviewer"},
+            "all_named_people_checked": True,
+            "sources": [{"name": "E2E tradition", "kind": "tradition", "evidence_url": "https://example.test/e2e"}],
+        }),
+        "prompt_review": json.dumps({
+            "schema_version": "1",
+            "verdict": "pass",
+            "prompt": prompt,
+            "reviewer": {"provider": "local", "model": "fixture-reviewer"},
+            "reference_independent": True,
+            "subject_independent": True,
+            "model_agnostic": True,
+            "style_name_independent": True,
+            "contradictions": [],
+            "intentional_tensions": [],
+            "revision_count": 0,
+            "observable_dimensions": dimensions,
+        }),
+        "portability_report": json.dumps(portability_report),
         "tags": json.dumps(["e2e"]),
         "direction_id": "",
         "curator_notes": "local e2e",
@@ -179,9 +300,7 @@ def run_art_style_case(label, ref_payloads, expect_published):
 
     wait_fields("ArtStyles", art_id, ["prompt_template", "thumbnail_file_id", "credits"])
 
-    st, body = req("POST", "/tdata/CurationJobs", {"ArtStyleIds": json.dumps([art_id])})
-    assert 200 <= st < 300, (st, body)
-    job_id = entity_id_of(body)
+    job_id = create_entity("CurationJobs", {"ArtStyleIds": json.dumps([art_id])})
     must_act("CurationJobs", job_id, "Configure", {"job_type": "synthesize_art_style", "completion_contract": "typed-v1"})
     must_act("CurationJobs", job_id, "Start", {})
     st, body = act("CurationJobs", job_id, "CompleteArtStyleSynthesis", {
@@ -201,7 +320,7 @@ def run_art_style_case(label, ref_payloads, expect_published):
         report(f"art_style/{label}: style Published", art_status == "Published", f"style={art_status}")
     else:
         report(f"art_style/{label}: job Failed", job_status == "Failed", f"job={job_status}")
-        report(f"art_style/{label}: rejection names the fake image", "lane_file_not_image" in err, f"err={err}")
+        report(f"art_style/{label}: rejection names the fake proof image", "lane_file_not_image" in err, f"err={err}")
         report(f"art_style/{label}: style NOT published", art_status != "Published", f"style={art_status}")
     return job_id, art_id
 
@@ -211,9 +330,7 @@ def run_palette_case(label, tokens_payload, expect_published):
     tokens_id = make_file(f"{label}-tokens.css", tokens_payload.encode(), "text/plain")
     thumb_id = make_file(f"{label}-pthumb.jpg", jpg, "image/jpeg")
 
-    st, body = req("POST", "/tdata/PaletteSystems", {})
-    assert 200 <= st < 300, (st, body)
-    pal_id = entity_id_of(body)
+    pal_id = create_entity("PaletteSystems")
     flat = {"bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16", "muted": "#6b655a",
             "accent": "#7c6f57", "error": "#b3402f", "warning": "#b3862f", "success": "#3f7a4e"}
     must_act("PaletteSystems", pal_id, "SubmitPaletteSystem", {
@@ -237,8 +354,7 @@ def run_palette_case(label, tokens_payload, expect_published):
 
     wait_fields("PaletteSystems", pal_id, ["tokens_export_file_id", "thumbnail_file_id", "signature"])
 
-    st, body = req("POST", "/tdata/CurationJobs", {"PaletteSystemIds": json.dumps([pal_id])})
-    job_id = entity_id_of(body)
+    job_id = create_entity("CurationJobs", {"PaletteSystemIds": json.dumps([pal_id])})
     must_act("CurationJobs", job_id, "Configure", {"job_type": "synthesize_palette", "completion_contract": "typed-v1"})
     must_act("CurationJobs", job_id, "Start", {})
     st, body = act("CurationJobs", job_id, "CompletePaletteSynthesis", {
@@ -262,21 +378,38 @@ def run_palette_case(label, tokens_payload, expect_published):
         report(f"palette/{label}: palette NOT published", pal_status != "Published", f"palette={pal_status}")
 
 
+def verify_non_system_cannot_forge_attestation(art_id):
+    st, body = act("ArtStyles", art_id, "AttachArtStyleReview", {
+        "source_basis": json.dumps({"verdict": "forged"}),
+        "prompt_review": json.dumps({"verdict": "forged"}),
+        "portability_report": json.dumps({"verdict": "forged"}),
+    })
+    detail = json.dumps(body)[:300]
+    report(
+        "art_style/security: non-system principal cannot forge review attestation",
+        st in (401, 403),
+        f"http={st} body={detail}",
+    )
+
+
 def main():
     wasm_dir = os.path.join(os.path.dirname(__file__), "..", "..", "wasm")
     print("== stage 0: wasm modules + secrets ==")
     upload_wasm("blob_adapter", os.environ.get("PAW_FS_BLOB_ADAPTER", os.path.expanduser("~/Development/temperpaw/os-apps/paw-fs/wasm/blob_adapter.wasm")))
     upload_wasm("finalize_spawned_session", f"{wasm_dir}/finalize_spawned_session/finalize_spawned_session.wasm")
     set_secret("temper_api_url", BASE)
+    set_secret("published_blob_endpoint", "http://127.0.0.1:3910")
+    set_secret("published_blob_bucket", "katagami-e2e")
+    set_secret("published_blob_public_base_url", "http://127.0.0.1:3910/public")
 
-    jpg = jpeg_bytes()
-    fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
+    print("== stage 1: art style happy path (no reference images) ==")
+    _, good_art_id = run_art_style_case("good", expect_published=True)
 
-    print("== stage 1: art style happy path (real JPEG references) ==")
-    run_art_style_case("good", [(jpg, "image/jpeg")] * 3, expect_published=True)
+    print("== stage 1b: forged attestation is denied to non-system principals ==")
+    verify_non_system_cannot_forge_attestation(good_art_id)
 
-    print("== stage 2: art style rejection (HTML posing as a reference image) ==")
-    run_art_style_case("fake", [(jpg, "image/jpeg"), (fake_html, "image/jpeg")], expect_published=False)
+    print("== stage 2: art style rejection (HTML posing as a proof image) ==")
+    run_art_style_case("fake", expect_published=False, fake_proof_index=1)
 
     print("== stage 3: palette happy path ==")
     good_tokens = "/* E2E — Katagami palette tokens */\n:root {\n" + "".join(

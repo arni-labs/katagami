@@ -4,10 +4,12 @@ import tomllib
 
 
 class LaneFileReadyGuardsContractTests(unittest.TestCase):
-    """PR-5: PaletteSystem and ArtStyle publish/review readiness is engine-enforced
-    via cross_entity_state File Ready/Locked guards, replacing the WASM-trusted
-    *_verified copy-booleans, their Verify* actions, and PublishedRequiresVerified*
-    invariants."""
+    """Lane file readiness has one authoritative verifier per artifact shape.
+
+    Singular files use cross_entity_state guards. The ArtStyle portability
+    matrix is verified in WASM because its required six-or-more proof files
+    exceed Temper's bounded cross-entity lookup budget.
+    """
 
     def setUp(self):
         commons = Path(__file__).resolve().parents[2] / "katagami-commons"
@@ -93,23 +95,26 @@ class LaneFileReadyGuardsContractTests(unittest.TestCase):
         for var in ["has_reference_images", "has_proof_shots", "has_thumbnail"]:
             self.assertIn(var, states)
         for inv in [
-            "PublishedRequiresReferenceImages",
             "PublishedRequiresProofShots",
             "PublishedRequiresThumbnail",
         ]:
             self.assertIn(inv, invariants)
+        self.assertNotIn("PublishedRequiresReferenceImages", invariants)
 
-    def test_art_style_publish_gates_on_ready_files_including_list_refs(self):
+    def test_art_style_publish_gates_on_required_ready_files(self):
         actions = self._by_name(self.art, "action")
         submit = actions["SubmitForReview"]["guard"]
         publish = actions["Publish"]["guard"]
-        # reference_image_file_ids and proof_shots_file_ids are LIST File-ref
-        # fields; the resolver resolves the guard per element.
-        self.assertIn(self._file_guard("reference_image_file_ids"), submit)
+        # Reference images are optional examples and cannot be a lifecycle
+        # guard. Proof lists are checked byte-for-byte by the WASM finalizer;
+        # putting a six-file minimum through the bounded cross-entity guard
+        # would exhaust its lookup budget.
+        self.assertNotIn(self._file_guard("proof_shots_file_ids"), submit)
         self.assertIn(self._file_guard("thumbnail_file_id"), submit)
-        self.assertIn(self._file_guard("reference_image_file_ids"), publish)
-        self.assertIn(self._file_guard("proof_shots_file_ids"), publish)
+        self.assertNotIn(self._file_guard("proof_shots_file_ids"), publish)
         self.assertIn(self._file_guard("thumbnail_file_id"), publish)
+        self.assertNotIn(self._file_guard("reference_image_file_ids"), submit)
+        self.assertNotIn(self._file_guard("reference_image_file_ids"), publish)
         for var in [
             "reference_images_verified",
             "proof_shots_verified",
