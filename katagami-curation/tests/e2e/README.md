@@ -10,12 +10,13 @@ typed error and leaves the entity unpublished.
 This is the check the contract tests cannot do: it proves the feature works
 end to end the way production uses it, before anything deploys.
 
-## What it proves (10 assertions)
+## What it proves (14 assertions)
 
 | Case | Expected |
 |---|---|
 | Art style with six real raster portability proofs (including one megabyte-scale PNG) and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
 | Art style with HTML posing as a portability proof image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
+| Art style whose edit matrix contains a `user_supplied` private input | job `Failed` with `art_style_proof_input_not_publishable`, style stays unpublished |
 | Palette with real tokens export + thumbnail | job `Completed`, palette `Published` |
 | Palette with garbage tokens export | job `Failed` with `palette_tokens_export_invalid`, palette stays `Draft` |
 

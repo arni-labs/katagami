@@ -7,6 +7,9 @@ COMMONS = Path(__file__).resolve().parents[2] / "katagami-commons"
 FINALIZER_SRC = (
     ROOT / "wasm" / "finalize_spawned_session" / "src" / "lib.rs"
 ).read_text()
+ART_REVIEW_SRC = (
+    ROOT / "wasm" / "finalize_spawned_session" / "src" / "art_style_review.rs"
+).read_text()
 FINALIZER_WASM = (
     ROOT / "wasm" / "finalize_spawned_session" / "finalize_spawned_session.wasm"
 ).read_bytes()
@@ -138,6 +141,26 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
                 {"type": "is_true", "var": "has_reference_images"}, guard
             )
             self.assertIn({"type": "is_true", "var": "has_proof_shots"}, guard)
+
+    def test_private_validation_inputs_cannot_become_catalog_proofs(self):
+        for marker in [
+            "art_style_proof_input_not_publishable",
+            "publishable_input_source",
+            '"synthetic"',
+            '"public_domain"',
+            '"licensed"',
+            '"katagami_owned"',
+            "art_style_proof_input_clearance_mismatch",
+        ]:
+            self.assertIn(marker, ART_REVIEW_SRC)
+        self.assertIn("private or user-supplied", ART_REVIEW_SRC)
+        self.assertIn("private or user-supplied", ART_SKILL)
+        attach_hint = self._by_name(self.art, "action")["AttachProofShots"]["hint"]
+        self.assertIn("input_source", attach_hint)
+        self.assertIn("user-supplied", attach_hint)
+        self.assertIn("publishableInputSource", MCP_TOOLS)
+        self.assertIn('z.enum(["synthetic", "public_domain", "licensed", "katagami_owned"])', MCP_TOOLS)
+        self.assertIn("artStyleProofInput", MCP_TOOLS)
 
     def test_evidence_inputs_invalidate_the_attestations_they_can_change(self):
         actions = self._by_name(self.art, "action")

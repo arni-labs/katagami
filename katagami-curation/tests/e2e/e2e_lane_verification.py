@@ -171,8 +171,14 @@ def sizable_png_bytes():
     return payload
 
 
-def run_art_style_case(label, expect_published, fake_proof_index=None):
-    """Exercise reference-free publication, optionally corrupting one proof image."""
+def run_art_style_case(
+    label,
+    expect_published,
+    fake_proof_index=None,
+    private_input_index=None,
+    expected_error_code="lane_file_not_image",
+):
+    """Exercise reference-free publication with optional proof/consent failures."""
     jpg = jpeg_bytes()
     sizable_png = sizable_png_bytes()
     fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
@@ -218,8 +224,24 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
             )
         )
     thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
+    def cleared_input(subject, index):
+        source = {
+            "kind": "synthetic",
+            "asset_id": f"{label}-source-{subject}",
+            "rights_evidence": "deterministic local E2E fixture generated for Katagami",
+        }
+        if index == private_input_index:
+            source = {
+                "kind": "user_supplied",
+                "asset_id": f"{label}-private-source-{subject}",
+                "rights_evidence": "no publication permission",
+            }
+        return source
+
     cases_by_model = {}
-    for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs):
+    for index, (file_id, (model, subject, source_medium)) in enumerate(
+        zip(proof_ids, proof_specs)
+    ):
         cases_by_model.setdefault(model, []).append({
             "file_id": file_id,
             "subject": subject,
@@ -228,6 +250,7 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
             "seed": f"{label}-{model}-{subject}",
             "prompt": prompt,
             "style_reference_used": False,
+            "input_source": cleared_input(subject, index),
             "scores": {dimension: 2 for dimension in dimensions},
         })
     portability_report = {
@@ -261,9 +284,12 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
                 "mode": "image_edit",
                 "seed": f"{label}-{model}-{subject}",
                 "style_reference_used": False,
+                "input_source": cleared_input(subject, index),
                 "model": {"model": model, "provider": "local"},
             }
-            for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs)
+            for index, (file_id, (model, subject, source_medium)) in enumerate(
+                zip(proof_ids, proof_specs)
+            )
         ]}),
         "thumbnail_file_id": thumb_id,
         "parent_ids": [],
@@ -320,7 +346,11 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
         report(f"art_style/{label}: style Published", art_status == "Published", f"style={art_status}")
     else:
         report(f"art_style/{label}: job Failed", job_status == "Failed", f"job={job_status}")
-        report(f"art_style/{label}: rejection names the fake proof image", "lane_file_not_image" in err, f"err={err}")
+        report(
+            f"art_style/{label}: rejection names the failing gate",
+            expected_error_code in err,
+            f"err={err}",
+        )
         report(f"art_style/{label}: style NOT published", art_status != "Published", f"style={art_status}")
     return job_id, art_id
 
@@ -411,7 +441,15 @@ def main():
     print("== stage 2: art style rejection (HTML posing as a proof image) ==")
     run_art_style_case("fake", expect_published=False, fake_proof_index=1)
 
-    print("== stage 3: palette happy path ==")
+    print("== stage 3: art style rejection (private input lacks publication clearance) ==")
+    run_art_style_case(
+        "private-input",
+        expect_published=False,
+        private_input_index=0,
+        expected_error_code="art_style_proof_input_not_publishable",
+    )
+
+    print("== stage 4: palette happy path ==")
     good_tokens = "/* E2E — Katagami palette tokens */\n:root {\n" + "".join(
         f"  --ds-{k}: {v};\n" for k, v in {
             "bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16", "muted": "#6b655a",
@@ -420,7 +458,7 @@ def main():
     ) + "}\n/* DTCG */\n" + json.dumps({"color": {"accent": {"$type": "color", "$value": "#7c6f57"}}})
     run_palette_case("good", good_tokens, expect_published=True)
 
-    print("== stage 4: palette rejection (garbage tokens export) ==")
+    print("== stage 5: palette rejection (garbage tokens export) ==")
     run_palette_case("bad", "oops, not a tokens document", expect_published=False)
 
     print()

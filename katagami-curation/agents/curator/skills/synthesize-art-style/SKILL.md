@@ -160,6 +160,19 @@ distinct edit-capable image models. For each model:
 - do not add model-specific aesthetic wording;
 - preserve the exact prompt string in every case;
 - record a reproducible seed or request id.
+- use only publication-cleared edit inputs. Private or user-supplied test images
+  are valid for ephemeral evaluation but can never become catalog proofs.
+
+Every image-edit case must carry the same `input_source` object in both the
+portability report and proof manifest:
+
+- `kind`: one of `synthetic`, `public_domain`, `licensed`, or
+  `katagami_owned`;
+- `asset_id`: a stable source identifier or content fingerprint;
+- `rights_evidence`: the generation record, public-domain basis, license, or
+  ownership record.
+
+The two image models must use the same cleared input asset for each matrix row.
 
 Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
 Every dimension must score at least 1, every case average at least 1.5, and each
@@ -185,6 +198,11 @@ portability_report = {
                     "seed": "<seed or request id>",
                     "prompt": prompt_template,
                     "style_reference_used": False,
+                    "input_source": {
+                        "kind": "synthetic",
+                        "asset_id": "<stable source id or fingerprint>",
+                        "rights_evidence": "<generation/rights record>",
+                    },
                     "scores": {
                         "medium_material": 2,
                         "marks_edges": 2,
@@ -210,9 +228,11 @@ prompt and rerun the failed model; never add a per-model prompt.
 
 Write every proof image to PawFS. `proof_shots_manifest.items` must mirror the
 proof file ids and record model/provider, subject, source medium, mode, seed, and
-`style_reference_used: false`. A thumbnail may reuse/crop one proof. Optional
-example references use `reference_image_file_ids` and `reference_manifest`; pass
-`[]` and `{"items":[]}` when none exist.
+`style_reference_used: false`. For image edits, it must also repeat the exact
+publication-cleared `input_source` object from the portability case. A thumbnail
+may reuse/crop one proof. Optional example references use
+`reference_image_file_ids` and `reference_manifest`; pass `[]` and
+`{"items":[]}` when none exist.
 
 ```python
 slot_recipes = {
@@ -281,4 +301,7 @@ temper.done("synthesize_art_style complete")
 - Each session creates one style.
 - Batch/catalog revalidation jobs process at most 10 styles.
 - Procedural placeholders do not count as proof.
+- Never promote a private or user-supplied validation input into proof shots,
+  thumbnails, references, or published assets. Use a synthetic, public-domain,
+  licensed, or Katagami-owned source with explicit evidence.
 - Missing model access is a visible failed/blocked review, never a silent pass.

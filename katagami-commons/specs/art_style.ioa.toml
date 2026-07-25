@@ -231,7 +231,7 @@ kind = "input"
 from = ["Draft", "UnderReview"]
 effect = [{ type = "set_bool", var = "has_proof_shots", value = "true" }, { type = "set_bool", var = "has_published_assets", value = "false" }, { type = "set_bool", var = "has_source_basis_review", value = "false" }, { type = "set_bool", var = "quality_review_passed", value = "false" }, { type = "set_bool", var = "has_portability_evidence", value = "false" }]
 params = ["proof_shots_file_ids", "proof_shots_manifest"]
-hint = "Attach the proof-shot set demonstrating the recipe across unrelated subjects and source media. Manifest items must record the producing model/provider. The WASM finalizer verifies every proof File is Ready/Locked because the minimum six-file portability matrix exceeds Temper's bounded cross-entity lookup budget."
+hint = "Attach the proof-shot set demonstrating the recipe across unrelated subjects and source media. Manifest items must record the producing model/provider. Every image-edit item must include input_source {kind, asset_id, rights_evidence}; kind is limited to synthetic, public_domain, licensed, or katagami_owned. Private and user-supplied validation inputs can never be public catalog proofs. The WASM finalizer verifies every proof File is Ready/Locked because the minimum six-file portability matrix exceeds Temper's bounded cross-entity lookup budget."
 
 # --- Actions: Thumbnail / Public Assets ---
 

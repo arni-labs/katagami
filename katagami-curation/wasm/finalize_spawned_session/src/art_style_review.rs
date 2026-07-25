@@ -578,6 +578,41 @@ fn score_case(owner_id: &str, scores: &Value) -> Result<f64, VerificationError> 
     Ok(total / DIMENSIONS.len() as f64)
 }
 
+fn publishable_input_source(
+    owner_id: &str,
+    value: &Value,
+    field: &'static str,
+) -> Result<(String, String, String), VerificationError> {
+    let source = value.get("input_source").unwrap_or(&Value::Null);
+    let kind = text(source, "kind");
+    let asset_id = text(source, "asset_id");
+    let rights_evidence = text(source, "rights_evidence");
+    const PUBLISHABLE_KINDS: [&str; 4] = [
+        "synthetic",
+        "public_domain",
+        "licensed",
+        "katagami_owned",
+    ];
+    if !PUBLISHABLE_KINDS.contains(&kind)
+        || asset_id.is_empty()
+        || rights_evidence.is_empty()
+    {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_input_not_publishable",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' image-edit proofs require input_source.kind=synthetic|public_domain|licensed|katagami_owned plus asset_id and rights_evidence; private or user-supplied test inputs can never be catalog proofs"
+            ),
+        ));
+    }
+    Ok((
+        kind.to_string(),
+        asset_id.to_string(),
+        rights_evidence.to_string(),
+    ))
+}
+
 pub(super) fn verify_portability_report(
     owner_id: &str,
     fields: &Value,
@@ -630,11 +665,64 @@ pub(super) fn verify_portability_report(
         })?;
 
     let proof_set: BTreeSet<&str> = proof_ids.iter().map(String::as_str).collect();
+    let proof_manifest = lane_json_value(fields, "proof_shots_manifest").ok_or_else(|| {
+        art_error(
+            owner_id,
+            "art_style_proof_manifest_missing",
+            "proof_shots_manifest",
+            format!("ArtStyle '{owner_id}' has no proof-shot manifest"),
+        )
+    })?;
+    let manifest_items = proof_manifest
+        .get("items")
+        .and_then(Value::as_array)
+        .filter(|items| items.len() == proof_set.len())
+        .ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_proof_manifest_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof-shot manifest must describe every attached proof"
+                ),
+            )
+        })?;
+    let mut manifest_input_sources = HashMap::new();
+    for item in manifest_items {
+        let file_id = text(item, "file_id");
+        let mode = text(item, "mode");
+        if !proof_set.contains(file_id)
+            || manifest_input_sources.contains_key(file_id)
+            || bool_field(item, "style_reference_used")
+            || !matches!(mode, "text_to_image" | "image_edit")
+        {
+            return Err(art_error(
+                owner_id,
+                "art_style_proof_manifest_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof manifest has an absent/duplicate file, invalid mode, or style-reference dependency"
+                ),
+            ));
+        }
+        let clearance = if mode == "image_edit" {
+            Some(publishable_input_source(
+                owner_id,
+                item,
+                "proof_shots_manifest",
+            )?)
+        } else {
+            None
+        };
+        manifest_input_sources.insert(file_id.to_string(), clearance);
+    }
     let mut tested_models = BTreeSet::new();
     let mut source_media = BTreeSet::new();
     let mut used_files = BTreeSet::new();
     let mut edit_models = 0usize;
-    let mut expected_edit_matrix: Option<BTreeSet<(String, String)>> = None;
+    let mut expected_edit_matrix: Option<
+        BTreeSet<(String, String, String, String, String)>,
+    > = None;
     for model in models {
         let model_key = nonempty_model(model).ok_or_else(|| {
             art_error(
@@ -721,8 +809,35 @@ pub(super) fn verify_portability_report(
                         ),
                     ));
                 }
+                let clearance =
+                    publishable_input_source(owner_id, case, "portability_report")?;
+                if manifest_input_sources.get(file_id) != Some(&Some(clearance.clone())) {
+                    return Err(art_error(
+                        owner_id,
+                        "art_style_proof_input_clearance_mismatch",
+                        "portability_report",
+                        format!(
+                            "ArtStyle '{owner_id}' proof '{file_id}' input-source clearance differs between its manifest and portability case"
+                        ),
+                    ));
+                }
                 source_media.insert(medium.clone());
-                edit_matrix.insert((normalized_words(subject), medium));
+                edit_matrix.insert((
+                    normalized_words(subject),
+                    medium,
+                    clearance.0,
+                    clearance.1,
+                    clearance.2,
+                ));
+            } else if manifest_input_sources.get(file_id) != Some(&None) {
+                return Err(art_error(
+                    owner_id,
+                    "art_style_proof_input_clearance_mismatch",
+                    "portability_report",
+                    format!(
+                        "ArtStyle '{owner_id}' proof '{file_id}' mode differs between its manifest and portability case"
+                    ),
+                ));
             }
             let average = score_case(owner_id, case.get("scores").unwrap_or(&Value::Null))?;
             if average < 1.5 {
@@ -808,6 +923,7 @@ mod tests {
             "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry"
         });
         let mut proof_ids = Vec::new();
+        let mut proof_manifest = Vec::new();
         let mut models = Vec::new();
         for (provider, model) in [("fal", "flux-kontext"), ("google", "gemini-image")] {
             let mut cases = Vec::new();
@@ -816,7 +932,21 @@ mod tests {
                 .enumerate()
             {
                 let file_id = format!("{model}-{index}");
+                let input_source = json!({
+                    "kind": "synthetic",
+                    "asset_id": format!("katagami-test-source-{index}"),
+                    "rights_evidence": "generated exclusively for Katagami portability validation"
+                });
                 proof_ids.push(file_id.clone());
+                proof_manifest.push(json!({
+                    "file_id": file_id.clone(),
+                    "subject": format!("subject {index}"),
+                    "source_medium": medium,
+                    "mode": "image_edit",
+                    "seed": format!("{index}"),
+                    "style_reference_used": false,
+                    "input_source": input_source.clone()
+                }));
                 cases.push(json!({
                     "file_id": file_id,
                     "subject": format!("subject {index}"),
@@ -825,6 +955,7 @@ mod tests {
                     "seed": format!("{index}"),
                     "prompt": prompt,
                     "style_reference_used": false,
+                    "input_source": input_source,
                     "scores": {
                         "medium_material": 2, "marks_edges": 2, "tonal_shading": 1,
                         "color_roles": 2, "composition": 1, "signature_details": 2,
@@ -861,6 +992,7 @@ mod tests {
                 "evaluator": {"provider": "openai", "model": "vision-reviewer"},
                 "models": models
             },
+            "proof_shots_manifest": {"schema_version": "1", "items": proof_manifest},
             "proof_ids": proof_ids
         })
     }
@@ -1031,6 +1163,16 @@ mod tests {
             .as_array_mut()
             .unwrap()
             .push(json!("unscored-proof"));
+        fields["proof_shots_manifest"]["items"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "file_id": "unscored-proof",
+                "subject": "unscored subject",
+                "mode": "text_to_image",
+                "seed": "unscored",
+                "style_reference_used": false
+            }));
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1053,6 +1195,77 @@ mod tests {
         let mut fields = valid_fields();
         fields["portability_report"]["models"][1]["cases"][2]["source_medium"] =
             json!("oil painting");
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_matrix_mismatch");
+    }
+
+    #[test]
+    fn private_or_user_supplied_inputs_can_never_be_catalog_proofs() {
+        for kind in ["user_supplied", "private"] {
+            let mut fields = valid_fields();
+            fields["portability_report"]["models"][0]["cases"][0]["input_source"]["kind"] =
+                json!(kind);
+            fields["proof_shots_manifest"]["items"][0]["input_source"]["kind"] = json!(kind);
+            let proof_ids = fields["proof_ids"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            let err = verify_portability_report(
+                "as-1",
+                &fields,
+                text(&fields, "prompt_template"),
+                &proof_ids,
+            )
+            .unwrap_err();
+            assert_eq!(err.code, "art_style_proof_input_not_publishable");
+        }
+    }
+
+    #[test]
+    fn proof_input_clearance_must_match_manifest_and_report() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][0]["cases"][0]["input_source"]["asset_id"] =
+            json!("different-source");
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_proof_input_clearance_mismatch");
+    }
+
+    #[test]
+    fn proof_input_source_must_be_identical_across_models() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][1]["cases"][0]["input_source"]["asset_id"] =
+            json!("other-cleared-source");
+        fields["proof_shots_manifest"]["items"][3]["input_source"]["asset_id"] =
+            json!("other-cleared-source");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
