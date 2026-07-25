@@ -42,6 +42,32 @@ clean_generated_files() {
   find "$dir" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 }
 
+pin_curation_commons_dependency() {
+  local manifest="$1"
+  local commons_hash="$2"
+
+  python3 -c '
+from pathlib import Path
+import re
+import sys
+
+manifest = Path(sys.argv[1])
+commons_hash = sys.argv[2]
+source = manifest.read_text()
+updated, count = re.subn(
+    r"(\bkatagami/katagami-commons@)[0-9a-f]{40}\b",
+    rf"\g<1>{commons_hash}",
+    source,
+)
+if count != 1:
+    raise SystemExit(
+        f"expected exactly one katagami-commons dependency in {manifest}, found {count}"
+    )
+manifest.write_text(updated)
+' "$manifest" "$commons_hash"
+  echo "katagami-curation: pinned katagami-commons dependency to ${commons_hash}"
+}
+
 json_string() {
   python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$1"
 }
@@ -138,6 +164,7 @@ push_app() {
   local name="$1"
   local source="$2"
   local repo="$3"
+  local commons_hash="${4:-}"
 
   rsync -a --delete \
     --exclude='.git' \
@@ -146,6 +173,13 @@ push_app() {
     --exclude='.pytest_cache/' \
     --exclude='target/' \
     "${ROOT}/${source}/" "${repo}/"
+  if [[ "$name" == "katagami-curation" ]]; then
+    if [[ -z "$commons_hash" ]]; then
+      echo "katagami-curation: missing promoted katagami-commons hash" >&2
+      return 1
+    fi
+    pin_curation_commons_dependency "${repo}/app.toml" "$commons_hash"
+  fi
   clean_generated_files "$repo"
   git -C "$repo" add -A
 
@@ -216,5 +250,6 @@ if [[ "$MODE" == "pull" ]]; then
   echo "Review with: git diff --cached --stat"
 else
   push_app "katagami-commons" "katagami-commons" "${WORK_DIR}/katagami-commons"
-  push_app "katagami-curation" "katagami-curation" "${WORK_DIR}/katagami-curation"
+  commons_hash="$(git -C "${WORK_DIR}/katagami-commons" rev-parse HEAD)"
+  push_app "katagami-curation" "katagami-curation" "${WORK_DIR}/katagami-curation" "$commons_hash"
 fi
