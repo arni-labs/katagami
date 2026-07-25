@@ -207,7 +207,7 @@ export async function ingestImageBytesWithDigest(
   };
 }
 
-/** Fetch a generated https image, hash the exact bytes, and store them. */
+/** Fetch a contributor-supplied HTTPS image, hash the exact bytes, and store them. */
 export async function ingestImageWithDigest(
   id: Identity,
   url: string,
