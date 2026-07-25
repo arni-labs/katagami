@@ -23,6 +23,7 @@
     {
       "style_id": "en-019ef0b7-1be3-7710-8268-ddc60cd2c42c",
       "slug": "risograph-ember",
+      "canonical_prompt": "Construct the supplied subject entirely as a two-ink stencil-duplicator print on matte uncoated paper. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Define forms with bold flat spot-ink silhouettes, coarse halftone screens, and slightly broken paper-grain edges. Model depth only through dot density, hard overlaps, and ink overprinting, never smooth shading. Assign the darkest supplied palette role to structural ink and one saturated role to sparse focal accents, leaving the paper as the lightest value. Use an asymmetric editorial-poster crop with generous bare paper that supports a strong silhouette. Show slightly misregistered layers, clean offset halos, and visible overprint intersections. Avoid photorealistic source surfaces, glossy surfaces, gradients, airbrush blending, retained source-medium marks, text, and logos.",
       "selection_rationale": "Print-room, street-life, portable-electronics, and dense-city subjects expose ink separation and registration behavior while spanning people, motion, hard products, and layered depth.",
       "cases": [
         {
@@ -54,6 +55,7 @@
     {
       "style_id": "en-019ef63d-c464-7de1-8eb1-67a65263b683",
       "slug": "cyanotype",
+      "canonical_prompt": "Construct the supplied subject entirely as an iron-salt contact print on lightly textured cold-pressed paper. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Define forms with luminous contact silhouettes, delicate white linear traces, and occasional brush-coated edge breaks. Build tone as a long monochrome range from near-white paper to dense Prussian blue, with no colored local shading. Use the supplied palette only by mapping its darkest cool role to the blue image and its lightest neutral to exposed paper. Compose the subject full-frame while preserving a few precise luminous negative shapes. Show faint chemical blooms, uneven sensitizer wash, subtle fibre texture, and slight exposure variation. Avoid multicolor rendering, glossy digital lighting, hard vector contours, retained source-medium marks, readable text, and logos.",
       "selection_rationale": "Field observation, translucency, glass, and tidal terrain suit cyanotype's contact-print logic while testing whether it can resolve a person, a soft animal, reflective objects, and deep space.",
       "cases": [
         {
@@ -85,6 +87,7 @@
     {
       "style_id": "en-019ef726-f4e5-7052-bd9e-5ae2ab1ab703",
       "slug": "torn-cut-paper-collage",
+      "canonical_prompt": "Construct the supplied subject entirely from layered hand-torn and scissor-cut paper on warm board. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Convert every contour and small mechanical detail into simplified stacked paper strips, discs, and cutouts with fibrous deckles, clean cut arcs, and overlapping silhouettes. Model depth only with flat paper layers, small offset underlays, and soft contact shadows; do not paint volume onto the pieces. Assign the supplied palette to a limited set of colored papers, reserving the brightest role for one or two small focal pieces. Fill the frame with a clear picture-book arrangement and broad readable shapes. Show paper grain, torn fibres, translucent tissue overlaps, tiny pasted seams, and slightly lifted corners. Avoid drawn outlines, retained source texture, smooth gradients, glossy 3D surfaces, readable text, and logos.",
       "selection_rationale": "Carried baskets, crossing grasses, overlapping tabletop silhouettes, and a curving street create natural layer boundaries without asking the source generator for collage styling.",
       "cases": [
         {
@@ -116,6 +119,7 @@
     {
       "style_id": "en-019ef7e2-bd69-7352-be66-8458156801bc",
       "slug": "hardline",
+      "canonical_prompt": "Construct the supplied subject entirely from large flat edge-meeting planes of matte pigment. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Define every form with crisp geometric boundaries and clean silhouettes, using no contour outline. Build all depth through adjacency, scale, and abrupt value changes, with no blended shading. Map the supplied palette to a few saturated fields, reserving the highest-chroma role for one controlled focal plane. Arrange the planes in an asymmetric full-frame color-field composition with deliberate negative intervals. Keep every surface uniformly opaque and every junction precisely hard-edged. Avoid brush texture, gradients, shadows, retained source-medium marks, photorealistic detail, text, and logos.",
       "selection_rationale": "Angular human balance and rigid products are sympathetic tests; radial agave growth and a sparse salt-flat horizon are stress tests for preserving decisive geometry across organic and open scenes.",
       "cases": [
         {
@@ -147,6 +151,7 @@
     {
       "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
       "slug": "dawnvapor-cel",
+      "canonical_prompt": "Construct the supplied subject entirely as a newly hand-inked flat animation cel. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; redraw rather than filter or trace it. Define every form with clean black contour lines, tapered hairline interior rules, and decisive silhouette cuts. Build volume with two-step cel shading: one flat local fill and one hard-edged shadow, with no modeled gradients. Map color to cool lavender and cyan atmosphere, deep blue structure, and tiny terminal-green and magenta rectangular glints. Crop asymmetrically so the subject fills the frame while a restrained dawn haze opens behind it. Show sparse edge glints, registration-clean fills, and thin technical accent bars. Avoid retained source-medium marks, photorealism, painterly surfaces, glossy 3D rendering, heavy neon glow, text, and logos.",
       "selection_rationale": "Radio equipment and a pre-sunrise platform exercise the style's technical-dawn vocabulary, while a human face and turning koi test whether cel reconstruction works on skin, hair, and organic motion without a reference image.",
       "cases": [
         {
@@ -178,6 +183,7 @@
     {
       "style_id": "en-019efd9f-293b-7423-abb4-cecf6689aeac",
       "slug": "bouba-softbody",
+      "canonical_prompt": "Construct the supplied subject entirely as an inflated soft-vinyl three-dimensional object on a calm studio field. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Replace every edge with pillowy rounded fillets, puffed seams, and smooth continuous contours with no sharp corners. Model volume with one broad upper-left highlight, soft subsurface falloff, and narrow ambient-occlusion creases where forms meet. Map the supplied palette to matte-to-satin vinyl surfaces, reserving the brightest role for a small molded accent. Center the subject with generous breathing room and a single grounded contact shadow. Show slight air-filled bulges, seam tension, and fine molded-surface softness. Avoid hard edges, noisy texture, metallic gloss, flat illustration, retained source-medium marks, text, and logos.",
       "selection_rationale": "A stretched athlete and segmented animal test living anatomy; a rigid espresso machine and repeated turbine landscape deliberately test whether soft volumetric treatment transfers beyond naturally rounded subjects.",
       "cases": [
         {
@@ -209,6 +215,7 @@
     {
       "style_id": "en-019efd9f-3328-7d92-9a46-c86dcf3929f1",
       "slug": "wetwash",
+      "canonical_prompt": "Construct the supplied subject entirely with saturated wet-into-wet watercolor on bright cold-pressed paper. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; repaint rather than filter or trace it. Define forms with feathered blooms, soft capillary fringes, and occasional dry-paper edge breaks. Build volume from pooled translucent washes, overlapping glazes, granulating pigment, and luminous bare-paper highlights rather than line drawing. Map the supplied palette to clean jewel-tone washes, keeping the darkest role only in a few pooled accents and the paper as the lightest value. Let the subject dominate the frame while open paper channels air through the composition. Show backruns, cauliflower blooms, tide lines, and fine pigment settling. Avoid opaque flat fills, hard vector contours, muddy mixing, digital airbrush gradients, retained source-medium marks, glossy 3D lighting, text, and logos.",
       "selection_rationale": "A musician, diving bird, transparent bottle, and rainy street supply gesture, speed, overlap, reflection, and depth without embedding watercolor or wash cues in the source content.",
       "cases": [
         {
@@ -240,6 +247,7 @@
     {
       "style_id": "en-019efdcd-404d-7233-a8d4-9fd2ba595389",
       "slug": "woven-sampler-embroidery",
+      "canonical_prompt": "Construct the supplied subject entirely as a hand-embroidered panel on visible woven linen. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; restitch rather than filter or trace it. Define every contour with couched cord and visible directional stitch edges, never drawn ink lines. Build tone with long-and-short satin stitches, dense seed stitches, raised French knots, and tiny thread shadows that follow form. Translate the supplied palette into dyed cotton and wool threads, reserving the brightest role for sparse knot accents. Compose the subject full-frame on a calm warp-and-weft ground with balanced ornamental spacing. Show individual floss strands, fibre fuzz, stitch-direction changes, and slightly raised seams. Avoid painted surfaces, smooth gradients, plastic gloss, retained source-medium marks, unaltered photographic texture, readable text, and logos.",
       "selection_rationale": "Workshop portraiture, a small armored animal, navigation objects, and an alpine route provide varied seams, scales, and surface divisions while ensuring the style is not tested only on textile-friendly subjects.",
       "cases": [
         {

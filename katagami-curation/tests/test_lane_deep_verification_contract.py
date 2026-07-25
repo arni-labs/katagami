@@ -214,8 +214,18 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             "flat vector illustration",
         }
         seen_subject_compositions = set()
+        seen_prompts = set()
         assignments = set()
         for style in AUDIT_MATRIX["styles"]:
+            prompt = style["canonical_prompt"]
+            self.assertNotIn(prompt, seen_prompts)
+            seen_prompts.add(prompt)
+            self.assertNotRegex(prompt.lower(), r"\{[^}]+\}|in the style of")
+            self.assertIn(
+                "retain none of its material, texture, lighting, or shading",
+                prompt,
+            )
+            self.assertRegex(prompt, r"rather than filter or trace it")
             self.assertEqual(len(style["cases"]), 4)
             self.assertEqual(
                 {case["category"] for case in style["cases"]},
