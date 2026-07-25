@@ -467,6 +467,8 @@ pub(super) fn verify_prompt_review(
                 ),
             )
         })?;
+    let normalized_prompt = normalized_words(prompt);
+    let mut evidence_spans: Vec<(usize, usize, &str)> = Vec::new();
     for dimension in DIMENSIONS {
         let evidence = dimensions
             .get(dimension)
@@ -483,6 +485,32 @@ pub(super) fn verify_prompt_review(
                 ),
             ));
         }
+        let normalized_evidence = normalized_words(evidence);
+        let Some(start) = normalized_prompt.find(&normalized_evidence) else {
+            return Err(art_error(
+                owner_id,
+                "art_style_prompt_dimension_unproven",
+                "prompt_review",
+                format!(
+                    "ArtStyle '{owner_id}' prompt review does not quote prompt evidence for '{dimension}'"
+                ),
+            ));
+        };
+        let end = start + normalized_evidence.len();
+        if let Some((_, _, prior_dimension)) = evidence_spans
+            .iter()
+            .find(|(prior_start, prior_end, _)| start < *prior_end && *prior_start < end)
+        {
+            return Err(art_error(
+                owner_id,
+                "art_style_prompt_dimension_evidence_reused",
+                "prompt_review",
+                format!(
+                    "ArtStyle '{owner_id}' reuses overlapping prompt evidence for '{prior_dimension}' and '{dimension}'"
+                ),
+            ));
+        }
+        evidence_spans.push((start, end, dimension));
     }
     Ok(review)
 }
@@ -830,6 +858,16 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_dimension_unproven");
+    }
+
+    #[test]
+    fn prompt_dimensions_need_distinct_non_overlapping_evidence() {
+        let mut fields = valid_fields();
+        fields["prompt_review"]["observable_dimensions"]["marks_edges"] =
+            fields["prompt_review"]["observable_dimensions"]["medium_material"].clone();
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_dimension_evidence_reused");
     }
 
     #[test]
