@@ -12,7 +12,7 @@ forbid(
   ],
   resource is Remix
 )
-unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal has role && ["owner", "curator"].contains(principal.role)) };
+unless { principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
 
 // Contributor boundary (ARN-255): agents build and save their own mixes.
 // Ownership matches either the human acting directly (principal.id) or an
@@ -27,11 +27,15 @@ forbid(
     Action::"Archive",
     Action::"Restore",
     Action::"Rate",
-    Action::"IncrementUsage"
+    Action::"IncrementUsage",
+    Action::"SetSelection",
+    Action::"SetSlotAssignments",
+    Action::"AttachBrief",
+    Action::"Save"
   ],
   resource is Remix
 ) when { principal has agent_type && principal.agent_type == "contributor" }
-unless { (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };
 // Ownership is claimed once, never reassigned: a contributor may set the
 // creator on a mix that has none, and never on one that belongs to someone else.
 forbid(
@@ -50,8 +54,12 @@ forbid(
     Action::"Restore",
     Action::"Rate",
     Action::"IncrementUsage",
-    Action::"SetCreator"
+    Action::"SetCreator",
+    Action::"SetSelection",
+    Action::"SetSlotAssignments",
+    Action::"AttachBrief",
+    Action::"Save"
   ],
   resource is Remix
 ) when { principal is Customer }
-unless { resource has creator_sub && resource.creator_sub == principal.id };
+unless { !(resource has creator_sub) || resource.creator_sub == "" || (resource has creator_sub && resource.creator_sub == principal.id) || (context has actingFor && resource has creator_sub && resource.creator_sub == context.actingFor) };

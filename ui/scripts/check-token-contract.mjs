@@ -150,6 +150,18 @@ const required = [
   ...crudChecks,
   ...humanChecks,
   ...denyByDefaultChecks,
+  // A role grants authority to the HUMAN holding it, never to an agent that
+  // merely carries it for provenance — otherwise authorizing any MCP client
+  // hands it your curator powers.
+  ...["design_language","art_style","taxonomy"].map((stem) => [
+    `${stem}.cedar grants role authority only to Customers`,
+    read(`../katagami-commons/policies/${stem}.cedar`),
+    /principal is Customer && principal has role/,
+  ]),
+  // Ownership covers EVERY mutating remix action, not a chosen few.
+  ["remix.cedar ownership-gates every mutating action",
+   read("../katagami-commons/policies/remix.cedar"),
+   /Action::"SetSelection",[\s\S]*?Action::"SetSlotAssignments",[\s\S]*?Action::"AttachBrief",[\s\S]*?Action::"Save"/],
 ];
 
 let failed = 0;

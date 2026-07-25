@@ -12,4 +12,4 @@ permit(
 // jobs, or rewrite directions. Curators act through the katagami.ai server,
 // which carries the operator credential. Reads stay open.
 forbid(principal, action, resource is CurationDirection)
-unless { action == Action::"read" || principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal has role && ["owner", "curator"].contains(principal.role)) };
+unless { action == Action::"read" || principal is System || principal is Admin || (principal has agent_type && ["operator", "curation-service", "wasm-module", "service:wasm-runtime"].contains(principal.agent_type)) || (principal is Customer && principal has role && ["owner", "curator"].contains(principal.role)) };
