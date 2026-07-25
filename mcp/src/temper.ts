@@ -164,6 +164,49 @@ export type IngestedImage = {
   sizeBytes: number;
 };
 
+const ACCEPTED_PROOF_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+function hasExpectedImageSignature(bytes: Uint8Array, mimeType: string): boolean {
+  if (mimeType === "image/png")
+    return (
+      bytes.length >= 8 &&
+      [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte)
+    );
+  if (mimeType === "image/jpeg")
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mimeType === "image/webp")
+    return (
+      bytes.length >= 12 &&
+      Buffer.from(bytes.subarray(0, 4)).toString("ascii") === "RIFF" &&
+      Buffer.from(bytes.subarray(8, 12)).toString("ascii") === "WEBP"
+    );
+  return false;
+}
+
+/** Hash and store contributor-supplied image bytes without invoking a generator. */
+export async function ingestImageBytesWithDigest(
+  id: Identity,
+  bytes: Uint8Array,
+  mimeType: string,
+  label: string,
+): Promise<IngestedImage> {
+  const mime = mimeType.toLowerCase().trim();
+  if (!ACCEPTED_PROOF_IMAGE_TYPES.has(mime))
+    throw new TemperError(`${label} must be PNG, JPEG, or WebP`, 400);
+  if (bytes.byteLength === 0) throw new TemperError(`${label} is empty`, 400);
+  if (bytes.byteLength > MAX_IMAGE_BYTES) throw new TemperError(`${label} exceeds 8MB`, 400);
+  if (!hasExpectedImageSignature(bytes, mime))
+    throw new TemperError(`${label} bytes do not match ${mime}`, 400);
+  const ext = mime === "image/jpeg" ? "jpg" : mime.split("/")[1];
+  const fileId = await uploadFile(id, `${label}-${Date.now()}.${ext}`, mime, bytes);
+  return {
+    fileId,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    mimeType: mime,
+    sizeBytes: bytes.byteLength,
+  };
+}
+
 /** Fetch a generated https image, hash the exact bytes, and store them. */
 export async function ingestImageWithDigest(
   id: Identity,
@@ -175,17 +218,8 @@ export async function ingestImageWithDigest(
   const res = await fetch(u, { signal: AbortSignal.timeout(60_000), redirect: "follow" });
   if (!res.ok) throw new TemperError(`Fetching ${label} failed (${res.status})`, 502);
   const mime = (res.headers.get("content-type") ?? "").split(";")[0].trim();
-  if (!mime.startsWith("image/")) throw new TemperError(`${label} is not an image (${mime})`, 400);
   const buf = new Uint8Array(await res.arrayBuffer());
-  if (buf.byteLength > MAX_IMAGE_BYTES) throw new TemperError(`${label} exceeds 8MB`, 400);
-  const ext = mime.split("/")[1]?.split("+")[0] || "img";
-  const fileId = await uploadFile(id, `${label}-${Date.now()}.${ext}`, mime, buf);
-  return {
-    fileId,
-    sha256: createHash("sha256").update(buf).digest("hex"),
-    mimeType: mime,
-    sizeBytes: buf.byteLength,
-  };
+  return ingestImageBytesWithDigest(id, buf, mime, label);
 }
 
 /** Fetch a contributor-supplied https image URL and store it as a File. */

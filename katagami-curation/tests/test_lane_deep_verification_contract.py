@@ -139,7 +139,13 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn(".length(8)", submit)
         self.assertNotIn("generate_art_style_proof_matrix", MCP_TOOLS)
         self.assertIn("import_art_style_proof_image", MCP_TOOLS)
+        self.assertIn("image_base64", MCP_TOOLS)
+        self.assertIn("ingestImageBytesWithDigest", MCP_TOOLS)
         self.assertIn("generation_record", submit)
+        images = submit[submit.index("images:") :]
+        images = images[: images.index("credits:")]
+        self.assertIn(".array(", images)
+        self.assertIn(".length(2)", images)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):

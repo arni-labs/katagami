@@ -13,6 +13,7 @@ import {
   createEntity,
   getEntity,
   ingestImage,
+  ingestImageBytesWithDigest,
   ingestImageWithDigest,
   listEntities,
   principalId,
@@ -335,15 +336,46 @@ export function buildServer(auth: AuthInfo): McpServer {
     {
       title: "Import an ArtStyle proof image",
       description:
-        "Import and lock one contributor-supplied source or output image for an ArtStyle proof. Katagami stores and hashes the exact bytes; it does not generate or edit the image. TemperPaw contributors may create images with PawMedia before importing them, while other contributors use their own tools.",
+        "Import and lock one contributor-supplied source or output image for an ArtStyle proof, either by HTTPS URL or base64 bytes. Katagami stores and hashes the exact bytes; it does not generate or edit the image. TemperPaw contributors may create images with PawMedia before importing them, while other contributors use their own tools.",
       inputSchema: {
-        image_url: z.string().url().startsWith("https://"),
+        image_url: z.string().url().startsWith("https://").optional(),
+        image_base64: z
+          .string()
+          .min(1)
+          .max(11_184_812)
+          .optional()
+          .describe("Raw base64 for one contributor-supplied image, at most 8MB decoded"),
+        mime_type: z.enum(["image/png", "image/jpeg", "image/webp"]).optional(),
         label: z.string().regex(/^[a-z0-9-]+$/).max(80),
       },
     },
-    async ({ image_url, label }) => {
+    async ({ image_url, image_base64, mime_type, label }) => {
       try {
-        const imported = await ingestImageWithDigest(id, image_url, label);
+        if (Boolean(image_url) === Boolean(image_base64))
+          throw new TemperError("Provide exactly one of image_url or image_base64", 400);
+        if (image_base64 && !mime_type)
+          throw new TemperError("mime_type is required with image_base64", 400);
+        if (image_url && mime_type)
+          throw new TemperError("mime_type is only accepted with image_base64", 400);
+        let imported;
+        if (image_url) {
+          imported = await ingestImageWithDigest(id, image_url, label);
+        } else {
+          const encoded = image_base64!.replace(/\s+/g, "");
+          if (
+            encoded.length % 4 !== 0 ||
+            !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+              encoded,
+            )
+          )
+            throw new TemperError("image_base64 is not valid base64", 400);
+          imported = await ingestImageBytesWithDigest(
+            id,
+            new Uint8Array(Buffer.from(encoded, "base64")),
+            mime_type!,
+            label,
+          );
+        }
         await temperAction(id, "Files", imported.fileId, "Lock");
         const file = await getEntity(id, "Files", imported.fileId);
         if (file?.status !== "Locked")
@@ -415,12 +447,16 @@ export function buildServer(auth: AuthInfo): McpServer {
           style: z.object({ model: z.string(), provider: z.string() }),
           source: z.object({ model: z.string(), provider: z.string() }),
           images: z
-            .object({
-              model: z.string(),
-              provider: z.string(),
-              tool: z.string().optional(),
-            })
-            .passthrough(),
+            .array(
+              z
+                .object({
+                  model: z.string(),
+                  provider: z.string(),
+                  tool: z.string().optional(),
+                })
+                .passthrough(),
+            )
+            .length(2),
         }),
         credits: z
           .array(
