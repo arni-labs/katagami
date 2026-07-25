@@ -109,6 +109,16 @@ fn has_substantive_evidence(value: &str) -> bool {
         >= 2
 }
 
+fn contains_word_sequence(haystack: &str, needle: &str) -> bool {
+    let haystack_words = haystack.split_whitespace().collect::<Vec<_>>();
+    let needle_words = needle.split_whitespace().collect::<Vec<_>>();
+    !needle_words.is_empty()
+        && needle_words.len() <= haystack_words.len()
+        && haystack_words
+            .windows(needle_words.len())
+            .any(|window| window == needle_words)
+}
+
 fn nonempty_model(value: &Value) -> Option<(String, String)> {
     let provider = text(value, "provider").to_lowercase();
     let model = text(value, "model").to_lowercase();
@@ -469,6 +479,7 @@ pub(super) fn verify_prompt_review(
         })?;
     let normalized_prompt = normalized_words(prompt);
     let mut evidence_spans: Vec<(usize, usize, &str)> = Vec::new();
+    let mut evidence_phrases: Vec<(String, &str)> = Vec::new();
     for dimension in DIMENSIONS {
         let evidence = dimensions
             .get(dimension)
@@ -486,6 +497,19 @@ pub(super) fn verify_prompt_review(
             ));
         }
         let normalized_evidence = normalized_words(evidence);
+        if let Some((_, prior_dimension)) = evidence_phrases.iter().find(|(prior, _)| {
+            contains_word_sequence(prior, &normalized_evidence)
+                || contains_word_sequence(&normalized_evidence, prior)
+        }) {
+            return Err(art_error(
+                owner_id,
+                "art_style_prompt_dimension_evidence_reused",
+                "prompt_review",
+                format!(
+                    "ArtStyle '{owner_id}' reuses nested prompt evidence for '{prior_dimension}' and '{dimension}'"
+                ),
+            ));
+        }
         let Some(start) = normalized_prompt.find(&normalized_evidence) else {
             return Err(art_error(
                 owner_id,
@@ -511,6 +535,7 @@ pub(super) fn verify_prompt_review(
             ));
         }
         evidence_spans.push((start, end, dimension));
+        evidence_phrases.push((normalized_evidence, dimension));
     }
     Ok(review)
 }
@@ -865,6 +890,22 @@ mod tests {
         let mut fields = valid_fields();
         fields["prompt_review"]["observable_dimensions"]["marks_edges"] =
             fields["prompt_review"]["observable_dimensions"]["medium_material"].clone();
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_prompt_dimension_evidence_reused");
+    }
+
+    #[test]
+    fn nested_evidence_fails_when_a_phrase_occurs_more_than_once() {
+        let mut fields = valid_fields();
+        let prompt = format!(
+            "Fibrous matte paper surrounds the subject. {}",
+            text(&fields, "prompt_template")
+        );
+        fields["prompt_template"] = json!(prompt);
+        fields["prompt_review"]["prompt"] = fields["prompt_template"].clone();
+        fields["prompt_review"]["observable_dimensions"]["marks_edges"] =
+            json!("fibrous matte paper");
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_dimension_evidence_reused");
