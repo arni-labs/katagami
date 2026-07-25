@@ -732,7 +732,6 @@ katagami_embed_url = "{secret:katagami_embed_url}"
 katagami_embed_key = "{secret:katagami_embed_key}"
 style_embed_url = "{secret:style_embed_url}"
 style_embed_key = "{secret:style_embed_key}"
-art_style_proof_receipt_key = "{secret:art_style_proof_receipt_key}"
 
 [[action.triggers]]
 name = "art_style_synthesis_completes_direction"

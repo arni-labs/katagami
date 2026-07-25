@@ -22,10 +22,6 @@ export const config = {
   temperUrl: req("TEMPER_API_URL", "https://openpaw-production.up.railway.app"),
   temperTenant: req("TEMPER_TENANT", "default"),
   temperApiKey: req("TEMPER_API_KEY", ""),
-  /** Server-side image generation. Never exposed to contributors. */
-  falKey: req("FAL_KEY", ""),
-  /** Shared only by this generator and the Temper finalizer WASM. */
-  artStyleProofReceiptKey: req("ART_STYLE_PROOF_RECEIPT_KEY", ""),
   /** Public gallery, for handing back human-viewable links. */
   galleryUrl: req("KATAGAMI_GALLERY_URL", "https://katagami.ai"),
 };

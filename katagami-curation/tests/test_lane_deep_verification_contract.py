@@ -19,9 +19,7 @@ ART_SKILL = (
 ).read_text()
 ART_POLICY = (COMMONS / "policies" / "art_style.cedar").read_text()
 MCP_TOOLS = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "tools.ts").read_text()
-PROOF_GENERATOR = (
-    Path(__file__).resolve().parents[2] / "mcp" / "src" / "art-style-proofs.ts"
-).read_text()
+MCP_CONFIG = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "config.ts").read_text()
 FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
 AUDIT_MATRIX = json.loads((FIXTURE_ROOT / "audit-matrix.json").read_text())
 CURATION_JOB_SPEC = (ROOT / "specs" / "curation_job.ioa.toml").read_text()
@@ -139,7 +137,9 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("prompt_review", submit)
         self.assertIn("portability_report", submit)
         self.assertIn(".length(8)", submit)
-        self.assertIn("generate_art_style_proof_matrix", MCP_TOOLS)
+        self.assertNotIn("generate_art_style_proof_matrix", MCP_TOOLS)
+        self.assertIn("import_art_style_proof_image", MCP_TOOLS)
+        self.assertIn("generation_record", submit)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):
@@ -151,57 +151,43 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             )
             self.assertIn({"type": "is_true", "var": "has_proof_shots"}, guard)
 
-    def test_private_validation_inputs_cannot_become_catalog_proofs(self):
+    def test_contributor_proofs_are_verified_without_katagami_generation(self):
         for marker in [
-            "generation_receipt",
-            "art_style_proof_receipt_signature_invalid",
+            "generation_record",
             "content_preserved",
             "source_medium_replaced",
             "art_style_portability_source_medium_preserved",
-            "Hmac::<Sha256>",
             "source_file_id",
             "output_file_id",
         ]:
             self.assertIn(marker, ART_REVIEW_SRC)
+        self.assertNotIn("Hmac::<Sha256>", ART_REVIEW_SRC)
+        self.assertNotIn('"katagami-mcp"', ART_REVIEW_SRC)
+        self.assertNotIn("EDIT_ENDPOINTS", ART_REVIEW_SRC)
         for marker in [
-            "fn verify_art_style_proof_receipt_files",
-            "fn read_art_style_receipt_file_sha256",
+            "fn verify_art_style_proof_record_files",
+            "fn read_art_style_proof_file_sha256",
             "expected immutable Locked file",
             "Sha256::new()",
-            "art_style_proof_receipt_file_hash_mismatch",
+            "art_style_proof_file_hash_mismatch",
         ]:
             self.assertIn(marker, FINALIZER_SRC)
-        self.assertIn("private or user-supplied", ART_SKILL)
+        self.assertIn("contributor-supplied", ART_SKILL)
+        self.assertIn("PawMedia", ART_SKILL)
         attach_hint = self._by_name(self.art, "action")["AttachProofShots"]["hint"]
-        self.assertIn("generator-issued receipt", attach_hint)
-        self.assertIn("no user/external image URL", attach_hint)
-        generator_tool = MCP_TOOLS[
-            MCP_TOOLS.index('"generate_art_style_proof_matrix"') :
-            MCP_TOOLS.index('"submit_art_style"')
-        ]
-        self.assertNotIn("image_url:", generator_tool)
-        self.assertNotIn("reference_url", generator_tool)
-        self.assertIn("generation_receipt", MCP_TOOLS)
-        self.assertIn("createHmac", PROOF_GENERATOR)
-        self.assertIn("ART_STYLE_PROOF_RECEIPT_KEY", PROOF_GENERATOR)
-        self.assertIn("image_urls: [sourceUrl]", PROOF_GENERATOR)
-        self.assertEqual(
-            PROOF_GENERATOR.count("await lockGeneratedFile(id, image.fileId);"),
-            2,
-        )
-        self.assertIn("`${config.galleryUrl}/api/file/${source.fileId}`", PROOF_GENERATOR)
-        self.assertIn('image_size: "auto"', PROOF_GENERATOR)
-        self.assertIn('aspect_ratio: "auto"', PROOF_GENERATOR)
+        self.assertIn("contributor-supplied", attach_hint)
+        self.assertIn("generation record", attach_hint)
+        self.assertIn("generation_record", MCP_TOOLS)
+        self.assertNotIn("createHmac", MCP_TOOLS)
+        self.assertNotIn("FAL_KEY", MCP_CONFIG)
+        self.assertNotIn("ART_STYLE_PROOF_RECEIPT_KEY", MCP_CONFIG)
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
         self.assertIn(
-            "thumbnail_file_id must identify one of the eight governed proof shots",
+            "thumbnail_file_id must identify one of the eight verified proof shots",
             MCP_TOOLS,
         )
-        self.assertIn(
-            'art_style_proof_receipt_key = "{secret:art_style_proof_receipt_key}"',
-            CURATION_JOB_SPEC,
-        )
+        self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)
 
     def test_audit_matrix_balances_roles_media_and_style_specific_subjects(self):
         self.assertEqual(AUDIT_MATRIX["schema_version"], "2")

@@ -14,9 +14,9 @@ end to end the way production uses it, before anything deploys.
 
 | Case | Expected |
 |---|---|
-| Art style with eight Locked raster portability proofs, two governed models using the same four Locked generated sources with valid HMAC receipts, and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
+| Art style with eight Locked raster portability proofs, two distinct models using the same four Locked contributor sources with matching generation records, and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
 | Art style with HTML posing as a portability proof image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
-| Art style whose edit matrix carries a caller-forged generation receipt | job `Failed` with `art_style_proof_receipt_signature_invalid`, style stays unpublished |
+| Art style whose edit matrix records a digest that does not match the Locked output | job `Failed` with `art_style_proof_file_hash_mismatch`, style stays unpublished |
 | Palette with real tokens export + thumbnail | job `Completed`, palette `Published` |
 | Palette with garbage tokens export | job `Failed` with `palette_tokens_export_invalid`, palette stays `Draft` |
 
