@@ -1,3 +1,5 @@
+#[cfg(target_arch = "wasm32")]
+use sha2::{Digest, Sha256};
 use temper_wasm_sdk::prelude::*;
 
 mod art_style_review;
@@ -2492,12 +2494,15 @@ fn verify_synthesized_art_styles(
             art_style_review::verify_source_basis(id, &lane_fields, &prompt_template)?;
         let prompt_review =
             art_style_review::verify_prompt_review(id, &lane_fields, &prompt_template)?;
-        let portability_report = art_style_review::verify_portability_report(
+        let verified_portability = art_style_review::verify_portability_report(
             id,
             &lane_fields,
             &prompt_template,
             &proof_ids,
         )?;
+        for fixture in &verified_portability.input_fixtures {
+            verify_art_style_input_fixture(ctx, api_url, headers, id, fixture)?;
+        }
 
         dispatch_action(
             ctx,
@@ -2509,7 +2514,7 @@ fn verify_synthesized_art_styles(
             &json!({
                 "source_basis": source_basis.to_string(),
                 "prompt_review": prompt_review.to_string(),
-                "portability_report": portability_report.to_string(),
+                "portability_report": verified_portability.report.to_string(),
             }),
         )?;
 
@@ -2850,6 +2855,187 @@ fn verify_lane_image_file(
         .artifact(artifact_kind, file_id));
     }
     Ok(())
+}
+
+fn verify_art_style_input_fixture(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    fixture: &art_style_review::TrustedProofInput,
+) -> Result<(), VerificationError> {
+    let file = load_entity(ctx, api_url, headers, "Files", &fixture.file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "art_style_proof_input_fixture_missing",
+            format!(
+                "ArtStyle '{owner_id}' trusted input fixture '{}' points to missing file '{}'",
+                fixture.fixture_id, fixture.file_id
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact("proof_input", &fixture.file_id)
+    })?;
+    let file_status = entity_status_value(&file);
+    if file_status != "Locked" {
+        return Err(VerificationError::new(
+            "art_style_proof_input_fixture_not_immutable",
+            format!(
+                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' is in state '{file_status}', expected Locked",
+                fixture.fixture_id, fixture.file_id
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact("proof_input", &fixture.file_id));
+    }
+    let size_bytes = numeric_field_any(&file, &["size_bytes", "SizeBytes"]);
+    if size_bytes != fixture.size_bytes {
+        return Err(VerificationError::new(
+            "art_style_proof_input_fixture_hash_mismatch",
+            format!(
+                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' has {size_bytes} bytes, expected {}",
+                fixture.fixture_id, fixture.file_id, fixture.size_bytes
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact("proof_input", &fixture.file_id));
+    }
+    let actual_sha256 = read_locked_fixture_sha256(
+        ctx,
+        api_url,
+        headers,
+        owner_id,
+        fixture.fixture_id,
+        &fixture.file_id,
+    )?;
+    if actual_sha256 != fixture.sha256 {
+        return Err(VerificationError::new(
+            "art_style_proof_input_fixture_hash_mismatch",
+            format!(
+                "ArtStyle '{owner_id}' trusted input fixture '{}' file '{}' does not match the verifier-owned SHA-256",
+                fixture.fixture_id, fixture.file_id
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact("proof_input", &fixture.file_id));
+    }
+    Ok(())
+}
+
+fn read_locked_fixture_sha256(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    fixture_id: &str,
+    file_id: &str,
+) -> Result<String, VerificationError> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = ctx;
+        let url = format!("{api_url}/tdata/Files('{file_id}')/$value");
+        let stream_headers: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let (request_body, mut response_body, response_head) =
+            temper_wasm_sdk::http_stream::streaming_call("GET", &url, &stream_headers)
+                .map_err(|error| {
+                    VerificationError::new(
+                        "art_style_proof_input_fixture_read_failed",
+                        format!(
+                            "Failed to open trusted fixture '{fixture_id}' file '{file_id}': {error}"
+                        ),
+                    )
+                    .entity("ArtStyle", owner_id)
+                    .artifact("proof_input", file_id)
+                    .repairable(false)
+                })?;
+        request_body.finish().map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_input_fixture_read_failed",
+                format!(
+                    "Failed to finish trusted fixture '{fixture_id}' request for '{file_id}': {error}"
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_input", file_id)
+            .repairable(false)
+        })?;
+        let head = response_head().map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_input_fixture_read_failed",
+                format!(
+                    "Failed to read trusted fixture '{fixture_id}' response head for '{file_id}': {error}"
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_input", file_id)
+            .repairable(false)
+        })?;
+        if !(200..300).contains(&head.status) {
+            let _ = response_body.close();
+            return Err(VerificationError::new(
+                "art_style_proof_input_fixture_read_failed",
+                format!(
+                    "Trusted fixture '{fixture_id}' file '{file_id}' returned HTTP {}",
+                    head.status
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_input", file_id));
+        }
+
+        let hash_result = (|| -> Result<String, VerificationError> {
+            let mut hasher = Sha256::new();
+            let mut buffer = vec![0_u8; 64 * 1024];
+            loop {
+                match response_body.read_next_chunk(&mut buffer) {
+                    Ok(Some(0)) | Ok(None) => break,
+                    Ok(Some(count)) => hasher.update(&buffer[..count]),
+                    Err(error) => {
+                        return Err(VerificationError::new(
+                            "art_style_proof_input_fixture_read_failed",
+                            format!(
+                                "Failed while hashing trusted fixture '{fixture_id}' file '{file_id}': {error}"
+                            ),
+                        )
+                        .entity("ArtStyle", owner_id)
+                        .artifact("proof_input", file_id)
+                        .repairable(false));
+                    }
+                }
+            }
+            Ok(format!("{:x}", hasher.finalize()))
+        })();
+        let close_result = response_body.close();
+        let hash = hash_result?;
+        close_result.map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_input_fixture_read_failed",
+                format!(
+                    "Failed to close trusted fixture '{fixture_id}' file '{file_id}': {error}"
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_input", file_id)
+            .repairable(false)
+        })?;
+        Ok(hash)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (ctx, api_url, headers);
+        Err(VerificationError::new(
+            "art_style_proof_input_fixture_read_failed",
+            format!(
+                "Trusted fixture hashing for '{fixture_id}' file '{file_id}' runs in the deployed WASM finalizer"
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact("proof_input", file_id)
+        .repairable(false))
+    }
 }
 
 fn read_lane_image_prefix(

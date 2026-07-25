@@ -159,20 +159,31 @@ distinct edit-capable image models. For each model:
 - provide no style reference;
 - do not add model-specific aesthetic wording;
 - preserve the exact prompt string in every case;
-- record a reproducible seed or request id.
-- use only publication-cleared edit inputs. Private or user-supplied test images
-  are valid for ephemeral evaluation but can never become catalog proofs.
+- record a reproducible seed or request id;
+- use all three verifier-owned Katagami fixtures below. Private or user-supplied
+  test images are valid for ephemeral evaluation but can never become catalog
+  proofs.
 
 Every image-edit case must carry the same `input_source` object in both the
 portability report and proof manifest:
 
-- `kind`: one of `synthetic`, `public_domain`, `licensed`, or
-  `katagami_owned`;
-- `asset_id`: a stable source identifier or content fingerprint;
-- `rights_evidence`: the generation record, public-domain basis, license, or
-  ownership record.
+- `fixture_id`: one of the exact reviewed fixture IDs below;
+- `file_id`: a Locked PawFS copy of that fixture's exact bytes.
 
-The two image models must use the same cleared input asset for each matrix row.
+The finalizer streams every source file and checks its byte count and SHA-256
+against a registry compiled into the WASM. A curator's own `synthetic`,
+`licensed`, or rights-evidence claim is never accepted. The two image models
+must use the same fixture and Locked source file for each matrix row.
+
+| fixture_id | subject | source_medium | canonical PawFS path |
+| --- | --- | --- | --- |
+| `katagami.synthetic.bicycle-photo.v1` | `commuter bicycle` | `documentary photograph` | `/katagami/art-style-proof-fixtures/v1/synthetic-bicycle-photo-v1.png` |
+| `katagami.synthetic.lighthouse-line-drawing.v1` | `lighthouse on an island` | `black-ink line drawing` | `/katagami/art-style-proof-fixtures/v1/synthetic-lighthouse-line-drawing-v1.png` |
+| `katagami.synthetic.teapot-pear-3d.v1` | `teapot and pear still life` | `synthetic 3d render` | `/katagami/art-style-proof-fixtures/v1/synthetic-teapot-pear-3d-v1.png` |
+
+Resolve those exact paths to Locked `Files` once per job. Local fixture bytes
+and their reviewed provenance live in
+`katagami-curation/fixtures/art-style-portability/`.
 
 Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
 Every dimension must score at least 1, every case average at least 1.5, and each
@@ -199,9 +210,8 @@ portability_report = {
                     "prompt": prompt_template,
                     "style_reference_used": False,
                     "input_source": {
-                        "kind": "synthetic",
-                        "asset_id": "<stable source id or fingerprint>",
-                        "rights_evidence": "<generation/rights record>",
+                        "fixture_id": "katagami.synthetic.bicycle-photo.v1",
+                        "file_id": "<Locked PawFS fixture File id>",
                     },
                     "scores": {
                         "medium_material": 2,
@@ -229,8 +239,8 @@ prompt and rerun the failed model; never add a per-model prompt.
 Write every proof image to PawFS. `proof_shots_manifest.items` must mirror the
 proof file ids and record model/provider, subject, source medium, mode, seed, and
 `style_reference_used: false`. For image edits, it must also repeat the exact
-publication-cleared `input_source` object from the portability case. A thumbnail
-may reuse/crop one proof. Optional example references use
+verifier-owned `input_source` object from the portability case. A thumbnail may
+reuse/crop one proof. Optional example references use
 `reference_image_file_ids` and `reference_manifest`; pass `[]` and
 `{"items":[]}` when none exist.
 

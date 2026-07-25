@@ -1,5 +1,7 @@
 import unittest
 from pathlib import Path
+import hashlib
+import json
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +20,8 @@ ART_SKILL = (
 ).read_text()
 ART_POLICY = (COMMONS / "policies" / "art_style.cedar").read_text()
 MCP_TOOLS = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "tools.ts").read_text()
+FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
+FIXTURE_MANIFEST = json.loads((FIXTURE_ROOT / "manifest.json").read_text())
 
 
 class LaneDeepVerificationContractTests(unittest.TestCase):
@@ -144,23 +148,44 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
 
     def test_private_validation_inputs_cannot_become_catalog_proofs(self):
         for marker in [
-            "art_style_proof_input_not_publishable",
-            "publishable_input_source",
-            '"synthetic"',
-            '"public_domain"',
-            '"licensed"',
-            '"katagami_owned"',
+            "art_style_proof_input_not_trusted",
+            "trusted_input_source",
+            "TRUSTED_PROOF_FIXTURES",
             "art_style_proof_input_clearance_mismatch",
         ]:
             self.assertIn(marker, ART_REVIEW_SRC)
-        self.assertIn("private or user-supplied", ART_REVIEW_SRC)
+        for marker in [
+            "fn verify_art_style_input_fixture",
+            "fn read_locked_fixture_sha256",
+            'file_status != "Locked"',
+            "Sha256::new()",
+            "art_style_proof_input_fixture_hash_mismatch",
+        ]:
+            self.assertIn(marker, FINALIZER_SRC)
+        self.assertIn("private, user-supplied, and self-attested", ART_REVIEW_SRC)
         self.assertIn("private or user-supplied", ART_SKILL)
         attach_hint = self._by_name(self.art, "action")["AttachProofShots"]["hint"]
         self.assertIn("input_source", attach_hint)
         self.assertIn("user-supplied", attach_hint)
-        self.assertIn("publishableInputSource", MCP_TOOLS)
-        self.assertIn('z.enum(["synthetic", "public_domain", "licensed", "katagami_owned"])', MCP_TOOLS)
+        self.assertIn("trustedArtStyleInputFixture", MCP_TOOLS)
+        self.assertIn("katagami.synthetic.bicycle-photo.v1", MCP_TOOLS)
+        self.assertIn("katagami.synthetic.lighthouse-line-drawing.v1", MCP_TOOLS)
+        self.assertIn("katagami.synthetic.teapot-pear-3d.v1", MCP_TOOLS)
+        self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
+
+    def test_trusted_fixture_manifest_matches_committed_bytes(self):
+        self.assertEqual(FIXTURE_MANIFEST["schema_version"], "1")
+        self.assertEqual(len(FIXTURE_MANIFEST["fixtures"]), 3)
+        for fixture in FIXTURE_MANIFEST["fixtures"]:
+            payload = (FIXTURE_ROOT / fixture["file"]).read_bytes()
+            self.assertEqual(len(payload), fixture["size_bytes"])
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), fixture["sha256"])
+            self.assertEqual(fixture["origin_kind"], "synthetic")
+            self.assertFalse(fixture["generator"]["user_media_supplied"])
+            self.assertFalse(fixture["generator"]["style_reference_supplied"])
+            self.assertIn(fixture["fixture_id"], ART_REVIEW_SRC)
+            self.assertIn(fixture["sha256"], ART_REVIEW_SRC)
 
     def test_evidence_inputs_invalidate_the_attestations_they_can_change(self):
         actions = self._by_name(self.art, "action")

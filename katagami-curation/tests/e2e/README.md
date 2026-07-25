@@ -14,9 +14,9 @@ end to end the way production uses it, before anything deploys.
 
 | Case | Expected |
 |---|---|
-| Art style with six real raster portability proofs (including one megabyte-scale PNG) and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
+| Art style with six real raster portability proofs, two models using the same three Locked/hash-checked Katagami fixtures, and no reference images | job `Completed`, style `Published`, asset URLs + search blob attached |
 | Art style with HTML posing as a portability proof image | job `Failed` with `lane_file_not_image`, style stays `Draft` |
-| Art style whose edit matrix contains a `user_supplied` private input | job `Failed` with `art_style_proof_input_not_publishable`, style stays unpublished |
+| Art style whose edit matrix claims an unregistered private/self-attested input | job `Failed` with `art_style_proof_input_not_trusted`, style stays unpublished |
 | Palette with real tokens export + thumbnail | job `Completed`, palette `Published` |
 | Palette with garbage tokens export | job `Failed` with `palette_tokens_export_invalid`, palette stays `Draft` |
 

@@ -20,6 +20,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3901")
 TENANT = os.environ.get("E2E_TENANT", "katagami")
@@ -31,6 +32,33 @@ HDRS = {
 }
 
 PASS, FAIL = [], []
+FIXTURE_ROOT = (
+    Path(__file__).resolve().parents[2]
+    / "fixtures"
+    / "art-style-portability"
+    / "inputs"
+)
+TRUSTED_FIXTURES = [
+    {
+        "fixture_id": "katagami.synthetic.bicycle-photo.v1",
+        "path": FIXTURE_ROOT / "bicycle-photo.png",
+        "subject": "commuter bicycle",
+        "source_medium": "documentary photograph",
+    },
+    {
+        "fixture_id": "katagami.synthetic.lighthouse-line-drawing.v1",
+        "path": FIXTURE_ROOT / "lighthouse-line-drawing.png",
+        "subject": "lighthouse on an island",
+        "source_medium": "black-ink line drawing",
+    },
+    {
+        "fixture_id": "katagami.synthetic.teapot-pear-3d.v1",
+        "path": FIXTURE_ROOT / "teapot-pear-3d.png",
+        "subject": "teapot and pear still life",
+        "source_medium": "synthetic 3d render",
+    },
+]
+TRUSTED_INPUT_FILE_IDS = None
 
 
 def report(name, ok, detail=""):
@@ -118,7 +146,7 @@ def set_secret(key, value):
     print(f"  secret '{key}' set")
 
 
-def make_file(name, payload, mime):
+def make_file(name, payload, mime, lock=False):
     st, body = req("POST", "/tdata/Files", {"Name": name, "Path": f"/e2e/{name}", "MimeType": mime})
     assert 200 <= st < 300, (name, st, body)
     fid = entity_id_of(body)
@@ -126,10 +154,32 @@ def make_file(name, payload, mime):
     assert 200 <= st < 300, ("$value", name, st, body)
     for _ in range(20):
         ent = get_entity("Files", fid)
-        if entity_status(ent) in ("Ready", "Locked"):
-            return fid
+        current = entity_status(ent)
+        if current in ("Ready", "Locked"):
+            if lock and current == "Ready":
+                must_act("Files", fid, "Lock")
+                continue
+            if not lock or current == "Locked":
+                return fid
         time.sleep(0.5)
-    raise AssertionError(f"file {name} never became Ready: {json.dumps(ent)[:300]}")
+    raise AssertionError(f"file {name} never became Ready/Locked: {json.dumps(ent)[:300]}")
+
+
+def trusted_input_file_ids():
+    global TRUSTED_INPUT_FILE_IDS
+    if TRUSTED_INPUT_FILE_IDS is None:
+        TRUSTED_INPUT_FILE_IDS = [
+            make_file(
+                f"trusted-{fixture['path'].name}",
+                fixture["path"].read_bytes(),
+                "image/png",
+                lock=True,
+            )
+            for fixture in TRUSTED_FIXTURES
+        ]
+        for fixture, file_id in zip(TRUSTED_FIXTURES, TRUSTED_INPUT_FILE_IDS):
+            print(f"  trusted fixture '{fixture['fixture_id']}' locked as {file_id}")
+    return TRUSTED_INPUT_FILE_IDS
 
 
 def wait_fields(set_name, eid, field_names, timeout=15):
@@ -201,15 +251,12 @@ def run_art_style_case(
         "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
     }
     proof_specs = [
-        ("fixture-a", "portrait", "watercolor"),
-        ("fixture-a", "landscape", "photograph"),
-        ("fixture-a", "object", "line drawing"),
-        ("fixture-b", "portrait", "watercolor"),
-        ("fixture-b", "landscape", "photograph"),
-        ("fixture-b", "object", "line drawing"),
+        (model, fixture)
+        for model in ("fixture-a", "fixture-b")
+        for fixture in TRUSTED_FIXTURES
     ]
     proof_ids = []
-    for index, (model, subject, _) in enumerate(proof_specs):
+    for index, (model, fixture) in enumerate(proof_specs):
         if index == fake_proof_index:
             payload, extension, mime = fake_html, "jpg", "image/jpeg"
         elif index == 0:
@@ -218,39 +265,40 @@ def run_art_style_case(
             payload, extension, mime = jpg, "jpg", "image/jpeg"
         proof_ids.append(
             make_file(
-                f"{label}-proof-{model}-{subject}.{extension}",
+                f"{label}-proof-{model}-{fixture['subject'].replace(' ', '-')}.{extension}",
                 payload,
                 mime,
             )
         )
     thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
-    def cleared_input(subject, index):
+    input_file_ids = trusted_input_file_ids()
+
+    def cleared_input(index):
+        fixture = TRUSTED_FIXTURES[index % len(TRUSTED_FIXTURES)]
         source = {
-            "kind": "synthetic",
-            "asset_id": f"{label}-source-{subject}",
-            "rights_evidence": "deterministic local E2E fixture generated for Katagami",
+            "fixture_id": fixture["fixture_id"],
+            "file_id": input_file_ids[index % len(input_file_ids)],
         }
         if index == private_input_index:
             source = {
-                "kind": "user_supplied",
-                "asset_id": f"{label}-private-source-{subject}",
-                "rights_evidence": "no publication permission",
+                "fixture_id": "user-supplied-private-image",
+                "file_id": input_file_ids[index % len(input_file_ids)],
             }
         return source
 
     cases_by_model = {}
-    for index, (file_id, (model, subject, source_medium)) in enumerate(
+    for index, (file_id, (model, fixture)) in enumerate(
         zip(proof_ids, proof_specs)
     ):
         cases_by_model.setdefault(model, []).append({
             "file_id": file_id,
-            "subject": subject,
-            "source_medium": source_medium,
+            "subject": fixture["subject"],
+            "source_medium": fixture["source_medium"],
             "mode": "image_edit",
-            "seed": f"{label}-{model}-{subject}",
+            "seed": f"{label}-{model}-{fixture['fixture_id']}",
             "prompt": prompt,
             "style_reference_used": False,
-            "input_source": cleared_input(subject, index),
+            "input_source": cleared_input(index),
             "scores": {dimension: 2 for dimension in dimensions},
         })
     portability_report = {
@@ -279,15 +327,15 @@ def run_art_style_case(
         "proof_shots_manifest": json.dumps({"items": [
             {
                 "file_id": file_id,
-                "subject": subject,
-                "source_medium": source_medium,
+                "subject": fixture["subject"],
+                "source_medium": fixture["source_medium"],
                 "mode": "image_edit",
-                "seed": f"{label}-{model}-{subject}",
+                "seed": f"{label}-{model}-{fixture['fixture_id']}",
                 "style_reference_used": False,
-                "input_source": cleared_input(subject, index),
+                "input_source": cleared_input(index),
                 "model": {"model": model, "provider": "local"},
             }
-            for index, (file_id, (model, subject, source_medium)) in enumerate(
+            for index, (file_id, (model, fixture)) in enumerate(
                 zip(proof_ids, proof_specs)
             )
         ]}),
@@ -446,7 +494,7 @@ def main():
         "private-input",
         expect_published=False,
         private_input_index=0,
-        expected_error_code="art_style_proof_input_not_publishable",
+        expected_error_code="art_style_proof_input_not_trusted",
     )
 
     print("== stage 4: palette happy path ==")

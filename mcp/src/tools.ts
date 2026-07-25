@@ -122,22 +122,27 @@ const imageInput = z.object({
   provider: z.string().optional(),
 });
 
-const publishableInputSource = z.object({
-  kind: z.enum(["synthetic", "public_domain", "licensed", "katagami_owned"]),
-  asset_id: z.string().min(1).describe("Stable source identifier or content fingerprint"),
-  rights_evidence: z
-    .string()
-    .min(1)
-    .describe("Generation record, public-domain basis, license, or ownership record"),
-});
+const trustedArtStyleInputFixture = z
+  .object({
+    fixture_id: z.enum([
+      "katagami.synthetic.bicycle-photo.v1",
+      "katagami.synthetic.lighthouse-line-drawing.v1",
+      "katagami.synthetic.teapot-pear-3d.v1",
+    ]),
+    file_id: z
+      .string()
+      .min(1)
+      .describe("Locked PawFS copy of the exact verifier-owned fixture bytes"),
+  })
+  .strict();
 
 const artStyleProofInput = imageInput.extend({
   source_medium: z.string().min(1),
   mode: z.literal("image_edit"),
   seed: z.string().min(1),
   style_reference_used: z.literal(false),
-  input_source: publishableInputSource.describe(
-    "Publication clearance for the edit input. Private and user-supplied test inputs are deliberately unsupported.",
+  input_source: trustedArtStyleInputFixture.describe(
+    "Verifier-owned edit fixture. The finalizer streams the Locked PawFS bytes and checks their compiled SHA-256; private, user-supplied, and self-attested inputs are unsupported.",
   ),
 });
 
@@ -355,7 +360,7 @@ export function buildServer(auth: AuthInfo): McpServer {
           .min(6)
           .max(10)
           .describe(
-            "At least two image models × three unrelated edit cases, each using a synthetic, public-domain, licensed, or Katagami-owned input with rights evidence",
+            "At least two image models × the three verifier-owned, hash-checked Katagami input fixtures",
           ),
         thumbnail_url: z.string().describe("https URL; 600x400-ish JPEG of the style"),
         source_basis: z

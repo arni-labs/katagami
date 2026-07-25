@@ -13,6 +13,59 @@ const DIMENSIONS: [&str; 7] = [
     "exclusions",
 ];
 
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(super) struct TrustedProofInput {
+    pub fixture_id: &'static str,
+    pub file_id: String,
+    pub sha256: &'static str,
+    pub size_bytes: i64,
+    pub subject: &'static str,
+    pub source_medium: &'static str,
+}
+
+#[derive(Debug)]
+pub(super) struct VerifiedPortabilityReport {
+    pub report: Value,
+    pub input_fixtures: Vec<TrustedProofInput>,
+}
+
+#[derive(Clone, Copy)]
+struct TrustedFixture {
+    fixture_id: &'static str,
+    sha256: &'static str,
+    size_bytes: i64,
+    subject: &'static str,
+    source_medium: &'static str,
+}
+
+// This is the publication trust boundary for edit-proof inputs. Adding a
+// fixture requires a reviewed code change with the exact immutable PawFS
+// payload hash; a curator cannot make a private upload publishable by writing a
+// provenance label into its own report.
+const TRUSTED_PROOF_FIXTURES: [TrustedFixture; 3] = [
+    TrustedFixture {
+        fixture_id: "katagami.synthetic.bicycle-photo.v1",
+        sha256: "52c6e4f291e3e6853815d761ffee261842e4c751e26be7665750890feac8796d",
+        size_bytes: 2_627_689,
+        subject: "commuter bicycle",
+        source_medium: "documentary photograph",
+    },
+    TrustedFixture {
+        fixture_id: "katagami.synthetic.lighthouse-line-drawing.v1",
+        sha256: "fa8c093393feb6e3c6d7346976e8037e3d4b724a0f2dd056c572346fc7b35b66",
+        size_bytes: 991_056,
+        subject: "lighthouse on an island",
+        source_medium: "black-ink line drawing",
+    },
+    TrustedFixture {
+        fixture_id: "katagami.synthetic.teapot-pear-3d.v1",
+        sha256: "9db187909ee3429a14a88709faca69f4c3562e21fd1dab96d745784d8ea6bb66",
+        size_bytes: 1_610_441,
+        subject: "teapot and pear still life",
+        source_medium: "synthetic 3d render",
+    },
+];
+
 fn art_error(
     owner_id: &str,
     code: &'static str,
@@ -578,39 +631,66 @@ fn score_case(owner_id: &str, scores: &Value) -> Result<f64, VerificationError> 
     Ok(total / DIMENSIONS.len() as f64)
 }
 
-fn publishable_input_source(
+fn trusted_input_source(
     owner_id: &str,
     value: &Value,
     field: &'static str,
-) -> Result<(String, String, String), VerificationError> {
+) -> Result<TrustedProofInput, VerificationError> {
     let source = value.get("input_source").unwrap_or(&Value::Null);
-    let kind = text(source, "kind");
-    let asset_id = text(source, "asset_id");
-    let rights_evidence = text(source, "rights_evidence");
-    const PUBLISHABLE_KINDS: [&str; 4] = [
-        "synthetic",
-        "public_domain",
-        "licensed",
-        "katagami_owned",
-    ];
-    if !PUBLISHABLE_KINDS.contains(&kind)
-        || asset_id.is_empty()
-        || rights_evidence.is_empty()
-    {
+    let fixture_id = text(source, "fixture_id");
+    let file_id = text(source, "file_id");
+    let exact_shape = source
+        .as_object()
+        .map(|object| {
+            object.len() == 2
+                && object.contains_key("fixture_id")
+                && object.contains_key("file_id")
+        })
+        .unwrap_or(false);
+    let Some(fixture) = TRUSTED_PROOF_FIXTURES
+        .iter()
+        .find(|fixture| fixture.fixture_id == fixture_id)
+    else {
         return Err(art_error(
             owner_id,
-            "art_style_proof_input_not_publishable",
+            "art_style_proof_input_not_trusted",
             field,
             format!(
-                "ArtStyle '{owner_id}' image-edit proofs require input_source.kind=synthetic|public_domain|licensed|katagami_owned plus asset_id and rights_evidence; private or user-supplied test inputs can never be catalog proofs"
+                "ArtStyle '{owner_id}' image-edit proofs must use a verifier-owned Katagami fixture; private, user-supplied, and self-attested inputs can never be catalog proofs"
+            ),
+        ));
+    };
+    if !exact_shape || file_id.is_empty() {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_input_not_trusted",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' input_source must contain only fixture_id and the immutable PawFS file_id"
             ),
         ));
     }
-    Ok((
-        kind.to_string(),
-        asset_id.to_string(),
-        rights_evidence.to_string(),
-    ))
+    if normalized_words(text(value, "subject")) != normalized_words(fixture.subject)
+        || normalized_words(text(value, "source_medium"))
+            != normalized_words(fixture.source_medium)
+    {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_input_fixture_mismatch",
+            field,
+            format!(
+                "ArtStyle '{owner_id}' proof subject/source medium does not match trusted fixture '{fixture_id}'"
+            ),
+        ));
+    }
+    Ok(TrustedProofInput {
+        fixture_id: fixture.fixture_id,
+        file_id: file_id.to_string(),
+        sha256: fixture.sha256,
+        size_bytes: fixture.size_bytes,
+        subject: fixture.subject,
+        source_medium: fixture.source_medium,
+    })
 }
 
 pub(super) fn verify_portability_report(
@@ -618,7 +698,7 @@ pub(super) fn verify_portability_report(
     fields: &Value,
     prompt: &str,
     proof_ids: &[String],
-) -> Result<Value, VerificationError> {
+) -> Result<VerifiedPortabilityReport, VerificationError> {
     let report = lane_json_value(fields, "portability_report").ok_or_else(|| {
         art_error(
             owner_id,
@@ -706,7 +786,7 @@ pub(super) fn verify_portability_report(
             ));
         }
         let clearance = if mode == "image_edit" {
-            Some(publishable_input_source(
+            Some(trusted_input_source(
                 owner_id,
                 item,
                 "proof_shots_manifest",
@@ -719,10 +799,9 @@ pub(super) fn verify_portability_report(
     let mut tested_models = BTreeSet::new();
     let mut source_media = BTreeSet::new();
     let mut used_files = BTreeSet::new();
+    let mut used_input_fixtures = BTreeSet::new();
     let mut edit_models = 0usize;
-    let mut expected_edit_matrix: Option<
-        BTreeSet<(String, String, String, String, String)>,
-    > = None;
+    let mut expected_edit_matrix: Option<BTreeSet<(String, String, String, String)>> = None;
     for model in models {
         let model_key = nonempty_model(model).ok_or_else(|| {
             art_error(
@@ -809,8 +888,7 @@ pub(super) fn verify_portability_report(
                         ),
                     ));
                 }
-                let clearance =
-                    publishable_input_source(owner_id, case, "portability_report")?;
+                let clearance = trusted_input_source(owner_id, case, "portability_report")?;
                 if manifest_input_sources.get(file_id) != Some(&Some(clearance.clone())) {
                     return Err(art_error(
                         owner_id,
@@ -821,13 +899,13 @@ pub(super) fn verify_portability_report(
                         ),
                     ));
                 }
+                used_input_fixtures.insert(clearance.clone());
                 source_media.insert(medium.clone());
                 edit_matrix.insert((
                     normalized_words(subject),
                     medium,
-                    clearance.0,
-                    clearance.1,
-                    clearance.2,
+                    clearance.fixture_id.to_string(),
+                    clearance.file_id,
                 ));
             } else if manifest_input_sources.get(file_id) != Some(&None) {
                 return Err(art_error(
@@ -903,13 +981,17 @@ pub(super) fn verify_portability_report(
             ),
         ));
     }
-    Ok(report)
+    Ok(VerifiedPortabilityReport {
+        report,
+        input_fixtures: used_input_fixtures.into_iter().collect(),
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
+    use sha2::{Digest, Sha256};
 
     fn valid_fields() -> Value {
         let prompt = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
@@ -927,21 +1009,17 @@ mod tests {
         let mut models = Vec::new();
         for (provider, model) in [("fal", "flux-kontext"), ("google", "gemini-image")] {
             let mut cases = Vec::new();
-            for (index, medium) in ["watercolor", "photograph", "line drawing"]
-                .iter()
-                .enumerate()
-            {
+            for (index, fixture) in TRUSTED_PROOF_FIXTURES.iter().enumerate() {
                 let file_id = format!("{model}-{index}");
                 let input_source = json!({
-                    "kind": "synthetic",
-                    "asset_id": format!("katagami-test-source-{index}"),
-                    "rights_evidence": "generated exclusively for Katagami portability validation"
+                    "fixture_id": fixture.fixture_id,
+                    "file_id": format!("source-file-{index}")
                 });
                 proof_ids.push(file_id.clone());
                 proof_manifest.push(json!({
                     "file_id": file_id.clone(),
-                    "subject": format!("subject {index}"),
-                    "source_medium": medium,
+                    "subject": fixture.subject,
+                    "source_medium": fixture.source_medium,
                     "mode": "image_edit",
                     "seed": format!("{index}"),
                     "style_reference_used": false,
@@ -949,8 +1027,8 @@ mod tests {
                 }));
                 cases.push(json!({
                     "file_id": file_id,
-                    "subject": format!("subject {index}"),
-                    "source_medium": medium,
+                    "subject": fixture.subject,
+                    "source_medium": fixture.source_medium,
                     "mode": "image_edit",
                     "seed": format!("{index}"),
                     "prompt": prompt,
@@ -995,6 +1073,68 @@ mod tests {
             "proof_shots_manifest": {"schema_version": "1", "items": proof_manifest},
             "proof_ids": proof_ids
         })
+    }
+
+    #[test]
+    fn trusted_fixture_registry_matches_reviewed_assets_and_manifest() {
+        let assets: [(&str, &[u8]); 3] = [
+            (
+                "katagami.synthetic.bicycle-photo.v1",
+                include_bytes!(
+                    "../../../fixtures/art-style-portability/inputs/bicycle-photo.png"
+                ),
+            ),
+            (
+                "katagami.synthetic.lighthouse-line-drawing.v1",
+                include_bytes!(
+                    "../../../fixtures/art-style-portability/inputs/lighthouse-line-drawing.png"
+                ),
+            ),
+            (
+                "katagami.synthetic.teapot-pear-3d.v1",
+                include_bytes!(
+                    "../../../fixtures/art-style-portability/inputs/teapot-pear-3d.png"
+                ),
+            ),
+        ];
+        let manifest: Value = serde_json::from_str(include_str!(
+            "../../../fixtures/art-style-portability/manifest.json"
+        ))
+        .expect("fixture manifest is valid JSON");
+        let manifest_fixtures = manifest["fixtures"]
+            .as_array()
+            .expect("fixture manifest has fixtures");
+
+        for fixture in TRUSTED_PROOF_FIXTURES {
+            let bytes = assets
+                .iter()
+                .find(|(fixture_id, _)| *fixture_id == fixture.fixture_id)
+                .map(|(_, bytes)| *bytes)
+                .expect("trusted fixture has reviewed bytes");
+            assert_eq!(bytes.len() as i64, fixture.size_bytes);
+            assert_eq!(format!("{:x}", Sha256::digest(bytes)), fixture.sha256);
+
+            let recorded = manifest_fixtures
+                .iter()
+                .find(|item| text(item, "fixture_id") == fixture.fixture_id)
+                .expect("trusted fixture has a provenance record");
+            assert_eq!(text(recorded, "sha256"), fixture.sha256);
+            assert_eq!(
+                recorded["size_bytes"].as_i64().unwrap_or_default(),
+                fixture.size_bytes
+            );
+            assert_eq!(text(recorded, "subject"), fixture.subject);
+            assert_eq!(text(recorded, "source_medium"), fixture.source_medium);
+            assert_eq!(text(recorded, "origin_kind"), "synthetic");
+            assert_eq!(
+                recorded["generator"]["user_media_supplied"].as_bool(),
+                Some(false)
+            );
+            assert_eq!(
+                recorded["generator"]["style_reference_supplied"].as_bool(),
+                Some(false)
+            );
+        }
     }
 
     #[test]
@@ -1191,7 +1331,7 @@ mod tests {
     }
 
     #[test]
-    fn models_must_run_the_same_edit_matrix() {
+    fn fixture_source_medium_cannot_be_relabelled() {
         let mut fields = valid_fields();
         fields["portability_report"]["models"][1]["cases"][2]["source_medium"] =
             json!("oil painting");
@@ -1209,16 +1349,17 @@ mod tests {
             &proof_ids,
         )
         .unwrap_err();
-        assert_eq!(err.code, "art_style_portability_matrix_mismatch");
+        assert_eq!(err.code, "art_style_proof_input_fixture_mismatch");
     }
 
     #[test]
-    fn private_or_user_supplied_inputs_can_never_be_catalog_proofs() {
-        for kind in ["user_supplied", "private"] {
+    fn private_or_self_attested_inputs_can_never_be_catalog_proofs() {
+        for fixture_id in ["user-supplied-private-image", "claimed-synthetic"] {
             let mut fields = valid_fields();
-            fields["portability_report"]["models"][0]["cases"][0]["input_source"]["kind"] =
-                json!(kind);
-            fields["proof_shots_manifest"]["items"][0]["input_source"]["kind"] = json!(kind);
+            fields["portability_report"]["models"][0]["cases"][0]["input_source"]["fixture_id"] =
+                json!(fixture_id);
+            fields["proof_shots_manifest"]["items"][0]["input_source"]["fixture_id"] =
+                json!(fixture_id);
             let proof_ids = fields["proof_ids"]
                 .as_array()
                 .unwrap()
@@ -1233,15 +1374,15 @@ mod tests {
                 &proof_ids,
             )
             .unwrap_err();
-            assert_eq!(err.code, "art_style_proof_input_not_publishable");
+            assert_eq!(err.code, "art_style_proof_input_not_trusted");
         }
     }
 
     #[test]
     fn proof_input_clearance_must_match_manifest_and_report() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][0]["cases"][0]["input_source"]["asset_id"] =
-            json!("different-source");
+        fields["portability_report"]["models"][0]["cases"][0]["input_source"]["file_id"] =
+            json!("different-source-file");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1262,10 +1403,10 @@ mod tests {
     #[test]
     fn proof_input_source_must_be_identical_across_models() {
         let mut fields = valid_fields();
-        fields["portability_report"]["models"][1]["cases"][0]["input_source"]["asset_id"] =
-            json!("other-cleared-source");
-        fields["proof_shots_manifest"]["items"][3]["input_source"]["asset_id"] =
-            json!("other-cleared-source");
+        fields["portability_report"]["models"][1]["cases"][0]["input_source"]["file_id"] =
+            json!("other-trusted-source-copy");
+        fields["proof_shots_manifest"]["items"][3]["input_source"]["file_id"] =
+            json!("other-trusted-source-copy");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()

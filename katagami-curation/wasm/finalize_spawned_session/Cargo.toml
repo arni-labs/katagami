@@ -21,3 +21,5 @@ serde_json = { version = "1", features = ["preserve_order"] }
 # Pure-Rust deflate for the page-redundancy quality gate (works on wasm32-unknown-unknown).
 miniz_oxide = "0.8"
 regex-lite = "0.1"
+# Streaming content-address verification for trusted ArtStyle edit fixtures.
+sha2 = "0.10"

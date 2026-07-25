@@ -1,0 +1,61 @@
+{
+  "schema_version": "1",
+  "purpose": "Verifier-owned, style-neutral image-edit inputs for public ArtStyle portability proofs",
+  "publication_rule": "Only exact Locked PawFS byte matches for these reviewed fixtures may back public image-edit proofs. User-supplied or self-attested sources are never accepted.",
+  "fixtures": [
+    {
+      "fixture_id": "katagami.synthetic.bicycle-photo.v1",
+      "file": "inputs/bicycle-photo.png",
+      "sha256": "52c6e4f291e3e6853815d761ffee261842e4c751e26be7665750890feac8796d",
+      "size_bytes": 2627689,
+      "subject": "commuter bicycle",
+      "source_medium": "documentary photograph",
+      "origin_kind": "synthetic",
+      "generator": {
+        "provider": "openai",
+        "model": "gpt-image",
+        "generation_receipt": "call_KC93W2U3LNwdTggMmBsxc6VY",
+        "input_mode": "text_only",
+        "user_media_supplied": false,
+        "style_reference_supplied": false
+      },
+      "rights_basis": "Generated specifically for Katagami's model-portability fixture corpus; Katagami-owned test asset."
+    },
+    {
+      "fixture_id": "katagami.synthetic.lighthouse-line-drawing.v1",
+      "file": "inputs/lighthouse-line-drawing.png",
+      "sha256": "fa8c093393feb6e3c6d7346976e8037e3d4b724a0f2dd056c572346fc7b35b66",
+      "size_bytes": 991056,
+      "subject": "lighthouse on an island",
+      "source_medium": "black-ink line drawing",
+      "origin_kind": "synthetic",
+      "generator": {
+        "provider": "openai",
+        "model": "gpt-image",
+        "generation_receipt": "call_XJInMuU4mZ6WrEZvxRsXlFQv",
+        "input_mode": "text_only",
+        "user_media_supplied": false,
+        "style_reference_supplied": false
+      },
+      "rights_basis": "Generated specifically for Katagami's model-portability fixture corpus; Katagami-owned test asset."
+    },
+    {
+      "fixture_id": "katagami.synthetic.teapot-pear-3d.v1",
+      "file": "inputs/teapot-pear-3d.png",
+      "sha256": "9db187909ee3429a14a88709faca69f4c3562e21fd1dab96d745784d8ea6bb66",
+      "size_bytes": 1610441,
+      "subject": "teapot and pear still life",
+      "source_medium": "synthetic 3d render",
+      "origin_kind": "synthetic",
+      "generator": {
+        "provider": "openai",
+        "model": "gpt-image",
+        "generation_receipt": "call_emSdUMHMNqMqql9hclyvLd5T",
+        "input_mode": "text_only",
+        "user_media_supplied": false,
+        "style_reference_supplied": false
+      },
+      "rights_basis": "Generated specifically for Katagami's model-portability fixture corpus; Katagami-owned test asset."
+    }
+  ]
+}
