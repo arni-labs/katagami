@@ -1,4 +1,3 @@
-use hmac::{Hmac, Mac};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeSet, HashMap};
@@ -29,35 +28,24 @@ const SOURCE_MEDIA: [&str; 4] = [
     "flat vector illustration",
 ];
 
-const SOURCE_ENDPOINT: &str = "fal-ai/flux/schnell";
-const EDIT_ENDPOINTS: [&str; 2] = [
-    "openai/gpt-image-2/edit",
-    "fal-ai/nano-banana-2/edit",
-];
-
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub(super) struct VerifiedProofReceipt {
+pub(super) struct VerifiedProofRecord {
     pub category: String,
     pub subject: String,
     pub composition: String,
     pub source_medium: String,
     pub source_file_id: String,
     pub source_sha256: String,
-    pub source_endpoint: String,
-    pub source_request_id: String,
-    pub source_prompt_sha256: String,
     pub output_file_id: String,
     pub output_sha256: String,
-    pub output_endpoint: String,
-    pub output_request_id: String,
     pub output_prompt_sha256: String,
-    pub seed: String,
+    pub provider_request_id: String,
 }
 
 #[derive(Debug)]
 pub(super) struct VerifiedPortabilityReport {
     pub report: Value,
-    pub proof_receipts: Vec<VerifiedProofReceipt>,
+    pub proof_records: Vec<VerifiedProofRecord>,
 }
 
 fn art_error(
@@ -283,22 +271,38 @@ pub(super) fn verify_source_basis(
         || !version_is_one(&basis)
         || text(&basis, "verdict") != "pass"
         || !bool_field(&basis, "all_named_people_checked")
+        || !bool_field(&basis, "no_living_artist_target")
+        || !bool_field(&basis, "tradition_level_description")
     {
         return Err(art_error(
             owner_id,
             "art_style_source_basis_invalid",
             "source_basis",
             format!(
-                "ArtStyle '{owner_id}' source_basis must use schema v1, verdict=pass, and all_named_people_checked=true"
+                "ArtStyle '{owner_id}' source_basis must use schema v1, verdict=pass, check every named person, reject any living-artist target, and attest a tradition-level description"
             ),
         ));
     }
-    if nonempty_model(basis.get("reviewer").unwrap_or(&Value::Null)).is_none() {
+    let reviewer =
+        nonempty_model(basis.get("reviewer").unwrap_or(&Value::Null)).ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_source_reviewer_missing",
+                "source_basis",
+                format!("ArtStyle '{owner_id}' source_basis is missing reviewer provider/model"),
+            )
+        })?;
+    if prompt_author(fields)
+        .map(|author| author == reviewer)
+        .unwrap_or(false)
+    {
         return Err(art_error(
             owner_id,
-            "art_style_source_reviewer_missing",
+            "art_style_source_review_not_independent",
             "source_basis",
-            format!("ArtStyle '{owner_id}' source_basis is missing reviewer provider/model"),
+            format!(
+                "ArtStyle '{owner_id}' source-basis reviewer must differ from the prompt author"
+            ),
         ));
     }
 
@@ -649,200 +653,117 @@ fn sha256_hex(value: &str) -> String {
     format!("{:x}", Sha256::digest(value.as_bytes()))
 }
 
-fn decode_hex_32(value: &str) -> Option<[u8; 32]> {
-    if value.len() != 64 {
-        return None;
-    }
-    let mut output = [0_u8; 32];
-    for (index, pair) in value.as_bytes().chunks_exact(2).enumerate() {
-        let pair = std::str::from_utf8(pair).ok()?;
-        output[index] = u8::from_str_radix(pair, 16).ok()?;
-    }
-    Some(output)
+fn is_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn generation_receipt(
+fn generation_record(
     owner_id: &str,
     value: &Value,
     field: &'static str,
     style_slug: &str,
     prompt: &str,
-    model: &(String, String),
-    receipt_key: &str,
-) -> Result<VerifiedProofReceipt, VerificationError> {
-    let receipt = value
-        .get("generation_receipt")
+) -> Result<VerifiedProofRecord, VerificationError> {
+    let record = value
+        .get("generation_record")
         .unwrap_or(&Value::Null);
-    let source = receipt.get("source").unwrap_or(&Value::Null);
-    let output = receipt.get("output").unwrap_or(&Value::Null);
+    let source = record.get("source").unwrap_or(&Value::Null);
+    let output = record.get("output").unwrap_or(&Value::Null);
+    let output_has_expected_keys = output
+        .as_object()
+        .map(|object| {
+            (object.len() == 3 || object.len() == 4)
+                && ["file_id", "sha256", "prompt_sha256"]
+                    .iter()
+                    .all(|key| object.contains_key(*key))
+                && object
+                    .keys()
+                    .all(|key| {
+                        ["file_id", "sha256", "prompt_sha256", "provider_request_id"]
+                            .contains(&key.as_str())
+                    })
+        })
+        .unwrap_or(false);
     if !exact_object_keys(
-        receipt,
+        record,
         &[
             "schema_version",
-            "issuer",
             "kind",
             "style_slug",
-            "category",
-            "subject",
-            "composition",
-            "source_medium",
             "source",
             "output",
-            "signature",
         ],
     ) || !exact_object_keys(
         source,
-        &[
-            "file_id",
-            "sha256",
-            "endpoint",
-            "request_id",
-            "prompt_sha256",
-        ],
-    ) || !exact_object_keys(
-        output,
-        &[
-            "file_id",
-            "sha256",
-            "endpoint",
-            "request_id",
-            "prompt_sha256",
-            "seed",
-        ],
+        &["file_id", "sha256"],
     ) {
         return Err(art_error(
             owner_id,
-            "art_style_proof_receipt_invalid",
+            "art_style_proof_record_invalid",
             field,
             format!(
-                "ArtStyle '{owner_id}' proof generation receipt has an invalid shape"
+                "ArtStyle '{owner_id}' proof generation record has an invalid shape"
             ),
         ));
     }
-    let category = text(receipt, "category");
-    let subject = text(receipt, "subject");
-    let composition = text(receipt, "composition");
-    let source_medium = text(receipt, "source_medium");
+    if !output_has_expected_keys {
+        return Err(art_error(
+            owner_id,
+            "art_style_proof_record_invalid",
+            field,
+            format!("ArtStyle '{owner_id}' proof output record has an invalid shape"),
+        ));
+    }
+    let category = text(value, "category");
+    let subject = text(value, "subject");
+    let composition = text(value, "composition");
+    let source_medium = text(value, "source_medium");
     let source_file_id = text(source, "file_id");
     let source_sha256 = text(source, "sha256");
-    let source_endpoint = text(source, "endpoint");
-    let source_request_id = text(source, "request_id");
-    let source_prompt_sha256 = text(source, "prompt_sha256");
     let output_file_id = text(output, "file_id");
     let output_sha256 = text(output, "sha256");
-    let output_endpoint = text(output, "endpoint");
-    let output_request_id = text(output, "request_id");
     let output_prompt_sha256 = text(output, "prompt_sha256");
-    let seed = text(output, "seed");
-    let signature = text(receipt, "signature");
+    let provider_request_id = text(output, "provider_request_id");
 
-    if text(receipt, "schema_version") != "1"
-        || text(receipt, "issuer") != "katagami-mcp"
-        || text(receipt, "kind") != "art_style_proof"
-        || text(receipt, "style_slug") != style_slug
+    if text(record, "schema_version") != "1"
+        || text(record, "kind") != "art_style_proof"
+        || text(record, "style_slug") != style_slug
         || !PROOF_CATEGORIES.contains(&category)
         || subject.is_empty()
         || composition.is_empty()
         || !SOURCE_MEDIA.contains(&source_medium)
-        || source_endpoint != SOURCE_ENDPOINT
-        || !EDIT_ENDPOINTS.contains(&output_endpoint)
-        || model.0 != "fal"
-        || model.1 != output_endpoint
-        || text(value, "category") != category
-        || text(value, "subject") != subject
-        || text(value, "composition") != composition
-        || text(value, "source_medium") != source_medium
         || text(value, "file_id") != output_file_id
-        || text(value, "seed") != seed
         || text(value, "mode") != "image_edit"
         || bool_field(value, "style_reference_used")
         || output_prompt_sha256 != sha256_hex(prompt.trim())
         || source_file_id.is_empty()
-        || source_request_id.is_empty()
         || output_file_id.is_empty()
-        || output_request_id.is_empty()
-        || seed.is_empty()
         || subject.contains(['\n', '\r'])
         || composition.contains(['\n', '\r'])
-        || decode_hex_32(source_sha256).is_none()
-        || decode_hex_32(source_prompt_sha256).is_none()
-        || decode_hex_32(output_sha256).is_none()
-        || decode_hex_32(output_prompt_sha256).is_none()
+        || !is_sha256(source_sha256)
+        || !is_sha256(output_sha256)
+        || !is_sha256(output_prompt_sha256)
     {
         return Err(art_error(
             owner_id,
-            "art_style_proof_receipt_mismatch",
+            "art_style_proof_record_mismatch",
             field,
             format!(
-                "ArtStyle '{owner_id}' proof receipt does not bind the exact style, role, source, prompt, model, seed, and output file"
+                "ArtStyle '{owner_id}' proof record does not bind the exact style, source, prompt, and output file"
             ),
         ));
     }
-    let message = [
-        "1",
-        "katagami-mcp",
-        "art_style_proof",
-        style_slug,
-        category,
-        subject,
-        composition,
-        source_medium,
-        source_file_id,
-        source_sha256,
-        source_endpoint,
-        source_request_id,
-        source_prompt_sha256,
-        output_file_id,
-        output_sha256,
-        output_endpoint,
-        output_request_id,
-        output_prompt_sha256,
-        seed,
-    ]
-    .join("\n");
-    let signature_bytes = decode_hex_32(signature).ok_or_else(|| {
-        art_error(
-            owner_id,
-            "art_style_proof_receipt_signature_invalid",
-            field,
-            format!("ArtStyle '{owner_id}' proof receipt signature is not valid hex"),
-        )
-    })?;
-    let mut mac = Hmac::<Sha256>::new_from_slice(receipt_key.as_bytes()).map_err(|_| {
-        art_error(
-            owner_id,
-            "art_style_proof_receipt_key_invalid",
-            field,
-            format!("ArtStyle '{owner_id}' proof receipt verifier key is invalid"),
-        )
-    })?;
-    mac.update(message.as_bytes());
-    mac.verify_slice(&signature_bytes).map_err(|_| {
-        art_error(
-            owner_id,
-            "art_style_proof_receipt_signature_invalid",
-            field,
-            format!(
-                "ArtStyle '{owner_id}' proof receipt was not issued by the governed generation service"
-            ),
-        )
-    })?;
-    Ok(VerifiedProofReceipt {
+    Ok(VerifiedProofRecord {
         category: category.to_string(),
         subject: subject.to_string(),
         composition: composition.to_string(),
         source_medium: source_medium.to_string(),
         source_file_id: source_file_id.to_string(),
         source_sha256: source_sha256.to_string(),
-        source_endpoint: source_endpoint.to_string(),
-        source_request_id: source_request_id.to_string(),
-        source_prompt_sha256: source_prompt_sha256.to_string(),
         output_file_id: output_file_id.to_string(),
         output_sha256: output_sha256.to_string(),
-        output_endpoint: output_endpoint.to_string(),
-        output_request_id: output_request_id.to_string(),
         output_prompt_sha256: output_prompt_sha256.to_string(),
-        seed: seed.to_string(),
+        provider_request_id: provider_request_id.to_string(),
     })
 }
 
@@ -851,18 +772,7 @@ pub(super) fn verify_portability_report(
     fields: &Value,
     prompt: &str,
     proof_ids: &[String],
-    receipt_key: &str,
 ) -> Result<VerifiedPortabilityReport, VerificationError> {
-    if receipt_key.is_empty() || receipt_key.contains("{secret:") {
-        return Err(art_error(
-            owner_id,
-            "art_style_proof_receipt_key_missing",
-            "portability_report",
-            format!(
-                "ArtStyle '{owner_id}' cannot be verified without the governed proof-receipt key"
-            ),
-        ));
-    }
     let style_slug = text(fields, "slug");
     if style_slug.is_empty() {
         return Err(art_error(
@@ -936,12 +846,12 @@ pub(super) fn verify_portability_report(
             format!("ArtStyle '{owner_id}' has no proof-shot manifest"),
         )
     })?;
-    if text(&proof_manifest, "schema_version") != "2" {
+    if text(&proof_manifest, "schema_version") != "3" {
         return Err(art_error(
             owner_id,
             "art_style_proof_manifest_invalid",
             "proof_shots_manifest",
-            format!("ArtStyle '{owner_id}' proof-shot manifest must use schema v2"),
+            format!("ArtStyle '{owner_id}' proof-shot manifest must use schema v3"),
         ));
     }
     let manifest_items = proof_manifest
@@ -958,7 +868,8 @@ pub(super) fn verify_portability_report(
                 ),
             )
         })?;
-    let mut manifest_receipts: HashMap<String, VerifiedProofReceipt> = HashMap::new();
+    let mut manifest_records: HashMap<String, ((String, String), VerifiedProofRecord)> =
+        HashMap::new();
     for item in manifest_items {
         if !exact_object_keys(
             item,
@@ -969,10 +880,9 @@ pub(super) fn verify_portability_report(
                 "composition",
                 "source_medium",
                 "mode",
-                "seed",
                 "style_reference_used",
                 "model",
-                "generation_receipt",
+                "generation_record",
             ],
         ) {
             return Err(art_error(
@@ -994,7 +904,7 @@ pub(super) fn verify_portability_report(
             )
         })?;
         if !proof_set.contains(file_id)
-            || manifest_receipts.contains_key(file_id)
+            || manifest_records.contains_key(file_id)
             || bool_field(item, "style_reference_used")
             || text(item, "mode") != "image_edit"
         {
@@ -1007,26 +917,21 @@ pub(super) fn verify_portability_report(
                 ),
             ));
         }
-        let receipt = generation_receipt(
+        let record = generation_record(
             owner_id,
             item,
             "proof_shots_manifest",
             style_slug,
             prompt,
-            &model,
-            receipt_key,
         )?;
-        manifest_receipts.insert(file_id.to_string(), receipt);
+        manifest_records.insert(file_id.to_string(), (model, record));
     }
 
     let mut tested_models = BTreeSet::new();
     let mut used_files = BTreeSet::new();
-    let mut verified_receipts = Vec::new();
+    let mut verified_records = Vec::new();
     let mut expected_source_matrix: Option<
         BTreeSet<(
-            String,
-            String,
-            String,
             String,
             String,
             String,
@@ -1044,16 +949,6 @@ pub(super) fn verify_portability_report(
                 format!("ArtStyle '{owner_id}' portability model lacks provider/model"),
             )
         })?;
-        if model_key.0 != "fal" || !EDIT_ENDPOINTS.contains(&model_key.1.as_str()) {
-            return Err(art_error(
-                owner_id,
-                "art_style_portability_model_invalid",
-                "portability_report",
-                format!(
-                    "ArtStyle '{owner_id}' portability proofs must come from the two governed edit endpoints"
-                ),
-            ));
-        }
         if model_key == evaluator {
             return Err(art_error(
                 owner_id,
@@ -1098,12 +993,11 @@ pub(super) fn verify_portability_report(
                     "composition",
                     "source_medium",
                     "mode",
-                    "seed",
                     "prompt",
                     "style_reference_used",
                     "content_preserved",
                     "source_medium_replaced",
-                    "generation_receipt",
+                    "generation_record",
                     "scores",
                 ],
             ) {
@@ -1145,10 +1039,8 @@ pub(super) fn verify_portability_report(
             let composition = text(case, "composition");
             let category = text(case, "category");
             let source_medium = text(case, "source_medium");
-            let seed = text(case, "seed");
             if subject.is_empty()
                 || composition.is_empty()
-                || seed.is_empty()
                 || text(case, "mode") != "image_edit"
                 || !PROOF_CATEGORIES.contains(&category)
                 || !SOURCE_MEDIA.contains(&source_medium)
@@ -1158,41 +1050,36 @@ pub(super) fn verify_portability_report(
                     "art_style_portability_case_invalid",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' portability cases need a valid semantic role, subject, composition, source medium, seed, and image-edit mode"
+                        "ArtStyle '{owner_id}' portability cases need a valid semantic role, subject, composition, source medium, and image-edit mode"
                     ),
                 ));
             }
             categories.insert(category.to_string());
             source_media.insert(source_medium.to_string());
-            let receipt = generation_receipt(
+            let record = generation_record(
                 owner_id,
                 case,
                 "portability_report",
                 style_slug,
                 prompt,
-                &model_key,
-                receipt_key,
             )?;
-            if manifest_receipts.get(file_id) != Some(&receipt) {
+            if manifest_records.get(file_id) != Some(&(model_key.clone(), record.clone())) {
                 return Err(art_error(
                     owner_id,
-                    "art_style_proof_receipt_mismatch",
+                    "art_style_proof_record_mismatch",
                     "portability_report",
                     format!(
-                        "ArtStyle '{owner_id}' proof '{file_id}' receipt differs between its manifest and portability report"
+                        "ArtStyle '{owner_id}' proof '{file_id}' generation record differs between its manifest and portability report"
                     ),
                 ));
             }
             source_matrix.insert((
-                receipt.category.clone(),
-                receipt.subject.clone(),
-                receipt.composition.clone(),
-                receipt.source_medium.clone(),
-                receipt.source_file_id.clone(),
-                receipt.source_sha256.clone(),
-                receipt.source_endpoint.clone(),
-                receipt.source_request_id.clone(),
-                receipt.source_prompt_sha256.clone(),
+                record.category.clone(),
+                record.subject.clone(),
+                record.composition.clone(),
+                record.source_medium.clone(),
+                record.source_file_id.clone(),
+                record.source_sha256.clone(),
             ));
             let average = score_case(owner_id, case.get("scores").unwrap_or(&Value::Null))?;
             if average < 1.5 {
@@ -1206,7 +1093,7 @@ pub(super) fn verify_portability_report(
                 ));
             }
             model_total += average;
-            verified_receipts.push(receipt);
+            verified_records.push(record);
         }
         let expected_categories = PROOF_CATEGORIES
             .iter()
@@ -1246,37 +1133,32 @@ pub(super) fn verify_portability_report(
         }
     }
 
-    let expected_models = EDIT_ENDPOINTS
-        .iter()
-        .map(|endpoint| ("fal".to_string(), endpoint.to_string()))
-        .collect::<BTreeSet<_>>();
-    if tested_models != expected_models
-        || used_files.len() != 8
-        || verified_receipts.len() != 8
-    {
+    if tested_models.len() != 2 || used_files.len() != 8 || verified_records.len() != 8 {
         return Err(art_error(
             owner_id,
             "art_style_portability_matrix_incomplete",
             "portability_report",
             format!(
-                "ArtStyle '{owner_id}' needs the governed two-model by four-role matrix and a score for every attached proof"
+                "ArtStyle '{owner_id}' needs two distinct image models by four roles and a score for every attached proof"
             ),
         ));
     }
     Ok(VerifiedPortabilityReport {
         report,
-        proof_receipts: verified_receipts,
+        proof_records: verified_records,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hmac::{Hmac, Mac};
     use serde_json::json;
 
-    const RECEIPT_KEY: &str = "katagami-test-proof-receipt-key";
     const STYLE_SLUG: &str = "archive-ember";
+    const TEST_MODELS: [(&str, &str); 2] = [
+        ("fal", "openai/gpt-image-2/edit"),
+        ("other-provider", "independent-image-edit"),
+    ];
     const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
 
     const SUBJECTS: [&str; 4] = [
@@ -1292,69 +1174,22 @@ mod tests {
         "wide cityscape rising diagonally across the frame",
     ];
 
-    fn receipt_message(receipt: &Value) -> String {
-        let source = &receipt["source"];
-        let output = &receipt["output"];
-        [
-            text(receipt, "schema_version"),
-            text(receipt, "issuer"),
-            text(receipt, "kind"),
-            text(receipt, "style_slug"),
-            text(receipt, "category"),
-            text(receipt, "subject"),
-            text(receipt, "composition"),
-            text(receipt, "source_medium"),
-            text(source, "file_id"),
-            text(source, "sha256"),
-            text(source, "endpoint"),
-            text(source, "request_id"),
-            text(source, "prompt_sha256"),
-            text(output, "file_id"),
-            text(output, "sha256"),
-            text(output, "endpoint"),
-            text(output, "request_id"),
-            text(output, "prompt_sha256"),
-            text(output, "seed"),
-        ]
-        .join("\n")
-    }
-
-    fn sign_receipt(receipt: &mut Value) {
-        let message = receipt_message(receipt);
-        let mut mac = Hmac::<Sha256>::new_from_slice(RECEIPT_KEY.as_bytes()).unwrap();
-        mac.update(message.as_bytes());
-        receipt["signature"] = json!(format!("{:x}", mac.finalize().into_bytes()));
-    }
-
-    fn proof_receipt(model: &str, index: usize, output_file_id: &str) -> Value {
-        let mut receipt = json!({
+    fn proof_record(provider: &str, model: &str, index: usize, output_file_id: &str) -> Value {
+        json!({
             "schema_version": "1",
-            "issuer": "katagami-mcp",
             "kind": "art_style_proof",
             "style_slug": STYLE_SLUG,
-            "category": PROOF_CATEGORIES[index],
-            "subject": SUBJECTS[index],
-            "composition": COMPOSITIONS[index],
-            "source_medium": SOURCE_MEDIA[index],
             "source": {
                 "file_id": format!("source-file-{index}"),
                 "sha256": sha256_hex(&format!("source-bytes-{index}")),
-                "endpoint": SOURCE_ENDPOINT,
-                "request_id": format!("source-request-{index}"),
-                "prompt_sha256": sha256_hex(&format!("neutral-source-prompt-{index}"))
             },
             "output": {
                 "file_id": output_file_id,
-                "sha256": sha256_hex(&format!("output-bytes-{model}-{index}")),
-                "endpoint": model,
-                "request_id": format!("output-request-{model}-{index}"),
+                "sha256": sha256_hex(&format!("output-bytes-{provider}-{model}-{index}")),
                 "prompt_sha256": sha256_hex(PROMPT),
-                "seed": format!("{model}-{index}")
-            },
-            "signature": ""
-        });
-        sign_receipt(&mut receipt);
-        receipt
+                "provider_request_id": format!("request-{provider}-{model}-{index}"),
+            }
+        })
     }
 
     fn valid_fields() -> Value {
@@ -1370,12 +1205,11 @@ mod tests {
         let mut proof_ids = Vec::new();
         let mut proof_manifest = Vec::new();
         let mut models = Vec::new();
-        for model in EDIT_ENDPOINTS {
+        for (provider, model) in TEST_MODELS {
             let mut cases = Vec::new();
             for index in 0..4 {
-                let file_id = format!("proof-{model}-{index}");
-                let receipt = proof_receipt(model, index, &file_id);
-                let seed = text(&receipt["output"], "seed").to_string();
+                let file_id = format!("proof-{provider}-{model}-{index}");
+                let record = proof_record(provider, model, index, &file_id);
                 proof_ids.push(file_id.clone());
                 proof_manifest.push(json!({
                     "file_id": file_id.clone(),
@@ -1384,10 +1218,9 @@ mod tests {
                     "composition": COMPOSITIONS[index],
                     "source_medium": SOURCE_MEDIA[index],
                     "mode": "image_edit",
-                    "seed": seed,
                     "style_reference_used": false,
-                    "model": {"provider": "fal", "model": model},
-                    "generation_receipt": receipt.clone()
+                    "model": {"provider": provider, "model": model},
+                    "generation_record": record.clone()
                 }));
                 cases.push(json!({
                     "file_id": file_id,
@@ -1396,12 +1229,11 @@ mod tests {
                     "composition": COMPOSITIONS[index],
                     "source_medium": SOURCE_MEDIA[index],
                     "mode": "image_edit",
-                    "seed": seed,
                     "prompt": PROMPT,
                     "style_reference_used": false,
                     "content_preserved": true,
                     "source_medium_replaced": true,
-                    "generation_receipt": receipt,
+                    "generation_record": record,
                     "scores": {
                         "medium_material": 2, "marks_edges": 2, "tonal_shading": 1,
                         "color_roles": 2, "composition": 1, "signature_details": 2,
@@ -1409,7 +1241,7 @@ mod tests {
                     }
                 }));
             }
-            models.push(json!({"provider": "fal", "model": model, "cases": cases}));
+            models.push(json!({"provider": provider, "model": model, "cases": cases}));
         }
         json!({
             "name": "Archive Ember",
@@ -1419,6 +1251,7 @@ mod tests {
             "credits": [{"name": "European relief print tradition", "kind": "tradition"}],
             "source_basis": {
                 "schema_version": "1", "verdict": "pass", "all_named_people_checked": true,
+                "no_living_artist_target": true, "tradition_level_description": true,
                 "reviewer": {"provider": "anthropic", "model": "reviewer"},
                 "sources": [{
                     "name": "European relief print tradition", "kind": "tradition",
@@ -1440,7 +1273,7 @@ mod tests {
                 "evaluator": {"provider": "openai", "model": "vision-reviewer"},
                 "models": models
             },
-            "proof_shots_manifest": {"schema_version": "2", "items": proof_manifest},
+            "proof_shots_manifest": {"schema_version": "3", "items": proof_manifest},
             "proof_ids": proof_ids
         })
     }
@@ -1459,9 +1292,7 @@ mod tests {
         assert!(verify_portable_prompt("as-1", text(&fields, "name"), prompt).is_ok());
         assert!(verify_source_basis("as-1", &fields, prompt).is_ok());
         assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
-        assert!(
-            verify_portability_report("as-1", &fields, prompt, &proof_ids, RECEIPT_KEY).is_ok()
-        );
+        assert!(verify_portability_report("as-1", &fields, prompt, &proof_ids).is_ok());
     }
 
     #[test]
@@ -1471,6 +1302,24 @@ mod tests {
         let prompt = text(&fields, "prompt_template");
         let err = verify_prompt_review("as-1", &fields, prompt).unwrap_err();
         assert_eq!(err.code, "art_style_prompt_review_invalid");
+    }
+
+    #[test]
+    fn source_review_must_reject_a_living_artist_target() {
+        let mut fields = valid_fields();
+        fields["source_basis"]["no_living_artist_target"] = json!(false);
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_source_basis("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_source_basis_invalid");
+    }
+
+    #[test]
+    fn source_review_must_be_independent_from_prompt_author() {
+        let mut fields = valid_fields();
+        fields["source_basis"]["reviewer"] = fields["model_provenance"]["style"].clone();
+        let prompt = text(&fields, "prompt_template");
+        let err = verify_source_basis("as-1", &fields, prompt).unwrap_err();
+        assert_eq!(err.code, "art_style_source_review_not_independent");
     }
 
     #[test]
@@ -1610,7 +1459,6 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_dimension_failed");
@@ -1633,7 +1481,6 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_prompt_changed");
@@ -1662,7 +1509,6 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_matrix_incomplete");
@@ -1685,17 +1531,16 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_case_invalid");
     }
 
     #[test]
-    fn caller_authored_or_forged_receipt_fails() {
+    fn manifest_and_report_generation_records_must_match() {
         let mut fields = valid_fields();
-        fields["proof_shots_manifest"]["items"][0]["generation_receipt"]["signature"] =
-            json!("00".repeat(32));
+        fields["proof_shots_manifest"]["items"][0]["generation_record"]["output"]
+            ["provider_request_id"] = json!("different-request");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1708,10 +1553,9 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
-        assert_eq!(err.code, "art_style_proof_receipt_signature_invalid");
+        assert_eq!(err.code, "art_style_proof_record_mismatch");
     }
 
     #[test]
@@ -1730,7 +1574,6 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_case_invalid");
@@ -1740,13 +1583,13 @@ mod tests {
     fn both_models_must_receive_the_identical_four_sources() {
         let mut fields = valid_fields();
         let manifest_index = 4;
-        let mut receipt =
-            fields["proof_shots_manifest"]["items"][manifest_index]["generation_receipt"].clone();
-        receipt["source"]["file_id"] = json!("different-generated-source");
-        sign_receipt(&mut receipt);
-        fields["proof_shots_manifest"]["items"][manifest_index]["generation_receipt"] =
-            receipt.clone();
-        fields["portability_report"]["models"][1]["cases"][0]["generation_receipt"] = receipt;
+        let mut record =
+            fields["proof_shots_manifest"]["items"][manifest_index]["generation_record"].clone();
+        record["source"]["file_id"] = json!("different-generated-source");
+        record["source"]["sha256"] = json!(sha256_hex("different-source-bytes"));
+        fields["proof_shots_manifest"]["items"][manifest_index]["generation_record"] =
+            record.clone();
+        fields["portability_report"]["models"][1]["cases"][0]["generation_record"] = record;
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1759,7 +1602,6 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_matrix_mismatch");
@@ -1768,15 +1610,9 @@ mod tests {
     #[test]
     fn every_model_needs_all_four_roles_and_all_four_media() {
         let mut fields = valid_fields();
-        let mut receipt =
-            fields["proof_shots_manifest"]["items"][1]["generation_receipt"].clone();
-        receipt["category"] = json!(PROOF_CATEGORIES[0]);
-        sign_receipt(&mut receipt);
         fields["proof_shots_manifest"]["items"][1]["category"] = json!(PROOF_CATEGORIES[0]);
-        fields["proof_shots_manifest"]["items"][1]["generation_receipt"] = receipt.clone();
         fields["portability_report"]["models"][0]["cases"][1]["category"] =
             json!(PROOF_CATEGORIES[0]);
-        fields["portability_report"]["models"][0]["cases"][1]["generation_receipt"] = receipt;
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1789,15 +1625,23 @@ mod tests {
             &fields,
             text(&fields, "prompt_template"),
             &proof_ids,
-            RECEIPT_KEY,
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_model_below_threshold");
     }
 
     #[test]
-    fn verifier_fails_closed_without_receipt_key() {
-        let fields = valid_fields();
+    fn models_are_not_hardcoded_to_one_provider() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][1]["provider"] = json!("second-provider");
+        fields["proof_shots_manifest"]["items"][4]["model"]["provider"] =
+            json!("second-provider");
+        fields["proof_shots_manifest"]["items"][5]["model"]["provider"] =
+            json!("second-provider");
+        fields["proof_shots_manifest"]["items"][6]["model"]["provider"] =
+            json!("second-provider");
+        fields["proof_shots_manifest"]["items"][7]["model"]["provider"] =
+            json!("second-provider");
         let proof_ids = fields["proof_ids"]
             .as_array()
             .unwrap()
@@ -1805,14 +1649,14 @@ mod tests {
             .filter_map(Value::as_str)
             .map(str::to_string)
             .collect::<Vec<_>>();
-        let err = verify_portability_report(
-            "as-1",
-            &fields,
-            text(&fields, "prompt_template"),
-            &proof_ids,
-            "",
-        )
-        .unwrap_err();
-        assert_eq!(err.code, "art_style_proof_receipt_key_missing");
+        assert!(
+            verify_portability_report(
+                "as-1",
+                &fields,
+                text(&fields, "prompt_template"),
+                &proof_ids,
+            )
+            .is_ok()
+        );
     }
 }

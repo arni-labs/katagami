@@ -129,6 +129,8 @@ source_basis = {
     "verdict": "pass",
     "reviewer": {"provider": "<provider>", "model": "<review model>"},
     "all_named_people_checked": True,
+    "no_living_artist_target": True,
+    "tradition_level_description": True,
     "sources": [
         {
             "name": "European relief print tradition",
@@ -148,13 +150,16 @@ Allowed `source_basis.sources[].kind` values are `tradition`, `movement`,
 - `licensed_artist` / `licensed_source` requires `license_url` or `permission`.
 - Every credit must have a matching source-basis entry.
 - Every artist credit must be public-domain or licensed.
+- The source reviewer must differ from the prompt author and must explicitly
+  reject hidden targeting of a living artist, including an unnamed but
+  recognizably practitioner-specific recipe.
 - Do not name an artist in the operative prompt, even when public-domain; encode
   the observable technique.
 
 ## 4. Cross-model behavioral proof
 
-Text review cannot prove image behavior. Test the exact prompt on the two
-governed edit models using a style-specific 2×4 matrix. Every style needs these
+Text review cannot prove image behavior. Test the exact prompt on two distinct
+edit models using a style-specific 2×4 matrix. Every style needs these
 four semantic roles:
 
 1. `human_portrait`
@@ -170,27 +175,28 @@ line drawing`, `neutral synthetic 3d render`, and `flat vector illustration`,
 so portrait never implicitly means photograph and landscape never implicitly
 means one stock horizon.
 
-Call `generate_art_style_proof_matrix` with those four structured cases. The
-governed service:
+The contributor owns image generation. If this contributor is a TemperPaw
+agent, use PawMedia (`temper.image_generate` for neutral sources and
+`temper.image_edit` for outputs). Otherwise use the contributor's own tools.
+Katagami never calls an image provider and never spends credits on behalf of an
+outside contributor.
 
-- generates four style-neutral sources itself and accepts no external/user
-  image URL;
-- locks the exact source and output bytes in PawFS;
-- sends the same four sources and byte-for-byte canonical aesthetic prompt to
-  `openai/gpt-image-2/edit` and `fal-ai/nano-banana-2/edit`;
-- supplies no style reference and adds no model-specific aesthetic wording;
-- returns eight proof records with execution-layer HMAC receipts binding the
-  exact style slug, role, subject, composition, source medium, source file/hash,
-  source request/prompt hash, output model/request/prompt hash/seed, and output
-  file/hash.
+For either path:
 
-Do not upload, substitute, or hand-author proof records. A receipt signed by the
-governed generator is required in both the proof manifest and portability
-report. The finalizer verifies the signature, streams all four Locked sources
-and eight Locked outputs, checks every signed SHA-256, and proves both models received
-the identical source quartet. This makes private or user-supplied media
-structurally unavailable to catalog proof generation rather than trusting a
-curator's provenance label.
+- prepare four style-neutral, contributor-owned sources;
+- send the same four sources and the byte-for-byte canonical aesthetic prompt
+  to two distinct edit models;
+- supply no style reference and add no model-specific aesthetic wording;
+- import each source and output with `import_art_style_proof_image`, which locks
+  and returns the exact File id and SHA-256;
+- build a `generation_record` binding the style slug, source file/hash, output
+  file/hash, canonical prompt hash, and provider request id when available.
+
+The finalizer does not trust a provider name or contributor claim by itself. It
+streams all four Locked sources and eight Locked outputs, checks every SHA-256,
+requires the same source quartet for both models, and independently evaluates
+the complete 2×4 matrix. Provider-specific fields such as seeds are optional;
+the portable contract is exact files + exact prompt + distinct model identity.
 
 Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
 The subject/content must remain recognizable, the source medium must be fully
@@ -218,12 +224,11 @@ portability_report = {
                     "composition": "<specific spatial arrangement>",
                     "source_medium": "documentary photograph",
                     "mode": "image_edit",
-                    "seed": "<seed or request id>",
                     "prompt": prompt_template,
                     "style_reference_used": False,
                     "content_preserved": True,
                     "source_medium_replaced": True,
-                    "generation_receipt": proof["generation_receipt"],
+                    "generation_record": proof["generation_record"],
                     "scores": {
                         "medium_material": 2,
                         "marks_edges": 2,
@@ -237,7 +242,7 @@ portability_report = {
                 # the other three semantic roles, each using a distinct source medium
             ],
         },
-        # the second governed model with the exact same four source chains
+        # the second distinct model with the exact same four source chains
     ],
 }
 ```
@@ -247,12 +252,13 @@ prompt and rerun the failed model; never add a per-model prompt.
 
 ## 5. Write files and submit once
 
-Write every proof image to PawFS. `proof_shots_manifest.items` must mirror the
-eight governed proof records exactly, including category, subject, composition,
-source medium, mode, seed, model/provider, `style_reference_used: false`, and
-the unmodified `generation_receipt`. Choose the strongest of those exact eight
-governed proof Files as the thumbnail; do not force the same role across styles
-and do not upload a separate or cropped thumbnail through this workflow.
+Import every contributor-supplied source and proof image.
+`proof_shots_manifest.items` must mirror the eight proof records exactly,
+including category, subject, composition, source medium, mode, model/provider,
+`style_reference_used: false`, and the unmodified `generation_record`. Choose
+the strongest of those exact eight verified proof Files as the thumbnail; do
+not force the same role across styles and do not upload a separate or cropped
+thumbnail through this workflow.
 Optional example references use
 `reference_image_file_ids` and `reference_manifest`; pass `[]` and
 `{"items":[]}` when none exist.
@@ -293,7 +299,7 @@ temper.action("ArtStyles", eid, "SubmitArtStyle", {
     "reference_manifest": json.dumps({"items": reference_manifest}, ensure_ascii=False),
     "proof_shots_file_ids": json.dumps(proof_ids),
     "proof_shots_manifest": json.dumps(
-        {"schema_version": "2", "items": proof_manifest},
+        {"schema_version": "3", "items": proof_manifest},
         ensure_ascii=False,
     ),
     "thumbnail_file_id": thumbnail_file_id,
@@ -327,7 +333,7 @@ temper.done("synthesize_art_style complete")
 - Each session creates one style.
 - Batch/catalog revalidation jobs process at most 10 styles.
 - Procedural placeholders do not count as proof.
-- Never promote a private or user-supplied validation input into proof shots,
-  thumbnails, references, or published assets. Catalog proof sources come only
-  from `generate_art_style_proof_matrix`; it accepts no image input.
+- Proof images are contributor-supplied. Confirm the contributor owns or is
+  authorized to use every source; import them into Katagami and retain their
+  generation records. Katagami validates but never generates submission media.
 - Missing model access is a visible failed/blocked review, never a silent pass.

@@ -2424,18 +2424,6 @@ fn verify_synthesized_art_styles(
     headers: &[(String, String)],
     fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
-    let receipt_key = ctx
-        .config
-        .get("art_style_proof_receipt_key")
-        .filter(|value| !value.is_empty() && !value.contains("{secret:"))
-        .ok_or_else(|| {
-            VerificationError::new(
-                "art_style_proof_receipt_key_missing",
-                "ArtStyle finalization requires the governed proof-receipt verifier key",
-            )
-            .field("art_style_proof_receipt_key")
-            .repairable(false)
-        })?;
     let ids = lane_ids_from_job(fields, &["art_style_ids", "artstyle_ids"]);
     if ids.is_empty() {
         return Err(VerificationError::new(
@@ -2511,14 +2499,13 @@ fn verify_synthesized_art_styles(
             &lane_fields,
             &prompt_template,
             &proof_ids,
-            receipt_key,
         )?;
-        verify_art_style_proof_receipt_files(
+        verify_art_style_proof_record_files(
             ctx,
             api_url,
             headers,
             id,
-            &verified_portability.proof_receipts,
+            &verified_portability.proof_records,
         )?;
 
         dispatch_action(
@@ -2874,46 +2861,46 @@ fn verify_lane_image_file(
     Ok(())
 }
 
-fn verify_art_style_proof_receipt_files(
+fn verify_art_style_proof_record_files(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     owner_id: &str,
-    receipts: &[art_style_review::VerifiedProofReceipt],
+    records: &[art_style_review::VerifiedProofRecord],
 ) -> Result<(), VerificationError> {
     let mut verified_sources = std::collections::BTreeSet::new();
     let mut verified_outputs = std::collections::BTreeSet::new();
-    for receipt in receipts {
-        if verified_sources.insert(receipt.source_file_id.clone()) {
-            verify_art_style_receipt_file(
+    for record in records {
+        if verified_sources.insert(record.source_file_id.clone()) {
+            verify_art_style_proof_file(
                 ctx,
                 api_url,
                 headers,
                 owner_id,
-                &receipt.source_file_id,
-                &receipt.source_sha256,
+                &record.source_file_id,
+                &record.source_sha256,
                 true,
                 "proof_source",
             )?;
         }
-        if !verified_outputs.insert(receipt.output_file_id.clone()) {
+        if !verified_outputs.insert(record.output_file_id.clone()) {
             return Err(VerificationError::new(
                 "art_style_proof_output_duplicate",
                 format!(
-                    "ArtStyle '{owner_id}' proof receipt repeats output file '{}'",
-                    receipt.output_file_id
+                    "ArtStyle '{owner_id}' proof record repeats output file '{}'",
+                    record.output_file_id
                 ),
             )
             .entity("ArtStyle", owner_id)
-            .artifact("proof_output", &receipt.output_file_id));
+            .artifact("proof_output", &record.output_file_id));
         }
-        verify_art_style_receipt_file(
+        verify_art_style_proof_file(
             ctx,
             api_url,
             headers,
             owner_id,
-            &receipt.output_file_id,
-            &receipt.output_sha256,
+            &record.output_file_id,
+            &record.output_sha256,
             true,
             "proof_output",
         )?;
@@ -2922,7 +2909,7 @@ fn verify_art_style_proof_receipt_files(
         return Err(VerificationError::new(
             "art_style_proof_file_matrix_incomplete",
             format!(
-                "ArtStyle '{owner_id}' receipts must resolve to four immutable sources and eight unique outputs"
+                "ArtStyle '{owner_id}' proof records must resolve to four immutable sources and eight unique outputs"
             ),
         )
         .entity("ArtStyle", owner_id)
@@ -2931,7 +2918,7 @@ fn verify_art_style_proof_receipt_files(
     Ok(())
 }
 
-fn verify_art_style_receipt_file(
+fn verify_art_style_proof_file(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
@@ -2943,8 +2930,8 @@ fn verify_art_style_receipt_file(
 ) -> Result<(), VerificationError> {
     let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
         VerificationError::new(
-            "art_style_proof_receipt_file_missing",
-            format!("ArtStyle '{owner_id}' proof receipt points to missing file '{file_id}'"),
+            "art_style_proof_file_missing",
+            format!("ArtStyle '{owner_id}' proof record points to missing file '{file_id}'"),
         )
         .entity("ArtStyle", owner_id)
         .artifact(artifact_kind, file_id)
@@ -2957,9 +2944,9 @@ fn verify_art_style_receipt_file(
     };
     if !status_valid {
         return Err(VerificationError::new(
-            "art_style_proof_receipt_file_state_invalid",
+            "art_style_proof_file_state_invalid",
             format!(
-                "ArtStyle '{owner_id}' receipt file '{file_id}' is in state '{status}'{}",
+                "ArtStyle '{owner_id}' proof file '{file_id}' is in state '{status}'{}",
                 if require_locked {
                     ", expected immutable Locked file"
                 } else {
@@ -2971,12 +2958,12 @@ fn verify_art_style_receipt_file(
         .artifact(artifact_kind, file_id));
     }
     let actual_sha256 =
-        read_art_style_receipt_file_sha256(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
+        read_art_style_proof_file_sha256(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
     if actual_sha256 != expected_sha256 {
         return Err(VerificationError::new(
-            "art_style_proof_receipt_file_hash_mismatch",
+            "art_style_proof_file_hash_mismatch",
             format!(
-                "ArtStyle '{owner_id}' receipt file '{file_id}' does not match its signed SHA-256"
+                "ArtStyle '{owner_id}' proof file '{file_id}' does not match its recorded SHA-256"
             ),
         )
         .entity("ArtStyle", owner_id)
@@ -2985,7 +2972,7 @@ fn verify_art_style_receipt_file(
     Ok(())
 }
 
-fn read_art_style_receipt_file_sha256(
+fn read_art_style_proof_file_sha256(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
@@ -3005,8 +2992,8 @@ fn read_art_style_receipt_file_sha256(
             temper_wasm_sdk::http_stream::streaming_call("GET", &url, &stream_headers)
                 .map_err(|error| {
                     VerificationError::new(
-                        "art_style_proof_receipt_file_read_failed",
-                        format!("Failed to open proof receipt file '{file_id}': {error}"),
+                        "art_style_proof_file_read_failed",
+                        format!("Failed to open proof file '{file_id}': {error}"),
                     )
                     .entity("ArtStyle", owner_id)
                     .artifact(artifact_kind, file_id)
@@ -3014,8 +3001,8 @@ fn read_art_style_receipt_file_sha256(
                 })?;
         request_body.finish().map_err(|error| {
             VerificationError::new(
-                "art_style_proof_receipt_file_read_failed",
-                format!("Failed to finish proof receipt request for '{file_id}': {error}"),
+                "art_style_proof_file_read_failed",
+                format!("Failed to finish proof file request for '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
             .artifact(artifact_kind, file_id)
@@ -3023,8 +3010,8 @@ fn read_art_style_receipt_file_sha256(
         })?;
         let head = response_head().map_err(|error| {
             VerificationError::new(
-                "art_style_proof_receipt_file_read_failed",
-                format!("Failed to read proof receipt response head for '{file_id}': {error}"),
+                "art_style_proof_file_read_failed",
+                format!("Failed to read proof file response head for '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
             .artifact(artifact_kind, file_id)
@@ -3033,10 +3020,8 @@ fn read_art_style_receipt_file_sha256(
         if !(200..300).contains(&head.status) {
             let _ = response_body.close();
             return Err(VerificationError::new(
-                "art_style_proof_receipt_file_read_failed",
-                format!(
-                    "Proof receipt file '{file_id}' returned HTTP {}", head.status
-                ),
+                "art_style_proof_file_read_failed",
+                format!("Proof file '{file_id}' returned HTTP {}", head.status),
             )
             .entity("ArtStyle", owner_id)
             .artifact(artifact_kind, file_id));
@@ -3051,8 +3036,8 @@ fn read_art_style_receipt_file_sha256(
                     Ok(Some(count)) => hasher.update(&buffer[..count]),
                     Err(error) => {
                         return Err(VerificationError::new(
-                            "art_style_proof_receipt_file_read_failed",
-                            format!("Failed while hashing proof receipt file '{file_id}': {error}"),
+                            "art_style_proof_file_read_failed",
+                            format!("Failed while hashing proof file '{file_id}': {error}"),
                         )
                         .entity("ArtStyle", owner_id)
                         .artifact(artifact_kind, file_id)
@@ -3066,8 +3051,8 @@ fn read_art_style_receipt_file_sha256(
         let hash = hash_result?;
         close_result.map_err(|error| {
             VerificationError::new(
-                "art_style_proof_receipt_file_read_failed",
-                format!("Failed to close proof receipt file '{file_id}': {error}"),
+                "art_style_proof_file_read_failed",
+                format!("Failed to close proof file '{file_id}': {error}"),
             )
             .entity("ArtStyle", owner_id)
             .artifact(artifact_kind, file_id)
@@ -3080,10 +3065,8 @@ fn read_art_style_receipt_file_sha256(
     {
         let _ = (ctx, api_url, headers);
         Err(VerificationError::new(
-            "art_style_proof_receipt_file_read_failed",
-            format!(
-                "Proof receipt hashing for file '{file_id}' runs in the deployed WASM finalizer"
-            ),
+            "art_style_proof_file_read_failed",
+            format!("Proof hashing for file '{file_id}' runs in the deployed WASM finalizer"),
         )
         .entity("ArtStyle", owner_id)
         .artifact(artifact_kind, file_id)

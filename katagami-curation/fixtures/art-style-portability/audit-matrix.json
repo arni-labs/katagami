@@ -1,5 +1,5 @@
 {
-  "schema_version": "2",
+  "schema_version": "3",
   "purpose": "Style-specific, consent-safe subject matrices for ArtStyle cross-model portability audits",
   "rules": {
     "required_categories": [
@@ -17,254 +17,327 @@
     "same_inputs_across_models_within_style": true,
     "same_inputs_across_styles": false,
     "user_media_allowed": false,
-    "style_references_allowed": false
+    "style_references_allowed": false,
+    "source_fixture_policy": "Contributor-created outside Katagami and supplied to the audit. Katagami does not invoke or pay an image generator."
   },
   "styles": [
     {
       "style_id": "en-019ef0b7-1be3-7710-8268-ddc60cd2c42c",
       "slug": "risograph-ember",
+      "canonical_prompt": "Construct the supplied subject entirely as a two-ink stencil-duplicator print on matte uncoated paper. This is a complete two-mask reconstruction, not a colorization or textured rendering. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Before rendering, discard every continuous source tone and every source line or surface mark. Reduce all forms to solid spot-ink silhouettes or visibly coarse halftone cells with slightly broken paper-grain edges; no photographic midtones and no original hatching may survive. Model depth only through dot density, hard overlaps, and ink overprinting, never smooth shading. Assign the darkest supplied palette role to structural ink and one saturated role to sparse focal accents, leaving the paper as the lightest value. Use an asymmetric editorial-poster crop with generous bare paper that supports a strong silhouette. Show slightly misregistered layers, clean offset halos, and visible overprint intersections. Avoid photorealistic source surfaces, glossy surfaces, gradients, airbrush blending, fine engraving, retained source-medium marks, text, and logos.",
       "selection_rationale": "Print-room, street-life, portable-electronics, and dense-city subjects expose ink separation and registration behavior while spanning people, motion, hard products, and layered depth.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "night-shift newspaper printer wearing an ink apron",
           "composition": "waist-up three-quarter portrait beside a stack of blank paper",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/risograph-ember/human-portrait-documentary.webp",
+          "source_sha256": "b8c7ea67b2856bec0d0360e5eac936412897414c50fca28059fe7d6d390d1c0b"
         },
         {
           "category": "nonhuman_living",
           "subject": "urban pigeon lifting into flight",
           "composition": "single bird crossing the frame diagonally with wings fully spread",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/risograph-ember/nonhuman-living-line.webp",
+          "source_sha256": "047118a064101cda3ea4fb71cc8b07251009804dd771889f26c42439848b21b9"
         },
         {
           "category": "still_life_object",
           "subject": "portable cassette player, headphones, and two tape cases",
           "composition": "overhead product arrangement with clear gaps between objects",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/risograph-ember/still-life-3d.webp",
+          "source_sha256": "e2e43cb057456fcdba905da5f86db92094e873b0854f23be0fca9685621577c9"
         },
         {
           "category": "landscape_environment",
           "subject": "dense hillside neighborhood with stairways and rooftop water tanks",
           "composition": "wide layered cityscape rising from lower left to upper right",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/risograph-ember/landscape-environment-vector.webp",
+          "source_sha256": "f1d09dcd02dfe3e6c8b1d01be4151be31bc31ad95570f944e94de21a8d54a46e"
         }
       ]
     },
     {
       "style_id": "en-019ef63d-c464-7de1-8eb1-67a65263b683",
       "slug": "cyanotype",
+      "canonical_prompt": "Construct the supplied subject entirely as an iron-salt contact print on lightly textured cold-pressed paper. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Define forms with luminous contact silhouettes, delicate white linear traces, and occasional brush-coated edge breaks. Build tone as a long monochrome range from near-white paper to dense Prussian blue, with no colored local shading. Use the supplied palette only by mapping its darkest cool role to the blue image and its lightest neutral to exposed paper. Compose the subject full-frame while preserving a few precise luminous negative shapes. Show faint chemical blooms, uneven sensitizer wash, subtle fibre texture, and slight exposure variation. Avoid multicolor rendering, glossy digital lighting, hard vector contours, retained source-medium marks, readable text, and logos.",
       "selection_rationale": "Field observation, translucency, glass, and tidal terrain suit cyanotype's contact-print logic while testing whether it can resolve a person, a soft animal, reflective objects, and deep space.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "coastal field researcher holding an empty specimen tray",
           "composition": "standing three-quarter portrait with windblown coat and open space to one side",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/cyanotype/human-portrait-line.webp",
+          "source_sha256": "4afcd80d04b049384041b8a54663b014d79982473d7e1e79593d17b13c20616b"
         },
         {
           "category": "nonhuman_living",
           "subject": "moon jellyfish drifting with four trailing tentacles",
           "composition": "single translucent animal suspended off-center in open water",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/cyanotype/nonhuman-living-documentary.webp",
+          "source_sha256": "28ffb220708ed1d9979138c9e08cf5c23b80c2b92bc2f1eeb0b98ab72f3e6089"
         },
         {
           "category": "still_life_object",
           "subject": "glass bottles, brass dividers, and folded cotton cloth",
           "composition": "shallow tabletop arrangement with overlapping silhouettes",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/cyanotype/still-life-vector.webp",
+          "source_sha256": "b3eea1891357251a79fbe98d01c36742d39db896f3c5a942f540c0fbb63a3b0f"
         },
         {
           "category": "landscape_environment",
           "subject": "rocky tidal cove at low tide beneath an open sky",
           "composition": "wide view with exposed pools leading toward a distant headland",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/cyanotype/landscape-environment-3d.webp",
+          "source_sha256": "502f156780e5969aa821402a9b1308a262721a931512916ed8eac0b843cab5f2"
         }
       ]
     },
     {
       "style_id": "en-019ef726-f4e5-7052-bd9e-5ae2ab1ab703",
-      "slug": "decoupage",
+      "slug": "torn-cut-paper-collage",
+      "canonical_prompt": "Construct the supplied subject entirely from layered hand-torn and scissor-cut paper on warm board. This is a complete physical paper reconstruction, not a surface overlay or painted imitation. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Discard every source line, photographic surface, and rendered volume before rebuilding; every visible form and background area must be an opaque or translucent piece of paper. Convert every contour and small mechanical detail into simplified stacked paper strips, discs, and cutouts with fibrous deckles, clean cut arcs, and overlapping silhouettes. Model depth only with flat paper layers, small offset underlays, and soft contact shadows; do not paint volume onto the pieces. Assign the supplied palette to a limited set of colored papers, reserving the brightest role for one or two small focal pieces. Fill the frame with a clear picture-book arrangement and broad readable shapes. Show paper grain, torn fibres, translucent tissue overlaps, tiny pasted seams, and slightly lifted corners. Avoid drawn or printed outlines, retained source texture, smooth gradients, glossy 3D surfaces, readable text, and logos.",
       "selection_rationale": "Carried baskets, crossing grasses, overlapping tabletop silhouettes, and a curving street create natural layer boundaries without asking the source generator for collage styling.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "street-food vendor carrying a shallow basket",
           "composition": "frontal half-length portrait with basket cutting across the lower frame",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/torn-cut-paper-collage/human-portrait-3d.webp",
+          "source_sha256": "7f0491816d18942c6e485c8c6d3fa9932c3f19f3f588b1d53390d793c85b9cfb"
         },
         {
           "category": "nonhuman_living",
           "subject": "red fox stepping through tall grass",
           "composition": "full animal in profile with grasses crossing its legs",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/torn-cut-paper-collage/nonhuman-living-vector.webp",
+          "source_sha256": "72ea730fe6089b908f385f62ad71eb185fceb467333ce7b288e123045f63837e"
         },
         {
           "category": "still_life_object",
           "subject": "ceramic kettle, three lemons, and a striped dish towel",
           "composition": "casual tabletop still life with one lemon separated in front",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/torn-cut-paper-collage/still-life-documentary.webp",
+          "source_sha256": "0fce5964894f05309651600cb516b7a2b60024bdd6a7619f7b806af9495a2514"
         },
         {
           "category": "landscape_environment",
           "subject": "tram curving through a steep neighborhood",
           "composition": "street-level view with tracks sweeping from foreground into clustered buildings",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/torn-cut-paper-collage/landscape-environment-line.webp",
+          "source_sha256": "d7d4c05852a56ebc941c752606850dcde43d0c109d844c103e51ac781dad990d"
         }
       ]
     },
     {
       "style_id": "en-019ef7e2-bd69-7352-be66-8458156801bc",
       "slug": "hardline",
+      "canonical_prompt": "Construct the supplied subject entirely from large flat edge-meeting planes of matte pigment. This is a complete color-field reconstruction, not a flattened filter placed over the source. Preserve recognizable subject matter, object relationships, viewpoint, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Discard all source texture, small surface detail, and continuous tone so every visible area belongs to one uniformly opaque geometric field. Define every form with crisp geometric boundaries and clean silhouettes, using no contour outline. Build all depth through adjacency, scale, and abrupt value changes, with no blended shading. Map the supplied palette to a few saturated fields, reserving the highest-chroma role for one controlled focal plane. Arrange the planes in an asymmetric full-frame color-field composition with deliberate negative intervals; introduce no decorative shape that is unrelated to the supplied subject or its negative space. Keep every surface uniformly opaque and every junction precisely hard-edged. Avoid brush texture, gradients, shadows, retained source-medium marks, photorealistic detail, text, and logos.",
       "selection_rationale": "Angular human balance and rigid products are sympathetic tests; radial agave growth and a sparse salt-flat horizon are stress tests for preserving decisive geometry across organic and open scenes.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "contemporary dancer in structured rehearsal clothes holding an angular balance pose",
           "composition": "full-length studio portrait with the figure reaching across a tall off-center frame",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/hardline/human-portrait-vector.webp",
+          "source_sha256": "c04a665d12d253638196df02da4d29d0cbf5fd9f88b1dac7c641eb9c6c2d2cf9"
         },
         {
           "category": "nonhuman_living",
           "subject": "agave rosette with a small beetle on one blade",
           "composition": "low close view with pointed leaves radiating beyond the frame",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/hardline/nonhuman-living-3d.webp",
+          "source_sha256": "65b67613d79109090f5d9f7c0a0a27eab5a5a71544c8d57564382115a7a1221e"
         },
         {
           "category": "still_life_object",
           "subject": "folding chair, adjustable desk lamp, and rectangular book",
           "composition": "three objects meeting as a compact asymmetric product group",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/hardline/still-life-line.webp",
+          "source_sha256": "46d7ca19c36c8adbdb95db3cb3b7086631afae2ce5238e4cedeca3e57d53ba92"
         },
         {
           "category": "landscape_environment",
           "subject": "salt flat with a distant mesa and one utility tower",
           "composition": "very wide horizon with the tower isolated in the right third",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/hardline/landscape-environment-documentary.webp",
+          "source_sha256": "9e77c8215db71be490bd39a15d2e393a6897eaca34234d0a935abe27c8beb8fc"
         }
       ]
     },
     {
       "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
       "slug": "dawnvapor-cel",
+      "canonical_prompt": "Construct the supplied subject entirely as a newly hand-inked flat animation cel. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; redraw rather than filter or trace it. Define every form with clean black contour lines, tapered hairline interior rules, and decisive silhouette cuts. Build volume with two-step cel shading: one flat local fill and one hard-edged shadow, with no modeled gradients. Map color to cool lavender and cyan atmosphere, deep blue structure, and tiny terminal-green and magenta rectangular glints. Crop asymmetrically so the subject fills the frame while a restrained dawn haze opens behind it. Show sparse edge glints, registration-clean fills, and thin technical accent bars. Avoid retained source-medium marks, photorealism, painterly surfaces, glossy 3D rendering, heavy neon glow, text, and logos.",
       "selection_rationale": "Radio equipment and a pre-sunrise platform exercise the style's technical-dawn vocabulary, while a human face and turning koi test whether cel reconstruction works on skin, hair, and organic motion without a reference image.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "overnight radio operator wearing headphones",
           "composition": "off-center shoulders-up portrait with a console edge in the foreground",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/dawnvapor-cel/human-portrait-documentary.webp",
+          "source_sha256": "799d06f79a084f3b2821c5944435ca997d39705f73b3074a0a6c5fa5423368ae"
         },
         {
           "category": "nonhuman_living",
           "subject": "two koi turning in opposite directions beneath rippled water",
           "composition": "overhead circular movement with open water at the center",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/dawnvapor-cel/nonhuman-living-line.webp",
+          "source_sha256": "8c7ef4227287be5a90e3d863eaa6fdab0385cb7185b4684478005f926a3c099e"
         },
         {
           "category": "still_life_object",
           "subject": "portable field radio, coiled cable, and signal meter",
           "composition": "low three-quarter product view with the cable crossing the foreground",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/dawnvapor-cel/still-life-3d.webp",
+          "source_sha256": "113b61fbc875de08ce350683bfbab4da5397e9cad50c23bdcceaec257a266f58"
         },
         {
           "category": "landscape_environment",
           "subject": "elevated railway platform just before sunrise",
           "composition": "long one-point perspective with tracks exiting toward the horizon",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/dawnvapor-cel/landscape-environment-vector.webp",
+          "source_sha256": "22a3127cca56933a106fafb591195fc0e50b82fb581191a37ad9b0a1515719fe"
         }
       ]
     },
     {
       "style_id": "en-019efd9f-293b-7423-abb4-cecf6689aeac",
-      "slug": "softbody",
+      "slug": "bouba-softbody",
+      "canonical_prompt": "Construct the supplied subject entirely as an inflated soft-vinyl three-dimensional object on a calm studio field. Preserve recognizable subject matter, object count, spatial relationships, viewpoint, depth ordering, and broad composition when an input image is present, but retain none of its material, texture, lighting, or shading; rebuild rather than filter or trace it. Keep the supplied arrangement intact while translating each existing form; do not replace the scene with a generic centered icon or flatten its foreground, middle distance, and background. Replace every edge with pillowy rounded fillets, puffed seams, and smooth continuous contours with no sharp corners. Model volume with one broad upper-left highlight, soft subsurface falloff, and narrow ambient-occlusion creases where forms meet. Map the supplied palette to matte-to-satin vinyl surfaces, reserving the brightest role for a small molded accent. Give the translated subject generous breathing room and a single grounded contact shadow without changing its essential camera relationship. Show slight air-filled bulges, seam tension, and fine molded-surface softness. Avoid hard edges, noisy texture, metallic gloss, flat illustration, retained source-medium marks, text, and logos.",
       "selection_rationale": "A stretched athlete and segmented animal test living anatomy; a rigid espresso machine and repeated turbine landscape deliberately test whether soft volumetric treatment transfers beyond naturally rounded subjects.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "youth goalkeeper in padded kit holding a ball overhead",
           "composition": "full-length environmental portrait in front of a goal net with the body stretched diagonally",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/bouba-softbody/human-portrait-line.webp",
+          "source_sha256": "703533f05bbd2e3710fae867aa197d0b154c10fae208dea4f66611750cbc53e9"
         },
         {
           "category": "nonhuman_living",
           "subject": "armadillo walking with its segmented shell visible",
           "composition": "ground-level side view with the full animal and a long cast shadow",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/bouba-softbody/nonhuman-living-documentary.webp",
+          "source_sha256": "c861fa92caed77516035e0eef97f23d0da65e5e3ca82b9c6362c1ea4ff9ea7f6"
         },
         {
           "category": "still_life_object",
           "subject": "compact espresso machine, cup, and tamper",
           "composition": "straight-on product group with rigid verticals and small gaps",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/bouba-softbody/still-life-vector.webp",
+          "source_sha256": "db37cacc04737db063f59633b99590bdea479c640f19c68425c9f3c5d230cfb0"
         },
         {
           "category": "landscape_environment",
           "subject": "wind turbines along a ridge above farm fields",
           "composition": "deep panoramic view with repeating towers receding into distance",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/bouba-softbody/landscape-environment-3d.webp",
+          "source_sha256": "a70b98f20d25c242abd1b9c92329e08d167941ce92df592e47fc4764c134ec26"
         }
       ]
     },
     {
       "style_id": "en-019efd9f-3328-7d92-9a46-c86dcf3929f1",
       "slug": "wetwash",
+      "canonical_prompt": "Construct the supplied subject entirely with saturated wet-into-wet watercolor on bright cold-pressed paper. This is a complete repaint in moving pigment and water, not a pale wash over the source. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, shading, or linework; repaint rather than filter or trace it. Remove every source contour before painting; every visible edge must be formed by a pigment bloom, capillary fringe, pooled wash, or deliberate dry-paper break. Define forms with feathered blooms, soft capillary fringes, and occasional dry-paper edge breaks. Build volume from pooled translucent washes, overlapping glazes, granulating pigment, and luminous bare-paper highlights rather than line drawing. Map the supplied palette to clean jewel-tone washes, keeping the darkest role only in a few pooled accents and the paper as the lightest value. Let the subject dominate the frame while open paper channels air through the composition. Show backruns, cauliflower blooms, tide lines, and fine pigment settling. Avoid underdrawing, opaque flat fills, hard vector contours, muddy mixing, digital airbrush gradients, retained source-medium marks, glossy 3D lighting, text, and logos.",
       "selection_rationale": "A musician, diving bird, transparent bottle, and rainy street supply gesture, speed, overlap, reflection, and depth without embedding watercolor or wash cues in the source content.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "violinist pausing between phrases",
           "composition": "seated half-length portrait with bow angled across the frame",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/wetwash/human-portrait-3d.webp",
+          "source_sha256": "25e66207e11e96558f7cffbcd4d29d45b92ed5d5e713feb67dd1d936da64b977"
         },
         {
           "category": "nonhuman_living",
           "subject": "kingfisher diving toward water with wings tucked",
           "composition": "small bird descending through a tall frame toward one ripple",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/wetwash/nonhuman-living-vector.webp",
+          "source_sha256": "101ad325d2d5d5ddf1f91f5751a55e1f8c98cdad6da4ee31a8935f552b38e76a"
         },
         {
           "category": "still_life_object",
           "subject": "clear medicine bottle, brass key, and folded blue ribbon",
           "composition": "close tabletop still life with transparent overlaps and narrow negative spaces",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/wetwash/still-life-documentary.webp",
+          "source_sha256": "7a0c3f39f8d67b5254aebe2eff62019730138081c028517045dcc01936bd2df5"
         },
         {
           "category": "landscape_environment",
           "subject": "rainy open-air market street with awnings and reflections",
           "composition": "eye-level street view leading between stalls toward a bright distant opening",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/wetwash/landscape-environment-line.webp",
+          "source_sha256": "5ae3a1ebe56a998a1cb750e979d100a80fbafb832eb0fed5fed396ea510b321b"
         }
       ]
     },
     {
       "style_id": "en-019efdcd-404d-7233-a8d4-9fd2ba595389",
-      "slug": "sampler",
+      "slug": "woven-sampler-embroidery",
+      "canonical_prompt": "Construct the supplied subject entirely as a hand-embroidered panel on visible woven linen. This is a complete physical restitching, not an image printed, painted, or projected onto fabric. Preserve recognizable subject matter, object relationships, and broad composition when an input image is present, but retain none of its material, texture, lighting, shading, or linework; restitch rather than filter or trace it. Remove every source contour and surface before rebuilding; every visible contour, filled area, and tonal transition must be made from individual thread stitches over the linen ground. Define every contour with couched cord and visible directional stitch edges, never drawn ink lines. Build tone with long-and-short satin stitches, dense seed stitches, raised French knots, and tiny thread shadows that follow form. Translate the supplied palette into dyed cotton and wool threads, reserving the brightest role for sparse knot accents. Compose the subject full-frame on a calm warp-and-weft ground with balanced ornamental spacing. Show individual floss strands, fibre fuzz, stitch-direction changes, and slightly raised seams. Avoid printed outlines, painted surfaces, smooth gradients, plastic gloss, retained source-medium marks, unaltered photographic texture, readable text, and logos.",
       "selection_rationale": "Workshop portraiture, a small armored animal, navigation objects, and an alpine route provide varied seams, scales, and surface divisions while ensuring the style is not tested only on textile-friendly subjects.",
       "cases": [
         {
           "category": "human_portrait",
           "subject": "instrument repairer holding calipers beside a workbench",
           "composition": "three-quarter standing portrait framed by two partially open instrument cases",
-          "source_medium": "flat vector illustration"
+          "source_medium": "flat vector illustration",
+          "source_file": "sources/woven-sampler-embroidery/human-portrait-vector.webp",
+          "source_sha256": "81de7b07cffbb970defb567a43a0dcefdd69356b546a949ea4dec2125db6cfbe"
         },
         {
           "category": "nonhuman_living",
           "subject": "stag beetle among oak leaves and two acorns",
           "composition": "close overhead cluster with the beetle crossing a diagonal twig",
-          "source_medium": "neutral synthetic 3d render"
+          "source_medium": "neutral synthetic 3d render",
+          "source_file": "sources/woven-sampler-embroidery/nonhuman-living-3d.webp",
+          "source_sha256": "01d318fba40cbddd3ab068aa9727bc28dc31e2966d3214c7d62d4783dc5ecb68"
         },
         {
           "category": "still_life_object",
           "subject": "enamel camping mug, compass, and folded map",
           "composition": "overhead arrangement with the map creating an irregular ground shape",
-          "source_medium": "black-ink line drawing"
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/woven-sampler-embroidery/still-life-line.webp",
+          "source_sha256": "1ea0ffd232af8fb12fc0dff2d26562a527f0b4d6a108650cf1d0f2cd65f02fc3"
         },
         {
           "category": "landscape_environment",
           "subject": "alpine footpath leading to a small stone shelter",
           "composition": "wide view with the path entering low and bending toward the shelter",
-          "source_medium": "documentary photograph"
+          "source_medium": "documentary photograph",
+          "source_file": "sources/woven-sampler-embroidery/landscape-environment-documentary.webp",
+          "source_sha256": "facdf101ead85b750c4b356e5244ea039a12b221fff9a65a1b302251642964f5"
         }
       ]
     }

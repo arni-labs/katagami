@@ -13,18 +13,30 @@ import {
   createEntity,
   getEntity,
   ingestImage,
+  ingestImageBytesWithDigest,
+  ingestImageWithDigest,
   listEntities,
   principalId,
+  temperAction,
   TemperError,
   uploadFile,
   type EntityRow,
   type Identity,
 } from "./temper.js";
-import {
-  ART_STYLE_PROOF_CATEGORIES,
-  ART_STYLE_SOURCE_MEDIA,
-  generateArtStyleProofMatrix,
-} from "./art-style-proofs.js";
+
+const ART_STYLE_PROOF_CATEGORIES = [
+  "human_portrait",
+  "nonhuman_living",
+  "still_life_object",
+  "landscape_environment",
+] as const;
+
+const ART_STYLE_SOURCE_MEDIA = [
+  "documentary photograph",
+  "black-ink line drawing",
+  "neutral synthetic 3d render",
+  "flat vector illustration",
+] as const;
 
 const KINDS = {
   language: { set: "DesignLanguages", path: "language" },
@@ -98,36 +110,25 @@ function fail(message: string) {
   };
 }
 
-const artStyleGenerationReceipt = z
+const artStyleGenerationRecord = z
   .object({
     schema_version: z.literal("1"),
-    issuer: z.literal("katagami-mcp"),
     kind: z.literal("art_style_proof"),
     style_slug: z.string(),
-    category: z.enum(ART_STYLE_PROOF_CATEGORIES),
-    subject: z.string(),
-    composition: z.string(),
-    source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
     source: z
       .object({
         file_id: z.string(),
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        endpoint: z.string(),
-        request_id: z.string(),
-        prompt_sha256: z.string().regex(/^[a-f0-9]{64}$/),
       })
       .strict(),
     output: z
       .object({
         file_id: z.string(),
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        endpoint: z.string(),
-        request_id: z.string(),
         prompt_sha256: z.string().regex(/^[a-f0-9]{64}$/),
-        seed: z.string(),
+        provider_request_id: z.string().optional(),
       })
       .strict(),
-    signature: z.string().regex(/^[a-f0-9]{64}$/),
   })
   .strict();
 
@@ -138,11 +139,10 @@ const artStyleProofInput = z.object({
   composition: z.string().min(1),
   source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
   mode: z.literal("image_edit"),
-  seed: z.string().min(1),
   style_reference_used: z.literal(false),
-  model: z.object({ provider: z.literal("fal"), model: z.string().min(1) }).strict(),
-  generation_receipt: artStyleGenerationReceipt.describe(
-    "Execution-layer HMAC receipt binding the exact prompt, generated source, model request, and output bytes. Caller-authored or externally uploaded proofs are unsupported.",
+  model: z.object({ provider: z.string().min(1), model: z.string().min(1) }).strict(),
+  generation_record: artStyleGenerationRecord.describe(
+    "Contributor-supplied provenance binding the exact prompt hash, imported source bytes, image model request when available, and imported output bytes. Katagami verifies the files and cross-model matrix but does not generate them.",
   ),
 }).strict();
 
@@ -332,50 +332,63 @@ export function buildServer(auth: AuthInfo): McpServer {
   );
 
   server.registerTool(
-    "generate_art_style_proof_matrix",
+    "import_art_style_proof_image",
     {
-      title: "Generate governed ArtStyle proofs",
+      title: "Import an ArtStyle proof image",
       description:
-        "Generate the consent-safe 2×4 portability matrix server-side. The tool creates one human portrait, one non-human living subject, one still-life/object, and one landscape/environment across four distinct neutral source media, then edits the same four sources with GPT Image and Nano Banana using the exact prompt. It returns HMAC-bound PawFS proof records for submit_art_style; no external or user image URL is accepted.",
+        "Import and lock one contributor-supplied source or output image for an ArtStyle proof, either by HTTPS URL or base64 bytes. Katagami stores and hashes the exact bytes; it does not generate or edit the image. TemperPaw contributors may create images with PawMedia before importing them, while other contributors use their own tools.",
       inputSchema: {
-        style_slug: z.string().regex(/^[a-z0-9-]+$/),
-        prompt_template: z
+        image_url: z.string().url().startsWith("https://").optional(),
+        image_base64: z
           .string()
-          .trim()
           .min(1)
-          .max(4000)
-          .describe("The exact canonical aesthetic prompt; sent unchanged to both edit models"),
-        cases: z
-          .array(
-            z
-              .object({
-                category: z.enum(ART_STYLE_PROOF_CATEGORIES),
-                subject: z.string().min(3).max(180),
-                composition: z.string().min(3).max(220),
-                source_medium: z.enum(ART_STYLE_SOURCE_MEDIA),
-              })
-              .strict(),
-          )
-          .length(4),
+          .max(11_184_812)
+          .optional()
+          .describe("Raw base64 for one contributor-supplied image, at most 8MB decoded"),
+        mime_type: z.enum(["image/png", "image/jpeg", "image/webp"]).optional(),
+        label: z.string().regex(/^[a-z0-9-]+$/).max(80),
       },
     },
-    async ({ style_slug, prompt_template, cases }) => {
+    async ({ image_url, image_base64, mime_type, label }) => {
       try {
-        const proofShots = await generateArtStyleProofMatrix(
-          id,
-          style_slug,
-          prompt_template,
-          cases,
-        );
+        if (Boolean(image_url) === Boolean(image_base64))
+          throw new TemperError("Provide exactly one of image_url or image_base64", 400);
+        if (image_base64 && !mime_type)
+          throw new TemperError("mime_type is required with image_base64", 400);
+        if (image_url && mime_type)
+          throw new TemperError("mime_type is only accepted with image_base64", 400);
+        let imported;
+        if (image_url) {
+          imported = await ingestImageWithDigest(id, image_url, label);
+        } else {
+          const encoded = image_base64!.replace(/\s+/g, "");
+          if (
+            encoded.length % 4 !== 0 ||
+            !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+              encoded,
+            )
+          )
+            throw new TemperError("image_base64 is not valid base64", 400);
+          imported = await ingestImageBytesWithDigest(
+            id,
+            new Uint8Array(Buffer.from(encoded, "base64")),
+            mime_type!,
+            label,
+          );
+        }
+        await temperAction(id, "Files", imported.fileId, "Lock");
+        const file = await getEntity(id, "Files", imported.fileId);
+        if (file?.status !== "Locked")
+          throw new TemperError(`Imported File('${imported.fileId}') did not become Locked`, 502);
         return ok({
-          style_slug,
-          prompt_template,
-          proof_shots: proofShots,
-          next:
-            "Blind-score every output on the seven observable dimensions. Every case must record content_preserved=true only when the subject remains recognizable and source_medium_replaced=true only when the original medium is fully rebuilt; medium_material must score 2. Build prompt_review and portability_report around these exact file ids/receipts, then call submit_art_style.",
+          file_id: imported.fileId,
+          sha256: imported.sha256,
+          mime_type: imported.mimeType,
+          size_bytes: imported.sizeBytes,
+          status: "Locked",
         });
       } catch (error) {
-        return fail(error instanceof Error ? error.message : "ArtStyle proof generation failed");
+        return fail(error instanceof Error ? error.message : "ArtStyle proof import failed");
       }
     },
   );
@@ -385,7 +398,7 @@ export function buildServer(auth: AuthInfo): McpServer {
     {
       title: "Submit an art style",
       description:
-        "Author a complete art-style Draft using one portable aesthetic prompt plus structured source, prompt-review, and governed cross-model proof evidence. Proofs must come unchanged from generate_art_style_proof_matrix. A curator finalizer independently verifies and advances the Draft.",
+        "Author a complete art-style Draft using one portable aesthetic prompt plus structured source, prompt-review, and contributor-supplied cross-model proof evidence. Katagami never generates submission images; its curator finalizer independently verifies the imported files and advances the Draft.",
       inputSchema: {
         entity_id: z.string().optional().describe("Existing draft (e.g. from remix); omit to create"),
         name: z.string(),
@@ -405,17 +418,19 @@ export function buildServer(auth: AuthInfo): McpServer {
           .array(artStyleProofInput)
           .length(8)
           .describe(
-            "The exact HMAC-bound output of generate_art_style_proof_matrix: two image models × four role/media cases",
+            "Two distinct image models × the same four contributor-supplied source images. Import all four sources and eight outputs first; bind their exact hashes and the canonical prompt hash in each generation_record.",
           ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .describe(
-            "Choose the strongest thumbnail from the eight governed proof file_ids; external thumbnails are rejected and no semantic role is forced across styles",
+            "Choose the strongest thumbnail from the eight verified proof file_ids; no semantic role is forced across styles",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
-          .describe("Schema-v1 source and rights review"),
+          .describe(
+            "Schema-v1 independent source and rights review; it must check every named person, reject named or hidden living-artist targeting, and attest that the recipe is described at tradition level",
+          ),
         prompt_review: z
           .record(z.string(), z.unknown())
           .describe(
@@ -424,7 +439,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         portability_report: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 blind cross-model scores over the exact eight governed File ids and generation receipts.",
+            "Schema-v1 blind cross-model scores over the exact eight imported File ids and generation records.",
           ),
         tags: z.array(z.string()).optional(),
         direction_id: z.string().optional(),
@@ -434,12 +449,16 @@ export function buildServer(auth: AuthInfo): McpServer {
           style: z.object({ model: z.string(), provider: z.string() }),
           source: z.object({ model: z.string(), provider: z.string() }),
           images: z
-            .object({
-              model: z.string(),
-              provider: z.string(),
-              tool: z.string().optional(),
-            })
-            .passthrough(),
+            .array(
+              z
+                .object({
+                  model: z.string(),
+                  provider: z.string(),
+                  tool: z.string().optional(),
+                })
+                .passthrough(),
+            )
+            .length(2),
         }),
         credits: z
           .array(
@@ -462,7 +481,7 @@ export function buildServer(auth: AuthInfo): McpServer {
 
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
       if (!proofIds.includes(a.thumbnail_file_id))
-        return fail("thumbnail_file_id must identify one of the eight governed proof shots.");
+        return fail("thumbnail_file_id must identify one of the eight verified proof shots.");
       const thumbId = a.thumbnail_file_id;
 
       await action(id, set, entityId, "SubmitArtStyle", {
@@ -476,7 +495,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         reference_manifest: asJsonString({ items: [] }),
         proof_shots_file_ids: proofIds,
         proof_shots_manifest: asJsonString({
-          schema_version: "2",
+          schema_version: "3",
           items: a.proof_shots,
         }),
         thumbnail_file_id: thumbId,
@@ -500,7 +519,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         url: galleryUrl("art_style", entityId),
         governed_files: { proof_shots: proofIds, thumbnail: thumbId },
         next:
-          "The curator finalizer must independently verify the exact prompt, rights basis, and proof matrix before advancing this Draft.",
+          "The curator finalizer must independently verify the exact prompt, rights basis, imported file hashes, and proof matrix before advancing this Draft.",
       });
     },
   );

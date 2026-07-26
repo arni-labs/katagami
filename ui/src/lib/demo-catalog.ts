@@ -473,14 +473,62 @@ const DEMO_ART_STYLES: Array<{
   prompt: string;
   tags: string[];
 }> = [
-  { name: "Linocut Reduction", slug: "linocut-reduction", medium: "relief print", prompt: "bold linocut reduction print, carved texture, 3 spot colors, visible gouge marks, {subject}", tags: ["print", "carved", "bold", "specimen"] },
-  { name: "Gouache Storybook", slug: "gouache-storybook", medium: "opaque paint", prompt: "flat gouache illustration, matte storybook texture, soft edges, limited warm palette, {subject}", tags: ["paint", "soft", "storybook", "specimen"] },
-  { name: "Blueprint Cyanotype", slug: "blueprint-cyanotype", medium: "photographic print", prompt: "cyanotype blueprint, prussian blue ground, white technical linework, annotation labels, {subject}", tags: ["technical", "blue", "diagram", "specimen"] },
-  { name: "Collage Ransom", slug: "collage-ransom", medium: "paper collage", prompt: "cut-paper collage, torn edges, mixed printed ephemera, ransom-note typography, {subject}", tags: ["collage", "punk", "texture", "specimen"] },
-  { name: "Isometric Diorama", slug: "isometric-diorama", medium: "vector render", prompt: "isometric diorama, clean vector shading, miniature architectural scene, pastel lighting, {subject}", tags: ["isometric", "vector", "miniature", "specimen"] },
-  { name: "Charcoal Gesture", slug: "charcoal-gesture", medium: "drawing", prompt: "loose charcoal gesture drawing, smudged tone, confident strokes, newsprint ground, {subject}", tags: ["drawing", "loose", "monochrome", "specimen"] },
-  { name: "Stained Glass Mosaic", slug: "stained-glass-mosaic", medium: "glass", prompt: "stained glass panel, leaded outlines, jewel-tone light transmission, radial composition, {subject}", tags: ["glass", "jewel-tone", "ornament", "specimen"] },
-  { name: "Pixel Bitmap 1-bit", slug: "pixel-bitmap-1bit", medium: "bitmap", prompt: "1-bit pixel art, dithered shading, macintosh-era bitmap, crisp silhouette, {subject}", tags: ["pixel", "retro", "monochrome", "specimen"] },
+  {
+    name: "Linocut Reduction",
+    slug: "linocut-reduction",
+    medium: "relief print",
+    prompt: "Reconstruct the supplied subject entirely as a hand-carved reduction relief print on fibrous uncoated paper, retaining its recognizable content but none of its original surface treatment. Define forms with broad knife-cut silhouettes, broken gouge edges, and sparse incised interior marks. Build depth from hard overlaps, hatch density, and successive opaque ink layers rather than smooth shading. Limit color to paper plus three spot inks, using the darkest ink for structure and the brightest only for small focal cuts. Use a forceful off-center crop with large interlocking masses and deliberate open paper. Show chipped ink, carved chatter, slight registration offsets, and overprinted color at intersections. Avoid photorealistic source surfaces, soft airbrush modeling, glossy surfaces, gradients, text, and logos.",
+    tags: ["print", "carved", "bold", "specimen"],
+  },
+  {
+    name: "Gouache Storybook",
+    slug: "gouache-storybook",
+    medium: "opaque paint",
+    prompt: "Reconstruct the supplied subject entirely in opaque matte gouache on lightly toothed paper, retaining its recognizable content but none of its original surface treatment. Shape every form with loaded brush edges, softly squared corners, and a few dry-brushed contour breaks. Model volume with two or three flat value steps and restrained opaque overlaps rather than polished gradients. Use a limited warm palette of cream, ochre, coral, leaf green, and deep brown, reserving the strongest contrast for the focal subject. Arrange the scene as a clear picture-book spread with clustered foreground forms and breathing room around the main silhouette. Show faint paper tooth, bristle streaks, corrected paint edges, and small hand-painted irregularities. Avoid photographic detail, digital airbrush blending, glossy lighting, hard vector perfection, text, and logos.",
+    tags: ["paint", "soft", "storybook", "specimen"],
+  },
+  {
+    name: "Blueprint Cyanotype",
+    slug: "blueprint-cyanotype",
+    medium: "photographic print",
+    prompt: "Reconstruct the supplied subject entirely as an iron-salt contact print on lightly textured paper, retaining its recognizable content but none of its original surface treatment. Define forms with luminous contact silhouettes, fine white linear traces, and occasional brush-coated edge breaks. Build tone through a long monochrome range from exposed paper to dense Prussian blue, without colored local shading. Use only the white of the paper and layered blue densities, concentrating the deepest blue around structural intersections. Compose the subject full-frame with a few precise negative shapes that clarify its construction. Show faint chemical blooms, uneven sensitizer wash, soft fibre texture, and slight exposure variation. Avoid multicolor rendering, glossy digital lighting, hard vector contours, readable text, measurement labels, and logos.",
+    tags: ["technical", "blue", "diagram", "specimen"],
+  },
+  {
+    name: "Collage Ransom",
+    slug: "collage-ransom",
+    medium: "paper collage",
+    prompt: "Reconstruct the supplied subject entirely from layered torn paper, clipped printed textures, and pasted cutouts on warm board, retaining its recognizable content but none of its original surface treatment. Form every edge from fibrous tears, blunt scissor cuts, overlapping strips, and irregular paper silhouettes. Model depth only with flat stacked layers, small offset underlays, and soft contact shadows. Limit color to black, warm paper neutrals, one red accent, and one electric blue accent, using printed fragments only as abstract texture. Pack the frame with an energetic diagonal assembly while keeping the main silhouette immediately readable. Show glue wrinkles, mismatched paper grain, clipped halftone fragments, and visibly lifted corners. Avoid readable words or letters, photographic continuity, smooth gradients, glossy 3D surfaces, drawn outlines, and logos.",
+    tags: ["collage", "punk", "texture", "specimen"],
+  },
+  {
+    name: "Isometric Diorama",
+    slug: "isometric-diorama",
+    medium: "vector render",
+    prompt: "Reconstruct the supplied subject entirely as a miniature three-dimensional diorama viewed in isometric projection, retaining its recognizable content but none of its original surface treatment. Define forms with clean planar edges, simplified bevels, and consistent thirty-degree axes. Model volume with flat local color, one compact shadow plane, and narrow ambient-occlusion seams rather than realistic lighting. Use a restrained palette of warm white, charcoal, muted teal, and one orange focal accent. Arrange the subject as a self-contained cutaway on a compact platform with clear front, side, and top faces. Show tiny modular joints, stepped levels, precise cast shadows, and scale-model material transitions. Avoid eye-level perspective, photographic texture, painterly marks, glossy reflections, atmospheric gradients, text, and logos.",
+    tags: ["isometric", "vector", "miniature", "specimen"],
+  },
+  {
+    name: "Charcoal Gesture",
+    slug: "charcoal-gesture",
+    medium: "drawing",
+    prompt: "Reconstruct the supplied subject entirely with compressed charcoal and kneaded eraser on warm newsprint, retaining its recognizable content but none of its original surface treatment. Define forms with broad directional sweeps, snapped dark accents, rubbed edges, and a few searching construction lines. Build volume from smudged tonal masses, erased highlights, and dense pressure changes rather than enclosed flat fills. Keep the palette monochrome from bare paper through silver grey to velvety black. Place the subject off-center with the strongest gesture cutting across the frame and quieter marks dissolving toward the margins. Show charcoal crumbs, finger-smear transitions, erased ghosts, and exposed paper tooth. Avoid colored paint, clean vector contours, digital airbrush gradients, glossy lighting, photographic detail, text, and logos.",
+    tags: ["drawing", "loose", "monochrome", "specimen"],
+  },
+  {
+    name: "Stained Glass Mosaic",
+    slug: "stained-glass-mosaic",
+    medium: "glass",
+    prompt: "Reconstruct the supplied subject entirely as a hand-assembled stained-glass panel with dark lead came, retaining its recognizable content but none of its original surface treatment. Divide every form into enclosed glass cells with decisive lead seams, faceted contours, and carefully joined intersections. Build depth through shifts in glass opacity, cell scale, and transmitted light rather than painted shading. Use cobalt, ruby, amber, and clear glass, reserving the brightest transmitted yellow for small focal cells. Organize the subject as a balanced full-frame medallion whose lead network reinforces its dominant curves and axes. Show seeded bubbles, rippled glass, solder joints, and slight color variation within individual panes. Avoid photographic realism, soft borderless gradients, plastic gloss, painterly brushwork, readable text, and logos.",
+    tags: ["glass", "jewel-tone", "ornament", "specimen"],
+  },
+  {
+    name: "Pixel Bitmap 1-bit",
+    slug: "pixel-bitmap-1bit",
+    medium: "bitmap",
+    prompt: "Reconstruct the supplied subject entirely as a one-bit black-and-white bitmap on a strict square pixel grid, retaining its recognizable content but none of its original surface treatment. Define forms with stepped silhouettes, single-pixel interior marks, and deliberately jagged diagonal edges. Build tone only with ordered dithering, clustered dots, and solid black masses, with no grey pixels. Use pure black and pure white, reserving the densest black for the focal structure and open white for separation. Crop tightly around a compact readable silhouette with a few small interface-like negative spaces. Show consistent pixel scale, repeating dither matrices, tiny knockout highlights, and crisp grid alignment. Avoid antialiasing, grayscale blur, vector-smooth curves, color, photographic texture, text, and logos.",
+    tags: ["pixel", "retro", "monochrome", "specimen"],
+  },
 ];
 
 export function demoArtStyles(): LaneEntity[] {
