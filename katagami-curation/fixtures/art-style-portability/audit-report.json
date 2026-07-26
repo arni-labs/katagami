@@ -1,0 +1,115 @@
+{
+  "schema_version": "1",
+  "audited_at": "2026-07-25",
+  "purpose": "Cross-model acceptance evidence for the governed eight-style portability sample. This report records outcomes, not proof image bytes; passing bytes are imported into governed Katagami Files.",
+  "image_models": [
+    {
+      "provider": "fal",
+      "model": "openai/gpt-image-2/edit"
+    },
+    {
+      "provider": "fal",
+      "model": "fal-ai/nano-banana-2/edit"
+    }
+  ],
+  "evaluator": {
+    "provider": "openrouter",
+    "model": "anthropic/claude-sonnet-4.6",
+    "blind": true
+  },
+  "acceptance": {
+    "roles_per_style": 4,
+    "source_media_per_style": 4,
+    "outputs_per_style": 8,
+    "content_preserved_required": true,
+    "source_medium_replaced_required": true,
+    "medium_material_score_required": 2,
+    "minimum_case_average": 1.5,
+    "style_reference_used": false,
+    "maximum_prompt_revisions": 1
+  },
+  "styles": [
+    {
+      "style_id": "en-019ef0b7-1be3-7710-8268-ddc60cd2c42c",
+      "slug": "risograph-ember",
+      "prompt_sha256": "0b8596a5ea1b2756d656503e3564867046e78cf4ce7092d19c9a8ed678744176",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "fail",
+      "failure_count": 2,
+      "evaluator_request_id": null,
+      "note": "The raw failed evaluation is preserved, but its provider request id was not recovered after a serialization failure."
+    },
+    {
+      "style_id": "en-019ef63d-c464-7de1-8eb1-67a65263b683",
+      "slug": "cyanotype",
+      "prompt_sha256": "3a7504f7b790a1269a2a26ca43b5c7b7544c238b2d476d01d0ca43a59eb0fbd2",
+      "revision_count": 0,
+      "output_count": 8,
+      "verdict": "pass",
+      "failure_count": 0,
+      "evaluator_request_id": "019f9bb7-7acf-7443-a4f7-b7fb702147a1"
+    },
+    {
+      "style_id": "en-019ef726-f4e5-7052-bd9e-5ae2ab1ab703",
+      "slug": "torn-cut-paper-collage",
+      "prompt_sha256": "cc8dd81fe03fe7d13aa6dbd4372e012928fcafcd95ed9aa0861ed3829c7912a6",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "fail",
+      "failure_count": 5,
+      "evaluator_request_id": "019f9bcc-81f5-7ad3-b972-26f29f0bc908"
+    },
+    {
+      "style_id": "en-019ef7e2-bd69-7352-be66-8458156801bc",
+      "slug": "hardline",
+      "prompt_sha256": "08ba44b13f77e9206a8abecd2e3ec10d68a3a8140f284aa38431ef593bb3127b",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "pass",
+      "failure_count": 0,
+      "evaluator_request_id": "019f9bcc-fb30-7d91-ba5a-fd462971c497"
+    },
+    {
+      "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
+      "slug": "dawnvapor-cel",
+      "prompt_sha256": "8073e8c4dff4248366e31418b6bdaf1f4f846dae8bcbf0d2b5bac9825ea93517",
+      "revision_count": 0,
+      "output_count": 8,
+      "verdict": "pass",
+      "failure_count": 0,
+      "evaluator_request_id": "019f9bc2-be7e-7c90-b964-8afb855b5e1a",
+      "note": "The reviewer supplied passing case scores but a contradictory fail label; the universal formula computed pass without changing any score."
+    },
+    {
+      "style_id": "en-019efd9f-293b-7423-abb4-cecf6689aeac",
+      "slug": "bouba-softbody",
+      "prompt_sha256": "15c7b63585db0f76976b23e6aa4fe1215bc14df979deed6e1635b4ae4bc070bd",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "fail",
+      "failure_count": 2,
+      "evaluator_request_id": "019f9bcd-7c9a-7350-bf87-46307a5361ce"
+    },
+    {
+      "style_id": "en-019efd9f-3328-7d92-9a46-c86dcf3929f1",
+      "slug": "wetwash",
+      "prompt_sha256": "1cc7aa50a5917a19ecca69591986f7dd3aaf4e42e1b445ea643dc5138cf29822",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "fail",
+      "failure_count": 2,
+      "evaluator_request_id": "019f9bce-f809-79d2-a1ce-c0ce68e63047"
+    },
+    {
+      "style_id": "en-019efdcd-404d-7233-a8d4-9fd2ba595389",
+      "slug": "woven-sampler-embroidery",
+      "prompt_sha256": "923870c1e384442181ce9b92455e155af04936746aed1413f649c75cffc56763",
+      "revision_count": 1,
+      "output_count": 8,
+      "verdict": "fail",
+      "failure_count": 2,
+      "evaluator_request_id": "019f9bd0-7be9-7a03-b2c4-1568aeeb9b57"
+    }
+  ]
+}

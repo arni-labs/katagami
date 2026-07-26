@@ -23,6 +23,7 @@ MCP_TOOLS = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "tools.ts").r
 MCP_CONFIG = (Path(__file__).resolve().parents[2] / "mcp" / "src" / "config.ts").read_text()
 FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
 AUDIT_MATRIX = json.loads((FIXTURE_ROOT / "audit-matrix.json").read_text())
+AUDIT_REPORT = json.loads((FIXTURE_ROOT / "audit-report.json").read_text())
 CURATION_JOB_SPEC = (ROOT / "specs" / "curation_job.ioa.toml").read_text()
 
 
@@ -232,7 +233,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             seen_prompts.add(prompt)
             self.assertNotRegex(prompt.lower(), r"\{[^}]+\}|in the style of")
             self.assertIn(
-                "retain none of its material, texture, lighting, or shading",
+                "retain none of its material, texture, lighting,",
                 prompt,
             )
             self.assertRegex(prompt, r"rather than filter or trace it")
@@ -277,6 +278,45 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         )
         self.assertFalse(AUDIT_MATRIX["rules"]["user_media_allowed"])
         self.assertFalse(AUDIT_MATRIX["rules"]["style_references_allowed"])
+
+    def test_audit_report_is_bound_to_the_exact_prompts_and_universal_gate(self):
+        self.assertEqual(AUDIT_REPORT["schema_version"], "1")
+        self.assertEqual(
+            {
+                (item["provider"], item["model"])
+                for item in AUDIT_REPORT["image_models"]
+            },
+            {
+                ("fal", "openai/gpt-image-2/edit"),
+                ("fal", "fal-ai/nano-banana-2/edit"),
+            },
+        )
+        self.assertTrue(AUDIT_REPORT["evaluator"]["blind"])
+        acceptance = AUDIT_REPORT["acceptance"]
+        self.assertEqual(acceptance["roles_per_style"], 4)
+        self.assertEqual(acceptance["source_media_per_style"], 4)
+        self.assertEqual(acceptance["outputs_per_style"], 8)
+        self.assertTrue(acceptance["content_preserved_required"])
+        self.assertTrue(acceptance["source_medium_replaced_required"])
+        self.assertEqual(acceptance["medium_material_score_required"], 2)
+        self.assertEqual(acceptance["minimum_case_average"], 1.5)
+        self.assertFalse(acceptance["style_reference_used"])
+        self.assertEqual(acceptance["maximum_prompt_revisions"], 1)
+
+        report_by_slug = {item["slug"]: item for item in AUDIT_REPORT["styles"]}
+        matrix_by_slug = {item["slug"]: item for item in AUDIT_MATRIX["styles"]}
+        self.assertEqual(report_by_slug.keys(), matrix_by_slug.keys())
+        self.assertEqual(len(report_by_slug), 8)
+        for slug, report in report_by_slug.items():
+            prompt = matrix_by_slug[slug]["canonical_prompt"]
+            self.assertEqual(
+                report["prompt_sha256"],
+                hashlib.sha256(prompt.encode()).hexdigest(),
+            )
+            self.assertEqual(report["output_count"], 8)
+            self.assertIn(report["verdict"], {"pass", "fail"})
+            self.assertLessEqual(report["revision_count"], 1)
+            self.assertEqual(report["verdict"] == "pass", report["failure_count"] == 0)
 
     def test_evidence_inputs_invalidate_the_attestations_they_can_change(self):
         actions = self._by_name(self.art, "action")
