@@ -144,11 +144,15 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("image_base64", MCP_TOOLS)
         self.assertIn("ingestImageBytesWithDigest", MCP_TOOLS)
         self.assertIn("generation_record", submit)
+        self.assertIn("depiction grammar", submit)
         images = submit[submit.index("images:") :]
         images = images[: images.index("credits:")]
         self.assertIn(".array(", images)
         self.assertIn(".length(2)", images)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
+        self.assertIn('createEntity(id, "CurationJobs")', submit)
+        self.assertIn('"CompleteArtStyleSynthesis"', submit)
+        self.assertIn('"VerificationQueued"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):
         actions = self._by_name(self.art, "action")

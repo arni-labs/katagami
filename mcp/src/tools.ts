@@ -11,6 +11,7 @@ import { identityFromAuth } from "./auth.js";
 import {
   action,
   createEntity,
+  curationAction,
   getEntity,
   ingestImage,
   ingestImageBytesWithDigest,
@@ -434,7 +435,7 @@ export function buildServer(auth: AuthInfo): McpServer {
         prompt_review: z
           .record(z.string(), z.unknown())
           .describe(
-            "Schema-v1 independent semantic review of this exact prompt, including source_medium_independent=true; quote substantive clauses for medium/material, marks/edges, tonal/shading, color roles, composition, signature details, and exclusions in that canonical order",
+            "Schema-v1 independent semantic review of this exact prompt, including source_medium_independent=true; quote substantive clauses for medium/material, marks/edges, depiction grammar, tonal/shading, color roles, composition, signature details, and exclusions in that canonical order",
           ),
         portability_report: z
           .record(z.string(), z.unknown())
@@ -512,14 +513,39 @@ export function buildServer(auth: AuthInfo): McpServer {
         curator_notes: a.curator_notes ?? "",
       });
       await setCreator(id, set, entityId);
+      const verificationJobId = await createEntity(id, "CurationJobs");
+      await curationAction(id, "CurationJobs", verificationJobId, "Configure", {
+        job_type: "synthesize_art_style",
+        input: asJsonString({
+          submission_source: "katagami-mcp",
+          contributor_principal: principalId(id),
+          art_style_ids: [entityId],
+        }),
+        completion_contract: "typed-v1",
+      });
+      await curationAction(id, "CurationJobs", verificationJobId, "Start", {});
+      await curationAction(
+        id,
+        "CurationJobs",
+        verificationJobId,
+        "CompleteArtStyleSynthesis",
+        {
+          art_style_ids: asJsonString([entityId]),
+          output: asJsonString({
+            submission_source: "katagami-mcp",
+            art_style_ids: [entityId],
+          }),
+        },
+      );
       return ok({
         entity_id: entityId,
-        status: "Draft",
+        status: "VerificationQueued",
+        verification_job_id: verificationJobId,
         attributed_to: id.email,
         url: galleryUrl("art_style", entityId),
         governed_files: { proof_shots: proofIds, thumbnail: thumbId },
         next:
-          "The curator finalizer must independently verify the exact prompt, rights basis, imported file hashes, and proof matrix before advancing this Draft.",
+          "The curator finalizer is independently verifying the exact prompt, rights basis, imported file hashes, depiction grammar, and proof matrix. It alone may advance or publish the Draft.",
       });
     },
   );

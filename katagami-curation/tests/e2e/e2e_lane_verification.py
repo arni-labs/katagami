@@ -235,8 +235,11 @@ def run_art_style_case(
     fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
     prompt = (
         "Render the supplied subject as a two-ink relief print on fibrous matte paper. "
-        "Use blunt carved contours and visibly broken edges. Build volume with sparse "
-        "directional hatching and broad unprinted highlights. Reserve deep indigo for "
+        "Use blunt carved contours and visibly broken edges. "
+        "Reconstruct people, animals, objects, and environments as simplified interlocking "
+        "carved masses with compressed proportions and deliberately omitted incidental anatomy. "
+        "Build volume with sparse directional hatching and broad unprinted highlights. "
+        "Reserve deep indigo for "
         "structural masses and vermilion for small focal accents. Keep a centered, "
         "compressed composition with generous bare paper. Add slight ink spread and "
         "irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, "
@@ -245,6 +248,7 @@ def run_art_style_case(
     dimensions = {
         "medium_material": "two-ink relief print on fibrous matte paper",
         "marks_edges": "blunt carved contours and visibly broken edges",
+        "depiction_grammar": "simplified interlocking carved masses with compressed proportions and deliberately omitted incidental anatomy",
         "tonal_shading": "sparse directional hatching and broad unprinted highlights",
         "color_roles": "deep indigo for structural masses and vermilion for small focal accents",
         "composition": "centered, compressed composition with generous bare paper",
