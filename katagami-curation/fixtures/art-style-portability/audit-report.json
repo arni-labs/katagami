@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "audited_at": "2026-07-25",
+  "audited_at": "2026-07-28",
   "purpose": "Cross-model acceptance evidence for the governed eight-style portability sample. This report records outcomes, not proof image bytes; passing bytes are imported into governed Katagami Files.",
   "image_models": [
     {
@@ -15,6 +15,7 @@
   "evaluator": {
     "provider": "openrouter",
     "model": "anthropic/claude-sonnet-4.6",
+    "adjudicator_model": "openai/gpt-5.4",
     "blind": true
   },
   "acceptance": {
@@ -24,6 +25,7 @@
     "content_preserved_required": true,
     "source_medium_replaced_required": true,
     "medium_material_score_required": 2,
+    "depiction_grammar_score_required": 2,
     "minimum_case_average": 1.5,
     "style_reference_used": false,
     "maximum_prompt_revisions": 1
@@ -73,13 +75,14 @@
     {
       "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
       "slug": "dawnvapor-cel",
-      "prompt_sha256": "8073e8c4dff4248366e31418b6bdaf1f4f846dae8bcbf0d2b5bac9825ea93517",
-      "revision_count": 0,
+      "prompt_sha256": "cbdc2fff3480a235809b5743025befd8b938466e931b7674b853b6e9ef3cf866",
+      "revision_count": 1,
       "output_count": 8,
       "verdict": "pass",
       "failure_count": 0,
-      "evaluator_request_id": "019f9bc2-be7e-7c90-b964-8afb855b5e1a",
-      "note": "The reviewer supplied passing case scores but a contradictory fail label; the universal formula computed pass without changing any score."
+      "evaluator_request_id": "019fabc0-f1d9-7710-81b1-5bee928cd354",
+      "evaluator_model": "openai/gpt-5.4",
+      "note": "The final exact-prompt matrix passed all eight cases after manga depiction grammar and exact subject-count preservation were made explicit."
     },
     {
       "style_id": "en-019efd9f-293b-7423-abb4-cecf6689aeac",
