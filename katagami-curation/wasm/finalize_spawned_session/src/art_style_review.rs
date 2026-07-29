@@ -4,9 +4,10 @@ use std::collections::{BTreeSet, HashMap};
 
 use super::{lane_json_value, VerificationError};
 
-const DIMENSIONS: [&str; 7] = [
+const DIMENSIONS: [&str; 8] = [
     "medium_material",
     "marks_edges",
+    "depiction_grammar",
     "tonal_shading",
     "color_roles",
     "composition",
@@ -604,7 +605,7 @@ pub(super) fn verify_prompt_review(
             "art_style_prompt_dimension_evidence_too_thin",
             "prompt_review",
             format!(
-                "ArtStyle '{owner_id}' prompt review must bind the seven semantic dimensions to substantial prompt clauses, not isolated fragments"
+                "ArtStyle '{owner_id}' prompt review must bind the eight semantic dimensions to substantial prompt clauses, not isolated fragments"
             ),
         ));
     }
@@ -632,6 +633,16 @@ fn score_case(owner_id: &str, scores: &Value) -> Result<f64, VerificationError> 
                 "portability_report",
                 format!(
                     "ArtStyle '{owner_id}' portability case did not fully replace the source medium with the target material"
+                ),
+            ));
+        }
+        if dimension == "depiction_grammar" && score < 2.0 {
+            return Err(art_error(
+                owner_id,
+                "art_style_portability_depiction_grammar_weak",
+                "portability_report",
+                format!(
+                    "ArtStyle '{owner_id}' portability case retained the image model's default subject construction instead of fully applying the target depiction grammar"
                 ),
             ));
         }
@@ -1159,7 +1170,7 @@ mod tests {
         ("fal", "openai/gpt-image-2/edit"),
         ("other-provider", "independent-image-edit"),
     ];
-    const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
+    const PROMPT: &str = "Render the supplied subject as a two-ink relief print on fibrous matte paper. Use blunt carved contours and visibly broken edges. Reconstruct people, animals, objects, and environments as simplified interlocking carved masses with compressed proportions and deliberately omitted incidental anatomy. Build volume with sparse directional hatching and broad unprinted highlights. Reserve deep indigo for structural masses and vermilion for small focal accents. Keep a centered, compressed composition with generous bare paper. Add slight ink spread and irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry.";
 
     const SUBJECTS: [&str; 4] = [
         "a night-shift printer beside a blank paper stack",
@@ -1196,6 +1207,7 @@ mod tests {
         let dims = json!({
             "medium_material": "two-ink relief print on fibrous matte paper",
             "marks_edges": "blunt carved contours and visibly broken edges",
+            "depiction_grammar": "simplified interlocking carved masses with compressed proportions and deliberately omitted incidental anatomy",
             "tonal_shading": "sparse directional hatching and broad unprinted highlights",
             "color_roles": "deep indigo for structural masses and vermilion for small focal accents",
             "composition": "centered, compressed composition with generous bare paper",
@@ -1235,7 +1247,8 @@ mod tests {
                     "source_medium_replaced": true,
                     "generation_record": record,
                     "scores": {
-                        "medium_material": 2, "marks_edges": 2, "tonal_shading": 1,
+                        "medium_material": 2, "marks_edges": 2, "depiction_grammar": 2,
+                        "tonal_shading": 1,
                         "color_roles": 2, "composition": 1, "signature_details": 2,
                         "exclusions": 1
                     }
@@ -1401,6 +1414,7 @@ mod tests {
         fields["prompt_review"]["observable_dimensions"] = json!({
             "medium_material": "fibrous matte paper",
             "marks_edges": "visibly broken edges",
+            "depiction_grammar": "compressed proportions and deliberately omitted incidental anatomy",
             "tonal_shading": "broad unprinted highlights",
             "color_roles": "vermilion for small focal accents",
             "composition": "generous bare paper",
@@ -1462,6 +1476,28 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(err.code, "art_style_portability_dimension_failed");
+    }
+
+    #[test]
+    fn every_case_must_fully_apply_depiction_grammar() {
+        let mut fields = valid_fields();
+        fields["portability_report"]["models"][0]["cases"][0]["scores"]
+            ["depiction_grammar"] = json!(1);
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err = verify_portability_report(
+            "as-1",
+            &fields,
+            text(&fields, "prompt_template"),
+            &proof_ids,
+        )
+        .unwrap_err();
+        assert_eq!(err.code, "art_style_portability_depiction_grammar_weak");
     }
 
     #[test]

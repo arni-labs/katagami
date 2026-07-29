@@ -54,9 +54,11 @@ slug = "archive-ember"
 medium = "print"
 prompt_template = (
     "Render the supplied subject as a two-ink relief print on fibrous matte paper. "
-    "Use blunt carved contours and visibly broken edges. Build volume with sparse "
-    "directional hatching and broad unprinted highlights. Reserve deep indigo for "
-    "structural masses and vermilion for small focal accents. Keep a centered, "
+    "Use blunt carved contours and visibly broken edges. "
+    "Reconstruct people, animals, objects, and environments as simplified interlocking "
+    "carved masses with compressed proportions and deliberately omitted incidental anatomy. "
+    "Build volume with sparse directional hatching and broad unprinted highlights. Reserve "
+    "deep indigo for structural masses and vermilion for small focal accents. Keep a centered, "
     "compressed composition with generous bare paper. Add slight ink spread and "
     "irregular hand pressure. Avoid photorealistic skin, glossy surfaces, gradients, "
     "and smooth vector geometry."
@@ -76,7 +78,7 @@ Give another LLM only the candidate prompt, catalog name, and this universal
 review schema. It must quote the exact prompt fragment supporting each dimension.
 It may identify intentional scoped contrast, but `contradictions` must be empty
 before publication. If it fails, revise once and re-review; do not loop.
-The seven quotes must be substantive clauses, appear in the same canonical order
+The eight quotes must be substantive clauses, appear in the same canonical order
 as the keys below, and collectively cover the prompt rather than cherry-picking
 isolated words.
 
@@ -97,6 +99,7 @@ prompt_review = {
     "observable_dimensions": {
         "medium_material": "<exact quote from prompt>",
         "marks_edges": "<exact quote from prompt>",
+        "depiction_grammar": "<exact quote describing how subjects are constructed, simplified, and proportioned>",
         "tonal_shading": "<exact quote from prompt>",
         "color_roles": "<exact quote from prompt>",
         "composition": "<exact quote from prompt>",
@@ -198,10 +201,11 @@ requires the same source quartet for both models, and independently evaluates
 the complete 2×4 matrix. Provider-specific fields such as seeds are optional;
 the portable contract is exact files + exact prompt + distinct model identity.
 
-Blind-review each output on a 0/1/2 scale for the seven observable dimensions.
+Blind-review each output on a 0/1/2 scale for the eight observable dimensions.
 The subject/content must remain recognizable, the source medium must be fully
-replaced, `medium_material` must score 2, every other dimension must score at
-least 1, every case average at least 1.5, and each model average at least 1.5.
+replaced, and both `medium_material` and `depiction_grammar` must score 2.
+Every other dimension must score at least 1, every case average at least 1.5,
+and each model average at least 1.5.
 A strong model cannot hide a weak model, and a lightly tinted or cleaned-up
 source image cannot pass as a transfer.
 
@@ -232,6 +236,7 @@ portability_report = {
                     "scores": {
                         "medium_material": 2,
                         "marks_edges": 2,
+                        "depiction_grammar": 2,
                         "tonal_shading": 1,
                         "color_roles": 2,
                         "composition": 1,

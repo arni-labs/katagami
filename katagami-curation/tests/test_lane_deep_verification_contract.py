@@ -25,6 +25,13 @@ FIXTURE_ROOT = ROOT / "fixtures" / "art-style-portability"
 AUDIT_MATRIX = json.loads((FIXTURE_ROOT / "audit-matrix.json").read_text())
 AUDIT_REPORT = json.loads((FIXTURE_ROOT / "audit-report.json").read_text())
 CURATION_JOB_SPEC = (ROOT / "specs" / "curation_job.ioa.toml").read_text()
+CONTRIBUTOR_SKILL = (
+    Path(__file__).resolve().parents[2]
+    / "mcp"
+    / "skills"
+    / "katagami-contributor"
+    / "SKILL.md"
+).read_text()
 
 
 class LaneDeepVerificationContractTests(unittest.TestCase):
@@ -118,6 +125,20 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("portability_report", submit_params)
         self.assertIn('"source_medium_independent"', ART_REVIEW_SRC)
 
+    def test_external_contributor_skill_uses_the_governed_art_style_boundary(self):
+        normalized_skill = " ".join(CONTRIBUTOR_SKILL.split())
+        for marker in [
+            "Use the authenticated Katagami MCP as the contribution boundary",
+            "VerificationQueued",
+            "Katagami does not generate or edit images for outside contributors",
+            "`depiction_grammar=2`",
+            "One model cannot hide behind the other model's average",
+            "Do not call `SubmitForReview`",
+        ]:
+            self.assertIn(marker, normalized_skill)
+        self.assertNotIn("Cedar is open-permit", CONTRIBUTOR_SKILL)
+        self.assertNotIn("POST /tdata/ArtStyles", CONTRIBUTOR_SKILL)
+
     def test_committed_wasm_imports_the_bounded_streaming_host_abi(self):
         # The live local E2E executes this committed module. These binary-level
         # assertions additionally keep CI from accepting a stale WASM artifact
@@ -144,11 +165,15 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("image_base64", MCP_TOOLS)
         self.assertIn("ingestImageBytesWithDigest", MCP_TOOLS)
         self.assertIn("generation_record", submit)
+        self.assertIn("depiction grammar", submit)
         images = submit[submit.index("images:") :]
         images = images[: images.index("credits:")]
         self.assertIn(".array(", images)
         self.assertIn(".length(2)", images)
         self.assertNotIn('action(id, set, entityId, "SubmitForReview"', submit)
+        self.assertIn('createEntity(id, "CurationJobs")', submit)
+        self.assertIn('"CompleteArtStyleSynthesis"', submit)
+        self.assertIn('"VerificationQueued"', submit)
 
     def test_reference_images_are_optional_but_proof_is_required(self):
         actions = self._by_name(self.art, "action")
@@ -231,12 +256,17 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             prompt = style["canonical_prompt"]
             self.assertNotIn(prompt, seen_prompts)
             seen_prompts.add(prompt)
-            self.assertNotRegex(prompt.lower(), r"\{[^}]+\}|in the style of")
-            self.assertIn(
-                "retain none of its material, texture, lighting,",
-                prompt,
+            prompt_lower = prompt.lower()
+            self.assertNotRegex(prompt_lower, r"\{[^}]+\}|in the style of")
+            self.assertRegex(prompt_lower, r"\b(source|input|supplied)\b")
+            self.assertRegex(
+                prompt_lower,
+                r"\b(construct|redraw|rebuild|repaint|replace|transform)\b",
             )
-            self.assertRegex(prompt, r"rather than filter or trace it")
+            self.assertRegex(
+                prompt_lower,
+                r"\b(filter|trace|retain|source-medium)\w*\b",
+            )
             self.assertEqual(len(style["cases"]), 4)
             self.assertEqual(
                 {case["category"] for case in style["cases"]},
@@ -299,6 +329,7 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertTrue(acceptance["content_preserved_required"])
         self.assertTrue(acceptance["source_medium_replaced_required"])
         self.assertEqual(acceptance["medium_material_score_required"], 2)
+        self.assertEqual(acceptance["depiction_grammar_score_required"], 2)
         self.assertEqual(acceptance["minimum_case_average"], 1.5)
         self.assertFalse(acceptance["style_reference_used"])
         self.assertEqual(acceptance["maximum_prompt_revisions"], 1)

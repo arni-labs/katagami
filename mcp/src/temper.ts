@@ -100,6 +100,27 @@ export async function action(
   );
 }
 
+/** Dispatch an action owned by the Katagami curation app. */
+export async function curationAction(
+  id: Identity,
+  set: string,
+  entityId: string,
+  name: string,
+  params: Record<string, unknown>,
+): Promise<void> {
+  for (const namespace of ["Temper", "Katagami.Curation", "Katagami"]) {
+    const res = await fetch(
+      `${config.temperUrl}/tdata/${set}('${encodeURIComponent(entityId)}')/${namespace}.${name}`,
+      { method: "POST", headers: headers(id), body: JSON.stringify(params) },
+    );
+    if (res.ok) return;
+    if (res.status !== 404) {
+      await check(res, `${name} on ${set}('${entityId}')`);
+    }
+  }
+  throw new TemperError(`${name} on ${set}('${entityId}') has no accepted action namespace`, 404);
+}
+
 export async function temperAction(
   id: Identity,
   set: string,
