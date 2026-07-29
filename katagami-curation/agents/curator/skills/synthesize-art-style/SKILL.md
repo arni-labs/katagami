@@ -165,6 +165,13 @@ Text review cannot prove image behavior. Test the exact prompt on two distinct
 edit models using a style-specific 2×4 matrix. Every style needs these
 four semantic roles:
 
+Use a two-model, one-source preflight before commissioning the full matrix.
+Choose the source most likely to expose source-medium retention or base-model
+depiction bias. If either result fails, revise the one canonical prompt and
+preflight again. Reuse a passing pair in the full matrix rather than generating
+it twice. The preflight is only a cost-control screen; it never substitutes for
+the complete four-role publication evidence.
+
 1. `human_portrait`
 2. `nonhuman_living`
 3. `still_life_object`

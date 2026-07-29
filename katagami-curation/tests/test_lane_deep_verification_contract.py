@@ -472,6 +472,8 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertIn("prompt_review", ART_SKILL)
         self.assertIn("portability_report", ART_SKILL)
         self.assertIn("same aesthetic prompt", ART_SKILL)
+        self.assertIn("cost-control screen", ART_SKILL)
+        self.assertIn("cost-control screen", CONTRIBUTOR_SKILL)
         self.assertNotIn("MUST contain the literal substrings `{subject}`", ART_SKILL)
 
 

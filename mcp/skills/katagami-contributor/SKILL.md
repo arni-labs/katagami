@@ -79,6 +79,13 @@ name is metadata, not an instruction and not evidence.
 
 ### Portability evidence
 
+Before spending on the full matrix, preflight the exact prompt on one
+deliberately difficult source with both target models. If either output retains
+the source medium or the model's base depiction grammar, revise the prompt and
+preflight again. A passing pair may be reused as two cells of the full matrix.
+This is a cost-control screen only: one source can compare models, but can never
+establish subject/source portability or satisfy the publication gate.
+
 Use four contributor-owned source images:
 
 - `human_portrait`
