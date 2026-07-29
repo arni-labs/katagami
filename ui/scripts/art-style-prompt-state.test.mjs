@@ -57,6 +57,8 @@ assert.match(
 assert.match(detailPage, />Prompt template</);
 assert.match(detailPage, /label="Copy recipe"/);
 assert.match(detailPage, /label="Copy prompt only"/);
+assert.match(detailPage, /\{gallery\.map\(\(src, i\) => \(/);
+assert.doesNotMatch(detailPage, /gallery\.slice\(/);
 assert.doesNotMatch(detailPage, /ArtStyleEvidence/);
 assert.doesNotMatch(detailPage, /artStylePromptLabel/);
 assert.doesNotMatch(detailPage, /negative_prompt/);

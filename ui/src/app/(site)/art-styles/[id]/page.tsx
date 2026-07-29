@@ -149,8 +149,8 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
           ) : null}
         </div>
         {gallery.length > 0 ? (
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {gallery.slice(0, 3).map((src, i) => (
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {gallery.map((src, i) => (
               <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />

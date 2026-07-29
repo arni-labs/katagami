@@ -53,20 +53,33 @@ async function odataFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Entries over Next's ~2MB Data Cache limit are simply re-fetched (not cached);
-// correctness is unaffected, those reads just stay uncached.
+// Next rejects cache entries over 2 MB and logs the cache-write rejection as an
+// unhandled server error. Collection size is unbounded, regardless of entity
+// type, so cache only shape-bounded reads: one entity/function or a zero-row
+// count. Collection callers can cache a compact derived result instead.
 const cachedOdataFetch = unstable_cache(
   (path: string) => odataFetch<unknown>(path),
   ["odata-read-v1"],
   { revalidate: ODATA_REVALIDATE_SECONDS },
 );
 
+function isShapeBoundedODataRead(path: string): boolean {
+  const url = new URL(odataUrl(path));
+  const entityPath = url.pathname.split("/tdata/").at(-1) ?? "";
+  return (
+    entityPath.includes("(") ||
+    url.searchParams.get("$top") === "0"
+  );
+}
+
 async function odata<T>(path: string, init?: RequestInit): Promise<T> {
   const method = (init?.method ?? "GET").toUpperCase();
-  // Reads (GET, no body) are cached; anything else (defensive — mutations live
-  // in odata-mutations.ts) goes straight through, uncached.
+  // Bounded reads use the persistent cache; collections and anything else
+  // (defensive — mutations live in odata-mutations.ts) go straight through.
   if (method === "GET" && !init?.body) {
-    return cachedOdataFetch(path) as Promise<T>;
+    return isShapeBoundedODataRead(path)
+      ? (cachedOdataFetch(path) as Promise<T>)
+      : odataFetch<T>(path);
   }
   const res = await fetch(odataUrl(path), {
     ...init,
