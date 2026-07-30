@@ -9,6 +9,7 @@ import {
   paletteDisplayName,
 } from "@/lib/odata";
 import type { LanguageOpt, PaletteOpt, ArtOpt } from "@/components/remix/inline-remix";
+import { artStyleManifestationFileIds } from "@/lib/art-style-prompt-state";
 
 type Row = {
   entity_id: string;
@@ -80,13 +81,19 @@ export function toArtOpts(rows: Row[]): ArtOpt[] {
     )
     .map((a) => {
       const refs = refUrls(a.fields.reference_image_file_ids);
-      const proofs = refUrls(a.fields.proof_shots_file_ids);
-      const thumb = a.fields.thumbnail_file_id ? getFileUrl(a.fields.thumbnail_file_id) : "";
+      const proofIds = parseJson<string[]>(a.fields.proof_shots_file_ids) ?? [];
+      const thumbnailFileId = a.fields.thumbnail_file_id ?? "";
+      const manifestations = artStyleManifestationFileIds({
+        proofManifest: a.fields.proof_shots_manifest,
+        proofFileIds: proofIds,
+        thumbnailFileId,
+      }).map((fileId) => getFileUrl(fileId));
+      const thumb = thumbnailFileId ? getFileUrl(thumbnailFileId) : "";
       return {
         id: a.entity_id,
         name: artStyleDisplayName(a.fields),
         medium: a.fields.medium ?? "",
-        hero: proofs[0] || refs[0] || thumb || "",
+        hero: thumb || manifestations[0] || refs[0] || "",
         promptTemplate: a.fields.prompt_template ?? "",
         slotRecipes: a.fields.slot_recipes ?? "{}",
         refs,

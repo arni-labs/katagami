@@ -11,7 +11,7 @@ export interface ArtStyleItem {
   promptTemplate: string;
   /** Reference images — refs[0] is the wide hero (the establishing shot). */
   refs: string[];
-  /** Proof shots: the same subjects rendered in-style (portrait/object/scene). */
+  /** One curator-selected manifestation per semantic subject role. */
   proofs: string[];
   thumb: string;
   tags: string[];
@@ -75,11 +75,10 @@ export function ArtStyleCard({
   const tint = accentColors[hashInt(art.id) % accentColors.length];
   const archived = art.status === "Archived";
 
-  // A wide hero (the establishing shot) leads; the proof shots read as a tidy
-  // contact strip of fixed-size squares (never a stretched orphan). Falls back
-  // to extra references if no separate proof shots were attached.
-  const hero = art.refs[0] || art.thumb || "";
-  const strip = (art.proofs.length ? art.proofs : art.refs.slice(1)).filter(
+  // A curator-selected hero leads; the other public manifestations read as a
+  // compact strip. The second model's audit row is deliberately not public.
+  const hero = art.thumb || art.proofs[0] || art.refs[0] || "";
+  const strip = [...art.proofs, ...art.refs].filter(
     (s) => s && s !== hero,
   );
   const imageCount = new Set([hero, ...strip].filter(Boolean)).size;
@@ -106,7 +105,7 @@ export function ArtStyleCard({
           status={art.status}
         />
       ) : null}
-      {/* hero reference — edge to edge; proofs ride as a small strip in the corner */}
+      {/* hero manifestation — edge to edge; the other roles form a compact strip */}
       <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: "16 / 10" }}>
         {hero ? (
           <GalleryImg
@@ -122,7 +121,7 @@ export function ArtStyleCard({
           <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
             {stripShots.slice(0, 3).map((src, i) => (
               <div key={i} className="relative h-8 w-8 shrink-0 overflow-hidden bg-muted shadow-[0_1px_3px_rgba(0,0,0,0.25)]">
-                <GalleryImg src={src} alt={`${art.name} proof ${i + 1}`} sizes="48px" className="object-cover" />
+                <GalleryImg src={src} alt={`${art.name} manifestation ${i + 1}`} sizes="48px" className="object-cover" />
               </div>
             ))}
             {overflow > 0 && (

@@ -1154,6 +1154,104 @@ pub(super) fn verify_portability_report(
             ),
         ));
     }
+
+    let presentation = proof_manifest
+        .get("presentation")
+        .filter(|value| value.is_object() && version_is_one(value))
+        .ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_presentation_missing",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' proof manifest needs a schema-v1 public presentation"
+                ),
+            )
+        })?;
+    let thumbnail_file_id = text(fields, "thumbnail_file_id");
+    let hero_file_id = text(presentation, "hero_file_id");
+    let presentation_items = presentation
+        .get("items")
+        .and_then(Value::as_array)
+        .filter(|items| items.len() == PROOF_CATEGORIES.len())
+        .ok_or_else(|| {
+            art_error(
+                owner_id,
+                "art_style_presentation_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' public presentation needs exactly one manifestation per semantic role"
+                ),
+            )
+        })?;
+    if hero_file_id.is_empty() || hero_file_id != thumbnail_file_id {
+        return Err(art_error(
+            owner_id,
+            "art_style_presentation_hero_invalid",
+            "proof_shots_manifest",
+            format!(
+                "ArtStyle '{owner_id}' presentation hero must equal thumbnail_file_id"
+            ),
+        ));
+    }
+    let mut presentation_files = BTreeSet::new();
+    let mut presentation_categories = BTreeSet::new();
+    for item in presentation_items {
+        if !exact_object_keys(item, &["file_id", "category", "selection_reason"]) {
+            return Err(art_error(
+                owner_id,
+                "art_style_presentation_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' presentation items must contain only file_id, category, and selection_reason"
+                ),
+            ));
+        }
+        let file_id = text(item, "file_id");
+        let category = text(item, "category");
+        let selection_reason = text(item, "selection_reason");
+        let Some((_, proof)) = manifest_records.get(file_id) else {
+            return Err(art_error(
+                owner_id,
+                "art_style_presentation_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' public manifestation '{file_id}' is not a verified proof"
+                ),
+            ));
+        };
+        if proof.category != category
+            || !PROOF_CATEGORIES.contains(&category)
+            || selection_reason.split_whitespace().count() < 4
+            || !presentation_files.insert(file_id)
+            || !presentation_categories.insert(category)
+        {
+            return Err(art_error(
+                owner_id,
+                "art_style_presentation_invalid",
+                "proof_shots_manifest",
+                format!(
+                    "ArtStyle '{owner_id}' public presentation has a mismatched/duplicate role, duplicate file, or non-substantive selection reason"
+                ),
+            ));
+        }
+    }
+    if !presentation_files.contains(hero_file_id)
+        || presentation_categories.len() != PROOF_CATEGORIES.len()
+        || !PROOF_CATEGORIES
+            .iter()
+            .all(|category| presentation_categories.contains(category))
+    {
+        return Err(art_error(
+            owner_id,
+            "art_style_presentation_invalid",
+            "proof_shots_manifest",
+            format!(
+                "ArtStyle '{owner_id}' presentation must cover all four roles and include its hero"
+            ),
+        ));
+    }
+
     Ok(VerifiedPortabilityReport {
         report,
         proof_records: verified_records,
@@ -1286,7 +1384,37 @@ mod tests {
                 "evaluator": {"provider": "openai", "model": "vision-reviewer"},
                 "models": models
             },
-            "proof_shots_manifest": {"schema_version": "3", "items": proof_manifest},
+            "thumbnail_file_id": "proof-fal-openai/gpt-image-2/edit-0",
+            "proof_shots_manifest": {
+                "schema_version": "3",
+                "items": proof_manifest,
+                "presentation": {
+                    "schema_version": "1",
+                    "hero_file_id": "proof-fal-openai/gpt-image-2/edit-0",
+                    "items": [
+                        {
+                            "file_id": "proof-fal-openai/gpt-image-2/edit-0",
+                            "category": "human_portrait",
+                            "selection_reason": "Carved facial planes remain immediately legible"
+                        },
+                        {
+                            "file_id": "proof-fal-openai/gpt-image-2/edit-1",
+                            "category": "nonhuman_living",
+                            "selection_reason": "Feather structure exposes the broken carved edges"
+                        },
+                        {
+                            "file_id": "proof-fal-openai/gpt-image-2/edit-2",
+                            "category": "still_life_object",
+                            "selection_reason": "Hard surfaces demonstrate the compressed tonal masses"
+                        },
+                        {
+                            "file_id": "proof-fal-openai/gpt-image-2/edit-3",
+                            "category": "landscape_environment",
+                            "selection_reason": "Layered depth shows the limited ink separation"
+                        }
+                    ]
+                }
+            },
             "proof_ids": proof_ids
         })
     }
@@ -1306,6 +1434,40 @@ mod tests {
         assert!(verify_source_basis("as-1", &fields, prompt).is_ok());
         assert!(verify_prompt_review("as-1", &fields, prompt).is_ok());
         assert!(verify_portability_report("as-1", &fields, prompt, &proof_ids).is_ok());
+    }
+
+    #[test]
+    fn public_presentation_is_required_and_must_bind_the_thumbnail() {
+        let mut fields = valid_fields();
+        fields["proof_shots_manifest"]
+            .as_object_mut()
+            .unwrap()
+            .remove("presentation");
+        let prompt = text(&fields, "prompt_template").to_string();
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err =
+            verify_portability_report("as-1", &fields, &prompt, &proof_ids).unwrap_err();
+        assert_eq!(err.code, "art_style_presentation_missing");
+
+        let mut fields = valid_fields();
+        fields["thumbnail_file_id"] = json!("proof-fal-openai/gpt-image-2/edit-1");
+        let prompt = text(&fields, "prompt_template").to_string();
+        let proof_ids = fields["proof_ids"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let err =
+            verify_portability_report("as-1", &fields, &prompt, &proof_ids).unwrap_err();
+        assert_eq!(err.code, "art_style_presentation_hero_invalid");
     }
 
     #[test]

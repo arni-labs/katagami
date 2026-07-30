@@ -9,6 +9,7 @@ import {
 } from "@/lib/odata";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
+import { artStyleManifestationFileIds } from "@/lib/art-style-prompt-state";
 
 // Row -> card-item mappings shared by the palette/art-style galleries and the
 // Under Review queue, so the two never drift.
@@ -29,11 +30,6 @@ export function toPaletteItem(r: LaneEntity): PaletteItem {
     featured: /^(true|1)$/i.test(String(r.fields.featured ?? "")),
     taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
   };
-}
-
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
 }
 
 // Build image URLs from the governed File ids -> /api/file proxy. We DON'T use
@@ -94,6 +90,8 @@ export function toWritingStyleItem(r: LaneEntity): import("@/components/writing-
 
 /** An ArtStyle row -> the item the art-style catalog renders. */
 export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
+  const proofIds = parseJson<string[]>(r.fields.proof_shots_file_ids) ?? [];
+  const thumbnailFileId = r.fields.thumbnail_file_id ?? "";
   return {
     id: r.entity_id,
     name: artStyleDisplayName(r.fields),
@@ -102,10 +100,12 @@ export function toArtStyleItem(r: LaneEntity): ArtStyleItem {
     medium: r.fields.medium ?? "",
     promptTemplate: r.fields.prompt_template ?? "",
     refs: refImageUrls(r.fields),
-    proofs: refUrls(r.fields.proof_shots_file_ids),
-    thumb: r.fields.thumbnail_file_id
-      ? getFileUrl(r.fields.thumbnail_file_id)
-      : "",
+    proofs: artStyleManifestationFileIds({
+      proofManifest: r.fields.proof_shots_manifest,
+      proofFileIds: proofIds,
+      thumbnailFileId,
+    }).map((fileId) => getFileUrl(fileId)),
+    thumb: thumbnailFileId ? getFileUrl(thumbnailFileId) : "",
     tags: parseJson<string[]>(r.fields.tags) ?? [],
     taxonomyIds: parseJson<string[]>(r.fields.taxonomy_ids) ?? [],
   };

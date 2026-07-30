@@ -17,16 +17,14 @@ import { CopyButton } from "@/components/copy-button";
 import { Credits } from "@/components/credits";
 import { ModelProvenance } from "@/components/model-provenance";
 import { InlineRemix } from "@/components/remix/inline-remix";
-import { artStyleGallerySources } from "@/lib/art-style-prompt-state";
+import {
+  artStyleGallerySources,
+  artStyleManifestationFileIds,
+} from "@/lib/art-style-prompt-state";
 
 export const dynamic = "force-dynamic";
 
 const CHIP = "bg-[color-mix(in_srgb,var(--foreground)_4%,var(--card))]";
-
-function refUrls(raw?: string): string[] {
-  const ids = parseJson<string[]>(raw);
-  return Array.isArray(ids) ? ids.map((id) => getFileUrl(id)) : [];
-}
 
 // Build image URLs from File ids -> /api/file proxy (reliable). Avoid
 // reference_assets VALUES (some are assets.katagami.ai CDN urls that 404) and
@@ -84,13 +82,19 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
   const tags = parseJson<string[]>(f.tags) ?? [];
 
   const refs = refImageUrls(f);
-  const proofs = refUrls(f.proof_shots_file_ids);
-  const thumb = f.thumbnail_file_id ? getFileUrl(f.thumbnail_file_id) : "";
+  const proofIds = parseJson<string[]>(f.proof_shots_file_ids) ?? [];
+  const thumbnailFileId = f.thumbnail_file_id ?? "";
+  const manifestations = artStyleManifestationFileIds({
+    proofManifest: f.proof_shots_manifest,
+    proofFileIds: proofIds,
+    thumbnailFileId,
+  }).map((fileId) => getFileUrl(fileId));
+  const thumb = thumbnailFileId ? getFileUrl(thumbnailFileId) : "";
   const { hero, gallery } = artStyleGallerySources({
     status: art.status,
     promptVerified,
     referenceUrls: refs,
-    proofUrls: proofs,
+    manifestationUrls: manifestations,
     thumbnailUrl: thumb,
   });
 
@@ -130,7 +134,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             />
           </span>
         }
-        description="An engine-agnostic style recipe: a wide hero, proof shots across subjects, and a portable prompt."
+        description="An engine-agnostic style recipe: curated manifestations across subjects and one portable prompt."
         rightSlot={<Stamp color="sakura">{medium}</Stamp>}
       />
 
@@ -140,7 +144,7 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
         </div>
       ) : null}
 
-      {/* hero + proof gallery */}
+      {/* hero + curated manifestation gallery */}
       <StickyNote tint="sakura" className="p-3">
         <div className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "16/9" }}>
           {hero ? (
@@ -153,13 +157,13 @@ export default async function ArtStyleDetailPage({ params }: { params: Promise<{
             {gallery.map((src, i) => (
               <div key={i} className="overflow-hidden rounded-[2px] bg-muted" style={{ aspectRatio: "1/1" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`${name} proof ${i + 1}`} className="h-full w-full object-cover" />
+                <img src={src} alt={`${name} manifestation ${i + 1}`} className="h-full w-full object-cover" />
               </div>
             ))}
           </div>
         ) : null}
         <div className="mt-2 px-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/70">
-          1 hero · {gallery.length} proof{gallery.length === 1 ? "" : "s"}
+          1 hero · {gallery.length} manifestation{gallery.length === 1 ? "" : "s"}
         </div>
       </StickyNote>
 

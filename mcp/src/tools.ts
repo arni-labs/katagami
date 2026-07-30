@@ -147,6 +147,20 @@ const artStyleProofInput = z.object({
   ),
 }).strict();
 
+const artStyleManifestationInput = z
+  .object({
+    file_id: z.string().min(1),
+    category: z.enum(ART_STYLE_PROOF_CATEGORIES),
+    selection_reason: z
+      .string()
+      .trim()
+      .min(12)
+      .describe(
+        "Explain which distinctive behavior of this particular style the subject and output make visible; audit score alone is not an editorial reason",
+      ),
+  })
+  .strict();
+
 const lineageInput = {
   parent_ids: z.array(z.string()).optional().describe("Katagami entity ids this derives from"),
   lineage_type: z.enum(["original", "evolution", "remix"]).optional(),
@@ -421,11 +435,17 @@ export function buildServer(auth: AuthInfo): McpServer {
           .describe(
             "Two distinct image models × the same four contributor-supplied source images. Import all four sources and eight outputs first; bind their exact hashes and the canonical prompt hash in each generation_record.",
           ),
+        public_manifestations: z
+          .array(artStyleManifestationInput)
+          .length(4)
+          .describe(
+            "Exactly one selected proof output for each semantic role. These four are the public gallery; the duplicate model row remains audit evidence. Subjects must be chosen for this style rather than copied from a house fixture set.",
+          ),
         thumbnail_file_id: z
           .string()
           .min(1)
           .describe(
-            "Choose the strongest thumbnail from the eight verified proof file_ids; no semantic role is forced across styles",
+            "Editorial hero from public_manifestations: choose the image that communicates this style most immediately at card crop, not the highest audit score",
           ),
         source_basis: z
           .record(z.string(), z.unknown())
@@ -481,8 +501,32 @@ export function buildServer(auth: AuthInfo): McpServer {
       const entityId = a.entity_id ?? (await createEntity(id, set));
 
       const proofIds = a.proof_shots.map((proof) => proof.file_id);
-      if (!proofIds.includes(a.thumbnail_file_id))
-        return fail("thumbnail_file_id must identify one of the eight verified proof shots.");
+      const proofById = new Map(a.proof_shots.map((proof) => [proof.file_id, proof]));
+      const manifestationCategories = new Set(
+        a.public_manifestations.map((item) => item.category),
+      );
+      if (
+        manifestationCategories.size !== ART_STYLE_PROOF_CATEGORIES.length ||
+        !ART_STYLE_PROOF_CATEGORIES.every((category) =>
+          manifestationCategories.has(category),
+        )
+      )
+        return fail(
+          "public_manifestations must select exactly one proof for each semantic role.",
+        );
+      for (const manifestation of a.public_manifestations) {
+        const proof = proofById.get(manifestation.file_id);
+        if (!proof || proof.category !== manifestation.category)
+          return fail(
+            `Public manifestation '${manifestation.file_id}' must identify a proof with category '${manifestation.category}'.`,
+          );
+      }
+      if (
+        !a.public_manifestations.some(
+          (manifestation) => manifestation.file_id === a.thumbnail_file_id,
+        )
+      )
+        return fail("thumbnail_file_id must identify one of the four public manifestations.");
       const thumbId = a.thumbnail_file_id;
 
       await action(id, set, entityId, "SubmitArtStyle", {
@@ -498,6 +542,11 @@ export function buildServer(auth: AuthInfo): McpServer {
         proof_shots_manifest: asJsonString({
           schema_version: "3",
           items: a.proof_shots,
+          presentation: {
+            schema_version: "1",
+            hero_file_id: thumbId,
+            items: a.public_manifestations,
+          },
         }),
         thumbnail_file_id: thumbId,
         parent_ids: a.parent_ids ?? [],
