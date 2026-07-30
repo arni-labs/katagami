@@ -185,39 +185,39 @@
       "style_id": "en-019ef841-8bbf-7b00-8c63-38019e9dc938",
       "slug": "dawnvapor-cel",
       "canonical_prompt": "Redraw the supplied subject from scratch as a hand-inked manga illustration prepared as a flat animation cel, never as a filter or toon-shaded version of the input. Preserve only semantic content—role, pose, hairstyle category, clothing, exact subject count and relationships, viewpoint, and broad composition—not identity, source facial landmarks, anatomy, material, texture, lighting, shading, or render geometry. Never add a person, animal, object, or prop absent from the source; an empty scene must remain empty. The nonnegotiable final hierarchy is manga design first and source resemblance second: every subject must still read as the same manga/cel language when cropped away from the background. Define every form with clean black contour lines, tapered interior rules, decisive silhouette cuts, one flat local fill, and at most one hard-edged shadow; use no gradients anywhere. Completely redesign every person as a youthful mainstream shōnen-manga character rather than a recognizable portrait or Western adult-animation figure, exaggerating beyond natural facial proportions: use a broad smooth cranium and sharply triangular lower face whose pointed chin is no more than half the cheek width; make two visibly oversized horizontal eyes dominate the central face, each at least one quarter of the face width and one sixth of the face height, with a bold upper line and large simple iris, leaving roughly one eye width between them. Reduce the nose to one tiny wedge or two short lines with no bridge shading; use one economical mouth line, a slender simplified neck, and perfectly untextured skin. Remove source age and facial hair entirely so the face reads as a clean-shaven young-adult manga protagonist; limit it to flat skin fill plus one hard-edged shadow shape, with no stubble, cheek modeling, under-eye marks, nasolabial marks, forehead creases, or realistic brow volume. Give animals simplified expressive anatomy; repeated scales, feathers, fur, and other surface motifs may remain only as deliberately inked flat graphic patterns grouped into a few clear regions, never as soft, tactile, or volumetrically shaded texture. Rebuild manufactured objects from flat outlined geometric faces and inked silhouette breaks; preserve recognizable functional parts when useful, and represent handles, corners, controls, and bevels as discrete flat facets with hard edges rather than physical depth, soft shading, gradients, specular highlights, or photographic mechanical texture. Rebuild plants and environments through equally economical drawn planes and simplified graphic perspective; represent water, sky, haze, and other atmosphere with two to four flat hard-edged color regions, never soft transitions. Map color to cool lavender and cyan atmosphere, deep blue structure, and tiny terminal-green and magenta rectangular glints. Crop asymmetrically so the primary subject fills the frame while restrained dawn haze opens behind it. Show sparse edge glints, registration-clean fills, and thin technical accent bars, but no registration crosshairs or printer marks. Avoid realistic facial construction, pores, photographic anatomy, painterly surfaces, glossy or volumetric 3D rendering, soft gradients, heavy neon glow, retained source-medium marks, text, and logos.",
-      "selection_rationale": "The four deliberately different subjects test one manga/cel depiction grammar across a human face, organic motion, hard manufactured forms, and deep environmental perspective; radio equipment and the pre-sunrise platform additionally exercise the style's technical-dawn color vocabulary.",
+      "selection_rationale": "A rooftop weather observer, swallows crossing tram wires, portable measuring equipment, and an urban greenhouse connect the manga-cel grammar to movement, precise technical silhouettes, and pre-sunrise city atmosphere without falling back to a generic character portrait.",
       "cases": [
         {
           "category": "human_portrait",
-          "subject": "overnight radio operator wearing headphones",
-          "composition": "off-center shoulders-up portrait with a console edge in the foreground",
-          "source_medium": "documentary photograph",
-          "source_file": "sources/dawnvapor-cel/human-portrait-documentary.webp",
-          "source_sha256": "799d06f79a084f3b2821c5944435ca997d39705f73b3074a0a6c5fa5423368ae"
+          "subject": "young weather observer fastening a scarf beside a rooftop anemometer",
+          "composition": "dynamic three-quarter waist-up view with one raised arm and dawn skyline behind",
+          "source_medium": "black-ink line drawing",
+          "source_file": "sources/dawnvapor-cel-v2/human-portrait-line.webp",
+          "source_sha256": "282b01c6c092b42fbc485f88619254e75460999eaadee0c901ba16d9d2f96b34"
         },
         {
           "category": "nonhuman_living",
-          "subject": "two koi turning in opposite directions beneath rippled water",
-          "composition": "overhead circular movement with open water at the center",
-          "source_medium": "black-ink line drawing",
-          "source_file": "sources/dawnvapor-cel/nonhuman-living-line.webp",
-          "source_sha256": "8c7ef4227287be5a90e3d863eaa6fdab0385cb7185b4684478005f926a3c099e"
+          "subject": "three swallows banking between suspended tram wires",
+          "composition": "upward diagonal view with the birds at three depths and open sky between wires",
+          "source_medium": "documentary photograph",
+          "source_file": "sources/dawnvapor-cel-v2/nonhuman-living-documentary.webp",
+          "source_sha256": "c19c08612f44e4e40cf0aff1d7008489e1c67eeea4a086f505a938ae60085646"
         },
         {
           "category": "still_life_object",
-          "subject": "portable field radio, coiled cable, and signal meter",
-          "composition": "low three-quarter product view with the cable crossing the foreground",
+          "subject": "compact weather receiver, folding headphones, and analog wind meter",
+          "composition": "low three-quarter product grouping with the receiver dominant and cable forming one arc",
           "source_medium": "neutral synthetic 3d render",
-          "source_file": "sources/dawnvapor-cel/still-life-3d.webp",
-          "source_sha256": "113b61fbc875de08ce350683bfbab4da5397e9cad50c23bdcceaec257a266f58"
+          "source_file": "sources/dawnvapor-cel-v2/still-life-3d.webp",
+          "source_sha256": "3cccf77e5c78c6825fd43c923c7fbc1b7a9a50bbf7164d9f2f0c1d02d09d16c3"
         },
         {
           "category": "landscape_environment",
-          "subject": "elevated railway platform just before sunrise",
-          "composition": "long one-point perspective with tracks exiting toward the horizon",
+          "subject": "rooftop greenhouse and antenna array before sunrise",
+          "composition": "wide oblique view across roof levels with the greenhouse left and antennae rising right",
           "source_medium": "flat vector illustration",
-          "source_file": "sources/dawnvapor-cel/landscape-environment-vector.webp",
-          "source_sha256": "22a3127cca56933a106fafb591195fc0e50b82fb581191a37ad9b0a1515719fe"
+          "source_file": "sources/dawnvapor-cel-v2/landscape-environment-vector.webp",
+          "source_sha256": "a2957c885e47ad0ef2fdf405bf7db36351f8751839e384f1df533308a36f103f"
         }
       ]
     },

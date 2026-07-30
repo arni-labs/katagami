@@ -118,8 +118,28 @@ For every source and output:
 
 Build exactly eight proof items: two models for each of the four categories.
 Both model rows must point to the same source id and source hash for that
-category. Choose the strongest proof output as the thumbnail; no subject role
-is globally privileged.
+category.
+
+The four roles are a coverage taxonomy, not a recurring subject list. Before
+making sources, inspect adjacent and sibling ArtStyles. Pick concrete subjects
+whose structure, motion, surface, or space exposes what is distinctive about
+this exact technique. Do not reuse another style's quartet merely to make a
+controlled comparison; the two model rows already provide the control.
+
+Select exactly one passing proof output per role as `public_manifestations`.
+The other model's output remains verification evidence and is not repeated in
+the public gallery. Give every selection a short style-specific reason. Choose
+the `thumbnail_file_id` from those four using this editorial order:
+
+1. communicates the distinctive treatment immediately;
+2. has a meaningful subject/technique relationship;
+3. survives the wide card crop;
+4. avoids a generic headshot unless portraiture is the clearest expression;
+5. does not repeat the hero or subject set of an adjacent/sibling style.
+
+Audit score is only a publication threshold; it is never the hero-selection
+criterion. This presentation selection reuses the eight required outputs, so
+the contract requires eight generations, not twelve.
 
 ### Independent prompt and visual review
 
@@ -150,8 +170,9 @@ flip a score or label.
 ### Submit
 
 Call `submit_art_style` once with the complete Draft, imported proof records,
-independent source review, independent prompt review, and blind portability
-report. Do not call `SubmitForReview`, `AttachArtStyleReview`,
+the four public manifestation selections, independent source review,
+independent prompt review, and blind portability report. Do not call
+`SubmitForReview`, `AttachArtStyleReview`,
 `MarkQualityPassed`, or `Publish`.
 
 Return:

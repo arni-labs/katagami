@@ -178,7 +178,8 @@ the complete four-role publication evidence.
 4. `landscape_environment`
 
 Choose the concrete subject and composition deliberately for the style under
-review. Do not reuse a house list of props or one recurring composition. The
+review. Do not reuse a house list of props, one recurring composition, or a
+sibling style's quartet merely to create a controlled comparison. The
 role is fixed for comparable coverage; the thing depicted is not. Across the
 four roles, rotate exactly one each of `documentary photograph`, `black-ink
 line drawing`, `neutral synthetic 3d render`, and `flat vector illustration`,
@@ -267,10 +268,17 @@ prompt and rerun the failed model; never add a per-model prompt.
 Import every contributor-supplied source and proof image.
 `proof_shots_manifest.items` must mirror the eight proof records exactly,
 including category, subject, composition, source medium, mode, model/provider,
-`style_reference_used: false`, and the unmodified `generation_record`. Choose
-the strongest of those exact eight verified proof Files as the thumbnail; do
-not force the same role across styles and do not upload a separate or cropped
-thumbnail through this workflow.
+`style_reference_used: false`, and the unmodified `generation_record`.
+
+Add `proof_shots_manifest.presentation` with schema version `1`. Select one
+passing proof per semantic role and give each a `selection_reason` explaining
+which distinctive behavior of this exact style it exposes. Those four become
+the public manifestations; the second model row remains audit evidence. Choose
+the thumbnail/hero from the four for immediate technique legibility,
+subject/technique fit, and a strong wide crop. Never choose it merely because
+it has the highest audit score, and avoid a generic headshot unless portraiture
+is genuinely the clearest expression. Reuse the eight proof outputs; do not
+commission four additional gallery generations.
 Optional example references use
 `reference_image_file_ids` and `reference_manifest`; pass `[]` and
 `{"items":[]}` when none exist.
@@ -311,7 +319,15 @@ temper.action("ArtStyles", eid, "SubmitArtStyle", {
     "reference_manifest": json.dumps({"items": reference_manifest}, ensure_ascii=False),
     "proof_shots_file_ids": json.dumps(proof_ids),
     "proof_shots_manifest": json.dumps(
-        {"schema_version": "3", "items": proof_manifest},
+        {
+            "schema_version": "3",
+            "items": proof_manifest,
+            "presentation": {
+                "schema_version": "1",
+                "hero_file_id": thumbnail_file_id,
+                "items": public_manifestations,
+            },
+        },
         ensure_ascii=False,
     ),
     "thumbnail_file_id": thumbnail_file_id,

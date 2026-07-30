@@ -220,9 +220,11 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         self.assertNotIn("rights_evidence", MCP_TOOLS)
         self.assertIn("artStyleProofInput", MCP_TOOLS)
         self.assertIn(
-            "thumbnail_file_id must identify one of the eight verified proof shots",
+            "thumbnail_file_id must identify one of the four public manifestations",
             MCP_TOOLS,
         )
+        self.assertIn("public_manifestations", MCP_TOOLS)
+        self.assertIn("duplicate model row remains audit evidence", MCP_TOOLS)
         self.assertNotIn("art_style_proof_receipt_key", CURATION_JOB_SPEC)
 
     def test_audit_matrix_balances_roles_media_and_style_specific_subjects(self):
