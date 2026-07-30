@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Atlas - Launch Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { min-width: 0; overflow-x: hidden; }
+    button, input, textarea, select { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; background: transparent; border: none; outline: 0; }
+    button { cursor: pointer; }
+    button:disabled, input:disabled, textarea:disabled, select:disabled { cursor: not-allowed; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    svg { display: block; }
+
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F4FAFE;
+      --text: #000000;
+      --muted: #546376;
+      --border: transparent;
+      --accent: #00C8F0;
+      --on-accent: #000000;
+      --success: #00D070;
+      --warning: #FF2A62;
+      --error: #FF2A62;
+      --info: #00C8F0;
+      --hero-image: url('./media/hero.jpg');
+
+      --accent-hot: var(--error);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --space-10: 128px;
+      --radius-none: 0;
+      --radius-field: 16px;
+      --radius-card: 24px;
+      --radius-pill: 9999px;
+      --control-height: 48px;
+      --control-pad-x: 20px;
+      --control-gap: 8px;
+      --control-min: 120px;
+      --content-max: 1180px;
+      --font-display: "Anton", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --type-xs: 15px;
+      --type-sm: 15px;
+      --type-md: 17px;
+      --type-lg: 21px;
+      --type-xl: 28px;
+      --type-2xl: clamp(34px, 5vw, 54px);
+      --type-3xl: clamp(48px, 8vw, 92px);
+      --type-4xl: clamp(58px, 11vw, 128px);
+      --shadow-sky: 0 24px 70px color-mix(in srgb, var(--accent) 18%, transparent);
+      --shadow-leaf: 0 24px 70px color-mix(in srgb, var(--success) 16%, transparent);
+      --shadow-hot: 0 24px 70px color-mix(in srgb, var(--error) 18%, transparent);
+      --shadow-soft: 0 18px 48px color-mix(in srgb, var(--info) 12%, transparent);
+      --focus-ring: 0 0 0 2px var(--bg), 0 0 0 6px var(--accent);
+      --motion-fast: 140ms;
+      --motion-med: 380ms;
+      --ease: cubic-bezier(0.2, 0.82, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--type-md);
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .page {
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(var(--space-5), 1fr) minmax(0, var(--content-max)) minmax(var(--space-5), 1fr);
+    }
+
+    .shell > * { grid-column: 2; min-width: 0; }
+
+    .nav {
+      min-height: calc(var(--control-height) + var(--space-5));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-5);
+      padding-top: var(--space-5);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--control-height);
+      gap: var(--space-3);
+      font-family: var(--font-display);
+      font-size: var(--type-lg);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      width: var(--control-height);
+      height: var(--control-height);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow-sky);
+    }
+
+    .brand-mark svg { width: 28px; height: 28px; color: var(--text); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+
+    .nav-links a {
+      min-height: var(--control-height);
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 800;
+      transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+    }
+
+    .nav-links a:hover, .nav-links a:focus-visible {
+      color: var(--text);
+      background: var(--surface);
+      transform: translateY(-2px);
+    }
+
+    .nav-links a:focus-visible { box-shadow: var(--focus-ring); }
+
+    .hero {
+      position: relative;
+      width: 100%;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      gap: var(--space-7);
+      align-items: end;
+      padding: var(--space-9) var(--space-5) var(--space-10);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 34%;
+      max-width: 440px;
+      height: 120px;
+      right: 0;
+      top: var(--space-8);
+      border-radius: var(--radius-pill);
+      background: var(--success);
+      z-index: 0;
+    }
+
+    .hero-copy, .hero-card { position: relative; z-index: 1; min-width: 0; }
+
+    .kicker {
+      display: inline-flex;
+      min-height: var(--control-height);
+      align-items: center;
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: var(--type-sm);
+      font-weight: 700;
+      margin-bottom: var(--space-6);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+      line-height: 0.92;
+    }
+
+    h1 {
+      font-size: var(--type-4xl);
+      text-transform: uppercase;
+      max-width: 860px;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .press-line {
+      display: inline-block;
+      max-width: 100%;
+      background: var(--text);
+      color: var(--bg);
+      padding: var(--space-2) var(--space-4) var(--space-3);
+      border-radius: var(--radius-none);
+    }
+
+    .hero-lede {
+      max-width: 720px;
+      margin-top: var(--space-6);
+      color: var(--muted);
+      font-size: var(--type-lg);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .btn {
+      min-height: var(--control-height);
+      min-width: var(--control-min);
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--control-gap);
+      font-weight: 900;
+      font-size: var(--type-md);
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    .btn:focus-visible { box-shadow: var(--focus-ring); }
+    .btn:disabled { opacity: 0.42; pointer-events: none; transform: none; box-shadow: none; }
+    .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sky); }
+    .btn-hot { background: var(--error); color: var(--on-accent); box-shadow: var(--shadow-hot); }
+    .btn-secondary { background: var(--bg); color: var(--text); box-shadow: var(--shadow-soft); }
+    .btn-ghost { background: transparent; color: var(--text); box-shadow: none; }
+    .btn-ghost:hover { background: var(--surface); }
+
+    .hero-card {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-leaf);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .hero-card img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: var(--radius-card);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .metric {
+      min-width: 0;
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+    }
+
+    .metric strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: var(--type-xl);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .metric span { color: var(--muted); font-size: var(--type-sm); }
+
+    section { padding: var(--space-8) 0; }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: var(--space-7);
+      align-items: end;
+      margin-bottom: var(--space-7);
+      padding-top: var(--space-7);
+    }
+
+    .section-head h2 {
+      font-size: var(--type-3xl);
+      text-transform: uppercase;
+    }
+
+    .section-head p { color: var(--muted); font-size: var(--type-lg); }
+
+    .lane-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .lane-grid > * { min-width: 0; }
+
+    .card {
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-soft);
+      min-width: 0;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+    }
+
+    .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sky); }
+    .card:focus-within { box-shadow: var(--focus-ring); }
+
+    .air-sheet {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-6);
+      min-width: 0;
+    }
+
+    .image-block {
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: var(--shadow-hot);
+    }
+
+    .image-block img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+
+    .copy-stack { display: grid; gap: var(--space-4); }
+    .copy-stack h3 { font-size: var(--type-2xl); text-transform: uppercase; }
+    .copy-stack p { color: var(--muted); }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .chip {
+      min-height: calc(var(--control-height) - var(--space-2));
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 800;
+    }
+    .chip-blue { background: var(--accent); color: var(--on-accent); }
+    .chip-green { background: var(--success); color: var(--on-accent); }
+    .chip-hot { background: var(--error); color: var(--on-accent); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .control-group { display: grid; gap: var(--space-2); min-width: 0; }
+    label { color: var(--text); font-weight: 900; font-size: var(--type-sm); }
+
+    .field {
+      min-height: var(--control-height);
+      border-radius: var(--radius-field);
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      align-items: center;
+      position: relative;
+      transition: box-shadow var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+
+    .field:hover { transform: translateY(-2px); background: var(--surface); }
+    .field:focus-within { box-shadow: var(--focus-ring); transform: none; background: var(--bg); }
+    .field:has(:disabled) { opacity: 0.5; pointer-events: none; }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      min-height: var(--control-height);
+      padding: 0 var(--control-pad-x);
+      color: var(--text);
+      font-size: var(--type-md);
+    }
+
+    .field textarea {
+      min-height: calc(var(--control-height) * 2);
+      padding-top: var(--space-3);
+      resize: vertical;
+    }
+
+    .select-field svg {
+      position: absolute;
+      right: var(--space-4);
+      top: 50%;
+      transform: translateY(-50%);
+      width: var(--space-5);
+      height: var(--space-5);
+      color: var(--text);
+      pointer-events: none;
+    }
+
+    .select-field select { padding-right: var(--space-8); }
+
+    .switch-row {
+      min-height: var(--control-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-3) var(--space-4);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .switch {
+      width: calc(var(--control-height) + var(--space-6));
+      height: var(--control-height);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      position: relative;
+      flex: 0 0 auto;
+      transition: background var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+
+    .switch input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    .switch span {
+      position: absolute;
+      top: var(--space-2);
+      left: var(--space-2);
+      width: calc(var(--control-height) - var(--space-4));
+      height: calc(var(--control-height) - var(--space-4));
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+      transition: transform var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
+    }
+
+    .switch:has(input:checked) { background: var(--success); }
+    .switch:has(input:checked) span { transform: translateX(var(--space-6)); }
+    .switch:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+    .switch:has(input:disabled) { opacity: 0.5; pointer-events: none; }
+
+    .timeline { display: grid; gap: var(--space-3); }
+    .task-row {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-card);
+      background: var(--surface);
+      min-width: 0;
+    }
+
+    .task-row strong { display: block; font-size: var(--type-md); }
+    .task-row span { color: var(--muted); font-size: var(--type-sm); }
+
+    .bars { display: grid; gap: var(--space-4); }
+    .bar-item { display: grid; gap: var(--space-2); }
+    .bar-label { display: flex; justify-content: space-between; gap: var(--space-4); font-weight: 900; font-size: var(--type-sm); }
+    .bar-track { height: var(--space-5); border-radius: var(--radius-pill); background: var(--surface); overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: var(--radius-pill); background: var(--accent); width: var(--level); }
+    .bar-fill.green { background: var(--success); }
+    .bar-fill.hot { background: var(--error); }
+
+    .poster-panel {
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-none);
+      padding: var(--space-7);
+      display: grid;
+      gap: var(--space-5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .poster-panel::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: var(--space-8);
+      right: var(--space-6);
+      bottom: var(--space-6);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+
+    .poster-panel h2 {
+      font-size: var(--type-3xl);
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+
+    .poster-panel p { color: var(--bg); max-width: 680px; position: relative; z-index: 1; }
+
+    .product-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .product-row .card { display: grid; gap: var(--space-3); }
+    .product-row h3 { font-size: var(--type-xl); }
+    .product-row p { color: var(--muted); }
+
+    footer {
+      padding: var(--space-8) 0;
+      color: var(--muted);
+      font-size: var(--type-sm);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 860px) {
+      .hero, .section-head, .lane-grid { grid-template-columns: minmax(0, 1fr); }
+      .hero { padding-top: var(--space-7); }
+      .hero-card { order: -1; }
+      .nav-links a:nth-child(n+3) { display: none; }
+      .form-grid, .product-row { grid-template-columns: minmax(0, 1fr); }
+      .metrics { grid-template-columns: minmax(0, 1fr); }
+      .poster-panel { padding: var(--space-6); }
+    }
+
+    @media (max-width: 520px) {
+      .shell { grid-template-columns: minmax(0, 1fr); padding: 0 var(--space-4); }
+      .shell > * { grid-column: 1; }
+      .nav { align-items: center; }
+      .nav-links { display: none; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+      h1 { font-size: clamp(44px, 15vw, 76px); }
+      .section-head h2, .poster-panel h2 { font-size: clamp(38px, 13vw, 64px); }
+      .task-row { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="shell">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Nobori Atlas home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img" focusable="false">
+              <path d="M9 27 C17 12, 31 11, 40 22 C32 36, 17 36, 9 27 Z" fill="currentColor"></path>
+              <circle cx="32" cy="23" r="4" fill="var(--bg)"></circle>
+              <path d="M13 27 L4 18 L4 36 Z" fill="currentColor"></path>
+            </svg>
+          </span>
+          Nobori Atlas
+        </a>
+        <div class="nav-links">
+          <a href="#release">Release</a>
+          <a href="#site">Site plan</a>
+          <a href="#orders">Orders</a>
+          <a href="#proof">Proof desk</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="kicker">May 5 launch desk</span>
+          <h1 id="hero-title"><span class="press-line">Raise the</span><br>wind edition.</h1>
+          <p class="hero-lede">Plan a Kodomo no Hi release with gallery-grade koinobori imagery, venue timing, edition control, and install decisions in one bright operating surface.</p>
+          <div class="actions">
+            <button class="btn btn-primary" type="button">Open launch desk</button>
+            <button class="btn btn-secondary" type="button">Review proofs</button>
+            <button class="btn btn-ghost" type="button" disabled>Archive locked</button>
+          </div>
+        </div>
+        <aside class="hero-card" aria-label="Release snapshot">
+          <img src="./media/wind-detail.jpg" alt="Koinobori textile detail in early summer light">
+          <div class="metrics" aria-label="Launch metrics">
+            <div class="metric"><strong>42</strong><span>family sets</span></div>
+            <div class="metric"><strong>18</strong><span>venues</span></div>
+            <div class="metric"><strong>05.05</strong><span>public lift</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="release" class="shell" aria-labelledby="release-title">
+        <div class="section-head">
+          <h2 id="release-title">Edition run, not party kit.</h2>
+          <p>Nobori Atlas treats each Children’s Day campaign like an adult cultural product: numbered textiles, site approvals, wind windows, sponsor review, and public copy.</p>
+        </div>
+        <div class="lane-grid">
+          <article class="air-sheet copy-stack">
+            <div class="chip-row" aria-label="Release status">
+              <span class="chip chip-blue">Public page ready</span>
+              <span class="chip chip-green">Fabric locked</span>
+              <span class="chip chip-hot">Wind review due</span>
+            </div>
+            <h3>Hikari Riverside Set</h3>
+            <p>Forty-two koinobori families rise from the bridge approach to the oak grove. The blue parent carp holds the skyline, green child carp mark community sponsors, and one hot detail marks the opening-day edition.</p>
+            <div class="bars" aria-label="Release progress">
+              <div class="bar-item">
+                <div class="bar-label"><span>Fabric approvals</span><span>92 percent</span></div>
+                <div class="bar-track"><div class="bar-fill" style="--level: 92%"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-label"><span>Venue readiness</span><span>76 percent</span></div>
+                <div class="bar-track"><div class="bar-fill green" style="--level: 76%"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-label"><span>Sponsor copy</span><span>54 percent</span></div>
+                <div class="bar-track"><div class="bar-fill hot" style="--level: 54%"></div></div>
+              </div>
+            </div>
+          </article>
+          <figure class="image-block">
+            <img src="./media/kit-still-life.jpg" alt="Koinobori installation kit on a white table">
+          </figure>
+        </div>
+      </section>
+
+      <section id="site" class="shell" aria-labelledby="site-title">
+        <div class="section-head">
+          <h2 id="site-title">Site decisions stay visible.</h2>
+          <p>The surface is operational, but it keeps the poster energy: large decisions first, smaller checks below, each lane separated by tone and air.</p>
+        </div>
+        <div class="lane-grid">
+          <form class="card" aria-label="Installation intake">
+            <div class="form-grid">
+              <div class="control-group">
+                <label for="venue">Venue</label>
+                <div class="field"><input id="venue" name="venue" type="text" value="Aoba River Walk"></div>
+              </div>
+              <div class="control-group">
+                <label for="edition">Edition count</label>
+                <div class="field"><input id="edition" name="edition" type="number" value="42" min="1"></div>
+              </div>
+              <div class="control-group">
+                <label for="window">Wind window</label>
+                <div class="field select-field">
+                  <select id="window" name="window">
+                    <option>Morning lift</option>
+                    <option>Midday public set</option>
+                    <option>Evening still review</option>
+                  </select>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9 L12 15 L18 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+              </div>
+              <div class="control-group">
+                <label for="owner">Install lead</label>
+                <div class="field"><input id="owner" name="owner" type="search" value="Mika Tanabe"></div>
+              </div>
+              <div class="control-group" style="grid-column: 1 / -1;">
+                <label for="notes">Public note</label>
+                <div class="field"><textarea id="notes" name="notes">Families arrive at the south lawn by 09:30. First lift begins after the textile safety check.</textarea></div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" type="button">Save release</button>
+              <button class="btn btn-secondary" type="button">Send to venue</button>
+            </div>
+          </form>
+          <aside class="copy-stack">
+            <div class="switch-row">
+              <div><strong>Public page</strong><br><span class="muted">Open for partner review</span></div>
+              <label class="switch" aria-label="Public page enabled"><input type="checkbox" checked><span></span></label>
+            </div>
+            <div class="switch-row">
+              <div><strong>Rain hold</strong><br><span class="muted">Disabled after forecast review</span></div>
+              <label class="switch" aria-label="Rain hold disabled"><input type="checkbox" disabled><span></span></label>
+            </div>
+            <div class="timeline" aria-label="Site checklist">
+              <div class="task-row"><div><strong>Bridge pole spacing</strong><span>Measured at 3.2 meter intervals</span></div><span class="chip chip-green">Clear</span></div>
+              <div class="task-row"><div><strong>North grove family sets</strong><span>Waiting on two textile proofs</span></div><span class="chip chip-hot">Due</span></div>
+              <div class="task-row"><div><strong>Opening caption</strong><span>Partner names approved</span></div><span class="chip chip-blue">Ready</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="orders" class="shell" aria-labelledby="orders-title">
+        <div class="poster-panel">
+          <h2 id="orders-title">Forty-two sets. One clear lift.</h2>
+          <p>The black press block keeps the campaign adult and decisive. Accent color is held for status, calls, and moments that need action.</p>
+        </div>
+        <div class="product-row" style="margin-top: var(--space-6);">
+          <article class="card"><span class="chip chip-blue">Parent carp</span><h3>Sky Lead</h3><p>Electric blue textile proof assigned to the opening pole sequence.</p></article>
+          <article class="card"><span class="chip chip-green">Child set</span><h3>Leaf Run</h3><p>Fresh green sponsor editions grouped for the riverside family lane.</p></article>
+          <article class="card"><span class="chip chip-hot">Opening mark</span><h3>Hot Seal</h3><p>One vivid accent reserved for launch-day signage and urgent tasks.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell" id="proof">
+      <p>Nobori Atlas keeps Kodomo no Hi hopeful and grown-up: wind, textile, civic care, and crisp release operations.</p>
+    </footer>
+  </div>
+</body>
+</html>

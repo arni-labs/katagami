@@ -1,0 +1,102 @@
+{
+  "artifact": "katagami:shadcn-preview-shots",
+  "version": "preview-shots-v1",
+  "schema": "katagami:shadcn-preview-shots/renderable-v1",
+  "renderable": true,
+  "author": "katagami-agent",
+  "language": "Nobori",
+  "visualProfile": {
+    "family": "graphic-product-editorial",
+    "material": "white-air-and-cool-surface",
+    "contour": "pill-controls-card-panels",
+    "border": "none-transparent",
+    "underlay": "tone-sheets",
+    "grain": false,
+    "stickerBadges": false,
+    "motion": "wind-lift",
+    "density": "operational-spacious",
+    "accents": ["electric-sky", "leaf-green", "hot-coral"]
+  },
+  "componentRecipes": [
+    {"primitive": "button", "recipe": "48px pill, electric primary, hot destructive, quiet secondary, visible electric focus ring"},
+    {"primitive": "card", "recipe": "24px white or cool-tone panel, no border, tone shadow, no nesting"},
+    {"primitive": "input", "recipe": "48px custom field shell, 16px radius, white fill, focus-within ring"},
+    {"primitive": "textarea", "recipe": "same field shell, min-height two control tokens, vertical resize only"},
+    {"primitive": "select", "recipe": "same field shell, inline SVG chevron, no native chrome"},
+    {"primitive": "dialog", "recipe": "24px white panel, black press title, no border, one primary action"},
+    {"primitive": "sheet", "recipe": "tone-separated panel, 24px inset or 0 edge-flush radius, no visible outline"},
+    {"primitive": "tabs", "recipe": "48px pill tab list, active electric fill or strong black text"},
+    {"primitive": "badge", "recipe": "pill status using only blue, green, or hot"},
+    {"primitive": "separator", "recipe": "spacing or tone gap instead of a visible line"},
+    {"primitive": "checkbox", "recipe": "custom 48px row with 16px indicator and SVG check"},
+    {"primitive": "switch", "recipe": "48px pill track, white thumb, green checked state"},
+    {"primitive": "slider", "recipe": "48px interaction height, cool pill track, electric fill"},
+    {"primitive": "tooltip", "recipe": "black press block, white text, 0 radius, no glyph arrow"},
+    {"primitive": "dropdown-menu", "recipe": "24px white menu, tone shadow, 48px items, no border"},
+    {"primitive": "table", "recipe": "48px minimum rows, 15px+ type, cool row tones, no grid lines"}
+  ],
+  "shots": [
+    {
+      "id": "application-shell",
+      "title": "Hikari Riverside release overview",
+      "primitives": ["button", "card", "tabs", "badge", "table", "tooltip"],
+      "composition": "sidebar plus spacious dashboard grid with press-block page title, four stat cards, progress bars, and venue queue",
+      "mustShowStates": ["primary button hover", "table row focus", "badge statuses"],
+      "avoid": ["visible borders", "nested cards", "extra accents", "specimen framing"],
+      "scene": {
+        "eyebrow": "May 5 operations",
+        "headline": "Hikari Riverside is 61 percent ready",
+        "description": "Coordinate the koinobori family sets, wind window, venue approvals, and sponsor captions before public lift.",
+        "actions": ["Send update", "Export venue brief"],
+        "stats": [
+          {"label": "Family sets", "value": "42"},
+          {"label": "Venue zones", "value": "18"},
+          {"label": "Crew calls", "value": "9"}
+        ],
+        "rows": [
+          {"site": "Aoba River Walk", "lead": "Mika Tanabe", "status": "Clear"},
+          {"site": "North Grove", "lead": "Jun Sato", "status": "Due"},
+          {"site": "Station Lawn", "lead": "Aya Mori", "status": "Ready"}
+        ]
+      }
+    },
+    {
+      "id": "detail-editor",
+      "title": "Venue release editor",
+      "primitives": ["input", "textarea", "select", "switch", "checkbox", "button", "dialog", "sheet"],
+      "composition": "large cool air sheet with form fields on the left and generated kit imagery on the right",
+      "mustShowStates": ["focus-within ring on field", "disabled switch", "hot action quieter than primary unless singular"],
+      "avoid": ["browser default controls", "placeholder-only labels", "grey field borders"],
+      "scene": {
+        "eyebrow": "Venue setup",
+        "headline": "Aoba River Walk install details",
+        "description": "Set the venue lead, wind decision, pole spacing note, and public-page switch before sending the release to partners.",
+        "actions": ["Save release", "Open proof sheet"],
+        "fields": [
+          {"label": "Venue", "value": "Aoba River Walk"},
+          {"label": "Wind window", "value": "Morning lift"},
+          {"label": "Install note", "value": "Confirm bridge rail clearance before lifting the parent carp."}
+        ]
+      }
+    },
+    {
+      "id": "data-operations",
+      "title": "Proof and hold queue",
+      "primitives": ["dropdown-menu", "slider", "separator", "badge", "button", "table", "card"],
+      "composition": "dense operational rows on cool surface, highlighter bars for readiness, black press block for the urgent wind hold",
+      "mustShowStates": ["dropdown item hover", "slider focus", "destructive hold action"],
+      "avoid": ["chart gradients", "grid borders", "tiny unreadable rows"],
+      "scene": {
+        "eyebrow": "Proof desk",
+        "headline": "Two textile proofs remain before the wind call",
+        "description": "Operations stay adult and crisp while retaining early-summer lift through white air and highlighter status.",
+        "actions": ["Resolve wind hold", "Assign proof lead"],
+        "rows": [
+          {"proof": "Blue parent carp", "progress": "92%", "status": "Ready"},
+          {"proof": "Green sponsor set", "progress": "76%", "status": "Clear"},
+          {"proof": "Hot opening mark", "progress": "54%", "status": "Due"}
+        ]
+      }
+    }
+  ]
+}

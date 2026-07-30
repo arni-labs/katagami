@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nobori Atlas - Kodomo no Hi Launch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
+    body { min-width: 0; overflow-x: hidden; }
+    button, input, textarea, select { appearance: none; -webkit-appearance: none; font: inherit; color: inherit; background: transparent; border: none; outline: 0; }
+    button { cursor: pointer; }
+    button:disabled, input:disabled, textarea:disabled, select:disabled { cursor: not-allowed; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    svg { display: block; }
+
+    :root {
+      --bg: #FFFFFF;
+      --surface: #F4FAFE;
+      --text: #000000;
+      --muted: #546376;
+      --border: transparent;
+      --accent: #00C8F0;
+      --on-accent: #000000;
+      --success: #00D070;
+      --warning: #FF2A62;
+      --error: #FF2A62;
+      --info: #00C8F0;
+      --hero-image: url('./media/hero.jpg');
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+      --space-9: 96px;
+      --space-10: 128px;
+      --radius-none: 0;
+      --radius-field: 16px;
+      --radius-card: 24px;
+      --radius-pill: 9999px;
+      --control-height: 48px;
+      --control-pad-x: 20px;
+      --control-gap: 8px;
+      --control-min: 120px;
+      --content-max: 1180px;
+      --font-display: "Anton", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+      --font-body: Inter, "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --type-sm: 15px;
+      --type-md: 17px;
+      --type-lg: 21px;
+      --type-xl: 28px;
+      --type-2xl: clamp(36px, 5vw, 58px);
+      --type-3xl: clamp(52px, 8vw, 96px);
+      --type-4xl: clamp(64px, 11vw, 128px);
+      --shadow-sky: 0 24px 70px color-mix(in srgb, var(--accent) 18%, transparent);
+      --shadow-leaf: 0 24px 70px color-mix(in srgb, var(--success) 16%, transparent);
+      --shadow-hot: 0 24px 70px color-mix(in srgb, var(--error) 18%, transparent);
+      --shadow-soft: 0 18px 48px color-mix(in srgb, var(--info) 12%, transparent);
+      --focus-ring: 0 0 0 2px var(--bg), 0 0 0 6px var(--accent);
+      --motion-fast: 140ms;
+      --motion-med: 380ms;
+      --motion-slow: 700ms;
+      --ease: cubic-bezier(0.2, 0.82, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: var(--type-md);
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .hero {
+      min-height: 100svh;
+      width: 100vw;
+      position: relative;
+      background-image: var(--hero-image);
+      background-size: cover;
+      background-position: center;
+      border-radius: var(--radius-none);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: min(42vw, 560px);
+      height: var(--space-9);
+      right: 7vw;
+      top: 18svh;
+      border-radius: var(--radius-pill);
+      background: var(--success);
+      opacity: 0.96;
+    }
+
+    .nav {
+      position: relative;
+      z-index: 2;
+      min-height: calc(var(--control-height) + var(--space-6));
+      padding: var(--space-5) var(--space-6) 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-5);
+    }
+
+    .brand {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: 0 var(--control-pad-x);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .brand svg { width: 24px; height: 24px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+
+    .nav-links a {
+      min-height: var(--control-height);
+      padding: 0 var(--control-pad-x);
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-pill);
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 900;
+      font-size: var(--type-sm);
+      box-shadow: var(--shadow-soft);
+      transition: transform var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
+    }
+
+    .nav-links a:hover, .nav-links a:focus-visible { transform: translateY(-2px); background: var(--accent); }
+    .nav-links a:focus-visible { box-shadow: var(--focus-ring); }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      align-self: end;
+      padding: 0 var(--space-6) var(--space-8);
+      display: grid;
+      gap: var(--space-5);
+      justify-items: start;
+      max-width: min(980px, 100vw);
+    }
+
+    .role-tag {
+      min-height: var(--control-height);
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      color: var(--on-accent);
+      font-family: var(--font-mono);
+      font-size: var(--type-sm);
+      font-weight: 900;
+      box-shadow: var(--shadow-sky);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+      line-height: 0.92;
+    }
+
+    h1 {
+      display: inline;
+      font-size: var(--type-4xl);
+      text-transform: uppercase;
+      background: var(--text);
+      color: var(--bg);
+      padding: var(--space-2) var(--space-4) var(--space-4);
+      border-radius: var(--radius-none);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .hero-copy p {
+      max-width: 700px;
+      background: var(--bg);
+      color: var(--text);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-card);
+      font-size: var(--type-lg);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .btn {
+      min-height: var(--control-height);
+      min-width: var(--control-min);
+      padding: 0 var(--control-pad-x);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--control-gap);
+      font-weight: 900;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    .btn:focus-visible { box-shadow: var(--focus-ring); }
+    .btn:disabled { opacity: 0.42; pointer-events: none; box-shadow: none; transform: none; }
+    .btn-primary { background: var(--error); color: var(--on-accent); box-shadow: var(--shadow-hot); }
+    .btn-secondary { background: var(--bg); color: var(--text); box-shadow: var(--shadow-soft); }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(var(--space-5), 1fr) minmax(0, var(--content-max)) minmax(var(--space-5), 1fr);
+    }
+    .shell > * { grid-column: 2; min-width: 0; }
+
+    section:not(.hero) { padding: var(--space-9) 0; }
+
+    .section-head {
+      padding-top: var(--space-7);
+      margin-bottom: var(--space-7);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--space-7);
+      align-items: end;
+    }
+
+    .section-head h2 { font-size: var(--type-3xl); text-transform: uppercase; }
+    .section-head p { color: var(--muted); font-size: var(--type-lg); }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--space-6);
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-soft);
+      min-width: 0;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sky); }
+    .card:focus-within { box-shadow: var(--focus-ring); }
+
+    .image-card {
+      min-height: 420px;
+      background-image: url('./media/wind-detail.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-sky);
+      position: relative;
+      overflow: hidden;
+    }
+    .image-card .caption {
+      position: absolute;
+      left: var(--space-5);
+      bottom: var(--space-5);
+      right: var(--space-5);
+      background: var(--bg);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      font-weight: 900;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+    .stat {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-5);
+      min-width: 0;
+    }
+    .stat strong { display: block; font-family: var(--font-display); font-size: var(--type-2xl); line-height: 1; letter-spacing: -0.02em; }
+    .stat span { color: var(--muted); }
+
+    .air {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-6);
+      display: grid;
+      gap: var(--space-5);
+    }
+
+    .bars { display: grid; gap: var(--space-4); }
+    .bar-item { display: grid; gap: var(--space-2); }
+    .bar-label { display: flex; justify-content: space-between; gap: var(--space-4); font-weight: 900; font-size: var(--type-sm); }
+    .bar-track { height: var(--space-5); border-radius: var(--radius-pill); background: var(--bg); overflow: hidden; }
+    .bar-fill { height: 100%; width: var(--level); border-radius: var(--radius-pill); background: var(--accent); transform-origin: left center; }
+    .bar-fill.green { background: var(--success); }
+    .bar-fill.hot { background: var(--error); }
+
+    .poster-strip {
+      background: var(--text);
+      color: var(--bg);
+      border-radius: var(--radius-none);
+      padding: var(--space-8);
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+      gap: var(--space-7);
+      align-items: end;
+      position: relative;
+      overflow: hidden;
+    }
+    .poster-strip::before {
+      content: "";
+      position: absolute;
+      right: var(--space-8);
+      top: var(--space-8);
+      width: min(360px, 34vw);
+      height: var(--space-8);
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+    }
+    .poster-strip h2 { font-size: var(--type-3xl); text-transform: uppercase; position: relative; z-index: 1; }
+    .poster-strip p { position: relative; z-index: 1; font-size: var(--type-lg); }
+
+    .feature-list { display: grid; gap: var(--space-3); }
+    .feature-row {
+      min-height: var(--control-height);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      padding: var(--space-3) var(--space-4);
+    }
+    .feature-row span { color: var(--muted); }
+
+    .chip {
+      min-height: calc(var(--control-height) - var(--space-2));
+      display: inline-flex;
+      align-items: center;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: var(--type-sm);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .chip-blue { background: var(--accent); color: var(--on-accent); }
+    .chip-green { background: var(--success); color: var(--on-accent); }
+    .chip-hot { background: var(--error); color: var(--on-accent); }
+
+    .waitlist {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+    .field {
+      min-height: var(--control-height);
+      border-radius: var(--radius-field);
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      align-items: center;
+      transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease), opacity var(--motion-fast) var(--ease);
+    }
+    .field:hover { transform: translateY(-2px); background: var(--surface); }
+    .field:focus-within { box-shadow: var(--focus-ring); transform: none; background: var(--bg); }
+    .field:has(:disabled) { opacity: 0.5; pointer-events: none; }
+    .field input { width: 100%; min-height: var(--control-height); padding: 0 var(--control-pad-x); font-size: var(--type-md); }
+
+    .reveal { opacity: 1; transform: translateY(0); }
+    .anim .hero { animation: hero-breathe var(--motion-slow) var(--ease) both; }
+    .anim .reveal { opacity: 0; transform: translateY(var(--space-6)); transition: opacity var(--motion-med) var(--ease), transform var(--motion-med) var(--ease); }
+    .anim .reveal.in { opacity: 1; transform: translateY(0); }
+    .anim .bar-fill { transform: scaleX(0); transition: transform var(--motion-slow) var(--ease); }
+    .anim .bar-fill.grow { transform: scaleX(1); }
+
+    @keyframes hero-breathe {
+      from { background-size: 108% auto; }
+      to { background-size: 100% auto; }
+    }
+
+    footer { padding: var(--space-8) 0; color: var(--muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+    }
+
+    @media (max-width: 860px) {
+      .section-head, .proof-grid, .poster-strip { grid-template-columns: minmax(0, 1fr); }
+      .stats { grid-template-columns: minmax(0, 1fr); }
+      .nav-links a:nth-child(n+3) { display: none; }
+      .waitlist { grid-template-columns: minmax(0, 1fr); }
+      .waitlist .btn { width: 100%; }
+      .hero-copy { padding-left: var(--space-5); padding-right: var(--space-5); }
+    }
+
+    @media (max-width: 520px) {
+      .nav { padding-left: var(--space-4); padding-right: var(--space-4); }
+      .brand { padding: 0 var(--space-4); }
+      .nav-links a:not(:first-child) { display: none; }
+      .hero-copy { padding-left: var(--space-4); padding-right: var(--space-4); }
+      h1 { font-size: clamp(48px, 16vw, 76px); }
+      .section-head h2, .poster-strip h2 { font-size: clamp(42px, 13vw, 68px); }
+      .shell { grid-template-columns: minmax(0, 1fr); padding: 0 var(--space-4); }
+      .shell > * { grid-column: 1; }
+      .actions { flex-direction: column; width: 100%; }
+      .btn { width: 100%; }
+      .feature-row { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M9 27 C17 12, 31 11, 40 22 C32 36, 17 36, 9 27 Z" fill="currentColor"></path><circle cx="32" cy="23" r="4" fill="var(--bg)"></circle><path d="M13 27 L4 18 L4 36 Z" fill="currentColor"></path></svg>
+          Nobori Atlas
+        </a>
+        <div class="nav-links">
+          <a href="#edition">Edition</a>
+          <a href="#operate">Operate</a>
+          <a href="#join">Join</a>
+        </div>
+      </nav>
+      <div class="hero-copy" id="top">
+        <span class="role-tag">Kodomo no Hi, May 5</span>
+        <h1 id="hero-title">Launch koinobori with adult precision.</h1>
+        <p>Nobori Atlas gives cultural teams a bright command center for editioned carp streamers, venue approvals, wind reviews, and public launch pages.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#join">Start the May release</a>
+          <a class="btn btn-secondary" href="#edition">See the product</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell reveal" id="edition" aria-labelledby="edition-title">
+      <div class="section-head">
+        <h2 id="edition-title">One hopeful lift, built like a release.</h2>
+        <p>For museums, shopping districts, schools with design standards, and brands that want the clarity of a product launch rather than festival clutter.</p>
+      </div>
+      <div class="proof-grid">
+        <div class="image-card" role="img" aria-label="Bright koinobori textile detail">
+          <div class="caption">Generated textile imagery keeps the campaign vivid while the interface stays clean.</div>
+        </div>
+        <div class="air">
+          <div class="stats">
+            <div class="stat"><strong data-count="42">0</strong><span>editioned sets</span></div>
+            <div class="stat"><strong data-count="18">0</strong><span>venue zones</span></div>
+            <div class="stat"><strong data-count="5">0</strong><span>day launch window</span></div>
+          </div>
+          <div class="bars" aria-label="Launch readiness">
+            <div class="bar-item"><div class="bar-label"><span>Textile proofs</span><span>92 percent</span></div><div class="bar-track"><div class="bar-fill" style="--level: 92%"></div></div></div>
+            <div class="bar-item"><div class="bar-label"><span>Venue approvals</span><span>78 percent</span></div><div class="bar-track"><div class="bar-fill green" style="--level: 78%"></div></div></div>
+            <div class="bar-item"><div class="bar-label"><span>Public copy</span><span>61 percent</span></div><div class="bar-track"><div class="bar-fill hot" style="--level: 61%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell reveal" id="operate" aria-labelledby="operate-title">
+      <div class="poster-strip">
+        <h2 id="operate-title">From first fabric proof to final wind call.</h2>
+        <p>Coordinate koinobori sets, sponsor captions, install crews, and weather holds without losing the clear early-summer emotion of the day.</p>
+      </div>
+      <div class="proof-grid" style="margin-top: var(--space-6);">
+        <article class="card">
+          <h3>Release desk</h3>
+          <p style="color: var(--muted); margin-top: var(--space-3);">A single place for edition count, pole spacing, proof status, and public schedule.</p>
+          <div class="feature-list" style="margin-top: var(--space-5);">
+            <div class="feature-row"><div><strong>Aoba River Walk</strong><br><span>Opening lift at 09:30</span></div><span class="chip chip-green">Clear</span></div>
+            <div class="feature-row"><div><strong>North Grove</strong><br><span>Two textile proofs pending</span></div><span class="chip chip-hot">Due</span></div>
+            <div class="feature-row"><div><strong>Station Lawn</strong><br><span>Partner caption approved</span></div><span class="chip chip-blue">Ready</span></div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Adult by default</h3>
+          <p style="color: var(--muted); margin-top: var(--space-3);">No mascot layer, no candy palette, no clutter. The carp streamers carry hope; the product keeps the launch sharp.</p>
+          <div class="actions"><button class="btn btn-primary" type="button">View dashboard</button><button class="btn btn-secondary" type="button">Download brief</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell reveal" id="join" aria-labelledby="join-title">
+      <div class="section-head">
+        <h2 id="join-title">Prepare the May 5 lift.</h2>
+        <p>Bring the product into your cultural calendar. We will send a launch template, venue checklist, and first edition planner.</p>
+      </div>
+      <form class="card waitlist" aria-label="Join Nobori Atlas">
+        <label class="field" aria-label="Work email"><input type="email" placeholder="team@example.jp"></label>
+        <button class="btn btn-primary" type="button">Request access</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>Nobori Atlas keeps Kodomo no Hi bright, airy, hopeful, and launch-ready.</p>
+  </footer>
+
+  <script>
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      document.documentElement.classList.add('anim');
+      var sections = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+      var bars = Array.prototype.slice.call(document.querySelectorAll('.bar-fill'));
+      var stats = Array.prototype.slice.call(document.querySelectorAll('[data-count]'));
+      var seenStats = new WeakSet();
+
+      function countUp(el) {
+        if (seenStats.has(el)) return;
+        seenStats.add(el);
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        var start = performance.now();
+        function tick(now) {
+          var t = Math.min(1, (now - start) / 900);
+          el.textContent = Math.round(target * t);
+          if (t < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('in');
+          entry.target.querySelectorAll('[data-count]').forEach(countUp);
+          entry.target.querySelectorAll('.bar-fill').forEach(function (bar) { bar.classList.add('grow'); });
+        });
+      }, { threshold: 0.2 });
+
+      sections.forEach(function (section) { observer.observe(section); });
+      bars.forEach(function (bar) { if (bar.closest('.hero')) bar.classList.add('grow'); });
+    }());
+  </script>
+</body>
+</html>
