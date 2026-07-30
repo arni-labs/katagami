@@ -58,7 +58,33 @@ function paletteShelfKey(p: PaletteItem): string {
   });
 }
 
-/** Art styles have no token palette, so they shelve by medium (largest medium
+/** The 7 controlled mediums the gallery shelves by. `medium` is un-enforced, so
+ *  agents keep dropping sub-techniques ("linocut", "risograph", "cyanotype",
+ *  "glazed glass") into it — which would fragment the catalog into singleton
+ *  shelves. Map anything off-vocab to its family here so the gallery stays a
+ *  handful of clean shelves no matter what gets written. The raw medium still
+ *  shows on the card and powers search; only the SHELF grouping is normalized. */
+const MEDIUM_VOCAB = new Set([
+  "illustration", "photography", "painting", "print", "3d", "collage", "mixed",
+]);
+const MEDIUM_FAMILY: Array<[RegExp, string]> = [
+  [/glass|glaz/, "mixed"],
+  [/graphite|pencil|charcoal/, "illustration"],
+  [/cut.?paper|d[eé]coup|papercut|collage/, "collage"],
+  [/photo|cathode|infrared|\bfilm\b|tintype|collodion|cyanotype|daguerre|polaroid/, "photography"],
+  [/print|engrav|risograph|woodblock|mokuhanga|linocut|letterpress|etch|screen.?print|silkscreen|litho|offset|overprint|\bplate\b/, "print"],
+  [/watercol|gouache|\boil\b|ink.?wash|acrylic|fresco|tempera|paint/, "painting"],
+  [/\b3d\b|render|voxel|\bclay\b|sculpt|isometric/, "3d"],
+  [/vector|pictogram|\bicon|drawing|comic|manga|crayon|pastel|\bink\b|\bline\b|illustration/, "illustration"],
+];
+function normalizeMedium(raw: string | undefined): string {
+  const m = (raw || "").trim().toLowerCase();
+  if (MEDIUM_VOCAB.has(m)) return m;
+  for (const [re, fam] of MEDIUM_FAMILY) if (re.test(m)) return fam;
+  return "mixed";
+}
+
+/** Art styles have no token palette, so they shelve by medium family (largest
  *  first), with archived collected last. */
 function mediumShelves(items: ArtStyleItem[]): ShelfBucket<ArtStyleItem>[] {
   const buckets = new Map<string, ArtStyleItem[]>();
@@ -68,7 +94,7 @@ function mediumShelves(items: ArtStyleItem[]): ShelfBucket<ArtStyleItem>[] {
       archived.push(a);
       continue;
     }
-    const key = (a.medium || "mixed").trim().toLowerCase() || "mixed";
+    const key = normalizeMedium(a.medium);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(a);
     else buckets.set(key, [a]);
