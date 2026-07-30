@@ -161,21 +161,18 @@ export default async function LanguageDetailPage({
       key: "landing",
       label: "Landing",
       url: landingUrl,
-      note: "bespoke marketing landing",
     });
   if (embodimentRenderable)
     embodimentTabs.push({
       key: "embodiment",
       label: "Embodiment",
       url: embodimentUrl,
-      note: "the full element showcase",
     });
   if (dashboardUrl)
     embodimentTabs.push({
       key: "dashboard",
       label: "Dashboard",
       url: dashboardUrl,
-      note: "bespoke app dashboard",
     });
   const specProps = {
     languageId: id,

@@ -8,8 +8,6 @@ export type EmbodimentTab = {
   label: string;
   /** Served URL of the self-contained HTML (embodiment / landing / dashboard). */
   url: string;
-  /** Short note shown under the frame, e.g. "the full element showcase". */
-  note?: string;
 };
 
 /**
@@ -44,19 +42,6 @@ export function EmbodimentTabs({
             </button>
           ))}
         </div>
-        {cur.note ? (
-          <span className="min-w-0 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80 [overflow-wrap:anywhere]">
-            {cur.note}
-          </span>
-        ) : null}
-        <a
-          href={cur.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-auto font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
-        >
-          open full page ↗
-        </a>
       </div>
 
       <div className="relative min-w-0">
