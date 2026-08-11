@@ -47,9 +47,17 @@ loaded by synthesis and quality-review jobs.
 ### CuratorAgent
 
 The synthesis protocol one curator run must conform to (ARN-294). Self-review
-precedes submission, submission happens at most once, and Publish is not in the
-actor's alphabet — all three by construction rather than by convention.
-`jobs_in_flight` is guarded at 10 concurrent claims, the standing batch cap.
+precedes submission, submission happens at most once, submitted work is already
+`UnderReview` on the entity side, and Publish is not in the actor's alphabet —
+all four by construction rather than by convention. `jobs_in_flight` is guarded
+at 10 concurrent claims, the standing batch cap.
+
+There is one submit action per lane (`SubmitDesignLanguages`, `SubmitArtStyles`,
+`SubmitPaletteSystems`, `SubmitWritingStyles`), mirroring CurationJob's lane
+completions. Each guards its own id list with `cross_entity_state`, so the
+artifact requirements are read off the entity graph — reaching `UnderReview`
+means that entity's own `SubmitForReview` guard already proved DESIGN.md,
+embodiment, landing, thumbnail, proof shots, or corpus, depending on the lane.
 
 **States:** `BriefReceived` -> `Drafting` -> `SelfReviewed` -> `Submitted`,
 with `Abandoned` for a run that gives up or stalls.

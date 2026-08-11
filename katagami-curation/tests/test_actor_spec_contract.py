@@ -38,11 +38,26 @@ def guards(action):
     return guard if isinstance(guard, list) else [guard]
 
 
+SUBMIT_LANES = {
+    "SubmitDesignLanguages": ("DesignLanguage", "design_language_ids"),
+    "SubmitArtStyles": ("ArtStyle", "art_style_ids"),
+    "SubmitPaletteSystems": ("PaletteSystem", "palette_system_ids"),
+    "SubmitWritingStyles": ("WritingStyle", "writing_style_ids"),
+}
+
+
 class CuratorAgentSpecTest(unittest.TestCase):
     def setUp(self):
         self.spec = load("curator_agent")
         self.actions = actions(self.spec)
         self.states = states(self.spec)
+
+    def _submit_actions(self):
+        return {
+            name: action
+            for name, action in self.actions.items()
+            if name.startswith("Submit")
+        }
 
     def test_the_protocol_states_are_present_in_order(self):
         self.assertEqual(self.spec["automaton"]["name"], "CuratorAgent")
@@ -50,10 +65,14 @@ class CuratorAgentSpecTest(unittest.TestCase):
         for state in ("BriefReceived", "Drafting", "SelfReviewed", "Submitted"):
             self.assertIn(state, self.spec["automaton"]["states"])
 
+    def test_there_is_one_submit_action_per_lane(self):
+        self.assertEqual(sorted(self._submit_actions()), sorted(SUBMIT_LANES))
+
     def test_submit_is_only_reachable_after_self_review(self):
-        # The ordering is structural: SelfReviewed is Submit's only source
-        # state, and SelfReview is the only edge into it.
-        self.assertEqual(self.actions["Submit"]["from"], ["SelfReviewed"])
+        # The ordering is structural: SelfReviewed is the only source state for
+        # every submit, and SelfReview is the only edge into it.
+        for name, action in self._submit_actions().items():
+            self.assertEqual(action["from"], ["SelfReviewed"], name)
         self.assertEqual(self.actions["SelfReview"]["to"], "SelfReviewed")
         into_self_reviewed = [
             name
@@ -63,14 +82,18 @@ class CuratorAgentSpecTest(unittest.TestCase):
         self.assertEqual(into_self_reviewed, ["SelfReview"])
 
     def test_submit_is_also_guarded_on_the_self_review_flag(self):
-        self.assertIn(
-            {"type": "is_true", "var": "self_review_complete"},
-            guards(self.actions["Submit"]),
-        )
+        for name, action in self._submit_actions().items():
+            self.assertIn(
+                {"type": "is_true", "var": "self_review_complete"},
+                guards(action),
+                name,
+            )
 
     def test_submit_happens_at_most_once_per_run(self):
-        # Submitted is terminal, so a second Submit has no legal source state.
-        self.assertEqual(self.actions["Submit"]["to"], "Submitted")
+        # Every lane lands in the same terminal state, so no second submission
+        # of any lane has a legal source state.
+        for name, action in self._submit_actions().items():
+            self.assertEqual(action["to"], "Submitted", name)
         self.assertEqual(
             invariants(self.spec)["SubmittedIsFinal"]["assert"],
             "no_further_transitions",
@@ -81,6 +104,45 @@ class CuratorAgentSpecTest(unittest.TestCase):
             if "Submitted" in action.get("from", [])
         ]
         self.assertEqual(from_submitted, [])
+
+    def test_each_lane_checks_its_own_work_against_the_entity_graph(self):
+        # The artifact requirements (DESIGN.md, embodiment, landing, proof
+        # shots, corpus, ...) are not restated here — they are read off the
+        # entity graph, because reaching UnderReview means the entity's own
+        # SubmitForReview guard already proved them.
+        for name, (entity_type, id_field) in SUBMIT_LANES.items():
+            action = self.actions[name]
+            self.assertIn(
+                {
+                    "type": "cross_entity_state",
+                    "entity_type": entity_type,
+                    "entity_id_source": id_field,
+                    "required_status": ["UnderReview", "Published"],
+                },
+                guards(action),
+                name,
+            )
+            self.assertIn(id_field, self.states, id_field)
+            self.assertIn(id_field, action["params"], name)
+
+    def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
+        commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
+        language = tomllib.loads(
+            (commons_specs / "design_language.ioa.toml").read_text()
+        )
+        submit = next(
+            a for a in language["action"] if a["name"] == "SubmitForReview"
+        )
+        required = {
+            g["var"] for g in guards(submit) if g.get("type") == "is_true"
+        }
+        for expected in (
+            "has_valid_design_md",
+            "has_embodiment",
+            "has_compositions",
+            "has_thumbnail",
+        ):
+            self.assertIn(expected, required, expected)
 
     def test_the_curator_has_no_publish_action(self):
         # Publishing belongs to HumanCurator. Not "should not be called" —
@@ -101,10 +163,12 @@ class CuratorAgentSpecTest(unittest.TestCase):
         self.assertEqual(self.states["jobs_in_flight"]["type"], "counter")
 
     def test_a_run_cannot_submit_with_work_still_outstanding(self):
-        self.assertIn(
-            {"type": "max_count", "var": "jobs_in_flight", "max": 1},
-            guards(self.actions["Submit"]),
-        )
+        for name, action in self._submit_actions().items():
+            self.assertIn(
+                {"type": "max_count", "var": "jobs_in_flight", "max": 1},
+                guards(action),
+                name,
+            )
 
     def test_capture_identity_is_recorded_on_the_run(self):
         for field in ("session_id", "trajectory_id", "spec_version", "harness"):

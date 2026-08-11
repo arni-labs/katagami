@@ -7,13 +7,22 @@
 # itself, or submits twice, is a structural violation rather than a matter of
 # opinion.
 #
-# Three properties are enforced by construction, not by prose:
+# Four properties are enforced by construction, not by prose:
 #
-# 1. Self-review precedes submission. `Submit` is only reachable `from`
-#    ["SelfReviewed"], and `SelfReview` is the only edge into that state.
-# 2. Submission happens at most once per run. `Submitted` is terminal
-#    (SubmittedIsFinal), so a second `Submit` has no legal source state.
-# 3. Publishing is not in this actor's alphabet. There is no Publish action
+# 1. Self-review precedes submission. Every `Submit*` action is only reachable
+#    `from` ["SelfReviewed"], and `SelfReview` is the only edge into that state.
+# 2. Submission happens at most once per run. Every `Submit*` lands in
+#    `Submitted`, which is terminal (SubmittedIsFinal), so no second submission
+#    of any lane has a legal source state.
+# 3. The work is actually finished when it is submitted. Each lane's `Submit*`
+#    carries a `cross_entity_state` guard requiring the entities it produced to
+#    already be UnderReview — a state only reachable through those entities'
+#    own SubmitForReview guards, where the artifact requirements (DESIGN.md,
+#    embodiment, landing, thumbnail, shadcn export; medium + portable prompt +
+#    proof shots; corpus + bands + VOICE.md) already live. The precondition is
+#    read off the entity graph rather than restated, so there is one definition
+#    of "complete" instead of two that drift.
+# 4. Publishing is not in this actor's alphabet. There is no Publish action
 #    here, and none may be added: publishing belongs to HumanCurator
 #    (human_curator.ioa.toml) and stays governed by the existing commons
 #    policies (katagami-commons/policies/design_language.cedar and
@@ -22,8 +31,8 @@
 # Budget: `jobs_in_flight` is the concurrency ledger. `ClaimJob` is guarded on
 # max_count 10 — max_count is strict (val < max) — so the run can never hold
 # more than 10 concurrent curation jobs, matching the pipeline's standing
-# 10-concurrent cap. `Submit` is guarded on max_count 1 (that is, zero) so a
-# run cannot submit while work is still outstanding.
+# 10-concurrent cap. Every `Submit*` is guarded on max_count 1 (that is, zero)
+# so a run cannot submit while work is still outstanding.
 #
 # Lifecycle: BriefReceived -> Drafting -> SelfReviewed -> Submitted
 #            (any non-terminal state -> Abandoned on give-up or stall)
@@ -117,8 +126,27 @@ name = "submitted_entity_type"
 type = "string"
 initial = ""
 
+# One id list per lane, mirroring CurationJob's lane fields. Each lane's submit
+# action guards its OWN list with a cross_entity_state check, which is why the
+# lists are separate rather than one polymorphic list: the guard needs to know
+# the entity type it is resolving against.
 [[state]]
-name = "submitted_entity_ids"
+name = "design_language_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "art_style_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "palette_system_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "writing_style_ids"
 type = "string"
 initial = "[]"
 
@@ -180,19 +208,83 @@ effect = [{ type = "set_bool", var = "self_review_complete", value = "true" }]
 hint = "Critique the run's own output against the taste rules and the brief, and record what the pass found. This is the only edge into SelfReviewed, which is the only source state for Submit — self-review before submission is a structural property of this automaton, not a convention."
 
 # --- SelfReviewed ---
+#
+# One submit action per lane, mirroring CurationJob's lane completions
+# (CompleteSynthesis / CompletePaletteSynthesis / CompleteArtStyleSynthesis /
+# CompleteWritingStyleSynthesis). They all land in the same terminal state, so
+# submit-exactly-once still holds across the whole set: whichever lane fires,
+# Submitted has no outgoing edges and no other submit can follow.
+#
+# Each carries the same three guards:
+#
+#   1. self_review_complete — the ordering, restated as a guard as well as a
+#      source state.
+#   2. jobs_in_flight < 1 — no claimed work outstanding at submission.
+#   3. cross_entity_state over the lane's OWN id list — the entity-graph
+#      precondition. Requiring each produced entity to already be UnderReview
+#      means its own SubmitForReview guard passed, and THAT guard is where the
+#      artifact requirements live: DESIGN.md present and valid, embodiment and
+#      landing compositions present, thumbnail, shadcn export
+#      (katagami-commons/specs/design_language.ioa.toml), or medium + portable
+#      prompt + proof shots for an ArtStyle. Restating those conditions here
+#      would fork the definition of "complete" into two places that drift; this
+#      way there is one definition and the curator is held to it transitively.
 
 [[action]]
-name = "Submit"
+name = "SubmitDesignLanguages"
 kind = "input"
 from = ["SelfReviewed"]
 to = "Submitted"
-params = ["submitted_entity_type", "submitted_entity_ids"]
+params = ["submitted_entity_type", "design_language_ids"]
 guard = [
   { type = "is_true", var = "self_review_complete" },
   { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_ids", required_status = ["UnderReview", "Published"] },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
-hint = "Hand the synthesized set to review. Exactly once per run: Submitted is terminal, so a second Submit has no legal source state. Guarded on zero jobs in flight (max_count is strict, so max=1 means the counter is 0) — a run does not submit while claimed work is still outstanding. Submission lands UnderReview; this actor has no Publish action and must never gain one."
+hint = "Hand the synthesized design languages to review. Every listed language must already be UnderReview, which is only reachable through DesignLanguage's own SubmitForReview guard — so DESIGN.md, embodiment, landing, thumbnail and the shadcn artifacts are proven present by the entity graph rather than re-asserted here. This actor has no Publish action and must never gain one."
+
+[[action]]
+name = "SubmitArtStyles"
+kind = "input"
+from = ["SelfReviewed"]
+to = "Submitted"
+params = ["submitted_entity_type", "art_style_ids"]
+guard = [
+  { type = "is_true", var = "self_review_complete" },
+  { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "cross_entity_state", entity_type = "ArtStyle", entity_id_source = "art_style_ids", required_status = ["UnderReview", "Published"] },
+]
+effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
+hint = "Hand the synthesized art styles to review. Each must already be UnderReview, reachable only through ArtStyle's own SubmitForReview guard — which is what proves medium, portable prompt, slot recipes and proof shots exist."
+
+[[action]]
+name = "SubmitPaletteSystems"
+kind = "input"
+from = ["SelfReviewed"]
+to = "Submitted"
+params = ["submitted_entity_type", "palette_system_ids"]
+guard = [
+  { type = "is_true", var = "self_review_complete" },
+  { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "cross_entity_state", entity_type = "PaletteSystem", entity_id_source = "palette_system_ids", required_status = ["UnderReview", "Published"] },
+]
+effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
+hint = "Hand the synthesized palette systems to review. Each must already be UnderReview, which proves core, ramps, proof scenes and thumbnail are present."
+
+[[action]]
+name = "SubmitWritingStyles"
+kind = "input"
+from = ["SelfReviewed"]
+to = "Submitted"
+params = ["submitted_entity_type", "writing_style_ids"]
+guard = [
+  { type = "is_true", var = "self_review_complete" },
+  { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "cross_entity_state", entity_type = "WritingStyle", entity_id_source = "writing_style_ids", required_status = ["UnderReview", "Published"] },
+]
+effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
+hint = "Hand the synthesized writing styles to review. Each must already be UnderReview, which proves corpus, voice layer, mechanical bands, exemplars and VOICE.md are present."
 
 [[action]]
 name = "CuratorSubmittedEvent"

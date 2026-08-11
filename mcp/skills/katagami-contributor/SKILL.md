@@ -41,7 +41,8 @@ Then:
 
 The captured trajectory is replayed against `CuratorAgent`
 (`katagami-curation/specs/curator_agent.ioa.toml`), whose protocol this skill
-follows: draft, then self-review, then submit — once — and never publish.
+follows: draft, then self-review, then submit — once, and only work that already
+reached `UnderReview` — and never publish.
 
 ## Ownership boundary
 
