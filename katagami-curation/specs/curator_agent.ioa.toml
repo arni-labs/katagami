@@ -14,14 +14,17 @@
 # 2. Submission happens at most once per run. Every `Submit*` lands in
 #    `Submitted`, which is terminal (SubmittedIsFinal), so no second submission
 #    of any lane has a legal source state.
-# 3. The work is actually finished when it is submitted. Each lane's `Submit*`
-#    carries a `cross_entity_state` guard requiring the entities it produced to
-#    already be UnderReview — a state only reachable through those entities'
-#    own SubmitForReview guards, where the artifact requirements (DESIGN.md,
-#    embodiment, landing, thumbnail, shadcn export; medium + portable prompt +
-#    proof shots; corpus + bands + VOICE.md) already live. The precondition is
-#    read off the entity graph rather than restated, so there is one definition
-#    of "complete" instead of two that drift.
+# 3. The work is real and it is finished when it is submitted. Each lane's
+#    `Submit*` carries a `cross_entity_state` guard requiring the entities it
+#    produced to already be UnderReview — a state only reachable through those
+#    entities' own SubmitForReview guards, where the artifact requirements
+#    (DESIGN.md, embodiment, landing, thumbnail, shadcn export; medium +
+#    portable prompt + proof shots; corpus + bands + VOICE.md) already live. The
+#    precondition is read off the entity graph rather than restated, so there is
+#    one definition of "complete" instead of two that drift. It is paired with
+#    an `is_true has_<lane>_ids` guard because the kernel treats a cross-entity
+#    guard over an empty list as vacuous truth, and "produced nothing" must not
+#    read as "everything is fine".
 # 4. Publishing is not in this actor's alphabet. There is no Publish action
 #    here, and none may be added: publishing belongs to HumanCurator
 #    (human_curator.ioa.toml) and stays governed by the existing commons
@@ -130,10 +133,21 @@ initial = ""
 # action guards its OWN list with a cross_entity_state check, which is why the
 # lists are separate rather than one polymorphic list: the guard needs to know
 # the entity type it is resolving against.
+#
+# Each list has a companion bool, set when the first id is recorded. The kernel
+# resolves a cross_entity_state guard over an EMPTY list as vacuous truth
+# (temper-server/src/state/dispatch/cross_entity.rs), so the cross-entity guard
+# alone would let a run submit nothing at all and pass. The bool is what closes
+# that: a lane cannot be submitted until it has actually produced something.
 [[state]]
 name = "design_language_ids"
 type = "string"
 initial = "[]"
+
+[[state]]
+name = "has_design_language_ids"
+type = "bool"
+initial = "false"
 
 [[state]]
 name = "art_style_ids"
@@ -141,14 +155,29 @@ type = "string"
 initial = "[]"
 
 [[state]]
+name = "has_art_style_ids"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "palette_system_ids"
 type = "string"
 initial = "[]"
 
 [[state]]
+name = "has_palette_system_ids"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "writing_style_ids"
 type = "string"
 initial = "[]"
+
+[[state]]
+name = "has_writing_style_ids"
+type = "bool"
+initial = "false"
 
 [[state]]
 name = "abandon_reason"
@@ -198,6 +227,56 @@ params = ["draft_notes"]
 effect = [{ type = "increment", var = "draft_revision" }]
 hint = "Record one drafting revision. Callable once per revision; the count is the run's visible work, not a gate."
 
+# Produced work is recorded as it lands, one call per entity, rather than
+# arriving in a lump at submission time. Two reasons: the trajectory then shows
+# WHEN each artifact appeared, and the companion bool means the submit guard can
+# tell "produced nothing" from "produced something", which a cross-entity guard
+# over an empty list cannot.
+
+[[action]]
+name = "RecordDesignLanguage"
+kind = "input"
+from = ["Drafting"]
+params = ["design_language_ids"]
+effect = [
+  { type = "list_append", var = "design_language_ids" },
+  { type = "set_bool", var = "has_design_language_ids", value = "true" },
+]
+hint = "Record one DesignLanguage this run produced. The param is named after the list var so kernel ListAppend writes it."
+
+[[action]]
+name = "RecordArtStyle"
+kind = "input"
+from = ["Drafting"]
+params = ["art_style_ids"]
+effect = [
+  { type = "list_append", var = "art_style_ids" },
+  { type = "set_bool", var = "has_art_style_ids", value = "true" },
+]
+hint = "Record one ArtStyle this run produced."
+
+[[action]]
+name = "RecordPaletteSystem"
+kind = "input"
+from = ["Drafting"]
+params = ["palette_system_ids"]
+effect = [
+  { type = "list_append", var = "palette_system_ids" },
+  { type = "set_bool", var = "has_palette_system_ids", value = "true" },
+]
+hint = "Record one PaletteSystem this run produced."
+
+[[action]]
+name = "RecordWritingStyle"
+kind = "input"
+from = ["Drafting"]
+params = ["writing_style_ids"]
+effect = [
+  { type = "list_append", var = "writing_style_ids" },
+  { type = "set_bool", var = "has_writing_style_ids", value = "true" },
+]
+hint = "Record one WritingStyle this run produced."
+
 [[action]]
 name = "SelfReview"
 kind = "input"
@@ -235,10 +314,11 @@ name = "SubmitDesignLanguages"
 kind = "input"
 from = ["SelfReviewed"]
 to = "Submitted"
-params = ["submitted_entity_type", "design_language_ids"]
+params = ["submitted_entity_type"]
 guard = [
   { type = "is_true", var = "self_review_complete" },
   { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "is_true", var = "has_design_language_ids" },
   { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_ids", required_status = ["UnderReview", "Published"] },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
@@ -249,10 +329,11 @@ name = "SubmitArtStyles"
 kind = "input"
 from = ["SelfReviewed"]
 to = "Submitted"
-params = ["submitted_entity_type", "art_style_ids"]
+params = ["submitted_entity_type"]
 guard = [
   { type = "is_true", var = "self_review_complete" },
   { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "is_true", var = "has_art_style_ids" },
   { type = "cross_entity_state", entity_type = "ArtStyle", entity_id_source = "art_style_ids", required_status = ["UnderReview", "Published"] },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
@@ -263,10 +344,11 @@ name = "SubmitPaletteSystems"
 kind = "input"
 from = ["SelfReviewed"]
 to = "Submitted"
-params = ["submitted_entity_type", "palette_system_ids"]
+params = ["submitted_entity_type"]
 guard = [
   { type = "is_true", var = "self_review_complete" },
   { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "is_true", var = "has_palette_system_ids" },
   { type = "cross_entity_state", entity_type = "PaletteSystem", entity_id_source = "palette_system_ids", required_status = ["UnderReview", "Published"] },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
@@ -277,10 +359,11 @@ name = "SubmitWritingStyles"
 kind = "input"
 from = ["SelfReviewed"]
 to = "Submitted"
-params = ["submitted_entity_type", "writing_style_ids"]
+params = ["submitted_entity_type"]
 guard = [
   { type = "is_true", var = "self_review_complete" },
   { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "is_true", var = "has_writing_style_ids" },
   { type = "cross_entity_state", entity_type = "WritingStyle", entity_id_source = "writing_style_ids", required_status = ["UnderReview", "Published"] },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]

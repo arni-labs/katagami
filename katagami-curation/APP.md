@@ -52,12 +52,17 @@ precedes submission, submission happens at most once, submitted work is already
 all four by construction rather than by convention. `jobs_in_flight` is guarded
 at 10 concurrent claims, the standing batch cap.
 
-There is one submit action per lane (`SubmitDesignLanguages`, `SubmitArtStyles`,
+Produced entities are recorded as they land (`RecordDesignLanguage`,
+`RecordArtStyle`, `RecordPaletteSystem`, `RecordWritingStyle`), and there is one
+submit action per lane (`SubmitDesignLanguages`, `SubmitArtStyles`,
 `SubmitPaletteSystems`, `SubmitWritingStyles`), mirroring CurationJob's lane
-completions. Each guards its own id list with `cross_entity_state`, so the
-artifact requirements are read off the entity graph — reaching `UnderReview`
+completions. Each submit guards its own id list with `cross_entity_state`, so
+the artifact requirements are read off the entity graph — reaching `UnderReview`
 means that entity's own `SubmitForReview` guard already proved DESIGN.md,
-embodiment, landing, thumbnail, proof shots, or corpus, depending on the lane.
+embodiment, landing, thumbnail, proof shots, or corpus, depending on the lane —
+plus an `is_true has_<lane>_ids` guard, because the kernel treats a cross-entity
+guard over an empty list as vacuous truth and "produced nothing" must not read
+as "everything is fine".
 
 **States:** `BriefReceived` -> `Drafting` -> `SelfReviewed` -> `Submitted`,
 with `Abandoned` for a run that gives up or stalls.

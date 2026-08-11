@@ -39,10 +39,10 @@ def guards(action):
 
 
 SUBMIT_LANES = {
-    "SubmitDesignLanguages": ("DesignLanguage", "design_language_ids"),
-    "SubmitArtStyles": ("ArtStyle", "art_style_ids"),
-    "SubmitPaletteSystems": ("PaletteSystem", "palette_system_ids"),
-    "SubmitWritingStyles": ("WritingStyle", "writing_style_ids"),
+    "SubmitDesignLanguages": ("DesignLanguage", "design_language_ids", "RecordDesignLanguage"),
+    "SubmitArtStyles": ("ArtStyle", "art_style_ids", "RecordArtStyle"),
+    "SubmitPaletteSystems": ("PaletteSystem", "palette_system_ids", "RecordPaletteSystem"),
+    "SubmitWritingStyles": ("WritingStyle", "writing_style_ids", "RecordWritingStyle"),
 }
 
 
@@ -110,7 +110,7 @@ class CuratorAgentSpecTest(unittest.TestCase):
         # shots, corpus, ...) are not restated here — they are read off the
         # entity graph, because reaching UnderReview means the entity's own
         # SubmitForReview guard already proved them.
-        for name, (entity_type, id_field) in SUBMIT_LANES.items():
+        for name, (entity_type, id_field, _) in SUBMIT_LANES.items():
             action = self.actions[name]
             self.assertIn(
                 {
@@ -123,7 +123,42 @@ class CuratorAgentSpecTest(unittest.TestCase):
                 name,
             )
             self.assertIn(id_field, self.states, id_field)
-            self.assertIn(id_field, action["params"], name)
+
+    def test_a_lane_that_produced_nothing_cannot_be_submitted(self):
+        # The kernel resolves a cross-entity guard over an empty list as
+        # vacuous truth, so the cross-entity guard alone would let a run submit
+        # nothing at all and pass. The companion bool is what closes that.
+        for name, (_, id_field, record_action) in SUBMIT_LANES.items():
+            flag = f"has_{id_field}"
+            self.assertIn(flag, self.states, flag)
+            self.assertEqual(self.states[flag]["type"], "bool")
+            self.assertEqual(self.states[flag]["initial"], "false")
+            self.assertIn({"type": "is_true", "var": flag}, guards(self.actions[name]), name)
+
+            # And the only thing that flips it also appends the id, so the flag
+            # cannot be true while the list is empty.
+            recorder = self.actions[record_action]
+            self.assertEqual(recorder["from"], ["Drafting"], record_action)
+            self.assertIn(id_field, recorder["params"], record_action)
+            self.assertIn(
+                {"type": "list_append", "var": id_field}, recorder["effect"], record_action
+            )
+            self.assertIn(
+                {"type": "set_bool", "var": flag, "value": "true"},
+                recorder["effect"],
+                record_action,
+            )
+            setters = [
+                other
+                for other, action in self.actions.items()
+                if any(
+                    isinstance(e, dict)
+                    and e.get("type") == "set_bool"
+                    and e.get("var") == flag
+                    for e in action.get("effect", [])
+                )
+            ]
+            self.assertEqual(setters, [record_action], flag)
 
     def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
         commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
