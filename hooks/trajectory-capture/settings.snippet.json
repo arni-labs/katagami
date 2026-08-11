@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $KATAGAMI_HOME/hooks/trajectory-capture/capture.py enqueue"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $KATAGAMI_HOME/hooks/trajectory-capture/capture.py process"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "KATAGAMI_HOME": "/absolute/path/to/your/katagami/checkout",
+    "KATAGAMI_AGENT_ID": "katagami-contributor",
+    "KATAGAMI_TRAJECTORY_SCRIPT": "/absolute/path/to/your/katagami/checkout/scripts/trajectory/claude_session_to_ots.py",
+    "TEMPER_API_URL": "https://your-temper-host",
+    "TEMPER_TENANT_ID": "default"
+  }
+}

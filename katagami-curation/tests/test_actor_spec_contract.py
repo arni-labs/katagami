@@ -1,0 +1,302 @@
+"""Actor spec contract for the Judged Conformance System (ARN-294).
+
+The point of an actor spec is that the protocol is enforced by the automaton
+rather than by prose, so these tests assert the structural properties directly:
+which states an action is reachable from, which guards it carries, and which
+actions do NOT exist. `temper verify --specs-dir specs` proves the specs are
+internally sound; this file proves they say what the protocol requires.
+"""
+
+import tomllib
+import unittest
+from pathlib import Path
+
+CURATION_ROOT = Path(__file__).resolve().parents[1]
+SPECS = CURATION_ROOT / "specs"
+POLICIES = CURATION_ROOT / "policies"
+COMMONS_POLICIES = CURATION_ROOT.parent / "katagami-commons" / "policies"
+
+
+def load(name):
+    return tomllib.loads((SPECS / f"{name}.ioa.toml").read_text())
+
+
+def actions(spec):
+    return {action["name"]: action for action in spec["action"]}
+
+
+def states(spec):
+    return {state["name"]: state for state in spec.get("state", [])}
+
+
+def invariants(spec):
+    return {inv["name"]: inv for inv in spec.get("invariant", [])}
+
+
+def guards(action):
+    guard = action.get("guard", [])
+    return guard if isinstance(guard, list) else [guard]
+
+
+class CuratorAgentSpecTest(unittest.TestCase):
+    def setUp(self):
+        self.spec = load("curator_agent")
+        self.actions = actions(self.spec)
+        self.states = states(self.spec)
+
+    def test_the_protocol_states_are_present_in_order(self):
+        self.assertEqual(self.spec["automaton"]["name"], "CuratorAgent")
+        self.assertEqual(self.spec["automaton"]["initial"], "BriefReceived")
+        for state in ("BriefReceived", "Drafting", "SelfReviewed", "Submitted"):
+            self.assertIn(state, self.spec["automaton"]["states"])
+
+    def test_submit_is_only_reachable_after_self_review(self):
+        # The ordering is structural: SelfReviewed is Submit's only source
+        # state, and SelfReview is the only edge into it.
+        self.assertEqual(self.actions["Submit"]["from"], ["SelfReviewed"])
+        self.assertEqual(self.actions["SelfReview"]["to"], "SelfReviewed")
+        into_self_reviewed = [
+            name
+            for name, action in self.actions.items()
+            if action.get("to") == "SelfReviewed"
+        ]
+        self.assertEqual(into_self_reviewed, ["SelfReview"])
+
+    def test_submit_is_also_guarded_on_the_self_review_flag(self):
+        self.assertIn(
+            {"type": "is_true", "var": "self_review_complete"},
+            guards(self.actions["Submit"]),
+        )
+
+    def test_submit_happens_at_most_once_per_run(self):
+        # Submitted is terminal, so a second Submit has no legal source state.
+        self.assertEqual(self.actions["Submit"]["to"], "Submitted")
+        self.assertEqual(
+            invariants(self.spec)["SubmittedIsFinal"]["assert"],
+            "no_further_transitions",
+        )
+        from_submitted = [
+            name
+            for name, action in self.actions.items()
+            if "Submitted" in action.get("from", [])
+        ]
+        self.assertEqual(from_submitted, [])
+
+    def test_the_curator_has_no_publish_action(self):
+        # Publishing belongs to HumanCurator. Not "should not be called" —
+        # not present.
+        for name in self.actions:
+            self.assertNotIn("publish", name.lower(), f"{name} is a publish action")
+
+    def test_the_concurrency_budget_caps_the_run_at_ten_jobs(self):
+        claim = self.actions["ClaimJob"]
+        # max_count is strict (val < max), so max=10 admits ten held claims.
+        self.assertIn(
+            {"type": "max_count", "var": "jobs_in_flight", "max": 10}, guards(claim)
+        )
+        self.assertIn(
+            {"type": "increment", "var": "jobs_in_flight"}, claim.get("effect", [])
+        )
+        self.assertIn("jobs_in_flight", self.states)
+        self.assertEqual(self.states["jobs_in_flight"]["type"], "counter")
+
+    def test_a_run_cannot_submit_with_work_still_outstanding(self):
+        self.assertIn(
+            {"type": "max_count", "var": "jobs_in_flight", "max": 1},
+            guards(self.actions["Submit"]),
+        )
+
+    def test_capture_identity_is_recorded_on_the_run(self):
+        for field in ("session_id", "trajectory_id", "spec_version", "harness"):
+            self.assertIn(field, self.states)
+            self.assertIn(field, self.actions["ReceiveBrief"]["params"])
+
+    def test_a_stalled_run_is_abandoned_rather_than_left_hanging(self):
+        timed_out = {t["state"] for t in self.spec["state_timeout"]}
+        self.assertEqual(timed_out, {"BriefReceived", "Drafting", "SelfReviewed"})
+        for timeout in self.spec["state_timeout"]:
+            self.assertEqual(timeout["on_timeout"], "Abandon")
+
+
+class ReviewAgentSpecTest(unittest.TestCase):
+    def setUp(self):
+        self.spec = load("review_agent")
+        self.actions = actions(self.spec)
+
+    def test_the_protocol_states_are_present(self):
+        self.assertEqual(self.spec["automaton"]["name"], "ReviewAgent")
+        self.assertEqual(self.spec["automaton"]["initial"], "SubmissionReceived")
+        for state in ("SubmissionReceived", "Reviewing", "VerdictRecorded"):
+            self.assertIn(state, self.spec["automaton"]["states"])
+
+    def test_the_verdict_is_recorded_once_and_is_terminal(self):
+        self.assertEqual(self.actions["RecordVerdict"]["from"], ["Reviewing"])
+        self.assertEqual(self.actions["RecordVerdict"]["to"], "VerdictRecorded")
+        self.assertEqual(
+            invariants(self.spec)["VerdictRecordedIsFinal"]["assert"],
+            "no_further_transitions",
+        )
+
+    def test_the_review_agent_has_no_publish_action(self):
+        for name in self.actions:
+            self.assertNotIn("publish", name.lower(), f"{name} is a publish action")
+
+    def test_capture_identity_is_recorded_on_the_review(self):
+        params = self.actions["ReceiveSubmission"]["params"]
+        for field in ("session_id", "trajectory_id", "spec_version", "harness"):
+            self.assertIn(field, params)
+
+
+class HumanCuratorSpecTest(unittest.TestCase):
+    def setUp(self):
+        self.spec = load("human_curator")
+        self.actions = actions(self.spec)
+        self.states = states(self.spec)
+
+    def test_the_role_states_are_present(self):
+        self.assertEqual(self.spec["automaton"]["name"], "HumanCurator")
+        for state in (
+            "SubmissionAssigned",
+            "Reviewing",
+            "Published",
+            "ReturnedWithCritique",
+            "Escalated",
+        ):
+            self.assertIn(state, self.spec["automaton"]["states"])
+
+    def test_the_record_models_a_role_and_never_a_person(self):
+        # Identity lives on Member. The role points at its holder through an
+        # opaque reference and carries no personal field of its own.
+        self.assertIn("assignee_ref", self.states)
+        for field in self.states:
+            for personal in ("name", "email", "phone", "address"):
+                self.assertNotIn(
+                    personal, field.lower(), f"{field} looks like a personal field"
+                )
+
+    def test_publish_requires_the_machine_review_to_have_ruled_first(self):
+        publish_guards = guards(self.actions["Publish"])
+        self.assertIn({"type": "is_true", "var": "has_review_verdict"}, publish_guards)
+        self.assertIn(
+            {
+                "type": "cross_entity_state",
+                "entity_type": "ReviewAgent",
+                "entity_id_source": "review_agent_id",
+                "required_status": ["VerdictRecorded"],
+            },
+            publish_guards,
+        )
+
+    def test_publish_is_reachable_only_from_reviewing_and_only_once(self):
+        self.assertEqual(self.actions["Publish"]["from"], ["Reviewing"])
+        self.assertEqual(
+            invariants(self.spec)["PublishedIsFinal"]["assert"],
+            "no_further_transitions",
+        )
+
+    def test_an_unanswered_assignment_escalates_instead_of_stalling(self):
+        overdue = self.actions["ReviewOverdue"]
+        self.assertEqual(overdue["to"], "Escalated")
+        self.assertEqual(
+            sorted(overdue["from"]), ["Reviewing", "SubmissionAssigned"]
+        )
+        timeouts = {t["state"]: t for t in self.spec["state_timeout"]}
+        self.assertEqual(
+            sorted(timeouts), ["Reviewing", "SubmissionAssigned"]
+        )
+        for timeout in timeouts.values():
+            self.assertEqual(timeout["on_timeout"], "ReviewOverdue")
+        # Escalation re-routes; it never bypasses the review.
+        self.assertEqual(self.actions["Reassign"]["to"], "SubmissionAssigned")
+
+    def test_returning_a_submission_requires_a_written_critique(self):
+        self.assertIn("critique", self.actions["ReturnWithCritique"]["params"])
+
+
+class TrajectoryVerdictSpecTest(unittest.TestCase):
+    def setUp(self):
+        self.spec = load("trajectory_verdict")
+        self.actions = actions(self.spec)
+        self.states = states(self.spec)
+
+    def test_recorded_is_terminal(self):
+        self.assertEqual(self.spec["automaton"]["name"], "TrajectoryVerdict")
+        self.assertEqual(self.actions["Record"]["to"], "Recorded")
+        self.assertEqual(
+            invariants(self.spec)["RecordedIsFinal"]["assert"],
+            "no_further_transitions",
+        )
+
+    def test_every_required_field_exists_and_is_settable(self):
+        required = [
+            "trajectory_id",
+            "session_id",
+            "actor_spec",
+            "spec_version",
+            "layer",
+            "passed",
+            "violations",
+            "judged_by",
+            "created_at",
+        ]
+        for field in required:
+            self.assertIn(field, self.states, field)
+            self.assertIn(field, self.actions["Record"]["params"], field)
+        self.assertEqual(self.states["passed"]["type"], "bool")
+
+    def test_both_layers_are_documented_on_the_spec(self):
+        text = (SPECS / "trajectory_verdict.ioa.toml").read_text()
+        self.assertIn('layer = "deterministic"', text)
+        self.assertIn('layer = "llm"', text)
+        self.assertIn("never overrides layer 1", text)
+
+
+class ActorPolicyBoundaryTest(unittest.TestCase):
+    """Cedar must tighten the publish boundary and never re-grant it."""
+
+    def test_a_policy_exists_for_every_new_spec(self):
+        for name in (
+            "curator_agent",
+            "review_agent",
+            "human_curator",
+            "trajectory_verdict",
+        ):
+            policy = POLICIES / f"{name}.cedar"
+            self.assertTrue(policy.is_file(), f"missing policy: {policy}")
+            # The app mirrors its policies into specs/policies/; both copies
+            # are loaded depending on the install path.
+            mirrored = POLICIES.parent / "specs" / "policies" / f"{name}.cedar"
+            self.assertTrue(mirrored.is_file(), f"missing mirror: {mirrored}")
+            self.assertEqual(policy.read_text(), mirrored.read_text())
+
+    def test_no_agent_principal_may_publish_on_the_role_record(self):
+        policy = (POLICIES / "human_curator.cedar").read_text()
+        self.assertIn('forbid(', policy)
+        self.assertIn('Action::"Publish"', policy)
+        self.assertIn('Action::"ReturnWithCritique"', policy)
+        # Written against `has agent_type` rather than one value, so a new
+        # agent type cannot quietly inherit the human's authority.
+        self.assertIn("principal has agent_type", policy)
+
+    def test_the_existing_commons_boundary_is_referenced_not_restated(self):
+        policy = (POLICIES / "human_curator.cedar").read_text()
+        self.assertIn("design_language.cedar", policy)
+        self.assertIn("art_style.cedar", policy)
+        # And the referenced policies still carry the contributor forbid they
+        # are being credited with.
+        for name in ("design_language", "art_style"):
+            commons = (COMMONS_POLICIES / f"{name}.cedar").read_text()
+            self.assertIn('Action::"Publish"', commons)
+            self.assertIn('principal.agent_type == "contributor"', commons)
+
+    def test_a_contributor_may_not_rule_on_its_own_work(self):
+        review = (POLICIES / "review_agent.cedar").read_text()
+        self.assertIn('Action::"RecordVerdict"', review)
+        self.assertIn('principal.agent_type == "contributor"', review)
+        verdict = (POLICIES / "trajectory_verdict.cedar").read_text()
+        self.assertIn('Action::"Record"', verdict)
+        self.assertIn('principal.agent_type == "contributor"', verdict)
+
+
+if __name__ == "__main__":
+    unittest.main()

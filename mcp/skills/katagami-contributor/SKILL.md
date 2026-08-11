@@ -9,6 +9,40 @@ Use the authenticated Katagami MCP as the contribution boundary. Its current
 tool schemas are the source of truth for payload mechanics. Do not bypass the
 MCP with raw Temper actions.
 
+## Trajectory capture
+
+This run is training data. Before the first call, mint two ids and keep them
+for the whole run:
+
+- `session_id` — one per contribution run, e.g. `contrib-<short-brief>-<n>`.
+- `trajectory_id` — one per captured trajectory. Derive it from the session id
+  so a re-capture lands on the same document instead of a duplicate.
+
+Then:
+
+1. **Send `X-Session-Id` and `X-Intent` on EVERY Temper call.** Not the first
+   one, not the interesting ones — every one. `X-Session-Id` is what stitches
+   scattered calls back into one trajectory; `X-Intent` is a short plain
+   sentence saying what this call was trying to do. A call without them is a
+   hole in the record, and the hole is invisible until someone tries to judge
+   the run.
+2. **Run as the role's own agent credential.** Never a human's token, never a
+   shared one. Attribution is the point: a trajectory that cannot be traced to
+   the agent that produced it teaches nothing and cannot be governed.
+3. **Let the session be captured.** With the Claude Code hooks installed
+   (`hooks/trajectory-capture/README.md`) the transcript is converted and
+   posted automatically at the next session start. Outside that harness, run
+   `scripts/trajectory/claude_session_to_ots.py` yourself and confirm it
+   returned HTTP 201.
+4. **Stamp the spec version.** Pass `--spec-version` (or set
+   `KATAGAMI_ACTOR_SPEC_VERSION`) to the version of `CuratorAgent` this run
+   executed under. A verdict is only meaningful against the contract in force
+   at the time.
+
+The captured trajectory is replayed against `CuratorAgent`
+(`katagami-curation/specs/curator_agent.ioa.toml`), whose protocol this skill
+follows: draft, then self-review, then submit — once — and never publish.
+
 ## Ownership boundary
 
 - The contributor authors the work and owns any source and proof images.
