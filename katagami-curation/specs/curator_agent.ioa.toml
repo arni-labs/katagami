@@ -1,0 +1,257 @@
+# CuratorAgent - I/O Automaton Specification
+#
+# The synthesis protocol a curator agent run must conform to (ARN-294). One
+# entity == one curator run against one brief, in one session. This is the
+# ACTOR spec that layer 1 conformance replays a captured trajectory against:
+# the state machine is the contract, so a run that submits without reviewing
+# itself, or submits twice, is a structural violation rather than a matter of
+# opinion.
+#
+# Three properties are enforced by construction, not by prose:
+#
+# 1. Self-review precedes submission. `Submit` is only reachable `from`
+#    ["SelfReviewed"], and `SelfReview` is the only edge into that state.
+# 2. Submission happens at most once per run. `Submitted` is terminal
+#    (SubmittedIsFinal), so a second `Submit` has no legal source state.
+# 3. Publishing is not in this actor's alphabet. There is no Publish action
+#    here, and none may be added: publishing belongs to HumanCurator
+#    (human_curator.ioa.toml) and stays governed by the existing commons
+#    policies (katagami-commons/policies/design_language.cedar and
+#    art_style.cedar already forbid contributor agents from Publish).
+#
+# Budget: `jobs_in_flight` is the concurrency ledger. `ClaimJob` is guarded on
+# max_count 10 — max_count is strict (val < max) — so the run can never hold
+# more than 10 concurrent curation jobs, matching the pipeline's standing
+# 10-concurrent cap. `Submit` is guarded on max_count 1 (that is, zero) so a
+# run cannot submit while work is still outstanding.
+#
+# Lifecycle: BriefReceived -> Drafting -> SelfReviewed -> Submitted
+#            (any non-terminal state -> Abandoned on give-up or stall)
+
+[automaton]
+name = "CuratorAgent"
+states = ["BriefReceived", "Drafting", "SelfReviewed", "Submitted", "Abandoned"]
+initial = "BriefReceived"
+allow_indefinite_states = ["Submitted", "Abandoned"]
+
+# --- Run identity ---
+
+[[state]]
+name = "direction_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "brief"
+type = "string"
+initial = ""
+
+# Capture identity (ARN-293). Every Temper call this run makes carries
+# session_id; the captured OTS trajectory carries trajectory_id. Together they
+# let a TrajectoryVerdict point back at the exact run that was judged.
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "trajectory_id"
+type = "string"
+initial = ""
+
+# The version of THIS spec the run executed under, mirrored onto the captured
+# trajectory's OTS metadata (`spec_version`) so a verdict is always read
+# against the contract that was actually in force.
+[[state]]
+name = "spec_version"
+type = "string"
+initial = ""
+
+# "temperpaw" | "claude-code" | other. Which harness drove the run.
+[[state]]
+name = "harness"
+type = "string"
+initial = ""
+
+# --- Work ---
+
+[[state]]
+name = "has_brief"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "draft_notes"
+type = "string"
+initial = ""
+
+[[state]]
+name = "draft_revision"
+type = "counter"
+initial = 0
+
+# Concurrency ledger for the 10-concurrent batch cap.
+[[state]]
+name = "jobs_in_flight"
+type = "counter"
+initial = 0
+
+[[state]]
+name = "self_review_complete"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "self_review_notes"
+type = "string"
+initial = ""
+
+[[state]]
+name = "has_submission"
+type = "bool"
+initial = "false"
+
+# "DesignLanguage" | "ArtStyle" | "PaletteSystem" | "WritingStyle"
+[[state]]
+name = "submitted_entity_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "submitted_entity_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "abandon_reason"
+type = "string"
+initial = ""
+
+# --- BriefReceived ---
+
+[[action]]
+name = "ReceiveBrief"
+kind = "input"
+from = ["BriefReceived"]
+params = ["direction_id", "brief", "session_id", "trajectory_id", "spec_version", "harness"]
+effect = [{ type = "set_bool", var = "has_brief", value = "true" }]
+hint = "Record the brief this run answers plus its capture identity: the session id sent on every Temper call, the trajectory id the captured OTS document carries, the version of this actor spec the run executes under, and the harness driving it."
+
+[[action]]
+name = "BeginDrafting"
+kind = "input"
+from = ["BriefReceived"]
+to = "Drafting"
+guard = [{ type = "is_true", var = "has_brief" }]
+hint = "Start synthesis. Guarded on has_brief so a run cannot draft against a brief it never received."
+
+# --- Drafting ---
+
+[[action]]
+name = "ClaimJob"
+kind = "input"
+from = ["Drafting"]
+guard = [{ type = "max_count", var = "jobs_in_flight", max = 10 }]
+effect = [{ type = "increment", var = "jobs_in_flight" }]
+hint = "Claim one concurrent curation job. max_count is strict (val < max), so max=10 admits 0..9 claims before the increment and holds the run at 10 concurrent jobs — the standing batch cap."
+
+[[action]]
+name = "ReleaseJob"
+kind = "input"
+from = ["Drafting"]
+effect = [{ type = "decrement", var = "jobs_in_flight" }]
+hint = "Release one claimed job when it completes or fails, freeing budget for the next claim."
+
+[[action]]
+name = "RecordDraft"
+kind = "input"
+from = ["Drafting"]
+params = ["draft_notes"]
+effect = [{ type = "increment", var = "draft_revision" }]
+hint = "Record one drafting revision. Callable once per revision; the count is the run's visible work, not a gate."
+
+[[action]]
+name = "SelfReview"
+kind = "input"
+from = ["Drafting"]
+to = "SelfReviewed"
+params = ["self_review_notes"]
+effect = [{ type = "set_bool", var = "self_review_complete", value = "true" }]
+hint = "Critique the run's own output against the taste rules and the brief, and record what the pass found. This is the only edge into SelfReviewed, which is the only source state for Submit — self-review before submission is a structural property of this automaton, not a convention."
+
+# --- SelfReviewed ---
+
+[[action]]
+name = "Submit"
+kind = "input"
+from = ["SelfReviewed"]
+to = "Submitted"
+params = ["submitted_entity_type", "submitted_entity_ids"]
+guard = [
+  { type = "is_true", var = "self_review_complete" },
+  { type = "max_count", var = "jobs_in_flight", max = 1 },
+]
+effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
+hint = "Hand the synthesized set to review. Exactly once per run: Submitted is terminal, so a second Submit has no legal source state. Guarded on zero jobs in flight (max_count is strict, so max=1 means the counter is 0) — a run does not submit while claimed work is still outstanding. Submission lands UnderReview; this actor has no Publish action and must never gain one."
+
+[[action]]
+name = "CuratorSubmittedEvent"
+kind = "output"
+hint = "Emitted when a curator run submits. The review actor's ReceiveSubmission consumes it."
+
+# --- Give-up / stall ---
+
+[[action]]
+name = "Abandon"
+kind = "input"
+from = ["BriefReceived", "Drafting", "SelfReviewed"]
+to = "Abandoned"
+params = ["abandon_reason"]
+hint = "End the run without submitting: the agent gave up, or a state timeout fired. Recorded rather than silent, so a stalled run is still a judgeable trajectory."
+
+# --- Stall detection ---
+
+[[state_timeout]]
+state = "BriefReceived"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "CuratorAgent held BriefReceived for 15m without beginning to draft." }
+
+[[state_timeout]]
+state = "Drafting"
+after_seconds = 7200
+on_timeout = "Abandon"
+params = { abandon_reason = "CuratorAgent held Drafting for 2h without self-reviewing." }
+
+[[state_timeout]]
+state = "SelfReviewed"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "CuratorAgent self-reviewed but did not submit within 15m." }
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "DraftingRequiresBrief"
+when = ["Drafting"]
+assert = "has_brief"
+
+[[invariant]]
+name = "SubmittedRequiresSelfReview"
+when = ["Submitted"]
+assert = "self_review_complete"
+
+[[invariant]]
+name = "SubmittedRequiresSubmission"
+when = ["Submitted"]
+assert = "has_submission"
+
+[[invariant]]
+name = "SubmittedIsFinal"
+when = ["Submitted"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "AbandonedIsFinal"
+when = ["Abandoned"]
+assert = "no_further_transitions"

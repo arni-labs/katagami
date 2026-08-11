@@ -1,0 +1,117 @@
+# TrajectoryVerdict - I/O Automaton Specification
+#
+# One judged trajectory, at one layer (ARN-294 / ARN-295). Every conformance
+# run writes exactly one of these per layer, so a trajectory judged by both
+# layers has two verdict records:
+#
+#   layer = "deterministic" — layer 1. Written from the result of
+#       POST /api/conformance/check, which replays the captured trajectory
+#       against the actor spec named in `actor_spec` at version `spec_version`.
+#       This verdict is authoritative for everything rule-shaped.
+#   layer = "llm"           — layer 2. Written by the katagami-judge skill,
+#       which judges taste, quality, and reasoning against the actor's spec
+#       slice ONLY. It never overrides layer 1: a layer 2 record that
+#       contradicts a layer 1 failure is a judge bug, and the layers stay
+#       separate rows precisely so that contradiction is visible instead of
+#       merged away.
+#
+# `violations` holds the structured findings — inline JSON for small results,
+# or a `file:<file_id>` reference when the payload is large. `judged_by`
+# identifies the judging agent or engine build, never a person.
+#
+# Lifecycle: Pending -> Recorded (terminal)
+
+[automaton]
+name = "TrajectoryVerdict"
+states = ["Pending", "Recorded"]
+initial = "Pending"
+allow_indefinite_states = ["Pending", "Recorded"]
+
+# --- What was judged ---
+
+[[state]]
+name = "trajectory_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+# The actor automaton the trajectory was replayed against: "CuratorAgent",
+# "ReviewAgent", or "HumanCurator".
+[[state]]
+name = "actor_spec"
+type = "string"
+initial = ""
+
+# Version/hash of that actor spec, mirrored from the trajectory's OTS
+# metadata. A verdict is only meaningful against the contract in force.
+[[state]]
+name = "spec_version"
+type = "string"
+initial = ""
+
+# --- The verdict ---
+
+# "deterministic" (layer 1) | "llm" (layer 2)
+[[state]]
+name = "layer"
+type = "string"
+initial = ""
+
+[[state]]
+name = "passed"
+type = "bool"
+initial = "false"
+
+# Structured findings: inline JSON, or "file:<file_id>" when large.
+[[state]]
+name = "violations"
+type = "string"
+initial = "[]"
+
+# The judging agent id or engine build. Never a person.
+[[state]]
+name = "judged_by"
+type = "string"
+initial = ""
+
+[[state]]
+name = "created_at"
+type = "string"
+initial = ""
+
+[[state]]
+name = "has_verdict"
+type = "bool"
+initial = "false"
+
+# --- Actions ---
+
+[[action]]
+name = "Record"
+kind = "input"
+from = ["Pending"]
+to = "Recorded"
+params = ["trajectory_id", "session_id", "actor_spec", "spec_version", "layer", "passed", "violations", "judged_by", "created_at"]
+effect = [{ type = "set_bool", var = "has_verdict", value = "true" }]
+hint = "Write the verdict for one trajectory at one layer, in a single call. layer is deterministic or llm; passed is the layer's own result; violations is the findings JSON or a file:<file_id> reference; judged_by is the judging agent or engine build. Recorded is terminal — a verdict is a fact about a completed judgement and is never edited in place. A re-judge writes a new TrajectoryVerdict."
+
+[[action]]
+name = "VerdictRecordedEvent"
+kind = "output"
+hint = "Emitted when a verdict lands, so dashboards and the taste-training pipeline can react without polling."
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "RecordedRequiresVerdict"
+when = ["Recorded"]
+assert = "has_verdict"
+
+[[invariant]]
+name = "RecordedIsFinal"
+when = ["Recorded"]
+assert = "no_further_transitions"

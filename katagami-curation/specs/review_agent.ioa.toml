@@ -1,0 +1,200 @@
+# ReviewAgent - I/O Automaton Specification
+#
+# The review protocol a reviewing agent run must conform to (ARN-294). One
+# entity == one review of one curator submission, in one session. Like
+# CuratorAgent this is an ACTOR spec: layer 1 conformance replays a captured
+# trajectory against it, so "reviewed before the human was asked to publish"
+# is a checkable structural fact.
+#
+# The ordering property this spec exists to carry: the machine review must act
+# BEFORE a human publish becomes available. HumanCurator.Publish is guarded on
+# `cross_entity_state` requiring this entity to be in `VerdictRecorded`
+# (human_curator.ioa.toml), so a submission no reviewer has ruled on is not
+# publishable — the guard, not a convention, is what holds the order.
+#
+# This actor has no Publish action either. It records a verdict; the human
+# acts on it.
+#
+# Lifecycle: SubmissionReceived -> Reviewing -> VerdictRecorded
+#            (any non-terminal state -> Abandoned on give-up or stall)
+
+[automaton]
+name = "ReviewAgent"
+states = ["SubmissionReceived", "Reviewing", "VerdictRecorded", "Abandoned"]
+initial = "SubmissionReceived"
+allow_indefinite_states = ["VerdictRecorded", "Abandoned"]
+
+# --- Submission under review ---
+
+# The CuratorAgent run that produced this submission.
+[[state]]
+name = "curator_agent_id"
+type = "string"
+initial = ""
+
+# "DesignLanguage" | "ArtStyle" | "PaletteSystem" | "WritingStyle"
+[[state]]
+name = "submission_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "submission_ids"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "has_submission"
+type = "bool"
+initial = "false"
+
+# --- Capture identity (ARN-293) ---
+
+[[state]]
+name = "session_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "trajectory_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "spec_version"
+type = "string"
+initial = ""
+
+[[state]]
+name = "harness"
+type = "string"
+initial = ""
+
+# --- Review ---
+
+[[state]]
+name = "findings"
+type = "string"
+initial = "[]"
+
+[[state]]
+name = "has_findings"
+type = "bool"
+initial = "false"
+
+# "pass" | "revise" | "reject"
+[[state]]
+name = "verdict"
+type = "string"
+initial = ""
+
+[[state]]
+name = "verdict_rationale"
+type = "string"
+initial = ""
+
+[[state]]
+name = "has_verdict"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "reviewed_by"
+type = "string"
+initial = ""
+
+[[state]]
+name = "abandon_reason"
+type = "string"
+initial = ""
+
+# --- SubmissionReceived ---
+
+[[action]]
+name = "ReceiveSubmission"
+kind = "input"
+from = ["SubmissionReceived"]
+params = ["curator_agent_id", "submission_type", "submission_ids", "session_id", "trajectory_id", "spec_version", "harness"]
+effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
+hint = "Record the curator submission to review plus this review run's capture identity (session id on every Temper call, trajectory id of the captured OTS document, the actor spec version in force, and the harness)."
+
+[[action]]
+name = "BeginReview"
+kind = "input"
+from = ["SubmissionReceived"]
+to = "Reviewing"
+guard = [{ type = "is_true", var = "has_submission" }]
+hint = "Start reviewing. Guarded on has_submission so a review cannot open against a submission it never received."
+
+# --- Reviewing ---
+
+[[action]]
+name = "RecordFinding"
+kind = "input"
+from = ["Reviewing"]
+params = ["findings"]
+effect = [
+  { type = "list_append", var = "findings" },
+  { type = "set_bool", var = "has_findings", value = "true" },
+]
+hint = "Append one finding: what is wrong, where, and how severe. Callable once per finding. The param is named after the list var so kernel ListAppend writes it."
+
+[[action]]
+name = "RecordVerdict"
+kind = "input"
+from = ["Reviewing"]
+to = "VerdictRecorded"
+params = ["verdict", "verdict_rationale", "reviewed_by"]
+effect = [{ type = "set_bool", var = "has_verdict", value = "true" }]
+hint = "Rule on the submission: verdict is pass, revise, or reject, with the rationale and the reviewing identity. Exactly once per review — VerdictRecorded is terminal. Recording a verdict is what unlocks the human publish path; it is not itself a publish."
+
+[[action]]
+name = "ReviewVerdictRecordedEvent"
+kind = "output"
+hint = "Emitted when a verdict lands. HumanCurator.AssignSubmission consumes it; HumanCurator.Publish is separately guarded on this entity reaching VerdictRecorded."
+
+# --- Give-up / stall ---
+
+[[action]]
+name = "Abandon"
+kind = "input"
+from = ["SubmissionReceived", "Reviewing"]
+to = "Abandoned"
+params = ["abandon_reason"]
+hint = "End the review without a verdict: the agent gave up, or a state timeout fired. An abandoned review leaves the submission unpublishable, which is the safe direction."
+
+# --- Stall detection ---
+
+[[state_timeout]]
+state = "SubmissionReceived"
+after_seconds = 900
+on_timeout = "Abandon"
+params = { abandon_reason = "ReviewAgent held SubmissionReceived for 15m without beginning the review." }
+
+[[state_timeout]]
+state = "Reviewing"
+after_seconds = 3600
+on_timeout = "Abandon"
+params = { abandon_reason = "ReviewAgent held Reviewing for 1h without recording a verdict." }
+
+# --- Safety Invariants ---
+
+[[invariant]]
+name = "ReviewingRequiresSubmission"
+when = ["Reviewing"]
+assert = "has_submission"
+
+[[invariant]]
+name = "VerdictRecordedRequiresVerdict"
+when = ["VerdictRecorded"]
+assert = "has_verdict"
+
+[[invariant]]
+name = "VerdictRecordedIsFinal"
+when = ["VerdictRecorded"]
+assert = "no_further_transitions"
+
+[[invariant]]
+name = "AbandonedIsFinal"
+when = ["Abandoned"]
+assert = "no_further_transitions"

@@ -44,6 +44,48 @@ Rules can be created by `taste_distillation` from catalog signals or extracted
 from already-approved Katagami foundation docs. Only `Accepted` rules are
 loaded by synthesis and quality-review jobs.
 
+### CuratorAgent
+
+The synthesis protocol one curator run must conform to (ARN-294). Self-review
+precedes submission, submission happens at most once, and Publish is not in the
+actor's alphabet — all three by construction rather than by convention.
+`jobs_in_flight` is guarded at 10 concurrent claims, the standing batch cap.
+
+**States:** `BriefReceived` -> `Drafting` -> `SelfReviewed` -> `Submitted`,
+with `Abandoned` for a run that gives up or stalls.
+
+### ReviewAgent
+
+One machine review of one curator submission. `RecordVerdict` is what unlocks
+the human publish path: `HumanCurator.Publish` is guarded on this entity having
+reached `VerdictRecorded`, so the machine review acts first by construction.
+
+**States:** `SubmissionReceived` -> `Reviewing` -> `VerdictRecorded`, with
+`Abandoned` for a review that gives up or stalls.
+
+### HumanCurator
+
+The publishing ROLE — never a person. Identity lives on `Member`; this record
+points at the current holder through an opaque `assignee_ref`. Publish and
+ReturnWithCritique are closed to every agent principal in
+`policies/human_curator.cedar`, and the artifact-side boundary stays in
+`katagami-commons/policies/design_language.cedar` and `art_style.cedar`.
+Both working states carry a 48h timeout onto `ReviewOverdue` -> `Escalated`, so
+an assignment nobody picks up surfaces instead of stalling the queue.
+
+**States:** `SubmissionAssigned` -> `Reviewing` -> `Published` |
+`ReturnedWithCritique`; `Escalated` -> `SubmissionAssigned` on reassignment.
+
+### TrajectoryVerdict
+
+One judged trajectory at one layer. `layer = "deterministic"` records the
+layer 1 result from `POST /api/conformance/check` and is authoritative for
+everything rule-shaped; `layer = "llm"` records the katagami-judge skill's
+taste, quality, and reasoning judgement, which never overrides layer 1. Two
+layers means two rows, so a contradiction stays visible instead of merged away.
+
+**States:** `Pending` -> `Recorded` (terminal).
+
 ## Natural Language Operations
 
 Operator and DM-facing agents should translate plain requests like "run taste
