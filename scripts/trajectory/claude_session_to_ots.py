@@ -423,6 +423,11 @@ def atif_to_ots(
         context["entities"] = entities
     custom = {
         "harness": harness,
+        # OTS has no session field of its own — the session id travels in the
+        # X-Session-Id header. Recording it here too means a stored document is
+        # still traceable to its session after the request is long gone, which
+        # is what TrajectoryVerdict.session_id has to be filled from.
+        "session_id": session_id,
         "atif_schema_version": atif.get("schema_version") or ATIF_SCHEMA_VERSION,
         "converter": f"harbor@{HARBOR_PINNED_VERSION}",
         "agent_version": agent.get("version"),

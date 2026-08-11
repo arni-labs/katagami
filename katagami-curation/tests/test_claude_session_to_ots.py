@@ -201,6 +201,9 @@ class AtifToOtsTests(unittest.TestCase):
     def test_custom_context_records_the_converter_provenance(self):
         custom = json.loads(self.ots["context"]["custom_context"])
         self.assertEqual(custom["harness"], "claude-code")
+        # OTS has no session field of its own; without this a stored document
+        # cannot be traced back to its session once the request headers are gone.
+        self.assertEqual(custom["session_id"], "00000000-0000-4000-8000-000000000000")
         self.assertEqual(custom["atif_schema_version"], "ATIF-v1.7")
         self.assertEqual(
             custom["converter"], f"harbor@{harbor_adapter.HARBOR_PINNED_VERSION}"

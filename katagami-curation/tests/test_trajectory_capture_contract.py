@@ -38,7 +38,15 @@ class HarborIsPinnedAndIsolatedTest(unittest.TestCase):
         )
         # A range would let the converter drift under a trajectory that has
         # already been posted, leaving no way to reconstruct how it was built.
-        self.assertNotIn(">=", requirements.split("#")[-1])
+        declarations = [
+            line.strip()
+            for line in requirements.splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        self.assertTrue(declarations)
+        for line in declarations:
+            for loose in (">=", "<=", "~=", "*"):
+                self.assertNotIn(loose, line, f"loose version specifier in {line!r}")
 
     def test_the_pin_in_the_adapter_matches_the_requirements_file(self):
         adapter = ADAPTER.read_text()
