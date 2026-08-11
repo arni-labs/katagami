@@ -182,7 +182,10 @@ def _result_parts(content: Any) -> tuple[str, list[dict[str, Any]]]:
         return _content_parts(content)
     if content is None:
         return "", []
-    return redact_text(json.dumps(content, ensure_ascii=False)), []
+    # A structured result is redacted as structure first — a `{"api_key": ...}`
+    # field is a credential whatever its value looks like, and serializing
+    # before redacting would leave only the text patterns to catch it.
+    return json.dumps(redact_value(content), ensure_ascii=False), []
 
 
 def _result_text(content: Any) -> str:

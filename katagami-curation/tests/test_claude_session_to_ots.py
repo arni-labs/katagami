@@ -350,6 +350,18 @@ class RedactionTests(unittest.TestCase):
         self.assertIn("[redacted:env]", self.rendered)  # unshaped, named value
         self.assertIn("[redacted:aws-key-id]", self.rendered)  # user message
 
+    def test_a_structured_result_is_redacted_by_key_not_only_by_shape(self):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in atif["steps"] if s.get("tool_calls"))
+        step["observation"]["results"][0]["content"] = {
+            "config": {"api_key": "opaque-value-no-shape"}
+        }
+        rendered = json.dumps(
+            converter.atif_to_ots(atif, agent_id="a", session_id="s", trajectory_id="t")
+        )
+        self.assertNotIn("opaque-value-no-shape", rendered)
+        self.assertIn("[redacted:key]", rendered)
+
     def test_the_decision_summary_is_redacted_as_well_as_the_message(self):
         # The judge reads result_summary; a secret that survived only there
         # would be just as leaked.

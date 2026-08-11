@@ -53,7 +53,6 @@ SECRET_KEY_EXCEPTIONS = (
     "completion_token_ids",
     "max_tokens",
     "token_budget",
-    "tool_call_id",
 )
 
 _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
