@@ -219,6 +219,167 @@ class AtifToOtsTests(unittest.TestCase):
         )
 
 
+class UnobservedCallTests(unittest.TestCase):
+    """A tool call with no result is not a successful tool call.
+
+    Claude interrupted between issuing a call and persisting its result leaves
+    a call with no observation. Recording that as `success: true` puts an
+    unfinished operation into the corpus as an example of a finished one.
+    """
+
+    def setUp(self):
+        self.atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in self.atif["steps"] if s.get("tool_calls"))
+        # Drop every observation from the step, keeping the calls.
+        step["observation"] = {"results": []}
+        self.ots = converter.atif_to_ots(
+            self.atif, agent_id="a", session_id="s", trajectory_id="t"
+        )
+        self.turn = next(t for t in self.ots["turns"] if t["decisions"])
+
+    def test_an_unobserved_call_is_not_recorded_as_a_success(self):
+        for decision in self.turn["decisions"]:
+            self.assertFalse(decision["consequence"]["success"])
+            self.assertEqual(decision["consequence"]["error_type"], "no_result")
+
+    def test_the_turn_is_marked_and_the_outcome_is_downgraded(self):
+        self.assertTrue(self.turn["error"])
+        self.assertEqual(self.ots["metadata"]["outcome"], "partial_success")
+
+    def test_a_call_that_did_get_a_result_is_still_a_success(self):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        ots = converter.atif_to_ots(atif, agent_id="a", session_id="s", trajectory_id="t")
+        successes = [
+            d
+            for turn in ots["turns"]
+            for d in turn["decisions"]
+            if d["consequence"]["success"]
+        ]
+        self.assertEqual(len(successes), 1)
+
+
+class MultimodalContentTests(unittest.TestCase):
+    """Images are evidence. A trajectory that drops them cannot be judged on taste."""
+
+    def setUp(self):
+        self.atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in self.atif["steps"] if s.get("tool_calls"))
+        result = step["observation"]["results"][0]
+        result["content"] = [
+            {"type": "text", "text": "rendered the landing page"},
+            {
+                "type": "image",
+                "source": {"media_type": "image/png", "path": "/tmp/landing.png"},
+            },
+        ]
+        self.ots = converter.atif_to_ots(
+            self.atif, agent_id="a", session_id="s", trajectory_id="t"
+        )
+
+    def _tool_response(self):
+        return next(
+            m
+            for turn in self.ots["turns"]
+            for m in turn["messages"]
+            if m["content"]["type"] == "tool_response"
+            and m["content"]["data"].get("attachments")
+        )
+
+    def test_the_image_reference_survives_as_an_attachment(self):
+        data = self._tool_response()["content"]["data"]
+        self.assertEqual(
+            data["attachments"],
+            [{"type": "image", "media_type": "image/png", "path": "/tmp/landing.png"}],
+        )
+
+    def test_the_text_still_marks_where_the_image_was(self):
+        data = self._tool_response()["content"]["data"]
+        self.assertIn("rendered the landing page", data["content"])
+        self.assertIn("[image image/png /tmp/landing.png]", data["content"])
+
+    def test_a_user_message_keeps_its_images_too(self):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        user = next(s for s in atif["steps"] if s["source"] == "user")
+        user["message"] = [
+            {"type": "text", "text": "look at this"},
+            {"type": "image", "source": {"media_type": "image/webp", "path": "a.webp"}},
+        ]
+        ots = converter.atif_to_ots(atif, agent_id="a", session_id="s", trajectory_id="t")
+        message = ots["turns"][0]["messages"][0]
+        self.assertEqual(message["attachments"][0]["media_type"], "image/webp")
+
+
+class RedactionTests(unittest.TestCase):
+    """Nothing leaves this converter without passing through redaction."""
+
+    def setUp(self):
+        self.atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in self.atif["steps"] if s.get("tool_calls"))
+        step["tool_calls"][0]["arguments"] = {
+            "command": "curl -H 'Authorization: Bearer abcdef0123456789abcdef' https://x"
+        }
+        step["observation"]["results"][0]["content"] = (
+            "TEMPER_API_KEY=ghp_0123456789abcdefghijklmnopqrstuvwxyz"
+        )
+        step["reasoning_content"] = (
+            "the key is sk-ant-api03-AAAABBBBCCCCDDDDEEEEFFFF and "
+            "DB_PASSWORD=correct-horse-battery"
+        )
+        user = next(s for s in self.atif["steps"] if s["source"] == "user")
+        user["message"] = "deploy with AKIAIOSFODNN7EXAMPLE"
+        self.rendered = json.dumps(
+            converter.atif_to_ots(
+                self.atif, agent_id="a", session_id="s", trajectory_id="t"
+            )
+        )
+
+    def test_no_credential_shape_survives_anywhere_in_the_document(self):
+        for secret in (
+            "abcdef0123456789abcdef",
+            "ghp_0123456789abcdefghijklmnopqrstuvwxyz",
+            "sk-ant-api03-AAAABBBBCCCCDDDDEEEEFFFF",
+            "AKIAIOSFODNN7EXAMPLE",
+            "correct-horse-battery",
+        ):
+            self.assertNotIn(secret, self.rendered, secret)
+
+    def test_tool_arguments_and_results_and_reasoning_are_all_covered(self):
+        self.assertIn("[redacted:bearer]", self.rendered)  # tool arguments
+        self.assertIn("[redacted:github-token]", self.rendered)  # tool output
+        self.assertIn("[redacted:anthropic-key]", self.rendered)  # reasoning
+        self.assertIn("[redacted:env]", self.rendered)  # unshaped, named value
+        self.assertIn("[redacted:aws-key-id]", self.rendered)  # user message
+
+    def test_the_decision_summary_is_redacted_as_well_as_the_message(self):
+        # The judge reads result_summary; a secret that survived only there
+        # would be just as leaked.
+        decisions = json.loads(self.rendered)["turns"][1]["decisions"]
+        self.assertIn("[redacted:github-token]", decisions[0]["consequence"]["result_summary"])
+
+
+class SpecVersionResolutionTests(unittest.TestCase):
+    def test_the_version_is_computed_from_the_agents_actor_spec(self):
+        version = converter.resolve_spec_version(
+            spec_version=None, actor_spec=None, agent_id="katagami-contributor"
+        )
+        self.assertTrue(version.startswith("CuratorAgent@sha256:"))
+
+    def test_an_explicit_version_wins(self):
+        self.assertEqual(
+            converter.resolve_spec_version(
+                spec_version="X@1", actor_spec="CuratorAgent", agent_id="katagami-contributor"
+            ),
+            "X@1",
+        )
+
+    def test_an_unmapped_agent_yields_nothing_rather_than_a_guess(self):
+        self.assertIsNone(
+            converter.resolve_spec_version(
+                spec_version=None, actor_spec=None, agent_id="unknown-agent"
+            )
+        )
+
+
 class PostTrajectoryTests(unittest.TestCase):
     def test_every_required_header_is_sent(self):
         captured = {}
@@ -260,6 +421,27 @@ class PostTrajectoryTests(unittest.TestCase):
         self.assertEqual(headers["x-trajectory-id"], "traj-1")
         self.assertEqual(headers["authorization"], "Bearer secret-token")
         self.assertEqual(headers["content-type"], "application/json")
+        # The claimed agent and the request principal are the same identity, so
+        # the server has something to correlate the credential against.
+        self.assertEqual(headers["x-temper-principal-kind"], "agent")
+        self.assertEqual(headers["x-temper-principal-id"], "katagami-contributor")
+
+    def test_posting_without_a_credential_is_refused(self):
+        def _never_called(request, timeout=None):  # pragma: no cover - must not run
+            raise AssertionError("posted without a credential")
+
+        with mock.patch.object(converter.urllib.request, "urlopen", _never_called):
+            with self.assertRaises(converter.TrajectoryError) as raised:
+                converter.post_trajectory(
+                    {"turns": []},
+                    api_url="https://temper.example",
+                    api_key=None,
+                    agent_id="katagami-contributor",
+                    session_id="s",
+                    tenant_id="t",
+                    trajectory_id="tr",
+                )
+        self.assertIn("TEMPER_API_KEY", str(raised.exception))
 
     def test_an_unreachable_ingest_raises_rather_than_passing_silently(self):
         def _boom(request, timeout=None):

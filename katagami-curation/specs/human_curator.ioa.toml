@@ -17,7 +17,9 @@
 #     SubmitForReview/Publish/... on ArtStyle, and restricts the finalizer
 #     actions to Agent::"system".
 #   - policies/human_curator.cedar (this app) forbids ANY agent principal from
-#     the Publish and ReturnWithCritique actions on this role record.
+#     the Publish and ReturnWithCritique actions on this role record, and binds
+#     both to the assignment's own holder (`principal.id == assignee_ref`), so
+#     one named human answers for the decision rather than any human at all.
 #
 # Two orderings hold by construction:
 #
@@ -47,8 +49,15 @@ allow_indefinite_states = ["Published", "ReturnedWithCritique", "Escalated"]
 
 # --- The assignment ---
 
-# Opaque reference to whoever holds the role right now (a Member id or a rota
-# handle). Never a name, never an address — the role is the subject here.
+# Opaque reference to whoever holds the role right now. Never a name, never an
+# address — the role is the subject here.
+#
+# It carries the holder's PRINCIPAL ID, because policies/human_curator.cedar
+# binds Publish and ReturnWithCritique to `principal.id == resource.assignee_ref`
+# — without that binding any authenticated human could publish somebody else's
+# assignment. A rota handle is resolved to the current holder's principal id
+# before AssignSubmission is called; an assignment whose assignee_ref is empty
+# or unresolvable is not publishable, which is the safe direction.
 [[state]]
 name = "assignee_ref"
 type = "string"
@@ -143,7 +152,7 @@ kind = "input"
 from = ["SubmissionAssigned"]
 params = ["assignee_ref", "submission_type", "submission_ids", "curator_agent_id", "review_agent_id", "session_id", "trajectory_id", "spec_version", "harness"]
 effect = [{ type = "set_bool", var = "has_assignment", value = "true" }]
-hint = "Route one reviewed submission to the publishing role. assignee_ref is an opaque holder reference, never a person's name or address. review_agent_id links the machine review whose verdict gates Publish."
+hint = "Route one reviewed submission to the publishing role. assignee_ref is the current holder's principal id — an opaque reference, never a person's name or address — and Cedar binds Publish and ReturnWithCritique to it, so an empty or stale assignee_ref makes the assignment unpublishable. review_agent_id links the machine review whose verdict gates Publish."
 
 [[action]]
 name = "RecordReviewVerdict"

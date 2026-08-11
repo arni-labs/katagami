@@ -16,12 +16,24 @@ Usage:
 Environment:
 
     TEMPER_API_URL    base URL, e.g. https://temper.example.com   (--post)
-    TEMPER_API_KEY    bearer token                                (--post)
+    TEMPER_API_KEY    bearer token — REQUIRED for --post          (--post)
     TEMPER_TENANT_ID  tenant, default "default"
     KATAGAMI_AGENT_ID default for --agent-id
 
 Every failure exits non-zero with the reason on stderr. A capture that
 silently produced nothing would be worse than no capture at all.
+
+Two things this module refuses to do:
+
+  * Post without a credential. Attribution is the point of the corpus, and an
+    unauthenticated post lets the caller name any agent and any tenant it likes.
+  * Post without a spec version. A trajectory that cannot name the contract it
+    ran under cannot enter either judgement layer, so it would be stored and
+    never judged — a silent failure dressed as HTTP 201.
+
+Everything that leaves here passes through `redaction`. Tool arguments, tool
+output, message text and reasoning are all verbatim agent content, and verbatim
+agent content is where credentials live.
 """
 
 from __future__ import annotations
@@ -45,6 +57,12 @@ from harbor_adapter import (  # noqa: E402  (path set above)
     HarborConversionError,
     HarborUnavailable,
     transcript_to_atif,
+)
+from redaction import redact_text, redact_value  # noqa: E402  (path set above)
+from spec_version import (  # noqa: E402  (path set above)
+    SpecVersionError,
+    actor_for_agent_id,
+    compute_version,
 )
 
 OTS_VERSION = "0.1.0"
@@ -120,27 +138,55 @@ def _duration_ms(start: str, end: str) -> float | None:
 _ROLE_BY_SOURCE = {"user": "user", "agent": "assistant", "system": "system"}
 
 
-def _message_text(message: Any) -> str:
-    """ATIF messages are a string, or a list of content parts (v1.6+)."""
+def _content_parts(message: Any) -> tuple[str, list[dict[str, Any]]]:
+    """ATIF content: a string, or a list of parts (v1.6+), text and images mixed.
+
+    Images are not thrown away. A curator that rendered a landing page and
+    looked at it made its judgement on the picture, and a trajectory that keeps
+    only the words around the picture cannot be judged on taste or finish at
+    all. ATIF image parts carry a media type and a path rather than the bytes
+    (`harbor.models.trajectories.content.ImageSource`), so the reference is what
+    there is to keep — and keeping it is what lets layer 2 go and look.
+    """
     if isinstance(message, str):
-        return message
-    if isinstance(message, list):
-        chunks = []
-        for part in message:
-            if isinstance(part, dict) and isinstance(part.get("text"), str):
-                chunks.append(part["text"])
-        return "\n".join(chunks)
-    return ""
+        return redact_text(message), []
+    if not isinstance(message, list):
+        return "", []
+
+    chunks: list[str] = []
+    attachments: list[dict[str, Any]] = []
+    for part in message:
+        if not isinstance(part, dict):
+            continue
+        if part.get("type") == "image" or part.get("source"):
+            source = part.get("source") or {}
+            media_type = source.get("media_type") or "image"
+            path = redact_text(str(source.get("path") or ""))
+            attachments.append(
+                {"type": "image", "media_type": media_type, "path": path}
+            )
+            chunks.append(f"[image {media_type} {path}]" if path else f"[image {media_type}]")
+        elif isinstance(part.get("text"), str):
+            chunks.append(redact_text(part["text"]))
+    return "\n".join(chunks), attachments
+
+
+def _message_text(message: Any) -> str:
+    return _content_parts(message)[0]
+
+
+def _result_parts(content: Any) -> tuple[str, list[dict[str, Any]]]:
+    if isinstance(content, str):
+        return redact_text(content), []
+    if isinstance(content, list):
+        return _content_parts(content)
+    if content is None:
+        return "", []
+    return redact_text(json.dumps(content, ensure_ascii=False)), []
 
 
 def _result_text(content: Any) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return _message_text(content)
-    if content is None:
-        return ""
-    return json.dumps(content, ensure_ascii=False)
+    return _result_parts(content)[0]
 
 
 def _truncate(text: str, limit: int) -> str:
@@ -166,6 +212,22 @@ def _result_is_error(result: dict[str, Any] | None) -> bool:
     return bool(extra.get("tool_result_is_error"))
 
 
+def _unobserved_calls(step: dict[str, Any]) -> list[str]:
+    """Tool calls this step issued and never got a result for.
+
+    A call with no observation is an operation whose outcome nobody recorded —
+    the session was interrupted between the request and the result, or the
+    result never came. It is not a success, and labelling it one puts an
+    unfinished operation into the corpus as an example of a finished one.
+    """
+    results = _results_by_call(step)
+    return [
+        call.get("tool_call_id")
+        for call in step.get("tool_calls") or []
+        if call.get("tool_call_id") not in results
+    ]
+
+
 def _build_messages(
     step: dict[str, Any], trajectory_id: str, timestamp: str
 ) -> list[dict[str, Any]]:
@@ -173,17 +235,19 @@ def _build_messages(
     role = _ROLE_BY_SOURCE.get(step.get("source", ""), "system")
     messages: list[dict[str, Any]] = []
 
-    text = _message_text(step.get("message"))
+    text, attachments = _content_parts(step.get("message"))
     reasoning = step.get("reasoning_content")
-    if text or reasoning or not step.get("tool_calls"):
+    if text or reasoning or attachments or not step.get("tool_calls"):
         message: dict[str, Any] = {
             "message_id": _stable_id("msg", trajectory_id, step_id, "text"),
             "role": role,
             "timestamp": timestamp,
             "content": {"type": "text", "text": text},
         }
+        if attachments:
+            message["attachments"] = attachments
         if role == "assistant" and isinstance(reasoning, str) and reasoning:
-            message["reasoning"] = reasoning
+            message["reasoning"] = redact_text(reasoning)
         messages.append(message)
 
     results = _results_by_call(step)
@@ -199,13 +263,21 @@ def _build_messages(
                     "data": {
                         "tool_call_id": call_id,
                         "name": call.get("function_name", ""),
-                        "arguments": call.get("arguments") or {},
+                        "arguments": redact_value(call.get("arguments") or {}),
                     },
                 },
             }
         )
         result = results.get(call_id) if isinstance(call_id, str) else None
         if result is not None:
+            content, result_attachments = _result_parts(result.get("content"))
+            data: dict[str, Any] = {
+                "tool_call_id": call_id,
+                "content": content,
+                "is_error": _result_is_error(result),
+            }
+            if result_attachments:
+                data["attachments"] = result_attachments
             messages.append(
                 {
                     "message_id": _stable_id(
@@ -213,14 +285,7 @@ def _build_messages(
                     ),
                     "role": "tool",
                     "timestamp": timestamp,
-                    "content": {
-                        "type": "tool_response",
-                        "data": {
-                            "tool_call_id": call_id,
-                            "content": _result_text(result.get("content")),
-                            "is_error": _result_is_error(result),
-                        },
-                    },
+                    "content": {"type": "tool_response", "data": data},
                 }
             )
 
@@ -229,6 +294,10 @@ def _build_messages(
     for result in (step.get("observation") or {}).get("results") or []:
         if result.get("source_call_id"):
             continue
+        content, result_attachments = _result_parts(result.get("content"))
+        data = {"content": content}
+        if result_attachments:
+            data["attachments"] = result_attachments
         messages.append(
             {
                 "message_id": _stable_id(
@@ -236,10 +305,7 @@ def _build_messages(
                 ),
                 "role": "tool",
                 "timestamp": timestamp,
-                "content": {
-                    "type": "tool_response",
-                    "data": {"content": _result_text(result.get("content"))},
-                },
+                "content": {"type": "tool_response", "data": data},
             }
         )
 
@@ -264,20 +330,28 @@ def _build_decisions(
         call_id = call.get("tool_call_id")
         result = results.get(call_id) if isinstance(call_id, str) else None
         is_error = _result_is_error(result)
-        consequence: dict[str, Any] = {"success": not is_error}
+        # No observation means nobody recorded what the call did. That is not a
+        # success — a run interrupted between the request and the result would
+        # otherwise be stored as an example of the operation completing.
+        consequence: dict[str, Any] = {"success": result is not None and not is_error}
         if result is not None:
             summary = _truncate(_result_text(result.get("content")), RESULT_SUMMARY_CHARS)
             if summary:
                 consequence["result_summary"] = summary
-        if is_error:
-            consequence["error_type"] = "tool_error"
+            if is_error:
+                consequence["error_type"] = "tool_error"
+        else:
+            consequence["error_type"] = "no_result"
+            consequence["result_summary"] = (
+                "no observation was recorded for this call; the outcome is unknown"
+            )
 
         decision: dict[str, Any] = {
             "decision_id": _stable_id("dec", trajectory_id, step_id, call_id),
             "decision_type": "tool_selection",
             "choice": {
                 "action": call.get("function_name", ""),
-                "arguments": call.get("arguments") or {},
+                "arguments": redact_value(call.get("arguments") or {}),
             },
             "consequence": consequence,
         }
@@ -368,7 +442,11 @@ def atif_to_ots(
             "turn_id": step.get("step_id", index + 1),
             "span_id": _stable_id("span", trajectory_id, step.get("step_id", index + 1)),
             "timestamp": timestamp,
-            "error": any(_result_is_error(result) for result in results),
+            # An unobserved call marks the turn too: the record of what happened
+            # in it is incomplete, and a consumer reading `error: false` would
+            # take it for a clean turn.
+            "error": any(_result_is_error(result) for result in results)
+            or bool(_unobserved_calls(step)),
             "messages": _build_messages(step, trajectory_id, timestamp),
             "decisions": _build_decisions(step, trajectory_id),
         }
@@ -384,6 +462,8 @@ def atif_to_ots(
             _message_text(first_user.get("message")) if first_user else "",
             TASK_DESCRIPTION_CHARS,
         )
+    else:
+        task_description = redact_text(task_description)
 
     agent = atif.get("agent") or {}
     metadata: dict[str, Any] = {
@@ -466,6 +546,25 @@ def post_trajectory(
     trajectory_id: str,
     timeout: float = 60.0,
 ) -> int:
+    """POST one OTS document, under a credential, as a named agent principal.
+
+    The credential is mandatory. `X-Agent-Id` is a claim the caller makes about
+    itself, and against a server with no key configured an anonymous caller
+    could make that claim about anyone — so this client will not post without
+    one, and sends the same identity as the request principal
+    (`x-temper-principal-id`) so the server sees one identity rather than two.
+
+    Correlating the claimed agent id with the credential that authenticated the
+    request is the server's to do; this client makes the two agree so that the
+    correlation has something to check.
+    """
+    if not api_key:
+        raise TrajectoryError(
+            "refusing to post without TEMPER_API_KEY. The trajectory is attributed "
+            "to an agent, and an unauthenticated post can claim any agent and any "
+            "tenant it likes."
+        )
+
     body = json.dumps(ots, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
         api_url.rstrip("/") + OTS_INGEST_PATH,
@@ -477,8 +576,9 @@ def post_trajectory(
     request.add_header("X-Session-Id", session_id)
     request.add_header("X-Tenant-Id", tenant_id)
     request.add_header("X-Trajectory-Id", trajectory_id)
-    if api_key:
-        request.add_header("Authorization", f"Bearer {api_key}")
+    request.add_header("x-temper-principal-kind", "agent")
+    request.add_header("x-temper-principal-id", agent_id)
+    request.add_header("Authorization", f"Bearer {api_key}")
 
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -516,7 +616,23 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("TEMPER_TENANT_ID", "default"),
         help="tenant for the X-Tenant-Id header (default $TEMPER_TENANT_ID or 'default')",
     )
-    parser.add_argument("--spec-version", help="actor spec version this run executed under")
+    parser.add_argument(
+        "--spec-version",
+        default=os.environ.get("KATAGAMI_ACTOR_SPEC_VERSION"),
+        help=(
+            "actor spec version this run executed under. Normally omitted: it is "
+            "computed from the actor spec in this checkout (default "
+            "$KATAGAMI_ACTOR_SPEC_VERSION)"
+        ),
+    )
+    parser.add_argument(
+        "--actor-spec",
+        default=os.environ.get("KATAGAMI_ACTOR_SPEC"),
+        help=(
+            "actor automaton this run conforms to, e.g. CuratorAgent. Defaults to "
+            "$KATAGAMI_ACTOR_SPEC, then to the actor mapped from --agent-id"
+        ),
+    )
     parser.add_argument("--harness", default=DEFAULT_HARNESS)
     parser.add_argument("--domain")
     parser.add_argument("--environment")
@@ -531,6 +647,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--started-at", help="ISO 8601 fallback when the transcript has no timestamps")
     parser.add_argument("--model-name", help="fallback model for events that do not name one")
     return parser
+
+
+def resolve_spec_version(
+    *, spec_version: str | None, actor_spec: str | None, agent_id: str
+) -> str | None:
+    """The actor spec version to stamp, computed rather than typed.
+
+    Order: an explicit `--spec-version`, then the version of the named actor
+    spec, then the version of the actor this agent id runs under. Returning
+    None means there is no actor contract to name — the caller decides whether
+    that is fatal (it is, for `--post`).
+    """
+    if spec_version:
+        return spec_version
+    actor = actor_spec or actor_for_agent_id(agent_id)
+    if not actor:
+        return None
+    return compute_version(actor)
 
 
 def _session_id_from(atif: dict[str, Any], transcript: Path, override: str | None) -> str:
@@ -556,6 +690,27 @@ def main(argv: list[str] | None = None) -> int:
         print("error: nothing to do — pass --out and/or --post", file=sys.stderr)
         return 2
 
+    try:
+        spec_version = resolve_spec_version(
+            spec_version=args.spec_version,
+            actor_spec=args.actor_spec,
+            agent_id=args.agent_id,
+        )
+    except SpecVersionError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.post and not spec_version:
+        print(
+            "error: no actor spec version could be resolved for agent "
+            f"{args.agent_id!r}. A trajectory with no spec_version cannot enter "
+            "either judgement layer, so posting one would store a row nothing can "
+            "judge. Pass --actor-spec (e.g. CuratorAgent), or --spec-version / "
+            "KATAGAMI_ACTOR_SPEC_VERSION if the run executed under a spec that is "
+            "not in this checkout.",
+            file=sys.stderr,
+        )
+        return 2
+
     transcript = Path(args.transcript).expanduser()
     try:
         atif = transcript_to_atif(
@@ -576,7 +731,7 @@ def main(argv: list[str] | None = None) -> int:
             agent_id=args.agent_id,
             session_id=session_id,
             trajectory_id=trajectory_id,
-            spec_version=args.spec_version,
+            spec_version=spec_version,
             harness=args.harness,
             domain=args.domain,
             environment=args.environment,

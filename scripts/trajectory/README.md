@@ -9,8 +9,11 @@ transcript JSONL --[harbor v0.21.0]--> ATIF v1.7 --[claude_session_to_ots]--> OT
 
 | File | Role |
 |---|---|
-| `harbor_adapter.py` | The only place Harbor is imported. Transcript -> ATIF, plus the version pin. |
+| `harbor_adapter.py` | The only place Harbor is imported. Transcript (plus its subagent transcripts) -> ATIF, and the version pin. |
 | `claude_session_to_ots.py` | ATIF -> OTS mapping, and the HTTP post. Imports no Harbor. |
+| `redaction.py` | Strips credential shapes from every string before it leaves. |
+| `spec_version.py` | The actor spec version, computed from the spec file. |
+| `conformance_check.py` | Layer 1: replays a captured trajectory against its actor spec. |
 | `requirements.txt` | The pin. |
 
 ## Why Harbor rather than our own parser
@@ -48,12 +51,45 @@ python3 scripts/trajectory/claude_session_to_ots.py \
 # convert and post
 TEMPER_API_URL=https://your-temper-host TEMPER_API_KEY=... \
 python3 scripts/trajectory/claude_session_to_ots.py \
-  --transcript <path> --agent-id katagami-contributor \
-  --spec-version 'CuratorAgent@<hash>' --post
+  --transcript <path> --agent-id katagami-contributor --post
+
+# what version of the actor spec is in force
+python3 scripts/trajectory/spec_version.py CuratorAgent
+
+# layer 1: replay a captured trajectory against its actor spec
+python3 scripts/trajectory/conformance_check.py \
+  --trajectory ~/.katagami/trajectory-queue/archive/<trajectory-id>.json \
+  --actor-spec CuratorAgent
 ```
 
 Hook installation (capture every session automatically) is in
 [`hooks/trajectory-capture/README.md`](../../hooks/trajectory-capture/README.md).
+
+## Two refusals
+
+`--post` fails, loudly, without either of these:
+
+- **A credential.** `TEMPER_API_KEY` is required. `X-Agent-Id` is a claim the
+  caller makes about itself, and an unauthenticated post can claim any agent
+  and any tenant it likes; the client also sends the same identity as
+  `x-temper-principal-id` so the server sees one identity rather than two.
+- **A spec version.** Computed from the actor spec in this checkout —
+  `--actor-spec`, else `$KATAGAMI_ACTOR_SPEC`, else the actor mapped from the
+  agent id. A trajectory that cannot name its contract cannot enter either
+  judgement layer, so posting one would store a row nothing can judge.
+
+## Redaction
+
+Every string — message text, reasoning, tool arguments, tool output, the task
+description — passes through `redaction.py` before it reaches the document.
+It removes the credential shapes (bearer and basic authorization values,
+private key blocks, JWTs, GitHub/Anthropic/OpenAI/Slack/Google/AWS keys,
+`user:password@host`, and `NAME=value` where the name says secret) and drops
+values under keys like `api_key` or `authorization` whatever they contain.
+
+It is a reduction, not a guarantee: a secret with no recognizable shape still
+travels. `hooks/trajectory-capture/README.md#privacy` states plainly what gets
+uploaded so nobody has to guess.
 
 ## What the mapping produces
 
@@ -61,12 +97,13 @@ Hook installation (capture every session automatically) is in
 |---|---|
 | `trajectory_id` | `--trajectory-id`, else derived deterministically from the session id. |
 | `metadata.harness` | `--harness`, default `claude-code`. |
-| `metadata.spec_version` | `--spec-version` — the actor spec the run executed under. |
+| `metadata.spec_version` | Computed from the actor spec (see above). `--spec-version` overrides. |
 | `metadata.framework` | ATIF `agent.name`. |
-| `metadata.outcome` | `success`, or `partial_success` when any tool errored. `--outcome` overrides. |
+| `metadata.outcome` | `success`, or `partial_success` when any tool errored or any call went unobserved. `--outcome` overrides. |
 | `turns[]` | One per ATIF step, `turn_id` = `step_id`. |
 | `turns[].messages[]` | The step text, then one `tool_call` message per call and one `tool_response` message per result. |
-| `turns[].decisions[]` | One `tool_selection` decision per tool call. |
+| `turns[].messages[].attachments` | Image parts kept as `{type, media_type, path}` references, with an `[image ...]` marker inline in the text. ATIF carries image locations rather than bytes. |
+| `turns[].decisions[]` | One `tool_selection` decision per tool call. A call with no observation is `success: false` with `error_type: "no_result"` — the outcome is unknown, and unknown is not success. |
 | `turns[].decisions[].cause_id` | The tool_call id — what links a decision to the observation it produced. |
 | `turns[].prompt_token_ids` / `completion_token_ids` / `logprobs` | Copied from ATIF metrics **only when the serving stack supplied them**. Absent for ordinary Claude Code sessions, which record token counts but not ids. |
 | `context.custom_context` | JSON: harness, ATIF schema version, converter version, agent version, model, and the ATIF final metrics (token totals and cost). |

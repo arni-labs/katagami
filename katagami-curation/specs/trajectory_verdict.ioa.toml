@@ -78,8 +78,11 @@ name = "judged_by"
 type = "string"
 initial = ""
 
+# When the judgement was made. Named `judged_at` rather than `created_at`
+# because every entity already carries a platform CreatedAt column, and two
+# fields one letter apart in meaning is how they end up filled inconsistently.
 [[state]]
-name = "created_at"
+name = "judged_at"
 type = "string"
 initial = ""
 
@@ -95,7 +98,7 @@ name = "Record"
 kind = "input"
 from = ["Pending"]
 to = "Recorded"
-params = ["trajectory_id", "session_id", "actor_spec", "spec_version", "layer", "passed", "violations", "judged_by", "created_at"]
+params = ["trajectory_id", "session_id", "actor_spec", "spec_version", "layer", "passed", "violations", "judged_by", "judged_at"]
 effect = [{ type = "set_bool", var = "has_verdict", value = "true" }]
 hint = "Write the verdict for one trajectory at one layer, in a single call. layer is deterministic or llm; passed is the layer's own result; violations is the findings JSON or a file:<file_id> reference; judged_by is the judging agent or engine build. Recorded is terminal — a verdict is a fact about a completed judgement and is never edited in place. A re-judge writes a new TrajectoryVerdict."
 

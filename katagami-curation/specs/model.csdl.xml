@@ -150,12 +150,132 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
+      <!-- CuratorAgent: one curator run against one brief, in one session.
+           The actor spec layer 1 conformance replays a trajectory against
+           (specs/curator_agent.ioa.toml). -->
+      <EntityType Name="CuratorAgent">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="BriefReceived" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Brief" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasBrief" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DraftNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DraftRevision" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="JobsInFlight" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="SelfReviewComplete" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SelfReviewNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasSubmission" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SubmittedEntityType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasDesignLanguageIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasArtStyleIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasPaletteSystemIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasWritingStyleIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- ReviewAgent: one machine review of one curator submission
+           (specs/review_agent.ioa.toml). Its VerdictRecorded state is what
+           HumanCurator.Publish is guarded on. -->
+      <EntityType Name="ReviewAgent">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="SubmissionReceived" />
+        <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasSubmission" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Findings" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasFindings" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Verdict" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="VerdictRationale" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- HumanCurator: the publishing ROLE and one assignment to it
+           (specs/human_curator.ioa.toml). A role, never a person: identity
+           lives on Member and AssigneeRef is an opaque holder reference. -->
+      <EntityType Name="HumanCurator">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="SubmissionAssigned" />
+        <Property Name="AssigneeRef" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReviewAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasAssignment" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasReviewVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ReviewVerdict" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Critique" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CuratorNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EscalationReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EscalationCount" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
+      <!-- TrajectoryVerdict: one judged trajectory at one layer
+           (specs/trajectory_verdict.ioa.toml). Layer 1 and layer 2 are separate
+           rows so a disagreement stays visible. -->
+      <EntityType Name="TrajectoryVerdict">
+        <Key>
+          <PropertyRef Name="Id" />
+        </Key>
+        <Property Name="Id" Type="Edm.Guid" Nullable="false" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Pending" />
+        <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ActorSpec" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Layer" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="Passed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Violations" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="JudgedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="JudgedAt" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="HasVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
+        <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
+      </EntityType>
+
       <EntityContainer Name="KatagamiCurationContainer">
         <EntitySet Name="CurationJobs" EntityType="Katagami.Curation.CurationJob" />
         <EntitySet Name="CurationDirections" EntityType="Katagami.Curation.CurationDirection" />
         <EntitySet Name="CurationJobTemplates" EntityType="Katagami.Curation.CurationJobTemplate" />
         <EntitySet Name="CurationQueries" EntityType="Katagami.Curation.CurationQuery" />
         <EntitySet Name="TasteRules" EntityType="Katagami.Curation.TasteRule" />
+        <EntitySet Name="CuratorAgents" EntityType="Katagami.Curation.CuratorAgent" />
+        <EntitySet Name="ReviewAgents" EntityType="Katagami.Curation.ReviewAgent" />
+        <EntitySet Name="HumanCurators" EntityType="Katagami.Curation.HumanCurator" />
+        <EntitySet Name="TrajectoryVerdicts" EntityType="Katagami.Curation.TrajectoryVerdict" />
       </EntityContainer>
 
     </Schema>

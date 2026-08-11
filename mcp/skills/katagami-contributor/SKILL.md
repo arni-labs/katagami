@@ -11,12 +11,26 @@ MCP with raw Temper actions.
 
 ## Trajectory capture
 
-This run is training data. Before the first call, mint two ids and keep them
-for the whole run:
+This run is training data. Before the first call, get the two ids this run is
+captured under — **read them, do not invent them**:
 
-- `session_id` — one per contribution run, e.g. `contrib-<short-brief>-<n>`.
-- `trajectory_id` — one per captured trajectory. Derive it from the session id
-  so a re-capture lands on the same document instead of a duplicate.
+```bash
+python3 hooks/trajectory-capture/capture.py identity
+```
+
+- `session_id` — the harness session id. Everything is filed under it.
+- `trajectory_id` — derived from that same session id by the capture pipeline.
+
+An id you minted yourself points at no stored document: the hook files the
+trajectory under the harness session id, so a run that wrote its own invented
+id onto `ReceiveBrief` leaves a `trajectory_id` that resolves to nothing.
+There is one derivation, in one place
+(`scripts/trajectory/claude_session_to_ots.py::derive_trajectory_id`), and both
+sides read it.
+
+Outside Claude Code, or with the hooks not installed, mint a `session_id`
+yourself and pass **both** `--session-id` and `--trajectory-id` to the
+converter, so the actor record and the stored trajectory still agree.
 
 Then:
 
@@ -32,12 +46,13 @@ Then:
 3. **Let the session be captured.** With the Claude Code hooks installed
    (`hooks/trajectory-capture/README.md`) the transcript is converted and
    posted automatically at the next session start. Outside that harness, run
-   `scripts/trajectory/claude_session_to_ots.py` yourself and confirm it
-   returned HTTP 201.
-4. **Stamp the spec version.** Pass `--spec-version` (or set
-   `KATAGAMI_ACTOR_SPEC_VERSION`) to the version of `CuratorAgent` this run
-   executed under. A verdict is only meaningful against the contract in force
-   at the time.
+   `scripts/trajectory/claude_session_to_ots.py` yourself and confirm the
+   ingest accepted it.
+4. **Record the spec version you actually ran under.** The converter computes
+   it from `CuratorAgent` in the checkout and refuses to post without one; put
+   that same value on `ReceiveBrief`. A verdict is only meaningful against the
+   contract in force at the time, and `python3 scripts/trajectory/spec_version.py
+   CuratorAgent` prints it.
 
 The captured trajectory is replayed against `CuratorAgent`
 (`katagami-curation/specs/curator_agent.ioa.toml`), whose protocol this skill

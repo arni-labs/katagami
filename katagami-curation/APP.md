@@ -79,10 +79,13 @@ reached `VerdictRecorded`, so the machine review acts first by construction.
 ### HumanCurator
 
 The publishing ROLE — never a person. Identity lives on `Member`; this record
-points at the current holder through an opaque `assignee_ref`. Publish and
-ReturnWithCritique are closed to every agent principal in
-`policies/human_curator.cedar`, and the artifact-side boundary stays in
-`katagami-commons/policies/design_language.cedar` and `art_style.cedar`.
+points at the current holder through an opaque `assignee_ref` carrying that
+holder's principal id. Publish and ReturnWithCritique are closed to every agent
+principal in `policies/human_curator.cedar` and bound to the assignment's own
+holder (`principal.id == resource.assignee_ref`), so one named human answers for
+the decision rather than any authenticated human at all. The artifact-side
+boundary stays in `katagami-commons/policies/design_language.cedar` and
+`art_style.cedar`.
 Both working states carry a 48h timeout onto `ReviewOverdue` -> `Escalated`, so
 an assignment nobody picks up surfaces instead of stalling the queue.
 
@@ -92,10 +95,17 @@ an assignment nobody picks up surfaces instead of stalling the queue.
 ### TrajectoryVerdict
 
 One judged trajectory at one layer. `layer = "deterministic"` records the
-layer 1 result from `POST /api/conformance/check` and is authoritative for
-everything rule-shaped; `layer = "llm"` records the katagami-judge skill's
-taste, quality, and reasoning judgement, which never overrides layer 1. Two
-layers means two rows, so a contradiction stays visible instead of merged away.
+layer 1 result from `scripts/trajectory/conformance_check.py`, which replays the
+captured trajectory against the actor spec and is authoritative for everything
+rule-shaped; `layer = "llm"` records the katagami-judge skill's taste, quality,
+and reasoning judgement, which never overrides layer 1. Two layers means two
+rows, so a contradiction stays visible instead of merged away.
+
+The replay runs here rather than on the server: the kernel has no conformance
+engine, the actor specs are this app's, and a transcript plus a spec is all it
+needs. Guards it cannot decide from a transcript — `cross_entity_state`, which
+is resolved against the entity graph at dispatch time — are reported as
+`unverifiable` rather than counted as satisfied.
 
 **States:** `Pending` -> `Recorded` (terminal).
 

@@ -10,7 +10,8 @@ not to us, and it moves. Harbor's installed-agent for Claude Code declares
 `SUPPORTS_ATIF` and already handles the parts that bite —
 
   * subagent transcripts written to `subagents/*.jsonl` instead of inlined
-    sidechain events,
+    sidechain events — Harbor reads them when they are in the tree it is given,
+    which is why `_stage_subagent_transcripts` puts them there,
   * duplicate `uuid` events replayed after a compaction,
   * streaming usage that accumulates across chunks, so only the last one is
     real,
@@ -135,6 +136,48 @@ def _stdout_to_stderr():
         os.close(saved)
 
 
+def subagent_transcripts(transcript_path: Path) -> list[Path]:
+    """The subagent JSONLs that belong to one Claude Code session transcript.
+
+    Claude Code writes each subagent's transcript to
+    `<projects>/<slug>/<session-id>/subagents/agent-<id>.jsonl`, a directory
+    that sits beside `<session-id>.jsonl` rather than inside it. Delegated work
+    — a published artifact, a file the main agent never touched itself — exists
+    only in those files.
+
+    Staging the primary JSONL alone therefore produces a trajectory that is
+    quietly missing whatever was delegated, and a conformance replay over it
+    can pass a run whose actions are not all there. The pinned Harbor reads
+    `session_dir.rglob("subagents/*.jsonl")` alongside the primary
+    (`claude_code.py::_convert_events_to_trajectory`), so handing it the tree is
+    all that is needed; it dedupes and orders by timestamp itself.
+    """
+    subagent_dir = transcript_path.parent / transcript_path.stem / "subagents"
+    if not subagent_dir.is_dir():
+        return []
+    return sorted(p for p in subagent_dir.glob("*.jsonl") if p.is_file())
+
+
+def _stage_subagent_transcripts(source: Path, session_dir: Path) -> list[Path]:
+    """Copy the session's subagent transcripts into the layout Harbor reads.
+
+    `ClaudeCode._session_dirs` excludes any directory whose path contains a
+    `subagents` component, so staging them here adds no second session
+    directory and leaves the "exactly one session dir" requirement intact.
+    """
+    found = subagent_transcripts(source)
+    if not found:
+        return []
+    staged_dir = session_dir / source.stem / "subagents"
+    staged_dir.mkdir(parents=True, exist_ok=True)
+    staged: list[Path] = []
+    for path in found:
+        destination = staged_dir / path.name
+        shutil.copyfile(path, destination)
+        staged.append(destination)
+    return staged
+
+
 def transcript_to_atif(
     transcript_path: Path | str,
     *,
@@ -175,6 +218,7 @@ def transcript_to_atif(
         session_dir = logs_dir / "sessions" / "projects" / "katagami-capture"
         session_dir.mkdir(parents=True)
         shutil.copyfile(source, session_dir / staged_name)
+        staged_subagents = _stage_subagent_transcripts(source, session_dir)
 
         capture = _LogCapture()
         harbor_logger = logging.getLogger("harbor")
@@ -193,7 +237,8 @@ def transcript_to_atif(
         if not produced.is_file():
             detail = "\n".join(capture.lines[-20:]) or "(harbor logged nothing)"
             raise HarborConversionError(
-                f"harbor produced no ATIF trajectory for {source}.\n"
+                f"harbor produced no ATIF trajectory for {source} "
+                f"({len(staged_subagents)} subagent transcript(s) staged).\n"
                 f"harbor debug output:\n{detail}"
             )
         atif = json.loads(produced.read_text(encoding="utf-8"))

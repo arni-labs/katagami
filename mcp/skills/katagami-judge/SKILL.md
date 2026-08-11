@@ -1,6 +1,6 @@
 ---
 name: katagami-judge
-description: Judge a captured Katagami agent trajectory against its actor spec. Runs the deterministic conformance check first and treats its verdict as authoritative for everything rule-shaped, then judges only taste, quality, and reasoning against the actor's spec slice. Writes one TrajectoryVerdict per layer. Use when asked to judge, review, or score a captured trajectory or agent run.
+description: Judge a captured Katagami agent trajectory against its actor spec. Runs the deterministic conformance replay first and treats its verdict as authoritative for everything rule-shaped, then judges only taste, quality, and reasoning against the actor's spec slice. Writes one TrajectoryVerdict per layer. Use when asked to judge, review, or score a captured trajectory or agent run.
 ---
 
 # Katagami judge — layer 2
@@ -11,15 +11,15 @@ There are two layers, and they do different jobs:
 
 | Layer | Who decides | Scope |
 |---|---|---|
-| 1 — deterministic | `POST /api/conformance/check` | Everything rule-shaped: state order, action legality, guards, invariants, exactly-once, budgets. |
+| 1 — deterministic | `scripts/trajectory/conformance_check.py` | Everything rule-shaped: state order, action legality, guards the run carries evidence for, exactly-once, budgets. |
 | 2 — LLM | You | Only what no rule can state: taste, quality, and the reasoning behind the choices. |
 
-**You never override layer 1.** If the conformance engine says a run violated
-its spec, it violated its spec — a well-argued paragraph does not overturn a
-replay. If you believe layer 1 is wrong, say so in your own verdict's
-violations as a finding against the engine, and still leave layer 1's verdict
-standing. The two layers are stored as separate `TrajectoryVerdict` rows
-precisely so a disagreement stays visible instead of being averaged away.
+**You never override layer 1.** If the replay says a run violated its spec, it
+violated its spec — a well-argued paragraph does not overturn a replay. If you
+believe layer 1 is wrong, say so in your own verdict's violations as a finding
+against the engine, and still leave layer 1's verdict standing. The two layers
+are stored as separate `TrajectoryVerdict` rows precisely so a disagreement
+stays visible instead of being averaged away.
 
 Correspondingly: do not re-litigate rule-shaped questions. "It submitted twice"
 and "it skipped self-review" are layer 1's, already answered, and repeating them
@@ -28,11 +28,18 @@ cannot see.
 
 ## 0. Identity — your own run is captured too
 
-You are an actor like any other. Before the first call, mint a `session_id`
-(e.g. `judge-<trajectory-id-short>-<n>`) and send it on **every** Temper call as
-`X-Session-Id`, together with a one-sentence `X-Intent`. Run as the judge's own
-agent credential, never a human's and never the credential of the agent you are
-judging.
+You are an actor like any other. Take your `session_id` and `trajectory_id`
+from the capture pipeline rather than minting them:
+
+```bash
+python3 hooks/trajectory-capture/capture.py identity
+```
+
+Send that `session_id` on **every** Temper call as `X-Session-Id`, together
+with a one-sentence `X-Intent`. Run as the judge's own agent credential, never
+a human's and never the credential of the agent you are judging —
+`policies/trajectory_verdict.cedar` admits `Agent::"katagami-judge"` and
+`Agent::"system"` on `Record` and nobody else.
 
 Standard headers on every call:
 
@@ -49,29 +56,55 @@ Your own trajectory is captured by the same pipeline
 (`hooks/trajectory-capture/README.md`), so a judge that drifts is itself
 judgeable.
 
-## 1. Fetch the trajectory and the spec slice — and nothing else
+## 1. Get the trajectory and the spec slice — and nothing else
 
 ### The trajectory
 
+Two steps, because the list endpoint does not return documents.
+
+**Confirm the row landed, and read its metadata:**
+
 ```
 GET $TEMPER_API_URL/api/ots/trajectories?agent_id=<agent>&limit=50
-    -> { "trajectories": [ { "trajectory_id": ..., "session_id": ..., "data": "<OTS JSON>" } ], "total": N }
+    -> { "trajectories": [ { "trajectory_id": ..., "session_id": ..., "agent_id": ...,
+                             "outcome": ..., "turn_count": ..., "created_at": ... } ],
+         "total": N }
 ```
 
-Filter to the `trajectory_id` you were asked to judge and parse its `data`.
-`metadata.spec_version` on that document tells you which version of the actor
-spec the run executed under; `metadata.harness` tells you which harness drove
-it.
+Metadata only — ids, outcome, turn count. The stored OTS document is **not** in
+this response (`OtsTrajectoryRow` in `temper-store-turso/src/store/ots.rs`
+carries no `data` field, and no route exposes the row that does).
+
+**Read the document from the capture archive:**
+
+```
+~/.katagami/trajectory-queue/archive/<trajectory-id>.json
+```
+
+Capture writes every posted document there under the id it was posted with
+(`hooks/trajectory-capture/capture.py`). If the file is not there — a run
+captured on another machine, or an archive that was cleared — you cannot read
+that trajectory. Say so and stop; do not judge a run from its metadata row.
+`metadata.spec_version` tells you which version of the actor spec the run
+executed under, `metadata.harness` which harness drove it.
 
 ### The spec slice — only the actor's own
 
-```
-GET $TEMPER_API_URL/tdata/Specs?$filter=Name eq '<ActorName>' and Version eq '<spec_version>'
+The actor specs live in this repository, and the version is a function of the
+spec file, so you can prove you are reading the contract the run executed
+under rather than trusting a label:
+
+```bash
+python3 scripts/trajectory/spec_version.py CuratorAgent \
+  --verify "<metadata.spec_version>"
 ```
 
 `<ActorName>` is one of `CuratorAgent`, `ReviewAgent`, `HumanCurator`
 (`katagami-curation/specs/`). Read that actor's states, actions, guards, and
-invariants — and stop there.
+invariants from its `.ioa.toml` — and stop there. The deployed copy is
+readable at `GET $TEMPER_API_URL/observe/specs/<ActorName>` (states, actions
+with their guards and effects, invariants, state variables); that endpoint has
+no version filter, which is exactly why the version is computed from the file.
 
 **Only the actor's own slice.** Not the sibling actors, not the artifact
 entities, not the Cedar policies, not the taste rules of a different lane. A
@@ -80,42 +113,60 @@ actor never had, and the verdicts stop being about conformance at all. If the
 slice does not contain the ground for a finding, the finding does not belong in
 this verdict.
 
-If `metadata.spec_version` is missing or names a version you cannot fetch,
-**stop**: judging a run against a contract you cannot confirm was in force is
-not a judgement. Record that as the reason and do not invent a substitute.
+If `metadata.spec_version` is missing, or `--verify` fails because the spec has
+moved since the run, **stop**: judging a run against a contract you cannot
+confirm was in force is not a judgement. Record that as the reason and do not
+invent a substitute. (Capture refuses to post a trajectory with no spec
+version, so a missing one means the row predates that rule.)
 
 ## 2. Layer 1 first — always
 
-Run the deterministic check before you form any opinion, so your reading is
-anchored to what actually replayed.
+Run the replay before you form any opinion, so your reading is anchored to what
+actually happened.
 
-```
-POST $TEMPER_API_URL/api/conformance/check
-Content-Type: application/json
-
-{
-  "trajectory_id": "<trajectory id>",
-  "actor_spec": "CuratorAgent",
-  "spec_version": "<metadata.spec_version>"
-}
+```bash
+python3 scripts/trajectory/conformance_check.py \
+  --trajectory ~/.katagami/trajectory-queue/archive/<trajectory-id>.json \
+  --actor-spec CuratorAgent \
+  --out layer1.json
 ```
 
-Response:
+It replays the actor actions the trajectory recorded against the automaton and
+returns:
 
 ```json
 {
   "passed": false,
   "actor_spec": "CuratorAgent",
-  "spec_version": "<hash>",
+  "spec_version": "CuratorAgent@sha256:...",
+  "layer": "deterministic",
+  "judged_by": "katagami-conformance@1",
+  "final_state": "Submitted",
   "violations": [
     {
       "kind": "illegal_transition",
       "turn_id": 14,
-      "detail": "Submit from Drafting; Submit is only legal from SelfReviewed"
+      "detail": "SubmitDesignLanguages from Drafting; SubmitDesignLanguages is only legal from SelfReviewed"
+    }
+  ],
+  "unverifiable": [
+    {
+      "kind": "cross_entity_state",
+      "turn_id": 14,
+      "action": "SubmitDesignLanguages",
+      "detail": "resolved against the entity graph at dispatch time and cannot be replayed from a transcript"
     }
   ]
 }
 ```
+
+Read `unverifiable` as well as `violations`. Those guards were **not** checked;
+a `passed: true` does not cover them, and saying so is part of reporting the
+verdict honestly.
+
+There is no `/api/conformance/check` on the Temper server — the kernel has no
+conformance engine — which is why the replay runs here, against the specs in
+this checkout.
 
 Write layer 1's result verbatim into its own `TrajectoryVerdict` (§4) with
 `layer = "deterministic"`. Do not summarize, soften, or re-score it.
@@ -127,14 +178,17 @@ spec slice and the trajectory's own content:
 
 1. **Taste.** Where the actor made a design judgement, is it good work by
    Katagami's standards — bright and clean, generous spacing, restrained
-   accents, real hierarchy? Cite the turn.
+   accents, real hierarchy? Cite the turn. Image evidence rides on messages as
+   `attachments` (`{"type": "image", "media_type", "path"}`); open the paths
+   before judging what something looks like.
 2. **Quality.** Is the output finished, or nominally complete? A submission
    that satisfies every guard and still looks unfinished passes layer 1 and
    fails here.
 3. **Reasoning.** Do the decisions in the trajectory follow from the
    observations? `cause_id` links each decision to the observation it produced
    — use it. A run that read a file and then ignored what it said is visible in
-   the chain.
+   the chain. A decision whose consequence is `{"success": false, "error_type":
+   "no_result"}` was never observed at all: treat it as unknown, not as done.
 
 Rules for findings:
 
@@ -163,8 +217,8 @@ POST $TEMPER_API_URL/tdata/TrajectoryVerdicts('<verdict id>')/Temper.Record
   "layer":         "deterministic",
   "passed":        false,
   "violations":    "[{\"kind\":\"illegal_transition\",\"turn_id\":14,\"detail\":\"...\"}]",
-  "judged_by":     "temper-conformance@<engine version>",
-  "created_at":    "2026-08-11T10:00:00Z"
+  "judged_by":     "katagami-conformance@1",
+  "judged_at":     "2026-08-11T10:00:00Z"
 }
 ```
 
@@ -181,9 +235,10 @@ of inline JSON.
 
 Report, in this order:
 
-1. The layer 1 verdict — passed or failed, and the violations, unedited.
+1. The layer 1 verdict — passed or failed, the violations unedited, and
+   anything it listed as `unverifiable`.
 2. Your layer 2 verdict — passed or failed, with findings, each citing a turn.
 3. The two `TrajectoryVerdict` ids.
-4. Anything you could not judge and why (missing spec version, unfetchable
-   slice, truncated trajectory). Say it plainly; a judge that quietly narrows
+4. Anything you could not judge and why (missing spec version, archive entry
+   absent, truncated trajectory). Say it plainly; a judge that quietly narrows
    its own scope is worse than one that abstains out loud.

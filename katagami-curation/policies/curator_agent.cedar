@@ -12,3 +12,13 @@ permit(
   action,
   resource is CuratorAgent
 );
+
+// An unauthenticated caller is nobody. `anonymous` is the principal id the
+// platform assigns when no identity was presented (temper-authz
+// SecurityContext::from_headers), and a run ledger with nobody attached to it
+// is not a run ledger.
+forbid(
+  principal,
+  action,
+  resource is CuratorAgent
+) when { principal.id == "anonymous" };

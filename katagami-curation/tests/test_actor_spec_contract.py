@@ -9,12 +9,27 @@ internally sound; this file proves they say what the protocol requires.
 
 import tomllib
 import unittest
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
 CURATION_ROOT = Path(__file__).resolve().parents[1]
 SPECS = CURATION_ROOT / "specs"
 POLICIES = CURATION_ROOT / "policies"
 COMMONS_POLICIES = CURATION_ROOT.parent / "katagami-commons" / "policies"
+MODEL_CSDL = SPECS / "model.csdl.xml"
+
+EDM_NS = "{http://docs.oasis-open.org/odata/ns/edm}"
+
+# A state var's EDM type. Lists are strings holding JSON; counters are ints.
+EDM_TYPE_BY_STATE_TYPE = {
+    "string": "Edm.String",
+    "bool": "Edm.Boolean",
+    "counter": "Edm.Int32",
+}
+
+
+def pascal(name):
+    return "".join(part.capitalize() for part in name.split("_"))
 
 
 def load(name):
@@ -336,18 +351,96 @@ class TrajectoryVerdictSpecTest(unittest.TestCase):
             "passed",
             "violations",
             "judged_by",
-            "created_at",
+            "judged_at",
         ]
         for field in required:
             self.assertIn(field, self.states, field)
             self.assertIn(field, self.actions["Record"]["params"], field)
         self.assertEqual(self.states["passed"]["type"], "bool")
 
+    def test_the_verdict_timestamp_does_not_collide_with_the_platform_column(self):
+        # Every entity already has a CreatedAt column. A state var called
+        # created_at would map onto it and the two would drift apart.
+        self.assertNotIn("created_at", self.states)
+
     def test_both_layers_are_documented_on_the_spec(self):
         text = (SPECS / "trajectory_verdict.ioa.toml").read_text()
         self.assertIn('layer = "deterministic"', text)
         self.assertIn('layer = "llm"', text)
         self.assertIn("never overrides layer 1", text)
+
+
+class CsdlExposesEverySpecTest(unittest.TestCase):
+    """An automaton with no entity set is a spec nobody can call.
+
+    `temper verify` proves each IOA file is sound and says nothing about the
+    CSDL, so a new spec can pass verification while `POST /tdata/<Set>` returns
+    404 for it. This walks every spec in the directory rather than the four that
+    were missing, so the next one that is added is caught the same way.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.schema = ElementTree.parse(MODEL_CSDL).getroot().find(f".//{EDM_NS}Schema")
+        cls.entity_types = {
+            entity.get("Name"): entity
+            for entity in cls.schema.findall(f"{EDM_NS}EntityType")
+        }
+        container = cls.schema.find(f"{EDM_NS}EntityContainer")
+        cls.entity_sets = {
+            entity_set.get("EntityType").rsplit(".", 1)[-1]: entity_set.get("Name")
+            for entity_set in container.findall(f"{EDM_NS}EntitySet")
+        }
+        cls.specs = {}
+        for path in sorted(SPECS.glob("*.ioa.toml")):
+            spec = tomllib.loads(path.read_text())
+            cls.specs[spec["automaton"]["name"]] = spec
+
+    def _properties(self, name):
+        return {
+            prop.get("Name"): prop
+            for prop in self.entity_types[name].findall(f"{EDM_NS}Property")
+        }
+
+    def test_every_automaton_has_an_entity_type_and_an_entity_set(self):
+        for name in self.specs:
+            self.assertIn(name, self.entity_types, f"{name} has no EntityType")
+            self.assertIn(name, self.entity_sets, f"{name} has no EntitySet")
+
+    def test_every_state_variable_is_exposed_with_the_right_type(self):
+        for name, spec in self.specs.items():
+            properties = self._properties(name)
+            for state in spec.get("state", []):
+                prop_name = pascal(state["name"])
+                self.assertIn(
+                    prop_name, properties, f"{name}.{state['name']} is not in the CSDL"
+                )
+                expected = EDM_TYPE_BY_STATE_TYPE.get(state["type"])
+                if expected:
+                    self.assertEqual(
+                        properties[prop_name].get("Type"),
+                        expected,
+                        f"{name}.{prop_name}",
+                    )
+
+    def test_every_entity_carries_the_platform_columns(self):
+        for name in self.specs:
+            properties = self._properties(name)
+            for column in ("Id", "State", "CreatedAt", "UpdatedAt"):
+                self.assertIn(column, properties, f"{name} has no {column}")
+            self.assertEqual(properties["Id"].get("Type"), "Edm.Guid", name)
+
+    def test_the_declared_initial_state_is_the_state_columns_default(self):
+        for name, spec in self.specs.items():
+            self.assertEqual(
+                self._properties(name)["State"].get("DefaultValue"),
+                spec["automaton"]["initial"],
+                name,
+            )
+
+    def test_the_actor_entity_sets_are_the_paths_the_skills_call(self):
+        for actor in ("CuratorAgent", "ReviewAgent", "HumanCurator", "TrajectoryVerdict"):
+            self.assertEqual(self.entity_sets[actor], f"{actor}s", actor)
 
 
 class ActorPolicyBoundaryTest(unittest.TestCase):
@@ -395,6 +488,40 @@ class ActorPolicyBoundaryTest(unittest.TestCase):
         verdict = (POLICIES / "trajectory_verdict.cedar").read_text()
         self.assertIn('Action::"Record"', verdict)
         self.assertIn('principal.agent_type == "contributor"', verdict)
+
+    def test_publishing_is_bound_to_the_assignment_holder(self):
+        # Forbidding agents is not enough on its own: without this any other
+        # authenticated human could publish somebody else's assignment.
+        policy = (POLICIES / "human_curator.cedar").read_text()
+        self.assertIn("unless", policy)
+        self.assertIn("principal.id == resource.assignee_ref", policy)
+        self.assertIn('resource.assignee_ref != ""', policy)
+        # And the spec says assignee_ref carries what the binding compares to.
+        spec = (SPECS / "human_curator.ioa.toml").read_text()
+        self.assertIn("principal id", spec.lower())
+
+    def test_recording_a_verdict_is_an_allowlist_not_a_default(self):
+        review = (POLICIES / "review_agent.cedar").read_text()
+        self.assertIn("unless", review)
+        self.assertIn('principal == Agent::"katagami-reviewer"', review)
+        verdict = (POLICIES / "trajectory_verdict.cedar").read_text()
+        self.assertIn("unless", verdict)
+        self.assertIn('principal == Agent::"katagami-judge"', verdict)
+        # The judge skill runs under exactly that principal.
+        judge = (
+            CURATION_ROOT.parent / "mcp" / "skills" / "katagami-judge" / "SKILL.md"
+        ).read_text()
+        self.assertIn("x-temper-principal-id: katagami-judge", judge)
+
+    def test_no_actor_record_is_writable_by_an_unauthenticated_caller(self):
+        for name in (
+            "curator_agent",
+            "review_agent",
+            "human_curator",
+            "trajectory_verdict",
+        ):
+            policy = (POLICIES / f"{name}.cedar").read_text()
+            self.assertIn('principal.id == "anonymous"', policy, name)
 
 
 if __name__ == "__main__":
