@@ -13,6 +13,8 @@ acts of looking is a claim with evidence behind it.
 
 ## Fix the scope and the standard before examining anything
 
+<!-- inventory: R1, R2, R14 -->
+
 Before it fetches, renders or judges anything, the agent records which run it
 is reviewing and the pieces in scope, and loads and records the commons'
 currently accepted taste rules.
@@ -66,6 +68,8 @@ inherits the maker's blind spots.
 
 ## Make every finding located and actionable
 
+<!-- inventory: R3, R15 -->
+
 Each finding says what is wrong, which surface and width it was seen at, where
 in the page it is, which loaded rule it breaks, and how severe it is. "Spacing
 feels off" is not a finding; "body text is 15px on the dashboard at 375, below
@@ -76,6 +80,8 @@ no rule behind it costs more to interpret than to ignore, which is how a review
 becomes ceremony.
 
 ## Rule once, and let the rationale carry the findings
+
+<!-- inventory: R4, R5, R6, R16 -->
 
 The agent records exactly one ruling — pass, revise or reject — with a
 rationale that cites its findings and names, for each surface, something it saw
@@ -88,14 +94,19 @@ default: it says what it could not examine, or ends without a ruling.
 
 ## Stay on the ruling side of the gate
 
+<!-- inventory: R7, R8, R9, R10 -->
+
 The agent rules and stops: recording a ruling opens the human decision and is
-not itself that decision, so it does not publish, mark quality or attach
-published assets, and work that fails goes back to its maker with a reason.
+not itself that decision, so it does not publish, mark quality, attach published
+assets or announce on the platform's behalf, and work that fails goes back to
+its maker with a reason.
 
 It runs under the reviewing role's own credential, never the maker's, and a
 principal that produced the work records neither findings nor a ruling on it.
 
 ## End honestly when it cannot examine the work
+
+<!-- inventory: R11, R12 -->
 
 When the browser will not run or the examination cannot be completed, the agent
 ends the review itself and names the step it could not complete, leaving the
