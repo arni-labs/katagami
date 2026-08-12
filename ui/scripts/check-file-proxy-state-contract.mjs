@@ -495,6 +495,14 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
 // `context_preparer` loads it into the agent prompt). The kernel's own
 // protected-tree predicate names /system, /agents and /projects.
 for (const p of [
+  // Enumerating os-app-docs (679 files) turned up two scratch trees and a
+  // ROOT-level app manual outside /apps — the same document at a new location,
+  // which is the bug /apps itself was.
+  "/APP.md",
+  "/app.md",
+  "/katagami/embodiments/APP.md",
+  "/probe/rt-1782861556/thing.png",
+  "/tmp/scratch.json",
   "/apps/katagami-curation/APP.md",
   "/apps/paw-patrol/APP.md",
   "/apps/katagami-commons/adrs/0001-whatever.md",

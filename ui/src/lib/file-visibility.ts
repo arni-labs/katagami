@@ -74,6 +74,9 @@ const PUBLIC_FILE_STATES = new Set(["Ready", "Locked"]);
  *   `os-app-guide-{app_slug}`, plus ADRs as `os-app-adr-{app}-{file}`. This one
  *   is NOT in the kernel predicate and was world-readable in production: 17 of
  *   19 os-apps answered 200 unauthenticated, ids derivable from app names.
+ * - `/probe/`, `/tmp/` — scratch trees found by enumerating the workspace (15
+ *   files and 1). Nobody's public content, and a scratch tree inside the docs
+ *   workspace is precisely where something private lands by accident.
  *
  * Path-based on purpose: the same content appears in `os-app-docs`, in per-soul
  * snapshots, and in agent sandboxes, and only the path is common to all of them.
@@ -83,7 +86,21 @@ const NEVER_SERVED_PATH_PREFIXES = [
   "/system/",
   "/projects/",
   "/apps/",
+  "/probe/",
+  "/tmp/",
 ] as const;
+
+/**
+ * Filenames never served, wherever they sit.
+ *
+ * `APP.md` is an OS app's operations manual. The kernel writes them to
+ * `/apps/{app}/APP.md`, which the prefix list covers — but enumerating
+ * `os-app-docs` also turned up a bare `/APP.md` at the workspace ROOT, outside
+ * that tree and therefore public under a prefix-only rule. Denying the filename
+ * closes the class instead of the one instance, which is the lesson `/apps`
+ * itself taught: the same document at a new location is the recurring bug.
+ */
+const NEVER_SERVED_BASENAMES = ["app.md"] as const;
 
 /**
  * Trees inside a servable workspace that only the owner may read.
@@ -257,6 +274,8 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   if (NEVER_SERVED_PATH_PREFIXES.some((prefix) => lowered.startsWith(prefix))) {
     return "denied";
   }
+  const basename = lowered.slice(lowered.lastIndexOf("/") + 1);
+  if (NEVER_SERVED_BASENAMES.includes(basename as never)) return "denied";
 
   // No workspace check, deliberately — see the note at the top of this file.
   // Workspace tracks who wrote the file, not what it is: 11 distinct workspaces
