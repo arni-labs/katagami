@@ -125,11 +125,26 @@ function readString(
 /**
  * Who, if anyone, may read this file.
  *
- * Deny rules run before any allow. A file with no readable PATH is `denied`:
- * the tree rules could not be applied, and an unapplied deny must never read as
- * an allow. That refusal has a live cost — 15 refs on under-review entities have
- * neither a path nor a workspace, and they will 404 — which is recorded in the
- * PR rather than discovered later. Workspace is not consulted at all.
+ * Deny rules run before any allow. Workspace is not consulted at all.
+ *
+ * A file with no readable PATH is `denied`. Every rule here is a path rule, so a
+ * pathless file cannot be vetted, and an unapplied deny must never read as an
+ * allow. That refusal has a measured cost and it is taken deliberately: 15 refs
+ * on under-review DesignLanguages carry a `name` but neither a path nor a
+ * workspace, and they serve today. Refusing them breaks the embodiment and
+ * DESIGN.md of eight languages — lineplate-atelier,
+ * memphis-postmodern-graphics-ui, nocturne-ink-screen-atlas,
+ * vellum-wash-feature-editorial, expressive-line-digital-atmosphere,
+ * mixed-media-inked-visual-essay, storyboard-product-humanism,
+ * tokenized-spatial-minimalism.
+ *
+ * The breakage is confined to the owner's curation queue: `/under-review` is
+ * owner-gated, and none of the 1,273 ids the public site fetches is pathless.
+ * The repair is data, not more proxy logic — backfill the paths (ARN-313). The
+ * alternative, serving a pathless file because some entity references its id,
+ * would add a second classification mechanism, in a hot path, to compensate for
+ * missing metadata; that is a band-aid over a data bug and a rule reviewers
+ * would have to reason about twice.
  *
  * A `denied` result, and an `owner` result for a caller who is not the owner,
  * must both leave the route as a 404 — never a 403. A distinguishable "exists

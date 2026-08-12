@@ -238,12 +238,24 @@ assert.equal(
   "owner-only trees keep their rule without a workspace",
 );
 
-// 15 refs on live under-review entities have NEITHER a path nor a workspace
-// (the resolve returns an empty path string). They cannot be classified at all,
-// so they are refused — an unapplied deny must never read as an allow. The cost
-// is real and recorded rather than discovered later: those 15 will show as
-// broken assets in the owner's queue.
+// 15 refs on live under-review DesignLanguages carry a `name` but NEITHER a
+// path nor a workspace, and they serve today. Every rule here is a path rule,
+// so they cannot be vetted and are refused — an unapplied deny must never read
+// as an allow. Measured cost, taken deliberately: the embodiment and DESIGN.md
+// of eight languages break in the owner's queue until the paths are backfilled
+// (ARN-313). Confined to the owner: /under-review is owner-gated and none of
+// the 1,273 ids the public site fetches is pathless.
 for (const meta of [
+  // The real shape: Ready, has a name, no path, no workspace.
+  {
+    fields: {
+      Id: "fl-019ddbdc-f486-0000-0000-000000000000",
+      Status: "Ready",
+      name: "lineplate-atelier.html",
+      mime_type: "text/html",
+      size_bytes: 13216,
+    },
+  },
   { fields: { Status: "Ready", path: "" } },
   { fields: { Status: "Ready" } },
 ]) {
