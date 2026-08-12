@@ -808,11 +808,17 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
         # the same entity instead of minting a second agent session.
         self.assertEqual(trigger["resolve_target"]["type"], "create_if_missing")
         self.assertEqual(trigger["resolve_target"]["id_field"], "repair_job_id")
+
+        # The guard is a sanity gate, not the verdict. create_if_missing falls
+        # back to "{source_id}-derived" on an empty id field, so a
+        # FailWithRepair carrying no repair params would otherwise mint a job
+        # with no job_type and no brief. field_in fails closed on empty.
+        self.assertEqual(trigger["guard"]["type"], "field_in")
+        self.assertEqual(trigger["guard"]["field"], "repair_job_type")
         self.assertNotIn(
-            "guard",
-            trigger,
-            "no guard needed and none wanted: the ACTION is the verdict, and a "
-            "guard on a field would reintroduce the staleness it replaced",
+            "",
+            trigger["guard"]["values"],
+            "an empty job type must never satisfy the repair gate",
         )
 
         for param in (
