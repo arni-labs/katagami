@@ -66,6 +66,12 @@ function loadModule(file) {
   const { code } = transform(fs.readFileSync(file, "utf8"), {
     transforms: ["typescript", "jsx", "imports"],
     jsxRuntime: "automatic",
+    // Emit jsx/jsxs from react/jsx-runtime rather than jsxDEV from
+    // react/jsx-dev-runtime. React 19 ships no `jsxDEV` when
+    // NODE_ENV=production — which is what CI sets — so the dev runtime
+    // resolves to undefined there and every render dies on `.call`. The
+    // production runtime is present in both modes, so this works everywhere.
+    production: true,
     filePath: file,
   });
   const mod = { exports: {} };
