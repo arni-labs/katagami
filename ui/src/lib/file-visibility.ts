@@ -8,51 +8,49 @@
  * `Ready` and its id is deterministic (`os-agent-skill-file-<soul>-<skill>`).
  * State was never a permission and obscurity was never the control.
  *
- * The shape here is an ALLOWLIST of workspaces with a DENY-LIST of trees inside
- * them, and the asymmetry is deliberate. Workspaces are few, change rarely, and
- * a new one appearing is exactly the dangerous case: install another OS app and
- * its docs land in a workspace nobody wrote a rule for. Under an allowlist that
- * workspace is closed until somebody admits it. Path conventions, by contrast,
- * churn constantly inside a workspace — `/katagami` then `/languages` then
- * `/rebuild` — and every attempt to enumerate them missed a live case, so paths
- * are used only to carve exceptions out, never to grant access.
+ * Access is decided by PATH, and only by path. Workspace is deliberately not
+ * consulted, because on this system it does not mean anything stable: it tracks
+ * WHO WROTE the file, not what the file is. The agent-facing write tool is
+ * `temper.write(path, content)` with no workspace argument at all
+ * (`katagami-curation/agents/curator/AGENT.md`), so agent-written artifacts land
+ * in whatever per-session workspace happens to exist — or in none. Resolving
+ * every file reference on 107 under-review entities found 283 refs spread across
+ * ELEVEN workspaces, seven of which appear nowhere in public traffic, plus 70
+ * refs with no workspace at all. A workspace allowlist cannot be written against
+ * a set that grows with every agent run.
  *
- * RESIDUAL RISK, stated plainly: a new PRIVATE tree added inside a servable
- * workspace is public until a deny rule is written for it. That is the cost of
- * this shape. The trade is that the failure is visible and immediate — content
- * that should be private shows up on a public page — where an allowlist miss on
- * a new workspace would be a silent leak nobody notices. Both lists are pinned
- * by `scripts/check-file-proxy-state-contract.mjs`, so deleting a rule fails
- * loudly rather than quietly widening access.
+ * Worse, workspace does not even separate public from private here: 23 live
+ * under-review assets sit INSIDE `os-app-docs` under `/katagami/**` — the same
+ * workspace that holds the agent skills this fix exists to protect. Denying that
+ * workspace wholesale would refuse real content; allowing it would expose every
+ * skill. Only the path tells those two apart.
+ *
+ * So: `/agents/**` and `/system/**` are refused everywhere, `/iterate/**` and
+ * `/feedback/**` are owner-only, and everything else is public in any workspace,
+ * including files that have none. New path conventions — `/rebuild`,
+ * `/artstyles`, whatever comes next — keep working without a code change, which
+ * is what every earlier revision of this rule got wrong.
+ *
+ * RESIDUAL RISK, stated plainly: this protects agent content by knowing where it
+ * lives. Verified for this codebase — installed skills sit under
+ * `/agents/<soul>/…` and the operator knowledge base under `/system/knowledge/…`
+ * — but ADR-0012 says only that MOST prompt assets are packaged under
+ * `os-app-docs`, and an OS app that installed docs under some third prefix would
+ * be public until a deny rule named it. That failure is visible (private content
+ * appears on a public page) rather than silent, and the deny list is pinned by
+ * `scripts/check-file-proxy-state-contract.mjs` so removing a rule fails loudly.
+ * If app-doc install paths ever become configurable, this rule needs revisiting.
  */
 
 const PUBLIC_FILE_STATES = new Set(["Ready", "Locked"]);
 
 /**
- * Workspaces whose files may be served at all.
- *
- * Derived from what published and under-review catalogue entities actually
- * reference, not from a guess: `katagami-contrib` holds current content, and
- * `ws-019d9c05-…` is an older content workspace still referenced by live
- * entities (it holds `/katagami/embodiments/**` and `/katagami/thumbnails/**`).
- *
- * Anything in an unlisted workspace is refused — including `os-app-docs`, where
- * OS apps install agent skills and documentation. That is not spelled out as a
- * separate deny rule because a rule that can never fire reads as though it were
- * load-bearing; the allowlist already closes it, and the contract test asserts
- * `os-app-docs` is denied so the intent stays recorded.
- */
-const SERVABLE_WORKSPACE_IDS = new Set([
-  "katagami-contrib",
-  "ws-019d9c05-1483-78e0-b9e7-370c0bdce031",
-]);
-
-/**
  * Trees never served to anyone, in any workspace.
  *
- * The agent instruction tree and the operator knowledge base. Denied by path as
- * well as excluded by workspace so that a copy landing in a servable workspace
- * is still refused.
+ * The agent instruction tree and the operator knowledge base — every file this
+ * fix exists to protect. Path-based on purpose: the same content appears in
+ * `os-app-docs`, in per-soul bootstrap snapshots, and in agent sandboxes, and
+ * only the path is common to all of them.
  */
 const NEVER_SERVED_PATH_PREFIXES = ["/agents/", "/system/"] as const;
 
@@ -127,11 +125,11 @@ function readString(
 /**
  * Who, if anyone, may read this file.
  *
- * Deny rules run before any allow. A file with no readable PATH is `denied` —
+ * Deny rules run before any allow. A file with no readable PATH is `denied`:
  * the tree rules could not be applied, and an unapplied deny must never read as
- * an allow. A file with no WORKSPACE is judged on its path instead of refused,
- * because that shape exists in live public content; see the comment at that
- * check.
+ * an allow. That refusal has a live cost — 15 refs on under-review entities have
+ * neither a path nor a workspace, and they will 404 — which is recorded in the
+ * PR rather than discovered later. Workspace is not consulted at all.
  *
  * A `denied` result, and an `owner` result for a caller who is not the owner,
  * must both leave the route as a 404 — never a 403. A distinguishable "exists
@@ -159,33 +157,11 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
     return "denied";
   }
 
-  // Some files carry no workspace at all — not a projection artifact, genuinely
-  // absent from the single-entity read too, in every casing. 34 of the 1,273 ids
-  // the live site fetches are like this (24 under `/katagami`, 10 under
-  // `/artstyles`, e.g. `/artstyles/opaline-soft-diffusion/opaline-melon.png`),
-  // and they are served publicly today. Refusing what we cannot place would take
-  // all of them dark, so a workspace-less file is classified on its path alone.
-  //
-  // EXPECT MORE OF THEM — this is not legacy data. Decoding the UUIDv7
-  // timestamps puts these files NEWER than the workspaced ones: 2026-06-24 to
-  // 2026-07-29, against 2026-06-22 for a current published hero. The cause looks
-  // like the agent-facing write tool, `temper.write(path, content)`, which takes
-  // no workspace argument at all (`katagami-curation/agents/curator/AGENT.md`)
-  // and is what writes exactly these trees — the curator's review-quality skill
-  // writes `/katagami/thumbnails/<slug>/desktop.jpg` that way. UI-side writes go
-  // through `Workspaces('<id>')/Paw.FS.CreateFile` and do carry one. So this
-  // branch is permanent behaviour until the writer is fixed, not a shim to
-  // delete later.
-  //
-  // The fallback is narrower than it looks. The deny trees above already ran and
-  // are absolute: a workspace-less file under `/agents/**` or `/system/**` is
-  // still refused, which is exactly the content this fix exists to protect.
-  const workspaceId = readString(fields, projection, [
-    "WorkspaceId",
-    "workspace_id",
-  ]);
-  if (workspaceId && !SERVABLE_WORKSPACE_IDS.has(workspaceId)) return "denied";
-
+  // No workspace check, deliberately — see the note at the top of this file.
+  // Workspace tracks who wrote the file, not what it is: 11 distinct workspaces
+  // hold under-review assets, 70 refs have no workspace at all, and 23 live
+  // assets sit inside `os-app-docs` beside the skills. The path deny above has
+  // already refused everything this fix protects, in every one of those places.
   return OWNER_ONLY_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
     ? "owner"
     : "public";

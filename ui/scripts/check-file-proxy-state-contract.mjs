@@ -50,9 +50,9 @@ for (const file of LIVE_PUBLIC) {
   );
 }
 
-// The older content workspace, in the older projection. Both halves matter:
-// an unlisted workspace 404s the whole generation, and reading only PascalCase
-// makes these entities look pathless, which also fails closed.
+// The older content generation, in the older projection. Reading only
+// PascalCase would make these entities look pathless, and a pathless file fails
+// closed — so the whole generation would 404.
 assert.equal(
   classifyFileVisibility({
     fields: {
@@ -95,33 +95,53 @@ assert.equal(
   "agent skills must never be served to anyone",
 );
 
-// os-app-docs is denied by the workspace allowlist. There is no separate deny
-// rule for it — this assertion is where that intent is recorded.
+// os-app-docs holds BOTH the agent skills this fix protects AND 23 live
+// under-review assets under /katagami/**. Only the path separates them, which is
+// exactly why workspace is not consulted at all.
 assert.equal(
   classifyFileVisibility({
     fields: {
       Status: "Ready",
-      Path: "/languages/looks-legit/embodiment.html",
+      Path: "/katagami/embodiments/some-language.html",
+      WorkspaceId: "os-app-docs",
+    },
+  }),
+  "public",
+  "under-review assets inside os-app-docs must serve — 23 of them are live",
+);
+assert.equal(
+  classifyFileVisibility({
+    fields: {
+      Status: "Ready",
+      Path: "/agents/curator/skills/review-quality/SKILL.md",
       WorkspaceId: "os-app-docs",
     },
   }),
   "denied",
-  "os-app-docs is not servable however public the path looks",
+  "agent skills in that same workspace must still be refused",
 );
 
-// A workspace nobody has admitted — e.g. a newly installed OS app — is closed
-// by default. This is the whole reason the workspace axis is an allowlist.
-assert.equal(
-  classifyFileVisibility({
-    fields: {
-      Status: "Ready",
-      Path: "/languages/some/thing.html",
-      WorkspaceId: "ws-brand-new-app-0000",
-    },
-  }),
-  "denied",
-  "an unlisted workspace must be closed by default",
-);
+// Per-session agent sandboxes: seven such workspaces hold under-review assets
+// and none appear in public traffic, so no allowlist could ever have held them.
+for (const ws of [
+  "ws-019e89c5-0000-0000-0000-000000000000",
+  "ws-019e8a00-0000-0000-0000-000000000000",
+  "ws-katagami-curation",
+  "katagami",
+  "ws-brand-new-sandbox-never-seen",
+]) {
+  assert.equal(
+    classifyFileVisibility({
+      fields: {
+        Status: "Ready",
+        Path: "/katagami/thumbnails/x/desktop.jpg",
+        WorkspaceId: ws,
+      },
+    }),
+    "public",
+    `${ws} holds real content; workspace must not gate it`,
+  );
+}
 
 // The agent/operator trees are denied even inside a servable workspace.
 for (const p of [
@@ -217,6 +237,22 @@ assert.equal(
   "owner",
   "owner-only trees keep their rule without a workspace",
 );
+
+// 15 refs on live under-review entities have NEITHER a path nor a workspace
+// (the resolve returns an empty path string). They cannot be classified at all,
+// so they are refused — an unapplied deny must never read as an allow. The cost
+// is real and recorded rather than discovered later: those 15 will show as
+// broken assets in the owner's queue.
+for (const meta of [
+  { fields: { Status: "Ready", path: "" } },
+  { fields: { Status: "Ready" } },
+]) {
+  assert.equal(
+    classifyFileVisibility(meta),
+    "denied",
+    "a file with no usable path cannot be classified and must be refused",
+  );
+}
 
 // State is still necessary; it is simply no longer sufficient.
 for (const state of ["Created", "Archived", "Deleted", "", null]) {
@@ -409,8 +445,6 @@ const lib = fs.readFileSync(
   "utf8",
 );
 for (const literal of [
-  '"katagami-contrib"',
-  '"ws-019d9c05-1483-78e0-b9e7-370c0bdce031"',
   '"/agents/"',
   '"/system/"',
   '"/iterate/"',
