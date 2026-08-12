@@ -653,16 +653,17 @@ class CallOnlyExtractionTests(unittest.TestCase):
         )
         self.assertEqual(self._extracted_actions(ots), ["SelfReview"])
 
-    def test_an_error_result_quoting_the_path_is_not_an_attempt(self):
-        # A denied or malformed call comes back with the path in the body. The
-        # attempt is in the call; reading it twice would double-count, and
-        # reading it only from the body would credit a call that never went.
+    def test_an_error_result_echoing_the_command_is_not_an_attempt(self):
+        # A `set -x` trace prints the command back before the error. The
+        # attempt is in the call; counting the echo as well would double every
+        # traced call, and counting only the echo would credit a run for a
+        # request that its own arguments never carried.
         ots = converter.atif_to_ots(
             self._atif_with(
-                call_arguments={"command": "cat error.json"},
+                call_arguments={"command": "cat error.log"},
                 result_content=(
-                    '{"error":{"message":"no such action '
-                    "/tdata/CuratorAgents('r1')/Temper.SelfReview\"}}"
+                    f"+ {self.REQUEST}\n"
+                    '{"error":{"message":"no such action"}}'
                 ),
             ),
             agent_id="a",
@@ -743,21 +744,26 @@ class KernelDecisionContractTests(unittest.TestCase):
                 "literals this producer writes against"
             )
         source = (repo / self.DECISIONS_RS).read_text()
-        self.assertIn(
-            f'const TRAJECTORY_ACTIONS_KEY: &str = "{self.contract["trajectory_actions_key"]}";',
-            source,
-            f"{repo / self.DECISIONS_RS} no longer declares the key this converter "
-            "writes; every governed call it produces would read as a harness tool",
+        # Asserted as booleans: a failure here should name the missing literal,
+        # not print the whole file back.
+        #
+        # The fragments cover the key, the nested field, and `is_action_name` —
+        # whose charset decides whether the envelope string is read as an
+        # action name at all. The envelope survives only while a space and a
+        # colon stay outside that charset.
+        missing = [
+            fragment
+            for fragment in self.contract["action_name_source_fragments"]
+            if fragment not in source
+        ]
+        self.assertEqual(
+            missing,
+            [],
+            f"{repo / self.DECISIONS_RS} no longer declares what this converter "
+            "writes against. If `trajectory_actions` was renamed, every governed "
+            "call this converter produces now reads as a harness tool and every "
+            "real violation disappears into a clean pass.",
         )
-        self.assertIn(
-            f'const NESTED_ACTION_KEY: &str = "{self.contract["nested_action_key"]}";',
-            source,
-        )
-        # `is_action_name`, whose charset decides whether the envelope string
-        # is read as an action name. The envelope survives only while a space
-        # and a colon are excluded from it.
-        for fragment in self.contract["action_name_source_fragments"]:
-            self.assertIn(fragment, source)
 
     def test_the_envelope_is_not_an_action_name_under_the_kernels_own_charset(self):
         allowed = set(self.contract["action_name_characters"])
