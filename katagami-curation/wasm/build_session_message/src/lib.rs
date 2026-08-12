@@ -898,21 +898,26 @@ fn shadowed_paths<'a>(
         .collect()
 }
 
-/// `content_hash` as a File row spells it — both shapes, the way
-/// `file_id_from_workspace_response` handles both.
+/// `content_hash` as a `File` row spells it: nested under `fields`, snake_case.
+///
+/// Probed against openpaw-production, tenant `default`, on 2026-08-12, on both
+/// shapes this module can see — the `$filter` listing in `doc_content_hash`
+/// below, and a single-entity `GET /tdata/Files('<id>')`. Both nest it as
+/// `fields.content_hash`. Neither carries a top-level `ContentHash` or a
+/// top-level `content_hash`, so the top-level fallback this function used to
+/// keep was dead on every response the server actually returns; it is gone
+/// rather than left to read as a verified alternative shape.
+///
+/// `fields` mixes cases and the mix is not arbitrary: `Id`/`Name`/`Path`/
+/// `Status` come back PascalCase, while the entity's own state vars —
+/// `content_hash`, `size_bytes`, `version_count` — are snake_case. Read the
+/// snake_case spelling for anything declared in `paw-fs/specs/file.ioa.toml`.
 fn content_hash_from_file_row(row: &serde_json::Value) -> Option<String> {
-    for key in ["content_hash", "ContentHash"] {
-        let found = row
-            .get("fields")
-            .and_then(|fields| fields.get(key))
-            .or_else(|| row.get(key))
-            .and_then(|value| value.as_str())
-            .filter(|value| !value.is_empty());
-        if found.is_some() {
-            return found.map(|value| value.to_string());
-        }
-    }
-    None
+    row.get("fields")
+        .and_then(|fields| fields.get("content_hash"))
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
 }
 
 /// The content hash recorded for a path, without reading a body.
@@ -920,6 +925,19 @@ fn content_hash_from_file_row(row: &serde_json::Value) -> Option<String> {
 /// `Ok(None)` is a genuine miss — nothing at that path. `Err` is a failure to
 /// find out, which is a different thing and must not be reported as either a
 /// miss or a match.
+///
+/// **Do not add `$select` to the query below.** Without it the server returns
+/// the entity envelope — `{"fields": {...}, "counters": {...}, ...}` — which is
+/// what `content_hash_from_file_row` reads and what `lookup_active_template`
+/// already relies on for `CurationJobTemplates`. `$select` projects properties
+/// instead, producing a flattened row (`{"Path": …, "WorkspaceId": …, "Id": …}`)
+/// with no `fields` object at all. Nothing here would error on that: the hash
+/// would simply read as `None` for every path, `shadowed_paths` would compare
+/// nothing, and shadow detection would switch off in silence. That failure mode
+/// is the reason this note exists rather than a `$select` that trims the row.
+/// (The envelope shape is measured — 2026-08-12, see
+/// `content_hash_from_file_row`; the flattened `$select` shape is carried over
+/// from the ARN-305 probe notes and is not re-measured here.)
 fn doc_content_hash(
     ctx: &Context,
     api_url: &str,
@@ -943,6 +961,24 @@ fn doc_content_hash(
     }
     let parsed: serde_json::Value = serde_json::from_str(&resp.body)
         .map_err(|err| format!("Files query returned invalid JSON for '{path}': {err}"))?;
+    // KNOWN DEFECT (ARN-305, measured 2026-08-12 — do not read this as correct):
+    // the filter above is on `Path` alone, so it is not scoped to
+    // `DOC_WORKSPACE_ID`, and `Path` is not unique. On openpaw-production the
+    // very paths this check runs against return several `File` entities across
+    // workspaces — `/agents/curator/skills/review-quality/SKILL.md` returns two
+    // (one in `os-app-docs`, one in `ws-019de271-…`), and the matching soul path
+    // returns three, two of which are inside `os-app-docs`. Taking `first()` of
+    // an unordered, unscoped list therefore picks a file the loader never read:
+    // `load_doc_file` resolves strictly inside `os-app-docs` via ResolvePath.
+    // Today that makes the winner's hash come from the wrong workspace, so it
+    // never equals the candidate's and the SHADOWED warning fires on every job —
+    // the always-on signal that comparing hashes instead of ids was meant to end
+    // — while `used_hash=` prints a hash from a workspace the session did not
+    // read. The fix is to ask the question the loader asks: reuse
+    // `LoadedDoc.file_id` for the winner (already resolved, free) and ResolvePath
+    // each lower-priority candidate, then read `Files('<id>')` per id. It is not
+    // done here because that adds a ResolvePath per candidate to a step
+    // `.proofs/perf-036` deliberately trimmed; see the runbook.
     let Some(row) = parsed
         .get("value")
         .and_then(|value| value.as_array())
@@ -1877,14 +1913,22 @@ mod tests {
     }
 
     #[test]
-    fn content_hash_is_read_from_either_row_shape() {
+    fn content_hash_is_read_from_the_shape_the_server_returns() {
         assert_eq!(
             content_hash_from_file_row(&json!({"fields": {"content_hash": "sha256:aaaa"}})),
             Some("sha256:aaaa".to_string())
         );
+        // A flattened row is what `$select` would produce, and it carries no
+        // hash. `None` here is the honest answer — the alternative, a top-level
+        // fallback, was dead against the live server (probe 2026-08-12) and
+        // would have made a `$select` regression look like a working check.
         assert_eq!(
             content_hash_from_file_row(&json!({"ContentHash": "sha256:bbbb"})),
-            Some("sha256:bbbb".to_string())
+            None
+        );
+        assert_eq!(
+            content_hash_from_file_row(&json!({"Path": "/p", "content_hash": "sha256:cccc"})),
+            None
         );
         assert_eq!(content_hash_from_file_row(&json!({"fields": {}})), None);
         // An empty hash is not a hash. Treating it as one would make every

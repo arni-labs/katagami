@@ -77,10 +77,25 @@ curl -sS "$TEMPER_API_URL/tdata/CurationJobTemplates" \
   -H "x-temper-principal-kind: agent" \
   -H "x-temper-principal-id: system" \
   -H "x-temper-agent-type: system" \
-| jq -r '.value[] | [.Id, .JobType, .SkillId, .InstructionPath, .Status] | @tsv'
+| jq -r '.value[] | [.fields.Id, .fields.job_type, .fields.skill_id, .fields.instruction_path, .status] | @tsv'
 ```
 
+The `jq` above reads the **entity envelope**, not a flat row — see the recorded
+response contract below. An earlier version of this command read `.Id`,
+`.JobType`, `.InstructionPath` and `.Status` at the top level; none of those keys
+exist there, so it printed a row of nulls per template, and the `select(.Status
+== "Active")` in step 1 matched nothing at all and printed an empty list. An
+empty list on this step reads exactly like "no rows need patching" — a silent
+false all-clear on the check that gates this whole runbook.
+
 Note which rows carry `/agents/sl-bootstrap-agent-soul-` and which are `Active`.
+
+Run against `openpaw-production`, tenant `default`, on **2026-08-12**, all nine
+templates are `Active` and **all nine still carry a
+`/agents/sl-bootstrap-agent-soul-curator/...` snapshot path** — step 2 below has
+not been performed on this tenant. The resolver fixes these at read time, so
+sessions read the app copy regardless; the rows are still wrong and still say
+something different from what the system does.
 **Entities may have been reconfigured after the original seed**, so do not
 assume the list matches `seed-data/job_templates.toml` — the file is the seed,
 the rows are the truth.
@@ -105,7 +120,7 @@ AUTH=(-H "X-Tenant-Id: $TEMPER_TENANT_ID"
 
 # Every path the DEPLOYED templates actually name, deduped.
 curl -sS "$TEMPER_API_URL/tdata/CurationJobTemplates" "${AUTH[@]}" \
-| jq -r '.value[] | select(.Status == "Active") | .InstructionPath' \
+| jq -r '.value[] | select(.status == "Active") | .fields.instruction_path' \
 | sort -u > /tmp/arn305-configured-paths.txt
 
 # The app-shipped path each of them should resolve to.
@@ -196,8 +211,81 @@ state field on the `File` entity (`paw-fs/specs/file.ioa.toml`, beside
 `size_bytes` and `version_count`), so reading it is a row read with no body
 fetch.
 
-In today's steady state — the two copies in sync — this warning is **silent**.
-It appears when, and only when, they actually differ.
+## The `Files` response contract (recorded 2026-08-12)
+
+Probed against `openpaw-production`, tenant `default`. This is the shape the
+shadow check parses; record any change to it here before changing the parser.
+
+**Single entity:**
+
+```
+GET /tdata/Files('fl-019e17fd-8b33-72a1-8ded-2ed9692d52ba')
+```
+
+Top-level keys returned:
+
+```
+@odata.actions, @odata.children, @odata.context, @odata.id, booleans, counters,
+entity_id, entity_type, events, events_since_snapshot, item_count,
+last_snapshot_sequence_nr, lists, processed_idempotency_keys, sequence_nr,
+status, total_event_count, fields
+```
+
+There is **no top-level `ContentHash`** and no top-level `content_hash`. The hash
+lives at `fields.content_hash`, and for that file it was
+`sha256:03601d2a5620b3cce1c16d80540e7434c314f63e910f29b017eb9a6db8bdc4d1`
+(`/agents/curator/skills/review-quality/SKILL.md`, workspace `os-app-docs`).
+`fields` also carries `version_count`, `version_number`, `last_version_id` and
+`previous_version_id`. Because the top-level spelling is not a shape this server
+produces, the parser no longer accepts it; a fallback nobody can trigger reads as
+a verified alternative and hides the shape that matters.
+
+**Collection query — the one the shadow check actually issues:**
+
+```
+GET /tdata/Files?$filter=Path eq '<path>'
+```
+
+Same envelope, one per row under `value`, with the hash again at
+`fields.content_hash`. Note this is the entity envelope, not a flat row — the
+same envelope `lookup_active_template` already parses for
+`CurationJobTemplates`, where `fields` holds `job_type`, `skill_id` and
+`instruction_path` in snake_case while `Id` and `Status` stay PascalCase.
+Adding `$select` would project properties instead and return a flattened row
+(`{"Path": …, "WorkspaceId": …, "Id": …}`) with no `fields` object, which reads
+as "no hash" for every path and switches shadow detection off without erroring.
+
+## Known defect: the shadow check reads an unscoped path query
+
+**Measured 2026-08-12. The warning above currently fires on every job, and its
+`used_hash=` value names a file the session never read.**
+
+`Path` is not unique and the query is not scoped to the `os-app-docs` workspace,
+so it returns several `File` entities and the code takes the first of an
+unordered list:
+
+| Path | Rows returned | Workspaces |
+|---|---|---|
+| `/agents/curator/skills/review-quality/SKILL.md` | 2 | `os-app-docs` (`03601d2a…`, 29,657 B), `ws-019de271-…` (`eb365ca4…`, 20,664 B) |
+| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | 3 | `os-app-docs` ×2 (`03601d2a…`, and `b803f8d7…` at 33,178 B), `ws-019de271-…` (`001fd44a…`) |
+
+`load_doc_file` resolves strictly inside `os-app-docs` via `ResolvePath`, so the
+row this query picks is not the file the session read. In the measured state the
+winner's hash comes back from `ws-019de271-…` and never equals the candidate's,
+which is the always-on signal that comparing hashes instead of ids was supposed
+to end. Scoping the filter to the workspace is **not** sufficient on its own —
+the soul path has two entities inside `os-app-docs`.
+
+The fix is to ask the same question the loader asks: reuse `LoadedDoc.file_id`
+for the winner, which `load_doc_file` has already resolved at no extra cost, run
+`ResolvePath` for each lower-priority candidate, then read `Files('<id>')` per
+id. That adds a `ResolvePath` per candidate to a step `.proofs/perf-036`
+deliberately trimmed, which is the tradeoff to weigh — see **Cost** below.
+
+Until that lands, treat a `SHADOWED` line as unproven: confirm by hand with the
+`ResolvePath` loop in step 1 before acting on it. The earlier claim here — that
+the warning is silent while the two copies are in sync — was not measured and is
+not true of the deployed system.
 
 **Cost.** The shadow check reads one `File` row per path involved: the winner
 plus each lower-priority candidate, so two rows in the ordinary case. That is on
