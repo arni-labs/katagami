@@ -14,6 +14,13 @@
 //                                 `spec_version`, the content hash of the
 //                                 registered IOA source
 //
+// Agent code reaches both of them without naming a URL: `temper.specs()` and
+// `temper.spec_detail(entity)` in the sandbox forward to exactly these two
+// paths carrying the calling agent's own identity
+// (temper-sandbox dispatch.rs). So this file also decides whether an agent's
+// spec probe works — before it existed, every katagami agent's `temper.specs()`
+// answered 403 along with everything else.
+//
 // The second is the one this permit is for. That digest is what a conformance
 // check compares a run's recorded `metadata.spec_version` against, so a capture
 // that can read it stamps the version the kernel will recognise instead of one
