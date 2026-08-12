@@ -59,27 +59,35 @@ const NEVER_SERVED_PATH_PREFIXES = ["/agents/", "/system/"] as const;
 /**
  * Trees inside a servable workspace that only the owner may read.
  *
- * - `/contrib/` — full artifact sets for submissions awaiting curation. The only
- *   page that renders them is `/under-review`, which calls `notFound()` for
- *   anyone who is not the owner, and cards for unpublished entities route their
- *   thumbnail through this proxy (`thumbnailProxyFileId` in
- *   `components/language-card.tsx`). So the owner needs these bytes and the
- *   public must not have them.
- * - `/iterate/` — `.jsonl` iteration logs, i.e. trajectory data. No UI reads
- *   them.
+ * - `/iterate/` — `.jsonl` iteration logs, i.e. trajectory data.
  * - `/feedback/` — the A/B verdict log. `app/(site)/ab/actions.ts` creates
  *   `/feedback/ab-verdicts.jsonl` in `katagami-contrib` on the first verdict
  *   submission, so the tree is absent today and this rule is prospective.
  *
- * Owner-only rather than denied outright, because denying would break the
- * owner's own curation queue while closing nothing that owner-gating does not
- * already close.
+ * Neither is fetched through this proxy by any page — nothing reads the
+ * iteration logs, and the verdict log is read server-side with the app
+ * credential. Owner-only rather than denied outright so the owner can still
+ * open one by id while debugging, which costs nothing given the cookie gate and
+ * the `no-store` handling in the route.
+ *
+ * `/contrib/` was in this list and has been REMOVED, because the assumption
+ * behind it was wrong. It does hold artifact sets for submissions awaiting
+ * curation, but it ALSO holds contributor-uploaded reference images that the
+ * PUBLIC art-styles page renders: `refImageUrls` in
+ * `app/(site)/art-styles/[id]/page.tsx` collects ids from `reference_manifest`,
+ * the `reference_assets` keys and `reference_image_file_ids`, and 180 of the
+ * 1,273 ids the live site fetches resolve under `/contrib`. Verified example:
+ * `/contrib/plainclothes/ref-kitchen.png` is served unauthenticated today and
+ * is referenced from the public `/art-styles` listing. Path cannot separate the
+ * two kinds, so owner-gating the tree would have 404'd live public imagery.
+ *
+ * The consequence, stated rather than hidden: an under-review submission's
+ * artifacts under `/contrib` stay publicly readable to anyone who knows the id.
+ * That is the behaviour that already exists — this change does not widen it —
+ * but whether drafts should be public is a product decision, and separating
+ * them needs the referencing entity's status, which a path cannot express.
  */
-const OWNER_ONLY_PATH_PREFIXES = [
-  "/contrib/",
-  "/iterate/",
-  "/feedback/",
-] as const;
+const OWNER_ONLY_PATH_PREFIXES = ["/iterate/", "/feedback/"] as const;
 
 export type FileVisibility = "public" | "owner" | "denied";
 

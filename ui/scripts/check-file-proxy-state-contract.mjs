@@ -18,46 +18,29 @@ const LEGACY = "ws-019d9c05-1483-78e0-b9e7-370c0bdce031";
 // Every path convention the pipeline has used is represented, because each one
 // of these was missed by an earlier version of this rule.
 const LIVE_PUBLIC = [
+  // Every (workspace, prefix) pair the live site actually fetches, from
+  // resolving all 1,273 proxy ids the public pages request. Counts are from
+  // that resolution. No public-prefix allowlist exists any more, which is the
+  // point: this long tail works because paths do not grant access.
+  { what: "628 files", Path: "/rebuild/civic-press/embodiment.html", WorkspaceId: CONTRIB },
+  { what: "192 files — UNHYPHENATED, the dominant art-style prefix", Path: "/artstyles/risograph-ember/hero.png", WorkspaceId: CONTRIB },
   {
-    what: "/rebuild embodiment — 37 of 40 sampled published languages",
-    Path: "/rebuild/civic-press/embodiment.html",
+    what: "180 files — contributor reference images rendered on the PUBLIC art-styles page",
+    Id: "fl-019f24b9-7e28-78a3-b322-7d0ea1bdf97f",
+    Path: "/contrib/plainclothes/ref-kitchen.png",
     WorkspaceId: CONTRIB,
   },
-  {
-    what: "/languages embodiment (DesignLanguages.embodiment_file_id)",
-    Id: "fl-019ef224-4a00-7290-80d2-5cf4f1cfee67",
-    Path: "/languages/civic-press/v10/embodiment.html",
-    WorkspaceId: CONTRIB,
-  },
-  {
-    what: "/languages thumbnail (DesignLanguages.thumbnail_file_id)",
-    Id: "fl-019ef224-6a71-7d23-925f-71232ab82f44",
-    Path: "/languages/civic-press/v10/thumb.jpg",
-    WorkspaceId: CONTRIB,
-  },
-  {
-    what: "/languages preview shots (shadcn_preview_shots_file_id)",
-    Id: "fl-019ef1b8-3d76",
-    Path: "/languages/civic-press/shadcn-v2/preview-shots.json",
-    WorkspaceId: CONTRIB,
-  },
-  {
-    what: "/art-styles hero embedded INSIDE generated landing HTML",
-    Id: "fl-019ef1c9-a74d-7e83-9bca-0423664cd0b1",
-    Path: "/art-styles/risograph-ember/hero-wide.png",
-    WorkspaceId: CONTRIB,
-  },
-  {
-    what: "/art-styles hero, second embedded reference",
-    Id: "fl-019ef131-c607-7940-91a0-c4e8ec2a34dd",
-    Path: "/art-styles/risograph-ember/hero.png",
-    WorkspaceId: CONTRIB,
-  },
-  {
-    what: "/palettes published tokens",
-    Path: "/palettes/ember-signal/tokens.css",
-    WorkspaceId: CONTRIB,
-  },
+  { what: "179 files", Path: "/review/some-language/shot.png", WorkspaceId: CONTRIB },
+  { what: "20 files", Path: "/batch/run-1/out.png", WorkspaceId: CONTRIB },
+  { what: "15 files", Path: "/landing-thumbs/civic-press.png", WorkspaceId: CONTRIB },
+  { what: "10 files", Path: "/rubric/scores.json", WorkspaceId: CONTRIB },
+  { what: "9 files", Path: "/languages/civic-press/v10/embodiment.html", WorkspaceId: CONTRIB },
+  { what: "hyphenated art-styles still exists alongside /artstyles", Path: "/art-styles/risograph-ember/hero-wide.png", WorkspaceId: CONTRIB },
+  { what: "one-off prefixes that no allowlist would have predicted", Path: "/quadro/a.png", WorkspaceId: CONTRIB },
+  { what: "one-off", Path: "/mossbank/b.png", WorkspaceId: CONTRIB },
+  { what: "one-off", Path: "/cameo/c.png", WorkspaceId: CONTRIB },
+  { what: "one-off", Path: "/impression/d.png", WorkspaceId: CONTRIB },
+  { what: "palette tokens", Path: "/palettes/ember-signal/tokens.css", WorkspaceId: CONTRIB },
 ];
 for (const file of LIVE_PUBLIC) {
   assert.equal(
@@ -155,13 +138,7 @@ for (const p of [
 }
 
 // The curation-queue trees are owner-only, not public.
-for (const p of [
-  "/contrib/pyrite/embodiment.html",
-  "/contrib/pyrite/DESIGN.md",
-  "/contrib/pyrite/test.html",
-  "/iterate/iter-pushpin-1.jsonl",
-  "/feedback/ab-verdicts.jsonl",
-]) {
+for (const p of ["/iterate/iter-pushpin-1.jsonl", "/feedback/ab-verdicts.jsonl"]) {
   const meta = { fields: { Status: "Ready", Path: p, WorkspaceId: CONTRIB } };
   assert.equal(classifyFileVisibility(meta), "owner", `${p} must be owner-only`);
   assert.equal(isPubliclyServableFile(meta), false, `${p} must never be public`);
@@ -187,6 +164,23 @@ for (const meta of [
     `unclassifiable metadata must fail closed: ${JSON.stringify(meta)}`,
   );
 }
+
+// 34 of the 1,273 ids come back with NO workspace key at all in the COLLECTION
+// projection (the legacy generation). Refusing is the deliberate choice: a file
+// we cannot place must not be served. That is only safe because the route reads
+// the SINGLE-ENTITY shape, which does carry workspace_id — asserted below.
+assert.equal(
+  classifyFileVisibility({
+    fields: {
+      Status: "Ready",
+      Path: "/katagami/thumbnails/legacy/desktop.jpg",
+      name: "desktop.jpg",
+      mime_type: "image/jpeg",
+    },
+  }),
+  "denied",
+  "a payload with no workspace key at all must fail closed",
+);
 
 // State is still necessary; it is simply no longer sufficient.
 for (const state of ["Created", "Archived", "Deleted", "", null]) {
@@ -279,7 +273,7 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
   const meta = {
     fields: {
       Status: "Ready",
-      Path: "/contrib/pyrite/embodiment.html",
+      Path: "/iterate/iter-pushpin-1.jsonl",
       WorkspaceId: CONTRIB,
     },
   };
@@ -288,7 +282,7 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
   assert.equal(
     await fetchServableFileBytes(anon.impl, "http://api", {}, "fl-c", ANON),
     null,
-    "curation-queue content must be refused to an anonymous caller",
+    "trajectory logs must be refused to an anonymous caller",
   );
   assert.ok(
     !anon.calls.some((u) => u.endsWith("/$value")),
@@ -303,7 +297,7 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
     "fl-c",
     OWNER,
   );
-  assert.ok(out, "the owner's curation queue must keep working");
+  assert.ok(out, "the owner can still open one by id");
   assert.equal(out.visibility, "owner", "owner-only bytes must be labelled");
 }
 
@@ -383,7 +377,6 @@ for (const literal of [
   '"ws-019d9c05-1483-78e0-b9e7-370c0bdce031"',
   '"/agents/"',
   '"/system/"',
-  '"/contrib/"',
   '"/iterate/"',
   '"/feedback/"',
 ]) {
@@ -405,6 +398,14 @@ assert.match(
   route,
   /fetchServableFileBytes\(/,
   "the route must go through the gated reader",
+);
+// Load-bearing: the collection projection omits workspace_id for the legacy
+// generation, and a file with no workspace fails closed. Reading the
+// single-entity shape is what keeps those assets classifiable.
+assert.match(
+  lib,
+  /\$\{apiBase\}\/tdata\/Files\('\$\{id\}'\)`/,
+  "metadata must be read as a single entity, not a collection query",
 );
 assert.doesNotMatch(
   route,
