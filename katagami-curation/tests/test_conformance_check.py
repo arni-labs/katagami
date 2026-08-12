@@ -10,6 +10,7 @@ that is a function of the spec file, and an explicit list of the guards the
 replay could NOT check — so a pass is never read as covering more than it did.
 """
 
+import hashlib
 import importlib.util
 import sys
 import tempfile
@@ -87,10 +88,18 @@ CONFORMING = [
 
 
 class SpecVersionTest(unittest.TestCase):
-    def test_the_version_names_the_actor_and_hashes_its_content(self):
-        self.assertTrue(CURATOR_VERSION.startswith("CuratorAgent@sha256:"))
+    def test_the_version_is_the_kernels_content_hash(self):
+        # `spec_content_hash` (temper-store-turso) is sha256 over the raw
+        # registered ioa_source, and `names_same_spec` compares two versions
+        # after stripping only a `sha256:` prefix. A version in any other
+        # format can never equal the registered one, which means 409 on every
+        # POST /api/conformance/check — the canonical layer 1 judging nothing.
+        self.assertTrue(CURATOR_VERSION.startswith("sha256:"))
+        digest = spec_version.bare_version(CURATOR_VERSION)
+        self.assertEqual(len(digest), 64)
         self.assertEqual(
-            len(CURATOR_VERSION.split(":")[1]), spec_version.VERSION_PREFIX_LENGTH
+            digest,
+            hashlib.sha256((SPECS / "curator_agent.ioa.toml").read_bytes()).hexdigest(),
         )
 
     def test_the_version_is_stable_across_runs(self):
@@ -109,9 +118,15 @@ class SpecVersionTest(unittest.TestCase):
         path.write_text(source)
         return spec_version.compute_version(str(path))
 
-    def test_a_comment_change_does_not_invalidate_existing_verdicts(self):
+    def test_any_edit_to_the_file_produces_a_new_version(self):
+        # The kernel hashes raw source, so this is the kernel's rule, not ours:
+        # a reflowed comment is a new version. The cost is real and it is paid
+        # by the snapshot store, which keeps the exact source under each hash
+        # so an older version stays retrievable after the file moves on.
         source = (SPECS / "curator_agent.ioa.toml").read_text()
-        self.assertEqual(self._version_of("# a reflowed comment\n" + source), CURATOR_VERSION)
+        self.assertNotEqual(
+            self._version_of("# a reflowed comment\n" + source), CURATOR_VERSION
+        )
 
     def test_a_protocol_change_does_invalidate_them(self):
         source = (SPECS / "curator_agent.ioa.toml").read_text().replace(
@@ -307,7 +322,7 @@ class VersionGateTest(unittest.TestCase):
     def test_a_trajectory_from_a_different_spec_version_is_refused(self):
         with self.assertRaises(conformance.ConformanceError) as raised:
             conformance.check(
-                trajectory(CONFORMING, version="CuratorAgent@sha256:deadbeefcafe"),
+                trajectory(CONFORMING, version="sha256:" + "de" * 32),
                 "CuratorAgent",
             )
         self.assertIn("not a judgement", str(raised.exception))

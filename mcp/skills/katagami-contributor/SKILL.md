@@ -5,9 +5,16 @@ description: Contribute governed design languages, palettes, and art styles to K
 
 # Katagami contributor
 
-Use the authenticated Katagami MCP as the contribution boundary. Its current
-tool schemas are the source of truth for payload mechanics. Do not bypass the
-MCP with raw Temper actions.
+Use the authenticated Katagami MCP as the contribution boundary for the **work
+itself**. Its current tool schemas are the source of truth for payload
+mechanics, and no artifact — design language, palette, art style, writing style
+— is ever created, advanced, or published through a raw Temper action.
+
+The one thing you drive directly is your own run ledger, the `CuratorAgent`
+entity described below. That is not a bypass: it is a record of this run, it
+touches no artifact, and its spec has no `Publish` action at all. The
+boundary the MCP enforces is on what you produce; the ledger is the account of
+how you produced it.
 
 ## Trajectory capture
 
@@ -54,10 +61,91 @@ Then:
    contract in force at the time, and `python3 scripts/trajectory/spec_version.py
    CuratorAgent` prints it.
 
+## The run ledger — drive it, do not just read about it
+
 The captured trajectory is replayed against `CuratorAgent`
-(`katagami-curation/specs/curator_agent.ioa.toml`), whose protocol this skill
-follows: draft, then self-review, then submit — once, and only work that already
-reached `UnderReview` — and never publish.
+(`katagami-curation/specs/curator_agent.ioa.toml`): draft, then self-review,
+then submit — once, and only work that already reached `UnderReview` — and
+never publish.
+
+That replay has something to check only if this run actually drove a
+`CuratorAgent` entity through those states. **The ledger is not optional
+bookkeeping you write up afterwards; it is the run's own record, written as the
+run happens.** A run that did the work and skipped the ledger produces a
+trajectory with no actor actions in it, and layer 1 reports exactly that:
+`no_actor_actions`, which is a violation, not a pass.
+
+One entity per run. Create it before the first piece of work:
+
+```
+POST $TEMPER_API_URL/tdata/CuratorAgents
+{}
+    -> 201, the new entity's state:
+       { "entity_type": "CuratorAgent", "entity_id": "<run id>", "status": "BriefReceived", ... }
+```
+
+The id is **`entity_id`**. Not `Id` — that spelling belongs to other creation
+paths, not to a spec-governed entity.
+
+Every action is a bound OData call on that entity. The `Temper.` prefix is
+required in the path; parameters are the top-level JSON body, with no wrapper:
+
+```
+POST $TEMPER_API_URL/tdata/CuratorAgents('<run id>')/Temper.<Action>
+{ ...params... }
+```
+
+Send the standard headers on **every** one of these calls:
+
+```
+X-Tenant-Id: <tenant>
+X-Session-Id: <session_id from capture.py identity>
+X-Intent: <one sentence: what this call is for>
+Authorization: Bearer $TEMPER_API_KEY
+x-temper-principal-kind: agent
+x-temper-principal-id: katagami-contributor
+```
+
+### The sequence
+
+| # | Call | Body | When |
+|---|---|---|---|
+| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity`, unchanged. |
+| 2 | `Temper.BeginDrafting` | `{}` | Before the first piece of design work. Moves to `Drafting`. Guarded on `has_brief`, so step 1 must have happened. |
+| 3 | `Temper.ClaimJob` / `Temper.ReleaseJob` | `{}` | Around each concurrent unit of work. `ClaimJob` is guarded at 10 in flight — the standing batch cap, enforced rather than remembered. |
+| 4 | `Temper.RecordDraft` | `draft_notes` | As the work takes shape. Call it more than once; it is a log, not a summary. |
+| 5 | `Temper.RecordDesignLanguage`, `Temper.RecordArtStyle`, `Temper.RecordPaletteSystem`, `Temper.RecordWritingStyle` | `design_language_ids` / `art_style_ids` / `palette_system_ids` / `writing_style_ids` | Once each artifact exists, with the ids the MCP submit tools returned. One call per lane you produced. |
+| 6 | `Temper.SelfReview` | `self_review_notes` | After reviewing your own work, before submitting. Moves to `SelfReviewed`. |
+| 7 | `Temper.SubmitDesignLanguages`, `Temper.SubmitArtStyles`, `Temper.SubmitPaletteSystems`, `Temper.SubmitWritingStyles` | `submitted_entity_type` | Last. Moves to `Submitted`, which is terminal. |
+
+Give `RecordDraft` and `SelfReview` real content. `self_review_notes` is what
+you actually checked and what you changed; a one-word note is a run that did
+not self-review, recorded as one that did.
+
+`Temper.Abandon` (`abandon_reason`) is the honest ending for a run that gives
+up. Use it. A run that stops silently in `Drafting` is indistinguishable from
+one that crashed.
+
+### Why submission is the hard step
+
+Each lane's submit action carries four guards, and all four have to hold:
+
+- `self_review_complete` — step 6 happened.
+- `jobs_in_flight` below 1 — every claimed job was released.
+- `has_<lane>_ids` — step 5 recorded at least one id. Without it, the
+  cross-entity guard below is vacuously true over an empty list, and a run that
+  produced nothing would submit successfully.
+- `cross_entity_state` — every recorded id is already `UnderReview` or
+  `Published`. That is read off the entity graph, not off your claim about it,
+  so the artifacts must genuinely have passed their own submit gates first.
+
+A 409 `ActionFailed` here names the guard that rejected it. Fix the underlying
+condition and retry; do not route around it. Retrying a denied action with
+nothing changed in between is itself recorded as a violation
+(`denied_then_retried`).
+
+`Submitted` is terminal, so there is exactly one submission per run. A second
+one has no legal source state.
 
 ## Ownership boundary
 

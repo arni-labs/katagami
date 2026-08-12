@@ -46,17 +46,23 @@ not evidence of anything.
 python3 scripts/trajectory/claude_session_to_ots.py \
   --transcript ~/.claude/projects/<slug>/<session-id>.jsonl \
   --agent-id katagami-contributor \
+  --image-dir ~/.katagami/trajectory-queue/archive/images \
   --out -
 
-# convert and post
+# convert and post, as the identity the credential belongs to
 TEMPER_API_URL=https://your-temper-host TEMPER_API_KEY=... \
+TEMPER_PRINCIPAL_ID=katagami-contributor \
 python3 scripts/trajectory/claude_session_to_ots.py \
-  --transcript <path> --agent-id katagami-contributor --post
+  --transcript <path> --post
 
-# what version of the actor spec is in force
-python3 scripts/trajectory/spec_version.py CuratorAgent
+# what version of the actor spec is in force, and record it
+python3 scripts/trajectory/spec_version.py CuratorAgent --snapshot
 
-# layer 1: replay a captured trajectory against its actor spec
+# read back the contract a run executed under, after the file has moved on
+python3 scripts/trajectory/spec_version.py CuratorAgent --show-snapshot <version>
+
+# layer 1, offline. The kernel's POST /api/conformance/check is authoritative;
+# this is the fallback for when it cannot be reached.
 python3 scripts/trajectory/conformance_check.py \
   --trajectory ~/.katagami/trajectory-queue/archive/<trajectory-id>.json \
   --actor-spec CuratorAgent
@@ -65,17 +71,31 @@ python3 scripts/trajectory/conformance_check.py \
 Hook installation (capture every session automatically) is in
 [`hooks/trajectory-capture/README.md`](../../hooks/trajectory-capture/README.md).
 
-## Two refusals
+## Three refusals
 
-`--post` fails, loudly, without either of these:
+`--post` fails, loudly, without every one of these:
 
-- **A credential.** `TEMPER_API_KEY` is required. `X-Agent-Id` is a claim the
-  caller makes about itself, and an unauthenticated post can claim any agent
-  and any tenant it likes; the client also sends the same identity as
-  `x-temper-principal-id` so the server sees one identity rather than two.
+- **A credential.** `TEMPER_API_KEY` is required. An unauthenticated post can
+  claim any agent and any tenant it likes.
+- **A configured identity.** The agent a run is filed under comes from
+  `TEMPER_PRINCIPAL_ID` (or `KATAGAMI_AGENT_ID`), which sits beside the
+  credential it belongs to — one configured identity per role credential.
+  `--agent-id` is read as an assertion about that configuration and a mismatch
+  is refused, so one role's credential cannot file a run under another role's
+  name. The same value goes out as `X-Agent-Id` and `x-temper-principal-id`, so
+  the server sees one identity rather than two.
+
+  This client cannot bind the token to the identity — it has no way to ask a
+  bearer token who it belongs to. Correlating the credential with the claimed
+  principal is the kernel's, tracked as ARN-255 and ARN-187. Until that lands,
+  a compromised role credential can still post as that role.
 - **A spec version.** Computed from the actor spec in this checkout —
   `--actor-spec`, else `$KATAGAMI_ACTOR_SPEC`, else the actor mapped from the
-  agent id. A trajectory that cannot name its contract cannot enter either
+  agent id — and snapshotted under its hash at capture time. An explicit
+  `--spec-version` is accepted only when it matches the computed version or
+  names a snapshot an earlier capture recorded; a version that can be neither
+  recomputed nor retrieved is refused, because it names a contract nobody can
+  produce. A trajectory that cannot name its contract cannot enter either
   judgement layer, so posting one would store a row nothing can judge.
 
 ## Redaction

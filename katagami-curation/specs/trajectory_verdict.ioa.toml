@@ -72,6 +72,62 @@ name = "violations"
 type = "string"
 initial = "[]"
 
+# --- What the check could NOT settle ---
+#
+# A verdict recording only `passed` and `violations` throws away the half of
+# the result that says how much the check actually covered, and a reader then
+# takes `passed = true` for "the run was fully checked and was fine". These
+# four fields let the deterministic result be stored verbatim, from either
+# engine:
+#
+#   field             | kernel POST /api/conformance/check | conformance_check.py
+#   ------------------|------------------------------------|---------------------
+#   passed            | report.passed                      | passed
+#   violations        | report.violations                  | violations
+#   unverifiable      | report.evidence_gaps               | unverifiable
+#   actions_replayed  | report.stats.actor_rows            | len(actions_replayed)
+#   evidence_complete | report.evidence_complete           | evidence_complete
+#   final_state       | "" — see below                     | final_state
+#
+# `actor_rows` rather than `stream_length`: the field counts actions the check
+# walked for this actor, and stream_length includes rows it skipped as another
+# actor's or as platform bookkeeping. The offline tool returns the replayed
+# calls as a list, so it is the length that goes here.
+
+# Everything the check could neither confirm nor deny, as JSON, or
+# "file:<file_id>" when large: cross-entity guards resolved off the entity
+# graph at dispatch time, evidence the checker never saw, a read that stopped
+# at its row cap. Empty means the check covered the whole run.
+[[state]]
+name = "unverifiable"
+type = "string"
+initial = "[]"
+
+# How many actions the replay walked. Zero alongside `passed = true` is the
+# signature of a check that ran against nothing, which is not a pass.
+[[state]]
+name = "actions_replayed"
+type = "counter"
+initial = 0
+
+# True only when the check saw the whole run. `passed` alone cannot carry this:
+# the kernel distinguishes fail from indeterminate, and flattening both into
+# `passed = false` loses the difference between "it broke its spec" and "we
+# could not tell". A consumer gating on conformance gates on BOTH.
+[[state]]
+name = "evidence_complete"
+type = "bool"
+initial = "false"
+
+# The state the replayed run ended in. Empty when the engine does not report
+# one: the kernel checker walks every entity in a session and returns
+# `stats.terminal_entities` (a count) rather than a per-entity final state, so
+# a kernel-written verdict leaves this empty rather than inventing a value.
+[[state]]
+name = "final_state"
+type = "string"
+initial = ""
+
 # The judging agent id or engine build. Never a person.
 [[state]]
 name = "judged_by"
@@ -98,9 +154,9 @@ name = "Record"
 kind = "input"
 from = ["Pending"]
 to = "Recorded"
-params = ["trajectory_id", "session_id", "actor_spec", "spec_version", "layer", "passed", "violations", "judged_by", "judged_at"]
+params = ["trajectory_id", "session_id", "actor_spec", "spec_version", "layer", "passed", "violations", "unverifiable", "actions_replayed", "evidence_complete", "final_state", "judged_by", "judged_at"]
 effect = [{ type = "set_bool", var = "has_verdict", value = "true" }]
-hint = "Write the verdict for one trajectory at one layer, in a single call. layer is deterministic or llm; passed is the layer's own result; violations is the findings JSON or a file:<file_id> reference; judged_by is the judging agent or engine build. Recorded is terminal — a verdict is a fact about a completed judgement and is never edited in place. A re-judge writes a new TrajectoryVerdict."
+hint = "Write the verdict for one trajectory at one layer, in a single call. layer is deterministic or llm; passed is the layer's own result; violations is the findings JSON or a file:<file_id> reference; unverifiable is what the check could not settle, in the same shape; actions_replayed is how many actions it walked; evidence_complete is false whenever any evidence was missing, so `passed && evidence_complete` is the only combination that means a fully checked conforming run; final_state is the state the replay ended in, empty when the engine reports none; judged_by is the judging agent or engine build. Record the deterministic layer's result verbatim — do not summarize or re-score it. Recorded is terminal, so a re-judge writes a new TrajectoryVerdict."
 
 [[action]]
 name = "VerdictRecordedEvent"

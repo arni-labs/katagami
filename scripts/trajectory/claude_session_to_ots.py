@@ -15,21 +15,53 @@ Usage:
 
 Environment:
 
-    TEMPER_API_URL    base URL, e.g. https://temper.example.com   (--post)
-    TEMPER_API_KEY    bearer token — REQUIRED for --post          (--post)
-    TEMPER_TENANT_ID  tenant, default "default"
-    KATAGAMI_AGENT_ID default for --agent-id
+    TEMPER_API_URL      base URL, e.g. https://temper.example.com  (--post)
+    TEMPER_API_KEY      bearer token — REQUIRED for --post         (--post)
+    TEMPER_TENANT_ID    tenant, default "default"
+    TEMPER_PRINCIPAL_ID the identity TEMPER_API_KEY belongs to
+    KATAGAMI_AGENT_ID   the same thing, under the older name
 
 Every failure exits non-zero with the reason on stderr. A capture that
 silently produced nothing would be worse than no capture at all.
 
-Two things this module refuses to do:
+Three things this module refuses to do:
 
   * Post without a credential. Attribution is the point of the corpus, and an
     unauthenticated post lets the caller name any agent and any tenant it likes.
+  * Post as an identity the environment did not configure. See below.
   * Post without a spec version. A trajectory that cannot name the contract it
     ran under cannot enter either judgement layer, so it would be stored and
     never judged — a silent failure dressed as HTTP 201.
+
+Attribution, and what this client can and cannot prove
+------------------------------------------------------
+
+A trajectory is only worth keeping if it is attributable, and attribution here
+means: the agent named on the document is the agent that produced it.
+
+This client cannot prove that, and does not pretend to. It holds a bearer
+token; it has no way to ask the token who it belongs to, so it cannot bind the
+credential to the identity. What it CAN stop doing is manufacturing the
+identity — and it previously did exactly that, copying a `--agent-id` command
+line argument into both `X-Agent-Id` and `x-temper-principal-id`, so anyone
+holding any valid token could file a run under any agent's name.
+
+So the posting identity is now configuration, not an argument: it comes from
+`TEMPER_PRINCIPAL_ID` (or `KATAGAMI_AGENT_ID`), which sits beside the
+credential it belongs to. One configured identity per role credential. An
+explicit `--agent-id` is read as an assertion about that configuration and is
+checked against it — a mismatch is refused rather than silently honoured.
+
+That reduces the problem from "any caller can claim any identity" to "any
+caller holding a role's credential can post as that role", which is what a
+bearer credential means anyway.
+
+Closing it completely is the kernel's job and is not in this repository:
+the server has to correlate the credential that authenticated the request with
+the principal the request claims, and reject the pair when they disagree.
+That work is tracked as ARN-255 (platform-run authorization server, verified
+principals) and ARN-187. Until it lands, a compromised role credential can
+still post as that role, and no client-side change alters that.
 
 Everything that leaves here passes through `redaction`. Tool arguments, tool
 output, message text and reasoning are all verbatim agent content, and verbatim
@@ -62,12 +94,16 @@ from redaction import redact_text, redact_value  # noqa: E402  (path set above)
 from spec_version import (  # noqa: E402  (path set above)
     SpecVersionError,
     actor_for_agent_id,
-    compute_version,
+    resolve_version,
 )
 
 OTS_VERSION = "0.1.0"
 DEFAULT_HARNESS = "claude-code"
 OTS_INGEST_PATH = "/api/ots/trajectories"
+
+# The environment that names the identity the credential belongs to. Checked in
+# order; the second is the older spelling and still honoured.
+PRINCIPAL_ENV_VARS = ("TEMPER_PRINCIPAL_ID", "KATAGAMI_AGENT_ID")
 
 # Result summaries are for a judge to read, not a datastore to hoard. Full tool
 # output stays on the message; the decision carries a legible excerpt.
@@ -138,6 +174,41 @@ def _duration_ms(start: str, end: str) -> float | None:
 _ROLE_BY_SOURCE = {"user": "user", "agent": "assistant", "system": "system"}
 
 
+def _image_attachment(source: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """One ATIF image reference as an OTS attachment, and its inline marker.
+
+    `harbor_adapter.archive_images` has already resolved the reference while
+    the staged tree still existed: an archived image carries `available: true`
+    and a path that opens, and everything else carries `available: false`, the
+    content hash, and the reason. This function never invents a path, because a
+    path that does not open is the failure it exists to prevent — a judge told
+    to "open the image before judging what it looks like" needs the difference
+    between "here it is" and "it is gone" to be explicit.
+    """
+    media_type = source.get("media_type") or "image"
+    available = bool(source.get("available"))
+    attachment: dict[str, Any] = {
+        "type": "image",
+        "media_type": media_type,
+        "available": available,
+    }
+    for field in ("sha256", "bytes"):
+        if source.get(field) is not None:
+            attachment[field] = source[field]
+
+    if available and source.get("path"):
+        attachment["path"] = redact_text(str(source["path"]))
+        return attachment, f"[image {media_type} {attachment['path']}]"
+
+    reason = source.get("unavailable_reason") or "the image was not archived with this capture"
+    attachment["unavailable_reason"] = redact_text(str(reason))
+    digest = source.get("sha256")
+    marker = f"[image {media_type} unavailable"
+    if digest:
+        marker += f" sha256:{digest}"
+    return attachment, marker + "]"
+
+
 def _content_parts(message: Any) -> tuple[str, list[dict[str, Any]]]:
     """ATIF content: a string, or a list of parts (v1.6+), text and images mixed.
 
@@ -145,8 +216,8 @@ def _content_parts(message: Any) -> tuple[str, list[dict[str, Any]]]:
     looked at it made its judgement on the picture, and a trajectory that keeps
     only the words around the picture cannot be judged on taste or finish at
     all. ATIF image parts carry a media type and a path rather than the bytes
-    (`harbor.models.trajectories.content.ImageSource`), so the reference is what
-    there is to keep — and keeping it is what lets layer 2 go and look.
+    (`harbor.models.trajectories.content.ImageSource`), so the file itself is
+    archived at capture time and the attachment points at the archived copy.
     """
     if isinstance(message, str):
         return redact_text(message), []
@@ -159,13 +230,9 @@ def _content_parts(message: Any) -> tuple[str, list[dict[str, Any]]]:
         if not isinstance(part, dict):
             continue
         if part.get("type") == "image" or part.get("source"):
-            source = part.get("source") or {}
-            media_type = source.get("media_type") or "image"
-            path = redact_text(str(source.get("path") or ""))
-            attachments.append(
-                {"type": "image", "media_type": media_type, "path": path}
-            )
-            chunks.append(f"[image {media_type} {path}]" if path else f"[image {media_type}]")
+            attachment, marker = _image_attachment(part.get("source") or {})
+            attachments.append(attachment)
+            chunks.append(marker)
         elif isinstance(part.get("text"), str):
             chunks.append(redact_text(part["text"]))
     return "\n".join(chunks), attachments
@@ -538,6 +605,47 @@ def atif_to_ots(
 # --------------------------------------------------------------------------
 
 
+def configured_principal() -> str | None:
+    """The identity this install's credential belongs to, from the environment."""
+    for name in PRINCIPAL_ENV_VARS:
+        value = (os.environ.get(name) or "").strip()
+        if value:
+            return value
+    return None
+
+
+def resolve_agent_id(*, requested: str | None, posting: bool) -> str:
+    """The identity to file this trajectory under.
+
+    Configuration decides it; `requested` (the `--agent-id` argument) is only
+    ever an assertion about that configuration. See the module docstring for
+    why the argument is not allowed to be the source.
+    """
+    configured = configured_principal()
+
+    if configured and requested and requested != configured:
+        raise TrajectoryError(
+            f"refusing to post as {requested!r}: this environment is configured for "
+            f"{configured!r} ({' / '.join(PRINCIPAL_ENV_VARS)}). The posting identity "
+            "comes from the configuration that holds the credential, so one role's "
+            "credential cannot file a run under another role's name. Set the "
+            "environment for the identity you mean to post as, or drop --agent-id."
+        )
+
+    if configured:
+        return configured
+    if requested and not posting:
+        # A local conversion authenticates to nobody and claims nothing; the
+        # argument is enough to label the file being written.
+        return requested
+    raise TrajectoryError(
+        "no posting identity is configured. Set TEMPER_PRINCIPAL_ID (or "
+        "KATAGAMI_AGENT_ID) to the agent the credential in TEMPER_API_KEY belongs "
+        "to. A trajectory whose agent id came from the command line is attributed "
+        "to whoever typed it, which is not attribution."
+    )
+
+
 def post_trajectory(
     ots: dict[str, Any],
     *,
@@ -549,17 +657,18 @@ def post_trajectory(
     trajectory_id: str,
     timeout: float = 60.0,
 ) -> int:
-    """POST one OTS document, under a credential, as a named agent principal.
+    """POST one OTS document, under a credential, as its configured principal.
 
-    The credential is mandatory. `X-Agent-Id` is a claim the caller makes about
-    itself, and against a server with no key configured an anonymous caller
-    could make that claim about anyone — so this client will not post without
-    one, and sends the same identity as the request principal
-    (`x-temper-principal-id`) so the server sees one identity rather than two.
+    The credential is mandatory, and `agent_id` must be the identity the
+    environment configured for it (`resolve_agent_id`) rather than anything a
+    caller typed. The same value goes out as `X-Agent-Id` and as the request
+    principal (`x-temper-principal-id`) so the server sees one identity rather
+    than two.
 
-    Correlating the claimed agent id with the credential that authenticated the
-    request is the server's to do; this client makes the two agree so that the
-    correlation has something to check.
+    Correlating that identity with the credential that authenticated the
+    request is the server's to do — ARN-255 / ARN-187, see the module
+    docstring. This client's job is to make the two agree so the correlation
+    has something to check, and to refuse to invent either one.
     """
     if not api_key:
         raise TrajectoryError(
@@ -611,8 +720,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trajectory-id", help="override the derived trajectory id")
     parser.add_argument(
         "--agent-id",
-        default=os.environ.get("KATAGAMI_AGENT_ID"),
-        help="agent identity for the run (default $KATAGAMI_AGENT_ID)",
+        default=None,
+        help=(
+            "assert the identity this run is filed under. The identity itself comes "
+            "from $TEMPER_PRINCIPAL_ID / $KATAGAMI_AGENT_ID, beside the credential it "
+            "belongs to; passing a different one here is refused"
+        ),
     )
     parser.add_argument(
         "--tenant-id",
@@ -636,6 +749,14 @@ def build_parser() -> argparse.ArgumentParser:
             "$KATAGAMI_ACTOR_SPEC, then to the actor mapped from --agent-id"
         ),
     )
+    parser.add_argument(
+        "--image-dir",
+        help=(
+            "archive images referenced by the transcript here, so the trajectory's "
+            "image references still open after conversion. Without it the images are "
+            "recorded by content hash and marked unavailable"
+        ),
+    )
     parser.add_argument("--harness", default=DEFAULT_HARNESS)
     parser.add_argument("--domain")
     parser.add_argument("--environment")
@@ -655,19 +776,23 @@ def build_parser() -> argparse.ArgumentParser:
 def resolve_spec_version(
     *, spec_version: str | None, actor_spec: str | None, agent_id: str
 ) -> str | None:
-    """The actor spec version to stamp, computed rather than typed.
+    """The actor spec version to stamp, proven rather than typed.
 
-    Order: an explicit `--spec-version`, then the version of the named actor
-    spec, then the version of the actor this agent id runs under. Returning
-    None means there is no actor contract to name — the caller decides whether
-    that is fatal (it is, for `--post`).
+    The actor is `--actor-spec`, or the one this agent id runs under. Its
+    version is computed from the spec file and snapshotted at capture time, so
+    a judge can retrieve the exact contract later even after the file moves on.
+
+    An explicit `--spec-version` is no longer taken on trust: it is accepted
+    only when it matches the computed version or names a snapshot an earlier
+    capture recorded, and refused otherwise (`spec_version.resolve_version`).
+
+    Returning None means there is no actor contract to name at all — the caller
+    decides whether that is fatal (it is, for `--post`).
     """
-    if spec_version:
-        return spec_version
-    actor = actor_spec or actor_for_agent_id(agent_id)
-    if not actor:
-        return None
-    return compute_version(actor)
+    return resolve_version(
+        claimed=spec_version,
+        actor=actor_spec or actor_for_agent_id(agent_id),
+    )
 
 
 def _session_id_from(atif: dict[str, Any], transcript: Path, override: str | None) -> str:
@@ -682,22 +807,21 @@ def _session_id_from(atif: dict[str, Any], transcript: Path, override: str | Non
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
-    if not args.agent_id:
-        print(
-            "error: --agent-id is required (or set KATAGAMI_AGENT_ID). The run must "
-            "be attributed to the role's own agent credential.",
-            file=sys.stderr,
-        )
-        return 2
     if not args.out and not args.post:
         print("error: nothing to do — pass --out and/or --post", file=sys.stderr)
+        return 2
+
+    try:
+        agent_id = resolve_agent_id(requested=args.agent_id, posting=args.post)
+    except TrajectoryError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
 
     try:
         spec_version = resolve_spec_version(
             spec_version=args.spec_version,
             actor_spec=args.actor_spec,
-            agent_id=args.agent_id,
+            agent_id=agent_id,
         )
     except SpecVersionError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -705,7 +829,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.post and not spec_version:
         print(
             "error: no actor spec version could be resolved for agent "
-            f"{args.agent_id!r}. A trajectory with no spec_version cannot enter "
+            f"{agent_id!r}. A trajectory with no spec_version cannot enter "
             "either judgement layer, so posting one would store a row nothing can "
             "judge. Pass --actor-spec (e.g. CuratorAgent), or --spec-version / "
             "KATAGAMI_ACTOR_SPEC_VERSION if the run executed under a spec that is "
@@ -720,6 +844,7 @@ def main(argv: list[str] | None = None) -> int:
             transcript,
             session_id=args.session_id,
             model_name=args.model_name,
+            image_dir=args.image_dir,
         )
     except (HarborUnavailable, HarborConversionError) as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -731,7 +856,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         ots = atif_to_ots(
             atif,
-            agent_id=args.agent_id,
+            agent_id=agent_id,
             session_id=session_id,
             trajectory_id=trajectory_id,
             spec_version=spec_version,
@@ -767,7 +892,7 @@ def main(argv: list[str] | None = None) -> int:
                 ots,
                 api_url=api_url,
                 api_key=os.environ.get("TEMPER_API_KEY"),
-                agent_id=args.agent_id,
+                agent_id=agent_id,
                 session_id=session_id,
                 tenant_id=args.tenant_id,
                 trajectory_id=trajectory_id,

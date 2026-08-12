@@ -259,6 +259,14 @@
         <Property Name="Layer" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Passed" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="Violations" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- What the check could not settle. `Passed` alone reads as "fully
+             checked and fine"; these four record how much was actually
+             covered, so the deterministic result is stored verbatim rather
+             than summarized down to a boolean. -->
+        <Property Name="Unverifiable" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ActionsReplayed" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="EvidenceComplete" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="FinalState" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="JudgedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="JudgedAt" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

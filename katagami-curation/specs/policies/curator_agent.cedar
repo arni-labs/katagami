@@ -7,9 +7,29 @@
 // where it already lives — katagami-commons/policies/design_language.cedar and
 // art_style.cedar forbid contributor agents from Publish on the artifacts
 // themselves. Nothing in this file grants anything those policies deny.
+// The permit ENUMERATES the alphabet rather than granting `action`, so an
+// action added to curator_agent.ioa.toml later arrives denied and has to be
+// admitted here deliberately. CuratorSubmittedEvent is absent on purpose: it
+// is an output action, emitted by the platform, never invoked by a caller.
 permit(
   principal,
-  action,
+  action in [
+    Action::"ReceiveBrief",
+    Action::"BeginDrafting",
+    Action::"ClaimJob",
+    Action::"ReleaseJob",
+    Action::"RecordDraft",
+    Action::"RecordDesignLanguage",
+    Action::"RecordArtStyle",
+    Action::"RecordPaletteSystem",
+    Action::"RecordWritingStyle",
+    Action::"SelfReview",
+    Action::"SubmitDesignLanguages",
+    Action::"SubmitArtStyles",
+    Action::"SubmitPaletteSystems",
+    Action::"SubmitWritingStyles",
+    Action::"Abandon"
+  ],
   resource is CuratorAgent
 );
 

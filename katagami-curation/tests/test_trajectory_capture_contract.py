@@ -13,11 +13,13 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 import unittest.mock
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+CURATION_ROOT = Path(__file__).resolve().parents[1]
 TRAJECTORY_DIR = REPO_ROOT / "scripts" / "trajectory"
 HOOK_DIR = REPO_ROOT / "hooks" / "trajectory-capture"
 SKILLS_DIR = REPO_ROOT / "mcp" / "skills"
@@ -137,12 +139,12 @@ class ConverterContractTest(unittest.TestCase):
 
 
 class JudgeSkillTargetsRealEndpointsTest(unittest.TestCase):
-    """The judge must call things that exist.
+    """The judge must call things that exist, with the shapes they really have.
 
-    Two of its calls did not: `/tdata/Specs` (specs are served at
-    `/observe/specs/{entity}`) and `/api/conformance/check` (the kernel has no
-    conformance engine at all). A skill that 404s before its first verdict is a
-    skill that never runs.
+    `/tdata/Specs` never existed (specs are served at
+    `/observe/specs/{entity}`). `/api/conformance/check` did not exist when this
+    skill was written and does now, so layer 1 is the kernel's engine and this
+    test pins the endpoints and response shapes it actually addresses.
     """
 
     def setUp(self):
@@ -150,15 +152,40 @@ class JudgeSkillTargetsRealEndpointsTest(unittest.TestCase):
 
     def test_it_does_not_call_endpoints_the_server_does_not_have(self):
         self.assertNotIn("/tdata/Specs", self.skill)
+        # There is no bare GET /api/ots/trajectories/{id}: the only single
+        # trajectory route is the ATIF export (temper-server/src/api/mod.rs).
         for line in self.skill.splitlines():
-            if line.startswith(("GET ", "POST ", "PUT ", "PATCH ", "DELETE ")):
-                self.assertNotIn("/api/conformance/check", line)
-        # And it says so, so nobody reintroduces the call.
-        self.assertIn("There is no `/api/conformance/check`", self.skill)
+            stripped = line.strip()
+            if stripped.startswith("GET ") and "/api/ots/trajectories/" in stripped:
+                self.assertIn("/atif", stripped, stripped)
 
-    def test_layer_one_runs_the_replay_that_ships_in_this_repository(self):
+    def test_layer_one_is_the_kernel_endpoint(self):
+        self.assertIn("POST $TEMPER_API_URL/api/conformance/check", self.skill)
+        # Its required request fields and the verdict vocabulary it answers in.
+        for field in ('"entity_type"', '"session_id"', '"spec_version"'):
+            self.assertIn(field, self.skill)
+        for field in ("evidence_complete", "evidence_gaps", "spec_resolution"):
+            self.assertIn(field, self.skill)
+        for verdict in ("indeterminate", "`pass`", "`fail`"):
+            self.assertIn(verdict, self.skill)
+
+    def test_the_local_replay_is_labelled_as_the_offline_fallback(self):
         self.assertIn("scripts/trajectory/conformance_check.py", self.skill)
         self.assertTrue((TRAJECTORY_DIR / "conformance_check.py").is_file())
+        flowed = " ".join(self.skill.lower().split())
+        self.assertIn("offline", flowed)
+        # And the tool itself says the kernel is authoritative, so the two
+        # engines cannot silently drift into disagreeing.
+        tool = (TRAJECTORY_DIR / "conformance_check.py").read_text()
+        self.assertIn("/api/conformance/check", tool)
+        self.assertIn("authoritative", tool.lower())
+
+    def test_the_canonical_trajectory_read_is_the_kernel_not_a_local_file(self):
+        self.assertIn("/api/ots/trajectories/<trajectory-id>/atif", self.skill)
+        # The archive survives only as an explicitly-labelled offline fallback.
+        archive_context = self.skill.lower()
+        self.assertIn("offline fallback", archive_context)
+        self.assertIn("~/.katagami/trajectory-queue/archive/", self.skill)
 
     def test_the_spec_slice_is_verified_against_the_recorded_version(self):
         self.assertIn("scripts/trajectory/spec_version.py", self.skill)
@@ -170,8 +197,15 @@ class JudgeSkillTargetsRealEndpointsTest(unittest.TestCase):
         self.assertIn("Metadata only", self.skill)
         self.assertNotIn('"data": "<OTS JSON>"', self.skill)
 
-    def test_it_reports_the_guards_the_replay_could_not_check(self):
+    def test_it_reports_what_the_check_could_not_settle(self):
         self.assertIn("unverifiable", self.skill)
+        self.assertIn("evidence_gaps", self.skill)
+
+    def test_entity_creation_reads_the_id_the_server_actually_returns(self):
+        # Temper answers a spec-governed create with the entity's state, whose
+        # id field is `entity_id`. `Id` belongs to other creation paths.
+        self.assertIn('"entity_id"', self.skill)
+        self.assertNotIn('-> { "Id":', self.skill)
 
 
 class SubagentStagingTest(unittest.TestCase):
@@ -256,35 +290,73 @@ class CaptureIdentityTest(unittest.TestCase):
 
     def test_the_identity_carries_the_actor_spec_version(self):
         identity = self.hook.build_identity("9bd6-session")
-        self.assertTrue(identity["spec_version"].startswith("CuratorAgent@sha256:"))
+        self.assertTrue(identity["spec_version"].startswith("sha256:"))
 
     def test_the_identity_is_published_where_a_skill_can_read_it(self):
         self.hook.write_identity("9bd6-session")
-        published = json.loads((self.queue / self.hook.IDENTITY_PATH).read_text())
+        published = json.loads(self.hook.identity_path("9bd6-session").read_text())
         self.assertEqual(published["session_id"], "9bd6-session")
         self.assertEqual(
             published["trajectory_id"],
             self.converter.derive_trajectory_id("9bd6-session"),
         )
 
-    def test_the_identity_subcommand_prints_it(self):
-        self.hook.write_identity("9bd6-session")
-        result = subprocess.run(
-            [sys.executable, str(HOOK_SCRIPT), "identity"],
+    def test_concurrent_sessions_do_not_overwrite_each_other(self):
+        # Two Claude Code windows open at once. A single shared identity file
+        # made the second session's ids the answer for both, so the first
+        # session recorded a trajectory_id belonging to the other run.
+        self.hook.write_identity("session-one")
+        self.hook.write_identity("session-two")
+
+        first = json.loads(self.hook.identity_path("session-one").read_text())
+        second = json.loads(self.hook.identity_path("session-two").read_text())
+        self.assertEqual(first["session_id"], "session-one")
+        self.assertEqual(second["session_id"], "session-two")
+        self.assertNotEqual(first["trajectory_id"], second["trajectory_id"])
+
+    def _identity(self, *args, **env):
+        stripped = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in self.hook.SESSION_ID_ENV_VARS
+        }
+        return subprocess.run(
+            [sys.executable, str(HOOK_SCRIPT), "identity", *args],
             capture_output=True,
             text=True,
-            env={**os.environ},
+            env={**stripped, **env},
         )
+
+    def test_the_identity_subcommand_prints_it(self):
+        self.hook.write_identity("9bd6-session")
+        result = self._identity()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["session_id"], "9bd6-session")
 
+    def test_a_named_session_is_answered_even_with_several_recorded(self):
+        self.hook.write_identity("session-one")
+        self.hook.write_identity("session-two")
+        result = self._identity("session-one")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["session_id"], "session-one")
+
+    def test_the_harness_session_env_picks_the_right_one(self):
+        self.hook.write_identity("session-one")
+        self.hook.write_identity("session-two")
+        result = self._identity(CLAUDE_CODE_SESSION_ID="session-two")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["session_id"], "session-two")
+
+    def test_an_ambiguous_ask_refuses_rather_than_guessing(self):
+        self.hook.write_identity("session-one")
+        self.hook.write_identity("session-two")
+        result = self._identity()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("cannot tell which one is asking", result.stderr)
+        self.assertIn("session-one", result.stderr)
+
     def test_asking_before_a_session_started_says_so_rather_than_inventing(self):
-        result = subprocess.run(
-            [sys.executable, str(HOOK_SCRIPT), "identity"],
-            capture_output=True,
-            text=True,
-            env={**os.environ, "KATAGAMI_TRAJECTORY_QUEUE": str(self.queue / "empty")},
-        )
+        result = self._identity(KATAGAMI_TRAJECTORY_QUEUE=str(self.queue / "empty"))
         self.assertEqual(result.returncode, 1)
         self.assertIn("no capture identity", result.stderr)
 
@@ -304,7 +376,7 @@ class CaptureIdentityTest(unittest.TestCase):
             entry["trajectory_id"],
             self.converter.derive_trajectory_id("9bd6-session"),
         )
-        self.assertTrue(entry["spec_version"].startswith("CuratorAgent@sha256:"))
+        self.assertTrue(entry["spec_version"].startswith("sha256:"))
 
 
 class HookWiringTest(unittest.TestCase):
@@ -405,6 +477,60 @@ class RoleSkillPreambleTest(unittest.TestCase):
     def test_every_role_skill_requires_the_roles_own_credential(self):
         for skill in ROLE_SKILLS:
             self.assertIn("own agent credential", skill.read_text(), skill.name)
+
+
+class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
+    """The contributor skill must actually drive CuratorAgent through its states.
+
+    Capturing a trajectory and defining an actor spec are worth nothing on
+    their own: layer 1 replays the actor actions the run invoked, so a skill
+    that never calls them leaves the checker a trajectory with no actor actions
+    in it — which the replay reports as `no_actor_actions`, not as a pass.
+    """
+
+    def setUp(self):
+        self.skill = (SKILLS_DIR / "katagami-contributor" / "SKILL.md").read_text()
+        self.spec = tomllib.loads(
+            (CURATION_ROOT / "specs" / "curator_agent.ioa.toml").read_text()
+        )
+
+    def test_it_creates_the_run_entity(self):
+        self.assertIn("POST $TEMPER_API_URL/tdata/CuratorAgents", self.skill)
+
+    def test_it_reads_the_id_the_server_actually_returns(self):
+        self.assertIn('"entity_id"', self.skill)
+        self.assertNotIn('-> { "Id":', self.skill)
+
+    def test_it_names_every_action_that_moves_the_run_forward(self):
+        # The lifecycle spine. An action missing here is a state the ledger
+        # never reaches, and a guard the replay can never satisfy.
+        for action in (
+            "ReceiveBrief",
+            "BeginDrafting",
+            "RecordDraft",
+            "SelfReview",
+            "SubmitDesignLanguages",
+            "Abandon",
+        ):
+            self.assertIn(action, self.skill, action)
+
+    def test_every_action_it_names_is_in_the_actor_alphabet(self):
+        # The other direction: a skill that instructs an action the spec does
+        # not define sends the run into `unknown_action` on every replay.
+        alphabet = {a["name"] for a in self.spec["action"]}
+        for line in self.skill.splitlines():
+            for token in re.findall(r"Temper\.([A-Za-z][A-Za-z0-9_]*)", line):
+                if token.startswith("<"):
+                    continue
+                self.assertIn(token, alphabet | {"Record", "Action"}, line)
+
+    def test_it_uses_the_bound_action_path_shape(self):
+        self.assertIn("/tdata/CuratorAgents('<run id>')/Temper.", self.skill)
+
+    def test_it_explains_the_submission_guards_rather_than_only_listing_them(self):
+        for guard in ("self_review_complete", "jobs_in_flight", "cross_entity_state"):
+            self.assertIn(guard, self.skill, guard)
+        self.assertIn("has_", self.skill)
 
 
 if __name__ == "__main__":

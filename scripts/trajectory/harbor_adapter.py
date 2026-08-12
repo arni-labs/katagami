@@ -34,6 +34,7 @@ need; we stage a transcript into that layout and read the result back.
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import logging
 import os
@@ -55,6 +56,14 @@ HARBOR_REQUIREMENT = (
 # The ATIF schema version the pinned Harbor emits. Recorded on the OTS document
 # so a consumer can tell which interchange format the trajectory came through.
 ATIF_SCHEMA_VERSION = "ATIF-v1.7"
+
+# Bounds on the image archive. A trajectory that carried a screenshot of every
+# render would otherwise pull an unbounded pile of pixels into the queue
+# directory. Past the cap the image is still identified by content hash — the
+# judge learns the picture existed and what it was, just not what it looked
+# like, which is a better answer than a path to nothing.
+MAX_ARCHIVED_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_ARCHIVED_IMAGE_TOTAL_BYTES = 64 * 1024 * 1024
 
 
 class HarborUnavailable(RuntimeError):
@@ -178,11 +187,142 @@ def _stage_subagent_transcripts(source: Path, session_dir: Path) -> list[Path]:
     return staged
 
 
+def _image_sources(node: Any) -> list[dict[str, Any]]:
+    """Every ATIF image `source` object anywhere in the document.
+
+    Image parts appear on step messages and inside tool results, and the shape
+    is the same in both places (`harbor.models.trajectories.content.ImageSource`
+    — a media type and a path, never the bytes). Walking the whole document
+    rather than the two known places means a third place cannot quietly start
+    producing dangling references.
+    """
+    found: list[dict[str, Any]] = []
+    if isinstance(node, dict):
+        source = node.get("source")
+        # `type == "image"` as well as the shape: without it any structure that
+        # happens to carry a `source.path` would have that file hashed and
+        # copied into the archive, which is a way to pull an arbitrary file off
+        # disk into the upload.
+        if (
+            node.get("type") == "image"
+            and isinstance(source, dict)
+            and isinstance(source.get("path"), str)
+        ):
+            found.append(source)
+        for value in node.values():
+            found.extend(_image_sources(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_image_sources(item))
+    return found
+
+
+def _resolve_image(raw: str, roots: list[Path]) -> Path | None:
+    candidate = Path(raw).expanduser()
+    if candidate.is_absolute():
+        return candidate if candidate.is_file() else None
+    for root in roots:
+        resolved = root / candidate
+        if resolved.is_file():
+            return resolved
+    return None
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def archive_images(
+    atif: dict[str, Any], *, roots: list[Path], image_dir: Path | None
+) -> dict[str, int]:
+    """Copy referenced images out before their directory disappears.
+
+    Harbor resolves images relative to the staged log tree, and that tree is a
+    TemporaryDirectory this module deletes on the way out. Leaving the relative
+    path on the document produced a reference that pointed at nothing the
+    moment conversion finished — worse than no reference, because it reads like
+    evidence a judge could go and open.
+
+    So every referenced file is hashed here, while it still exists, and copied
+    into `image_dir` when it is within the size bounds. What leaves is either
+    an image the judge can open or an explicit `available: false` with the
+    content hash and the reason. Never a path to nothing.
+    """
+    counts = {"archived": 0, "hashed_only": 0, "missing": 0}
+    budget = MAX_ARCHIVED_IMAGE_TOTAL_BYTES
+
+    for source in _image_sources(atif):
+        raw = source.get("path")
+        source["source_ref"] = raw if isinstance(raw, str) else None
+        source.pop("path", None)
+
+        resolved = _resolve_image(raw, roots) if isinstance(raw, str) and raw else None
+        if resolved is None:
+            source["available"] = False
+            source["unavailable_reason"] = (
+                "the transcript referenced this image but no file was found at that "
+                "path during capture"
+            )
+            counts["missing"] += 1
+            continue
+
+        try:
+            size = resolved.stat().st_size
+            source["sha256"] = _sha256(resolved)
+            source["bytes"] = size
+        except OSError as exc:
+            source["available"] = False
+            source["unavailable_reason"] = f"the image could not be read during capture: {exc}"
+            counts["missing"] += 1
+            continue
+
+        if image_dir is None:
+            source["available"] = False
+            source["unavailable_reason"] = (
+                "no image archive was configured for this capture; the content hash "
+                "identifies the image but the pixels were not kept"
+            )
+            counts["hashed_only"] += 1
+            continue
+        if size > MAX_ARCHIVED_IMAGE_BYTES or size > budget:
+            source["available"] = False
+            source["unavailable_reason"] = (
+                f"the image is {size} bytes, past the capture archive's bounds "
+                f"(per-image {MAX_ARCHIVED_IMAGE_BYTES}, per-trajectory "
+                f"{MAX_ARCHIVED_IMAGE_TOTAL_BYTES}); it is identified by hash only"
+            )
+            counts["hashed_only"] += 1
+            continue
+
+        try:
+            image_dir.mkdir(parents=True, exist_ok=True)
+            destination = image_dir / f"{source['sha256']}{resolved.suffix.lower()}"
+            if not destination.exists():
+                shutil.copyfile(resolved, destination)
+        except OSError as exc:
+            source["available"] = False
+            source["unavailable_reason"] = f"the image could not be archived: {exc}"
+            counts["hashed_only"] += 1
+            continue
+
+        source["path"] = str(destination)
+        source["available"] = True
+        budget -= size
+        counts["archived"] += 1
+
+    return counts
+
+
 def transcript_to_atif(
     transcript_path: Path | str,
     *,
     session_id: str | None = None,
     model_name: str | None = None,
+    image_dir: Path | str | None = None,
 ) -> dict[str, Any]:
     """Convert one Claude Code transcript JSONL into an ATIF trajectory dict.
 
@@ -191,6 +331,9 @@ def transcript_to_atif(
         session_id: used only to name the staged file; the real session id comes
             from the transcript's own `sessionId` events.
         model_name: fallback model for events that do not name one.
+        image_dir: where to copy referenced images. Without it the images are
+            still hashed and marked unavailable rather than left as paths into
+            a deleted temp tree (`archive_images`).
 
     Raises:
         HarborUnavailable: harbor missing or not at the pin.
@@ -242,6 +385,14 @@ def transcript_to_atif(
                 f"harbor debug output:\n{detail}"
             )
         atif = json.loads(produced.read_text(encoding="utf-8"))
+
+        # Inside the `with`, deliberately: `logs_dir` is about to be deleted,
+        # and it is where the image paths on this document resolve.
+        archive_images(
+            atif,
+            roots=[logs_dir, session_dir, source.parent],
+            image_dir=Path(image_dir).expanduser() if image_dir else None,
+        )
 
     if not atif.get("steps"):
         raise HarborConversionError(

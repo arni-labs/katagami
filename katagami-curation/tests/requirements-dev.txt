@@ -1,0 +1,8 @@
+# Test-only dependencies for katagami-curation (ARN-294).
+#
+# Nothing here ships. `make test-integration` installs these into a local
+# virtualenv before running the suite, because a test that cannot run is not a
+# passing test: test_actor_policy_evaluation.py is the only place the Cedar
+# policies are EVALUATED rather than grepped, and it fails loudly when the
+# bindings are missing instead of skipping.
+cedarpy>=3.4.1

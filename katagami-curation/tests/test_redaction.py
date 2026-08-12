@@ -109,5 +109,57 @@ class StructuredValueTest(unittest.TestCase):
         self.assertNotIn("ghp_0123456789abcdefghijklmnop", str(redacted))
 
 
+class ExceptionBypassTest(unittest.TestCase):
+    """The accounting exceptions must not become a way to smuggle a secret.
+
+    Substring-matched exceptions did exactly that: every key below contains an
+    entry from SECRET_KEY_EXCEPTIONS somewhere inside it, and every key below
+    holds a credential.
+    """
+
+    BYPASS_KEYS = (
+        # contains the exception "tokens"
+        "refresh_tokens",
+        "refresh_tokens_value",
+        # contains the exception "token_budget", and says "secret" outright
+        "token_budget_secret",
+        # contains the exception "tokens", and says "api_key" outright
+        "api_key_tokens",
+        # contains the exception "token_count"
+        "token_count_password",
+        # contains the exception "max_tokens"
+        "max_tokens_credential",
+        # the singular is not on the exception list at all
+        "refresh_token",
+    )
+
+    def test_a_key_that_merely_contains_an_exception_is_still_a_secret(self):
+        for key in self.BYPASS_KEYS:
+            redacted = redaction.redact_value({key: "s3cr3t-value-goes-here"})
+            self.assertEqual(redacted[key], "[redacted:key]", key)
+
+    def test_the_same_keys_are_redacted_as_text_assignments(self):
+        for key in self.BYPASS_KEYS:
+            redacted = redaction.redact_text(f"{key}=s3cr3t-value-goes-here")
+            self.assertNotIn("s3cr3t-value-goes-here", redacted, key)
+
+    def test_an_exception_only_applies_to_the_whole_key(self):
+        self.assertFalse(redaction._is_secret_key("tokens"))
+        self.assertTrue(redaction._is_secret_key("refresh_tokens"))
+
+    def test_a_non_token_hint_outvotes_an_exact_exception(self):
+        # Even if someone adds this exact key to the exception list, `secret`
+        # is not a hint an exception may neutralize.
+        self.assertTrue(
+            redaction._is_secret_key("token_budget_secret"),
+            "a key naming a secret must never be exempted as accounting",
+        )
+
+    def test_the_accounting_keys_it_exists_for_still_survive(self):
+        for key in redaction.SECRET_KEY_EXCEPTIONS:
+            self.assertFalse(redaction._is_secret_key(key), key)
+            self.assertFalse(redaction._is_secret_key(key.upper()), key)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,8 +6,11 @@ Three subcommands. The first two read the hook payload as JSON on stdin:
     enqueue   SessionEnd   — record session_id + transcript_path and return.
     process   SessionStart — publish this session's capture identity, then
                              convert and post whatever is queued.
-    identity  (no hook)    — print the current session's capture identity, for
-                             a skill that has to record it on its actor entity.
+    identity  (no hook)    — print THIS session's capture identity, for a skill
+                             that has to record it on its actor entity. Takes
+                             the session id, or reads $CLAUDE_CODE_SESSION_ID;
+                             with several sessions recorded and no way to tell
+                             which is asking, it says so rather than guessing.
 
 The enqueue/process split is deliberate. Converting a long conversation takes
 real time (Harbor parses the whole transcript, and the post is a network call),
@@ -112,7 +115,32 @@ def read_payload() -> dict:
 # capture identity
 # --------------------------------------------------------------------------
 
-IDENTITY_PATH = "current-session.json"
+# One file per session, never one file for "the current session". A single
+# shared file made concurrent sessions race: two Claude Code windows open at
+# once both ran SessionStart, the second overwrote the first, and the first
+# session's skill then read the second session's ids and wrote them onto its
+# actor record — pointing the verdict at somebody else's trajectory.
+IDENTITY_DIRNAME = "identity"
+
+# How a skill running inside a session finds its own id. Claude Code exports
+# the first; the second is the escape hatch for any other harness.
+SESSION_ID_ENV_VARS = ("CLAUDE_CODE_SESSION_ID", "KATAGAMI_SESSION_ID")
+
+
+def identity_dir() -> Path:
+    return queue_root() / IDENTITY_DIRNAME
+
+
+def _safe_session_name(session_id: str) -> str:
+    """A session id is an id, not a path. Refuse anything that could be one."""
+    cleaned = session_id.strip()
+    if not cleaned or "/" in cleaned or "\\" in cleaned or cleaned.startswith("."):
+        raise ValueError(f"unusable session id: {session_id!r}")
+    return cleaned
+
+
+def identity_path(session_id: str) -> Path:
+    return identity_dir() / f"{_safe_session_name(session_id)}.json"
 
 
 def _spec_version(converter, agent_id: str | None) -> tuple[str | None, str | None]:
@@ -154,22 +182,68 @@ def build_identity(session_id: str) -> dict:
 
 def write_identity(session_id: str) -> dict:
     identity = build_identity(session_id)
-    root = queue_root()
-    root.mkdir(parents=True, exist_ok=True)
-    (root / IDENTITY_PATH).write_text(
-        json.dumps(identity, indent=2) + "\n", encoding="utf-8"
-    )
+    path = identity_path(session_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(identity, indent=2) + "\n", encoding="utf-8")
     return identity
 
 
-def cmd_identity() -> int:
-    path = queue_root() / IDENTITY_PATH
+def resolve_session_id(explicit: str | None = None) -> tuple[str | None, str]:
+    """Which session is asking. Returns (session_id, how_we_know).
+
+    Never guesses between several. A skill that read the wrong session's ids
+    records a trajectory_id pointing at another run's trajectory, and nothing
+    downstream can tell that happened.
+    """
+    if explicit:
+        return explicit, "the session id you passed"
+    for name in SESSION_ID_ENV_VARS:
+        value = (os.environ.get(name) or "").strip()
+        if value:
+            return value, f"${name}"
+
+    directory = identity_dir()
+    recorded = sorted(directory.glob("*.json")) if directory.is_dir() else []
+    if len(recorded) == 1:
+        return recorded[0].stem, f"the only session recorded in {directory}"
+    return None, ""
+
+
+def cmd_identity(session_id: str | None = None) -> int:
+    resolved, how = resolve_session_id(session_id)
+    directory = identity_dir()
+
+    if resolved is None:
+        recorded = sorted(p.stem for p in directory.glob("*.json")) if directory.is_dir() else []
+        if not recorded:
+            print(
+                "katagami-trajectory: no capture identity recorded yet. The SessionStart "
+                "hook writes it; if the hooks are not installed, mint the ids yourself and "
+                "pass --session-id/--trajectory-id to claude_session_to_ots.py so the "
+                "actor record and the stored trajectory agree.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            "katagami-trajectory: several sessions are recorded and none of "
+            f"{'/'.join('$' + n for n in SESSION_ID_ENV_VARS)} is set, so this command "
+            "cannot tell which one is asking. Name it: capture.py identity "
+            f"<session-id>. Recorded: {', '.join(recorded)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        path = identity_path(resolved)
+    except ValueError as exc:
+        print(f"katagami-trajectory: {exc}", file=sys.stderr)
+        return 1
+
     if not path.is_file():
         print(
-            "katagami-trajectory: no capture identity recorded yet. The SessionStart "
-            "hook writes it; if the hooks are not installed, mint the ids yourself and "
-            "pass --session-id/--trajectory-id to claude_session_to_ots.py so the "
-            "actor record and the stored trajectory agree.",
+            f"katagami-trajectory: no capture identity for session {resolved!r} (from "
+            f"{how}) at {path}. The SessionStart hook writes it; a session that started "
+            "before the hooks were installed has none.",
             file=sys.stderr,
         )
         return 1
@@ -195,6 +269,12 @@ def cmd_enqueue() -> int:
         )
         return 1
 
+    try:
+        entry_name = _safe_session_name(session_id)
+    except ValueError as exc:
+        print(f"katagami-trajectory: {exc}; nothing enqueued", file=sys.stderr)
+        return 1
+
     identity = build_identity(session_id)
     pending = queue_root() / "pending"
     pending.mkdir(parents=True, exist_ok=True)
@@ -210,7 +290,7 @@ def cmd_enqueue() -> int:
         "actor_spec": identity["actor_spec"],
         "spec_version": identity["spec_version"],
     }
-    (pending / f"{session_id}.json").write_text(
+    (pending / f"{entry_name}.json").write_text(
         json.dumps(entry, indent=2) + "\n", encoding="utf-8"
     )
     return 0
@@ -252,6 +332,11 @@ def _convert_and_post(entry: dict) -> tuple[bool, str]:
         entry.get("harness", "claude-code"),
         "--out",
         str(archive / f"{archive_name}.json"),
+        # Images referenced by the transcript are resolved inside a temporary
+        # tree that conversion deletes. Copying them here is what keeps the
+        # trajectory's image references openable by a judge.
+        "--image-dir",
+        str(archive / "images"),
         "--post",
     ]
     if entry.get("trajectory_id"):
@@ -351,12 +436,23 @@ def cmd_process() -> int:
 
 COMMANDS = {"enqueue": cmd_enqueue, "process": cmd_process, "identity": cmd_identity}
 
+USAGE = "usage: capture.py {enqueue|process|identity [session-id]}"
+
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2 or argv[1] not in COMMANDS:
-        print("usage: capture.py {enqueue|process|identity}", file=sys.stderr)
+    if len(argv) < 2 or argv[1] not in COMMANDS:
+        print(USAGE, file=sys.stderr)
         return 2
-    return COMMANDS[argv[1]]()
+    command, rest = argv[1], argv[2:]
+    if command == "identity":
+        if len(rest) > 1:
+            print(USAGE, file=sys.stderr)
+            return 2
+        return cmd_identity(rest[0] if rest else None)
+    if rest:
+        print(USAGE, file=sys.stderr)
+        return 2
+    return COMMANDS[command]()
 
 
 if __name__ == "__main__":

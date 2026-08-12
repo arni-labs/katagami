@@ -95,17 +95,24 @@ an assignment nobody picks up surfaces instead of stalling the queue.
 ### TrajectoryVerdict
 
 One judged trajectory at one layer. `layer = "deterministic"` records the
-layer 1 result from `scripts/trajectory/conformance_check.py`, which replays the
-captured trajectory against the actor spec and is authoritative for everything
-rule-shaped; `layer = "llm"` records the katagami-judge skill's taste, quality,
-and reasoning judgement, which never overrides layer 1. Two layers means two
-rows, so a contradiction stays visible instead of merged away.
+layer 1 result and is authoritative for everything rule-shaped; `layer = "llm"`
+records the katagami-judge skill's taste, quality, and reasoning judgement,
+which never overrides layer 1. Two layers means two rows, so a contradiction
+stays visible instead of merged away.
 
-The replay runs here rather than on the server: the kernel has no conformance
-engine, the actor specs are this app's, and a transcript plus a spec is all it
-needs. Guards it cannot decide from a transcript — `cross_entity_state`, which
-is resolved against the entity graph at dispatch time — are reported as
-`unverifiable` rather than counted as satisfied.
+Layer 1 is the kernel's conformance engine, `POST /api/conformance/check`. It
+replays the governed dispatch rows the kernel recorded — what the platform
+actually did, rather than what a transcript says the agent asked for.
+`scripts/trajectory/conformance_check.py` is the offline fallback for when that
+endpoint cannot be reached, and it tracks the kernel engine rather than drifting
+into a second opinion.
+
+Neither engine claims more than it checked. Guards resolved against the entity
+graph at dispatch time (`cross_entity_state`), evidence never captured, a read
+that stopped at its row cap — all of it lands in `unverifiable` rather than
+counting as satisfied, and `evidence_complete` is false whenever any of it
+happened. `passed && evidence_complete` is the only pair that means a fully
+checked conforming run.
 
 **States:** `Pending` -> `Recorded` (terminal).
 

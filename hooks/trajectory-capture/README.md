@@ -33,7 +33,7 @@ python3 hooks/trajectory-capture/capture.py identity
   "trajectory_id": "traj-1f2e...",
   "harness": "claude-code",
   "agent_id": "katagami-contributor",
-  "spec_version": "CuratorAgent@sha256:..."
+  "spec_version": "sha256:d18bca6beb87..."
 }
 ```
 
@@ -41,6 +41,22 @@ python3 hooks/trajectory-capture/capture.py identity
 on every Temper call and on the actor record. Without the hooks installed, mint
 a session id yourself and pass `--session-id` **and** `--trajectory-id` to the
 converter so both sides still agree.
+
+The identity is stored **per session**, at
+`~/.katagami/trajectory-queue/identity/<session-id>.json`. Two Claude Code
+windows open at once would otherwise overwrite one shared file, and the first
+session would go on to read the second session's ids and write them onto its
+own actor record — pointing its verdict at somebody else's trajectory.
+
+So `identity` has to know which session is asking. It resolves that in order:
+
+1. the argument — `capture.py identity <session-id>`;
+2. `$CLAUDE_CODE_SESSION_ID`, which Claude Code exports into the session
+   (`$KATAGAMI_SESSION_ID` does the same job for any other harness);
+3. the only session recorded, when there is exactly one.
+
+With several recorded and no way to tell them apart, it prints the candidates
+and exits non-zero rather than guessing.
 
 ## Install
 
@@ -63,7 +79,8 @@ converter so both sides still agree.
 
    | Variable | Meaning |
    |---|---|
-   | `KATAGAMI_AGENT_ID` | The role's own agent credential. Required — capture refuses to guess one. |
+   | `TEMPER_PRINCIPAL_ID` | The identity `TEMPER_API_KEY` belongs to. This, not a command line argument, is who the run is filed under: one configured identity per role credential. |
+   | `KATAGAMI_AGENT_ID` | The same thing under the older name, still honoured. Required — capture refuses to guess one. |
    | `TEMPER_API_URL` | Temper base URL. |
    | `TEMPER_API_KEY` | Bearer token for the ingest. **Required**: capture will not post unauthenticated. |
    | `TEMPER_TENANT_ID` | Tenant, default `default`. |
@@ -98,10 +115,24 @@ that just finished.
 
 Every converted trajectory is written to
 `~/.katagami/trajectory-queue/archive/<trajectory-id>.json` as well as posted.
-`GET /api/ots/trajectories` lists stored rows **without** their data
-(`OtsTrajectoryRow` carries ids and counts, not the document), so this archive
-is what the judge reads to see the trajectory it is judging. Delete the archive
-when you no longer want the local copies; capture recreates only new ones.
+
+The posted copy is canonical: the judge reads trajectories from the kernel
+(`GET /api/ots/trajectories/<id>/atif`), and this archive is its **offline
+fallback** for when that endpoint cannot be reached. Delete it when you no
+longer want the local copies; capture recreates only new ones.
+
+Two other things live under the queue root:
+
+- `archive/images/` — the images the transcript referenced, copied out and
+  named by content hash. Harbor resolves image paths inside a temporary tree
+  that conversion deletes, so without this step the trajectory would carry
+  references that point at nothing. An image too large to keep is recorded by
+  hash and marked unavailable instead.
+- `spec-snapshots/<version>.json` — the canonical actor spec content, keyed by
+  the version hash stamped on the trajectory. Specs evolve; this is what lets a
+  judge read the contract a run actually executed under after the file has
+  moved on, and what stops a hand-typed `--spec-version` naming a contract that
+  never existed.
 
 ## When something goes wrong
 

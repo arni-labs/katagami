@@ -11,9 +11,14 @@ compares the live conversion against that golden, so converter drift is caught
 the moment anyone runs the suite in an environment that has the pin.
 """
 
+import hashlib
 import importlib.util
 import json
+import os
+import shutil
 import sys
+import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -40,6 +45,11 @@ def _load(module_name):
 
 converter = _load("claude_session_to_ots")
 harbor_adapter = _load("harbor_adapter")
+# The converter imported this on the way in. Reaching for the same module
+# object rather than loading a second copy keeps `SpecVersionError` one class:
+# two loads give two identically-named exception types, and `assertRaises`
+# against the wrong one never matches.
+spec_version_module = sys.modules["spec_version"]
 
 
 def _harbor_available():
@@ -261,52 +271,223 @@ class UnobservedCallTests(unittest.TestCase):
 class MultimodalContentTests(unittest.TestCase):
     """Images are evidence. A trajectory that drops them cannot be judged on taste."""
 
-    def setUp(self):
-        self.atif = json.loads(GOLDEN_ATIF.read_text())
-        step = next(s for s in self.atif["steps"] if s.get("tool_calls"))
-        result = step["observation"]["results"][0]
-        result["content"] = [
+    # An image source as `harbor_adapter.archive_images` leaves it once the
+    # file has been copied into the capture archive.
+    ARCHIVED = {
+        "media_type": "image/png",
+        "path": "/archive/images/abc123.png",
+        "sha256": "abc123",
+        "bytes": 2048,
+        "available": True,
+    }
+
+    def _ots_with(self, source):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in atif["steps"] if s.get("tool_calls"))
+        step["observation"]["results"][0]["content"] = [
             {"type": "text", "text": "rendered the landing page"},
-            {
-                "type": "image",
-                "source": {"media_type": "image/png", "path": "/tmp/landing.png"},
-            },
+            {"type": "image", "source": source},
         ]
-        self.ots = converter.atif_to_ots(
-            self.atif, agent_id="a", session_id="s", trajectory_id="t"
+        return converter.atif_to_ots(
+            atif, agent_id="a", session_id="s", trajectory_id="t"
         )
 
-    def _tool_response(self):
+    def setUp(self):
+        self.ots = self._ots_with(dict(self.ARCHIVED))
+
+    def _tool_response(self, ots=None):
         return next(
             m
-            for turn in self.ots["turns"]
+            for turn in (ots or self.ots)["turns"]
             for m in turn["messages"]
             if m["content"]["type"] == "tool_response"
             and m["content"]["data"].get("attachments")
         )
 
-    def test_the_image_reference_survives_as_an_attachment(self):
+    def test_an_archived_image_keeps_a_path_that_opens(self):
         data = self._tool_response()["content"]["data"]
         self.assertEqual(
             data["attachments"],
-            [{"type": "image", "media_type": "image/png", "path": "/tmp/landing.png"}],
+            [
+                {
+                    "type": "image",
+                    "media_type": "image/png",
+                    "available": True,
+                    "sha256": "abc123",
+                    "bytes": 2048,
+                    "path": "/archive/images/abc123.png",
+                }
+            ],
         )
+
+    def test_an_unarchived_image_carries_no_path_at_all(self):
+        # The bug this replaces: a relative path into a deleted temp tree,
+        # indistinguishable from a path a judge could open.
+        ots = self._ots_with(
+            {
+                "media_type": "image/png",
+                "sha256": "def456",
+                "available": False,
+                "unavailable_reason": "the image is past the archive's size bounds",
+            }
+        )
+        attachment = self._tool_response(ots)["content"]["data"]["attachments"][0]
+        self.assertNotIn("path", attachment)
+        self.assertFalse(attachment["available"])
+        self.assertEqual(attachment["sha256"], "def456")
+        self.assertIn("size bounds", attachment["unavailable_reason"])
+
+    def test_a_raw_reference_that_never_reached_the_archive_is_marked_unavailable(self):
+        ots = self._ots_with({"media_type": "image/png", "path": "landing.png"})
+        attachment = self._tool_response(ots)["content"]["data"]["attachments"][0]
+        self.assertNotIn("path", attachment)
+        self.assertFalse(attachment["available"])
 
     def test_the_text_still_marks_where_the_image_was(self):
         data = self._tool_response()["content"]["data"]
         self.assertIn("rendered the landing page", data["content"])
-        self.assertIn("[image image/png /tmp/landing.png]", data["content"])
+        self.assertIn("[image image/png /archive/images/abc123.png]", data["content"])
+
+    def test_the_marker_says_unavailable_rather_than_naming_a_dead_path(self):
+        ots = self._ots_with(
+            {"media_type": "image/png", "sha256": "def456", "available": False}
+        )
+        content = self._tool_response(ots)["content"]["data"]["content"]
+        self.assertIn("[image image/png unavailable sha256:def456]", content)
 
     def test_a_user_message_keeps_its_images_too(self):
         atif = json.loads(GOLDEN_ATIF.read_text())
         user = next(s for s in atif["steps"] if s["source"] == "user")
         user["message"] = [
             {"type": "text", "text": "look at this"},
-            {"type": "image", "source": {"media_type": "image/webp", "path": "a.webp"}},
+            {
+                "type": "image",
+                "source": {
+                    "media_type": "image/webp",
+                    "path": "/archive/images/a.webp",
+                    "available": True,
+                },
+            },
         ]
         ots = converter.atif_to_ots(atif, agent_id="a", session_id="s", trajectory_id="t")
         message = ots["turns"][0]["messages"][0]
         self.assertEqual(message["attachments"][0]["media_type"], "image/webp")
+
+
+class ImageArchiveTests(unittest.TestCase):
+    """Referenced images are copied out before their directory disappears."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="katagami-images-")
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.staged = self.root / "staged"
+        self.staged.mkdir()
+        self.archive = self.root / "archive"
+
+    def _document(self, path):
+        return {
+            "steps": [
+                {
+                    "message": [
+                        {"type": "image", "source": {"media_type": "image/png", "path": path}}
+                    ]
+                }
+            ]
+        }
+
+    def test_a_real_image_is_copied_and_hashed(self):
+        (self.staged / "shot.png").write_bytes(b"pretend-png-bytes")
+        document = self._document("shot.png")
+
+        counts = harbor_adapter.archive_images(
+            document, roots=[self.staged], image_dir=self.archive
+        )
+
+        source = document["steps"][0]["message"][0]["source"]
+        self.assertEqual(counts["archived"], 1)
+        self.assertTrue(source["available"])
+        self.assertTrue(Path(source["path"]).is_file())
+        self.assertEqual(
+            Path(source["path"]).read_bytes(), b"pretend-png-bytes"
+        )
+        self.assertEqual(
+            source["sha256"],
+            hashlib.sha256(b"pretend-png-bytes").hexdigest(),
+        )
+        # The copy survives the staged tree being torn down, which is the
+        # entire point.
+        shutil.rmtree(self.staged)
+        self.assertTrue(Path(source["path"]).is_file())
+
+    def test_a_reference_to_nothing_becomes_an_explicit_marker(self):
+        document = self._document("gone.png")
+
+        counts = harbor_adapter.archive_images(
+            document, roots=[self.staged], image_dir=self.archive
+        )
+
+        source = document["steps"][0]["message"][0]["source"]
+        self.assertEqual(counts["missing"], 1)
+        self.assertNotIn("path", source)
+        self.assertFalse(source["available"])
+        self.assertIn("no file was found", source["unavailable_reason"])
+        self.assertEqual(source["source_ref"], "gone.png")
+
+    def test_an_oversize_image_is_identified_by_hash_and_not_copied(self):
+        big = b"x" * (harbor_adapter.MAX_ARCHIVED_IMAGE_BYTES + 1)
+        (self.staged / "huge.png").write_bytes(big)
+        document = self._document("huge.png")
+
+        counts = harbor_adapter.archive_images(
+            document, roots=[self.staged], image_dir=self.archive
+        )
+
+        source = document["steps"][0]["message"][0]["source"]
+        self.assertEqual(counts["hashed_only"], 1)
+        self.assertNotIn("path", source)
+        self.assertFalse(source["available"])
+        self.assertEqual(source["sha256"], hashlib.sha256(big).hexdigest())
+
+    def test_without_an_archive_the_hash_is_still_recorded(self):
+        (self.staged / "shot.png").write_bytes(b"bytes")
+        document = self._document("shot.png")
+
+        harbor_adapter.archive_images(document, roots=[self.staged], image_dir=None)
+
+        source = document["steps"][0]["message"][0]["source"]
+        self.assertNotIn("path", source)
+        self.assertFalse(source["available"])
+        self.assertEqual(source["sha256"], hashlib.sha256(b"bytes").hexdigest())
+
+    def test_images_are_found_wherever_they_sit_in_the_document(self):
+        (self.staged / "deep.png").write_bytes(b"deep")
+        document = {
+            "steps": [
+                {
+                    "observation": {
+                        "results": [
+                            {
+                                "content": [
+                                    {
+                                        "type": "image",
+                                        "source": {
+                                            "media_type": "image/png",
+                                            "path": "deep.png",
+                                        },
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+        counts = harbor_adapter.archive_images(
+            document, roots=[self.staged], image_dir=self.archive
+        )
+        self.assertEqual(counts["archived"], 1)
 
 
 class RedactionTests(unittest.TestCase):
@@ -370,25 +551,221 @@ class RedactionTests(unittest.TestCase):
 
 
 class SpecVersionResolutionTests(unittest.TestCase):
+    def setUp(self):
+        # Never touch the real ~/.katagami archive from a test.
+        self.snapshots = tempfile.TemporaryDirectory(prefix="katagami-snapshots-")
+        self.addCleanup(self.snapshots.cleanup)
+        patch = mock.patch.dict(
+            os.environ, {"KATAGAMI_SPEC_SNAPSHOT_DIR": self.snapshots.name}
+        )
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def test_the_version_is_computed_from_the_agents_actor_spec(self):
         version = converter.resolve_spec_version(
             spec_version=None, actor_spec=None, agent_id="katagami-contributor"
         )
-        self.assertTrue(version.startswith("CuratorAgent@sha256:"))
+        self.assertTrue(version.startswith("sha256:"))
 
-    def test_an_explicit_version_wins(self):
+    def test_the_stamped_version_is_one_the_kernel_can_compare(self):
+        # The kernel's `spec_content_hash` is sha256 over the registered
+        # ioa_source, and `names_same_spec` strips only a `sha256:` prefix
+        # before an exact match. A version in any other shape makes
+        # POST /api/conformance/check answer 409 for every captured run, which
+        # leaves the canonical layer 1 unable to judge anything.
+        version = converter.resolve_spec_version(
+            spec_version=None, actor_spec="CuratorAgent", agent_id="katagami-contributor"
+        )
+        source = (
+            REPO_ROOT / "katagami-curation" / "specs" / "curator_agent.ioa.toml"
+        ).read_bytes()
         self.assertEqual(
+            spec_version_module.bare_version(version),
+            hashlib.sha256(source).hexdigest(),
+        )
+
+    def test_resolving_snapshots_the_spec_it_resolved(self):
+        version = converter.resolve_spec_version(
+            spec_version=None, actor_spec="CuratorAgent", agent_id="katagami-contributor"
+        )
+        stored = spec_version_module.load_snapshot(version, Path(self.snapshots.name))
+        self.assertIsNotNone(stored, "capture must record the contract it stamped")
+        self.assertEqual(stored["version"], version)
+        self.assertIn("automaton", stored["source"])
+
+    def test_an_unverifiable_explicit_version_is_refused(self):
+        # The whole point: a version nobody can produce is not provenance.
+        with self.assertRaises(spec_version_module.SpecVersionError) as caught:
             converter.resolve_spec_version(
                 spec_version="X@1", actor_spec="CuratorAgent", agent_id="katagami-contributor"
+            )
+        self.assertIn("X@1", str(caught.exception))
+
+    def _snapshot_an_older_spec(self):
+        """Snapshot a real variant of the spec, as capture would have at the time."""
+        root = Path(self.snapshots.name)
+        current = (
+            REPO_ROOT / "katagami-curation" / "specs" / "curator_agent.ioa.toml"
+        ).read_text()
+        older_source = "# the spec as it stood when the run happened\n" + current
+
+        scratch = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        older_path = scratch / "curator_agent.ioa.toml"
+        older_path.write_text(older_source, encoding="utf-8")
+        version, _ = spec_version_module.snapshot_spec(str(older_path), root)
+        return version
+
+    def test_an_explicit_version_is_accepted_when_a_snapshot_backs_it(self):
+        # A run that executed under a spec this checkout has since changed.
+        older = self._snapshot_an_older_spec()
+        self.assertNotEqual(older, spec_version_module.compute_version("CuratorAgent"))
+        self.assertEqual(
+            converter.resolve_spec_version(
+                spec_version=older,
+                actor_spec="CuratorAgent",
+                agent_id="katagami-contributor",
             ),
-            "X@1",
+            older,
         )
+
+    def test_a_snapshot_that_does_not_hash_to_its_own_name_is_not_provenance(self):
+        # Without recomputing the hash, anything on disk under the right file
+        # name reads back as the contract a run executed under.
+        older = "sha256:" + "ab" * 32
+        spec_version_module.snapshot_path(older, Path(self.snapshots.name)).write_text(
+            json.dumps({"version": older, "actor": "CuratorAgent", "source": "invented"}),
+            encoding="utf-8",
+        )
+        with self.assertRaises(spec_version_module.SpecVersionError) as caught:
+            converter.resolve_spec_version(
+                spec_version=older,
+                actor_spec="CuratorAgent",
+                agent_id="katagami-contributor",
+            )
+        self.assertIn("does not contain the spec it claims", str(caught.exception))
+
+    def test_a_snapshot_of_a_different_actor_cannot_be_stamped_on_this_run(self):
+        review_version, _ = spec_version_module.snapshot_spec(
+            "ReviewAgent", Path(self.snapshots.name)
+        )
+        with self.assertRaises(spec_version_module.SpecVersionError) as caught:
+            converter.resolve_spec_version(
+                spec_version=review_version,
+                actor_spec="CuratorAgent",
+                agent_id="katagami-contributor",
+            )
+        self.assertIn("ReviewAgent", str(caught.exception))
+
+    def test_a_version_with_no_spec_and_no_snapshot_is_refused(self):
+        with self.assertRaises(spec_version_module.SpecVersionError):
+            converter.resolve_spec_version(
+                spec_version="sha256:" + "cd" * 32, actor_spec=None, agent_id="unknown-agent"
+            )
 
     def test_an_unmapped_agent_yields_nothing_rather_than_a_guess(self):
         self.assertIsNone(
             converter.resolve_spec_version(
                 spec_version=None, actor_spec=None, agent_id="unknown-agent"
             )
+        )
+
+    def test_a_snapshot_is_written_once_and_never_rewritten(self):
+        root = Path(self.snapshots.name)
+        version, path = spec_version_module.snapshot_spec("CuratorAgent", root)
+        first = path.read_text(encoding="utf-8")
+        spec_version_module.snapshot_spec("CuratorAgent", root)
+        self.assertEqual(path.read_text(encoding="utf-8"), first)
+
+        # A file under this version's name whose content is something else is
+        # a corrupted archive. Saying so is the only safe answer: the whole
+        # scheme rests on the hash identifying exactly one contract.
+        path.write_text(
+            json.dumps({"version": version, "actor": "CuratorAgent", "source": "other"}),
+            encoding="utf-8",
+        )
+        with self.assertRaises(spec_version_module.SpecVersionError) as caught:
+            spec_version_module.snapshot_spec("CuratorAgent", root)
+        self.assertIn("does not contain the spec it claims", str(caught.exception))
+
+    def test_two_captures_racing_on_the_same_spec_both_succeed(self):
+        # Both SessionStart hooks snapshot the same spec at once. A shared
+        # staging filename made the loser rename a file the winner had already
+        # moved away, and the run was queued to failed/ over a no-op write.
+        root = Path(self.snapshots.name)
+        results = []
+        errors = []
+
+        def snapshot():
+            try:
+                results.append(spec_version_module.snapshot_spec("CuratorAgent", root))
+            except Exception as exc:  # noqa: BLE001 - the failure is the finding
+                errors.append(exc)
+
+        threads = [threading.Thread(target=snapshot) for _ in range(8)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len({version for version, _ in results}), 1)
+        self.assertEqual(
+            sorted(p.name for p in root.iterdir()),
+            [spec_version_module.snapshot_path(results[0][0], root).name],
+            "a staged .partial file was left behind",
+        )
+
+
+class PostingIdentityTests(unittest.TestCase):
+    """The posting identity is configuration, never a command line argument."""
+
+    def _env(self, **values):
+        patch = mock.patch.dict(os.environ, values, clear=False)
+        patch.start()
+        self.addCleanup(patch.stop)
+        for name in converter.PRINCIPAL_ENV_VARS:
+            if name not in values:
+                os.environ.pop(name, None)
+
+    def test_the_configured_principal_is_used(self):
+        self._env(TEMPER_PRINCIPAL_ID="katagami-contributor")
+        self.assertEqual(
+            converter.resolve_agent_id(requested=None, posting=True),
+            "katagami-contributor",
+        )
+
+    def test_the_older_env_name_still_works(self):
+        self._env(KATAGAMI_AGENT_ID="katagami-reviewer")
+        self.assertEqual(
+            converter.resolve_agent_id(requested=None, posting=True), "katagami-reviewer"
+        )
+
+    def test_a_matching_assertion_is_allowed(self):
+        self._env(TEMPER_PRINCIPAL_ID="katagami-contributor")
+        self.assertEqual(
+            converter.resolve_agent_id(requested="katagami-contributor", posting=True),
+            "katagami-contributor",
+        )
+
+    def test_a_mismatched_override_is_refused(self):
+        # The bypass this closes: one role's credential filing a run under
+        # another role's name, purely because the name was a CLI argument.
+        self._env(TEMPER_PRINCIPAL_ID="katagami-contributor")
+        with self.assertRaises(converter.TrajectoryError) as caught:
+            converter.resolve_agent_id(requested="katagami-judge", posting=True)
+        self.assertIn("katagami-contributor", str(caught.exception))
+
+    def test_posting_without_a_configured_identity_is_refused(self):
+        self._env()
+        with self.assertRaises(converter.TrajectoryError):
+            converter.resolve_agent_id(requested="anyone-at-all", posting=True)
+
+    def test_a_local_conversion_may_label_itself(self):
+        # Writing a file claims nothing to anybody.
+        self._env()
+        self.assertEqual(
+            converter.resolve_agent_id(requested="katagami-contributor", posting=False),
+            "katagami-contributor",
         )
 
 

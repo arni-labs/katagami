@@ -11,8 +11,15 @@ There are two layers, and they do different jobs:
 
 | Layer | Who decides | Scope |
 |---|---|---|
-| 1 — deterministic | `scripts/trajectory/conformance_check.py` | Everything rule-shaped: state order, action legality, guards the run carries evidence for, exactly-once, budgets. |
+| 1 — deterministic | The kernel: `POST /api/conformance/check` | Everything rule-shaped: state order, action legality, guards the run carries evidence for, exactly-once, budgets. |
 | 2 — LLM | You | Only what no rule can state: taste, quality, and the reasoning behind the choices. |
+
+Layer 1 is the **kernel's** conformance engine, not a local script. It replays
+the governed dispatch rows the kernel itself recorded for the session, which is
+the record of what the platform actually did — a transcript only shows what the
+agent asked for. `scripts/trajectory/conformance_check.py` still exists and is
+still useful, but it is an offline tool with a narrower view; §2 says when to
+reach for it.
 
 **You never override layer 1.** If the replay says a run violated its spec, it
 violated its spec — a well-argued paragraph does not overturn a replay. If you
@@ -58,35 +65,77 @@ judgeable.
 
 ## 1. Get the trajectory and the spec slice — and nothing else
 
-### The trajectory
+### The trajectory — from the kernel
 
-Two steps, because the list endpoint does not return documents.
+The kernel is the canonical source. Read the trajectory from it, not from any
+machine's local files: a judge that can only work on the laptop that captured
+the run cannot judge the corpus.
 
-**Confirm the row landed, and read its metadata:**
+**Find the run, if you were given an agent rather than an id:**
 
 ```
-GET $TEMPER_API_URL/api/ots/trajectories?agent_id=<agent>&limit=50
+GET $TEMPER_API_URL/api/ots/trajectories?agent_id=<agent>&outcome=<outcome>&limit=50
     -> { "trajectories": [ { "trajectory_id": ..., "session_id": ..., "agent_id": ...,
                              "outcome": ..., "turn_count": ..., "created_at": ... } ],
          "total": N }
 ```
 
-Metadata only — ids, outcome, turn count. The stored OTS document is **not** in
-this response (`OtsTrajectoryRow` in `temper-store-turso/src/store/ots.rs`
-carries no `data` field, and no route exposes the row that does).
+Metadata only — ids, outcome, turn count, and `total` is the size of this page,
+not a global count. The stored document is **not** in this response.
 
-**Read the document from the capture archive:**
+**Read the document:**
+
+```
+GET $TEMPER_API_URL/api/ots/trajectories/<trajectory-id>/atif
+    -> the full trajectory as ATIF v1.7, returned bare (no envelope)
+```
+
+That is the whole run: `steps[]`, each with `source`, `message`,
+`tool_calls[]`, and `observation.results[]`. The OTS metadata rides in
+`extra["temper.metadata"]` — that is where `spec_version` and `harness` are,
+**not** at a top-level `metadata` key. `extra["temper.context"]` carries the
+context, `extra["temper.ots_version"]` the OTS version.
+
+Answers other than 200 mean different things, and the bodies are **plain text,
+not JSON**:
+
+| Status | What it means |
+|---|---|
+| 400 | You sent no `X-Tenant-Id`. It is required here. |
+| 403 | Your principal has no Cedar permit for `read_trajectories` on `Trajectory` in that tenant. There is no admin bypass on this endpoint. |
+| 404 | No trajectory with that id in that tenant. |
+| 422 | The stored document has no valid ATIF rendering. The row is intact; it cannot be exported. Say so and stop. |
+| 503 | The server has no durable metadata backend, so nothing is stored to read. |
+
+There is no `GET /api/ots/trajectories/<id>` without the `/atif` suffix; the
+only routes are the list, the POST, and this export
+(`temper-server/src/api/mod.rs`).
+
+**Offline fallback, and only that.** If the kernel is unreachable, the capture
+archive on the machine that recorded the run holds the same document as OTS:
 
 ```
 ~/.katagami/trajectory-queue/archive/<trajectory-id>.json
 ```
 
-Capture writes every posted document there under the id it was posted with
-(`hooks/trajectory-capture/capture.py`). If the file is not there — a run
-captured on another machine, or an archive that was cleared — you cannot read
-that trajectory. Say so and stop; do not judge a run from its metadata row.
-`metadata.spec_version` tells you which version of the actor spec the run
-executed under, `metadata.harness` which harness drove it.
+Use it only when the kernel could not answer, and **say in your handback that
+you judged from a local archive rather than the canonical store** — a verdict
+read off one laptop's disk is not reproducible by anyone else. If neither the
+kernel nor an archive has it, you cannot read that trajectory: say so and stop.
+Never judge a run from its metadata row.
+
+Note the two shapes differ. The kernel exports ATIF (`steps[]`); the archive
+holds OTS (`turns[]` with `messages[]` and `decisions[]`). §3 refers to
+`turn_id`, `decision_id`, `cause_id` and `attachments`, which are OTS names; in
+the ATIF export the step id and the tool-call/observation pairing carry the
+same information.
+
+**Images.** Attachments carry `available`. When it is `true`, `path` points at
+an archived file you can open. When it is `false`, the image was not kept —
+`sha256` identifies it and `unavailable_reason` says why. An attachment never
+carries a path that does not open, so do not go hunting for one: if
+`available` is false, you cannot see that picture, and a taste finding that
+needed it is a finding you cannot make.
 
 ### The spec slice — only the actor's own
 
@@ -96,7 +145,18 @@ under rather than trusting a label:
 
 ```bash
 python3 scripts/trajectory/spec_version.py CuratorAgent \
-  --verify "<metadata.spec_version>"
+  --verify "<extra['temper.metadata'].spec_version>"
+```
+
+A version this checkout can no longer produce is not automatically drift:
+capture snapshots the canonical spec content under its version hash at capture
+time, so `--verify` also accepts a version the snapshot store holds, and tells
+you on stderr when it answered from there. Read the contract the run actually
+executed under with:
+
+```bash
+python3 scripts/trajectory/spec_version.py CuratorAgent \
+  --show-snapshot "<that version>"
 ```
 
 `<ActorName>` is one of `CuratorAgent`, `ReviewAgent`, `HumanCurator`
@@ -113,16 +173,93 @@ actor never had, and the verdicts stop being about conformance at all. If the
 slice does not contain the ground for a finding, the finding does not belong in
 this verdict.
 
-If `metadata.spec_version` is missing, or `--verify` fails because the spec has
-moved since the run, **stop**: judging a run against a contract you cannot
-confirm was in force is not a judgement. Record that as the reason and do not
-invent a substitute. (Capture refuses to post a trajectory with no spec
-version, so a missing one means the row predates that rule.)
+If the trajectory names no spec version, or `--verify` fails because the spec
+has moved and no snapshot of the recorded version exists either, **stop**:
+judging a run against a contract you cannot confirm was in force is not a
+judgement. Record that as the reason and do not invent a substitute. (Capture
+refuses to post a trajectory with no spec version, so a missing one means the
+row predates that rule.)
 
 ## 2. Layer 1 first — always
 
 Run the replay before you form any opinion, so your reading is anchored to what
 actually happened.
+
+```
+POST $TEMPER_API_URL/api/conformance/check
+{
+  "entity_type":   "CuratorAgent",
+  "session_id":    "<the judged run's session id>",
+  "trajectory_id": "<trajectory id>",
+  "spec_version":  "<the version the run executed under>"
+}
+```
+
+`entity_type` and `session_id` are required; `trajectory_id` and `spec_version`
+are optional but send both. `trajectory_id` contributes the agent-side
+decisions to the walk. `spec_version` is **verified, not selected**: the server
+compares it with the registered spec's hash and answers 409 if they differ,
+which is the check you want — a report against a spec that did not govern the
+run is not a report. Omitting it makes the check fall back to the trajectory's
+own `metadata.spec_version`, and if nothing names a version the report comes
+back with `spec_resolution: "unresolved"` and an evidence gap saying so.
+
+`limit` caps the rows read (1–5000, default 5000).
+
+The answer:
+
+```json
+{
+  "tenant": "...", "entity_type": "CuratorAgent", "session_id": "...",
+  "trajectory_id": "...", "spec_version": "<the registered spec's hash>",
+  "row_limit": 5000, "truncated": false,
+  "report": {
+    "verdict": "fail",
+    "passed": false,
+    "spec_resolution": "pinned",
+    "evidence_complete": true,
+    "violations": [
+      {
+        "index": 14,
+        "kind": "illegal_transition",
+        "action": "SubmitDesignLanguages",
+        "entity_type": "CuratorAgent",
+        "detail": "SubmitDesignLanguages from Drafting; only legal from SelfReviewed"
+      }
+    ],
+    "evidence_gaps": [],
+    "stats": { "stream_length": 22, "actor_rows": 18, "transitions_unchecked": 0, "...": 0 }
+  }
+}
+```
+
+Read all four of these, not just `passed`:
+
+- **`verdict`** — `pass`, `fail`, or `indeterminate`. `indeterminate` is not a
+  failure and not a pass: the evidence could not settle it.
+- **`passed`** — true only for `pass`. False for both a failure and an
+  unsettled check, so it can never be read as "checked and fine" on its own.
+- **`evidence_complete`** — false when anything went unchecked. `passed &&
+  evidence_complete` is the only pair that means a fully checked conforming run.
+- **`evidence_gaps`** — plain sentences saying what was missing and why. Report
+  these; they are the honest limit of the check.
+
+`spec_resolution: "unresolved"` means the report was produced against whatever
+spec is registered now, which may not be the one that governed the run. Treat
+that as a reason you could not fully judge, and say so.
+
+Failure bodies are **plain text**, not JSON: 400 (no `X-Tenant-Id`, bad
+`limit`, or the trajectory belongs to a different session), 403 (no Cedar
+permit for `read_trajectories` on `Trajectory`), 404 (no spec registered for
+that entity type, or no such trajectory), 409 (`spec_version` disagrees with
+the registered spec), 422 (malformed body), 503 (no durable store).
+
+### The offline replay — when the kernel cannot answer
+
+`scripts/trajectory/conformance_check.py` replays a captured trajectory against
+the spec files in this checkout. It is the fallback, and it sees less: a
+transcript records the calls the agent issued, while the kernel's rows record
+the dispatches the platform actually governed.
 
 ```bash
 python3 scripts/trajectory/conformance_check.py \
@@ -131,45 +268,30 @@ python3 scripts/trajectory/conformance_check.py \
   --out layer1.json
 ```
 
-It replays the actor actions the trajectory recorded against the automaton and
-returns:
+It answers in its own shape — `passed`, `evidence_complete`, `final_state`,
+`actions_replayed`, `violations`, and `unverifiable` (the guards it could not
+replay, chiefly `cross_entity_state`, which is resolved off the entity graph at
+dispatch time). Read `unverifiable` as carefully as `violations`: those guards
+were **not** checked, and a `passed: true` does not cover them.
 
-```json
-{
-  "passed": false,
-  "actor_spec": "CuratorAgent",
-  "spec_version": "CuratorAgent@sha256:...",
-  "layer": "deterministic",
-  "judged_by": "katagami-conformance@1",
-  "final_state": "Submitted",
-  "violations": [
-    {
-      "kind": "illegal_transition",
-      "turn_id": 14,
-      "detail": "SubmitDesignLanguages from Drafting; SubmitDesignLanguages is only legal from SelfReviewed"
-    }
-  ],
-  "unverifiable": [
-    {
-      "kind": "cross_entity_state",
-      "turn_id": 14,
-      "action": "SubmitDesignLanguages",
-      "detail": "resolved against the entity graph at dispatch time and cannot be replayed from a transcript"
-    }
-  ]
-}
-```
+If you used it, `judged_by` is `katagami-conformance@1` rather than the kernel,
+and your handback must say layer 1 ran offline.
 
-Read `unverifiable` as well as `violations`. Those guards were **not** checked;
-a `passed: true` does not cover them, and saying so is part of reporting the
-verdict honestly.
+### Either way
 
-There is no `/api/conformance/check` on the Temper server — the kernel has no
-conformance engine — which is why the replay runs here, against the specs in
-this checkout.
+Write layer 1's result **verbatim** into its own `TrajectoryVerdict` (§4) with
+`layer = "deterministic"`. Do not summarize, soften, or re-score it. The
+verdict entity has a field for each part of the result, so nothing has to be
+flattened into a boolean:
 
-Write layer 1's result verbatim into its own `TrajectoryVerdict` (§4) with
-`layer = "deterministic"`. Do not summarize, soften, or re-score it.
+| TrajectoryVerdict field | From the kernel report | From the offline tool |
+|---|---|---|
+| `passed` | `report.passed` | `passed` |
+| `violations` | `report.violations` | `violations` |
+| `unverifiable` | `report.evidence_gaps` | `unverifiable` |
+| `actions_replayed` | `report.stats.actor_rows` — the rows it walked for this actor, not `stream_length`, which counts rows it skipped as another actor's or as platform bookkeeping | `len(actions_replayed)` |
+| `evidence_complete` | `report.evidence_complete` | `evidence_complete` |
+| `final_state` | `""` — the kernel walks every entity in the session and reports `stats.terminal_entities`, a count, not a per-entity final state | `final_state` |
 
 ## 3. Layer 2 — judge taste, quality, and reasoning
 
@@ -206,24 +328,47 @@ record it in a single action.
 ```
 POST $TEMPER_API_URL/tdata/TrajectoryVerdicts
 {}
-    -> { "Id": "<verdict id>" }
+    -> 201, the new entity's state:
+       { "entity_type": "TrajectoryVerdict", "entity_id": "<verdict id>",
+         "status": "Pending", "fields": { ... }, "@odata.id": "TrajectoryVerdicts('<verdict id>')", ... }
+```
 
+The id is **`entity_id`**. There is no `Id` key on this response — that
+spelling belongs to the PG-actor and ToolDefinition creation paths, not to a
+spec-governed entity like this one. Read `entity_id`.
+
+```
 POST $TEMPER_API_URL/tdata/TrajectoryVerdicts('<verdict id>')/Temper.Record
 {
-  "trajectory_id": "<trajectory id>",
-  "session_id":    "<the judged run's session id>",
-  "actor_spec":    "CuratorAgent",
-  "spec_version":  "<metadata.spec_version>",
-  "layer":         "deterministic",
-  "passed":        false,
-  "violations":    "[{\"kind\":\"illegal_transition\",\"turn_id\":14,\"detail\":\"...\"}]",
-  "judged_by":     "katagami-conformance@1",
-  "judged_at":     "2026-08-11T10:00:00Z"
+  "trajectory_id":     "<trajectory id>",
+  "session_id":        "<the judged run's session id>",
+  "actor_spec":        "CuratorAgent",
+  "spec_version":      "<the version the run executed under>",
+  "layer":             "deterministic",
+  "passed":            false,
+  "violations":        "[{\"index\":14,\"kind\":\"illegal_transition\",\"detail\":\"...\"}]",
+  "unverifiable":      "[]",
+  "actions_replayed":  22,
+  "evidence_complete": true,
+  "final_state":       "",
+  "judged_by":         "katagami-conformance@kernel",
+  "judged_at":         "2026-08-11T10:00:00Z"
 }
 ```
 
-Then the same call again with `layer = "llm"`, your own findings in
-`violations`, and `judged_by` set to your agent id and model.
+Action parameters are top-level, with no wrapper key. A success returns 200
+with the entity's state; the `Temper.` namespace prefix is required in the path
+but only the last dot-segment is read as the action name. Errors come back as
+`{"error": {"code": ..., "message": ...}}` — 403 `AuthorizationDenied`, 409
+`ActionFailed` when a guard rejected the transition, 404
+`EntityTypeNotGoverned` when no spec is registered.
+
+Then the same call again on a **new** verdict entity with `layer = "llm"`, your
+own findings in `violations`, `judged_by` set to your agent id and model, and
+`actions_replayed` / `final_state` left at their defaults — those describe a
+replay, and layer 2 does not replay anything. Set `evidence_complete` to false
+if anything stopped you judging the whole run (an image you could not open, a
+truncated trajectory).
 
 `Recorded` is terminal — a verdict is a fact about a completed judgement and is
 never edited in place. Re-judging writes a new `TrajectoryVerdict`.
@@ -235,10 +380,15 @@ of inline JSON.
 
 Report, in this order:
 
-1. The layer 1 verdict — passed or failed, the violations unedited, and
-   anything it listed as `unverifiable`.
-2. Your layer 2 verdict — passed or failed, with findings, each citing a turn.
-3. The two `TrajectoryVerdict` ids.
-4. Anything you could not judge and why (missing spec version, archive entry
-   absent, truncated trajectory). Say it plainly; a judge that quietly narrows
-   its own scope is worse than one that abstains out loud.
+1. The layer 1 verdict — its `verdict` word (`pass` / `fail` /
+   `indeterminate`), the violations unedited, and everything it could not
+   settle (`evidence_gaps`, or `unverifiable` from the offline tool).
+2. Which engine produced it: the kernel, or the offline replay. If it was the
+   offline replay, say why the kernel could not answer.
+3. Your layer 2 verdict — passed or failed, with findings, each citing a turn.
+4. The two `TrajectoryVerdict` ids.
+5. Anything you could not judge and why: no spec version, no snapshot of the
+   version the run executed under, images marked unavailable, a truncated
+   trajectory, or a document read from a local archive rather than the kernel.
+   Say it plainly; a judge that quietly narrows its own scope is worse than one
+   that abstains out loud.

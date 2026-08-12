@@ -1,17 +1,45 @@
-"""Layer 1 of the Judged Conformance System: replay a trajectory against its spec.
+"""OFFLINE layer 1 replay. The kernel's conformance endpoint is authoritative.
 
-This is the deterministic half. It reads a captured OTS trajectory, finds the
-actor actions the run actually invoked, and replays them against the actor's
-I/O automaton. Everything rule-shaped is decided here — state order, action
-legality, guards that the recorded run carries the evidence for, exactly-once,
-and the counter budgets. The LLM judge (`mcp/skills/katagami-judge/SKILL.md`)
-never overrules this file; it judges what a replay structurally cannot see.
+    Canonical:  POST /api/conformance/check   (temper-server)
+    This file:  the offline tool, for when that endpoint cannot be reached
 
-It runs locally against the actor specs in this repository. There is no
-`/api/conformance/check` on the Temper server — the kernel has no conformance
-engine — so a skill that called one would 404 on every run. The specs are
-Katagami's, the trajectories are Katagami's, and the replay needs nothing the
-kernel holds, so it lives here.
+Read that first sentence as a constraint on this file, not a disclaimer. The
+kernel replays the governed dispatch ROWS it recorded — the record of what the
+platform actually did. This module replays a TRANSCRIPT — the record of what
+the agent asked for. Those differ exactly where it matters: a call the kernel
+refused, a transition the platform applied through a path the transcript never
+saw. When the two disagree, the kernel is right.
+
+So this file has two jobs and no others:
+
+  1. Judge a run when the kernel is unreachable — a laptop offline, a trajectory
+     captured against a server that is gone.
+  2. Serve the mutation suite, which needs to replay hand-built trajectories
+     against a spec with no server in the loop.
+
+**It must track the kernel engine.** When `crates/temper-server/src/conformance/`
+changes its rules, its verdict vocabulary, or its report shape, this file and
+`mcp/skills/katagami-judge/SKILL.md` change with it. Two engines that quietly
+drift apart give two different verdicts for the same run and nothing says which
+to believe.
+
+Where the two answers correspond (the judge skill's §2 has the full table):
+
+    this file            kernel report
+    ---------            -------------
+    passed               report.passed
+    evidence_complete    report.evidence_complete
+    violations           report.violations       (different `kind` vocabulary)
+    unverifiable         report.evidence_gaps
+    actions_replayed     report.stats.stream_length
+    final_state          no equivalent — the kernel walks every entity in the
+                         session and reports stats.terminal_entities, a count
+
+It reads a captured OTS trajectory, finds the actor actions the run invoked,
+and replays them against the actor's I/O automaton: state order, action
+legality, guards the recorded run carries evidence for, exactly-once, and the
+counter budgets. The LLM judge never overrules it; layer 2 judges what a replay
+structurally cannot see.
 
 What a pass does and does not mean:
 
@@ -362,6 +390,10 @@ def replay(
 
     return {
         "passed": not violations,
+        # False whenever something went unchecked, so `passed && evidence_complete`
+        # is the only pair that means a fully checked conforming run. Mirrors the
+        # kernel report's field of the same name.
+        "evidence_complete": not unverifiable,
         "final_state": state,
         "actions_replayed": replayed,
         "violations": violations,

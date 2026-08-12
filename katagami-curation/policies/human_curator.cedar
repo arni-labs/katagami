@@ -8,9 +8,22 @@
 // forbid contributor agents from Publish on DesignLanguage and ArtStyle, and
 // art_style.cedar restricts the finalizer actions to Agent::"system". Those
 // policies remain the authority for the artifacts.
+// The permit ENUMERATES the alphabet rather than granting `action`, so an
+// action added to human_curator.ioa.toml later arrives denied rather than open
+// — on the one record where "open by default" means "publishable by default".
+// The three *Event actions are absent on purpose: they are output actions,
+// emitted by the platform, never invoked by a caller.
 permit(
   principal,
-  action,
+  action in [
+    Action::"AssignSubmission",
+    Action::"RecordReviewVerdict",
+    Action::"BeginReview",
+    Action::"Publish",
+    Action::"ReturnWithCritique",
+    Action::"ReviewOverdue",
+    Action::"Reassign"
+  ],
   resource is HumanCurator
 );
 
@@ -44,10 +57,57 @@ forbid(
   principal.id == resource.assignee_ref
 };
 
-// Reassign moves the role to a different holder and so cannot be bound to the
-// current one. It stays a non-agent decision (the forbid above covers agents)
-// and never publishes anything — Reassign lands in SubmissionAssigned, which
+// --- Escalation is not a way around the binding above ---
+//
+// Publish requires `principal.id == resource.assignee_ref`. Reassign is what
+// SETS assignee_ref. Left open to any authenticated non-agent, the pair is a
+// two-step bypass of the whole publish boundary: escalate the assignment,
+// reassign it to yourself, publish. So escalation is held by an explicit
+// allowlist rather than by "anyone who is not a contributor".
+//
+//   Agent::"system"                       the platform. HumanCurator declares
+//                                         state_timeouts that fire
+//                                         ReviewOverdue on their own, and the
+//                                         pipeline is what dispatches them.
+//   Agent::"katagami-curation-escalation" the escalation role's own
+//                                         credential, for a re-route done by
+//                                         hand.
+//
+// Same shape as the reviewer allowlist in review_agent.cedar: adding a
+// principal means adding it here, in review, rather than it arriving by
+// default.
+
+// ReviewOverdue only says "this sat too long". It publishes nothing and lands
+// in Escalated, which is visible and countable — so the assignment's own
+// holder may also raise it, which is a person saying they cannot get to it.
+forbid(
+  principal,
+  action == Action::"ReviewOverdue",
+  resource is HumanCurator
+) unless {
+  principal == Agent::"system" ||
+  principal == Agent::"katagami-curation-escalation" ||
+  (resource has assignee_ref &&
+   resource.assignee_ref != "" &&
+   principal.id == resource.assignee_ref)
+};
+
+// Reassign moves the role to a different holder, so it cannot be bound to the
+// current one — the holder is absent, which is why it escalated. It is
+// deliberately NOT open to the outgoing assignee either: a holder who could
+// hand the assignment to themselves has re-granted themselves the publish
+// right the binding above took away.
+//
+// Reassign never publishes anything: it lands in SubmissionAssigned, which
 // still has the machine review and the human decision ahead of it.
+forbid(
+  principal,
+  action == Action::"Reassign",
+  resource is HumanCurator
+) unless {
+  principal == Agent::"system" ||
+  principal == Agent::"katagami-curation-escalation"
+};
 
 // Contributor agents never touch the role record at all — not their own
 // assignment, not anyone's. Same shape as katagami-commons/policies/member.cedar:

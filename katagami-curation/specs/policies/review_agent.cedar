@@ -1,7 +1,24 @@
 // ReviewAgent — one machine review of one curator submission (ARN-294).
+//
+// The permit ENUMERATES the alphabet rather than granting `action`. A blanket
+// permit means every action this actor does not yet have is already allowed:
+// the forbids below name RecordVerdict and RecordFinding, so every other
+// transition — the ones that move a review through its lifecycle, and any
+// action added to the spec later — was globally writable by anyone
+// authenticated. Adding an action to review_agent.ioa.toml now means adding it
+// here too, deliberately, instead of it arriving open.
+//
+// ReviewVerdictRecordedEvent is absent on purpose: it is an output action,
+// emitted by the platform when the verdict lands, never invoked by a caller.
 permit(
   principal,
-  action,
+  action in [
+    Action::"ReceiveSubmission",
+    Action::"BeginReview",
+    Action::"RecordFinding",
+    Action::"RecordVerdict",
+    Action::"Abandon"
+  ],
   resource is ReviewAgent
 );
 

@@ -1,7 +1,12 @@
 // TrajectoryVerdict — one judged trajectory at one layer (ARN-294 / ARN-295).
+//
+// The permit ENUMERATES the alphabet rather than granting `action`, so an
+// action added to trajectory_verdict.ioa.toml later arrives denied instead of
+// open. VerdictRecordedEvent is absent on purpose: it is an output action,
+// emitted by the platform when a verdict lands, never invoked by a caller.
 permit(
   principal,
-  action,
+  action in [Action::"Record"],
   resource is TrajectoryVerdict
 );
 

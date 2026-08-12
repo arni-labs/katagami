@@ -44,16 +44,57 @@ SECRET_KEY_HINTS = (
     "session_key",
 )
 
-# Keys that contain the word "token" but are counted, not secret. Without this
-# every trajectory would have its token accounting redacted into uselessness.
-SECRET_KEY_EXCEPTIONS = (
-    "token_count",
-    "tokens",
-    "prompt_token_ids",
-    "completion_token_ids",
-    "max_tokens",
-    "token_budget",
+# Keys that are counted, not secret. Without this every trajectory would have
+# its token accounting redacted into uselessness.
+#
+# Matched on the WHOLE key, never as a substring. Substring matching made the
+# exception list a bypass: `refresh_tokens` contains "tokens" and is a
+# credential, `token_budget_secret` contains "token_budget" and is a
+# credential, and both were exempted by a list whose entire purpose is token
+# *counters*. An exception now has to name the key exactly.
+# Exact matching means this list has to name the accounting fields rather than
+# catch them by shape, so it enumerates the ones serving stacks actually emit.
+# The `ephemeral_*` and `cache_*` entries are Claude Code's own usage keys,
+# counted from real transcripts — miss them and every message in every captured
+# trajectory has its usage block redacted into uselessness.
+#
+# Adding an entry is a deliberate act with two conditions: the key must be a
+# counter, and it must trip no hint other than "token". A key that also says
+# `secret`, `password`, `api_key` or `credential` is a credential whatever else
+# it says, and putting it here would not change that (see `_is_secret_key`).
+SECRET_KEY_EXCEPTIONS = frozenset(
+    {
+        "token_count",
+        "tokens",
+        "token_budget",
+        "prompt_token_ids",
+        "completion_token_ids",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "input_tokens",
+        "output_tokens",
+        "reasoning_tokens",
+        "thinking_tokens",
+        "cached_tokens",
+        "cache_read_input_tokens",
+        "cache_creation_input_tokens",
+        "cache_missed_input_tokens",
+        "ephemeral_5m_input_tokens",
+        "ephemeral_1h_input_tokens",
+        "max_tokens",
+        "max_output_tokens",
+        "max_completion_tokens",
+        "tokens_per_second",
+    }
 )
+
+# The only hint an exception is allowed to neutralize. Every entry above is on
+# the list because "token" appears in an accounting field; none of them is on
+# it because "secret" or "password" appears. So a key that trips any OTHER
+# hint is a secret no matter what the exception list says — an exception can
+# never outvote `secret`, `password`, `api_key`, or `credential`.
+EXEMPTIBLE_KEY_HINTS = frozenset({"token"})
 
 _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     # Whole private key blocks, before anything else can chew on their body.
@@ -102,10 +143,21 @@ _ENV_ASSIGNMENT_SKIP = re.compile(r"(?i)^(?:\[redacted:[a-z-]+\]|null|none|true|
 
 
 def _is_secret_key(key: str) -> bool:
+    """Does this key name a credential?
+
+    Hints match as substrings, because a credential key can be spelled a
+    hundred ways (`TEMPER_API_KEY`, `x-api-key`, `refresh_token`). Exceptions
+    match the whole key, because anything looser turns the exception list into
+    a way to smuggle a secret past the hints — and a hint outside
+    `EXEMPTIBLE_KEY_HINTS` wins even against an exact exception.
+    """
     lowered = key.lower()
-    if any(exception in lowered for exception in SECRET_KEY_EXCEPTIONS):
+    matched = {hint for hint in SECRET_KEY_HINTS if hint in lowered}
+    if not matched:
         return False
-    return any(hint in lowered for hint in SECRET_KEY_HINTS)
+    if lowered in SECRET_KEY_EXCEPTIONS and matched <= EXEMPTIBLE_KEY_HINTS:
+        return False
+    return True
 
 
 def redact_text(text: str) -> str:
