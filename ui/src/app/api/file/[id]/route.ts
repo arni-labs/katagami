@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isPubliclyServableFile } from "@/lib/file-visibility";
+import { fetchServableFileBytes } from "@/lib/file-visibility";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -177,28 +177,22 @@ export async function GET(
   if (API_KEY) fetchHeaders["Authorization"] = `Bearer ${API_KEY}`;
 
   // This proxy holds the app's credential, so whatever it agrees to fetch is
-  // public. Resolve the file's projection first and serve bytes only for files
-  // that sit on a known public surface — see `isPubliclyServableFile`. State
+  // public. `fetchServableFileBytes` resolves the file's projection and judges
+  // it before requesting a single byte — see `isPubliclyServableFile`. State
   // alone is not a permission: PawFS retains archived bytes for governed
   // recovery, and `Ready` is equally true of every agent skill in the tenant.
-  // Fail closed for Created, Archived, off-surface, malformed, or unavailable
-  // records. An authenticated server-side proxy must not turn backend retention
-  // or backend storage into public access.
-  const metadataRes = await fetch(`${API_BASE}/tdata/Files('${id}')`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-  let metadata: unknown;
-  if (metadataRes.ok) {
-    try {
-      metadata = await metadataRes.json();
-    } catch {
-      metadata = null;
-    }
-  }
-  // 404, never 403. A distinguishable "exists but forbidden" would let anyone
-  // enumerate real ids, and ids here are deterministic enough to guess.
-  if (!metadataRes.ok || !isPubliclyServableFile(metadata)) {
+  //
+  // Every refusal — missing, off-surface, malformed, or upstream 401/403 —
+  // comes back as `null` and leaves here as a 404. Never a 403: a
+  // distinguishable "exists but forbidden" would let anyone enumerate real ids,
+  // and ids here are deterministic enough to guess.
+  const served = await fetchServableFileBytes(
+    fetch,
+    API_BASE,
+    fetchHeaders,
+    id,
+  );
+  if (!served) {
     return NextResponse.json(
       { error: "File not found" },
       {
@@ -208,20 +202,8 @@ export async function GET(
     );
   }
 
-  const res = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    // Collapse the upstream status too. Passing a 401/403 straight through
-    // would tell a caller that the id exists and is merely protected, which is
-    // the same disclosure the gate above refuses to make.
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
-  }
-
-  const upstreamType = res.headers.get("content-type") || "";
-  const upstreamBody = await res.arrayBuffer();
+  const upstreamType = served.upstreamContentType;
+  const upstreamBody = served.bytes;
   // Repair a generic/missing upstream mime by sniffing the bytes, so a file
   // uploaded as application/octet-stream (the browser DOWNLOADS those) still
   // renders as the HTML/image/etc. it actually is.

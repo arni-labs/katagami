@@ -2,86 +2,129 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isPubliclyServableFile } from "../src/lib/file-visibility.ts";
+import {
+  isPubliclyServableFile,
+  fetchServableFileBytes,
+} from "../src/lib/file-visibility.ts";
 
-// A published artifact is served. These are the surfaces every caller of
-// getFileUrl() reads from: embodiments, landings, dashboards, thumbnails,
-// palettes, DESIGN.md projections, shadcn exports.
-for (const p of [
-  "/katagami/embodiments/en-abc/index.html",
-  "/katagami/thumbnails/en-abc.png",
-  "/katagami/palettes/pl-abc.json",
-  "/katagami/design-md/en-abc/DESIGN.md",
-  "/katagami/shadcn/en-abc/shadcn.json",
-]) {
+const PUBLIC_WS = "katagami-contrib";
+
+// ── Real published assets, read live from tenant `default` on 2026-08-12 ──
+// Published DesignLanguage en-019ef593-0eda-71c1-b412-f7f6fccf2570, plus a
+// published ArtStyle proof shot. These are the exact shapes the site's callers
+// hand to getFileUrl(), so each MUST stay servable.
+const LIVE_PUBLIC_FILES = [
+  {
+    what: "DesignLanguages.embodiment_file_id",
+    Id: "fl-019ef224-4a00",
+    WorkspaceId: PUBLIC_WS,
+    Path: "/languages/civic-press/v10/embodiment.html",
+  },
+  {
+    what: "DesignLanguages.thumbnail_file_id",
+    Id: "fl-019ef224-6a71",
+    WorkspaceId: PUBLIC_WS,
+    Path: "/languages/civic-press/v10/thumb.jpg",
+  },
+  {
+    what: "DesignLanguages.shadcn_preview_shots_file_id",
+    Id: "fl-019ef1b8-3d76",
+    WorkspaceId: PUBLIC_WS,
+    Path: "/languages/civic-press/shadcn-v2/preview-shots.json",
+  },
+  {
+    what: "DesignLanguages.design_md_asset_id",
+    WorkspaceId: PUBLIC_WS,
+    Path: "/languages/civic-press/v10/DESIGN.md",
+  },
+  {
+    what: "ArtStyles.proof_shots_file_ids",
+    WorkspaceId: PUBLIC_WS,
+    Path: "/art-styles/some-style/proof-01.png",
+  },
+];
+for (const file of LIVE_PUBLIC_FILES) {
   assert.equal(
-    isPubliclyServableFile({
-      fields: { Status: "Ready", Path: p, WorkspaceId: "katagami-contrib" },
-    }),
+    isPubliclyServableFile({ fields: { Status: "Ready", ...file } }),
     true,
-    `${p} is a public surface and must still be served`,
+    `${file.what} (${file.Path}) is live public content and must stay served`,
   );
 }
 assert.equal(
   isPubliclyServableFile({
     fields: {
       status: "Locked",
-      path: "/katagami/embodiments/en-abc/index.html",
+      path: "/languages/civic-press/v10/embodiment.html",
+      workspace_id: PUBLIC_WS,
     },
   }),
   true,
   "Locked is readable, and the snake_case projection must be understood",
 );
 
-// ARN-309. The real id, verified world-readable before this fix:
+// ── ARN-309: the disclosure this fix closes ──
+// Verified world-readable before the fix:
 //   curl https://katagami.ai/api/file/os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language
 //   -> 200, 12,037 bytes of the internal curator skill.
 // Ids of this shape are deterministic (`os-agent-skill-file-<soul>-<skill>`),
 // so obscurity was never the control.
+const REAL_SKILL_FILE = {
+  Id: "os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language",
+  Status: "Ready",
+  Path: "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+  WorkspaceId: "os-app-docs",
+};
 assert.equal(
-  isPubliclyServableFile({
-    fields: {
-      Id: "os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language",
-      Status: "Ready",
-      Path: "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
-      WorkspaceId: "os-app-docs",
-    },
-  }),
+  isPubliclyServableFile({ fields: REAL_SKILL_FILE }),
   false,
   "agent skills must never be served to an unauthenticated caller",
 );
+
+// Private trees are refused even inside the PUBLIC workspace. Not hypothetical:
+// the owner A/B tooling writes /feedback/ab-verdicts.jsonl into
+// katagami-contrib, so a workspace-only rule would publish it.
 for (const p of [
+  "/feedback/ab-verdicts.jsonl",
   "/agents/curator/skills/review-quality/SKILL.md",
   "/system/knowledge/design-principles.md",
-  "/feedback/ab-verdicts.jsonl",
 ]) {
   assert.equal(
-    isPubliclyServableFile({ fields: { Status: "Ready", Path: p } }),
+    isPubliclyServableFile({
+      fields: { Status: "Ready", Path: p, WorkspaceId: PUBLIC_WS },
+    }),
     false,
-    `${p} is not a public surface`,
+    `${p} must be refused even inside ${PUBLIC_WS}`,
   );
 }
 
-// The workspace deny holds even if a path somehow looks public.
-assert.equal(
-  isPubliclyServableFile({
-    fields: {
-      Status: "Ready",
-      Path: "/katagami/embodiments/x.html",
-      WorkspaceId: "os-app-docs",
-    },
-  }),
-  false,
-  "os-app-docs is never a public workspace",
-);
+// A non-public workspace is refused whatever the path looks like.
+for (const ws of ["os-app-docs", "ws-019de271-1cd1-7301-b5f7-fd19eca19419"]) {
+  assert.equal(
+    isPubliclyServableFile({
+      fields: {
+        Status: "Ready",
+        Path: "/languages/civic-press/v10/embodiment.html",
+        WorkspaceId: ws,
+      },
+    }),
+    false,
+    `${ws} is not a public workspace`,
+  );
+}
 
-// Unknown and unclassifiable input fails closed rather than being served.
+// Unclassifiable input fails closed rather than being served.
 for (const meta of [
   null,
   {},
-  { fields: { Status: "Ready" } }, // no path -> cannot place on a surface
-  { fields: { Status: "Ready", Path: "relative/path.html" } },
-  { fields: { Status: "Ready", Path: "/somewhere-else/thing.html" } },
+  { fields: { Status: "Ready", Path: "/languages/x.html" } }, // no workspace
+  { fields: { Status: "Ready", WorkspaceId: PUBLIC_WS } }, // no path
+  {
+    fields: {
+      Status: "Ready",
+      Path: "languages/x.html",
+      WorkspaceId: PUBLIC_WS,
+    },
+  }, // relative
 ]) {
   assert.equal(
     isPubliclyServableFile(meta),
@@ -94,32 +137,135 @@ for (const meta of [
 for (const state of ["Created", "Archived", "Deleted", "", null]) {
   assert.equal(
     isPubliclyServableFile({
-      fields: { Status: state, Path: "/katagami/embodiments/x.html" },
+      fields: {
+        Status: state,
+        Path: "/languages/civic-press/v10/embodiment.html",
+        WorkspaceId: PUBLIC_WS,
+      },
     }),
     false,
     `${String(state)} must fail closed`,
   );
 }
 
+// ── The orchestration, executed rather than read ──
+// The property that matters is an ordering one: a refused file's bytes are
+// never requested. Only running it can show that.
+function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
+  const calls = [];
+  const impl = async (url) => {
+    calls.push(String(url));
+    if (String(url).endsWith("/$value")) {
+      return {
+        ok: valueStatus >= 200 && valueStatus < 300,
+        status: valueStatus,
+        headers: { get: () => "text/html" },
+        arrayBuffer: async () => new TextEncoder().encode("BYTES").buffer,
+      };
+    }
+    return {
+      ok: metadataStatus >= 200 && metadataStatus < 300,
+      status: metadataStatus,
+      json: async () => metadata,
+    };
+  };
+  return { impl, calls };
+}
+
+{
+  const { impl, calls } = stubFetch({ fields: REAL_SKILL_FILE });
+  const out = await fetchServableFileBytes(
+    impl,
+    "http://api",
+    {},
+    REAL_SKILL_FILE.Id,
+  );
+  assert.equal(out, null, "the agent skill must be refused end to end");
+  assert.equal(calls.length, 1, "exactly one upstream call for a refusal");
+  assert.ok(
+    !calls.some((u) => u.endsWith("/$value")),
+    "a refused file's BYTES must never be fetched",
+  );
+}
+
+{
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/languages/civic-press/v10/embodiment.html",
+      WorkspaceId: PUBLIC_WS,
+    },
+  };
+  const { impl, calls } = stubFetch(meta);
+  const out = await fetchServableFileBytes(
+    impl,
+    "http://api",
+    {},
+    "fl-019ef224-4a00",
+  );
+  assert.ok(out, "a live published embodiment must still be served");
+  assert.equal(new TextDecoder().decode(out.bytes), "BYTES");
+  assert.equal(out.upstreamContentType, "text/html");
+  assert.ok(
+    calls.some((u) => u.endsWith("/$value")),
+    "bytes are fetched when allowed",
+  );
+}
+
+{
+  // Unknown id: upstream 404 on metadata, so no byte fetch and no result.
+  const { impl, calls } = stubFetch(null, { metadataStatus: 404 });
+  const out = await fetchServableFileBytes(
+    impl,
+    "http://api",
+    {},
+    "fl-does-not-exist",
+  );
+  assert.equal(out, null, "an unknown id is refused");
+  assert.ok(!calls.some((u) => u.endsWith("/$value")));
+}
+
+{
+  // Upstream forbids the bytes after we allowed the metadata: still a plain
+  // refusal, so a caller cannot distinguish it from "no such file".
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/languages/civic-press/v10/embodiment.html",
+      WorkspaceId: PUBLIC_WS,
+    },
+  };
+  const { impl } = stubFetch(meta, { valueStatus: 403 });
+  const out = await fetchServableFileBytes(
+    impl,
+    "http://api",
+    {},
+    "fl-019ef224-4a00",
+  );
+  assert.equal(out, null, "an upstream 403 must collapse to a plain refusal");
+}
+
+// ── Route wiring ──
 const here = path.dirname(fileURLToPath(import.meta.url));
 const route = fs.readFileSync(
   path.join(here, "../src/app/api/file/[id]/route.ts"),
   "utf8",
 );
-const metadataFetch = route.indexOf("/tdata/Files('${id}')`");
-const stateGate = route.indexOf("!isPubliclyServableFile", metadataFetch);
-const valueFetch = route.indexOf("/tdata/Files('${id}')/$value");
-assert.ok(metadataFetch >= 0, "file proxy must read the File projection");
-assert.ok(stateGate > metadataFetch, "the gate must be evaluated after metadata");
-assert.ok(valueFetch > stateGate, "bytes must not be fetched before the gate");
-assert.match(route, /Cache-Control": "private, no-store"/);
-
-// Refusals must be indistinguishable from "no such file", so the route must
-// never hand back a status it got from upstream.
+assert.match(
+  route,
+  /fetchServableFileBytes\(/,
+  "the route must go through the gated reader",
+);
+assert.doesNotMatch(
+  route,
+  /\$\{API_BASE\}\/tdata\/Files\('\$\{id\}'\)\/\$value/,
+  "the route must not fetch bytes directly, bypassing the gate",
+);
 assert.doesNotMatch(
   route,
   /status:\s*res\.status/,
   "upstream status must not be forwarded; it confirms the id exists",
 );
+assert.match(route, /Cache-Control": "private, no-store"/);
 
 console.log("file proxy scope contract: pass");
