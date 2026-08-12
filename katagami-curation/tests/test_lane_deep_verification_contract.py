@@ -277,9 +277,16 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             actions["SetModelProvenance"]["from"], ["Draft", "UnderReview"]
         )
 
-    def test_finalizer_callbacks_are_dispatchable_and_system_only(self):
+    def _art_policy_blocks(self):
+        """(finalizer-and-curator block, contributor block) of art_style.cedar."""
+        service_start = ART_POLICY.index("// The finalizer calls these OData actions")
+        contributor_start = ART_POLICY.index("// Contributor boundary")
+        return ART_POLICY[service_start:contributor_start], ART_POLICY[contributor_start:]
+
+    def test_finalizer_callbacks_are_dispatchable_and_attestation_locked(self):
         actions = self._by_name(self.art, "action")
-        service_actions = [
+        # Every finalizer callback must be dispatchable over OData.
+        dispatchable = [
             "AttachArtStyleReview",
             "AttachPublishedAssets",
             "SubmitForReview",
@@ -287,27 +294,92 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             "Publish",
             "AttachComputedFacets",
         ]
-        for action_name in service_actions:
+        for action_name in dispatchable:
             self.assertEqual(
                 actions[action_name]["kind"],
                 "input",
                 f"{action_name} must be reachable by the WASM finalizer over OData",
             )
+        # Attestation and publication stay locked to the finalizer
+        # (Agent::"system"); contributors never reach them. SubmitForReview is
+        # in this list on purpose: for art styles ONLY, advancing a draft is a
+        # finalizer step, not the submitting agent's (905aa864 "lock art style
+        # attestations to finalizer", paired with f9054e31, which stops
+        # submit_art_style at Draft so a curator independently verifies the
+        # prompt, rights basis, and proof matrix first). The other three lanes
+        # let the agent advance its own draft — do not "harmonize" this one.
+        attestation_actions = [
+            "AttachArtStyleReview",
+            "AttachPublishedAssets",
+            "SubmitForReview",
+            "MarkQualityPassed",
+            "Publish",
+            "AttachComputedFacets",
+        ]
+        service_only, contributor_block = self._art_policy_blocks()
+        self.assertIn('principal != Agent::"system"', service_only)
+        for action_name in attestation_actions:
             self.assertIn(
                 f'Action::"{action_name}"',
-                ART_POLICY,
+                service_only,
+                f"{action_name} must be denied to every non-system, non-curator principal",
+            )
+            self.assertIn(
+                f'Action::"{action_name}"',
+                contributor_block,
                 f"{action_name} must remain denied to contributor principals",
             )
-        self.assertIn('principal != Agent::"system"', ART_POLICY)
-        system_only = ART_POLICY[
-            ART_POLICY.index("// The finalizer calls these OData actions")
-            : ART_POLICY.index("// Contributor boundary")
-        ]
-        for action_name in service_actions:
-            self.assertIn(
-                f'Action::"{action_name}"',
-                system_only,
-                f"{action_name} must be denied to every non-system principal",
+
+    def test_finalizer_lock_is_not_exempted_for_self_declared_admins(self):
+        # An `!(principal is Admin)` exemption was tried here and REVERTED:
+        # `x-temper-principal-kind: admin` is a self-declared request header the
+        # kernel does not validate (only `system` is header-blocked), so the
+        # exemption let any caller unlock Publish / MarkQualityPassed / Attach*
+        # by sending one header. Nothing in this repo invokes those actions as
+        # Admin — the under-review curator surface only calls ReturnToDraft —
+        # so the exemption widened the attestation surface for no consumer.
+        # If human curators ever need these actions, the fix is a validated
+        # principal, not a hole in the forbid.
+        service_only, _ = self._art_policy_blocks()
+        self.assertNotIn(
+            "!(principal is Admin)",
+            service_only,
+            "the finalizer lock must not be exempted on a self-declared Admin header",
+        )
+
+    def test_only_art_styles_reserve_submit_for_review_to_the_finalizer(self):
+        # ARN-285 was filed as "ArtStyle wrongly forbids SubmitForReview" after
+        # production denials, and the forbid was briefly removed. That was the
+        # wrong read: the asymmetry is deliberate (905aa864). The denials came
+        # from a contributor skill instructing agents to call it on art styles.
+        # This pins the shape both ways so neither side drifts again.
+        art = (COMMONS / "policies" / "art_style.cedar").read_text()
+        self.assertIn(
+            'Action::"SubmitForReview"',
+            art,
+            "art_style.cedar must keep SubmitForReview finalizer-locked",
+        )
+        for policy_name in ["design_language", "palette_system", "writing_style"]:
+            policy = (COMMONS / "policies" / f"{policy_name}.cedar").read_text()
+            for forbid_block in policy.split("forbid(")[1:]:
+                self.assertNotIn(
+                    'Action::"SubmitForReview"',
+                    forbid_block,
+                    f"{policy_name}.cedar must let the agent advance its own draft",
+                )
+
+    def test_loaded_and_serve_policy_copies_stay_identical(self):
+        # policies/ is what the installed app loads (find_cedar_policies);
+        # specs/policies/ is what `temper serve` and the e2e harness load.
+        # A change to one that misses the other ships a policy that only
+        # holds in one of the two runtimes.
+        for policy in sorted((COMMONS / "policies").glob("*.cedar")):
+            mirror = COMMONS / "specs" / "policies" / policy.name
+            self.assertTrue(mirror.exists(), f"specs/policies/{policy.name} is missing")
+            self.assertEqual(
+                policy.read_text(),
+                mirror.read_text(),
+                f"{policy.name} differs between policies/ and specs/policies/",
             )
 
     def test_finalizer_verifies_palette_evidence(self):

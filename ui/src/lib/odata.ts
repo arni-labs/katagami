@@ -1448,3 +1448,37 @@ export function parseJson<T = unknown>(raw?: unknown): T | null {
     return null;
   }
 }
+
+export interface SpecField<T> {
+  /** Structured content, when the field holds a JSON object or array. */
+  data: T | null;
+  /** Trimmed free text, when the field holds prose instead of JSON. */
+  prose: string | null;
+}
+
+/**
+ * Spec fields (philosophy, tokens, rules, layout_principles, guidance,
+ * imagery_direction, …) hold EITHER structured JSON or plain prose — most
+ * contributor-authored languages store prose. parseJson() returns null for
+ * prose, and every consumer read that null as "field absent", so those panels
+ * rendered empty and the published DESIGN.md / KATAGAMI.MD dropped the whole
+ * section. Keep both shapes so callers can render whichever one is there.
+ */
+export function parseSpecField<T = Record<string, unknown>>(
+  raw?: unknown,
+): SpecField<T> {
+  const parsed = parseJson(raw);
+  if (parsed !== null && typeof parsed === "object") {
+    return { data: parsed as T, prose: null };
+  }
+  // Prefer the decoded value for JSON-quoted prose ("\"a sentence\""), and fall
+  // back to the raw text for anything JSON.parse rejected.
+  const text =
+    typeof parsed === "string"
+      ? parsed
+      : typeof raw === "string"
+        ? raw
+        : "";
+  const prose = text.trim();
+  return { data: null, prose: prose || null };
+}

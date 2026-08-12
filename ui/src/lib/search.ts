@@ -6,6 +6,7 @@ import {
   normalizeDesignLanguageRow,
   normalizeLaneRow,
   parseJson,
+  parseSpecField,
   type DesignLanguage,
   type VectorHit,
 } from "@/lib/odata";
@@ -131,16 +132,24 @@ function toHit(lane: SearchLane, hit: VectorHit, detailed: boolean): SearchHit {
 /** A short, human-legible line per kind, drawn from public fields. */
 function summarize(lane: SearchLane, fields: Record<string, unknown>): string {
   if (lane === "language") {
-    const phil = parseJson<{ summary?: string }>(fields.philosophy as string);
-    if (phil?.summary) return phil.summary.trim();
+    // Contributor-authored philosophy is often prose, not JSON. Fall back to it
+    // so those languages still carry a summary line instead of an empty one.
+    const { data, prose } = parseSpecField<{ summary?: string }>(
+      fields.philosophy as string,
+    );
+    if (data?.summary) return data.summary.trim();
+    if (prose) return prose;
   }
   if (lane === "art-style") {
     const medium = typeof fields.medium === "string" ? fields.medium : "";
     return medium ? `${medium} art style` : "";
   }
   if (lane === "palette") {
-    const mood = parseJson<{ summary?: string }>(fields.mood as string);
-    if (mood?.summary) return mood.summary.trim();
+    const { data, prose } = parseSpecField<{ summary?: string }>(
+      fields.mood as string,
+    );
+    if (data?.summary) return data.summary.trim();
+    if (prose) return prose;
   }
   const tags = parseJson<string[]>(fields.tags as string) ?? [];
   return tags.slice(0, 4).join(", ");

@@ -47,12 +47,17 @@ elements, or truncated labels are failures.
 
 ## Harness card — publishing (the platform mechanics, nothing more)
 
+Create the entity, then use `SetSpec` once for the whole core spec — never the
+ladder of small setters (`WritePhilosophy`, `SetTokens`, `SetRules`, `SetLayout`,
+`SetGuidance`), which costs a call each and leaves half-written specs behind on a
+failed retry:
+
 ```python
 lang = temper.create('DesignLanguages', {})
 eid = lang['entity_id']   # ALWAYS the entity_id, never the slug
 temper.action('DesignLanguages', eid, 'SetSpec', {
     'name': name, 'slug': slug,
-    'philosophy': json.dumps(philosophy),      # summary, values, anti_values, visual_character (3-5 concrete CSS traits)
+    'philosophy': json.dumps(philosophy),      # summary, values, anti_values, visual_character (3-5 concrete CSS traits), lineage
     'tokens': json.dumps(tokens),              # colors(12 keys)/typography(+google_fonts_url)/spacing/radii/shadows/surfaces/borders/motion
     'rules': json.dumps(rules),                # composition, hierarchy, density, signature_patterns(3+)
     'layout_principles': json.dumps(layout),   # grid, breakpoints, whitespace
@@ -89,28 +94,45 @@ Also produce (same language, same quality bar):
 - Desktop thumbnail: 1440×960 viewport capture of the embodiment, resized to
   600×400 JPEG.
 
-Publish everything in ONE call:
+Author everything in ONE call. `SubmitDesignLanguage` is the whole-language
+hot path — it re-sets the core spec, attaches every artifact file id, and sets
+every `SubmitForReview` guard var. It does NOT transition state: the entity
+stays in `Draft` until `SubmitForReview`. Every object and array param is
+`json.dumps(...)`, exactly as in `SetSpec` above — the bare file-id and version
+params are plain strings:
 
 ```python
-temper.action('DesignLanguages', eid, 'AuthorComplete', {
+temper.action('DesignLanguages', eid, 'SubmitDesignLanguage', {
     'name': name, 'slug': slug,
-    'philosophy': ..., 'tokens': ..., 'rules': ..., 'layout_principles': ...,
-    'guidance': ..., 'tags': ..., 'imagery_direction': ...,
-    'embodiment_file_id': ..., 'embodiment_format': 'html',
+    'philosophy': json.dumps(philosophy), 'tokens': json.dumps(tokens),
+    'rules': json.dumps(rules), 'layout_principles': json.dumps(layout),
+    'guidance': json.dumps(guidance), 'tags': json.dumps(tags),
+    'imagery_direction': json.dumps(imagery_direction),
+    'embodiment_file_id': embodiment_file_id, 'embodiment_format': 'html',
     'element_count': '18', 'composition_count': '5',
-    'landing_file_id': ..., 'dashboard_file_id': ...,
-    'design_md_file_id': ..., 'design_md_lint_result': ...,
+    'landing_file_id': landing_file_id, 'dashboard_file_id': dashboard_file_id,
+    'design_md_file_id': design_md_file_id,
+    'design_md_lint_result': json.dumps(lint_result),
     'design_md_format_version': 'design-md-v1',
-    'shadcn_export_file_id': ..., 'shadcn_export_format_version': 'registry-item-v1',
-    'shadcn_export_manifest': ...,
-    'shadcn_component_spec_file_id': ...,
+    'shadcn_export_file_id': shadcn_export_file_id,
+    'shadcn_export_format_version': 'registry-item-v1',
+    'shadcn_export_manifest': json.dumps(shadcn_export_manifest),
+    'shadcn_component_spec_file_id': shadcn_component_spec_file_id,
     'shadcn_component_spec_format_version': 'katagami:shadcn-component-recipes/v1',
-    'shadcn_component_spec_manifest': ...,
-    'shadcn_preview_shots_file_id': ...,
+    'shadcn_component_spec_manifest': json.dumps(shadcn_component_spec_manifest),
+    'shadcn_preview_shots_file_id': shadcn_preview_shots_file_id,
     'shadcn_preview_shots_format_version': 'katagami:shadcn-preview-shots/renderable-v1',
-    'shadcn_preview_shots_manifest': ...,
-    'thumbnail_file_id': ...,
-    'model_provenance': ..., 'direction_id': ..., 'curator_notes': ...,
+    'shadcn_preview_shots_manifest': json.dumps(shadcn_preview_shots_manifest),
+    'thumbnail_file_id': thumbnail_file_id,
+    # Lineage. Omit these and a remix publishes as an original — the parent
+    # link is lost and nothing downstream can reconstruct it. Arrays go NATIVE
+    # here, not json.dumps; scalars are plain.
+    'parent_ids': parent_ids,                # [] for an original; ['<source_entity_id>'] for a derivative
+    'lineage_type': lineage_type,            # 'original' | 'evolution' | 'remix'
+    'generation_number': generation_number,  # 0 for an original, else parent's + 1
+    'model_provenance': json.dumps(model_provenance),
+    'provenance_tier': provenance_tier,      # e.g. 'agent_generated'
+    'direction_id': direction_id, 'curator_notes': curator_notes,
 })
 ```
 
@@ -133,5 +155,11 @@ inherit base tokens, lineage_type 'evolution', finish with
 `CompleteEvolution`.)
 
 `direction_id` / `query_id` come from the **Your job identity** block at the
-top of this prompt. The `json` helper is preloaded; array/object params always
-via `json.dumps(...)`; no imports, no f-strings with nested quotes.
+top of this prompt.
+
+## Tooling Rules
+
+- The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
+  without importing it. Other imports are not available in the Monty REPL.
+- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
+- No f-strings with nested quotes.

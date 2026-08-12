@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { parseJson } from "@/lib/odata";
+import { parseSpecField, type SpecField } from "@/lib/odata";
 import {
   buildShadcnRegistryTheme,
   shadcnCssBlock,
@@ -141,6 +141,23 @@ function Empty({ label = "not set" }: { label?: string }) {
   );
 }
 
+function ProseQuote({
+  color,
+  children,
+}: {
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <blockquote
+      className="whitespace-pre-line bg-card/50 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/82 [overflow-wrap:anywhere]"
+      style={{ boxShadow: `inset 2px 0 0 var(--${color})` }}
+    >
+      {children}
+    </blockquote>
+  );
+}
+
 // ── Views ──────────────────────────────────────────────────────────
 
 function toLabel(v: unknown): string {
@@ -151,11 +168,30 @@ function toLabel(v: unknown): string {
 }
 
 function PhilosophyView({ raw }: { raw?: string }) {
-  const data = parseJson<Record<string, unknown>>(raw);
-  if (!data) return <Empty />;
+  const { data, prose } = parseSpecField(raw);
+  if (!data) {
+    // Most contributor languages write philosophy as prose, not JSON. Show it
+    // as the summary instead of blanking the panel.
+    if (!prose) return <Empty />;
+    return (
+      <section>
+        <SectionRule label="summary" color="teal" />
+        <SpecNote color="teal" className="whitespace-pre-line">
+          {prose}
+        </SpecNote>
+      </section>
+    );
+  }
 
   const values = (Array.isArray(data.values) ? data.values : []) as unknown[];
   const antiValues = (Array.isArray(data.anti_values) ? data.anti_values : []) as unknown[];
+  const visualCharacter = (
+    Array.isArray(data.visual_character) ? data.visual_character : []
+  ) as unknown[];
+  const visualCharacterText =
+    typeof data.visual_character === "string"
+      ? data.visual_character.trim()
+      : "";
   const lineage = (data.lineage as string) ?? "";
   const summary = (data.summary as string) ?? "";
 
@@ -197,6 +233,26 @@ function PhilosophyView({ raw }: { raw?: string }) {
           </div>
         </section>
       )}
+      {visualCharacter.length > 0 && (
+        <section>
+          <SectionRule label="visual character" color="sumire" />
+          <div className="flex flex-wrap gap-1.5">
+            {visualCharacter.map((v, i) => (
+              <PeeledLabel key={toLabel(v)} index={i} color="sumire">
+                {toLabel(v)}
+              </PeeledLabel>
+            ))}
+          </div>
+        </section>
+      )}
+      {visualCharacter.length === 0 && visualCharacterText && (
+        <section>
+          <SectionRule label="visual character" color="sumire" />
+          <SpecNote color="sumire" className="whitespace-pre-line">
+            {visualCharacterText}
+          </SpecNote>
+        </section>
+      )}
       {lineage && (
         <section>
           <SectionRule label="lineage" color="ramune" />
@@ -216,8 +272,20 @@ function PhilosophyView({ raw }: { raw?: string }) {
 }
 
 function TokensView({ raw }: { raw?: string }) {
-  const data = parseJson<Record<string, unknown>>(raw);
-  if (!data) return <Empty />;
+  const { data, prose } = parseSpecField(raw);
+  if (!data) {
+    // Prose is useless as tokens, but it is what the language actually says —
+    // keep it visible instead of dropping the panel.
+    if (!prose) return <Empty />;
+    return (
+      <section>
+        <SectionRule label="notes" color="sakura" />
+        <SpecNote color="sakura" className="whitespace-pre-line">
+          {prose}
+        </SpecNote>
+      </section>
+    );
+  }
 
   const groupColor: Record<string, AccentColor> = {
     colors: "sakura",
@@ -365,8 +433,9 @@ function KVValue({ value }: { value: unknown }) {
 }
 
 function RulesView({ raw }: { raw?: string }) {
-  const data = parseJson<Record<string, unknown>>(raw);
-  if (!data) return <Empty />;
+  const { data } = parseSpecField(raw);
+  // No structured rules: RichKeyValueView renders prose (or the empty state).
+  if (!data) return <RichKeyValueView raw={raw} />;
 
   if ("do" in data || "dont" in data) {
     const dos = (data.do as string[]) ?? [];
@@ -445,8 +514,11 @@ function RuleNote({
 }
 
 function RichKeyValueView({ raw }: { raw?: string }) {
-  const data = parseJson<Record<string, unknown>>(raw);
-  if (!data) return <Empty />;
+  const { data, prose } = parseSpecField(raw);
+  if (!data) {
+    if (!prose) return <Empty />;
+    return <ProseQuote color={cycleColor(0)}>{prose}</ProseQuote>;
+  }
 
   return (
     <div className="space-y-5">
@@ -477,14 +549,7 @@ function RichKeyValueView({ raw }: { raw?: string }) {
             return (
               <section key={key}>
                 <SectionRule label={label} color={color} />
-                <blockquote
-                  className="bg-card/50 py-2 pl-4 pr-3 text-[14px] italic leading-relaxed text-foreground/82 [overflow-wrap:anywhere]"
-                  style={{
-                    boxShadow: `inset 2px 0 0 var(--${color})`,
-                  }}
-                >
-                  {val}
-                </blockquote>
+                <ProseQuote color={color}>{val}</ProseQuote>
               </section>
             );
           }
@@ -932,32 +997,73 @@ function appendTypography(lines: string[], typography: JsonRecord) {
   lines.push("");
 }
 
+// Spec fields hold structured JSON or prose. A section is emitted for either —
+// dropping it when the field is prose is what silently truncated the published
+// DESIGN.md / KATAGAMI.MD for most contributor languages.
+function appendSpecSection(
+  lines: string[],
+  title: string,
+  field: SpecField<JsonRecord>,
+  renderData: (data: JsonRecord) => void,
+) {
+  if (field.data) {
+    lines.push(`## ${title}`, "");
+    renderData(field.data);
+    return;
+  }
+  if (field.prose) lines.push(`## ${title}`, "", field.prose, "");
+}
+
+// Sub-sections that are lists by contract but are often authored as a sentence.
+function appendListOrText(lines: string[], title: string, value: unknown) {
+  const items = toStringArray(value);
+  if (items.length > 0) {
+    appendList(lines, title, items);
+    return;
+  }
+  const text = asString(value);
+  if (text) lines.push(`### ${title}`, "", text, "");
+}
+
+function appendPhilosophyBody(lines: string[], phil: JsonRecord) {
+  if (phil.summary) lines.push(String(phil.summary), "");
+  appendListOrText(lines, "Values", phil.values);
+  appendListOrText(lines, "Anti-Values", phil.anti_values);
+  appendListOrText(lines, "Visual Character", phil.visual_character);
+  if (phil.lineage) {
+    lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
+  }
+}
+
+function appendGuidanceBody(lines: string[], gui: JsonRecord) {
+  appendList(lines, "Do", toStringArray(gui.do ?? gui.dos));
+  appendList(lines, "Don't", toStringArray(gui.dont ?? gui.donts));
+  const rest = Object.fromEntries(
+    Object.entries(gui).filter(
+      ([key]) => !["do", "dos", "dont", "donts"].includes(key),
+    ),
+  );
+  if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
+}
+
 export function katagamiSpecToMarkdown(props: SpecPanelProps): string {
   const lines: string[] = [];
-  const phil = parseJson<JsonRecord>(props.philosophy);
-  const tok = parseJson<JsonRecord>(props.tokens);
-  const rul = parseJson<JsonRecord>(props.rules);
-  const lay = parseJson<JsonRecord>(props.layout);
-  const gui = parseJson<JsonRecord>(props.guidance);
-  const img = parseJson<JsonRecord>(props.imageryDirection);
-  const gen = parseJson<JsonRecord>(props.generativeCanvas);
+  const phil = parseSpecField<JsonRecord>(props.philosophy);
+  const tok = parseSpecField<JsonRecord>(props.tokens);
+  const rul = parseSpecField<JsonRecord>(props.rules);
+  const lay = parseSpecField<JsonRecord>(props.layout);
+  const gui = parseSpecField<JsonRecord>(props.guidance);
+  const img = parseSpecField<JsonRecord>(props.imageryDirection);
+  const gen = parseSpecField<JsonRecord>(props.generativeCanvas);
 
   lines.push(`# ${props.name ?? "Katagami Design Language"}`, "");
 
-  if (phil) {
-    lines.push("## Philosophy", "");
-    if (phil.summary) lines.push(String(phil.summary), "");
-    appendList(lines, "Values", toStringArray(phil.values));
-    appendList(lines, "Anti-Values", toStringArray(phil.anti_values));
-    appendList(lines, "Visual Character", toStringArray(phil.visual_character));
-    if (phil.lineage) {
-      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
-    }
-  }
+  appendSpecSection(lines, "Philosophy", phil, (data) =>
+    appendPhilosophyBody(lines, data),
+  );
 
-  if (tok) {
-    lines.push("## Tokens", "");
-    for (const [group, values] of Object.entries(tok)) {
+  appendSpecSection(lines, "Tokens", tok, (data) => {
+    for (const [group, values] of Object.entries(data)) {
       lines.push(`### ${titleCase(group)}`, "");
       if (
         group === "colors" &&
@@ -980,56 +1086,34 @@ export function katagamiSpecToMarkdown(props: SpecPanelProps): string {
         lines.push(String(values), "");
       }
     }
-  }
+  });
 
-  if (rul) {
-    lines.push("## Rules", "");
-    renderKvSection(rul, lines);
-  }
-
-  if (lay) {
-    lines.push("## Layout", "");
-    renderKvSection(lay, lines);
-  }
-
-  if (gui) {
-    lines.push("## Guidance", "");
-    const dos = toStringArray(gui.do ?? gui.dos);
-    const donts = toStringArray(gui.dont ?? gui.donts);
-    appendList(lines, "Do", dos);
-    appendList(lines, "Don't", donts);
-    const rest = Object.fromEntries(
-      Object.entries(gui).filter(
-        ([key]) => !["do", "dos", "dont", "donts"].includes(key),
-      ),
-    );
-    if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
-  }
-
-  if (img) {
-    lines.push("## Imagery Direction", "");
-    renderKvSection(img, lines);
-  }
-
-  if (gen) {
-    lines.push("## Generative Canvas", "");
-    renderKvSection(gen, lines);
-  }
+  appendSpecSection(lines, "Rules", rul, (data) => renderKvSection(data, lines));
+  appendSpecSection(lines, "Layout", lay, (data) => renderKvSection(data, lines));
+  appendSpecSection(lines, "Guidance", gui, (data) =>
+    appendGuidanceBody(lines, data),
+  );
+  appendSpecSection(lines, "Imagery Direction", img, (data) =>
+    renderKvSection(data, lines),
+  );
+  appendSpecSection(lines, "Generative Canvas", gen, (data) =>
+    renderKvSection(data, lines),
+  );
 
   return lines.join("\n").trimEnd() + "\n";
 }
 
 export function designMdToMarkdown(props: SpecPanelProps): string {
   const lines: string[] = [];
-  const phil = parseJson<JsonRecord>(props.philosophy);
-  const tok = parseJson<JsonRecord>(props.tokens);
-  const rul = parseJson<JsonRecord>(props.rules);
-  const lay = parseJson<JsonRecord>(props.layout);
-  const gui = parseJson<JsonRecord>(props.guidance);
-  const img = parseJson<JsonRecord>(props.imageryDirection);
-  const gen = parseJson<JsonRecord>(props.generativeCanvas);
+  const phil = parseSpecField<JsonRecord>(props.philosophy);
+  const tok = parseSpecField<JsonRecord>(props.tokens);
+  const rul = parseSpecField<JsonRecord>(props.rules);
+  const lay = parseSpecField<JsonRecord>(props.layout);
+  const gui = parseSpecField<JsonRecord>(props.guidance);
+  const img = parseSpecField<JsonRecord>(props.imageryDirection);
+  const gen = parseSpecField<JsonRecord>(props.generativeCanvas);
 
-  const frontMatter = buildDesignMdFrontMatter(props, tok);
+  const frontMatter = buildDesignMdFrontMatter(props, tok.data);
   const colors = asRecord(frontMatter.colors) ?? {};
   const typography = asRecord(frontMatter.typography) ?? {};
   const spacing = asRecord(frontMatter.spacing) ?? {};
@@ -1039,32 +1123,37 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
   appendYamlObject(lines, frontMatter);
   lines.push("---", "", `# ${props.name ?? "Katagami Design Language"}`, "");
 
-  if (phil || props.name) {
+  if (phil.data || phil.prose || props.name) {
     lines.push("## Overview", "");
-    if (phil?.summary) {
-      lines.push(String(phil.summary), "");
+    if (phil.data?.summary) {
+      lines.push(String(phil.data.summary), "");
+    } else if (phil.prose) {
+      lines.push(phil.prose, "");
     } else if (props.name) {
       lines.push(
         `${props.name} is an agent-curated design language from Katagami.`,
         "",
       );
     }
-    appendList(lines, "Values", toStringArray(phil?.values));
-    appendList(lines, "Anti-Values", toStringArray(phil?.anti_values));
-    appendList(
-      lines,
-      "Visual Character",
-      toStringArray(phil?.visual_character),
-    );
-    if (phil?.lineage) {
-      lines.push("### Lineage", "", `> ${String(phil.lineage)}`, "");
+    if (phil.data) {
+      appendListOrText(lines, "Values", phil.data.values);
+      appendListOrText(lines, "Anti-Values", phil.data.anti_values);
+      appendListOrText(lines, "Visual Character", phil.data.visual_character);
+      if (phil.data.lineage) {
+        lines.push("### Lineage", "", `> ${String(phil.data.lineage)}`, "");
+      }
     }
+  }
+
+  // Prose tokens produce no front matter, so carry the text itself.
+  if (!tok.data && tok.prose) {
+    lines.push("## Tokens", "", tok.prose, "");
   }
 
   appendColors(lines, colors);
   appendTypography(lines, typography);
 
-  if (lay || Object.keys(spacing).length > 0) {
+  if (lay.data || lay.prose || Object.keys(spacing).length > 0) {
     lines.push("## Layout", "");
     if (Object.keys(spacing).length > 0) {
       lines.push("### Spacing Tokens", "");
@@ -1073,19 +1162,20 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
       }
       lines.push("");
     }
-    if (lay) renderKvSection(lay, lines);
+    if (lay.data) renderKvSection(lay.data, lines);
+    else if (lay.prose) lines.push(lay.prose, "");
   }
 
-  const shadows = asRecord(tok?.shadows);
-  const elevation = asRecord(tok?.elevation);
+  const shadows = asRecord(tok.data?.shadows);
+  const elevation = asRecord(tok.data?.elevation);
   if (shadows || elevation) {
     lines.push("## Elevation & Depth", "");
     if (shadows) renderKvSection({ shadows }, lines);
     if (elevation) renderKvSection({ elevation }, lines);
   }
 
-  const surfaces = asRecord(tok?.surfaces);
-  const borders = asRecord(tok?.borders);
+  const surfaces = asRecord(tok.data?.surfaces);
+  const borders = asRecord(tok.data?.borders);
   if (Object.keys(rounded).length > 0 || surfaces || borders) {
     lines.push("## Shapes", "");
     if (Object.keys(rounded).length > 0) {
@@ -1099,10 +1189,9 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
     if (borders) renderKvSection({ borders }, lines);
   }
 
-  if (rul) {
-    lines.push("## Components", "");
-    renderKvSection(rul, lines);
-  }
+  appendSpecSection(lines, "Components", rul, (data) =>
+    renderKvSection(data, lines),
+  );
 
   lines.push(
     shadcnUsageMarkdown(
@@ -1110,15 +1199,15 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
         languageId: props.languageId,
         name: props.name,
         slug: props.slug,
-        tokens: tok,
+        tokens: tok.data,
       }),
     ).trimEnd(),
     "",
   );
 
-  if (gui) {
-    const dos = toStringArray(gui.do ?? gui.dos);
-    const donts = toStringArray(gui.dont ?? gui.donts);
+  if (gui.data) {
+    const dos = toStringArray(gui.data.do ?? gui.data.dos);
+    const donts = toStringArray(gui.data.dont ?? gui.data.donts);
     if (dos.length > 0 || donts.length > 0) {
       lines.push("## Do's and Don'ts", "");
       for (const item of dos) lines.push(`- Do ${item}`);
@@ -1126,22 +1215,21 @@ export function designMdToMarkdown(props: SpecPanelProps): string {
       lines.push("");
     }
     const rest = Object.fromEntries(
-      Object.entries(gui).filter(
+      Object.entries(gui.data).filter(
         ([key]) => !["do", "dos", "dont", "donts"].includes(key),
       ),
     );
     if (Object.keys(rest).length > 0) renderKvSection(rest, lines);
+  } else if (gui.prose) {
+    lines.push("## Guidance", "", gui.prose, "");
   }
 
-  if (img) {
-    lines.push("## Imagery Direction", "");
-    renderKvSection(img, lines);
-  }
-
-  if (gen) {
-    lines.push("## Generative Canvas", "");
-    renderKvSection(gen, lines);
-  }
+  appendSpecSection(lines, "Imagery Direction", img, (data) =>
+    renderKvSection(data, lines),
+  );
+  appendSpecSection(lines, "Generative Canvas", gen, (data) =>
+    renderKvSection(data, lines),
+  );
 
   return lines.join("\n").trimEnd() + "\n";
 }
