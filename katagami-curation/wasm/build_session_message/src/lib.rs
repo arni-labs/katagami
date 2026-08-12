@@ -983,16 +983,59 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
     }
 }
 
-/// The master taste rulebook, compiled into the module from the app repo so
-/// the prompt can NEVER lack it. The runtime copy in the docs workspace is
-/// preferred (it may carry newer edits); this is the same-app-version
-/// fallback. The per-rule TasteRules ENTITIES are outdated and must not be
-/// loaded — the rulebook file is the single authority (owner decision,
-/// 2026-07-23).
-const TASTE_RULEBOOK_FALLBACK: &str = include_str!("../../../knowledge/rules/design-language.md");
+/// One authoring lane's rulebook: where to read it at runtime, the copy
+/// compiled in from the app repo so the prompt can NEVER lack it, and the
+/// name the prompt gives it.
+///
+/// `knowledge/rules/` holds one file per artifact kind. A lane gets its own
+/// rulebook and no other — an art-style session judged against the design
+/// language's radius and typography rules is being marked on the wrong exam.
+/// The per-rule TasteRules ENTITIES are outdated and must not be loaded — the
+/// rulebook files are the single authority (owner decision, 2026-07-23).
+struct Rulebook {
+    /// Names the rulebook in the prompt heading.
+    label: &'static str,
+    /// Docs-workspace paths, tried in order; they may carry newer edits than
+    /// the shipped app version.
+    paths: &'static [&'static str],
+    /// Same-app-version copy, compiled into the module.
+    fallback: &'static str,
+}
 
-/// Inline the master taste rulebook into the prompt. Tries the docs-workspace
-/// copy first, falls back to the compiled-in copy — the normal path ALWAYS
+const DESIGN_LANGUAGE_RULEBOOK: Rulebook = Rulebook {
+    label: "taste",
+    paths: &[
+        "/knowledge/rules/design-language.md",
+        "/system/knowledge/rules/design-language.md",
+    ],
+    fallback: include_str!("../../../knowledge/rules/design-language.md"),
+};
+
+const ART_STYLE_RULEBOOK: Rulebook = Rulebook {
+    label: "art style",
+    paths: &[
+        "/knowledge/rules/art-style.md",
+        "/system/knowledge/rules/art-style.md",
+    ],
+    fallback: include_str!("../../../knowledge/rules/art-style.md"),
+};
+
+/// The rulebook a skill is judged against, or `None` for lanes that author no
+/// catalog artifact (research, taxonomy, review, distillation) and so have no
+/// rulebook of their own to obey.
+fn rulebook_for_skill(skill: &str) -> Option<&'static Rulebook> {
+    match skill {
+        // Design languages: the `synthesize`, `regenerate_embodiment` and
+        // `evolve_language` job types all run this skill.
+        "synthesize-language" => Some(&DESIGN_LANGUAGE_RULEBOOK),
+        // Art styles: the `synthesize_art_style` job type.
+        "synthesize-art-style" => Some(&ART_STYLE_RULEBOOK),
+        _ => None,
+    }
+}
+
+/// Inline the lane's rulebook into the prompt. Tries the docs-workspace copy
+/// first, falls back to the compiled-in copy — the normal path ALWAYS
 /// inlines, because instruction-to-go-fetch proved to be
 /// instruction-to-never-see.
 fn render_taste_rules_block(
@@ -1001,21 +1044,20 @@ fn render_taste_rules_block(
     headers: &[(String, String)],
     skill: &str,
 ) -> String {
-    if skill != "synthesize-language" {
+    let Some(rulebook) = rulebook_for_skill(skill) else {
         return String::new();
-    }
-    const CANDIDATE_PATHS: [&str; 2] = [
-        "/knowledge/rules/design-language.md",
-        "/system/knowledge/rules/design-language.md",
-    ];
+    };
+    let label = rulebook.label;
     let mut content: Option<String> = None;
-    for path in CANDIDATE_PATHS {
+    for path in rulebook.paths {
         match load_doc_file(ctx, api_url, headers, path, true) {
             Ok(doc) => {
                 if let Some(body) = doc.content {
                     ctx.log(
                         "info",
-                        &format!("build_session_message: inlined taste rulebook from '{path}'"),
+                        &format!(
+                            "build_session_message: inlined {label} rulebook from '{path}'"
+                        ),
                     );
                     content = Some(body);
                     break;
@@ -1027,12 +1069,20 @@ fn render_taste_rules_block(
     let body = content.unwrap_or_else(|| {
         ctx.log(
             "info",
-            "build_session_message: taste rulebook not resolvable in docs workspace; inlining compiled-in copy",
+            &format!(
+                "build_session_message: {label} rulebook not resolvable in docs workspace; inlining compiled-in copy"
+            ),
         );
-        TASTE_RULEBOOK_FALLBACK.to_string()
+        rulebook.fallback.to_string()
     });
+    taste_rules_prompt(label, &body)
+}
+
+/// The rendered block, split out so the exact text a lane receives can be
+/// asserted without a live `Context`.
+fn taste_rules_prompt(label: &str, body: &str) -> String {
     format!(
-        "## The taste rulebook (authoritative — your output is judged against every rule)\n\n````markdown\n{body}\n````\n"
+        "## The {label} rulebook (authoritative — your output is judged against every rule)\n\n````markdown\n{body}\n````\n"
     )
 }
 
@@ -1203,8 +1253,13 @@ mod tests {
         completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
         instruction_path_candidates, knowledge_read_specs_for_skill,
         normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
-        render_reference_instruction_block, temper_read_command, LoadedDoc,
+        render_reference_instruction_block, rulebook_for_skill, taste_rules_prompt,
+        temper_read_command, LoadedDoc,
     };
+
+    /// The consent gate. It is the sentence that most needs to reach the lane
+    /// that can breach it, so it is what the routing test looks for.
+    const CONSENT_GATE: &str = "attribution alone is not permission";
 
     #[test]
     fn normalize_bootstrapped_soul_id_maps_agent_name_to_stable_id() {
@@ -1318,6 +1373,56 @@ mod tests {
         assert!(knowledge_read_specs_for_skill("review-language")
             .iter()
             .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
+    }
+
+    #[test]
+    fn each_authoring_lane_is_judged_against_its_own_rulebook() {
+        // The rulebooks were one file until the art-style rules were split out.
+        // Folding them back together, or pointing a lane at the wrong file,
+        // fails here.
+        let language = rulebook_for_skill("synthesize-language").expect("design language lane");
+        assert!(language.fallback.starts_with("# Design language rules"));
+        assert!(language.paths[0].ends_with("/design-language.md"));
+        assert!(
+            !language.fallback.contains(CONSENT_GATE),
+            "the art-style rules are back inside the design-language rulebook"
+        );
+
+        let art = rulebook_for_skill("synthesize-art-style").expect("art style lane");
+        assert!(art.fallback.starts_with("# Art style rules"));
+        assert!(art.paths[0].ends_with("/art-style.md"));
+        assert!(
+            art.fallback.contains(CONSENT_GATE),
+            "the art-style lane would run without its consent gate"
+        );
+
+        // Lanes that author no catalog artifact carry no rulebook of their own.
+        for skill in ["research-direction", "organize-taxonomy", "review-quality"] {
+            assert!(rulebook_for_skill(skill).is_none(), "{skill}");
+        }
+    }
+
+    #[test]
+    fn the_art_style_lane_prompt_carries_the_art_style_rules() {
+        // The text an art-style session actually reads, end to end from the
+        // compiled-in copy — the path production takes today, because the
+        // nested docs-workspace path does not resolve.
+        let rulebook = rulebook_for_skill("synthesize-art-style").expect("art style lane");
+        let prompt = taste_rules_prompt(rulebook.label, rulebook.fallback);
+
+        assert!(prompt.starts_with(
+            "## The art style rulebook (authoritative — your output is judged against every rule)"
+        ));
+        assert!(prompt.contains("# Art style rules"));
+        assert!(prompt.contains(CONSENT_GATE));
+        // The fenced block closes, so the rules cannot bleed into the sections
+        // the prompt appends after them.
+        assert!(prompt.ends_with("\n````\n"));
+
+        let language = rulebook_for_skill("synthesize-language").expect("design language lane");
+        assert!(taste_rules_prompt(language.label, language.fallback).starts_with(
+            "## The taste rulebook (authoritative — your output is judged against every rule)"
+        ));
     }
 
     #[test]
