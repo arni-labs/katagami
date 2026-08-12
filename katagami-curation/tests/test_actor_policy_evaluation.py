@@ -681,12 +681,17 @@ class PlatformPermitDecisionTest(unittest.TestCase):
     def test_the_platform_is_not_granted_the_spec_pair(self):
         """Deliberately unlike trajectory.cedar, which admits `Agent::"system"`.
 
-        Both spec endpoints go through `require_observe_auth`, which returns
-        early for a System-kind principal before Cedar is asked, and platform
-        code acting as System is covered by the kernel's built-in
-        `system-platform` permit. A grant here would be dead policy — and dead
-        policy inside an allowlist reads to the next person as evidence that a
-        call site exists.
+        This Deny is REACHABLE, which is why it is asserted rather than assumed.
+        The early return in `require_observe_auth` keys on principal KIND and
+        the kernel's built-in permit is written `principal is System`; neither
+        covers a caller sending `kind: agent, id: system` — the shape this
+        app's own wasm modules use — which arrives at Cedar as exactly this
+        principal and is refused here.
+
+        So the reason `Agent::"system"` is left out is not that a grant would
+        be unreachable. It is that nothing in this repo reads a spec under that
+        identity, and a permit added by analogy would read to the next person
+        as evidence that a call site exists. Add it when one does.
         """
         self.assertEqual(self.spec_decision(self.PLATFORM), cedarpy.Decision.Deny)
 
@@ -805,8 +810,10 @@ class PlatformPermitDecisionTest(unittest.TestCase):
                 "no temper checkout found; set $TEMPER_REPO to pin the kernel "
                 "call sites for `read_specs` on `Spec`"
             )
-        source = (checkout / "crates" / "temper-server" / "src" / "observe" / "specs.rs").read_text()
-        asks = source.count('require_observe_auth(&state, &headers, "read_specs", "Spec")')
+        handler = checkout / "crates" / "temper-server" / "src" / "observe" / "specs.rs"
+        asks = handler.read_text().count(
+            'require_observe_auth(&state, &headers, "read_specs", "Spec")'
+        )
         self.assertEqual(
             asks,
             len(self.SPEC_CALL_SITES),
@@ -815,12 +822,15 @@ class PlatformPermitDecisionTest(unittest.TestCase):
             "the policy comment together.",
         )
         # And no OTHER kernel file asks for the pair, which is what makes two
-        # call sites the whole story rather than the part we happened to look at.
-        crates = checkout / "crates"
+        # call sites the whole story rather than the part we happened to look
+        # at. Excluded by PATH, not by basename: the kernel has several files
+        # called specs.rs (temper-store-turso, temper-platform's test helpers),
+        # and skipping all of them would let an ask hide in one of those and
+        # still pass this sweep.
         elsewhere = sorted(
             path.relative_to(checkout).as_posix()
-            for path in crates.rglob("*.rs")
-            if path.name != "specs.rs"
+            for path in (checkout / "crates").rglob("*.rs")
+            if path != handler
             and '"read_specs"' in path.read_text(encoding="utf-8", errors="replace")
         )
         self.assertEqual(

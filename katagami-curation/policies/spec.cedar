@@ -131,8 +131,10 @@
 //                                  written `principal is System` (ADR-0046);
 //                                  neither covers a caller that sends
 //                                  `kind: agent, id: system`, which is the
-//                                  shape the commons finalizer uses and which
-//                                  reaches Cedar as exactly this principal.
+//                                  shape this app's own wasm modules use
+//                                  (katagami-curation/wasm/*/src/lib.rs) and
+//                                  which reaches Cedar as exactly this
+//                                  principal.
 //                                  Such a caller is DENIED here, and that is
 //                                  the whole reason to say so: an operator
 //                                  debugging that 403 should find it named in
