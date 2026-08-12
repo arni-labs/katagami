@@ -18,9 +18,9 @@ is reviewing and the pieces in scope, and loads and records the commons'
 currently accepted taste rules.
 
 Judging from a remembered standard, letting superseded rules carry weight, or
-widening scope to work that was not handed over, each fail this; a submission
-that names nothing to review is ended, not replaced with something else to rule
-on.
+widening scope to work that was not handed over, each fail this, and a submission
+that names nothing to review is ended rather than swapped for something else to
+rule on.
 
 ## Read the submitted bytes themselves
 
@@ -28,8 +28,9 @@ The agent resolves each submitted file and reads the actual bytes, treating a
 file whose contents are not what its format claims as a finding rather than as
 an artifact.
 
-Taking the maker's summary as a description of what a file contains is the
-whole class where something passes review because it was described well.
+Taking the maker's summary as a description of what a file contains does not
+satisfy this: it is the whole class where something passes review because it
+was described well.
 
 ## Render every surface itself, at every width it will rule on
 
@@ -81,9 +82,9 @@ rationale that cites its findings and names, for each surface, something it saw
 in a render. A pass with unresolved severe findings, or a rejection no finding
 supports, contradicts its own evidence.
 
-Passing because nothing obviously failed fails this, and when the evidence
-cannot settle the question the agent does not pass by default: it says what it
-could not examine, or ends without a ruling.
+Passing because nothing obviously went wrong is the rubber stamp this prevents,
+and when the evidence cannot settle the question the agent does not pass by
+default: it says what it could not examine, or ends without a ruling.
 
 ## Stay on the ruling side of the gate
 

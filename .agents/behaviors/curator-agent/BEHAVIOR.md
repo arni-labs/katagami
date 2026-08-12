@@ -21,14 +21,14 @@ to be — its physical truth, what the reader does by scrolling, the scenes and
 the transformation between each pair — and builds the page those answers
 describe.
 
-Answers written to describe a page already built are a caption, not a
+Answers written to describe a page already built are a caption rather than a
 direction, and a structure carried over from a previous language fails this
 however honestly the answers are filled in.
 
 ## Choose a signature mechanic the recent library does not already own
 
-The agent reads three recently published languages — the pages, not their
-names — writes down the signature mechanic each used, and chooses a scroll
+The agent reads three recently published languages — the pages rather than
+their names — writes down the signature mechanic each used, and chooses a scroll
 verb, a material and a set of transformations that differ from all three.
 
 Naming three mechanics from memory does not satisfy this, and a device another
