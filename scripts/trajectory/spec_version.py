@@ -7,13 +7,26 @@ install that forgot it produced rows nothing could judge — so the version is
 computed here instead, from the actor spec file, and capture refuses to post
 without one.
 
-The version is `sha256:<64 hex>` over the spec file's RAW bytes.
+The version is the digest the KERNEL registered, read from
+`GET /observe/specs/{entity}`, which reports it as `spec_version`. Failing
+that — offline, or no API configured — it is `sha256:<64 hex>` over the spec
+file's raw bytes, and the trajectory records that it was computed rather than
+read.
 
-That is the kernel's definition, not one of ours: `spec_content_hash`
-(temper-store-turso) hashes the registered `ioa_source`, and the conformance
-endpoint compares the version a trajectory records against that hash, stripping
-only a `sha256:` prefix before an exact string match
-(`temper-server/src/api/trajectory_analysis.rs::names_same_spec`).
+Reading beats computing, and the difference is not pedantry. The local hash is
+the registered one only if the deploy registered these exact bytes; any path
+that re-serializes the TOML on the way in breaks that, and nothing local can
+tell you it happened. sha256 avalanches, so a re-emitted spec disagrees in its
+first twelve characters exactly as it does in all sixty-four — no shorter or
+looser pin format repairs it. Reading the digest the kernel holds is the only
+thing that removes the risk instead of widening around it.
+
+That is also the kernel's definition of the hash: `spec_content_hash`
+(temper-store-turso) over the registered `ioa_source`. The conformance endpoint
+compares a trajectory's recorded version against it
+(`temper-server/src/api/spec_pin.rs`): a bare or `sha256:`-qualified digest
+matches exactly, and an entity-qualified pin (`CuratorAgent@sha256:<≥12 hex>`)
+matches by prefix.
 
 This used to be `<AutomatonName>@sha256:<12 hex>` over the spec's *semantic*
 content, so that reflowing a comment did not invalidate every verdict already
@@ -30,6 +43,15 @@ snapshots the exact source under its hash (below), so the contract a run
 executed under stays retrievable even after the file moves on. The automaton
 name is not in the version any more either; it travels beside it, in the
 snapshot record and in `TrajectoryVerdict.actor_spec`.
+
+Three kinds of provenance, and a version is stamped only if it has one:
+
+  * READ — the kernel reported it. Recorded as an attestation, so a capture
+    that read the registry while online can still be converted later offline.
+  * COMPUTED — hashed from the spec in this checkout, and snapshotted.
+  * RETRIEVED — a snapshot or attestation this machine wrote earlier.
+
+A hand-typed version with none of the three is refused rather than stamped.
 
 Because the version is a function of the file, a judge can recompute it from
 the spec in the checkout and prove it is reading the same contract the run
@@ -54,13 +76,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
+import re
 import sys
 import tomllib
+import urllib.error
+import urllib.parse
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 # scripts/trajectory/ -> repo root
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -287,48 +314,355 @@ def actor_name(actor: str) -> str | None:
         return None
 
 
+# --------------------------------------------------------------------------
+# the registered digest, read from the kernel
+# --------------------------------------------------------------------------
+
+REGISTRY_SPEC_PATH = "/observe/specs/{entity}"
+ATTESTATION_DIRNAME = "spec-attestations"
+
+# Short on purpose. This read happens inside the SessionEnd and SessionStart
+# hooks, where every second is a second the user is waiting on their own
+# session, and a registry that cannot answer quickly is exactly the case the
+# local fallback exists for. Falling back is a documented outcome, not a
+# failure, so waiting longer buys nothing worth the stall.
+DEFAULT_REGISTRY_TIMEOUT_SECONDS = 3.0
+
+
+def registry_timeout() -> float:
+    raw = os.environ.get("KATAGAMI_SPEC_REGISTRY_TIMEOUT")
+    if not raw:
+        return DEFAULT_REGISTRY_TIMEOUT_SECONDS
+    try:
+        timeout = float(raw)
+    except ValueError:
+        return DEFAULT_REGISTRY_TIMEOUT_SECONDS
+    # `inf` and `nan` both pass a bare `> 0`, and `inf` means "block this
+    # session hook forever" — the one value this setting must not accept.
+    if not math.isfinite(timeout) or timeout <= 0:
+        return DEFAULT_REGISTRY_TIMEOUT_SECONDS
+    return timeout
+
+
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow nothing.
+
+    The request carries `Authorization` and the principal headers, and the
+    stdlib's redirect handler re-sends every header it did not strip to
+    whatever host the `Location` names — any scheme, up to ten hops. A parked
+    domain, a reclaimed host, or a misconfigured proxy answering `302` would
+    therefore be handed the credential. There is no redirect worth following to
+    read one digest.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirects)
+
+# A spec digest is 64 hex characters. Anything else answering on this path is
+# a captive portal, a gateway error page, or a server we do not understand —
+# and stamping its output as the authoritative version would poison every
+# capture behind it.
+_DIGEST = re.compile(r"^[0-9a-f]{64}$")
+
+# The body is a spec detail document, not a stream. A server that drips bytes
+# forever would otherwise hold a session hook open indefinitely, because the
+# socket timeout resets on every packet.
+MAX_REGISTRY_BODY_BYTES = 4 * 1024 * 1024
+
+
+def _http_get_json(url: str, headers: dict[str, str], timeout: float) -> Any:
+    """One seam, so tests can answer without a server."""
+    request = urllib.request.Request(url, method="GET")
+    for name, value in headers.items():
+        request.add_header(name, value)
+    with _OPENER.open(request, timeout=timeout) as response:
+        body = response.read(MAX_REGISTRY_BODY_BYTES + 1)
+    if len(body) > MAX_REGISTRY_BODY_BYTES:
+        raise ValueError(f"the answer exceeded {MAX_REGISTRY_BODY_BYTES} bytes")
+    return json.loads(body.decode("utf-8"))
+
+
+def registered_version(
+    entity: str,
+    *,
+    api_url: str | None = None,
+    tenant: str | None = None,
+    api_key: str | None = None,
+    principal_id: str | None = None,
+    timeout: float | None = None,
+) -> tuple[str | None, str | None]:
+    """The digest the kernel registered for this entity: `(version, why_not)`.
+
+    This is the authoritative answer and the reason this function exists.
+    Computing the hash locally assumes the bytes the kernel registered are the
+    bytes on disk here, and any deploy path that re-serializes the spec breaks
+    that assumption silently — sha256 avalanches, so a re-emitted TOML disagrees
+    in its first twelve characters exactly as it does in all sixty-four. There
+    is no format that repairs it. Reading the digest the kernel holds is the
+    only thing that removes the risk rather than widening around it.
+
+    Never raises: a capture that cannot reach the server still has to produce a
+    trajectory. `why_not` says what happened so the caller can say it out loud
+    rather than quietly stamping a computed hash as if it were read.
+    """
+    api_url = api_url or os.environ.get("TEMPER_API_URL")
+    if not api_url:
+        return None, "TEMPER_API_URL is not set, so there is no registry to ask"
+
+    url = api_url.rstrip("/") + REGISTRY_SPEC_PATH.format(entity=urllib.parse.quote(entity))
+    headers = {"Accept": "application/json"}
+    tenant = tenant or os.environ.get("TEMPER_TENANT_ID", "default")
+    if tenant:
+        headers["X-Tenant-Id"] = tenant
+    api_key = api_key if api_key is not None else os.environ.get("TEMPER_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    principal_id = principal_id or os.environ.get("TEMPER_PRINCIPAL_ID") or os.environ.get(
+        "KATAGAMI_AGENT_ID"
+    )
+    if principal_id:
+        headers["x-temper-principal-kind"] = "agent"
+        headers["x-temper-principal-id"] = principal_id
+
+    try:
+        detail = _http_get_json(url, headers, timeout or registry_timeout())
+    except urllib.error.HTTPError as exc:
+        return None, f"{url} answered HTTP {exc.code}"
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        return None, f"{url} is unreachable: {exc}"
+    except (json.JSONDecodeError, ValueError) as exc:
+        return None, f"{url} did not answer with JSON: {exc}"
+
+    digest = detail.get("spec_version") if isinstance(detail, dict) else None
+    if not isinstance(digest, str) or not digest.strip():
+        return None, f"{url} reported no spec_version for {entity!r}"
+    digest = bare_version(digest.strip()).lower()
+    if not _DIGEST.match(digest):
+        return None, (
+            f"{url} answered with {digest[:32]!r}, which is not a sha256 digest; "
+            "refusing to stamp it as the registered version"
+        )
+    # The endpoint reports the bare hash; the interchange form adds the prefix,
+    # and the kernel strips it again before comparing.
+    return VERSION_PREFIX + digest, None
+
+
+def attestation_root() -> Path:
+    """Where registry attestations live, beside the snapshots in the archive."""
+    explicit = os.environ.get("KATAGAMI_SPEC_ATTESTATION_DIR")
+    if explicit:
+        return Path(explicit).expanduser()
+    queue = os.environ.get("KATAGAMI_TRAJECTORY_QUEUE", str(DEFAULT_QUEUE))
+    return Path(queue).expanduser() / ATTESTATION_DIRNAME
+
+
+def attestation_path(version: str, root: Path | None = None) -> Path:
+    # `root` is the snapshot directory a caller pinned; attestations go under
+    # it rather than beside it, so a caller that pinned one directory cannot
+    # have writes land in its parent.
+    directory = (root / ATTESTATION_DIRNAME) if root is not None else attestation_root()
+    return directory / _snapshot_name(version)
+
+
+def attest_registered_version(
+    version: str,
+    *,
+    entity: str,
+    local_version: str | None,
+    api_url: str | None,
+    root: Path | None = None,
+) -> Path:
+    """Record that the kernel reported this digest, so a later run can trust it.
+
+    A registry digest has no local snapshot by definition: under normalization
+    the content it names is the deploy's bytes, not the ones in this checkout,
+    and writing our source under that name would be a snapshot that does not
+    hash to itself — the exact lie the snapshot store refuses to tell.
+
+    So the fact recorded here is a different one, and a true one: at this
+    moment, the kernel at this URL reported this digest for this entity, while
+    our local source hashed to that. Capture reads the registry when it queues
+    a session and the converter runs at the *next* session start, which may be
+    offline; without this the queued version would look like an unverifiable
+    hand-typed one and the trajectory would be dropped.
+    """
+    path = attestation_path(version, root)
+    if path.is_file():
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "version": version,
+        "entity": entity,
+        "local_version": local_version,
+        "api_url": api_url,
+        "observed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    staged = path.with_name(f"{path.name}.{uuid.uuid4().hex}.partial")
+    try:
+        staged.write_text(
+            json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        staged.replace(path)
+    finally:
+        staged.unlink(missing_ok=True)
+    return path
+
+
+def load_attestation(
+    version: str, root: Path | None = None, entity: str | None = None
+) -> dict[str, Any] | None:
+    """A recorded registry observation for this version, or None."""
+    path = attestation_path(version, root)
+    if not path.is_file():
+        return None
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SpecVersionError(f"spec attestation {path} is unreadable: {exc}") from exc
+    if not isinstance(stored, dict) or stored.get("version") != version:
+        raise SpecVersionError(f"spec attestation {path} does not name {version!r}")
+    if entity is not None and stored.get("entity") != entity:
+        raise SpecVersionError(
+            f"spec attestation {path} names entity {stored.get('entity')!r}, not {entity!r}"
+        )
+    return stored
+
+
+class SpecStamp(NamedTuple):
+    """The version to stamp, where it came from, and what to say about it."""
+
+    version: str | None
+    # "registry" — read from the kernel; "local" — computed here; "attested" —
+    # a registry answer this machine recorded earlier.
+    source: str | None
+    local_version: str | None
+    warnings: list[str]
+
+
+def resolve_stamp(
+    *,
+    claimed: str | None,
+    actor: str | None,
+    root: Path | None = None,
+    use_registry: bool = True,
+) -> SpecStamp:
+    """Prefer the kernel's digest; compute locally only when it cannot be read.
+
+    The local computation is still done every time, and still snapshotted —
+    it is what keeps the contract retrievable, and it is what makes a
+    normalization problem visible instead of theoretical. When the two
+    disagree, that disagreement IS the signal: the bytes the kernel registered
+    are not the bytes in this checkout.
+    """
+    warnings: list[str] = []
+
+    if not actor:
+        # No actor spec to compute from, so a claimed version has to stand on
+        # what this machine already recorded — a snapshot, or a registry answer
+        # it wrote down — or not at all.
+        if not claimed:
+            return SpecStamp(None, None, None, warnings)
+        if load_attestation(claimed, root) is not None:
+            return SpecStamp(claimed, "attested", None, warnings)
+        if load_snapshot(claimed, root) is not None:
+            return SpecStamp(claimed, "snapshot", None, warnings)
+        raise SpecVersionError(
+            f"no actor spec is available for the claimed version {claimed!r}, and neither a "
+            f"snapshot ({snapshot_path(claimed, root)}) nor a registry attestation "
+            f"({attestation_path(claimed, root)}) exists for it. Pass --actor-spec so the "
+            "version is resolved from the spec, or run the capture on a checkout that has it."
+        )
+
+    local, _ = _versioned_payload(actor)
+    snapshot_spec(actor, root)
+    entity = actor_name(actor) or actor
+
+    registered: str | None = None
+    if use_registry:
+        registered, why_not = registered_version(entity)
+        if registered is None:
+            warnings.append(
+                f"could not read the registered spec version for {entity} ({why_not}); "
+                "stamping the version computed from this checkout, which is only correct "
+                "if the deploy registered these exact bytes"
+            )
+        elif bare_version(registered) != bare_version(local):
+            # Not an error. It is the normalization signal arriving, and the
+            # registered digest is the one the conformance endpoint compares
+            # against, so it is the one to stamp.
+            warnings.append(
+                f"the kernel registered {registered} for {entity} but this checkout computes "
+                f"{local}. The spec the deploy holds is not byte-identical to the one here — "
+                "stamping the registered digest, which is what a conformance check matches "
+                "against. Reconcile the checkout with what is deployed."
+            )
+            attest_registered_version(
+                registered, entity=entity, local_version=local, api_url=os.environ.get("TEMPER_API_URL"), root=root
+            )
+        else:
+            attest_registered_version(
+                registered, entity=entity, local_version=local, api_url=os.environ.get("TEMPER_API_URL"), root=root
+            )
+
+    version = registered or local
+    source = "registry" if registered else "local"
+
+    if claimed and bare_version(claimed) != bare_version(version):
+        resolved = _accept_claimed(claimed, actor, entity, root, warnings)
+        return SpecStamp(claimed, resolved, local, warnings)
+
+    return SpecStamp(version, source, local, warnings)
+
+
+def _accept_claimed(
+    claimed: str, actor: str, entity: str, root: Path | None, warnings: list[str]
+) -> str:
+    """Why a claimed version is allowed to stand, or an error saying it is not."""
+    try:
+        attestation = load_attestation(claimed, root, entity=entity)
+    except SpecVersionError as exc:
+        # A damaged side-file must not block a version the self-verifying
+        # snapshot store can prove on its own.
+        warnings.append(f"ignoring an unusable attestation: {exc}")
+        attestation = None
+    if attestation is not None:
+        # The kernel said so, on this machine, and we wrote it down. Which
+        # kernel matters: a digest a dev server registered is not evidence
+        # about production, and the two are one exported variable apart.
+        observed = attestation.get("api_url")
+        current = os.environ.get("TEMPER_API_URL")
+        if observed and current and observed != current:
+            warnings.append(
+                f"spec version {claimed} was attested against {observed}, but this run is "
+                f"configured for {current}. A digest one deployment registered says nothing "
+                "about another; re-capture against the server you are posting to if the "
+                "conformance check rejects it."
+            )
+        return "attested"
+    if load_snapshot(claimed, root, actor=actor_name(actor)) is not None:
+        return "snapshot"
+    raise SpecVersionError(
+        f"the caller claims spec version {claimed!r} for {entity}, but this checkout computes "
+        f"{compute_version(actor)!r}, no snapshot of it exists in {snapshot_path(claimed, root)}, "
+        f"and no registry attestation exists in {attestation_path(claimed, root)}. A version "
+        "that can be neither recomputed, retrieved, nor shown to have come from the kernel "
+        "names a contract nobody can produce."
+    )
+
+
 def resolve_version(
     *, claimed: str | None, actor: str | None, root: Path | None = None
 ) -> str | None:
-    """The version to stamp, proven against the spec or against the snapshot.
+    """Just the version from [`resolve_stamp`], for callers that want no more.
 
-    Three outcomes, and no fourth:
-
-      * The actor spec is in this checkout — the version is computed from it and
-        snapshotted. A `claimed` version that disagrees is refused, because the
-        caller is naming a contract this checkout can prove it is not running.
-      * The actor spec is not here but the claimed version was snapshotted by an
-        earlier capture — accepted, and the snapshot is what a judge reads.
-      * Neither — refused. An unverifiable version is worse than none: it looks
-        like provenance and carries none.
+    One resolution path, not two: a second copy of these rules would drift, and
+    the drift would show up as two components stamping different versions for
+    the same run.
     """
-    if actor:
-        version, _path = snapshot_spec(actor, root)
-        if claimed and bare_version(claimed) != bare_version(version):
-            # A version this checkout cannot produce may still be one an
-            # earlier capture recorded, for the same actor. The snapshot has to
-            # hash to its own name and name this actor, or it is not evidence.
-            if load_snapshot(claimed, root, actor=actor_name(actor)) is not None:
-                return claimed
-            raise SpecVersionError(
-                f"the caller claims spec version {claimed!r} but {actor} in this checkout "
-                f"is {version!r}, and no snapshot of {claimed!r} exists in "
-                f"{snapshot_path(claimed, root)}. A version that can be neither recomputed "
-                "nor retrieved names a contract nobody can produce."
-            )
-        return version
-
-    if claimed:
-        if load_snapshot(claimed, root) is None:
-            raise SpecVersionError(
-                f"no actor spec is available for the claimed version {claimed!r} and no "
-                f"snapshot of it exists in {snapshot_path(claimed, root)}. Pass "
-                "--actor-spec so the version is computed from the spec, or run the "
-                "capture on a checkout that has it."
-            )
-        return claimed
-
-    return None
+    return resolve_stamp(claimed=claimed, actor=actor, root=root).version
 
 
 def main(argv: list[str] | None = None) -> int:

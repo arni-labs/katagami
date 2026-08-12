@@ -148,11 +148,29 @@ python3 scripts/trajectory/spec_version.py CuratorAgent \
   --verify "<extra['temper.metadata'].spec_version>"
 ```
 
+Read `extra["temper.metadata"].spec_version_source` too, because it changes
+what the version proves:
+
+- **`registry`** — capture read the digest from `GET /observe/specs/{entity}`.
+  That is the digest a conformance check compares against, so a 409 means the
+  registered spec genuinely changed between the run and the check.
+- **`local`** — capture computed the hash from its own checkout, because the
+  registry could not be reached. It equals the registered digest only if that
+  deploy registered those exact bytes. **A 409 on a `local` version is as
+  likely to be a normalization difference as a real spec change**, so report it
+  that way instead of concluding the run executed under a spec nobody has.
+- **`attested`** — a registry answer the capturing machine had recorded
+  earlier, replayed while offline. As good as `registry`, one remove: it says
+  *some* kernel reported this digest, not necessarily the one you are checking
+  against.
+- **`snapshot`** — the version was neither read nor recomputed; it was matched
+  against a spec source the machine had stored. Treat it like `local`.
+- **absent** — the trajectory predates the field; read it as `local`.
+
 A version this checkout can no longer produce is not automatically drift:
-capture snapshots the canonical spec content under its version hash at capture
-time, so `--verify` also accepts a version the snapshot store holds, and tells
-you on stderr when it answered from there. Read the contract the run actually
-executed under with:
+capture snapshots the spec source under its hash at capture time, so `--verify`
+also accepts a version the snapshot store holds, and tells you on stderr when
+it answered from there. Read the contract the run actually executed under with:
 
 ```bash
 python3 scripts/trajectory/spec_version.py CuratorAgent \

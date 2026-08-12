@@ -89,14 +89,25 @@ Hook installation (capture every session automatically) is in
   bearer token who it belongs to. Correlating the credential with the claimed
   principal is the kernel's, tracked as ARN-255 and ARN-187. Until that lands,
   a compromised role credential can still post as that role.
-- **A spec version.** Computed from the actor spec in this checkout —
-  `--actor-spec`, else `$KATAGAMI_ACTOR_SPEC`, else the actor mapped from the
-  agent id — and snapshotted under its hash at capture time. An explicit
-  `--spec-version` is accepted only when it matches the computed version or
-  names a snapshot an earlier capture recorded; a version that can be neither
-  recomputed nor retrieved is refused, because it names a contract nobody can
-  produce. A trajectory that cannot name its contract cannot enter either
-  judgement layer, so posting one would store a row nothing can judge.
+- **A spec version.** Preferred from the kernel: `GET /observe/specs/{entity}`
+  reports `spec_version`, the digest it registered, and that is the digest a
+  conformance check compares against. A hash computed from the spec in this
+  checkout is right only if the deploy registered these exact bytes, and
+  nothing local can tell you whether it did — so the fallback is marked
+  `spec_version_source: "local"` on the trajectory and warns on the way past.
+  `--no-registry` forces it.
+
+  The local hash is computed and snapshotted either way. When it disagrees with
+  the registered one, that disagreement is the point: the deploy is not holding
+  the spec this checkout has, and it is reported loudly rather than stamped
+  over.
+
+  An explicit `--spec-version` is accepted only when it is what we resolved,
+  names a snapshot, or names a registry answer this machine recorded earlier
+  (`spec-attestations/`). A version with none of those is refused: it names a
+  contract nobody can produce. A trajectory that cannot name its contract
+  cannot enter either judgement layer, so posting one would store a row nothing
+  can judge.
 
 ## Redaction
 

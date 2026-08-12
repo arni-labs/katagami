@@ -192,6 +192,15 @@ class JudgeSkillTargetsRealEndpointsTest(unittest.TestCase):
         self.assertIn("--verify", self.skill)
         self.assertIn("/observe/specs/", self.skill)
 
+    def test_it_reads_how_the_spec_version_was_obtained(self):
+        # A 409 means different things depending on whether the version was
+        # read from the kernel or computed locally, and the judge has to say
+        # which rather than reporting a spec nobody has.
+        self.assertIn("spec_version_source", self.skill)
+        self.assertIn("`registry`", self.skill)
+        self.assertIn("`local`", self.skill)
+
+
     def test_it_does_not_expect_the_list_endpoint_to_return_documents(self):
         # OtsTrajectoryRow carries ids and counts, not the OTS blob.
         self.assertIn("Metadata only", self.skill)
@@ -270,11 +279,20 @@ class CaptureIdentityTest(unittest.TestCase):
                 os.environ,
                 {
                     "KATAGAMI_TRAJECTORY_QUEUE": str(self.queue),
+                    "KATAGAMI_SPEC_SNAPSHOT_DIR": str(self.queue / "spec-snapshots"),
+                    "KATAGAMI_SPEC_ATTESTATION_DIR": str(self.queue / "spec-attestations"),
                     "KATAGAMI_AGENT_ID": "katagami-contributor",
                     "KATAGAMI_TRAJECTORY_SCRIPT": str(CONVERTER),
                 },
             )
         )
+        # Building an identity resolves the spec version, which reads the
+        # registry. With TEMPER_API_URL exported — the normal state on a
+        # developer machine — these unit tests made live authenticated calls to
+        # whatever that pointed at, once per test, and their results changed
+        # with connectivity.
+        for name in ("TEMPER_API_URL", "TEMPER_API_KEY"):
+            os.environ.pop(name, None)
 
     def test_the_hook_derives_the_trajectory_id_with_the_converters_function(self):
         identity = self.hook.build_identity("9bd6-session")
@@ -291,6 +309,35 @@ class CaptureIdentityTest(unittest.TestCase):
     def test_the_identity_carries_the_actor_spec_version(self):
         identity = self.hook.build_identity("9bd6-session")
         self.assertTrue(identity["spec_version"].startswith("sha256:"))
+
+    SOURCES = {"registry", "local", "attested", "snapshot"}
+
+    def test_the_identity_says_where_the_version_came_from(self):
+        # "registry" (read from the kernel) vs "local" (computed here) is the
+        # difference between a digest a conformance check will match and one
+        # that matches only if the deploy registered these exact bytes.
+        identity = self.hook.build_identity("9bd6-session")
+        self.assertIn("spec_version_source", identity)
+        self.assertIn(identity["spec_version_source"], self.SOURCES)
+
+    def test_the_queue_entry_records_the_source_seen_at_enqueue(self):
+        # The converter re-resolves at process time, so this field is what was
+        # true when the session ended, not an instruction to the converter.
+        # Asserted on the written entry rather than on build_identity again,
+        # so deleting the field from the entry fails this test.
+        result = subprocess.run(
+            [sys.executable, str(HOOK_SCRIPT), "enqueue"],
+            input=json.dumps(
+                {"session_id": "9bd6-session", "transcript_path": "/tmp/x.jsonl"}
+            ),
+            capture_output=True,
+            text=True,
+            env={**os.environ},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entry = json.loads((self.queue / "pending" / "9bd6-session.json").read_text())
+        self.assertIn("spec_version_source", entry)
+        self.assertIn(entry["spec_version_source"], self.SOURCES)
 
     def test_the_identity_is_published_where_a_skill_can_read_it(self):
         self.hook.write_identity("9bd6-session")
@@ -532,6 +579,32 @@ class ContributorDrivesTheActorLedgerTest(unittest.TestCase):
             self.assertIn(guard, self.skill, guard)
         self.assertIn("has_", self.skill)
 
+
+class SpecVersionIsReadNotGuessedTest(unittest.TestCase):
+    """The registered digest is the kernel's to report, not ours to compute.
+
+    sha256 avalanches, so a deploy path that re-serializes the spec produces a
+    digest that disagrees in its first twelve characters exactly as it does in
+    all sixty-four. No pin format repairs that; reading the digest the kernel
+    registered is the only thing that does.
+    """
+
+    def setUp(self):
+        self.module = (TRAJECTORY_DIR / "spec_version.py").read_text()
+
+    def test_it_reads_the_endpoint_the_kernel_actually_serves(self):
+        self.assertIn("/observe/specs/{entity}", self.module)
+        # The field name on SpecDetail (temper-server/src/observe/specs.rs).
+        self.assertIn('"spec_version"', self.module)
+
+    def test_an_unreachable_registry_is_a_fallback_not_a_crash(self):
+        converter_source = CONVERTER.read_text()
+        self.assertIn("use_registry", converter_source)
+        self.assertIn("spec_version_source", converter_source)
+        # And the fallback is recorded, so the trajectory never looks better
+        # attested than it is.
+        self.assertIn('"local"', self.module)
+        self.assertIn('"registry"', self.module)
 
 if __name__ == "__main__":
     unittest.main()

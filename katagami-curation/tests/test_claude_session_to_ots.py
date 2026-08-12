@@ -556,15 +556,25 @@ class SpecVersionResolutionTests(unittest.TestCase):
         self.snapshots = tempfile.TemporaryDirectory(prefix="katagami-snapshots-")
         self.addCleanup(self.snapshots.cleanup)
         patch = mock.patch.dict(
-            os.environ, {"KATAGAMI_SPEC_SNAPSHOT_DIR": self.snapshots.name}
+            os.environ,
+            {
+                "KATAGAMI_TRAJECTORY_QUEUE": str(Path(self.snapshots.name) / "queue"),
+                "KATAGAMI_SPEC_SNAPSHOT_DIR": self.snapshots.name,
+                "KATAGAMI_SPEC_ATTESTATION_DIR": str(
+                    Path(self.snapshots.name) / "attestations"
+                ),
+            },
         )
         patch.start()
         self.addCleanup(patch.stop)
+        # These tests are about the local half. Unset the registry so they
+        # neither reach the network nor depend on a developer's environment.
+        os.environ.pop("TEMPER_API_URL", None)
 
     def test_the_version_is_computed_from_the_agents_actor_spec(self):
         version = converter.resolve_spec_version(
             spec_version=None, actor_spec=None, agent_id="katagami-contributor"
-        )
+        ).version
         self.assertTrue(version.startswith("sha256:"))
 
     def test_the_stamped_version_is_one_the_kernel_can_compare(self):
@@ -575,7 +585,7 @@ class SpecVersionResolutionTests(unittest.TestCase):
         # leaves the canonical layer 1 unable to judge anything.
         version = converter.resolve_spec_version(
             spec_version=None, actor_spec="CuratorAgent", agent_id="katagami-contributor"
-        )
+        ).version
         source = (
             REPO_ROOT / "katagami-curation" / "specs" / "curator_agent.ioa.toml"
         ).read_bytes()
@@ -587,7 +597,7 @@ class SpecVersionResolutionTests(unittest.TestCase):
     def test_resolving_snapshots_the_spec_it_resolved(self):
         version = converter.resolve_spec_version(
             spec_version=None, actor_spec="CuratorAgent", agent_id="katagami-contributor"
-        )
+        ).version
         stored = spec_version_module.load_snapshot(version, Path(self.snapshots.name))
         self.assertIsNotNone(stored, "capture must record the contract it stamped")
         self.assertEqual(stored["version"], version)
@@ -624,7 +634,7 @@ class SpecVersionResolutionTests(unittest.TestCase):
                 spec_version=older,
                 actor_spec="CuratorAgent",
                 agent_id="katagami-contributor",
-            ),
+            ).version,
             older,
         )
 
@@ -666,7 +676,7 @@ class SpecVersionResolutionTests(unittest.TestCase):
         self.assertIsNone(
             converter.resolve_spec_version(
                 spec_version=None, actor_spec=None, agent_id="unknown-agent"
-            )
+            ).version
         )
 
     def test_a_snapshot_is_written_once_and_never_rewritten(self):
@@ -714,6 +724,238 @@ class SpecVersionResolutionTests(unittest.TestCase):
             [spec_version_module.snapshot_path(results[0][0], root).name],
             "a staged .partial file was left behind",
         )
+
+
+class RegisteredVersionTests(unittest.TestCase):
+    """The digest the kernel registered beats the one computed here.
+
+    A local hash is only the registered hash if the deploy registered these
+    exact bytes. Nothing local can tell you whether it did, and sha256
+    avalanches, so a re-serialized spec disagrees at twelve characters exactly
+    as it does at sixty-four — no pin format repairs it. Reading the digest off
+    `GET /observe/specs/{entity}` is what removes the risk.
+    """
+
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        # EVERY store this code writes to, not just the snapshot one. Missing
+        # the attestation directory put fabricated records — a digest of all
+        # `f`s, attributed to a server that does not exist — into the real
+        # ~/.katagami archive, where a later capture would have accepted them
+        # as provenance.
+        patch = mock.patch.dict(
+            os.environ,
+            {
+                "KATAGAMI_TRAJECTORY_QUEUE": str(self.root / "queue"),
+                "KATAGAMI_SPEC_SNAPSHOT_DIR": str(self.root / "spec-snapshots"),
+                "KATAGAMI_SPEC_ATTESTATION_DIR": str(self.root / "spec-attestations"),
+                "TEMPER_API_URL": "https://temper.example",
+                "TEMPER_TENANT_ID": "katagami",
+            },
+        )
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.local = spec_version_module.compute_version("CuratorAgent")
+
+    def _serving(self, digest, capture=None):
+        """Patch the one HTTP seam, so no test needs a server."""
+
+        def fake_get(url, headers, timeout):
+            if capture is not None:
+                capture["url"] = url
+                capture["headers"] = headers
+            if digest is None:
+                raise OSError("connection refused")
+            return {"entity_type": "CuratorAgent", "spec_version": digest}
+
+        return mock.patch.object(spec_version_module, "_http_get_json", fake_get)
+
+    def _stamp(self, **kwargs):
+        return converter.resolve_spec_version(
+            spec_version=None,
+            actor_spec="CuratorAgent",
+            agent_id="katagami-contributor",
+            **kwargs,
+        )
+
+    def test_the_registered_digest_is_preferred_over_the_local_one(self):
+        deployed = "f" * 64
+        call = {}
+        with self._serving(deployed, call):
+            stamp = self._stamp()
+
+        self.assertEqual(stamp.version, "sha256:" + deployed)
+        self.assertEqual(stamp.source, "registry")
+        self.assertEqual(stamp.local_version, self.local)
+        self.assertIn("/observe/specs/CuratorAgent", call["url"])
+        self.assertEqual(call["headers"]["X-Tenant-Id"], "katagami")
+
+    def test_a_disagreement_is_reported_loudly_rather_than_swallowed(self):
+        # The normalization signal arriving: the bytes the deploy registered
+        # are not the bytes in this checkout.
+        with self._serving("f" * 64):
+            stamp = self._stamp()
+
+        self.assertTrue(stamp.warnings, "a divergent registry digest must warn")
+        warning = " ".join(stamp.warnings)
+        self.assertIn("sha256:" + "f" * 64, warning)
+        self.assertIn(self.local, warning)
+        self.assertIn("not byte-identical", warning)
+
+    def test_agreement_is_quiet(self):
+        with self._serving(spec_version_module.bare_version(self.local)):
+            stamp = self._stamp()
+        self.assertEqual(stamp.version, self.local)
+        self.assertEqual(stamp.source, "registry")
+        self.assertEqual(stamp.warnings, [])
+
+    def test_an_unreachable_registry_falls_back_and_says_so(self):
+        with self._serving(None):
+            stamp = self._stamp()
+
+        self.assertEqual(stamp.version, self.local)
+        self.assertEqual(stamp.source, "local")
+        self.assertTrue(stamp.warnings)
+        self.assertIn("could not read the registered spec version", stamp.warnings[0])
+
+    def test_no_configured_api_falls_back_without_a_network_call(self):
+        os.environ.pop("TEMPER_API_URL", None)
+        with mock.patch.object(
+            spec_version_module,
+            "_http_get_json",
+            side_effect=AssertionError("must not call out"),
+        ):
+            stamp = self._stamp()
+        self.assertEqual(stamp.source, "local")
+        self.assertIn("TEMPER_API_URL is not set", " ".join(stamp.warnings))
+
+    def test_the_registry_read_can_be_turned_off(self):
+        with mock.patch.object(
+            spec_version_module,
+            "_http_get_json",
+            side_effect=AssertionError("must not call out"),
+        ):
+            stamp = self._stamp(use_registry=False)
+        self.assertEqual(stamp.version, self.local)
+        self.assertEqual(stamp.source, "local")
+
+    def test_the_source_travels_on_the_trajectory(self):
+        # A judge reading `local` alongside a 409 from the conformance endpoint
+        # has its explanation; without the field it has a mystery.
+        ots = converter.atif_to_ots(
+            json.loads(GOLDEN_ATIF.read_text()),
+            agent_id="katagami-contributor",
+            session_id="s",
+            trajectory_id="t",
+            spec_version="sha256:" + "f" * 64,
+            spec_version_source="registry",
+        )
+        self.assertEqual(ots["metadata"]["spec_version_source"], "registry")
+
+    def test_a_registry_answer_survives_to_the_next_offline_run(self):
+        # Capture reads the registry when it queues a session; the converter
+        # runs at the NEXT session start, which may be offline. Without the
+        # recorded attestation the queued version would look hand-typed and the
+        # trajectory would be dropped.
+        with self._serving("f" * 64):
+            first = self._stamp()
+
+        with self._serving(None):
+            second = converter.resolve_spec_version(
+                spec_version=first.version,
+                actor_spec="CuratorAgent",
+                agent_id="katagami-contributor",
+            )
+        self.assertEqual(second.version, first.version)
+        self.assertEqual(second.source, "attested")
+
+    def test_a_non_digest_answer_is_refused_rather_than_stamped(self):
+        # A captive portal or gateway error page answering 200 with a JSON body
+        # that happens to carry `spec_version` would otherwise poison the stamp
+        # of every capture behind it, labelled `registry`.
+        for junk in ("not-a-hash", "", "   ", "zz" * 32, "sha256:" + "g" * 64):
+            with self._serving(junk):
+                stamp = self._stamp()
+            self.assertEqual(stamp.version, self.local, junk)
+            self.assertEqual(stamp.source, "local", junk)
+            self.assertTrue(stamp.warnings, junk)
+
+    def test_a_registry_answer_is_case_normalised(self):
+        with self._serving(("A" * 64).lower().upper()):
+            stamp = self._stamp()
+        self.assertEqual(stamp.version, "sha256:" + "a" * 64)
+        self.assertEqual(stamp.source, "registry")
+
+    def test_the_credential_is_not_followed_to_another_host(self):
+        # urllib re-sends Authorization across a redirect to any host; a parked
+        # domain or a misconfigured proxy answering 302 would be handed the
+        # bearer token.
+        import urllib.error
+
+        def redirecting(url, headers, timeout):
+            raise urllib.error.HTTPError(url, 302, "Found", {"Location": "https://evil"}, None)
+
+        with mock.patch.object(spec_version_module, "_http_get_json", redirecting):
+            stamp = self._stamp()
+        self.assertEqual(stamp.source, "local")
+        self.assertIn("302", " ".join(stamp.warnings))
+
+    def test_an_attestation_from_another_kernel_is_flagged(self):
+        with self._serving("f" * 64):
+            first = self._stamp()
+
+        with mock.patch.dict(os.environ, {"TEMPER_API_URL": "https://other.example"}):
+            with self._serving(None):
+                second = converter.resolve_spec_version(
+                    spec_version=first.version,
+                    actor_spec="CuratorAgent",
+                    agent_id="katagami-contributor",
+                )
+        self.assertEqual(second.source, "attested")
+        self.assertIn("says nothing about another", " ".join(second.warnings))
+
+    def test_a_corrupt_attestation_does_not_block_a_snapshotted_version(self):
+        older = self._snapshot_an_older_spec()
+        spec_version_module.attestation_path(older).parent.mkdir(
+            parents=True, exist_ok=True
+        )
+        spec_version_module.attestation_path(older).write_text("{not json", encoding="utf-8")
+
+        with self._serving(None):
+            stamp = converter.resolve_spec_version(
+                spec_version=older,
+                actor_spec="CuratorAgent",
+                agent_id="katagami-contributor",
+            )
+        self.assertEqual(stamp.version, older)
+        self.assertEqual(stamp.source, "snapshot")
+        self.assertIn("unusable attestation", " ".join(stamp.warnings))
+
+    def _snapshot_an_older_spec(self):
+        current = (
+            REPO_ROOT / "katagami-curation" / "specs" / "curator_agent.ioa.toml"
+        ).read_text()
+        scratch = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        path = scratch / "curator_agent.ioa.toml"
+        path.write_text("# as it stood when the run happened\n" + current, encoding="utf-8")
+        version, _ = spec_version_module.snapshot_spec(str(path))
+        return version
+
+    def test_a_hostile_timeout_setting_cannot_hang_a_session_hook(self):
+        for value in ("inf", "nan", "-1", "0", "not-a-number"):
+            with mock.patch.dict(os.environ, {"KATAGAMI_SPEC_REGISTRY_TIMEOUT": value}):
+                timeout = spec_version_module.registry_timeout()
+            self.assertTrue(0 < timeout < 3600, f"{value} -> {timeout}")
+
+    def test_an_unattested_unsnapshotted_version_is_still_refused(self):
+        with self._serving(None):
+            with self.assertRaises(spec_version_module.SpecVersionError) as caught:
+                converter.resolve_spec_version(
+                    spec_version="sha256:" + "ab" * 32,
+                    actor_spec="CuratorAgent",
+                    agent_id="katagami-contributor",
+                )
+        self.assertIn("nor shown to have come from the kernel", str(caught.exception))
 
 
 class PostingIdentityTests(unittest.TestCase):

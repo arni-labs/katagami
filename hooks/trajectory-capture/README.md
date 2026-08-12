@@ -86,8 +86,11 @@ and exits non-zero rather than guessing.
    | `TEMPER_TENANT_ID` | Tenant, default `default`. |
    | `KATAGAMI_TRAJECTORY_SCRIPT` | Path to `scripts/trajectory/claude_session_to_ots.py`. |
    | `KATAGAMI_ACTOR_SPEC` | Actor automaton the run conforms to, e.g. `CuratorAgent`. Defaults to the actor mapped from `KATAGAMI_AGENT_ID`. |
-   | `KATAGAMI_ACTOR_SPEC_VERSION` | Optional override. Normally computed from the actor spec in the checkout. |
+   | `KATAGAMI_ACTOR_SPEC_VERSION` | Optional override. Normally read from the kernel, else computed from the actor spec in the checkout. Accepted only if it is what capture resolved, or names a snapshot or attestation this machine already holds. |
+   | `KATAGAMI_SPEC_REGISTRY_TIMEOUT` | Optional. Seconds to wait for `GET /observe/specs/{entity}` before falling back to the computed hash, default 3. This read happens inside the session hooks, so it is deliberately short. |
    | `KATAGAMI_TRAJECTORY_QUEUE` | Optional queue root, default `~/.katagami/trajectory-queue`. |
+   | `KATAGAMI_SPEC_SNAPSHOT_DIR` | Optional. Where spec sources are snapshotted, default `<queue>/spec-snapshots`. |
+   | `KATAGAMI_SPEC_ATTESTATION_DIR` | Optional. Where registry answers are recorded, default `<queue>/spec-attestations`. |
    | `KATAGAMI_TRAJECTORY_BATCH` | Optional. Entries converted per session start, default 5. |
 
 4. **Verify it end to end** before trusting it. Run the converter by hand
@@ -121,18 +124,39 @@ The posted copy is canonical: the judge reads trajectories from the kernel
 fallback** for when that endpoint cannot be reached. Delete it when you no
 longer want the local copies; capture recreates only new ones.
 
-Two other things live under the queue root:
+Three other things live under the queue root:
 
 - `archive/images/` — the images the transcript referenced, copied out and
   named by content hash. Harbor resolves image paths inside a temporary tree
   that conversion deletes, so without this step the trajectory would carry
   references that point at nothing. An image too large to keep is recorded by
   hash and marked unavailable instead.
-- `spec-snapshots/<version>.json` — the canonical actor spec content, keyed by
-  the version hash stamped on the trajectory. Specs evolve; this is what lets a
-  judge read the contract a run actually executed under after the file has
-  moved on, and what stops a hand-typed `--spec-version` naming a contract that
-  never existed.
+- `spec-snapshots/<version>.json` — the actor spec source, keyed by the hash of
+  those bytes. Specs evolve; this is what lets a judge read the contract a run
+  executed under after the file has moved on, and what stops a hand-typed
+  `--spec-version` naming a contract that never existed.
+- `spec-attestations/<version>.json` — a note that the kernel reported this
+  digest for this entity, at this time. Capture reads the registry when it
+  queues a session and converts at the *next* session start, which may be
+  offline; without the note the queued version would look hand-typed and the
+  trajectory would be dropped.
+
+## Which spec version gets stamped
+
+The digest the kernel registered, read from `GET /observe/specs/{entity}`. That
+is what `POST /api/conformance/check` compares a run against, so it is the one
+worth recording.
+
+A hash computed from the spec file here is right only if the deploy registered
+those exact bytes, and nothing local can tell you whether it did — any path
+that re-serializes the TOML changes the whole digest, its first twelve
+characters included. So computing is the fallback: it is marked
+`spec_version_source: "local"` on the trajectory, and it warns.
+
+The local hash is computed and snapshotted either way. When the two disagree,
+the capture says so loudly — the deploy is not holding the spec this checkout
+has, which is worth knowing the moment it becomes true rather than months later
+as an unexplained 409.
 
 ## When something goes wrong
 

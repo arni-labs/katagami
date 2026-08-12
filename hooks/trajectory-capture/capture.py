@@ -143,19 +143,24 @@ def identity_path(session_id: str) -> Path:
     return identity_dir() / f"{_safe_session_name(session_id)}.json"
 
 
-def _spec_version(converter, agent_id: str | None) -> tuple[str | None, str | None]:
-    """(version, error) for the actor spec this session runs under."""
+def _spec_version(converter, agent_id: str | None):
+    """(version, source, warnings, error) for the spec this session runs under.
+
+    The version is preferred from the kernel's registry rather than computed
+    here, and `source` records which it was — so a trajectory never looks
+    better attested than it is.
+    """
     if converter is None:
-        return os.environ.get("KATAGAMI_ACTOR_SPEC_VERSION"), None
+        return os.environ.get("KATAGAMI_ACTOR_SPEC_VERSION"), None, [], None
     try:
-        version = converter.resolve_spec_version(
+        stamp = converter.resolve_spec_version(
             spec_version=os.environ.get("KATAGAMI_ACTOR_SPEC_VERSION"),
             actor_spec=os.environ.get("KATAGAMI_ACTOR_SPEC"),
             agent_id=agent_id or "",
         )
     except Exception as exc:
-        return None, str(exc)
-    return version, None
+        return None, None, [], str(exc)
+    return stamp.version, stamp.source, list(stamp.warnings), None
 
 
 def build_identity(session_id: str) -> dict:
@@ -165,7 +170,9 @@ def build_identity(session_id: str) -> dict:
     trajectory_id = (
         converter.derive_trajectory_id(session_id) if converter is not None else None
     )
-    version, version_error = _spec_version(converter, agent_id)
+    version, version_source, version_warnings, version_error = _spec_version(
+        converter, agent_id
+    )
     identity = {
         "session_id": session_id,
         "trajectory_id": trajectory_id,
@@ -173,8 +180,14 @@ def build_identity(session_id: str) -> dict:
         "agent_id": agent_id,
         "actor_spec": os.environ.get("KATAGAMI_ACTOR_SPEC"),
         "spec_version": version,
+        # "registry" — read from the kernel, the digest a conformance check
+        # compares against. "local" — computed from this checkout, correct only
+        # if the deploy registered these exact bytes.
+        "spec_version_source": version_source,
         "derived_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
+    if version_warnings:
+        identity["spec_version_warnings"] = version_warnings
     if version_error:
         identity["spec_version_error"] = version_error
     return identity
@@ -276,6 +289,12 @@ def cmd_enqueue() -> int:
         return 1
 
     identity = build_identity(session_id)
+    # Surfaced here too, not only at process time. A spec mismatch first seen
+    # while a session closes would otherwise be reported only if the next
+    # session start also reaches the registry.
+    for warning in identity.get("spec_version_warnings") or []:
+        print(f"katagami-trajectory: WARNING: {warning}", file=sys.stderr)
+
     pending = queue_root() / "pending"
     pending.mkdir(parents=True, exist_ok=True)
     entry = {
@@ -289,6 +308,7 @@ def cmd_enqueue() -> int:
         "agent_id": identity["agent_id"],
         "actor_spec": identity["actor_spec"],
         "spec_version": identity["spec_version"],
+        "spec_version_source": identity.get("spec_version_source"),
     }
     (pending / f"{entry_name}.json").write_text(
         json.dumps(entry, indent=2) + "\n", encoding="utf-8"
@@ -366,6 +386,8 @@ def cmd_process() -> int:
     session_id = payload.get("session_id")
     if session_id:
         identity = write_identity(session_id)
+        for warning in identity.get("spec_version_warnings") or []:
+            print(f"katagami-trajectory: WARNING: {warning}", file=sys.stderr)
         if identity.get("spec_version_error"):
             print(
                 "katagami-trajectory: no actor spec version for this session: "

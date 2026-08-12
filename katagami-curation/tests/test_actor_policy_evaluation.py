@@ -63,6 +63,38 @@ class CedarBindingsTest(unittest.TestCase):
         self.assertIsNotNone(cedarpy, MISSING_CEDAR)
 
 
+class TestsLeaveTheRealArchiveAloneTest(unittest.TestCase):
+    """No test may write into the operator's own capture archive.
+
+    A test that forgot to redirect one store wrote fabricated spec attestations
+    — a digest of all `f`s, attributed to a server that does not exist — into
+    `~/.katagami/trajectory-queue/`, where the next real capture would have read
+    them back as provenance. Nothing about that was visible from the test's own
+    output: it passed.
+
+    Checked here rather than in the capture tests because it is a property of
+    the whole suite, and because the test that caused it was the one that would
+    have had to notice.
+    """
+
+    ARCHIVE = Path.home() / ".katagami" / "trajectory-queue"
+
+    def test_the_suite_planted_no_spec_attestations(self):
+        attestations = self.ARCHIVE / "spec-attestations"
+        planted = (
+            sorted(p.name for p in attestations.glob("*.json"))
+            if attestations.is_dir()
+            else []
+        )
+        self.assertEqual(
+            planted,
+            [],
+            "these files are in the REAL capture archive. A test that does not redirect "
+            "KATAGAMI_SPEC_ATTESTATION_DIR and KATAGAMI_TRAJECTORY_QUEUE wrote them, and a "
+            "real capture would read them back as provenance: " + ", ".join(planted),
+        )
+
+
 class TestsActuallyRunTest(unittest.TestCase):
     """A test that cannot run is not a passing test — the same rule as above.
 

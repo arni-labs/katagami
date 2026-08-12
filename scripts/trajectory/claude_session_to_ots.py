@@ -92,9 +92,10 @@ from harbor_adapter import (  # noqa: E402  (path set above)
 )
 from redaction import redact_text, redact_value  # noqa: E402  (path set above)
 from spec_version import (  # noqa: E402  (path set above)
+    SpecStamp,
     SpecVersionError,
     actor_for_agent_id,
-    resolve_version,
+    resolve_stamp,
 )
 
 OTS_VERSION = "0.1.0"
@@ -480,6 +481,7 @@ def atif_to_ots(
     session_id: str,
     trajectory_id: str,
     spec_version: str | None = None,
+    spec_version_source: str | None = None,
     harness: str = DEFAULT_HARNESS,
     domain: str | None = None,
     environment: str | None = None,
@@ -558,6 +560,14 @@ def atif_to_ots(
         metadata["duration_ms"] = duration
     if spec_version:
         metadata["spec_version"] = spec_version
+        # Where the version came from, because it changes what it proves.
+        # "registry" was read from the kernel and is the digest a conformance
+        # check compares against. "local" was computed from the spec file in
+        # the capturing checkout, which is only the registered digest if the
+        # deploy registered those exact bytes — a judge reading a `local`
+        # version and a 409 from the conformance endpoint has its explanation.
+        if spec_version_source:
+            metadata["spec_version_source"] = spec_version_source
     if domain:
         metadata["domain"] = domain
     if environment:
@@ -750,6 +760,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--no-registry",
+        action="store_true",
+        help=(
+            "do not read the registered spec version from the kernel; compute it from "
+            "this checkout instead. The computed hash is only the registered one if the "
+            "deploy registered these exact bytes, so the trajectory records that its "
+            "version was locally computed"
+        ),
+    )
+    parser.add_argument(
         "--image-dir",
         help=(
             "archive images referenced by the transcript here, so the trajectory's "
@@ -774,24 +794,32 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def resolve_spec_version(
-    *, spec_version: str | None, actor_spec: str | None, agent_id: str
-) -> str | None:
-    """The actor spec version to stamp, proven rather than typed.
+    *, spec_version: str | None, actor_spec: str | None, agent_id: str, use_registry: bool = True
+) -> SpecStamp:
+    """The actor spec version to stamp, read rather than guessed.
 
-    The actor is `--actor-spec`, or the one this agent id runs under. Its
-    version is computed from the spec file and snapshotted at capture time, so
-    a judge can retrieve the exact contract later even after the file moves on.
+    The actor is `--actor-spec`, or the one this agent id runs under. The
+    version preferred is the digest the KERNEL registered, read from
+    `GET /observe/specs/{entity}` — because a locally computed hash is only
+    right if the deploy registered these exact bytes, and nothing local can
+    tell you whether it did.
 
-    An explicit `--spec-version` is no longer taken on trust: it is accepted
-    only when it matches the computed version or names a snapshot an earlier
-    capture recorded, and refused otherwise (`spec_version.resolve_version`).
+    The local hash is still computed and snapshotted every time. It is what
+    keeps the contract retrievable, and when it disagrees with the registry the
+    disagreement is reported loudly: that is a spec this checkout and the deploy
+    do not share, surfacing rather than staying silent.
 
-    Returning None means there is no actor contract to name at all — the caller
-    decides whether that is fatal (it is, for `--post`).
+    An explicit `--spec-version` is not taken on trust. It stands only if it is
+    what we resolved, or names a snapshot, or names a registry answer this
+    machine recorded earlier.
+
+    A `version` of None means there is no actor contract to name at all — the
+    caller decides whether that is fatal (it is, for `--post`).
     """
-    return resolve_version(
+    return resolve_stamp(
         claimed=spec_version,
         actor=actor_spec or actor_for_agent_id(agent_id),
+        use_registry=use_registry,
     )
 
 
@@ -818,14 +846,21 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        spec_version = resolve_spec_version(
+        stamp = resolve_spec_version(
             spec_version=args.spec_version,
             actor_spec=args.actor_spec,
             agent_id=agent_id,
+            use_registry=not args.no_registry,
         )
     except SpecVersionError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    spec_version = stamp.version
+    # Loud on purpose. Both cases mean the version being stamped is not
+    # provably the one the kernel will check against, and a silent capture is
+    # how that gets discovered months later as an unexplained 409.
+    for warning in stamp.warnings:
+        print(f"katagami-trajectory: WARNING: {warning}", file=sys.stderr)
     if args.post and not spec_version:
         print(
             "error: no actor spec version could be resolved for agent "
@@ -860,6 +895,7 @@ def main(argv: list[str] | None = None) -> int:
             session_id=session_id,
             trajectory_id=trajectory_id,
             spec_version=spec_version,
+            spec_version_source=stamp.source,
             harness=args.harness,
             domain=args.domain,
             environment=args.environment,
