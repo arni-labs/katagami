@@ -155,14 +155,22 @@ assignment to yourself. Treating escalation as approval-by-timeout.
 **Intent.** Two different acts, on two different records, and nothing ties them
 together automatically.
 
-<!-- inventory: H21, H22 -->
-**Execution.** The artifact-side publish is governed by its own policies — which
-forbid contributor agents from publishing a design language or an art style — but
-nothing machine-checks that the artifact a person publishes is the one this
-assignment reviewed. The holder MUST make that correspondence themselves, and MUST
-NOT assume publishing the assignment has published anything else.
+<!-- inventory: H21 -->
+**Execution.** The artifact-side publish is governed by its own policies, and
+they are strict: contributor agents cannot publish a design language or an art
+style. What those policies do **not** check is that the artifact a person
+publishes is the one this assignment reviewed. The holder MUST make that
+correspondence themselves, and MUST NOT assume publishing the assignment has
+published anything else.
 
 <!-- inventory: H22 -->
+**Evidence.** Any automation acting on an artifact, a grant, a member record or
+an OAuth client MUST declare what kind of agent it is. Declining to say is not a
+way to be treated as unclassified — it is refused outright. An agent that will
+not say what it is does not get the benefit of the doubt, on either side of the
+pipeline.
+
+<!-- inventory: H21, H22 -->
 **Failure modes.** Publishing an artifact that a different assignment reviewed.
-Assuming the artifact-side boundary is airtight and letting an unidentified
-automation act on artifacts on the holder's behalf.
+Running an automation that omits its own agent type, then reading the refusals
+as an outage to route around rather than as the boundary working.

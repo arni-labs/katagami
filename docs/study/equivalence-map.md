@@ -119,7 +119,7 @@ does better anywhere, it should be here.
 | H19 | The publish judgement itself | no guard; the design rulebook | "Publish or return…", Decision | 2 |
 | H20 | Critique is specific and about the work | `ReturnWithCritique` hint | same section, Execution | 2 |
 | H21 | Assignment publish ≠ artifact publish | commons policies; `APP.md` | "Publishing the assignment is not publishing the artifact" | — |
-| H22 | Artifact-side boundary is attribute-dependent | `katagami-commons/policies/design_language.cedar`, `art_style.cedar` | same section, Execution + Failure modes | — |
+| H22 | Undeclared agents get nothing on artifacts, identity or consent | all seven bounded `katagami-commons/policies/*.cedar` | same section, Execution + Failure modes | 1 (policy) |
 
 ---
 
@@ -129,8 +129,8 @@ does better anywhere, it should be here.
 |---|---|---|---|---|
 | CuratorAgent | 19 | 8 | 1 | 28 |
 | ReviewAgent | 14 | 2 | 0 | 16 |
-| HumanCurator | 16 | 2 | 4 | 22 |
-| **All** | **49** | **12** | **5** | **66** |
+| HumanCurator | 17 | 2 | 3 | 22 |
+| **All** | **50** | **12** | **4** | **66** |
 
 The layer-1 count here (49) is larger than the "machine" count in the inventory
 (34) because policy items are layer-1 checkable too: an authorization decision is

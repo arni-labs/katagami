@@ -420,14 +420,18 @@ the one this assignment reviewed; the two are linked by convention through
 `submission_ids`.
 *Source: `katagami-commons/policies/design_language.cedar` and `art_style.cedar`; `katagami-curation/APP.md`, HumanCurator section.*
 
-**H22. The artifact-side contributor boundary depends on the agent declaring its
-own type, and can be evaded by omitting it.** — convention
-This is the same weakness that H7 and H8 close on the curation side, still
-present in the commons policies. An agent that sends no agent-type header is
-**allowed** to publish a `DesignLanguage`. Verified against the policy file with
-the Cedar evaluator. **This is a decision for Rita** — see the open questions
-below.
-*Source: `katagami-commons/policies/design_language.cedar`, forbid when `principal has agent_type && principal.agent_type == "contributor"`; `katagami-commons/policies/art_style.cedar`, same shape.*
+**H22. An agent that will not declare what kind of agent it is cannot publish,
+advance, or curate any artifact — and cannot touch identity or consent records
+at all.** — policy
+This is H7 and H8 applied to the artifact side. It was the one place the
+boundary still asked the caller whether the rule should apply to it: the
+agent-type header is optional, so an agent that sent none failed the
+`has agent_type` test and was allowed to publish a `DesignLanguage`. Closed
+across every commons policy that has a boundary — the four artifact types, plus
+the grant, member and OAuth-client records where a contributor is excluded
+outright. Agents that legitimately act here declare their type, and the
+pipeline finalizer is named by id, so neither pays for it.
+*Source: `katagami-commons/policies/design_language.cedar`, `art_style.cedar`, `palette_system.cedar`, `writing_style.cedar`, `agent_grant.cedar`, `member.cedar`, `oauth_client.cedar` — each `forbid(principal is Agent, …) unless { principal has agent_type || principal == Agent::"system" }`.*
 
 ---
 
@@ -437,8 +441,8 @@ below.
 |---|---|---|---|---|---|
 | CuratorAgent | 28 (C1–C28) | 16 | 3 | 8 | 1 |
 | ReviewAgent | 16 (R1–R16) | 10 | 4 | 0 | 2 |
-| HumanCurator | 22 (H1–H22) | 8 | 8 | 1 | 5 |
-| **Total** | **66** | **34** | **15** | **9** | **8** |
+| HumanCurator | 22 (H1–H22) | 8 | 9 | 1 | 4 |
+| **Total** | **66** | **34** | **16** | **9** | **7** |
 
 These counts are recomputed from the items themselves by
 `katagami-curation/tests/test_behavior_inventory_contract.py`, so the table
@@ -453,14 +457,14 @@ question, not the automaton's.
 
 # Open questions — for Rita to decide, not for me
 
-**1. The artifact-side contributor boundary is evadable (H22).** On the curation
-side I closed this: agents are excluded by type, and an agent that will not
-declare its type gets nothing. The commons policies still use the old
-attribute-presence form, so an agent that omits one optional header may publish a
-design language. Three options: fix commons the same way (it is a different
-deployed app, so it needs its own review and deploy), accept it and record it as
-a known gap, or treat it as out of scope for the study and note that condition A
-and condition B are both measured against the curation-side boundary only.
+**1. ~~The artifact-side contributor boundary is evadable (H22).~~ DECIDED
+(2026-08-12): fixed, ARN-302.** Closed across all seven commons policies that
+have a boundary, using the same type-based idiom as the curation side, with
+cedarpy probes per resource. H22 is now a policy item rather than a convention
+item; the counts below moved with it. One consequence worth knowing: agents that
+act on artifacts must now send `x-temper-agent-type`, so anything in the
+pipeline that omitted it will start being refused — which is the point, but it
+is a behavioural change to watch on deploy.
 
 **2. Should the study score convention items at all?** Nine of the sixty-six are
 things the system expects but does not enforce. They are exactly where a

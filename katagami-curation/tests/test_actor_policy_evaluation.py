@@ -44,8 +44,15 @@ MISSING_CEDAR = (
 )
 
 
+COMMONS_POLICIES = POLICIES.parent.parent / "katagami-commons" / "policies"
+
+
 def policy(name):
     return (POLICIES / f"{name}.cedar").read_text()
+
+
+def commons_policy(name):
+    return (COMMONS_POLICIES / f"{name}.cedar").read_text()
 
 
 def entity(uid_type, uid_id, attrs):
@@ -61,6 +68,156 @@ class CedarBindingsTest(unittest.TestCase):
 
     def test_the_cedar_bindings_are_installed(self):
         self.assertIsNotNone(cedarpy, MISSING_CEDAR)
+
+
+class CommonsPolicyDecisionTest(unittest.TestCase):
+    """The artifact-side boundary, evaluated rather than assumed (ARN-302).
+
+    Every commons policy that excluded contributors did it with
+    `principal has agent_type && principal.agent_type == "contributor"`. The
+    agent-type header is OPTIONAL, so that clause asked the caller whether it
+    would like the rule applied to it: an Agent that sent no agent type failed
+    the `has` test and was ALLOWED to publish a design language.
+
+    The fix mirrors the curation side — an agent that will not declare its type
+    gets nothing on the gated actions — and these probes are the evidence, one
+    per commons resource that has a boundary at all.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if cedarpy is None:
+            raise AssertionError(MISSING_CEDAR)
+
+    def decide(self, policy_name, *, action, resource_type, agent_id="some-agent", attrs=None):
+        entities = [
+            entity("Agent", agent_id, {"id": agent_id, **(attrs or {})}),
+            entity(resource_type, "r1", {"id": "r1"}),
+        ]
+        return cedarpy.is_authorized(
+            {
+                "principal": {"type": "Agent", "id": agent_id},
+                "action": {"type": "Action", "id": action},
+                "resource": {"type": resource_type, "id": "r1"},
+                "context": {},
+            },
+            commons_policy(policy_name),
+            entities,
+        ).decision
+
+    # policy file, resource type, an action behind the boundary, an authoring
+    # action a contributor agent legitimately performs.
+    ARTIFACTS = (
+        ("design_language", "DesignLanguage", "Publish", "Create"),
+        ("art_style", "ArtStyle", "Publish", "SetLineage"),
+        ("palette_system", "PaletteSystem", "Publish", "Create"),
+        ("writing_style", "WritingStyle", "Publish", "Create"),
+    )
+
+    # Identity and consent substrate: contributors are excluded entirely.
+    SUBSTRATE = (
+        ("agent_grant", "AgentGrant"),
+        ("member", "Member"),
+        ("oauth_client", "OAuthClient"),
+    )
+
+    def test_an_undeclared_agent_cannot_publish_any_artifact(self):
+        for name, resource_type, gated, _ in self.ARTIFACTS:
+            self.assertEqual(
+                self.decide(name, action=gated, resource_type=resource_type),
+                cedarpy.Decision.Deny,
+                f"{name}: an agent that declares no type published {resource_type}",
+            )
+
+    def test_a_declared_contributor_still_cannot_publish(self):
+        for name, resource_type, gated, _ in self.ARTIFACTS:
+            self.assertEqual(
+                self.decide(
+                    name,
+                    action=gated,
+                    resource_type=resource_type,
+                    attrs={"agent_type": "contributor"},
+                ),
+                cedarpy.Decision.Deny,
+                name,
+            )
+
+    def test_the_pipeline_finalizer_still_publishes(self):
+        # The fix must not cost the principal the boundary exists to admit.
+        for name, resource_type, gated, _ in self.ARTIFACTS:
+            self.assertEqual(
+                self.decide(
+                    name, action=gated, resource_type=resource_type, agent_id="system"
+                ),
+                cedarpy.Decision.Allow,
+                name,
+            )
+
+    def test_contributors_may_still_author(self):
+        # The boundary is about advancing and publishing, not about making
+        # things. Blanket-forbidding agents would have broken the pipeline.
+        for name, resource_type, _, authoring in self.ARTIFACTS:
+            for attrs in ({}, {"agent_type": "contributor"}):
+                self.assertEqual(
+                    self.decide(
+                        name,
+                        action=authoring,
+                        resource_type=resource_type,
+                        attrs=attrs,
+                    ),
+                    cedarpy.Decision.Allow,
+                    f"{name}: {authoring} refused for attrs={attrs}",
+                )
+
+    def test_an_undeclared_agent_gets_nothing_on_identity_or_consent(self):
+        # A grant is the human's kill switch over the agent; a Member record is
+        # what every other boundary is written against.
+        for name, resource_type in self.SUBSTRATE:
+            for action in ("Read", "Revoke", "Update"):
+                self.assertEqual(
+                    self.decide(name, action=action, resource_type=resource_type),
+                    cedarpy.Decision.Deny,
+                    f"{name}: undeclared agent allowed {action}",
+                )
+
+    def test_a_declared_non_contributor_still_operates_the_substrate(self):
+        for name, resource_type in self.SUBSTRATE:
+            self.assertEqual(
+                self.decide(
+                    name,
+                    action="Read",
+                    resource_type=resource_type,
+                    attrs={"agent_type": "operations"},
+                ),
+                cedarpy.Decision.Allow,
+                name,
+            )
+
+    def test_no_commons_policy_still_gates_only_on_the_attribute(self):
+        # The generic form of the finding: a resource whose only agent
+        # exclusion is `has agent_type` is a resource an agent can walk past.
+        offenders = []
+        for path in sorted(COMMONS_POLICIES.glob("*.cedar")):
+            text = path.read_text()
+            if "principal has agent_type" not in text:
+                continue
+            if "principal is Agent" not in text:
+                offenders.append(path.name)
+        self.assertEqual(
+            offenders,
+            [],
+            "these commons policies exclude agents only by a self-declared "
+            f"attribute, so omitting one optional header evades them: {offenders}",
+        )
+
+    def test_both_commons_policy_copies_stay_identical(self):
+        mirror = COMMONS_POLICIES.parent / "specs" / "policies"
+        for path in sorted(COMMONS_POLICIES.glob("*.cedar")):
+            other = mirror / path.name
+            self.assertTrue(other.is_file(), f"missing mirror: {other}")
+            self.assertEqual(
+                path.read_text(), other.read_text(), f"{path.name} mirrors diverged"
+            )
 
 
 class TestsLeaveTheRealArchiveAloneTest(unittest.TestCase):
