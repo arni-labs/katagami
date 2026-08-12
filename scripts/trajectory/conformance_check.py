@@ -62,13 +62,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from odata_calls import (  # noqa: E402  (path set above)
+    entity_id as _entity_id,
+    odata_calls,
+)
 from spec_version import (  # noqa: E402  (path set above)
     SpecVersionError,
     bare_version,
@@ -87,61 +90,21 @@ class ConformanceError(RuntimeError):
 # finding the actor's actions inside the trajectory
 # --------------------------------------------------------------------------
 
-# POST /tdata/CuratorAgents('<id>')/Temper.SelfReview — the OData action shape,
-# however it was issued: an MCP tool argument, a curl in a Bash call, a fetch.
-# The namespace is optional in the pattern so a call written without it is still
-# seen, but a segment with no namespace only counts when it names an action the
-# actor actually has: `/tdata/CuratorAgents('x')/State` reads a property, and
-# reporting that as an unknown action would be a violation the run never made.
-_ODATA_ACTION = re.compile(
-    r"/tdata/(?P<set>[A-Za-z][A-Za-z0-9_]*)\((?P<id>[^)]*)\)/"
-    r"(?P<namespace>[A-Za-z][A-Za-z0-9_]*\.)?(?P<action>[A-Za-z][A-Za-z0-9_]*)"
-)
+# How a request in a tool call is recognised — the shape of the OData action
+# path, which argument of which tool can carry one, and what makes a command
+# segment a request rather than text about one — lives in `odata_calls`, shared
+# with the producer. A rule that differs between the document and the replay is
+# a verdict nobody can reproduce.
+#
+# A namespace-less segment is accepted here, unlike in the producer, but only
+# when it names an action the actor actually has: `/tdata/CuratorAgents('x')/State`
+# reads a property, and reporting that as an unknown action would be a
+# violation the run never made.
 
 
 def entity_set_name(actor: str) -> str:
     """`CuratorAgent` -> `CuratorAgents`, matching the CSDL EntityContainer."""
     return f"{actor}s"
-
-
-# Which argument of which tool carries a request target.
-#
-# The URL scan used to run over every argument of every call, serialized. That
-# counted a URL that was WRITTEN as a call that was MADE: editing this
-# repository's own skill documentation, which is full of
-# `/tdata/CuratorAgents('<run id>')/Temper.SelfReview` examples, registered as
-# the run performing those transitions. A replay that can be driven by the text
-# a run happened to author is not a replay of anything.
-#
-# So the scan is restricted to tools that actually issue HTTP, and inside them
-# to the argument that names the request. Keys are the tool name lowercased,
-# with any `mcp__server__` prefix dropped.
-HTTP_TOOL_ARGUMENTS: dict[str, tuple[str, ...]] = {
-    "bash": ("command",),
-    "shell": ("command",),
-    "run_command": ("command",),
-    "curl": ("url", "command"),
-    "fetch": ("url",),
-    "webfetch": ("url",),
-    "web_fetch": ("url",),
-    "http_request": ("url", "path", "endpoint"),
-    # MCP execute-style tools run code that makes the calls.
-    "execute": ("code", "script"),
-}
-
-
-def _tool_key(tool: Any) -> str:
-    """`mcp__temper__execute` -> `execute`; `Bash` -> `bash`."""
-    if not isinstance(tool, str):
-        return ""
-    return tool.rsplit("__", 1)[-1].strip().lower()
-
-
-def _entity_id(raw: Any) -> str:
-    """`'run-1'` or `run-1` -> `run-1`. An id is an id, quoted or not."""
-    if not isinstance(raw, str):
-        return ""
-    return raw.strip().strip("'\"").strip()
 
 
 def _argument_action(arguments: Any, actor: str) -> tuple[str, str] | None:
@@ -165,21 +128,64 @@ def _url_action(
     arguments: Any, actor: str, known_actions: frozenset[str], tool: Any
 ) -> tuple[str, str] | None:
     """The OData action path, in an argument that actually names a request."""
-    targets = HTTP_TOOL_ARGUMENTS.get(_tool_key(tool))
-    if not targets or not isinstance(arguments, dict):
-        return None
-
-    for name in targets:
-        value = arguments.get(name)
-        if not isinstance(value, str):
+    for call in odata_calls(tool, arguments):
+        if call.entity_set != entity_set_name(actor):
             continue
-        for match in _ODATA_ACTION.finditer(value):
-            if match.group("set") != entity_set_name(actor):
-                continue
-            action = match.group("action")
-            if match.group("namespace") or action in known_actions:
-                return action, _entity_id(match.group("id"))
+        if call.namespace or call.action in known_actions:
+            return call.action, call.entity_id
     return None
+
+
+# A harness envelope, as `claude_session_to_ots` and `temper-mcp` write it: the
+# `choice.action` is not an action name, and the governed actions the call
+# reached are listed beside it. These are the same literals the kernel reads
+# (`temper-server/src/conformance/decisions.rs`), which is why they are named
+# rather than spelled out at each use.
+TRAJECTORY_ACTIONS_KEY = "trajectory_actions"
+NESTED_ACTION_KEY = "action"
+TOOL_ARGUMENTS_KEY = "tool_arguments"
+HARNESS_TOOL_SEPARATOR = " tool: "
+
+
+def _envelope_tool(action: Any) -> Any:
+    """`claude-code tool: Bash` -> `Bash`. Anything else is returned unchanged."""
+    if isinstance(action, str) and HARNESS_TOOL_SEPARATOR in action:
+        return action.split(HARNESS_TOOL_SEPARATOR, 1)[1]
+    return action
+
+
+def _envelope_actions(arguments: Any, actor: str) -> list[tuple[str, str]]:
+    """Governed actions the producer already resolved, under `trajectory_actions`.
+
+    Read first, and trusted for what it says, because the producer resolved it
+    from the same request-shape rules this module uses — and because it is what
+    the kernel reads, so a trajectory that replays differently here than there
+    is a trajectory nobody can get one answer about.
+
+    An entry that names an entity set other than this actor's drove a different
+    machine and is not this actor's business. An entry naming no set at all is
+    kept: the MCP producer writes bare action names, and dropping them would
+    lose every governed call a Temper MCP session made.
+    """
+    if not isinstance(arguments, dict):
+        return []
+    entries = arguments.get(TRAJECTORY_ACTIONS_KEY)
+    if not isinstance(entries, list):
+        return []
+
+    found: list[tuple[str, str]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        action = entry.get(NESTED_ACTION_KEY)
+        if not isinstance(action, str) or not action:
+            continue
+        entity_set = entry.get("entity_set")
+        if isinstance(entity_set, str) and entity_set:
+            if entity_set != entity_set_name(actor):
+                continue
+        found.append((action, _entity_id(entry.get("entity_id"))))
+    return found
 
 
 def extract_actor_calls(
@@ -190,6 +196,13 @@ def extract_actor_calls(
     Decisions are the source rather than raw messages: the converter writes one
     decision per tool call with its arguments and its consequence, so a call
     that was issued and a call that succeeded are distinguishable here.
+
+    Both decision shapes are read. A flat one carries the tool name and its
+    arguments directly; a harness envelope names the harness in `choice.action`
+    and puts the governed actions under `trajectory_actions` with the original
+    arguments beside them. Reading only the flat shape is how this module went
+    blind to every trajectory the converter produced — the calls were all there
+    and the replay reported `no_actor_actions`.
     """
     calls: list[dict[str, Any]] = []
     for turn in trajectory.get("turns") or []:
@@ -197,26 +210,36 @@ def extract_actor_calls(
         for decision in turn.get("decisions") or []:
             choice = decision.get("choice") or {}
             arguments = choice.get("arguments")
-            tool = choice.get("action")
-            found = _argument_action(arguments, actor) or _url_action(
-                arguments, actor, known_actions, tool
-            )
+            tool = _envelope_tool(choice.get("action"))
+
+            found = _envelope_actions(arguments, actor)
             if not found:
-                continue
-            action, entity_id = found
+                # No envelope, or nothing in it for this actor: read the
+                # arguments themselves. Under an envelope they sit one level
+                # down, and they are still worth scanning — a namespace-less
+                # path that names a known action is a call the producer cannot
+                # recognise and this module can.
+                if isinstance(arguments, dict) and TOOL_ARGUMENTS_KEY in arguments:
+                    arguments = arguments.get(TOOL_ARGUMENTS_KEY)
+                single = _argument_action(arguments, actor) or _url_action(
+                    arguments, actor, known_actions, tool
+                )
+                found = [single] if single else []
+
             consequence = decision.get("consequence") or {}
-            calls.append(
-                {
-                    "turn_id": turn_id,
-                    "decision_id": decision.get("decision_id"),
-                    "action": action,
-                    # Which entity the call drove. One actor SPEC governs many
-                    # entities, and each is its own machine.
-                    "entity_id": entity_id,
-                    "tool": tool,
-                    "succeeded": bool(consequence.get("success")),
-                }
-            )
+            for action, entity_id in found:
+                calls.append(
+                    {
+                        "turn_id": turn_id,
+                        "decision_id": decision.get("decision_id"),
+                        "action": action,
+                        # Which entity the call drove. One actor SPEC governs
+                        # many entities, and each is its own machine.
+                        "entity_id": entity_id,
+                        "tool": tool,
+                        "succeeded": bool(consequence.get("success")),
+                    }
+                )
     return calls
 
 

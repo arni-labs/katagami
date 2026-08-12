@@ -45,11 +45,12 @@ def _load(module_name):
 
 converter = _load("claude_session_to_ots")
 harbor_adapter = _load("harbor_adapter")
-# The converter imported this on the way in. Reaching for the same module
-# object rather than loading a second copy keeps `SpecVersionError` one class:
+# The converter imported these on the way in. Reaching for the same module
+# objects rather than loading second copies keeps `SpecVersionError` one class:
 # two loads give two identically-named exception types, and `assertRaises`
 # against the wrong one never matches.
 spec_version_module = sys.modules["spec_version"]
+odata_calls = sys.modules["odata_calls"]
 
 
 def _harbor_available():
@@ -140,6 +141,122 @@ class AtifToOtsTests(unittest.TestCase):
         )
         self.assertEqual(forced["metadata"]["outcome"], "failure")
 
+    def test_a_harness_tool_is_an_envelope_not_a_governed_action_name(self):
+        # The whole point: `temper-server/src/conformance/decisions.rs` reads a
+        # bare `[A-Za-z0-9_.-]+` token as a governed action name and reports it
+        # as `unknown_action` when the actor's spec does not declare it. Every
+        # Claude Code tool call used to be written that way, so a clean run
+        # collected one violation per tool call and could never pass layer 1.
+        decisions = [d for turn in self.ots["turns"] for d in turn["decisions"]]
+        self.assertTrue(decisions)
+        for decision in decisions:
+            action = decision["choice"]["action"]
+            self.assertFalse(
+                converter._is_bare_token(action),
+                f"{action!r} would be checked as a governed action name",
+            )
+            self.assertTrue(action.startswith("claude-code tool: "))
+
+    def test_the_envelope_names_the_harness_it_came_from(self):
+        other = converter.atif_to_ots(
+            self.atif,
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+            harness="codex",
+        )
+        actions = [
+            d["choice"]["action"] for turn in other["turns"] for d in turn["decisions"]
+        ]
+        self.assertTrue(actions)
+        for action in actions:
+            self.assertTrue(action.startswith("codex tool: "))
+            self.assertFalse(converter._is_bare_token(action))
+
+    def test_a_governed_odata_call_surfaces_as_a_real_action(self):
+        # A curator reaches Temper over HTTP, so the action name is in the
+        # path. It has to reach `trajectory_actions`, or the run's own governed
+        # actions become invisible to the checker's decision walk.
+        #
+        # The arguments are the shape ATIF actually carries — a field map, not
+        # a bare command line — because the field is half of what makes this a
+        # request rather than prose.
+        choice = converter._tool_envelope(
+            "Bash",
+            {
+                "command": "curl -X POST "
+                "http://127.0.0.1:3521/tdata/CuratorAgents('r1')/Temper.ReceiveBrief "
+                "-d '{\"brief\":\"x\"}'"
+            },
+            "claude-code",
+        )
+        self.assertEqual(
+            choice["arguments"]["trajectory_actions"],
+            [
+                {
+                    "action": "ReceiveBrief",
+                    "params": {},
+                    "entity_set": "CuratorAgents",
+                    "entity_id": "r1",
+                }
+            ],
+        )
+        self.assertIn("tool_arguments", choice["arguments"])
+
+    def test_the_entry_names_the_entity_the_call_drove(self):
+        # The kernel reads `action` and ignores the rest, but the offline
+        # replay runs one machine per ENTITY: without the id every entity
+        # collapses into one machine, which is how a run smuggles state from
+        # one entity into another.
+        choice = converter._tool_envelope(
+            "Bash",
+            {
+                "command": "curl -X POST .../tdata/CuratorAgents('r1')/Temper.SelfReview; "
+                "curl -X POST .../tdata/CuratorAgents('r2')/Temper.SelfReview"
+            },
+            "claude-code",
+        )
+        self.assertEqual(
+            [entry["entity_id"] for entry in choice["arguments"]["trajectory_actions"]],
+            ["r1", "r2"],
+        )
+
+    def test_repeated_calls_to_one_action_are_listed_once(self):
+        choice = converter._tool_envelope(
+            "Bash",
+            {
+                "command": "curl .../tdata/CuratorAgents('r1')/Temper.RecordDraft; "
+                "curl .../tdata/CuratorAgents('r1')/Temper.RecordDraft"
+            },
+            "claude-code",
+        )
+        self.assertEqual(
+            choice["arguments"]["trajectory_actions"],
+            [
+                {
+                    "action": "RecordDraft",
+                    "params": {},
+                    "entity_set": "CuratorAgents",
+                    "entity_id": "r1",
+                }
+            ],
+        )
+
+    def test_an_ordinary_tool_call_lists_no_governed_actions(self):
+        # No `trajectory_actions` key at all is what makes the checker count it
+        # as a harness tool rather than walk it.
+        choice = converter._tool_envelope("Read", {"file_path": "/tmp/x.md"}, "claude-code")
+        self.assertNotIn("trajectory_actions", choice.get("arguments") or {})
+
+    def test_only_choices_own_fields_are_written(self):
+        # OTSChoice models action/arguments/rationale/confidence and the kernel
+        # drops the rest, so a key of our own would survive locally and vanish
+        # on the canonical path.
+        choice = converter._tool_envelope("Read", {"file_path": "/tmp/x.md"}, "claude-code")
+        self.assertLessEqual(
+            set(choice), {"action", "arguments", "rationale", "confidence"}
+        )
+
     def test_tool_calls_and_their_results_are_paired_as_messages(self):
         tool_turn = next(turn for turn in self.ots["turns"] if turn["decisions"])
         calls = [
@@ -226,6 +343,526 @@ class AtifToOtsTests(unittest.TestCase):
         self.assertEqual(
             self.ots["context"]["entities"],
             [{"type": "tool", "id": "Read", "name": "Read"}],
+        )
+
+
+class FabricatedActionTests(unittest.TestCase):
+    """An action name in a tool call's text is not an action the run attempted.
+
+    Every case here was a real fabrication: the converter serialized the whole
+    argument blob and matched the OData path shape anywhere in it, so an agent
+    that wrote about a call was recorded as having made it. The consequence is
+    not benign. A fabricated name the actor's spec does not declare has no
+    kernel row behind it, so layer 1 reports `unknown_action` against a run
+    that did nothing wrong — a formalism failing in a systematic direction,
+    which is the exact failure the study's verification log already records
+    once.
+
+    The fix narrows extraction at the source. It must not narrow it so far that
+    a real attempt disappears; `test_a_real_request_is_still_extracted` and
+    `UndeclaredActionDetectionTests` hold that end.
+    """
+
+    def _actions(self, tool, arguments):
+        choice = converter._tool_envelope(tool, arguments, "claude-code")
+        return (choice.get("arguments") or {}).get("trajectory_actions")
+
+    def test_a_subagent_prompt_quoting_a_failed_call_attempts_nothing(self):
+        # The realistic trigger: an action 404s, and the agent pastes the URL
+        # into a teammate's prompt to ask what the right name is. `Record` is
+        # not a CuratorAgent action, so fabricating it fails the run.
+        self.assertIsNone(
+            self._actions(
+                "Agent",
+                {
+                    "description": "find the right action",
+                    "prompt": (
+                        "POST /tdata/CuratorAgents('r1')/Temper.Record returned 404. "
+                        "Which action did I mean?"
+                    ),
+                },
+            )
+        )
+
+    def test_writing_a_file_that_documents_the_path_attempts_nothing(self):
+        self.assertIsNone(
+            self._actions(
+                "Write",
+                {
+                    "file_path": "/katagami/NOTES.md",
+                    "content": (
+                        "Call /tdata/CuratorAgents('r1')/Temper.SelfReview "
+                        "before submitting."
+                    ),
+                },
+            )
+        )
+
+    def test_echoing_the_path_into_a_file_attempts_nothing(self):
+        # `Bash.command` IS a request-bearing field, so the field allowlist
+        # alone does not save this one: a segment that only prints text made no
+        # request, whatever text it printed.
+        self.assertIsNone(
+            self._actions(
+                "Bash",
+                {
+                    "command": (
+                        "echo \"remember: /tdata/CuratorAgents('r1')/Temper.DeleteEverything\" "
+                        "> notes.txt"
+                    )
+                },
+            )
+        )
+
+    def test_this_repositorys_own_readme_attempts_nothing(self):
+        # The README of this very pipeline documents the extraction with a
+        # worked `Temper.ReceiveBrief` example. An agent editing it was
+        # recorded as having received a brief.
+        readme = (TRAJECTORY_DIR / "README.md").read_text()
+        self.assertIn("Temper.ReceiveBrief", readme)
+        self.assertIsNone(
+            self._actions("Write", {"file_path": "README.md", "content": readme})
+        )
+        self.assertIsNone(
+            self._actions(
+                "Edit",
+                {"file_path": "README.md", "old_string": "x", "new_string": readme},
+            )
+        )
+
+    def test_a_url_outside_the_request_argument_of_an_http_tool_attempts_nothing(self):
+        # Bash issues requests through `command`; its `description` is prose.
+        self.assertIsNone(
+            self._actions(
+                "Bash",
+                {
+                    "command": "ls",
+                    "description": "curl /tdata/CuratorAgents('r1')/Temper.SelfReview",
+                },
+            )
+        )
+
+    def test_a_real_request_is_still_extracted(self):
+        # The other end of the narrowing. Each of these is how a curator skill
+        # actually reaches Temper.
+        for tool, arguments in (
+            (
+                "Bash",
+                {
+                    "command": "curl -sS -X POST "
+                    "\"$TEMPER_API_URL/tdata/CuratorAgents('r1')/Temper.SelfReview\""
+                },
+            ),
+            (
+                "WebFetch",
+                {"url": "https://temper/tdata/CuratorAgents('r1')/Temper.SelfReview"},
+            ),
+            (
+                "mcp__temper__execute",
+                {
+                    "code": "temper.post(\"/tdata/CuratorAgents('r1')/Temper.SelfReview\")"
+                },
+            ),
+        ):
+            with self.subTest(tool=tool):
+                self.assertEqual(
+                    self._actions(tool, arguments),
+                    [
+                        {
+                            "action": "SelfReview",
+                            "params": {},
+                            "entity_set": "CuratorAgents",
+                            "entity_id": "r1",
+                        }
+                    ],
+                )
+
+    def test_a_real_request_beside_an_echo_is_still_extracted(self):
+        # Narrowing by segment, not by command: one line can do both.
+        self.assertEqual(
+            [
+                entry["action"]
+                for entry in self._actions(
+                    "Bash",
+                    {
+                        "command": (
+                            "echo \"/tdata/CuratorAgents('r1')/Temper.Fabricated\" > n.txt; "
+                            "curl -X POST .../tdata/CuratorAgents('r1')/Temper.SelfReview"
+                        )
+                    },
+                )
+            ],
+            ["SelfReview"],
+        )
+
+    def test_a_json_body_containing_a_semicolon_does_not_lose_the_request(self):
+        # The segment split is quote aware on purpose: a `;` inside a request
+        # body would otherwise cut the URL away from the curl that fetched it.
+        self.assertEqual(
+            [
+                entry["action"]
+                for entry in self._actions(
+                    "Bash",
+                    {
+                        "command": (
+                            "curl -X POST -d '{\"note\":\"a;b\"}' "
+                            ".../tdata/CuratorAgents('r1')/Temper.RecordDraft"
+                        )
+                    },
+                )
+            ],
+            ["RecordDraft"],
+        )
+
+    def test_any_namespace_is_read_the_way_the_kernel_reads_it(self):
+        # Deliberate: the kernel takes the LAST dot-segment as the action name
+        # (`action.rsplit('.').next()`, temper-server/src/odata/write.rs), so
+        # `Katagami.RecordDraft` dispatches `RecordDraft` exactly as
+        # `Temper.RecordDraft` does. Constraining the scan to `Temper.` would
+        # hide a real dispatched call, and a hidden call is a false PASS.
+        for namespace in ("Temper", "Katagami", "Ns_1"):
+            with self.subTest(namespace=namespace):
+                self.assertEqual(
+                    [
+                        entry["action"]
+                        for entry in self._actions(
+                            "Bash",
+                            {
+                                "command": "curl -X POST "
+                                f".../tdata/CuratorAgents('r1')/{namespace}.RecordDraft"
+                            },
+                        )
+                    ],
+                    ["RecordDraft"],
+                )
+
+    def test_a_path_segment_with_no_namespace_is_not_read_as_an_action(self):
+        # `/tdata/CuratorAgents('r1')/State` reads a property. This module has
+        # no spec in hand to tell one from the other, and inventing an action
+        # named `State` would be a violation the run never made. The offline
+        # checker, which does have the spec, still catches the real ones.
+        self.assertIsNone(
+            self._actions(
+                "Bash",
+                {"command": "curl .../tdata/CuratorAgents('r1')/State"},
+            )
+        )
+
+    def test_prose_fields_are_never_request_fields(self):
+        # The allowlist is the first gate and this set is the second. Without
+        # it, adding `prompt` to a tool's request arguments would silently turn
+        # every quoted URL in every subagent brief back into evidence.
+        for tool, fields in odata_calls.REQUEST_ARGUMENTS.items():
+            with self.subTest(tool=tool):
+                self.assertEqual(
+                    set(fields) & odata_calls.PROSE_ARGUMENTS,
+                    set(),
+                )
+
+    def test_a_tool_that_issues_no_request_is_never_scanned(self):
+        url = "curl https://temper/tdata/CuratorAgents('r1')/Temper.SelfReview"
+        for tool in ("Read", "Write", "Edit", "NotebookEdit", "Agent", "Task", "Glob"):
+            with self.subTest(tool=tool):
+                self.assertEqual(odata_calls.odata_calls(tool, {"content": url}), [])
+
+
+class CallOnlyExtractionTests(unittest.TestCase):
+    """Only the call is read for actions, never its result.
+
+    The README and the converter both advertise this as a decision, and until
+    this class nothing tested it: a mutation that also extracted governed
+    actions from tool RESULTS left every other test green. It matters because
+    results are full of action names the run did not invoke — a `$metadata`
+    document, a 404 body echoing the path, a file the agent read — and
+    crediting a run with attempting them is the same fabrication as reading
+    them out of prose.
+
+    The assertion walks the whole document rather than one decision, so a
+    mutation that extracts from results into any other field is caught too.
+    """
+
+    REQUEST = (
+        "curl -X POST https://temper/tdata/CuratorAgents('r1')/Temper.SelfReview"
+    )
+
+    def _atif_with(self, *, call_arguments, result_content):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in atif["steps"] if s.get("tool_calls"))
+        step["tool_calls"] = [
+            {
+                "arguments": call_arguments,
+                "function_name": "Bash",
+                "tool_call_id": "toolu_call_only",
+            }
+        ]
+        step["observation"] = {
+            "results": [
+                {"content": result_content, "source_call_id": "toolu_call_only"}
+            ]
+        }
+        return atif
+
+    def _extracted_actions(self, ots):
+        """Every action name in every `trajectory_actions` list in the document."""
+        found = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                entries = node.get(converter.TRAJECTORY_ACTIONS_KEY)
+                if isinstance(entries, list):
+                    found.extend(
+                        entry.get(converter.NESTED_ACTION_KEY)
+                        for entry in entries
+                        if isinstance(entry, dict)
+                    )
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        walk(ots)
+        return found
+
+    def test_a_request_named_only_in_a_result_is_not_an_attempt(self):
+        ots = converter.atif_to_ots(
+            self._atif_with(
+                call_arguments={"command": "cat run.log"},
+                result_content=f"the previous session ran: {self.REQUEST}",
+            ),
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+        )
+        self.assertEqual(self._extracted_actions(ots), [])
+        # The result itself is still stored — this is about what gets counted
+        # as an action, not about dropping evidence.
+        self.assertIn("Temper.SelfReview", json.dumps(ots))
+
+    def test_the_same_request_in_the_call_is_an_attempt(self):
+        # The positive control. Without it the test above would keep passing if
+        # extraction broke altogether.
+        ots = converter.atif_to_ots(
+            self._atif_with(
+                call_arguments={"command": self.REQUEST},
+                result_content="{}",
+            ),
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+        )
+        self.assertEqual(self._extracted_actions(ots), ["SelfReview"])
+
+    def test_an_error_result_echoing_the_command_is_not_an_attempt(self):
+        # A `set -x` trace prints the command back before the error. The
+        # attempt is in the call; counting the echo as well would double every
+        # traced call, and counting only the echo would credit a run for a
+        # request that its own arguments never carried.
+        ots = converter.atif_to_ots(
+            self._atif_with(
+                call_arguments={"command": "cat error.log"},
+                result_content=(
+                    f"+ {self.REQUEST}\n"
+                    '{"error":{"message":"no such action"}}'
+                ),
+            ),
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+        )
+        self.assertEqual(self._extracted_actions(ots), [])
+
+
+class KernelDecisionContractTests(unittest.TestCase):
+    """The literals this producer shares with the kernel checker.
+
+    `trajectory_actions` is the load-bearing one. Rename it in
+    `temper-server/src/conformance/decisions.rs` and this converter keeps
+    writing the old key, `nested_actions()` returns empty, every governed call
+    reads as a harness tool, real violations disappear — and every test in this
+    repository stays green while the verdict flips to a clean pass. A silent
+    false pass is the one outcome this study cannot survive.
+
+    Two pins, and one honest gap:
+
+      * the fixture, which both sides can read and this side asserts against;
+      * the Rust source, when a temper checkout is discoverable — `$TEMPER_REPO`
+        or a sibling of this repository;
+      * the gap: a CI runner with no temper checkout skips the second pin. The
+        kernel-side half (a test in temper asserting the same fixture) is not
+        in this repository and is tracked separately.
+    """
+
+    CONTRACT = FIXTURES / "kernel_decision_contract.json"
+    DECISIONS_RS = Path("crates/temper-server/src/conformance/decisions.rs")
+
+    @classmethod
+    def _temper_repo(cls):
+        candidates = []
+        for name in ("TEMPER_REPO", "KATAGAMI_TEMPER_REPO"):
+            configured = os.environ.get(name)
+            if configured:
+                candidates.append(Path(configured).expanduser())
+        candidates.append(REPO_ROOT.parent / "temper")
+        candidates.append(Path.home() / "Development" / "temper")
+        for candidate in candidates:
+            if (candidate / cls.DECISIONS_RS).is_file():
+                return candidate
+        return None
+
+    def setUp(self):
+        self.contract = json.loads(self.CONTRACT.read_text())
+
+    def test_the_producer_writes_the_keys_the_contract_names(self):
+        self.assertEqual(
+            converter.TRAJECTORY_ACTIONS_KEY, self.contract["trajectory_actions_key"]
+        )
+        self.assertEqual(
+            converter.NESTED_ACTION_KEY, self.contract["nested_action_key"]
+        )
+        self.assertEqual(
+            converter._BARE_TOKEN_RE.pattern, self.contract["action_name_pattern"]
+        )
+
+    def test_the_offline_checker_reads_the_keys_the_contract_names(self):
+        # Two Python readers of one kernel contract; both are pinned, so a
+        # rename in either one fails here rather than in a verdict.
+        checker = _load("conformance_check")
+        self.assertEqual(
+            checker.TRAJECTORY_ACTIONS_KEY, self.contract["trajectory_actions_key"]
+        )
+        self.assertEqual(checker.NESTED_ACTION_KEY, self.contract["nested_action_key"])
+        self.assertEqual(
+            checker.HARNESS_TOOL_SEPARATOR, converter.HARNESS_TOOL_SEPARATOR
+        )
+
+    def test_the_kernel_source_still_declares_those_literals(self):
+        repo = self._temper_repo()
+        if repo is None:
+            self.skipTest(
+                "no temper checkout found; set $TEMPER_REPO to pin the kernel "
+                "literals this producer writes against"
+            )
+        source = (repo / self.DECISIONS_RS).read_text()
+        # Asserted as booleans: a failure here should name the missing literal,
+        # not print the whole file back.
+        #
+        # The fragments cover the key, the nested field, and `is_action_name` —
+        # whose charset decides whether the envelope string is read as an
+        # action name at all. The envelope survives only while a space and a
+        # colon stay outside that charset.
+        missing = [
+            fragment
+            for fragment in self.contract["action_name_source_fragments"]
+            if fragment not in source
+        ]
+        self.assertEqual(
+            missing,
+            [],
+            f"{repo / self.DECISIONS_RS} no longer declares what this converter "
+            "writes against. If `trajectory_actions` was renamed, every governed "
+            "call this converter produces now reads as a harness tool and every "
+            "real violation disappears into a clean pass.",
+        )
+
+    def test_the_envelope_is_not_an_action_name_under_the_kernels_own_charset(self):
+        allowed = set(self.contract["action_name_characters"])
+        envelope = converter._tool_envelope("Bash", {}, "claude-code")["action"]
+        self.assertTrue(set(envelope) - allowed)
+        self.assertFalse(converter._is_bare_token(envelope))
+
+
+class UndeclaredActionDetectionTests(unittest.TestCase):
+    """A real attempt at an undeclared action must still fail the run.
+
+    This is the property the narrowing is not allowed to cost. An agent that
+    dispatches something outside its actor's alphabet and gets refused is a
+    signal layer 1 exists to catch; making it invisible would trade a false
+    fail for a false pass, and a false pass manufactures the clean result the
+    study is meant to test for.
+
+    The whole path is exercised — converter to offline replay — because that is
+    where the signal would go missing.
+    """
+
+    def setUp(self):
+        self.checker = _load("conformance_check")
+
+    def _trajectory(self, command):
+        atif = json.loads(GOLDEN_ATIF.read_text())
+        step = next(s for s in atif["steps"] if s.get("tool_calls"))
+        step["tool_calls"] = [
+            {
+                "arguments": {"command": command},
+                "function_name": "Bash",
+                "tool_call_id": "toolu_governed",
+            }
+        ]
+        step["observation"] = {
+            "results": [{"content": "{}", "source_call_id": "toolu_governed"}]
+        }
+        return converter.atif_to_ots(
+            atif,
+            agent_id="katagami-contributor",
+            session_id="s",
+            trajectory_id="t",
+            spec_version=self.checker.compute_version("CuratorAgent"),
+        )
+
+    def _kinds(self, command):
+        verdict = self.checker.check(self._trajectory(command), "CuratorAgent")
+        return {violation["kind"] for violation in verdict["violations"]}
+
+    def test_an_undeclared_action_in_a_real_request_is_still_reported(self):
+        self.assertIn(
+            "unknown_action",
+            self._kinds(
+                "curl -X POST .../tdata/CuratorAgents('r1')/Temper.DeleteEverything"
+            ),
+        )
+
+    def test_the_same_name_in_prose_is_not_reported(self):
+        # The other half of the same property: the violation above must come
+        # from the request, not from the string.
+        self.assertNotIn(
+            "unknown_action",
+            self._kinds(
+                "echo \"/tdata/CuratorAgents('r1')/Temper.DeleteEverything\" > n.txt"
+            ),
+        )
+
+    def test_a_converted_run_is_replayable_by_the_offline_checker(self):
+        # The envelope has to stay legible to the replay. It did not: the
+        # checker read only the flat shape, so every trajectory this converter
+        # produced replayed as `no_actor_actions` — a false FAIL on a run whose
+        # calls were all there in the document.
+        calls = self.checker.extract_actor_calls(
+            self._trajectory(
+                "curl -X POST .../tdata/CuratorAgents('r1')/Temper.ReceiveBrief"
+            ),
+            "CuratorAgent",
+            frozenset({"ReceiveBrief"}),
+        )
+        self.assertEqual(
+            [(call["action"], call["entity_id"], call["succeeded"]) for call in calls],
+            [("ReceiveBrief", "r1", True)],
+        )
+
+    def test_the_replay_still_separates_one_entity_from_another(self):
+        # One machine per entity. A trajectory that loses the entity id
+        # replays two entities as one, which is how a run that never drafted
+        # anything submits from a state another entity reached.
+        calls = self.checker.extract_actor_calls(
+            self._trajectory(
+                "curl -X POST .../tdata/CuratorAgents('r1')/Temper.ReceiveBrief; "
+                "curl -X POST .../tdata/CuratorAgents('r2')/Temper.BeginDrafting"
+            ),
+            "CuratorAgent",
+            frozenset({"ReceiveBrief", "BeginDrafting"}),
+        )
+        self.assertEqual(
+            [(call["action"], call["entity_id"]) for call in calls],
+            [("ReceiveBrief", "r1"), ("BeginDrafting", "r2")],
         )
 
 

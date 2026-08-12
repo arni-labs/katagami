@@ -1,0 +1,15 @@
+{
+  "note": "The literals the trajectory producer shares with the kernel's conformance checker. Kernel side: temper, crates/temper-server/src/conformance/decisions.rs. Python side: scripts/trajectory/claude_session_to_ots.py and conformance_check.py. Change one and this fixture fails before a verdict does. A rename of trajectory_actions with no fixture change is the silent path: every governed call would read as a harness tool and every real violation would disappear into a clean pass.",
+  "source": "temper: crates/temper-server/src/conformance/decisions.rs",
+  "trajectory_actions_key": "trajectory_actions",
+  "nested_action_key": "action",
+  "action_name_pattern": "^[A-Za-z0-9_.-]+$",
+  "action_name_characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.",
+  "action_name_source_fragments": [
+    "const TRAJECTORY_ACTIONS_KEY: &str = \"trajectory_actions\";",
+    "const NESTED_ACTION_KEY: &str = \"action\";",
+    "fn is_action_name(action: &str) -> bool",
+    "c.is_ascii_alphanumeric()",
+    "matches!(c, '_' | '-' | '.')"
+  ]
+}

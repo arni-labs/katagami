@@ -74,6 +74,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -90,6 +91,7 @@ from harbor_adapter import (  # noqa: E402  (path set above)
     HarborUnavailable,
     transcript_to_atif,
 )
+from odata_calls import odata_calls  # noqa: E402  (path set above)
 from redaction import redact_text, redact_value  # noqa: E402  (path set above)
 from spec_version import (  # noqa: E402  (path set above)
     SpecStamp,
@@ -393,8 +395,146 @@ def _build_messages(
     return messages
 
 
+# --------------------------------------------------------------------------
+# the kernel's decision contract
+#
+# The first two literals belong to `temper-server/src/conformance/decisions.rs`
+# and are the whole coupling between this producer and the checker; the other
+# two are ours, written beside them. The key is the load-bearing one: rename it
+# kernel-side and this module keeps writing
+# `trajectory_actions`, `nested_actions()` returns empty, every governed call
+# reads as a harness tool, real violations disappear, and every test in this
+# repository stays green while the verdict flips to a clean pass.
+#
+# `KernelDecisionContractTests` pins them: against the fixture
+# `tests/fixtures/kernel_decision_contract.json`, and — when a temper checkout
+# is discoverable — against the Rust source itself. What that guard cannot do
+# is fail in a CI runner that has no temper checkout; see the README.
+# --------------------------------------------------------------------------
+
+# Where a harness envelope lists the governed actions it reached.
+TRAJECTORY_ACTIONS_KEY = "trajectory_actions"
+# The field naming the action inside one entry of that list.
+NESTED_ACTION_KEY = "action"
+# Our own key, beside it, holding what the harness was actually asked to do.
+TOOL_ARGUMENTS_KEY = "tool_arguments"
+# What separates the harness from the tool it ran in an envelope string. The
+# space and the colon are what stop the envelope reading as an action name.
+HARNESS_TOOL_SEPARATOR = " tool: "
+
+# The kernel's rule for "this string names a governed action", mirrored from
+# `decisions.rs::is_action_name`. It is duplicated rather than imported because
+# the two live in different languages.
+_BARE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def _is_bare_token(value: str) -> bool:
+    return bool(value) and bool(_BARE_TOKEN_RE.match(value))
+
+
+def _governed_actions(tool_name: str, arguments: Any) -> list[dict[str, Any]]:
+    """The governed actions one harness call reached, read off its arguments.
+
+    A Claude Code agent reaches Temper by making an HTTP request — `curl` in a
+    Bash command, a WebFetch of the OData path. The action name is in the path,
+    so the path is where it is read from, and `odata_calls` owns the rules for
+    which argument of which tool can carry one: the request-bearing field of a
+    request-issuing tool, in a command segment that issues a request. The same
+    module answers the same question for the offline checker, so the document
+    and the replay cannot disagree about what the run did.
+
+    Read from the *redacted* arguments, which is what the stored document
+    carries: a reader can check the extraction against the same bytes the
+    judge sees. Redaction never touches a `/tdata/` path, and if it ever did,
+    under-reporting is the safe direction — the kernel's own rows remain the
+    authority on what was actually dispatched.
+
+    A match with no namespace segment is dropped here.
+    `/tdata/CuratorAgents('r')/State` reads a property, and this module has no
+    spec in hand to tell a property from an action. The offline checker does,
+    and accepts a namespace-less segment when it names an action the actor
+    actually has.
+
+    Three things this deliberately does not do. It does not read tool
+    *results*, only the call, so a run that merely read a document naming an
+    action is not credited with attempting it (`CallOnlyExtractionTests`). It
+    does not read prose fields at all, so a `Write` documenting an endpoint or
+    an `Agent` prompt quoting a call that 404'd stays what it is — text. And it
+    does not parse `temper.action(...)` out of `mcp__temper__execute` code: a
+    session that goes through MCP has its governed actions recorded by the MCP
+    server's own envelope and by the kernel rows, so re-deriving them from
+    Python source here would add a second, more fragile parser for no new
+    evidence.
+
+    The entity set and id ride along with each action. The kernel reads only
+    `action` and `params` from these entries and ignores the rest
+    (`decisions.rs::nested_actions`, `replay_inputs.rs::normalize_trajectory_action`),
+    but the offline replay needs the id: it runs one state machine per ENTITY,
+    and a list of bare action names collapses every entity into one machine,
+    which is how a run smuggles state between two of them.
+    """
+    seen: list[dict[str, Any]] = []
+    for call in odata_calls(tool_name, arguments):
+        if not call.namespace:
+            continue
+        entry: dict[str, Any] = {
+            NESTED_ACTION_KEY: call.action,
+            "params": {},
+            "entity_set": call.entity_set,
+        }
+        if call.entity_id:
+            entry["entity_id"] = call.entity_id
+        if entry not in seen:
+            seen.append(entry)
+    return seen
+
+
+def _tool_envelope(tool_name: str, arguments: Any, harness: str) -> dict[str, Any]:
+    """One harness tool call, in the envelope shape the checker recognises.
+
+    `temper-server/src/conformance/decisions.rs` classifies a decision by its
+    `choice.action`: a bare token is read as a governed action name and checked
+    against the actor's alphabet, anything else is an envelope whose real
+    actions are listed under `choice.arguments.trajectory_actions`. Writing a
+    raw tool name here therefore claimed `Bash` was a CuratorAgent action and
+    produced one `unknown_action` violation per tool call.
+
+    Harness tool use is cognition: it belongs in the trajectory for the LLM
+    judge and must never reach the deterministic action walk. So the tool name
+    goes into an envelope string that is not a bare token, and the governed
+    actions the call actually reached — if any — go where the checker reads
+    them. This mirrors the MCP producer (`temper-mcp::record_execute_turn`),
+    which writes `"execute: <code>"` with the same `trajectory_actions` key.
+    """
+    envelope = f"{harness}{HARNESS_TOOL_SEPARATOR}{tool_name}"
+    if _is_bare_token(envelope):
+        # Unreachable while the format carries a space and a colon, and worth
+        # failing on rather than silently emitting a decision the checker would
+        # score as a governed action.
+        raise ValueError(
+            f"envelope {envelope!r} reads as a governed action name; "
+            "the conformance checker would report it as an illegal action"
+        )
+    # Only OTSChoice's own fields are written. The kernel parses an upload into
+    # its model and drops every key it does not know, so a `tool` field of our
+    # own would read as absent on the canonical path while surviving in the
+    # local archive — the same trap the judge skill documents for metadata. The
+    # tool name is already in the envelope string and in the ATIF tool_calls.
+    choice: dict[str, Any] = {"action": envelope}
+    if arguments not in (None, {}, ""):
+        choice["arguments"] = arguments
+    governed = _governed_actions(tool_name, arguments)
+    if governed:
+        # `arguments` has to be an object for the checker to find the key.
+        existing = choice.get("arguments")
+        choice["arguments"] = {TRAJECTORY_ACTIONS_KEY: governed}
+        if existing not in (None, {}, ""):
+            choice["arguments"][TOOL_ARGUMENTS_KEY] = existing
+    return choice
+
+
 def _build_decisions(
-    step: dict[str, Any], trajectory_id: str
+    step: dict[str, Any], trajectory_id: str, harness: str = DEFAULT_HARNESS
 ) -> list[dict[str, Any]]:
     """One decision per tool call, each linked to its observation by cause_id.
 
@@ -402,6 +542,12 @@ def _build_decisions(
     and a flat list of results into a causal chain: a judge reading the
     trajectory can say which observation a given choice produced, rather than
     inferring it from adjacency.
+
+    Every call is written as a harness envelope (`_tool_envelope`), because a
+    harness tool is cognition, not an attempt to act on the governed system.
+    The governed actions a call actually reached ride under
+    `choice.arguments.trajectory_actions`, which is where the conformance
+    checker looks for them.
     """
     step_id = step.get("step_id")
     results = _results_by_call(step)
@@ -430,10 +576,11 @@ def _build_decisions(
         decision: dict[str, Any] = {
             "decision_id": _stable_id("dec", trajectory_id, step_id, call_id),
             "decision_type": "tool_selection",
-            "choice": {
-                "action": call.get("function_name", ""),
-                "arguments": redact_value(call.get("arguments") or {}),
-            },
+            "choice": _tool_envelope(
+                call.get("function_name", ""),
+                redact_value(call.get("arguments") or {}),
+                harness,
+            ),
             "consequence": consequence,
         }
         if isinstance(call_id, str) and call_id:
@@ -530,7 +677,7 @@ def atif_to_ots(
             "error": any(_result_is_error(result) for result in results)
             or bool(_unobserved_calls(step)),
             "messages": _build_messages(step, trajectory_id, timestamp),
-            "decisions": _build_decisions(step, trajectory_id),
+            "decisions": _build_decisions(step, trajectory_id, harness),
         }
         turn.update(_turn_token_fields(step))
         turns.append(turn)
