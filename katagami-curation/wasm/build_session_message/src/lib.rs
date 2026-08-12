@@ -823,7 +823,6 @@ fn load_instruction_doc(
                     headers,
                     &candidates[index + 1..],
                     path,
-                    &doc,
                 );
                 return Ok(doc);
             }
@@ -863,33 +862,155 @@ fn load_instruction_doc(
 /// paths is two file objects, and asking for both bodies would double the
 /// content fetch. A differing id means "a different file is sitting there",
 /// which is the thing an operator needs to be told.
+/// Which lower-priority copies are actually shadowing something.
+///
+/// Pure, so the decision can be tested without a server — and so that the
+/// decision is a thing somebody can look at. The first version compared FILE
+/// IDS, which are per-entity: two paths are two File entities, so the ids
+/// always differ and the warning fired on every job, for every template,
+/// forever. A signal that is always on is not a signal; the runbook's own query
+/// would have returned a hit whether or not anyone had installed anything,
+/// training the reader to ignore the one line that matters. That is how the
+/// original shadowing bug survived as long as it did.
+///
+/// `content_hash` answers the actual question — is a DIFFERENT skill being
+/// ignored? — and it is a first-class state field on the File entity
+/// (`paw-fs/specs/file.ioa.toml`, alongside `size_bytes` and `version_count`),
+/// readable from the row without fetching any body.
+///
+/// `None` means "could not be determined": either no file at that path, or the
+/// metadata read failed. Neither is evidence of a different skill sitting
+/// there, so neither warns.
+fn shadowed_paths<'a>(
+    winner_hash: Option<&str>,
+    lower_priority: &'a [(String, Option<String>)],
+) -> Vec<&'a str> {
+    let Some(winner_hash) = winner_hash else {
+        // Nothing to compare against; "shadowed" here would be a guess.
+        return Vec::new();
+    };
+    lower_priority
+        .iter()
+        .filter_map(|(path, hash)| match hash.as_deref() {
+            Some(hash) if hash != winner_hash => Some(path.as_str()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// `content_hash` as a File row spells it — both shapes, the way
+/// `file_id_from_workspace_response` handles both.
+fn content_hash_from_file_row(row: &serde_json::Value) -> Option<String> {
+    for key in ["content_hash", "ContentHash"] {
+        let found = row
+            .get("fields")
+            .and_then(|fields| fields.get(key))
+            .or_else(|| row.get(key))
+            .and_then(|value| value.as_str())
+            .filter(|value| !value.is_empty());
+        if found.is_some() {
+            return found.map(|value| value.to_string());
+        }
+    }
+    None
+}
+
+/// The content hash recorded for a path, without reading a body.
+///
+/// `Ok(None)` is a genuine miss — nothing at that path. `Err` is a failure to
+/// find out, which is a different thing and must not be reported as either a
+/// miss or a match.
+fn doc_content_hash(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Result<Option<String>, String> {
+    let quoted = path.replace('\'', "''");
+    let resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files?$filter=Path eq '{quoted}'"),
+            headers,
+            "",
+        )
+        .map_err(|err| format!("Files query failed for '{path}': {err}"))?;
+    if resp.status != 200 {
+        return Err(format!(
+            "Files query returned HTTP {} for '{path}'",
+            resp.status
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|err| format!("Files query returned invalid JSON for '{path}': {err}"))?;
+    let Some(row) = parsed
+        .get("value")
+        .and_then(|value| value.as_array())
+        .and_then(|rows| rows.first())
+    else {
+        return Ok(None);
+    };
+    Ok(content_hash_from_file_row(row))
+}
+
 fn warn_on_shadowed_instruction_copies(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     lower_priority: &[String],
     winning_path: &str,
-    winner: &LoadedDoc,
 ) {
-    for path in lower_priority {
-        let Ok(shadowed_file_id) = resolve_doc_file_id(ctx, api_url, headers, path) else {
-            // Nothing there. The ordinary case, and not worth a line.
-            continue;
-        };
-        if shadowed_file_id == winner.file_id {
-            continue;
+    if lower_priority.is_empty() {
+        return;
+    }
+
+    let winner_hash = match doc_content_hash(ctx, api_url, headers, winning_path) {
+        Ok(hash) => hash,
+        Err(error) => {
+            // A failure to look is not a clean bill of health. Going quiet here
+            // is how a shadowed install during FS flakiness disappears without
+            // leaving a trace of the fact that nobody checked.
+            ctx.log(
+                "debug",
+                &format!(
+                    "build_session_message: shadow check skipped — could not read the content \
+                     hash of the winning copy. path='{winning_path}' error='{error}'"
+                ),
+            );
+            return;
         }
+    };
+
+    let mut probed: Vec<(String, Option<String>)> = Vec::new();
+    for path in lower_priority {
+        match doc_content_hash(ctx, api_url, headers, path) {
+            Ok(hash) => probed.push((path.clone(), hash)),
+            Err(error) => {
+                ctx.log(
+                    "debug",
+                    &format!(
+                        "build_session_message: shadow check incomplete — could not read the \
+                         content hash of a lower-priority copy, so a shadowed install there \
+                         would go unreported. path='{path}' error='{error}'"
+                    ),
+                );
+                probed.push((path.clone(), None));
+            }
+        }
+    }
+
+    for path in shadowed_paths(winner_hash.as_deref(), &probed) {
         ctx.log(
             "warn",
             &format!(
-                "build_session_message: instruction doc SHADOWED. A different file exists at \
-                 a lower-priority path and is NOT being used. used_path='{winning_path}' \
-                 used_file_id='{}' shadowed_path='{path}' shadowed_file_id='{shadowed_file_id}' \
-                 workspace='{DOC_WORKSPACE_ID}'. The app-shipped copy wins by design so that a \
+                "build_session_message: instruction doc SHADOWED. A file with DIFFERENT content \
+                 exists at a lower-priority path and is NOT being used. \
+                 used_path='{winning_path}' used_hash='{}' shadowed_path='{path}' \
+                 workspace='{DOC_WORKSPACE_ID}'. The app-shipped copy wins by design, so that a \
                  one-time bootstrap snapshot cannot pin a session to a stale skill. If you \
                  installed a skill at the shadowed path and meant it to take effect, install it \
                  to the app path instead, or reconfigure the template's instruction_path.",
-                winner.file_id
+                winner_hash.as_deref().unwrap_or("")
             ),
         );
     }
@@ -1366,10 +1487,11 @@ mod tests {
 
     use super::{
         completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
-        instruction_path_candidates, knowledge_read_specs_for_known_skill,
+        content_hash_from_file_row, instruction_path_candidates,
+        knowledge_read_specs_for_known_skill,
         knowledge_read_specs_for_skill,
         normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
-        render_reference_instruction_block, temper_read_command, LoadedDoc,
+        render_reference_instruction_block, shadowed_paths, temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1647,7 +1769,19 @@ mod tests {
         // The two are written independently in the toml, so they can disagree.
         // A job would then load one skill's SKILL.md and another skill's
         // knowledge.
-        for (skill, path) in seeded_skill_ids().iter().zip(seeded_instruction_paths()) {
+        let skills = seeded_skill_ids();
+        let paths = seeded_instruction_paths();
+        // zip() truncates to the shorter side, so without this a template
+        // missing its skill_id would simply drop out of the comparison — and at
+        // runtime an empty skill_id falls through to the full corpus, which is
+        // exactly the failure removing the wildcard was meant to expose.
+        assert_eq!(
+            skills.len(),
+            paths.len(),
+            "every template must declare both a skill_id and an instruction_path"
+        );
+
+        for (skill, path) in skills.iter().zip(paths) {
             let from_path = path
                 .rsplit('/')
                 .nth(1)
@@ -1675,6 +1809,89 @@ mod tests {
                 "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
                     .to_string(),
             ]
+        );
+    }
+
+    fn candidate(path: &str, hash: Option<&str>) -> (String, Option<String>) {
+        (path.to_string(), hash.map(|value| value.to_string()))
+    }
+
+    #[test]
+    fn identical_copies_do_not_warn() {
+        // THE regression. The first version compared file ids, which are
+        // per-entity: two paths are two File entities, so the ids always differ
+        // and the warning fired on every job, for every template. The live
+        // probe of 2026-08-12 is exactly this shape — review-quality at 17 and
+        // at 10 versions, same 29,657 bytes, same hash — and it must be silent.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some("sha256:03601d2a5620"),
+        )];
+        assert_eq!(
+            shadowed_paths(Some("sha256:03601d2a5620"), &probed),
+            Vec::<&str>::new()
+        );
+    }
+
+    #[test]
+    fn a_copy_with_different_content_warns() {
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", Some("sha256:bbbb"))];
+        assert_eq!(
+            shadowed_paths(Some("sha256:aaaa"), &probed),
+            vec!["/agents/soul/skills/x/SKILL.md"]
+        );
+    }
+
+    #[test]
+    fn an_absent_copy_does_not_warn() {
+        // A genuine miss is the ordinary case: nothing is being ignored.
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", None)];
+        assert_eq!(shadowed_paths(Some("sha256:aaaa"), &probed), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn an_unreadable_winner_does_not_warn() {
+        // Failing to look is not evidence of shadowing. The caller logs that
+        // failure at debug, so "nobody checked" still leaves a trace.
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", Some("sha256:bbbb"))];
+        assert_eq!(shadowed_paths(None, &probed), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn several_lower_priority_copies_are_judged_independently() {
+        let probed = [
+            candidate("/a/same", Some("sha256:aaaa")),
+            candidate("/b/different", Some("sha256:bbbb")),
+            candidate("/c/absent", None),
+            candidate("/d/also-different", Some("sha256:cccc")),
+        ];
+        assert_eq!(
+            shadowed_paths(Some("sha256:aaaa"), &probed),
+            vec!["/b/different", "/d/also-different"]
+        );
+    }
+
+    #[test]
+    fn no_lower_priority_copies_means_nothing_to_report() {
+        assert_eq!(shadowed_paths(Some("sha256:aaaa"), &[]), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn content_hash_is_read_from_either_row_shape() {
+        assert_eq!(
+            content_hash_from_file_row(&json!({"fields": {"content_hash": "sha256:aaaa"}})),
+            Some("sha256:aaaa".to_string())
+        );
+        assert_eq!(
+            content_hash_from_file_row(&json!({"ContentHash": "sha256:bbbb"})),
+            Some("sha256:bbbb".to_string())
+        );
+        assert_eq!(content_hash_from_file_row(&json!({"fields": {}})), None);
+        // An empty hash is not a hash. Treating it as one would make every
+        // other empty-hash row look identical to it.
+        assert_eq!(
+            content_hash_from_file_row(&json!({"fields": {"content_hash": ""}})),
+            None
         );
     }
 

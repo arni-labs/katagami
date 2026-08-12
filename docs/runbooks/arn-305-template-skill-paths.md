@@ -171,9 +171,9 @@ Whenever a copy wins and a **different** file exists at a lower-priority path,
 the job logs at warn level:
 
 ```
-build_session_message: instruction doc SHADOWED. A different file exists at a
-lower-priority path and is NOT being used. used_path='…' used_file_id='…'
-shadowed_path='…' shadowed_file_id='…' workspace='os-app-docs'.
+build_session_message: instruction doc SHADOWED. A file with DIFFERENT content
+exists at a lower-priority path and is NOT being used. used_path='…'
+used_hash='…' shadowed_path='…' workspace='os-app-docs'.
 ```
 
 Watch for it after any runtime skill install:
@@ -186,19 +186,36 @@ If you see it and you meant your install to take effect, either install to the
 app path or reconfigure that template's `instruction_path`. **A silent no-op is
 the one outcome this cannot produce.**
 
-The comparison is by file id rather than content hash — identical content at two
-paths is still two file objects, and fetching both bodies would double the
-content read. A differing id means "a different file is sitting there", which is
-what an operator needs to know.
+**The comparison is `content_hash`, not file id.** That distinction is the whole
+difference between a signal and noise. Two paths are two `File` entities, so
+their ids *always* differ — the measured table above is exactly that case:
+identical bytes, identical hash, two paths, different version counts. Comparing
+ids would fire this warning on every job for every template forever, and a line
+that is always there is one people learn to scroll past. `content_hash` is a
+state field on the `File` entity (`paw-fs/specs/file.ioa.toml`, beside
+`size_bytes` and `version_count`), so reading it is a row read with no body
+fetch.
 
-**Cost:** one extra `ResolvePath` per job, on the path that succeeds.
-`.proofs/perf-036` removed runtime `ResolvePath` from this step precisely because
-it measured 581–1126ms, so this is not free — it is one call against a job that
-then runs an LLM session for minutes. The common case is a hit on the first
-candidate (the app copy demonstrably exists, see the table above), so the total
-is two resolves rather than one; a miss on the app copy costs a third. The
-alternative was leaving a deliberate install silently ignored, which is more
-expensive than a second of latency.
+In today's steady state — the two copies in sync — this warning is **silent**.
+It appears when, and only when, they actually differ.
+
+**Cost.** The shadow check reads one `File` row per path involved: the winner
+plus each lower-priority candidate, so two rows in the ordinary case. That is on
+top of the `ResolvePath` the load already did. `.proofs/perf-036` removed a
+runtime `ResolvePath` from this step because it measured 581–1126ms, so extra
+round trips here are not free, and this is a real addition to a step that was
+deliberately trimmed.
+
+The trade, stated plainly: a couple of metadata reads against a job that then
+runs an LLM session for minutes, in exchange for making it impossible to install
+a skill and have it silently ignored. If the latency ever matters more than the
+signal, `warn_on_shadowed_instruction_copies` is one function and one call site
+— but delete it knowing that a shadowed install goes back to being invisible.
+
+**A failed read is not a clean result.** If the winner's hash cannot be read the
+check is skipped, and if a candidate's cannot be read that candidate is left
+unjudged; both are logged at debug rather than passed over, so "nobody checked"
+is distinguishable from "nothing to report".
 
 ## What "done" looks like
 
