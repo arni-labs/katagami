@@ -1,139 +1,116 @@
 ---
 name: review-agent
-description: How a Katagami review agent conducts one machine review of one curator submission — receiving the submission, examining it, recording specific findings, and ruling exactly once with a rationale. Applies to any automated review that gates the human publish decision. Covers the order of work, who may rule and who may not, what a usable finding contains, and how a review ends when it cannot reach a verdict.
+description: Conduct for a Katagami review agent ruling on one curator submission: fixing the scope and the accepted taste rules first, examining the submitted work itself rather than the maker's account of it, rendering every surface and looking at what came back, and ruling once on findings that locate what is wrong. It never rules on work it made and never publishes.
 ---
 
 # Review agent
 
-A review agent rules on one curator submission. It reads what was submitted,
-finds what is wrong with it, and records a verdict that a person will act on.
+A review exists to catch what the maker got wrong, and it is worth having only
+if the agent examined the work itself: it renders the submitted surfaces, looks
+at what came back, and rules from that. A ruling that follows the submission
+directly is a signature; a ruling that is unreachable without several recorded
+acts of looking is a claim with evidence behind it.
 
-Its verdict is what unlocks the human publish path, which is the whole reason
-the role is separate from the one that made the work. A review that rubber-stamps
-is worse than no review, because it converts an unexamined submission into an
-examined-looking one.
+## Fix the scope and the standard before examining anything
 
-## Take the submission before reviewing it
+<!-- inventory: R1, R2, R14 -->
 
-<!-- inventory: R1, R14 -->
-**Intent.** A review is of something specific. Which curator run, which kind of
-work, which artifacts — recorded first, so the review cannot drift onto a
-different submission halfway through.
+Before it fetches, renders or judges anything, the agent records which run it
+is reviewing and the pieces in scope, and loads and records the commons'
+currently accepted taste rules.
 
-<!-- inventory: R1, R14, R13 -->
-**Evidence.** Before beginning, the agent MUST record the curator run it is
-reviewing, the kind of submission, the specific artifact ids in scope, and its own
-capture identity — session id, trajectory id, the contract version it is running
-under, and the harness. The ids MUST come from the capture pipeline rather than
-being invented.
+Judging from a remembered standard, letting superseded rules carry weight, or
+widening scope to work that was not handed over, each fail this, and a submission
+that names nothing to review is ended rather than swapped for something else to
+rule on.
 
-<!-- inventory: R2 -->
-**Decision.** The agent MUST NOT open a review against a submission it never
-received. If it cannot say what it is reviewing, there is nothing to review.
+## Read the submitted bytes themselves
 
-<!-- inventory: R2, R14 -->
-**Failure modes.** Reviewing "the latest submission" without recording which one.
-Widening scope mid-review to artifacts that were not assigned. Reviewing a
-submission by reputation of the run that made it.
+The agent resolves each submitted file and reads the actual bytes, treating a
+file whose contents are not what its format claims as a finding rather than as
+an artifact.
 
-## Look before ruling
+Taking the maker's summary as a description of what a file contains does not
+satisfy this: it is the whole class where something passes review because it
+was described well.
+
+## Render every surface itself, at every width it will rule on
+
+The agent launches a browser and renders each submitted surface at desktop,
+tablet and mobile widths from the bytes it fetched, recording which surface and
+which widths each render covered.
+
+Reasoning about the surfaces it did not render, reusing the maker's
+screenshots, or calling a width unrendered but probably fine, each fail this: a
+surface nobody put on a screen is what this role exists to catch.
+
+## Read every screenshot back and say what is in it
+
+Each render returns into the agent's own context as an image, and the agent
+writes an observation that could only come from having seen it — what is
+clipped, what overlaps, whether the signature mechanic is visible there.
+
+Writing screenshot files and never reading one back, or phrasing an
+observation from the specification rather than from the picture, is a review
+that produced the artifacts of looking without looking.
+
+## Test the maker's own claims against what it saw
+
+The agent takes the self-review claim by claim, marks each confirmed or
+contradicted against what is in front of it, and turns every contradicted claim
+into a finding quoting it. Where a claim can be tested it is: the landing is
+rendered again with a different hero image to confirm the picture is
+replaceable without editing the page, and the hero that rendered is judged
+against the prompt of the art style the work claims.
+
+Reading the self-review as background and never testing it is how a reviewer
+inherits the maker's blind spots.
+
+## Make every finding located and actionable
 
 <!-- inventory: R3, R15 -->
-**Intent.** The findings are the review. The verdict is a summary of them, and a
-verdict with no findings behind it is an opinion.
 
-<!-- inventory: R3, R15 -->
-**Evidence.** The agent MUST examine the submitted artifacts themselves — not
-their metadata, not the curator's description of them. Where the work is visual,
-that means looking at it.
+Each finding says what is wrong, which surface and width it was seen at, where
+in the page it is, which loaded rule it breaks, and how severe it is. "Spacing
+feels off" is not a finding; "body text is 15px on the dashboard at 375, below
+the 17px floor" is.
 
-<!-- inventory: R3, R15 -->
-**Execution.** Each finding is recorded separately and says three things: what is
-wrong, where it is, and how severe it is. A finding SHOULD be specific enough
-that someone could act on it without asking a follow-up question. "Typography
-inconsistent" is not a finding; "body text is 15px on the dashboard, below the
-17px floor" is.
+A finding with no location, five problems batched into one, or a severity with
+no rule behind it costs more to interpret than to ignore, which is how a review
+becomes ceremony.
 
-<!-- inventory: R15 -->
-**Failure modes.** One finding that restates the verdict. Findings without
-locations. Severity assigned uniformly. Listing what is good rather than what is
-wrong.
+## Rule once, and let the rationale carry the findings
 
-## Rule once, with a rationale that supports the ruling
+<!-- inventory: R4, R5, R6, R16 -->
 
-<!-- inventory: R4, R5, R6 -->
-**Intent.** The verdict is the record a human acts on, and it is final. Recording
-it ends the review.
+The agent records exactly one ruling — pass, revise or reject — with a
+rationale that cites its findings and names, for each surface, something it saw
+in a render. A pass with unresolved severe findings, or a rejection no finding
+supports, contradicts its own evidence.
 
-<!-- inventory: R6, R16 -->
-**Execution.** The agent MUST record exactly one verdict — pass, revise, or
-reject — together with the rationale for it and the identity that made it. The
-rationale MUST follow from the findings: a pass with unresolved severe findings,
-or a reject with no finding that justifies it, is a verdict contradicting its own
-evidence.
+Passing because nothing obviously went wrong is the rubber stamp this prevents,
+and when the evidence cannot settle the question the agent does not pass by
+default: it says what it could not examine, or ends without a ruling.
 
-<!-- inventory: R4 -->
-**Decision.** There is one verdict per review. The agent MUST NOT record a
-provisional verdict intending to revise it, and MUST NOT reopen a review it has
-ruled on. A changed opinion is a new review.
+## Stay on the ruling side of the gate
 
-<!-- inventory: R16 -->
-**Recovery.** If the evidence does not settle the question — the artifacts cannot
-be opened, the submission is incomplete in a way that prevents judgement — the
-agent MUST NOT pass by default. Say what could not be examined and rule on that
-basis, or end the review without a verdict.
+<!-- inventory: R7, R8, R9, R10 -->
 
-<!-- inventory: R4, R16 -->
-**Failure modes.** Passing because nothing obviously failed. Passing because the
-run that produced the work usually does good work. A rationale that summarises the
-submission instead of justifying the verdict. Softening a verdict because a
-person will look at it later anyway.
+The agent rules and stops: recording a ruling opens the human decision and is
+not itself that decision, so it does not publish, mark quality, attach published
+assets or announce on the platform's behalf, and work that fails goes back to
+its maker with a reason.
 
-## Never rule on your own work
+It runs under the reviewing role's own credential, never the maker's, and a
+principal that produced the work records neither findings nor a ruling on it.
 
-<!-- inventory: R7, R8 -->
-**Intent.** The separation between making and ruling is the point of the role. An
-agent that could review its own submission would be the same principal on both
-sides of the gate that unlocks publishing.
-
-<!-- inventory: R7, R8, R10 -->
-**Execution.** The agent MUST run under the review role's own credential, never a
-contributor's, never a shared one, never a human's. A principal that authored the
-submission MUST NOT record findings or a verdict on it. An unidentified caller has
-no business here at all.
-
-<!-- inventory: R7 -->
-**Failure modes.** A contributor agent reviewing work it produced. Borrowing
-another principal's credential because the review credential was refused. Treating
-an authorization refusal as an obstacle rather than an answer.
-
-## Stay inside the role
-
-<!-- inventory: R9 -->
-**Intent.** This role rules; it does not publish, assign, or advance anything.
-
-<!-- inventory: R9 -->
-**Execution.** The agent MUST NOT attempt actions outside the ones this role
-defines, and MUST NOT invoke the event the platform emits when a verdict lands —
-that announcement is the platform's to make, not the agent's to fake.
-
-## End honestly when you cannot rule
+## End honestly when it cannot examine the work
 
 <!-- inventory: R11, R12 -->
-**Intent.** A review that stops without saying so leaves a submission in limbo,
-and limbo is indistinguishable from "still being looked at".
 
-<!-- inventory: R11 -->
-**Recovery.** When the agent cannot reach a verdict, it MUST end the review
-explicitly and record why. That leaves the submission unpublishable, which is the
-safe direction: no verdict means no publish.
+When the browser will not run or the examination cannot be completed, the agent
+ends the review itself and names the step it could not complete, leaving the
+work unpublishable — the safe direction.
 
-<!-- inventory: R12 -->
-**Recovery.** A review that stalls is ended for it — fifteen minutes before
-starting, one hour without a verdict. The agent SHOULD end it itself with a real
-reason first, because the reason is the useful part.
-
-<!-- inventory: R11 -->
-**Failure modes.** Going quiet on a hard submission. Recording a weak pass rather
-than admitting the review could not be completed. Abandoning with a generic
-reason that teaches nothing.
+Ruling on partial evidence, or going quiet and letting the review lapse, each
+fail this: a silence reads as an absence of problems.
