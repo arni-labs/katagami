@@ -4,6 +4,9 @@ Create one complete `ArtStyle`: a medium, one canonical aesthetic prompt,
 slot-specific subject recipes, optional example images, multi-model proof shots,
 a thumbnail, source/rights evidence, and structured review evidence.
 
+Obey EVERY rule in the art style rulebook inlined in this prompt — it governs
+the prompt, the behavioral proof, and the source and rights evidence.
+
 ## When to use
 
 Job type: `synthesize_art_style`.
@@ -33,8 +36,10 @@ An ArtStyle is one prompt, not an adapter system.
 
 ## Before starting
 
-1. Read `/system/knowledge/design-principles.md`,
-   `/system/knowledge/quality-standards.md`, and all accepted `TasteRules`.
+1. Read `/system/knowledge/design-principles.md` and
+   `/system/knowledge/quality-standards.md`. The art style rulebook
+   (`knowledge/rules/art-style.md`) is already inlined above; it is the
+   authority, not the per-rule `TasteRules` entities.
 2. List existing `ArtStyles`; the new treatment must be distinct.
 3. Research every named influence and record its eligibility:
    - collective tradition or movement;
