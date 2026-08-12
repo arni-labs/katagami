@@ -293,9 +293,28 @@ DISPATCH_ACTION_ARG = 5
 
 # Raw OData action URLs the modules build by hand, e.g.
 #   {api_url}/tdata/Sessions('{session_id}')/OpenPaw.RecordResult
+# The key may be quoted (string key) or bare (Guid key), so both are matched.
 URL_ACTION_RE = re.compile(
-    r"/tdata/(?P<set>[A-Za-z][A-Za-z0-9_]*)\('[^']*'\)/(?P<ns>[A-Za-z][A-Za-z0-9_.]*)\.(?P<action>[A-Za-z{][A-Za-z0-9_}]*)"
+    r"/tdata/(?P<set>[A-Za-z][A-Za-z0-9_]*)"
+    r"\(\s*'?[^')]*'?\s*\)"
+    r"/(?P<ns>[A-Za-z][A-Za-z0-9_.]*)\.(?P<action>[A-Za-z{][A-Za-z0-9_}]*)"
 )
+
+# A `/tdata/` URL that is only a read or a create — no action segment. The set
+# name may be a `{placeholder}`, because with no action segment there is nothing
+# for this contract to miss. The only trailing segment allowed is an OData
+# system segment (`/$value`, `/$count`): the leading `$` is what distinguishes
+# it from the `Namespace.Action` shape.
+URL_PLAIN_RE = re.compile(
+    r"^/tdata/(?:[A-Za-z][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})"
+    r"(?:\(\s*'?[^')]*'?\s*\))?"
+    r"(?:/\$[a-z]+)?"
+    r"(?:[?][^\"]*)?$"
+)
+
+# The one generic template, inside `dispatch_action` itself. Its set and action
+# are resolved from the call sites, not from this string.
+GENERIC_DISPATCH_TEMPLATE = "/tdata/{set_name}('{entity_id}')/Temper.{action}"
 
 
 class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
@@ -391,6 +410,41 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             unresolved,
             "every WASM action dispatch must name its entity set and action "
             "statically, so this contract can see it:\n  " + "\n  ".join(unresolved),
+        )
+
+    def test_every_odata_url_in_wasm_is_a_shape_this_contract_understands(self):
+        """Close the false-negative door on the URL scan.
+
+        The dangerous direction for a guard like this is a MISS, and the way to
+        miss one is to assemble the action URL out of pieces so no single
+        literal looks like a dispatch. So: every `/tdata/` string literal in
+        every module must be a shape this file recognizes — a plain
+        collection/entity URL, a fully-formed action URL, or the one generic
+        template inside `dispatch_action`. A half-built path fails here rather
+        than sliding past the scan above.
+        """
+        offenders = []
+        literal_re = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
+        for path in self.modules:
+            module_name = path.parts[-3]
+            for raw in literal_re.findall(path.read_text()):
+                if "/tdata/" not in raw:
+                    continue
+                fragment = raw[raw.index("/tdata/"):]
+                if fragment == GENERIC_DISPATCH_TEMPLATE:
+                    continue
+                if URL_ACTION_RE.search(fragment):
+                    continue
+                if URL_PLAIN_RE.match(fragment):
+                    continue
+                offenders.append(f"{module_name}: {raw!r}")
+        self.assertEqual(
+            [],
+            offenders,
+            "these /tdata/ literals are not a recognized URL shape, so the "
+            "transition scan above cannot see what they dispatch. Build the "
+            "whole path in one literal, or route it through dispatch_action:\n  "
+            + "\n  ".join(offenders),
         )
 
     def test_wasm_modules_do_not_drive_lifecycle_transitions(self):
