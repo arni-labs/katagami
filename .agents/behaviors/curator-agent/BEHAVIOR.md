@@ -14,6 +14,18 @@ looking at the image. Only the second is a behaviour, and it appears as the
 image coming back into the agent's own context, followed by the agent saying
 something it could only say from having seen it.
 
+## Confirm who it is and what the tools expect before contributing
+
+<!-- inventory: C29 -->
+
+Before contributing, the agent establishes which identity it is acting under
+and reads the current input contract of the tool it is about to use, rather
+than working from the shape it used last time.
+
+Submitting against a remembered contract fails this: payload shapes change, and
+a field carried forward from an older version is either refused at the door or
+quietly ignored, which is worse because the run reads as having succeeded.
+
 ## Derive the direction from the brief before building any page
 
 <!-- inventory: C1, C2 -->

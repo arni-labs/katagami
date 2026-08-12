@@ -20,6 +20,7 @@ thing it is standing in for.
 """
 
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -28,6 +29,7 @@ STUDY = REPO_ROOT / "docs" / "study"
 INVENTORY = STUDY / "behavior-inventory.md"
 EQUIVALENCE = STUDY / "equivalence-map.md"
 BEHAVIORS = REPO_ROOT / ".agents" / "behaviors"
+ACTOR_SPECS = REPO_ROOT / "katagami-curation" / "specs"
 
 # CuratorAgent -> C, ReviewAgent -> R, HumanCurator -> H.
 ACTORS = {
@@ -35,6 +37,43 @@ ACTORS = {
     "review-agent": "R",
     "human-curator": "H",
 }
+
+# The actor machine each behavior spec describes the conduct for. Read rather
+# than hardcoded, so a renamed state cannot slip past the check below.
+ACTOR_SPEC_FILES = {
+    "curator-agent": "curator_agent.ioa.toml",
+    "review-agent": "review_agent.ioa.toml",
+    "human-curator": "human_curator.ioa.toml",
+}
+
+# `human-curator` has not been rewritten yet: it still uses the labelled
+# Intent/Evidence/Decision block style the other two shed, and its headings
+# still name actions from its machine. The exemption is here rather than in a
+# silent skip so it reads as a queue of one. DELETE THIS SET, and this comment,
+# when that file is rewritten — the assertions below are what should be holding
+# it to the same bar as the other two.
+PENDING_REWRITE = {"human-curator"}
+
+
+def _machine_vocabulary(actor):
+    """Every state and action name in this actor's machine."""
+    spec = tomllib.loads(
+        (ACTOR_SPECS / ACTOR_SPEC_FILES[actor]).read_text(encoding="utf-8")
+    )
+    names = set(spec["automaton"]["states"])
+    names.add(spec["automaton"]["name"])
+    names.update(action["name"] for action in spec.get("action", []))
+    return names
+
+
+def _sections(body):
+    """[(heading, prose)] for each `##`, with HTML comments stripped."""
+    out = []
+    for chunk in re.split(r"(?m)^## ", body)[1:]:
+        heading, _, rest = chunk.partition("\n")
+        prose = re.sub(r"<!--.*?-->", "", rest, flags=re.S)
+        out.append((heading.strip(), prose))
+    return out
 
 # `**C12. ...`  — an item's own definition in the inventory.
 _ITEM = re.compile(r"^\*\*([CRH])(\d+)\.", re.M)
@@ -242,6 +281,12 @@ class BehaviorFilesFollowTheBraintrustFormatTest(unittest.TestCase):
     Structural rules from the Agent Behavior specification: the directory name is
     the identifier, the file is `BEHAVIOR.md`, and the frontmatter carries a
     `name` matching the directory and a non-empty `description`.
+
+    Beyond validity, what makes a behavior spec judgeable: every `##` names one
+    act rather than a topic, every section says what to do and what would be
+    wrong, and no heading names a state or an action from the machine. See the
+    note before those assertions for what used to be here instead and why it
+    was the wrong bar.
     """
 
     NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -283,28 +328,168 @@ class BehaviorFilesFollowTheBraintrustFormatTest(unittest.TestCase):
             _, body = self._frontmatter(actor)
             self.assertTrue(body.strip(), f"{actor}: empty body")
 
-    def test_the_six_recommended_dimensions_are_used(self):
-        # The format calls these flexible guidance; the study uses all six so
-        # condition A is the strongest honest version of itself rather than a
-        # thin one that would lose for the wrong reason.
+    # ----------------------------------------------------------------------
+    # What replaced the six-label and RFC-2119 requirements, and why
+    #
+    # Two assertions used to live here. One required the labelled
+    # `**Intent.** / **Evidence.** / ...` block in every file; the other
+    # required the word MUST. Both enforced a shape the Agent Behavior format
+    # does not ask for, and the first enforced one it cannot read:
+    #
+    #   - The six dimensions are guidance. The specification says they "MAY
+    #     appear in prose or be combined, renamed, reordered, or omitted when
+    #     trivial or redundant."
+    #   - The two example specs that DO use the labels carry no `##` headings
+    #     at all, and the format's own reference judge throws on them. The
+    #     canonical example the judge runs against,
+    #     `primary-source-tax-research`, is plain prose under `##` headings and
+    #     contains no RFC-2119 keyword anywhere.
+    #   - RFC 2119 governs the specification document and the client
+    #     implementation guide. It is not a requirement on the specs people
+    #     author.
+    #
+    # So requiring the labels made condition A unrunnable by the judge it is
+    # supposed to be compared under, which is a worse failure than the thin
+    # baseline the old comment worried about. What actually has to hold is
+    # below: a heading is one specific behavior, a section says what to do and
+    # what would be wrong, and nothing names the machine — because if the prose
+    # arm names states and actions it is the state machine transcribed, and the
+    # study stops comparing two independent descriptions.
+    # ----------------------------------------------------------------------
+
+    # Heading-initial words that introduce a topic or a condition rather than
+    # conduct. A heuristic, deliberately small: it is here to catch `## The
+    # brief` and `## When nobody answers`, not to parse English.
+    TOPIC_OPENERS = {
+        "a", "an", "the", "this", "that", "these", "those",
+        "when", "if", "while", "because", "since", "before", "after",
+        "about", "on", "for", "in", "of", "with", "notes", "overview",
+    }
+
+    def test_the_body_is_organised_into_behavior_sections(self):
         for actor in ACTORS:
             _, body = self._frontmatter(actor)
-            for dimension in (
+            self.assertTrue(
+                _sections(body),
+                f"{actor}: no `##` sections, so there is no judgeable unit",
+            )
+
+    def test_every_heading_names_conduct_rather_than_a_topic(self):
+        """A heading is the behavior's identifier, so it has to name an act.
+
+        `## Read every screenshot back and say what is in it` can be judged
+        from a trace. `## Screenshots` cannot: it says what the section is
+        about and nothing about what the agent does.
+        """
+        for actor in ACTORS:
+            if actor in PENDING_REWRITE:
+                continue
+            _, body = self._frontmatter(actor)
+            for heading, _ in _sections(body):
+                first = re.sub(r"[^a-z]", "", heading.split()[0].lower())
+                self.assertNotIn(
+                    first,
+                    self.TOPIC_OPENERS,
+                    f"{actor}: `{heading}` opens with `{first}`, which reads as a "
+                    "topic or a condition rather than an act the agent performs",
+                )
+                self.assertGreaterEqual(
+                    len(heading.split()),
+                    3,
+                    f"{actor}: `{heading}` is too short to name a specific behavior",
+                )
+
+    def test_every_section_states_the_conduct_and_a_boundary(self):
+        """Both halves, or the behavior cannot be adjudicated.
+
+        The format asks a spec to "describe desired conduct" and "describe
+        undesired conduct or failure modes". These files carry the second in
+        the closing paragraph of each section rather than under a label, so
+        what is checked is that a second paragraph exists at all — a section
+        that only says what to do leaves a judge nothing to fail a run on.
+        """
+        for actor in ACTORS:
+            _, body = self._frontmatter(actor)
+            for heading, prose in _sections(body):
+                paragraphs = [p for p in re.split(r"\n\s*\n", prose) if p.strip()]
+                self.assertGreaterEqual(
+                    len(paragraphs),
+                    2,
+                    f"{actor}: `{heading}` states conduct with no boundary or "
+                    "failure case, so nothing about it can be judged wrong",
+                )
+
+    def test_no_heading_names_a_state_or_an_action_from_the_machine(self):
+        """The two encodings must stay independent descriptions.
+
+        Condition A is prose about conduct; condition B is the actor machine.
+        A heading that says `RenderInspected` or `SubmitDesignLanguages` is the
+        machine transcribed, and comparing the two then measures transcription
+        rather than approach. Checked against the specs themselves, so renaming
+        a state cannot quietly make this pass.
+        """
+        for actor in ACTORS:
+            if actor in PENDING_REWRITE:
+                continue
+            _, body = self._frontmatter(actor)
+            vocabulary = _machine_vocabulary(actor)
+            for heading, _ in _sections(body):
+                for name in sorted(vocabulary):
+                    self.assertNotRegex(
+                        heading,
+                        rf"\b{re.escape(name)}\b",
+                        f"{actor}: `{heading}` names `{name}` from the machine",
+                    )
+
+    def test_no_file_uses_the_label_block_template(self):
+        """The shape the reference judge throws on.
+
+        See the note above: the labelled template appears only in the format's
+        two heading-less examples, and its judge cannot read them. A spec that
+        reintroduces the labels is not a fair condition A, however complete it
+        looks.
+        """
+        for actor in ACTORS:
+            if actor in PENDING_REWRITE:
+                continue
+            _, body = self._frontmatter(actor)
+            for label in (
                 "Intent",
                 "Evidence",
                 "Decision",
                 "Execution",
                 "Recovery",
                 "Failure modes",
+                "Trigger",
+                "Boundary",
+                "Prevents",
             ):
-                self.assertIn(
-                    f"**{dimension}.**", body, f"{actor}: no {dimension} content"
+                self.assertNotIn(
+                    f"**{label}.**",
+                    body,
+                    f"{actor}: `**{label}.**` reintroduces the labelled block "
+                    "style the format's reference judge throws on",
                 )
 
-    def test_the_conduct_is_stated_in_rfc_2119_terms(self):
+    def test_the_conduct_is_stated_without_rfc_2119_keywords(self):
+        """Not required, and the canonical example uses none.
+
+        Dropped as a requirement rather than inverted into a ban would leave
+        nothing checking it, and the old assertion would be restored the first
+        time someone read the format's specification and mistook its own
+        keywords for a rule about specs.
+        """
         for actor in ACTORS:
+            if actor in PENDING_REWRITE:
+                continue
             _, body = self._frontmatter(actor)
-            self.assertIn("MUST", body, f"{actor}: no MUST-level conduct")
+            for keyword in ("MUST", "SHOULD", "MAY", "SHALL"):
+                self.assertNotRegex(
+                    body,
+                    rf"\b{keyword}\b",
+                    f"{actor}: `{keyword}` is RFC-2119 phrasing; the format does "
+                    "not ask for it and the canonical example uses none",
+                )
 
 
 if __name__ == "__main__":
