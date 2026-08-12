@@ -35,21 +35,28 @@
  * workspace wholesale would refuse real content; allowing it would expose every
  * skill. Only the path tells those two apart.
  *
- * So: `/agents/**` and `/system/**` are refused everywhere, `/iterate/**` and
- * `/feedback/**` are owner-only, and everything else is public in any workspace,
- * including files that have none. New path conventions — `/rebuild`,
- * `/artstyles`, whatever comes next — keep working without a code change, which
- * is what every earlier revision of this rule got wrong.
+ * So: `/agents/**`, `/system/**`, `/projects/**`, `/apps/**`, `/probe/**` and
+ * `/tmp/**` are refused everywhere, as is any file named `APP.md` or
+ * `repl_state.b64`; `/iterate/**` and `/feedback/**` are owner-only; everything
+ * else is public in any workspace, including files that have none. New path
+ * conventions — `/rebuild`, `/artstyles`, whatever comes next — keep working
+ * without a code change, which is what every earlier revision of this rule got
+ * wrong.
  *
  * RESIDUAL RISK, stated plainly: this protects agent content by knowing where it
- * lives. Verified for this codebase — installed skills sit under
- * `/agents/<soul>/…` and the operator knowledge base under `/system/knowledge/…`
- * — but ADR-0012 says only that MOST prompt assets are packaged under
- * `os-app-docs`, and an OS app that installed docs under some third prefix would
- * be public until a deny rule named it. That failure is visible (private content
- * appears on a public page) rather than silent, and the deny list is pinned by
- * `scripts/check-file-proxy-state-contract.mjs` so removing a rule fails loudly.
- * If app-doc install paths ever become configurable, this rule needs revisiting.
+ * lives, so it is only ever as complete as the enumeration behind it. `/apps`
+ * proved that — it was world-readable through this proxy until a review found
+ * it, because the tree was never mentioned in this repo. The deny list was
+ * subsequently checked against the kernel's own writers rather than sampled, and
+ * every file in `os-app-docs` (679) was enumerated and classified, which is the
+ * method that finds this class: list the workspace, classify everything, look at
+ * what comes back public. A future install path outside these trees would be
+ * public until a rule named it. That failure is visible — private content
+ * appears on a public page — rather than silent.
+ *
+ * The sharper residual is a writer that produces files with NO path, since a
+ * pathless file is judged by nothing. Two do today, and the basename list is
+ * what covers them; see `NEVER_SERVED_BASENAMES`.
  */
 
 const PUBLIC_FILE_STATES = new Set(["Ready", "Locked"]);
@@ -93,14 +100,28 @@ const NEVER_SERVED_PATH_PREFIXES = [
 /**
  * Filenames never served, wherever they sit.
  *
- * `APP.md` is an OS app's operations manual. The kernel writes them to
- * `/apps/{app}/APP.md`, which the prefix list covers — but enumerating
+ * `app.md` — an OS app's operations manual. The kernel writes them to
+ * `/apps/{app}/APP.md`, which the prefix list covers, but enumerating
  * `os-app-docs` also turned up a bare `/APP.md` at the workspace ROOT, outside
  * that tree and therefore public under a prefix-only rule. Denying the filename
- * closes the class instead of the one instance, which is the lesson `/apps`
- * itself taught: the same document at a new location is the recurring bug.
+ * closes the class instead of the one instance.
+ *
+ * `repl_state.b64` — serialized interpreter state from curator sandbox
+ * sessions: variable names, taste-rule fragments, log text, working data,
+ * 85–338 KB apiece. 115 of them sit in `os-app-docs` and every one sampled was
+ * publicly served. They are refused today only because they have no path, and
+ * that is an accident: `monty_repl/src/session.rs:473` creates them with
+ * lower-snake `"path"`, which the API ignores on create, while `temper.write`'s
+ * `ensure_pawfs_file` sends PascalCase `"Path"` and its files get real paths.
+ *
+ * **One character is the whole reason those files are unreachable.** The day
+ * somebody fixes what looks like an obvious typo, every REPL-state file carries
+ * a canonical `/repl_state.b64`, matches no deny prefix, and 300 KB of agent
+ * working memory per session is world-readable again — with nothing failing.
+ * This line is what makes that fix safe to apply. Do not remove it because the
+ * files "have no path anyway".
  */
-const NEVER_SERVED_BASENAMES = ["app.md"] as const;
+const NEVER_SERVED_BASENAMES = ["app.md", "repl_state.b64"] as const;
 
 /**
  * Trees inside a servable workspace that only the owner may read.
@@ -184,6 +205,17 @@ function readString(
  * Decodes percent-escapes, collapses repeated separators, resolves `.` and
  * `..`, and trims whitespace around each segment. Case is preserved — real
  * paths contain `DESIGN.md` — and folded only when comparing prefixes.
+ *
+ * KNOWN, ACCEPTED COST: a literal `%` in a filename is refused.
+ * `/artstyles/x/100%.png` fails to decode and `/artstyles/x/a%20b.png` decodes
+ * to something other than itself, so both deny. Zero of the 1,952 live files
+ * measured contain one, but contributor- and model-named uploads under
+ * `/contrib` are the population most likely to produce one, and the symptom
+ * would be a broken image rather than an error. Accepted rather than handled:
+ * the fix is to canonicalize the directory strictly while matching the filename
+ * against both its raw and decoded forms, and that is extra branching in the one
+ * function that has to stay trivially auditable — added for a file that does not
+ * exist. If contributor images start 404ing, look here first.
  */
 function canonicalPath(raw: string): string | null {
   let decoded = raw;
@@ -280,10 +312,16 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   // before I can judge it?" is not to judge it.
   if (path !== stored) return "denied";
 
+  // Both the tree and the bare form: every prefix ends in `/`, so `/agents`,
+  // `/apps` and `/tmp` with no trailing slash matched nothing and classified
+  // public. Directories do not reach this code, but root-level FILES do — the
+  // enumeration found `/APP.md` — and stored `/apps/` canonicalizes to `/apps`,
+  // which is the same hole from the other direction.
   const lowered = path.toLowerCase();
-  if (NEVER_SERVED_PATH_PREFIXES.some((prefix) => lowered.startsWith(prefix))) {
-    return "denied";
-  }
+  const inDeniedTree = NEVER_SERVED_PATH_PREFIXES.some(
+    (prefix) => lowered.startsWith(prefix) || lowered === prefix.slice(0, -1),
+  );
+  if (inDeniedTree) return "denied";
   const basename = lowered.slice(lowered.lastIndexOf("/") + 1);
   if (NEVER_SERVED_BASENAMES.includes(basename as never)) return "denied";
 

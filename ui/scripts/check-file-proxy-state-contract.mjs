@@ -547,6 +547,25 @@ for (const p of [
   "/agents%2Fcurator/skills/x/SKILL.md",
   "/ agents/curator/skills/x/SKILL.md",
   "/apps/../apps/paw-patrol/APP.md",
+  // Bare prefix forms: every deny prefix ends in "/", so these matched nothing.
+  // Root-level Files do occur — the enumeration found /APP.md.
+  "/agents",
+  "/apps",
+  "/system",
+  "/projects",
+  "/probe",
+  "/tmp",
+  // Load-bearing for the refuse-if-not-canonical line: "/apps/" canonicalizes
+  // to "/apps", which without that line classified public.
+  "/apps/",
+  "/agents/",
+  // repl_state.b64 is refused today only because it has no path. The writer
+  // sends lower-snake "path" (monty_repl session.rs:473) which the API ignores
+  // on create; the day that typo is fixed these carry a canonical path, and
+  // 300 KB of curator interpreter state per session is public again.
+  "/repl_state.b64",
+  "/katagami/repl_state.b64",
+  "/contrib/x/REPL_STATE.B64",
   "/%61pps/paw-patrol/APP.md",
   "/Projects/p/skills/x/SKILL.md",
   "/languages/a/../../agents/curator/SKILL.md",
@@ -575,6 +594,22 @@ for (const p of [
     }),
     "public",
     `${p} is canonical live content and must serve`,
+  );
+}
+
+// Accepted cost, pinned so it is a contract rather than a surprise: a literal
+// `%` in a filename is refused. Zero of the 1,952 live files measured contain
+// one; if contributor images start 404ing, this is the line that did it.
+for (const p of [
+  "/artstyles/x/100%.png",
+  "/artstyles/x/a%20b.png",
+]) {
+  assert.equal(
+    classifyFileVisibility({
+      fields: { Status: "Ready", Path: p, WorkspaceId: CONTRIB },
+    }),
+    "denied",
+    `${p} is refused by canonicalization — accepted, documented`,
   );
 }
 
