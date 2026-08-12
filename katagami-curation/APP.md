@@ -70,8 +70,19 @@ with `Abandoned` for a run that gives up or stalls.
 ### ReviewAgent
 
 One machine review of one curator submission. `RecordVerdict` is what unlocks
-the human publish path: `HumanCurator.Publish` is guarded on this entity having
-reached `VerdictRecorded`, so the machine review acts first by construction.
+the human publish path: `HumanCurator.Publish` is guarded on the ReviewAgent it
+names having reached `VerdictRecorded`, and on that reference being present
+(`required = true` — the kernel resolves a cross-entity guard over an ABSENT ref
+as vacuously true, so without it an assignment that never linked a review
+published as though one had happened).
+
+What the guard does **not** check is that the linked review reviewed THIS
+submission. The kernel can compare a related entity's status, not its fields, so
+any ReviewAgent that has recorded a verdict satisfies it. `AssignSubmission`
+records `reviewed_submission_ids` from that record so a mismatch is at least
+visible to a reader and to a conformance judge; turning it into a gate needs a
+field-equality guard in the kernel. Until then it is the caller's obligation,
+caught in review rather than by construction.
 
 **States:** `SubmissionReceived` -> `Reviewing` -> `VerdictRecorded`, with
 `Abandoned` for a review that gives up or stalls.
@@ -81,11 +92,19 @@ reached `VerdictRecorded`, so the machine review acts first by construction.
 The publishing ROLE — never a person. Identity lives on `Member`; this record
 points at the current holder through an opaque `assignee_ref` carrying that
 holder's principal id. Publish and ReturnWithCritique are closed to every agent
-principal in `policies/human_curator.cedar` and bound to the assignment's own
-holder (`principal.id == resource.assignee_ref`), so one named human answers for
-the decision rather than any authenticated human at all. The artifact-side
-boundary stays in `katagami-commons/policies/design_language.cedar` and
-`art_style.cedar`.
+principal in `policies/human_curator.cedar` — by the principal's TYPE, so an
+agent cannot shed the rule by omitting the optional `x-temper-agent-type`
+header — and bound to the assignment's own holder
+(`principal.id == resource.assignee_ref`), so one named human answers for the
+decision rather than any authenticated human at all.
+
+The artifact-side boundary is a different thing and worth stating plainly:
+`katagami-commons/policies/design_language.cedar` and `art_style.cedar` forbid
+contributor agents from publishing the artifacts. Nothing machine-checks that
+the DesignLanguage a human publishes is the one this assignment reviewed — the
+two records are linked by convention through `submission_ids`, not by a guard.
+Treat the artifact-side publish as governed by policy and process, not by
+construction.
 Both working states carry a 48h timeout onto `ReviewOverdue` -> `Escalated`, so
 an assignment nobody picks up surfaces instead of stalling the queue.
 

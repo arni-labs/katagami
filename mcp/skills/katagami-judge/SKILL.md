@@ -124,18 +124,33 @@ read off one laptop's disk is not reproducible by anyone else. If neither the
 kernel nor an archive has it, you cannot read that trajectory: say so and stop.
 Never judge a run from its metadata row.
 
-Note the two shapes differ. The kernel exports ATIF (`steps[]`); the archive
-holds OTS (`turns[]` with `messages[]` and `decisions[]`). §3 refers to
-`turn_id`, `decision_id`, `cause_id` and `attachments`, which are OTS names; in
-the ATIF export the step id and the tool-call/observation pairing carry the
-same information.
+### The two paths do not carry the same things
 
-**Images.** Attachments carry `available`. When it is `true`, `path` points at
-an archived file you can open. When it is `false`, the image was not kept —
-`sha256` identifies it and `unavailable_reason` says why. An attachment never
-carries a path that does not open, so do not go hunting for one: if
-`available` is false, you cannot see that picture, and a taste finding that
-needed it is a finding you cannot make.
+The kernel exports ATIF (`steps[]`); the archive holds OTS (`turns[]` with
+`messages[]` and `decisions[]`). Most of it corresponds — the step id and the
+tool-call/observation pairing say what `turn_id` and `cause_id` say. Some of it
+does not, and guessing costs you findings:
+
+| | kernel (`/atif`) | archive (OTS) |
+|---|---|---|
+| turn identity | step id, plus the turn id under the step's `extra` | `turn_id` |
+| decisions | folded into the agent step's tool calls and observations | `decisions[]`, each with `decision_id` and `cause_id` |
+| image references | the inline `[image …]` marker in the message text | the marker **and** structured `attachments` |
+| spec version provenance | `metadata.tags` | `metadata.tags` |
+
+**Images.** `OTSMessage` has no attachments field, so the structured
+`attachments` a capture writes exist only in the archive — the kernel drops
+them. The inline marker is what survives both paths, and it is self-sufficient:
+
+```
+[image image/png sha256:abc123 /archive/images/abc123.png]   you can open this
+[image image/png unavailable sha256:def456]                  you cannot
+```
+
+A marker never names a path that does not open. If it says `unavailable`, that
+picture is gone: the hash identifies it, and a taste finding that needed to see
+it is a finding you cannot make — say so rather than guessing from the words
+around it.
 
 ### The spec slice — only the actor's own
 
@@ -148,8 +163,13 @@ python3 scripts/trajectory/spec_version.py CuratorAgent \
   --verify "<extra['temper.metadata'].spec_version>"
 ```
 
-Read `extra["temper.metadata"].spec_version_source` too, because it changes
-what the version proves:
+Read the provenance too, because it changes what the version proves. It rides
+as a **tag**: look in `extra["temper.metadata"].tags` for
+`spec-version-source:<value>`. A tag rather than a field of its own, because
+the kernel parses an upload into `OTSMetadata` and drops every key it does not
+model — a field we invented would read as absent on the canonical path, and
+absent means "locally computed", which is the wrong answer for a digest the
+kernel itself reported.
 
 - **`registry`** — capture read the digest from `GET /observe/specs/{entity}`.
   That is the digest a conformance check compares against, so a 409 means the

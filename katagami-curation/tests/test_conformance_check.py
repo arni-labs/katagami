@@ -41,12 +41,26 @@ conformance = _load("conformance_check")
 CURATOR_VERSION = spec_version.compute_version("CuratorAgent")
 
 
-def call(turn_id, action, *, url=True, success=True):
-    """One decision that drove the CuratorAgent entity."""
-    arguments = (
-        {"url": f"https://temper/tdata/CuratorAgents('run-1')/Temper.{action}"}
+def call(turn_id, action, *, url=True, success=True, entity="run-1"):
+    """One decision that drove a CuratorAgent entity.
+
+    The shapes are the real ones: a `Bash` call carries the request in its
+    `command`, an MCP invocation carries `{entity_type, action, entity_id}`.
+    A URL sitting in any other argument is text that was written, not a
+    request that was made — see `RequestTargetTest`.
+    """
+    target = f"https://temper/tdata/CuratorAgents('{entity}')/Temper.{action}"
+    choice = (
+        {"action": "Bash", "arguments": {"command": f"curl -X POST {target}"}}
         if url
-        else {"entity_type": "CuratorAgent", "action": action}
+        else {
+            "action": "mcp__temper__execute",
+            "arguments": {
+                "entity_type": "CuratorAgent",
+                "action": action,
+                "entity_id": entity,
+            },
+        }
     )
     return {
         "turn_id": turn_id,
@@ -58,7 +72,7 @@ def call(turn_id, action, *, url=True, success=True):
             {
                 "decision_id": f"dec-{turn_id}",
                 "decision_type": "tool_selection",
-                "choice": {"action": "Bash", "arguments": arguments},
+                "choice": choice,
                 "consequence": {"success": success},
             }
         ],
@@ -280,7 +294,8 @@ class ReplayTest(unittest.TestCase):
                         "choice": {
                             "action": "Bash",
                             "arguments": {
-                                "url": "https://temper/tdata/CuratorAgents('r')/ReceiveBrief"
+                                "command": "curl -X POST "
+                                "https://temper/tdata/CuratorAgents('r')/ReceiveBrief"
                             },
                         },
                         "consequence": {"success": True},
@@ -326,6 +341,186 @@ class VersionGateTest(unittest.TestCase):
                 "CuratorAgent",
             )
         self.assertIn("not a judgement", str(raised.exception))
+
+    def test_the_prefix_is_not_a_different_contract(self):
+        # The kernel strips `sha256:` from both sides before comparing; a
+        # producer that wrote the prefix and one that did not ran the same spec.
+        document = trajectory(CONFORMING)
+        document["metadata"]["spec_version"] = spec_version.bare_version(CURATOR_VERSION)
+        self.assertTrue(conformance.check(document, "CuratorAgent")["passed"])
+
+
+class PerEntityReplayTest(unittest.TestCase):
+    """One actor spec governs many entities, and each is its own machine.
+
+    Replaying them as one merged machine let a run carry state from an entity
+    that did the work to an entity that did not.
+    """
+
+    def _check(self, turns):
+        return conformance.check(trajectory(turns), "CuratorAgent")
+
+    def test_one_entity_cannot_submit_on_anothers_progress(self):
+        # `run-a` walks the protocol as far as SelfReviewed; `run-b` then
+        # submits having done nothing at all. Merged, the machine was sitting
+        # in SelfReviewed and called it legal.
+        turns = [
+            call(1, "ReceiveBrief", entity="run-a"),
+            call(2, "BeginDrafting", entity="run-a"),
+            call(3, "RecordDesignLanguage", entity="run-a"),
+            call(4, "SelfReview", entity="run-a"),
+            call(5, "SubmitDesignLanguages", entity="run-b"),
+        ]
+        verdict = self._check(turns)
+
+        self.assertFalse(verdict["passed"])
+        offence = next(
+            v for v in verdict["violations"] if v["kind"] == "illegal_transition"
+        )
+        self.assertEqual(offence["entity_id"], "run-b")
+        self.assertEqual(verdict["entities_replayed"], 2)
+
+    def test_two_entities_each_doing_the_whole_protocol_both_pass(self):
+        # The other direction: legitimate concurrency must not read as a
+        # violation just because two runs interleave.
+        turns = []
+        turn_id = 0
+        for entity in ("run-a", "run-b"):
+            for action in (
+                "ReceiveBrief",
+                "BeginDrafting",
+                "RecordDesignLanguage",
+                "SelfReview",
+                "SubmitDesignLanguages",
+            ):
+                turn_id += 1
+                turns.append(call(turn_id, action, entity=entity))
+
+        verdict = self._check(turns)
+
+        self.assertTrue(verdict["passed"], verdict["violations"])
+        self.assertEqual(verdict["entities_replayed"], 2)
+        self.assertEqual(
+            verdict["final_states"], {"run-a": "Submitted", "run-b": "Submitted"}
+        )
+
+    def test_interleaved_entities_do_not_trip_each_other(self):
+        turns = []
+        turn_id = 0
+        for action in (
+            "ReceiveBrief",
+            "BeginDrafting",
+            "RecordDesignLanguage",
+            "SelfReview",
+            "SubmitDesignLanguages",
+        ):
+            for entity in ("run-a", "run-b"):
+                turn_id += 1
+                turns.append(call(turn_id, action, entity=entity))
+
+        verdict = self._check(turns)
+        self.assertTrue(verdict["passed"], verdict["violations"])
+
+    def test_a_single_entity_run_still_reports_one_final_state(self):
+        verdict = self._check(CONFORMING)
+        self.assertEqual(verdict["final_state"], "Submitted")
+        self.assertEqual(verdict["entities_replayed"], 1)
+
+    def test_several_entities_report_no_single_final_state(self):
+        turns = [
+            call(1, "ReceiveBrief", entity="run-a"),
+            call(2, "ReceiveBrief", entity="run-b"),
+        ]
+        verdict = self._check(turns)
+        self.assertEqual(verdict["final_state"], "")
+        self.assertEqual(len(verdict["final_states"]), 2)
+
+    def test_calls_naming_no_entity_are_flagged_as_unverifiable(self):
+        turns = [call(1, "ReceiveBrief", url=False, entity="")]
+        verdict = self._check(turns)
+        kinds = {u["kind"] for u in verdict["unverifiable"]}
+        self.assertIn("unidentified_entity", kinds)
+        self.assertFalse(verdict["evidence_complete"])
+
+
+class RequestTargetTest(unittest.TestCase):
+    """A URL that was written is not a call that was made.
+
+    The scan used to serialize every argument of every tool call, so editing
+    this repository's own skill docs — which are full of OData examples —
+    registered as the run performing those transitions.
+    """
+
+    def _check(self, turns):
+        return conformance.check(trajectory(turns), "CuratorAgent")
+
+    def _tool_call(self, tool, arguments):
+        return {
+            "turn_id": 1,
+            "decisions": [
+                {
+                    "decision_id": "dec-1",
+                    "choice": {"action": tool, "arguments": arguments},
+                    "consequence": {"success": True},
+                }
+            ],
+        }
+
+    URL = "https://temper/tdata/CuratorAgents('r')/Temper.SubmitDesignLanguages"
+
+    def _extracted(self, tool, arguments):
+        """What the replay believes the run actually invoked.
+
+        Asserted on extraction rather than on `actions_replayed`, because a
+        call that IS seen and is an illegal transition never reaches the
+        replayed list — so an empty list there would pass whether the call was
+        counted or not.
+        """
+        return conformance.extract_actor_calls(
+            trajectory([self._tool_call(tool, arguments)]),
+            "CuratorAgent",
+            frozenset({"SubmitDesignLanguages", "ReceiveBrief"}),
+        )
+
+    def test_writing_a_file_that_mentions_an_action_is_not_performing_it(self):
+        self.assertEqual(
+            self._extracted("Write", {"file_path": "SKILL.md", "content": self.URL}), []
+        )
+        verdict = self._check(
+            [self._tool_call("Write", {"file_path": "SKILL.md", "content": self.URL})]
+        )
+        self.assertEqual(
+            {v["kind"] for v in verdict["violations"]}, {"no_actor_actions"}
+        )
+
+    def test_editing_a_file_that_mentions_an_action_is_not_performing_it(self):
+        self.assertEqual(
+            self._extracted(
+                "Edit",
+                {"file_path": "SKILL.md", "old_string": "x", "new_string": self.URL},
+            ),
+            [],
+        )
+
+    def test_reading_a_file_that_mentions_an_action_is_not_performing_it(self):
+        self.assertEqual(self._extracted("Read", {"file_path": self.URL}), [])
+
+    def test_a_url_outside_the_request_argument_of_an_http_tool_is_ignored(self):
+        # Bash issues requests through `command`; a URL in `description` is prose.
+        self.assertEqual(
+            self._extracted("Bash", {"command": "ls", "description": self.URL}), []
+        )
+
+    def test_the_real_request_argument_still_counts(self):
+        for tool, arguments in (
+            ("Bash", {"command": f"curl -X POST {self.URL}"}),
+            ("WebFetch", {"url": self.URL}),
+            ("mcp__temper__execute", {"code": f"temper.post('{self.URL}')"}),
+        ):
+            calls = self._extracted(tool, arguments)
+            self.assertEqual(len(calls), 1, tool)
+            self.assertEqual(calls[0]["action"], "SubmitDesignLanguages", tool)
+            self.assertEqual(calls[0]["entity_id"], "r", tool)
 
 
 if __name__ == "__main__":

@@ -196,7 +196,11 @@ class JudgeSkillTargetsRealEndpointsTest(unittest.TestCase):
         # A 409 means different things depending on whether the version was
         # read from the kernel or computed locally, and the judge has to say
         # which rather than reporting a spec nobody has.
-        self.assertIn("spec_version_source", self.skill)
+        # It rides in `tags`, because the kernel drops metadata keys it does
+        # not model — a field of our own would always read as absent, and
+        # absent means "locally computed".
+        self.assertIn("spec-version-source:", self.skill)
+        self.assertIn("tags", self.skill)
         self.assertIn("`registry`", self.skill)
         self.assertIn("`local`", self.skill)
 

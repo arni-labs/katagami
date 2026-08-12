@@ -10,6 +10,7 @@ is ever committed to this repository.
 """
 
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -159,6 +160,67 @@ class ExceptionBypassTest(unittest.TestCase):
         for key in redaction.SECRET_KEY_EXCEPTIONS:
             self.assertFalse(redaction._is_secret_key(key), key)
             self.assertFalse(redaction._is_secret_key(key.upper()), key)
+
+
+class ContainerUnderSecretKeyTest(unittest.TestCase):
+    """A secret-named key takes its whole subtree, not only scalar values.
+
+    The key rule used to apply to str/int/float only, so a list or dict under
+    such a key was walked into and redacted by shape alone. Nothing below has a
+    recognizable shape, and every one of them is what a secret store returns.
+    """
+
+    LEAKS = (
+        {"api_keys": ["bare-secret"]},
+        {"credentials": {"value": "hunter2"}},
+        {"private_keys": [{"pem": "MIIEowIBAAKCAQEA-not-a-block"}]},
+        {"secrets": {"prod": {"db": "correct-horse-battery"}}},
+        {"password": ["first-one", "second-one"]},
+        {"authorization": {"scheme": "Bearer", "value": "plainish"}},
+        {"session_key": [[["deeply-nested"]]]},
+    )
+
+    SURVIVORS = (
+        "bare-secret",
+        "hunter2",
+        "MIIEowIBAAKCAQEA",
+        "correct-horse-battery",
+        "first-one",
+        "second-one",
+        "plainish",
+        "deeply-nested",
+    )
+
+    def test_no_secret_survives_under_a_container(self):
+        for case in self.LEAKS:
+            rendered = json.dumps(redaction.redact_value(case))
+            for leaked in self.SURVIVORS:
+                self.assertNotIn(leaked, rendered, f"{case} leaked {leaked}")
+
+    def test_the_whole_subtree_becomes_one_marker(self):
+        self.assertEqual(
+            redaction.redact_value({"api_keys": ["a", "b"]}),
+            {"api_keys": "[redacted:key]"},
+        )
+
+    def test_the_exception_rules_still_hold_for_containers(self):
+        # Accounting keys are still accounting when they hold a list.
+        self.assertEqual(
+            redaction.redact_value({"prompt_token_ids": [1, 2, 3]}),
+            {"prompt_token_ids": [1, 2, 3]},
+        )
+        # And a container under a bypass key is still a secret.
+        self.assertEqual(
+            redaction.redact_value({"refresh_tokens": ["a"]}),
+            {"refresh_tokens": "[redacted:key]"},
+        )
+
+    def test_a_secret_container_nested_in_ordinary_structure_is_caught(self):
+        redacted = redaction.redact_value(
+            {"config": {"db": {"host": "example", "credentials": {"pw": "hunter2"}}}}
+        )
+        self.assertEqual(redacted["config"]["db"]["host"], "example")
+        self.assertEqual(redacted["config"]["db"]["credentials"], "[redacted:key]")
 
 
 if __name__ == "__main__":

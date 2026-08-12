@@ -191,8 +191,21 @@ def redact_value(value: Any, *, key: str | None = None) -> Any:
 
     Dict keys are inspected as well as values: a `{"api_key": "..."}` argument
     is redacted whether or not the value itself looks like a credential.
+
+    A secret-named key takes its WHOLE subtree with it, container or not. The
+    rule used to apply only to `str`/`int`/`float`, so a list or dict under
+    such a key was walked into and redacted by shape alone — and shape catches
+    nothing that a secret store actually returns:
+
+        {"api_keys": ["bare-secret"]}            survived intact
+        {"credentials": {"value": "hunter2"}}    survived intact
+        {"private_keys": [{"pem": "MIIEow..."}]} survived intact
+
+    That is the shape of listing a vault, or of one tool result carrying
+    several keys. The key already said the subtree is a credential; the values
+    underneath do not get a second opinion.
     """
-    if key is not None and _is_secret_key(key) and isinstance(value, (str, int, float)):
+    if key is not None and _is_secret_key(key):
         return PLACEHOLDER.format(kind="key")
     if isinstance(value, str):
         return redact_text(value)

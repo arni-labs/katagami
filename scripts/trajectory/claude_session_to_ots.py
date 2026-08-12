@@ -106,6 +106,11 @@ OTS_INGEST_PATH = "/api/ots/trajectories"
 # order; the second is the older spelling and still honoured.
 PRINCIPAL_ENV_VARS = ("TEMPER_PRINCIPAL_ID", "KATAGAMI_AGENT_ID")
 
+# How the provenance of `spec_version` rides to a judge. It goes in `tags`
+# because that is a field the kernel models and therefore returns; a metadata
+# key of our own invention is dropped on ingest and reads as absent.
+SPEC_VERSION_SOURCE_TAG = "spec-version-source:"
+
 # Result summaries are for a judge to read, not a datastore to hoard. Full tool
 # output stays on the message; the decision carries a legible excerpt.
 RESULT_SUMMARY_CHARS = 400
@@ -197,17 +202,22 @@ def _image_attachment(source: dict[str, Any]) -> tuple[dict[str, Any], str]:
         if source.get(field) is not None:
             attachment[field] = source[field]
 
+    # The marker has to stand on its own, because the attachment does not
+    # survive the kernel. `OTSMessage` has no attachments field — the word
+    # appears nowhere in `temper-ots` — so a document read back through
+    # `GET /api/ots/trajectories/<id>/atif` has only the message text. Whatever
+    # a judge needs in order to find the picture goes in the marker, and the
+    # attachment stays as the richer structure the local archive keeps.
+    digest = source.get("sha256")
+    fingerprint = f" sha256:{digest}" if digest else ""
+
     if available and source.get("path"):
         attachment["path"] = redact_text(str(source["path"]))
-        return attachment, f"[image {media_type} {attachment['path']}]"
+        return attachment, f"[image {media_type}{fingerprint} {attachment['path']}]"
 
     reason = source.get("unavailable_reason") or "the image was not archived with this capture"
     attachment["unavailable_reason"] = redact_text(str(reason))
-    digest = source.get("sha256")
-    marker = f"[image {media_type} unavailable"
-    if digest:
-        marker += f" sha256:{digest}"
-    return attachment, marker + "]"
+    return attachment, f"[image {media_type} unavailable{fingerprint}]"
 
 
 def _content_parts(message: Any) -> tuple[str, list[dict[str, Any]]]:
@@ -547,12 +557,12 @@ def atif_to_ots(
         "outcome": outcome or _derive_outcome(turns),
         "human_reviewed": False,
         "harness": harness,
-        # The Temper OTS ingest handler indexes on `metadata.trajectory_id`
-        # (temper-server observe/evolution/trajectories.rs) and mints a random
-        # id when it is absent, which would orphan the id we minted and sent as
-        # X-Trajectory-Id. Emitting it here keeps the document findable by the
-        # id the judge will ask for. The canonical field is the top-level
-        # `trajectory_id`; this is the index key.
+        # The ingest takes the document's TOP-LEVEL `trajectory_id` as its
+        # identity and mints a random one when that is empty
+        # (temper-server observe/evolution/trajectories.rs), which would orphan
+        # the id we minted and sent as X-Trajectory-Id. This copy is not the
+        # identity; it is here so a stored document still names itself when it
+        # is read back through a path that hands over metadata alone.
         "trajectory_id": trajectory_id,
     }
     duration = _duration_ms(start, end)
@@ -560,20 +570,25 @@ def atif_to_ots(
         metadata["duration_ms"] = duration
     if spec_version:
         metadata["spec_version"] = spec_version
-        # Where the version came from, because it changes what it proves.
-        # "registry" was read from the kernel and is the digest a conformance
-        # check compares against. "local" was computed from the spec file in
-        # the capturing checkout, which is only the registered digest if the
-        # deploy registered those exact bytes — a judge reading a `local`
-        # version and a 409 from the conformance endpoint has its explanation.
-        if spec_version_source:
-            metadata["spec_version_source"] = spec_version_source
     if domain:
         metadata["domain"] = domain
     if environment:
         metadata["environment"] = environment
-    if tags:
-        metadata["tags"] = tags
+
+    # Where the version came from, carried as a TAG.
+    #
+    # `tags` is a field the kernel models (`OTSMetadata.tags`), so it survives
+    # ingest and comes back on the ATIF export. An invented metadata key does
+    # not: the kernel parses the upload into `OTSMetadata` and anything it does
+    # not know is dropped, so a `spec_version_source` written as its own field
+    # was always absent by the time a judge read it — and absent reads as
+    # "locally computed", which is exactly the wrong answer for a version the
+    # kernel itself reported.
+    all_tags = list(tags or [])
+    if spec_version and spec_version_source:
+        all_tags.append(f"{SPEC_VERSION_SOURCE_TAG}{spec_version_source}")
+    if all_tags:
+        metadata["tags"] = all_tags
     if parent_trajectory_id:
         metadata["parent_trajectory_id"] = parent_trajectory_id
 

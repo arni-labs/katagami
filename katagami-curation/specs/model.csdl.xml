@@ -226,6 +226,11 @@
         <Property Name="AssigneeRef" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <!-- What the linked ReviewAgent says it reviewed. Recorded so a review
+             of a different submission is visible as a mismatch; the kernel
+             cannot compare one entity's field with another's, so this is not
+             a machine gate. See human_curator.ioa.toml's Publish hint. -->
+        <Property Name="ReviewedSubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="ReviewAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasAssignment" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />

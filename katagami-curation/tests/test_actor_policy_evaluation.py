@@ -299,6 +299,55 @@ class ActorPolicyDecisionTest(unittest.TestCase):
                 **self._escalated(),
             )
 
+    # --- An agent cannot shed its agent-ness by omitting a header ----------
+
+    # `x-temper-agent-type` is OPTIONAL. A guard written against
+    # `principal has agent_type` therefore asks the caller whether it would
+    # like the rule applied to it, and an Agent that simply omitted the header
+    # was granted AssignSubmission, Publish and ReturnWithCritique.
+    UNDECLARED_AGENT = ("Agent", "agent-sneaky", {})
+
+    def test_an_agent_that_declares_no_type_publishes_nothing(self):
+        for action in ("Publish", "ReturnWithCritique"):
+            self.assertDenied(
+                "human_curator",
+                principal=self.UNDECLARED_AGENT,
+                action=action,
+                **self._assignment(assignee="agent-sneaky"),
+            )
+
+    def test_an_agent_that_declares_no_type_gets_nothing_on_the_role_record(self):
+        for action in ("AssignSubmission", "ReviewOverdue", "Reassign", "BeginReview"):
+            self.assertDenied(
+                "human_curator",
+                principal=self.UNDECLARED_AGENT,
+                action=action,
+                **self._assignment(assignee="agent-sneaky"),
+            )
+
+    def test_declaring_a_type_still_lets_the_pipeline_route_work(self):
+        # The fix must not cost the agents that do declare themselves.
+        self.assertAllowed(
+            "human_curator",
+            principal=self.OTHER_AGENT,
+            action="AssignSubmission",
+            **self._assignment(),
+        )
+
+    def test_an_undeclared_agent_cannot_rule_on_a_review_or_a_verdict(self):
+        self.assertDenied(
+            "review_agent",
+            principal=self.UNDECLARED_AGENT,
+            action="RecordVerdict",
+            **self.REVIEW,
+        )
+        self.assertDenied(
+            "trajectory_verdict",
+            principal=self.UNDECLARED_AGENT,
+            action="Record",
+            **self.VERDICT,
+        )
+
     def test_an_action_outside_the_human_curator_alphabet_is_denied(self):
         # A blanket `permit(principal, action, ...)` would allow this, and
         # would allow every action added to the spec after this policy.

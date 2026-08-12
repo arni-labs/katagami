@@ -144,15 +144,29 @@ name = "escalation_count"
 type = "counter"
 initial = 0
 
+# The submission ids the linked ReviewAgent says it reviewed, copied from that
+# record at assignment time.
+#
+# It exists so the mismatch is VISIBLE: Publish's cross-entity guard can check
+# that the linked review reached VerdictRecorded, but the kernel cannot compare
+# one entity's field with another's, so it cannot check that the review was of
+# THIS submission. Recording both sides means a reader — or a conformance
+# judge — can see whether they agree, instead of the question being unaskable.
+# Making it a machine gate needs a field-equality guard in the kernel.
+[[state]]
+name = "reviewed_submission_ids"
+type = "string"
+initial = ""
+
 # --- SubmissionAssigned ---
 
 [[action]]
 name = "AssignSubmission"
 kind = "input"
 from = ["SubmissionAssigned"]
-params = ["assignee_ref", "submission_type", "submission_ids", "curator_agent_id", "review_agent_id", "session_id", "trajectory_id", "spec_version", "harness"]
+params = ["assignee_ref", "submission_type", "submission_ids", "reviewed_submission_ids", "curator_agent_id", "review_agent_id", "session_id", "trajectory_id", "spec_version", "harness"]
 effect = [{ type = "set_bool", var = "has_assignment", value = "true" }]
-hint = "Route one reviewed submission to the publishing role. assignee_ref is the current holder's principal id — an opaque reference, never a person's name or address — and Cedar binds Publish and ReturnWithCritique to it, so an empty or stale assignee_ref makes the assignment unpublishable. review_agent_id links the machine review whose verdict gates Publish."
+hint = "Route one reviewed submission to the publishing role. assignee_ref is the current holder's principal id — an opaque reference, never a person's name or address — and Cedar binds Publish and ReturnWithCritique to it, so an empty or stale assignee_ref makes the assignment unpublishable. review_agent_id links the machine review whose verdict gates Publish; set reviewed_submission_ids from THAT record's own submission_ids, so a review of some other submission is visible as a mismatch rather than passing as a review of this one."
 
 [[action]]
 name = "RecordReviewVerdict"
@@ -181,9 +195,15 @@ params = ["curator_notes"]
 guard = [
   { type = "is_true", var = "has_assignment" },
   { type = "is_true", var = "has_review_verdict" },
-  { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"] },
+  # `required = true` is load-bearing. The kernel resolves a cross-entity guard
+  # over an ABSENT ref as vacuously true (Guard::CrossEntityState, `required`
+  # defaults to false), so without it an assignment that simply never recorded
+  # a review_agent_id satisfied "the machine review acted first" by having no
+  # machine review at all — and `has_review_verdict` is set by an unguarded
+  # action, so nothing else stood in the way.
+  { type = "cross_entity_state", entity_type = "ReviewAgent", entity_id_source = "review_agent_id", required_status = ["VerdictRecorded"], required = true },
 ]
-hint = "The human publishes. Reachable only from Reviewing, only once (Published is terminal), and only after the linked ReviewAgent reached VerdictRecorded — the machine review acts first by construction. Cedar keeps this action off every agent principal; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes."
+hint = "The human publishes. Reachable only from Reviewing, only once (Published is terminal), and only after the ReviewAgent named by review_agent_id exists and reached VerdictRecorded. WHAT IS NOT MACHINE-CHECKED: that the linked review reviewed THIS submission. The kernel's guard vocabulary can compare a related entity's STATUS but not its fields, so linking any ReviewAgent that has recorded a verdict satisfies this guard. AssignSubmission records reviewed_submission_ids for exactly that comparison; making it a guard needs a field-equality guard in the kernel. Until then the match is the caller's obligation, checked in review, not by construction. Cedar keeps this action off every agent principal; the artifact-side Publish stays governed by the existing commons policies, which this spec neither restates nor relaxes."
 
 [[action]]
 name = "ReturnWithCritique"

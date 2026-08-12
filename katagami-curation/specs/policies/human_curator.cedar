@@ -27,15 +27,20 @@ permit(
   resource is HumanCurator
 );
 
-// No agent principal — of any agent_type, present or future — takes the two
-// decisions that are the human's: publishing, and returning with critique.
-// Written against `principal has agent_type` rather than a specific value so a
-// new agent type cannot quietly inherit the human's authority.
+// No agent principal takes the two decisions that are the human's: publishing,
+// and returning with critique.
+//
+// Written against the principal's TYPE, the way wasm.cedar does it, and NOT
+// against `principal has agent_type`. That earlier spelling made the boundary
+// depend on an attribute the caller supplies: `x-temper-agent-type` is
+// optional, so an agent that simply omitted it shed the attribute, failed the
+// `has` test, and was allowed to Publish. A principal cannot decline to be an
+// Agent.
 forbid(
-  principal,
+  principal is Agent,
   action in [Action::"Publish", Action::"ReturnWithCritique"],
   resource is HumanCurator
-) when { principal has agent_type };
+);
 
 // The assignment is bound to its holder. "Not an agent" is not enough: any
 // authenticated human could otherwise publish somebody else's assigned
@@ -117,6 +122,27 @@ forbid(
   action,
   resource is HumanCurator
 ) when { principal has agent_type && principal.agent_type == "contributor" };
+
+// An agent that will not say what kind of agent it is gets nothing here.
+//
+// The rule above can only recognize a contributor by its `agent_type`, and
+// that attribute comes from an OPTIONAL header. Omitting it was therefore a
+// way for a contributor to stop looking like one. Since every agent that has
+// business with this record — the pipeline, the escalation role, the platform
+// — knows its own type and sends it, requiring the declaration costs those
+// nothing and closes the gap for everyone else.
+// The named principals above are exempt: they are identified by id, which is
+// stronger evidence than a self-declared attribute, and the platform's own
+// dispatches do not carry an agent type.
+forbid(
+  principal is Agent,
+  action,
+  resource is HumanCurator
+) unless {
+  principal has agent_type ||
+  principal == Agent::"system" ||
+  principal == Agent::"katagami-curation-escalation"
+};
 
 // An unauthenticated caller is nobody. `anonymous` is the principal id the
 // platform assigns when no identity was presented (temper-authz

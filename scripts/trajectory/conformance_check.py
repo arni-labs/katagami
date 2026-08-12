@@ -71,6 +71,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from spec_version import (  # noqa: E402  (path set above)
     SpecVersionError,
+    bare_version,
     compute_version,
     load_spec,
 )
@@ -103,7 +104,47 @@ def entity_set_name(actor: str) -> str:
     return f"{actor}s"
 
 
-def _argument_action(arguments: Any, actor: str) -> str | None:
+# Which argument of which tool carries a request target.
+#
+# The URL scan used to run over every argument of every call, serialized. That
+# counted a URL that was WRITTEN as a call that was MADE: editing this
+# repository's own skill documentation, which is full of
+# `/tdata/CuratorAgents('<run id>')/Temper.SelfReview` examples, registered as
+# the run performing those transitions. A replay that can be driven by the text
+# a run happened to author is not a replay of anything.
+#
+# So the scan is restricted to tools that actually issue HTTP, and inside them
+# to the argument that names the request. Keys are the tool name lowercased,
+# with any `mcp__server__` prefix dropped.
+HTTP_TOOL_ARGUMENTS: dict[str, tuple[str, ...]] = {
+    "bash": ("command",),
+    "shell": ("command",),
+    "run_command": ("command",),
+    "curl": ("url", "command"),
+    "fetch": ("url",),
+    "webfetch": ("url",),
+    "web_fetch": ("url",),
+    "http_request": ("url", "path", "endpoint"),
+    # MCP execute-style tools run code that makes the calls.
+    "execute": ("code", "script"),
+}
+
+
+def _tool_key(tool: Any) -> str:
+    """`mcp__temper__execute` -> `execute`; `Bash` -> `bash`."""
+    if not isinstance(tool, str):
+        return ""
+    return tool.rsplit("__", 1)[-1].strip().lower()
+
+
+def _entity_id(raw: Any) -> str:
+    """`'run-1'` or `run-1` -> `run-1`. An id is an id, quoted or not."""
+    if not isinstance(raw, str):
+        return ""
+    return raw.strip().strip("'\"").strip()
+
+
+def _argument_action(arguments: Any, actor: str) -> tuple[str, str] | None:
     """An explicit `{entity_type, action}` argument pair, as the MCP tools take."""
     if not isinstance(arguments, dict):
         return None
@@ -111,24 +152,33 @@ def _argument_action(arguments: Any, actor: str) -> str | None:
     action = arguments.get("action") or arguments.get("action_name")
     if isinstance(entity_type, str) and isinstance(action, str):
         if entity_type in (actor, entity_set_name(actor)):
-            return action
+            entity_id = _entity_id(
+                arguments.get("entity_id")
+                or arguments.get("entityId")
+                or arguments.get("id")
+            )
+            return action, entity_id
     return None
 
 
 def _url_action(
-    arguments: Any, actor: str, known_actions: frozenset[str]
-) -> str | None:
-    """The OData action path, wherever it appears in the call's arguments."""
-    try:
-        blob = json.dumps(arguments, ensure_ascii=False)
-    except (TypeError, ValueError):
-        blob = str(arguments)
-    for match in _ODATA_ACTION.finditer(blob):
-        if match.group("set") != entity_set_name(actor):
+    arguments: Any, actor: str, known_actions: frozenset[str], tool: Any
+) -> tuple[str, str] | None:
+    """The OData action path, in an argument that actually names a request."""
+    targets = HTTP_TOOL_ARGUMENTS.get(_tool_key(tool))
+    if not targets or not isinstance(arguments, dict):
+        return None
+
+    for name in targets:
+        value = arguments.get(name)
+        if not isinstance(value, str):
             continue
-        action = match.group("action")
-        if match.group("namespace") or action in known_actions:
-            return action
+        for match in _ODATA_ACTION.finditer(value):
+            if match.group("set") != entity_set_name(actor):
+                continue
+            action = match.group("action")
+            if match.group("namespace") or action in known_actions:
+                return action, _entity_id(match.group("id"))
     return None
 
 
@@ -147,18 +197,23 @@ def extract_actor_calls(
         for decision in turn.get("decisions") or []:
             choice = decision.get("choice") or {}
             arguments = choice.get("arguments")
-            action = _argument_action(arguments, actor) or _url_action(
-                arguments, actor, known_actions
+            tool = choice.get("action")
+            found = _argument_action(arguments, actor) or _url_action(
+                arguments, actor, known_actions, tool
             )
-            if not action:
+            if not found:
                 continue
+            action, entity_id = found
             consequence = decision.get("consequence") or {}
             calls.append(
                 {
                     "turn_id": turn_id,
                     "decision_id": decision.get("decision_id"),
                     "action": action,
-                    "tool": choice.get("action"),
+                    # Which entity the call drove. One actor SPEC governs many
+                    # entities, and each is its own machine.
+                    "entity_id": entity_id,
+                    "tool": tool,
                     "succeeded": bool(consequence.get("success")),
                 }
             )
@@ -223,13 +278,46 @@ def replay(
     terminal = _terminal_states(spec)
     value_invariants = _value_invariants(spec)
 
-    state = automaton.get("initial")
-    ledger = _initial_ledger(spec)
+    # One machine per entity, not one per actor TYPE.
+    #
+    # A run drives as many CuratorAgent entities as it likes, and each is its
+    # own state machine. Replaying them as one merged machine let a run smuggle
+    # state between them: entity A walks the protocol as far as SelfReviewed,
+    # entity B then submits from nowhere, and the merged machine — sitting in
+    # SelfReviewed because of A — called it legal. Two entities, one of which
+    # never drafted anything, and the replay said `passed: true`.
+    machines: dict[str, dict[str, Any]] = {}
+
+    def machine_for(entity_id: str) -> dict[str, Any]:
+        return machines.setdefault(
+            entity_id,
+            {"state": automaton.get("initial"), "ledger": _initial_ledger(spec)},
+        )
+
     violations: list[dict[str, Any]] = []
     unverifiable: list[dict[str, Any]] = []
     replayed: list[dict[str, Any]] = []
 
     calls = extract_actor_calls(trajectory, actor, frozenset(actions))
+
+    # A call whose entity we could not identify is not attributable to any
+    # machine. Grouping them under one empty key is the least-wrong choice, and
+    # saying so keeps a pass from being read as covering them.
+    unidentified = sum(1 for call in calls if not call.get("entity_id"))
+    if unidentified:
+        unverifiable.append(
+            {
+                "kind": "unidentified_entity",
+                "turn_id": None,
+                "action": None,
+                "detail": (
+                    f"{unidentified} call(s) named no entity id, so they were replayed as "
+                    "one unnamed machine; if they drove different entities this check "
+                    "neither confirms nor denies their ordering"
+                ),
+            }
+        )
+
     if not calls:
         violations.append(
             {
@@ -246,6 +334,7 @@ def replay(
     for call in calls:
         name = call["action"]
         turn_id = call["turn_id"]
+        entity_id = call.get("entity_id") or ""
         spec_action = actions.get(name)
 
         if spec_action is None:
@@ -254,6 +343,7 @@ def replay(
                     "kind": "unknown_action",
                     "turn_id": turn_id,
                     "decision_id": call["decision_id"],
+                    "entity_id": entity_id,
                     "detail": f"{name} is not in the {actor} alphabet",
                 }
             )
@@ -265,10 +355,15 @@ def replay(
                     "kind": "output_action_invoked",
                     "turn_id": turn_id,
                     "decision_id": call["decision_id"],
+                    "entity_id": entity_id,
                     "detail": f"{name} is an output action; it is emitted, never called",
                 }
             )
             continue
+
+        machine = machine_for(entity_id)
+        state = machine["state"]
+        ledger = machine["ledger"]
 
         # A call the transport rejected changed nothing. It is not a protocol
         # violation on its own, and replaying its effects would invent state.
@@ -284,6 +379,7 @@ def replay(
                     "kind": "terminal_state_violation",
                     "turn_id": turn_id,
                     "decision_id": call["decision_id"],
+                    "entity_id": entity_id,
                     "detail": f"{name} after {state}, which is terminal",
                 }
             )
@@ -296,6 +392,7 @@ def replay(
                     "kind": "illegal_transition",
                     "turn_id": turn_id,
                     "decision_id": call["decision_id"],
+                    "entity_id": entity_id,
                     "detail": (
                         f"{name} from {state}; {name} is only legal from "
                         f"{', '.join(sources)}"
@@ -314,6 +411,7 @@ def replay(
                             "kind": "guard_violation",
                             "turn_id": turn_id,
                             "decision_id": call["decision_id"],
+                            "entity_id": entity_id,
                             "detail": (
                                 f"{name} requires {guard.get('var')} to be true; the run "
                                 "had not set it"
@@ -330,6 +428,7 @@ def replay(
                             "kind": "guard_violation",
                             "turn_id": turn_id,
                             "decision_id": call["decision_id"],
+                            "entity_id": entity_id,
                             "detail": (
                                 f"{name} requires {guard.get('var')} < {limit}; the run "
                                 f"held {held}"
@@ -343,6 +442,7 @@ def replay(
                         "kind": kind,
                         "turn_id": turn_id,
                         "action": name,
+                        "entity_id": entity_id,
                         "detail": (
                             f"{kind} is resolved against the entity graph at dispatch "
                             "time and cannot be replayed from a transcript; this check "
@@ -368,6 +468,7 @@ def replay(
         state_before = state
         if spec_action.get("to"):
             state = spec_action["to"]
+        machine["state"] = state
         replayed.append(
             {**call, "state_before": state_before, "state_after": state, "applied": True}
         )
@@ -381,6 +482,7 @@ def replay(
                         "kind": "invariant_violation",
                         "turn_id": turn_id,
                         "decision_id": call["decision_id"],
+                        "entity_id": entity_id,
                         "detail": (
                             f"{invariant.get('name')}: {state} requires "
                             f"{invariant.get('assert')}"
@@ -388,13 +490,21 @@ def replay(
                     }
                 )
 
+    final_states = {entity: machine["state"] for entity, machine in machines.items()}
+
     return {
         "passed": not violations,
         # False whenever something went unchecked, so `passed && evidence_complete`
         # is the only pair that means a fully checked conforming run. Mirrors the
         # kernel report's field of the same name.
         "evidence_complete": not unverifiable,
-        "final_state": state,
+        # Where each entity ended. `final_state` is the single-entity answer and
+        # the one that goes on a TrajectoryVerdict; it is empty when the run
+        # drove more than one, because there is no single state to name and
+        # picking one would misreport the others.
+        "final_states": final_states,
+        "final_state": next(iter(final_states.values())) if len(final_states) == 1 else "",
+        "entities_replayed": len(final_states),
         "actions_replayed": replayed,
         "violations": violations,
         "unverifiable": unverifiable,
@@ -416,7 +526,10 @@ def check(
         spec = load_spec(actor)
     except SpecVersionError as exc:
         raise ConformanceError(str(exc)) from exc
-    if claimed != current:
+    # Compared the way the kernel compares them: `sha256:<hex>` and a bare
+    # `<hex>` are one version, so a producer that wrote the prefix and one that
+    # did not are not reported as running different contracts.
+    if bare_version(claimed) != bare_version(current):
         raise ConformanceError(
             f"the trajectory ran under {claimed!r} but {actor} in this checkout is "
             f"{current!r}. Check out the spec at the recorded version and re-run; "

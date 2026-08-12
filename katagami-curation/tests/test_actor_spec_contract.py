@@ -297,8 +297,26 @@ class HumanCuratorSpecTest(unittest.TestCase):
                 "entity_type": "ReviewAgent",
                 "entity_id_source": "review_agent_id",
                 "required_status": ["VerdictRecorded"],
+                # Without `required`, the kernel resolves this guard over an
+                # ABSENT review_agent_id as vacuously true, so an assignment
+                # that linked no review at all published as though one had
+                # happened.
+                "required": True,
             },
             publish_guards,
+        )
+
+    def test_the_publish_hint_admits_what_the_guard_cannot_check(self):
+        # The kernel compares a related entity's status, not its fields, so
+        # nothing ties the linked review to THIS submission. A hint that
+        # claimed otherwise would be the documentation asserting a guarantee
+        # the machine does not provide.
+        hint = self.actions["Publish"].get("hint", "")
+        self.assertIn("NOT MACHINE-CHECKED", hint)
+        self.assertIn("reviewed_submission_ids", hint)
+        self.assertIn(
+            "reviewed_submission_ids",
+            {v["name"] for v in self.spec.get("state", [])},
         )
 
     def test_publish_is_reachable_only_from_reviewing_and_only_once(self):

@@ -344,9 +344,15 @@ class MultimodalContentTests(unittest.TestCase):
         self.assertFalse(attachment["available"])
 
     def test_the_text_still_marks_where_the_image_was(self):
+        # The marker carries the hash as well as the path: `OTSMessage` has no
+        # attachments field, so on the kernel read path the marker is ALL a
+        # judge gets.
         data = self._tool_response()["content"]["data"]
         self.assertIn("rendered the landing page", data["content"])
-        self.assertIn("[image image/png /archive/images/abc123.png]", data["content"])
+        self.assertIn(
+            "[image image/png sha256:abc123 /archive/images/abc123.png]",
+            data["content"],
+        )
 
     def test_the_marker_says_unavailable_rather_than_naming_a_dead_path(self):
         ots = self._ots_with(
@@ -839,9 +845,11 @@ class RegisteredVersionTests(unittest.TestCase):
         self.assertEqual(stamp.version, self.local)
         self.assertEqual(stamp.source, "local")
 
-    def test_the_source_travels_on_the_trajectory(self):
-        # A judge reading `local` alongside a 409 from the conformance endpoint
-        # has its explanation; without the field it has a mystery.
+    def test_the_source_travels_on_the_trajectory_as_a_tag(self):
+        # It must ride in `tags`, which the kernel models and returns. Written
+        # as a metadata field of its own it was dropped on ingest, so the
+        # canonical read always said "absent" — which a judge reads as
+        # "locally computed", the wrong answer for a kernel-reported digest.
         ots = converter.atif_to_ots(
             json.loads(GOLDEN_ATIF.read_text()),
             agent_id="katagami-contributor",
@@ -850,7 +858,24 @@ class RegisteredVersionTests(unittest.TestCase):
             spec_version="sha256:" + "f" * 64,
             spec_version_source="registry",
         )
-        self.assertEqual(ots["metadata"]["spec_version_source"], "registry")
+        self.assertIn("spec-version-source:registry", ots["metadata"]["tags"])
+        # And not as an invented field the kernel would silently discard.
+        self.assertNotIn("spec_version_source", ots["metadata"])
+
+    def test_caller_tags_are_kept_alongside_the_provenance_tag(self):
+        ots = converter.atif_to_ots(
+            json.loads(GOLDEN_ATIF.read_text()),
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+            spec_version="sha256:" + "f" * 64,
+            spec_version_source="local",
+            tags=["lane:design-language"],
+        )
+        self.assertEqual(
+            ots["metadata"]["tags"],
+            ["lane:design-language", "spec-version-source:local"],
+        )
 
     def test_a_registry_answer_survives_to_the_next_offline_run(self):
         # Capture reads the registry when it queues a session; the converter
