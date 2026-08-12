@@ -1,63 +1,85 @@
+/**
+ * Who may read a stored file through the public `/api/file/<id>` proxy.
+ *
+ * The proxy holds the app's backend credential, so whatever it agrees to fetch
+ * is effectively public. It used to gate on file state alone — any `Ready` or
+ * `Locked` file was served to anyone who named its id — which made Katagami's
+ * entire agent instruction set world-readable, since every installed skill is
+ * `Ready` and its id is deterministic (`os-agent-skill-file-<soul>-<skill>`).
+ * State was never a permission and obscurity was never the control.
+ *
+ * The shape here is an ALLOWLIST of workspaces with a DENY-LIST of trees inside
+ * them, and the asymmetry is deliberate. Workspaces are few, change rarely, and
+ * a new one appearing is exactly the dangerous case: install another OS app and
+ * its docs land in a workspace nobody wrote a rule for. Under an allowlist that
+ * workspace is closed until somebody admits it. Path conventions, by contrast,
+ * churn constantly inside a workspace — `/katagami` then `/languages` then
+ * `/rebuild` — and every attempt to enumerate them missed a live case, so paths
+ * are used only to carve exceptions out, never to grant access.
+ *
+ * RESIDUAL RISK, stated plainly: a new PRIVATE tree added inside a servable
+ * workspace is public until a deny rule is written for it. That is the cost of
+ * this shape. The trade is that the failure is visible and immediate — content
+ * that should be private shows up on a public page — where an allowlist miss on
+ * a new workspace would be a silent leak nobody notices. Both lists are pinned
+ * by `scripts/check-file-proxy-state-contract.mjs`, so deleting a rule fails
+ * loudly rather than quietly widening access.
+ */
+
 const PUBLIC_FILE_STATES = new Set(["Ready", "Locked"]);
 
 /**
- * The workspace artifacts live in, and the primary control.
+ * Workspaces whose files may be served at all.
  *
- * Workspace is the right axis because it is the durable fact: contributed
- * artifacts are written to `katagami-contrib` and stay there, while agent and
- * operational content lives elsewhere. Path conventions inside that workspace
- * have already moved once — synthesis-time writes go to `/katagami/...` while
- * the published assets the site serves are under `/languages/...` and
- * `/art-styles/...` — so a rule keyed only on path prefixes would need revising
- * on every directory rename, and would fail closed on the live site whenever
- * somebody forgot.
+ * Derived from what published and under-review catalogue entities actually
+ * reference, not from a guess: `katagami-contrib` holds current content, and
+ * `ws-019d9c05-…` is an older content workspace still referenced by live
+ * entities (it holds `/katagami/embodiments/**` and `/katagami/thumbnails/**`).
+ *
+ * Anything in an unlisted workspace is refused — including `os-app-docs`, where
+ * OS apps install agent skills and documentation. That is not spelled out as a
+ * separate deny rule because a rule that can never fire reads as though it were
+ * load-bearing; the allowlist already closes it, and the contract test asserts
+ * `os-app-docs` is denied so the intent stays recorded.
  */
-const PUBLIC_WORKSPACE_IDS = new Set(["katagami-contrib"]);
+const SERVABLE_WORKSPACE_IDS = new Set([
+  "katagami-contrib",
+  "ws-019d9c05-1483-78e0-b9e7-370c0bdce031",
+]);
 
 /**
- * Workspaces that hold operational content and are never served.
- *
- * Checked before anything else, so adding a workspace above can never
- * accidentally re-expose one of these. `os-app-docs` is where OS apps install
- * agent documentation and skills.
- */
-const PRIVATE_WORKSPACE_IDS = new Set(["os-app-docs"]);
-
-/**
- * Trees never served to anyone through this proxy, wherever they live.
+ * Trees never served to anyone, in any workspace.
  *
  * The agent instruction tree and the operator knowledge base. Denied by path as
- * well as by workspace so that a copy appearing in a public workspace is still
- * refused.
+ * well as excluded by workspace so that a copy landing in a servable workspace
+ * is still refused.
  */
 const NEVER_SERVED_PATH_PREFIXES = ["/agents/", "/system/"] as const;
 
 /**
- * Trees inside the public workspace that only the owner may read.
+ * Trees inside a servable workspace that only the owner may read.
  *
- * `katagami-contrib` is not uniformly public. A live listing of it (143 files,
- * 2026-08-12) found six top-level trees, and three of them are not catalogue
- * content:
- *
- * - `/contrib/` — full artifact sets (embodiment, landing, dashboard,
- *   DESIGN.md, components.md) for submissions awaiting curation. The only page
- *   that renders these is `/under-review`, which is explicitly the owner's desk:
- *   it calls `notFound()` for everyone else. Cards for unpublished entities
- *   route their thumbnail through this proxy — see `thumbnailProxyFileId` in
- *   `components/language-card.tsx` — so the owner genuinely needs these bytes
- *   and the public genuinely must not have them.
+ * - `/contrib/` — full artifact sets for submissions awaiting curation. The only
+ *   page that renders them is `/under-review`, which calls `notFound()` for
+ *   anyone who is not the owner, and cards for unpublished entities route their
+ *   thumbnail through this proxy (`thumbnailProxyFileId` in
+ *   `components/language-card.tsx`). So the owner needs these bytes and the
+ *   public must not have them.
  * - `/iterate/` — `.jsonl` iteration logs, i.e. trajectory data. No UI reads
  *   them.
  * - `/feedback/` — the A/B verdict log. `app/(site)/ab/actions.ts` creates
- *   `/feedback/ab-verdicts.jsonl` in this workspace on the first verdict; the
- *   listing above predates that, so the tree is absent today and the rule is
- *   deliberately prospective.
+ *   `/feedback/ab-verdicts.jsonl` in `katagami-contrib` on the first verdict
+ *   submission, so the tree is absent today and this rule is prospective.
  *
  * Owner-only rather than denied outright, because denying would break the
  * owner's own curation queue while closing nothing that owner-gating does not
  * already close.
  */
-const OWNER_ONLY_PATH_PREFIXES = ["/contrib/", "/iterate/", "/feedback/"] as const;
+const OWNER_ONLY_PATH_PREFIXES = [
+  "/contrib/",
+  "/iterate/",
+  "/feedback/",
+] as const;
 
 export type FileVisibility = "public" | "owner" | "denied";
 
@@ -73,6 +95,15 @@ type FileProjection = {
   fields?: FileProjection;
 };
 
+/**
+ * Read a value under either projection.
+ *
+ * The backend returns PascalCase (`Path`, `WorkspaceId`) for newer entities and
+ * lower-snake (`path`, `workspace_id`) for older ones — same endpoint, same
+ * query, differing by entity. This must stay at RUNTIME and not only in tests:
+ * reading one spelling makes an old entity look pathless, and a file that
+ * cannot be placed fails closed, so the whole older generation would 404.
+ */
 function readString(
   fields: FileProjection,
   projection: FileProjection,
@@ -86,22 +117,14 @@ function readString(
 }
 
 /**
- * Who, if anyone, may read this file through the public proxy.
+ * Who, if anyone, may read this file.
  *
- * Gating used to be state-only: any file in `Ready` or `Locked` was served to
- * anyone who named its id. File ids are deterministic and guessable — an
- * installed agent skill is `os-agent-skill-file-<soul>-<skill>` — so that made
- * Katagami's entire agent instruction set world-readable without needing a leak
- * first. Obscurity was never the control, and state was never a permission.
+ * Deny rules run before any allow, and anything that cannot be placed — no
+ * workspace, no path, unreadable projection — is `denied` rather than served.
  *
- * State is now necessary but not sufficient. Deny rules run before any allow,
- * and anything that cannot be placed — no workspace, no path — is `denied`
- * rather than served, so a surface added tomorrow is closed by default instead
- * of open until somebody notices.
- *
- * A `denied` or unauthenticated-`owner` result must leave the route as a 404,
- * never a 403: a distinguishable "exists but forbidden" would confirm which ids
- * are real.
+ * A `denied` result, and an `owner` result for a caller who is not the owner,
+ * must both leave the route as a 404 — never a 403. A distinguishable "exists
+ * but forbidden" would confirm which ids are real, and these ids are guessable.
  */
 export function classifyFileVisibility(value: unknown): FileVisibility {
   if (!value || typeof value !== "object") return "denied";
@@ -119,21 +142,17 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   ]);
   if (!state || !PUBLIC_FILE_STATES.has(state)) return "denied";
 
-  // No workspace means we cannot place the file, so we cannot serve it.
-  const workspaceId = readString(fields, projection, [
-    "WorkspaceId",
-    "workspace_id",
-  ]);
-  if (!workspaceId || PRIVATE_WORKSPACE_IDS.has(workspaceId)) return "denied";
-
-  // Likewise no path: the tree rules below could not be applied, and an
-  // unapplied deny rule must never read as an allow.
   const path = readString(fields, projection, ["Path", "path"]);
   if (!path || !path.startsWith("/")) return "denied";
   if (NEVER_SERVED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return "denied";
   }
-  if (!PUBLIC_WORKSPACE_IDS.has(workspaceId)) return "denied";
+
+  const workspaceId = readString(fields, projection, [
+    "WorkspaceId",
+    "workspace_id",
+  ]);
+  if (!workspaceId || !SERVABLE_WORKSPACE_IDS.has(workspaceId)) return "denied";
 
   return OWNER_ONLY_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
     ? "owner"
