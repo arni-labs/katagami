@@ -152,16 +152,8 @@ fn run_inner(ctx: &Context) -> Result<(), String> {
                     );
                 }
                 Err(error) => {
-                    let repair_job_id = if error.repairable {
-                        maybe_spawn_repair_job(
-                            ctx,
-                            &api_url,
-                            &headers,
-                            &job_id,
-                            &job_type,
-                            &finalizing_fields,
-                            &error,
-                        )
+                    let repair = if error.repairable {
+                        plan_repair_job(ctx, &job_id, &job_type, &finalizing_fields, &error)
                     } else {
                         None
                     };
@@ -170,7 +162,7 @@ fn run_inner(ctx: &Context) -> Result<(), String> {
                         &job_id,
                         &job_type,
                         &error,
-                        repair_job_id.as_deref(),
+                        repair.as_ref(),
                     );
                 }
             }
@@ -285,42 +277,77 @@ fn set_failed_job_callback(ctx: &Context, job_id: &str, job_type: &str, error: &
     set_failed_job_callback_with_repair(ctx, job_id, job_type, error, None);
 }
 
+/// The finalizer's repair verdict: everything the spec needs to mint the
+/// follow-up job, and nothing about how to mint it. Deciding whether a failure
+/// is worth repairing is verification work — reading the budget, resolving the
+/// language, composing the brief. Creating and starting the job is a
+/// transition, and transitions belong to the spec (`failure_spawns_repair_job`
+/// on CurationJob.Fail).
+struct RepairPlan {
+    job_type: String,
+    input: String,
+    language_id: String,
+    model: String,
+    provider: String,
+    direction_id: String,
+}
+
 fn set_failed_job_callback_with_repair(
     ctx: &Context,
     job_id: &str,
     job_type: &str,
     error: &VerificationError,
-    repair_job_id: Option<&str>,
+    repair: Option<&RepairPlan>,
 ) {
-    let mut payload = error.payload(job_id, job_type);
-    if let Some(repair_id) = repair_job_id {
-        payload["repair_job_id"] = json!(repair_id);
+    let payload = error.payload(job_id, job_type);
+    let mut params = json!({"error_message": payload.to_string()});
+    if let Some(plan) = repair {
+        // "yes" is the positive marker the trigger guards on; see the
+        // repair_requested comment in curation_job.ioa.toml for why the guard
+        // is positive rather than an inverted emptiness check.
+        params["repair_requested"] = json!("yes");
+        params["repair_job_type"] = json!(plan.job_type);
+        params["repair_input"] = json!(plan.input);
+        params["repair_language_id"] = json!(plan.language_id);
+        params["repair_model"] = json!(plan.model);
+        params["repair_provider"] = json!(plan.provider);
+        params["repair_direction_id"] = json!(plan.direction_id);
+        ctx.log(
+            "info",
+            &format!(
+                "finalize_spawned_session: requesting repair of DesignLanguage '{}' after job '{job_id}' failed; failure_spawns_repair_job creates the follow-up",
+                plan.language_id
+            ),
+        );
     }
     ctx.log(
         "warn",
         &format!("finalize_spawned_session: verification failed for job '{job_id}': {payload}"),
     );
-    set_success_result("Fail", &json!({"error_message": payload.to_string()}));
+    set_success_result("Fail", &params);
 }
 
 /// Maximum number of chained repair sessions per original job before the
 /// failure is left for a human. Counted via `repair_attempt` in the job input.
 const MAX_REPAIR_ATTEMPTS: i64 = 4;
 
-/// Spawn a follow-up repair job for a repairable verification failure so
-/// imperfect runs self-heal instead of dying (ARN-269). The repair job runs
-/// the same synthesize-language skill against the EXISTING language, under the
-/// same model/provider as the failed job (contestant integrity for bake-offs),
-/// and re-enters full finalizer verification via CompleteRegeneration.
-fn maybe_spawn_repair_job(
+/// Decide whether a repairable verification failure earns a follow-up repair
+/// job, and compose its brief (ARN-269). The repair job runs the same
+/// synthesize-language skill against the EXISTING language, under the same
+/// model/provider as the failed job (contestant integrity for bake-offs), and
+/// re-enters full finalizer verification via CompleteRegeneration.
+///
+/// This function only decides. The job is created by the declared
+/// `failure_spawns_repair_job` trigger on CurationJob.Fail — a verifier that
+/// mints entities and walks them Queued -> Ready is driving the state machine,
+/// and the state machine is driven by transitions and effects.
+fn plan_repair_job(
     ctx: &Context,
-    api_url: &str,
-    headers: &[(String, String)],
     job_id: &str,
     job_type: &str,
     fields: &serde_json::Value,
     error: &VerificationError,
-) -> Option<String> {
+) -> Option<RepairPlan> {
     if !matches!(
         job_type,
         "synthesize" | "regenerate_embodiment" | "evolve_language"
@@ -405,74 +432,24 @@ fn maybe_spawn_repair_job(
         "original_input": input_raw,
     });
 
-    // Create → Configure → Submit, mirroring the operator flow.
-    let create = match ctx.http_call(
-        "POST",
-        &format!("{api_url}/tdata/CurationJobs"),
-        headers,
-        "{}",
-    ) {
-        Ok(resp) if (200..300).contains(&resp.status) => resp,
-        other => {
-            ctx.log(
-                "warn",
-                &format!("finalize_spawned_session: repair job create failed for '{job_id}': {other:?}"),
-            );
-            return None;
-        }
-    };
-    let repair_id = serde_json::from_str::<serde_json::Value>(&create.body)
-        .ok()
-        .and_then(|v| {
-            v.get("entity_id")
-                .and_then(|id| id.as_str())
-                .map(str::to_string)
-        })?;
-
-    let mut configure = json!({
-        "job_type": "regenerate_embodiment",
-        "design_language_id": language_id,
-        "input": repair_input.to_string(),
-    });
-    if !model.is_empty() {
-        configure["model"] = json!(model);
-    }
-    if !provider.is_empty() {
-        configure["provider"] = json!(provider);
-    }
-    if !direction_id.is_empty() {
-        configure["direction_id"] = json!(direction_id);
-    }
-    for (action, body) in [
-        ("Configure", configure.to_string()),
-        ("Submit", "{}".to_string()),
-    ] {
-        match ctx.http_call(
-            "POST",
-            &format!("{api_url}/tdata/CurationJobs('{repair_id}')/KatagamiCuration.{action}"),
-            headers,
-            &body,
-        ) {
-            Ok(resp) if (200..300).contains(&resp.status) => {}
-            other => {
-                ctx.log(
-                    "warn",
-                    &format!(
-                        "finalize_spawned_session: repair job {action} failed for '{repair_id}': {other:?}"
-                    ),
-                );
-                return None;
-            }
-        }
-    }
-
     ctx.log(
         "info",
         &format!(
-            "finalize_spawned_session: spawned repair job '{repair_id}' (attempt {next_attempt}/{MAX_REPAIR_ATTEMPTS}) for failed job '{job_id}' targeting language '{language_id}'"
+            "finalize_spawned_session: repair warranted for failed job '{job_id}' (attempt {next_attempt}/{MAX_REPAIR_ATTEMPTS}) targeting language '{language_id}'"
         ),
     );
-    Some(repair_id)
+    Some(RepairPlan {
+        // A repair always re-enters through the regenerate lane: the language
+        // already exists, so the work is to fix it in place, not to synthesize
+        // a new one. Carried as data rather than hardcoded in the trigger so
+        // the verifier's decision stays readable at the failure.
+        job_type: "regenerate_embodiment".to_string(),
+        input: repair_input.to_string(),
+        language_id,
+        model,
+        provider,
+        direction_id,
+    })
 }
 
 fn verify_typed_completion(

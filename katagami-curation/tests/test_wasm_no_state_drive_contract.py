@@ -483,12 +483,21 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             "repair_input",
             "the repair brief must travel from the failed job's own field",
         )
-        # The guard is what keeps every ordinary failure from minting a job.
-        self.assertEqual(trigger["guard"]["type"], "not")
-        self.assertEqual(trigger["guard"]["guard"]["field"], "repair_input")
-        self.assertEqual(trigger["guard"]["guard"]["value"], "")
+        # The guard is what keeps every ordinary failure from minting a job, and
+        # it is POSITIVE on purpose: a reaction `field_equals` guard reads a
+        # missing field as false, so an inverted "repair_input is not empty"
+        # guard would fire on every failure whose params never mentioned repair.
+        self.assertEqual(trigger["guard"]["type"], "field_equals")
+        self.assertEqual(trigger["guard"]["field"], "repair_requested")
+        self.assertEqual(trigger["guard"]["value"], "yes")
+        self.assertNotIn(
+            "not",
+            trigger["guard"],
+            "the repair guard must fail closed on a missing field, not open",
+        )
 
         for param in (
+            "repair_requested",
             "repair_input",
             "repair_job_type",
             "repair_language_id",

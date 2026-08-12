@@ -112,6 +112,54 @@ name = "error_message"
 type = "string"
 initial = ""
 
+# --- Repair verdict (ARN-320) ---
+#
+# When the finalizer rejects a repairable job it does NOT create the repair job
+# itself. It records the repair BRIEF on this job as part of the Fail verdict,
+# and `failure_spawns_repair_job` below mints the job. The verifier decides
+# whether a repair is warranted (budget, resolvable language, repairable job
+# type) and writes what it decided; the spec decides what happens next.
+#
+# repair_requested is the positive marker the trigger guards on. It is a
+# positive marker on purpose: a reaction `field_equals` guard reads `false` for
+# a missing field, so an inverted "repair_input is not empty" guard would fire
+# on every ordinary failure whose params never mentioned repair. This one fails
+# closed.
+[[state]]
+name = "repair_requested"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_input"
+type = "string"
+initial = "{}"
+
+[[state]]
+name = "repair_job_type"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_language_id"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_model"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_provider"
+type = "string"
+initial = ""
+
+[[state]]
+name = "repair_direction_id"
+type = "string"
+initial = ""
+
 [[state]]
 name = "query_id"
 type = "string"
@@ -888,8 +936,8 @@ name = "Fail"
 kind = "input"
 from = ["Queued", "Ready", "Running", "Finalizing"]
 to = "Failed"
-params = ["error_message"]
-hint = "Mark job as failed with error details."
+params = ["error_message", "repair_requested", "repair_input", "repair_job_type", "repair_language_id", "repair_model", "repair_provider", "repair_direction_id"]
+hint = "Mark job as failed with error details. The repair_* params are the finalizer's repair verdict: when it judges a failure repairable and within budget, it passes the repair brief here and failure_spawns_repair_job mints the follow-up. An ordinary failure leaves them unset and nothing is spawned."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -979,6 +1027,45 @@ error_message = "error_message"
 [action.triggers.resolve_target]
 type = "field"
 field = "query_id"
+
+# ARN-320: auto-repair used to be a hand-rolled walk inside the finalizer WASM —
+# POST /tdata/CurationJobs, then Configure, then Submit, minting an entity and
+# driving it Queued -> Ready from inside a verifier. Nothing in the spec said it
+# happened. Now the finalizer only DECIDES (is this failure repairable, is there
+# budget left, which language, which model) and records that decision in the Fail
+# verdict; this trigger is what creates the job. Same mint-a-job idiom as
+# direction_queue_synthesis_creates_job and the other three create-triggers.
+#
+# Declared last of the three Fail triggers so the direction/query failure
+# propagation lands before a repair job starts competing for the barrier.
+[[action.triggers]]
+name = "failure_spawns_repair_job"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationJob"
+target_action = "ConfigureAndSubmit"
+
+# Fails closed: only a Fail that carries the finalizer's explicit repair marker
+# spawns anything. Every ordinary failure leaves repair_requested unset, and a
+# reaction field_equals guard reads a missing field as false.
+[action.triggers.guard]
+type = "field_equals"
+field = "repair_requested"
+value = "yes"
+
+[action.triggers.params]
+completion_contract = "typed-v1"
+
+[action.triggers.params_from]
+job_type = "repair_job_type"
+input = "repair_input"
+design_language_id = "repair_language_id"
+model = "repair_model"
+provider = "repair_provider"
+direction_id = "repair_direction_id"
+
+[action.triggers.resolve_target]
+type = "create"
 
 # --- Retry ---
 
