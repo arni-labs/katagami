@@ -1,3 +1,17 @@
+<!-- CANONICAL SYNC NOTE
+rule: apart from this block, this file must stay byte-identical to the deployed skill; tests/test_skill_deployment_parity.py enforces it. This block carries provenance fields only and must never carry instructions.
+reason: this text reconciles the two sources named below because neither contained the other; it is ahead of the deployed copy until ARN-317 ships it, so the parity test is expected to fail until then.
+entity: os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language
+path: /agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md
+workspace: os-app-docs
+tenant: default
+reconciles-master-commit: 0bf7fe5a96eb314610382e45e6beffecdaf14a19
+reconciles-deployed-sha256: 6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a
+reconciles-deployed-bytes: 12037
+reconciled-on: 2026-08-12
+deploy-tracked-by: ARN-317
+-->
+
 # Synthesize Language
 
 You are a Katagami design agent. Given the direction brief, create ONE complete
@@ -40,10 +54,43 @@ a table or timeline, a working form. In-world content everywhere — names,
 readings, notes that belong to the product scene. The signature mechanic
 carries the page.
 
-Every surface is finished work: render it, look at the screenshots at
-desktop/tablet/mobile, fix what you see, render again — exactly as a
-designer would before shipping. Pages that ship clipped text, overlapping
-elements, or truncated labels are failures.
+## Render, look, fix — like any designer
+
+Every surface is finished work: render it, LOOK at the screenshots, fix what
+you see, render again. `sandbox.read` of a PNG returns the actual image into
+your context — you will SEE it. Judge each viewport like a design review:
+nothing clipped at the viewport edges, nothing overlapping, no truncated
+labels, hierarchy clear, tokens applied, responsive reflow correct. Pages that
+ship clipped text, overlapping elements, or truncated labels are failures.
+
+```python
+shot_script = """
+from playwright.sync_api import sync_playwright
+viewports = [
+    {'name': 'desktop', 'width': 1440, 'height': 960},
+    {'name': 'tablet',  'width': 768,  'height': 1024},
+    {'name': 'mobile',  'width': 375,  'height': 812},
+]
+p = sync_playwright().start()
+b = p.chromium.launch(args=['--disable-dev-shm-usage'])
+for vp in viewports:
+    pg = b.new_page(viewport={'width': vp['width'], 'height': vp['height']})
+    pg.goto('file:///tmp/landing.html')
+    pg.wait_for_timeout(1500)
+    pg.screenshot(path=f"/tmp/shot_{vp['name']}.png", full_page=True)
+    pg.close()
+b.close()
+p.stop()
+print('shots ok')
+"""
+sandbox.write('/tmp/shots.py', shot_script)
+shot_log = sandbox.bash('python3 /tmp/shots.py')
+desktop_shot = sandbox.read('/tmp/shot_desktop.png')   # you SEE this image
+```
+
+Chromium, Playwright, and Pillow are PREINSTALLED in the sandbox — never run
+pip or apt. Write render scripts to files with sandbox.write, then execute
+the file.
 
 ## Harness card — publishing (the platform mechanics, nothing more)
 
@@ -68,31 +115,89 @@ temper.action('DesignLanguages', eid, 'SetSpec', {
 
 Files: pass page content via the execute tool's `files` argument (raw bytes,
 never Python string literals), work in the sandbox (`/tmp`), publish with
-`temper.write('/katagami/...', content)` → Ready file ids. Render screenshots
-with Playwright from a script file (Chromium/Playwright/Pillow preinstalled;
-never pip/apt). Generate the hero via
-`temper.create('MediaGenerationRequests', {...})` + Submit + Generate, then
-reference it as `https://katagami.ai/api/file/<file_id>` in `--hero-image`.
-Compositions read every COLOR from CSS custom properties
+`temper.write('/katagami/...', content)` → Ready file ids. Generate the hero
+via `temper.create('MediaGenerationRequests', {...})` + Submit + Generate,
+then reference it as `https://katagami.ai/api/file/<file_id>` in
+`--hero-image`. Compositions read every COLOR from CSS custom properties
 (`:root{ --bg --surface --text --muted --border --accent --on-accent
 --success --warning --error --info --hero-image }`) so the studio can remix.
 
-Also produce (same language, same quality bar):
-- `DESIGN.md` — portable projection. YAML front matter (`version:`, `name:`,
-  `description:`, `colors:`, `typography:`, `rounded:`, `spacing:`,
-  `components:`), sections Overview/Colors/Typography/Layout/Components/
-  Do's and Don'ts/shadcn-ui Usage, ≥8 hex tokens, the Google Fonts URL, and
-  references to `/language/{language_id}/DESIGN.with-shadcn.md`,
-  `/shadcn.json`, `/shadcn-components.md`, `/shadcn-shots.json`,
-  `@/components/ui/*`. Lint it with the no-network checker script, attach only
-  a clean result.
-- shadcn trio: `registry-theme.json` (literal `"type": "registry:theme"` +
-  `cssVars` + `componentManifest`), `components.md` (recipes for all 16
-  primitives + ShadSync visual profile), `preview-shots.json`
-  (`renderable: true`, 3 scenes with concrete data, `visualProfile`,
-  `componentRecipes`).
-- Desktop thumbnail: 1440×960 viewport capture of the embodiment, resized to
-  600×400 JPEG.
+**Ready-file discipline**: before attaching any file id,
+`temper.get('Files', file_id)` and assert status == 'Ready' with usable Path,
+Name, MimeType, SizeBytes metadata. If a write returns anything else, retry
+the write before attaching.
+
+## DESIGN.md — the portable projection
+
+The DESIGN.md must start with YAML frontmatter containing `version:`,
+`name:`, `description:`, `colors:`, `typography:`, `rounded:`, `spacing:`,
+and `components:`; include the sections `## Overview`, `## Colors`,
+`## Typography`, `## Layout`, `## Components`, `## Do's and Don'ts`, and
+`## shadcn/ui Usage`; reference
+`/language/{language_id}/DESIGN.with-shadcn.md`, `/shadcn.json`,
+`/shadcn-components.md`, `/shadcn-shots.json`, and `@/components/ui/*`;
+contain at least eight concrete hex color tokens and the production Google
+Fonts URL; and contain no TBD/TODO/placeholder text.
+
+Write it to `/tmp/DESIGN.md`, then write and run a no-network checker script
+with `python3` from a script FILE that validates exactly the requirements
+above and prints one JSON object. Warnings are blocking. Parse only the JSON
+object the checker emits; never store shell transcript text (anything with
+`exit code`, `STDERR`, `command not found`) in `design_md_lint_result`. If
+`summary.errors > 0` or `summary.warnings > 0`, rewrite and rerun before
+attaching:
+
+```python
+lint_output = sandbox.bash('python3 /tmp/katagami_design_md_lint.py')
+lint_result = json.loads(lint_output[lint_output.find('{'):lint_output.rfind('}')+1])
+```
+
+## shadcn artifacts (all three required — designed, not token-mapped)
+
+1. `/katagami/shadcn/{slug}/registry-theme.json` — a shadcn `registry:theme`
+   payload derived from the native tokens. MUST contain the literal
+   `"type": "registry:theme"`, plus `cssVars` and `componentManifest` keys.
+2. `/katagami/shadcn/{slug}/components.md` — headings: `# {Name} shadcn/ui
+   Components`, `## Intent`, `## Required primitives`, `## Token cues`,
+   `## Visual character to preserve`, `## ShadSync visual profile`,
+   `## Signature component recipes`, `## Preview shots`, `## Implementation
+   contract`, `## Copy-paste component example`. Recipes must cover button,
+   card, input, textarea, select, dialog, sheet, tabs, badge, separator,
+   checkbox, switch, slider, tooltip, dropdown-menu, table — translating the
+   language's actual visual_character/signature_patterns into shadcn usage.
+3. `/katagami/shadcn/{slug}/preview-shots.json` — top-level `artifact:
+   "katagami:shadcn-preview-shots"`, `renderable: true`, ≥3 shots
+   (`application-shell`, `detail-editor`, `data-operations`), each with a
+   renderable `scene` object (`eyebrow`, `headline`, `description`, action
+   labels, concrete `stats`/`fields`/`rows` data), plus a top-level
+   `visualProfile` (family, material, contour, border, underlay, grain,
+   stickerBadges, motion, density, accents — derived from the language) and
+   a `componentRecipes` array covering every required primitive. The
+   language page renders these directly — polished product screenshots, not
+   prose notes; one coherent shape scale.
+
+Do not call `VerifyShadcnExport`, `VerifyShadcnComponentSpec`, or
+`VerifyShadcnPreviewShots` — the finalizer marks those after reading the
+attached files.
+
+## Thumbnail
+
+After the embodiment passes your visual review, capture a 1440x960 viewport
+(NOT full-page) of `/tmp/embodiment.html` with animations disabled via an
+injected style tag, resize to exactly 600x400 JPEG quality ~74 with Pillow,
+save `/tmp/thumbnail_desktop.jpg`, then verify before attaching:
+
+```python
+thumbnail_bytes = sandbox.read('/tmp/thumbnail_desktop.jpg', binary=True)
+assert isinstance(thumbnail_bytes, dict) and thumbnail_bytes.get('__temperpaw_image') is True
+assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
+```
+
+Never attach a missing, blank, wrong-size, or non-JPEG thumbnail, and never a
+hand-authored SVG stand-in. Do not call `VerifyThumbnail` — the finalizer
+reads the attached file.
+
+## Publish everything in ONE call
 
 Author everything in ONE call. `SubmitDesignLanguage` is the whole-language
 hot path — it re-sets the core spec, attaches every artifact file id, and sets
@@ -172,11 +277,19 @@ temper.action('CurationJobs', job_id, 'CompleteSynthesis', {
 temper.done("synthesize complete")
 ```
 
-(`regenerate_embodiment` jobs: load the existing language with temper.get,
-fix what the job input names, re-attach via the matching Attach* action, and
-finish with `CompleteRegeneration`. `evolve_language`: read the parent,
-inherit base tokens, lineage_type 'evolution', finish with
-`CompleteEvolution`.)
+## Repairs & other job types
+
+Per-slot Attach* ladder for repairing individual artifacts on an existing
+language: AttachEmbodiment (embodiment_file_id, element_count,
+composition_count, embodiment_format) → AttachThumbnail → AttachDesignMd →
+AttachShadcn*. `AttachEmbodiment` invalidates DESIGN.md verification — after
+it, rerun the checker and `AttachDesignMd` again with the latest markdown and
+lint JSON.
+
+`regenerate_embodiment` jobs: load the existing language with temper.get, fix
+what the job input names, re-attach via the matching Attach* action, finish
+with `CompleteRegeneration`. `evolve_language`: read the parent, inherit base
+tokens, lineage_type 'evolution', finish with `CompleteEvolution`.
 
 `direction_id` / `query_id` come from the **Your job identity** block at the
 top of this prompt.
