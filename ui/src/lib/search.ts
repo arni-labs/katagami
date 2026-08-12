@@ -9,6 +9,7 @@ import {
   type DesignLanguage,
   type VectorHit,
 } from "@/lib/odata";
+import { specSummary } from "@/lib/spec-summary";
 import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
@@ -128,19 +129,22 @@ function toHit(lane: SearchLane, hit: VectorHit, detailed: boolean): SearchHit {
   return base;
 }
 
-/** A short, human-legible line per kind, drawn from public fields. */
-function summarize(lane: SearchLane, fields: Record<string, unknown>): string {
+/** A short, human-legible line per kind, drawn from public fields.
+ *  Exported for the contract test — this is the integration the fix touches. */
+export function summarize(lane: SearchLane, fields: Record<string, unknown>): string {
+  // philosophy/mood may hold prose instead of JSON. Fall back to it so those
+  // entries carry a summary line rather than dropping to the tag join.
   if (lane === "language") {
-    const phil = parseJson<{ summary?: string }>(fields.philosophy as string);
-    if (phil?.summary) return phil.summary.trim();
+    const summary = specSummary(fields.philosophy);
+    if (summary) return summary;
   }
   if (lane === "art-style") {
     const medium = typeof fields.medium === "string" ? fields.medium : "";
     return medium ? `${medium} art style` : "";
   }
   if (lane === "palette") {
-    const mood = parseJson<{ summary?: string }>(fields.mood as string);
-    if (mood?.summary) return mood.summary.trim();
+    const summary = specSummary(fields.mood);
+    if (summary) return summary;
   }
   const tags = parseJson<string[]>(fields.tags as string) ?? [];
   return tags.slice(0, 4).join(", ");

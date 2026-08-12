@@ -7,6 +7,7 @@ import {
   parseJson,
   type LaneEntity,
 } from "@/lib/odata";
+import { specSummary } from "@/lib/spec-summary";
 import {
   buildArtStyleEmbeddingDocument,
   buildEmbeddingDocument,
@@ -78,9 +79,12 @@ export async function GET() {
           name: lang.fields.name,
           slug: lang.fields.slug,
           tags: parseJson<string[]>(lang.fields.tags) ?? undefined,
-          philosophySummary: parseJson<{ summary?: string }>(
-            lang.fields.philosophy,
-          )?.summary,
+          // The vector is what a language is RANKED by. Reading only
+          // `philosophy.summary` left a prose philosophy out of the document
+          // entirely, so such a language was embedded from name+tags+fonts
+          // alone and could not be found by its own words — searching the
+          // exact sentence it was written with would not surface it.
+          philosophySummary: specSummary(lang.fields.philosophy) ?? undefined,
           headingFont: tokens?.typography?.heading_font,
           bodyFont: tokens?.typography?.body_font,
           colors: tokens?.colors,

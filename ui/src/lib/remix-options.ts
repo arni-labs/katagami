@@ -8,6 +8,7 @@ import {
   paletteCore,
   paletteDisplayName,
 } from "@/lib/odata";
+import { specSummary } from "@/lib/spec-summary";
 import type { LanguageOpt, PaletteOpt, ArtOpt } from "@/components/remix/inline-remix";
 
 type Row = {
@@ -30,7 +31,9 @@ export function toLanguageOpts(rows: Row[]): LanguageOpt[] {
   return rows
     .filter((l) => Boolean(l.fields.landing_file_id) && Boolean(l.fields.dashboard_file_id))
     .map((l) => {
-    const philosophy = parseJson<{ summary?: string }>(l.fields.philosophy);
+    // A prose philosophy has no `.summary`, which left the remix card
+    // tagline undefined; specSummary falls back to the prose itself.
+    const tagline = specSummary(l.fields.philosophy) ?? undefined;
     const thumb =
       l.fields.thumbnail_asset_url ||
       (l.fields.thumbnail_file_id ? getFileUrl(l.fields.thumbnail_file_id) : "");
@@ -41,7 +44,7 @@ export function toLanguageOpts(rows: Row[]): LanguageOpt[] {
       landingUrl: l.fields.landing_file_id ? getFileUrl(l.fields.landing_file_id) : "",
       dashboardUrl: l.fields.dashboard_file_id ? getFileUrl(l.fields.dashboard_file_id) : "",
       thumb,
-      tagline: philosophy?.summary,
+      tagline,
       tags: parseJson<string[]>(l.fields.tags) ?? [],
     };
   });
