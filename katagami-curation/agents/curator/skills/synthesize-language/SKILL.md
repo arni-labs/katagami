@@ -111,6 +111,19 @@ shapes exactly rather than applying a blanket rule:
 - **Plain strings** for every file id, format version, `lineage_type`,
   `provenance_tier`, and `provenance`.
 
+Bind the lineage values before the call — they are not defined for you, and an
+unbound name raises `NameError`, which aborts the whole `SubmitDesignLanguage`
+and leaves a bare Draft with none of your rendered artifacts attached:
+
+```python
+# A new language from a direction brief — the common case:
+parent_ids, lineage_type, generation_number = [], 'original', 0
+provenance_tier, provenance = 'agent_generated', ''
+# Evolving or remixing an existing one instead:
+#   parent_ids, lineage_type = [parent_eid], 'evolution'   # or 'remix'
+#   generation_number = int(parent['fields'].get('generation_number', 0)) + 1
+```
+
 ```python
 temper.action('DesignLanguages', eid, 'SubmitDesignLanguage', {
     'name': name, 'slug': slug,

@@ -1,8 +1,10 @@
 // Spec fields (philosophy, tokens, rules, layout_principles, guidance,
 // imagery_direction, generative_canvas) hold EITHER structured JSON or prose,
-// and most contributor-authored languages store prose. Every consumer used to
-// read parseJson()'s null as "field absent", which blanked the spec panels and
-// silently dropped whole sections from the published KATAGAMI.MD / DESIGN.md.
+// and either shape has to render. Every consumer used to read parseJson()'s
+// null as "field absent", which blanked the spec panel and dropped the section
+// from the published KATAGAMI.MD / DESIGN.md. (Prevalence unmeasured: a spot
+// check of 15 published languages found structured philosophy in all 15, so
+// this pins a correctness gap, not a live outage.)
 // These vectors pin both halves: the parser and what the panel/exports emit.
 //
 // Run: node ui/scripts/spec-prose.test.mjs
@@ -23,6 +25,14 @@ const STUBS = {
   "next/cache": { unstable_cache: (fn) => fn },
   "./spec-actions": { SpecActions: () => null },
   "lucide-react": new Proxy({}, { get: () => () => null }),
+  // search.ts is `server-only` and pulls in the embedding model. Stub both so
+  // its pure projection (summarize) can be exercised here — leaving it
+  // unloadable is why the search half of this fix shipped untested.
+  "server-only": {},
+  "@/lib/embeddings": {
+    embedDocument: async () => [],
+    TASTE_EMBEDDING_MODEL: "test",
+  },
 };
 
 function resolveModule(specifier, fromFile) {
@@ -114,6 +124,23 @@ check("primitives → prose, never dropped", () => {
   assert.equal(parseSpecField("true").prose, "true");
   assert.equal(parseSpecField(42).prose, "42");
   assert.equal(parseSpecField(true).prose, "true");
+});
+
+check("JSON null is absent, not the word 'null'", () => {
+  // `json.dumps(None)` is the 4-char string "null", which an agent sends for
+  // any spec field it has nothing for. Treating it as prose publishes a
+  // section whose body is the word "null" into DESIGN.md — an artifact other
+  // agents consume. Absent must stay absent.
+  for (const empty of ["null", "", "   ", null, undefined]) {
+    const field = parseSpecField(empty);
+    assert.equal(field.data, null, `data leaked for ${JSON.stringify(empty)}`);
+    assert.equal(field.prose, null, `prose leaked for ${JSON.stringify(empty)}`);
+  }
+});
+
+check("empty containers are absent, not empty sections", () => {
+  assert.equal(parseSpecField("[]").prose, null);
+  assert.equal(parseSpecField("{}").data && Object.keys(parseSpecField("{}").data).length, 0);
 });
 
 check("prose → trimmed prose", () => {
@@ -334,6 +361,74 @@ check("search summary clamps a long prose philosophy to one line", () => {
 check("search summary keeps a short first sentence intact", () => {
   assert.equal(oneLine("Quiet. Then louder."), "Quiet.");
   assert.equal(oneLine("   "), null);
+  // Terminal punctuation closed by a quote still ends the sentence.
+  assert.equal(oneLine('"Hi!" Then louder.'), '"Hi!"');
+});
+
+check("the clamp honours its bound, word and code point", () => {
+  const long = "considerable ".repeat(60);
+  const out = oneLine(long);
+  // The ellipsis counts against the budget rather than being added on top.
+  assert.ok(
+    Array.from(out).length <= MAX_SUMMARY_CHARS,
+    `clamp returned ${Array.from(out).length} > ${MAX_SUMMARY_CHARS}`,
+  );
+  assert.ok(!/\bconsiderabl…$/.test(out), "clamp split a word");
+
+  // Astral characters must never be cut in half into a lone surrogate.
+  const emoji = "🎨".repeat(MAX_SUMMARY_CHARS + 40);
+  const cut = oneLine(emoji);
+  assert.ok(!/[\uD800-\uDBFF]$|[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(cut),
+    "clamp emitted a lone surrogate half");
+  assert.ok(Array.from(cut).length <= MAX_SUMMARY_CHARS);
+});
+
+check("an array of objects flattens instead of blanking", () => {
+  // [{term, definition}, …] used to flatten to "" and render an empty section.
+  const field = parseSpecField(
+    JSON.stringify([{ term: "Restraint", definition: "Say less" }, { term: "Grain" }]),
+  );
+  assert.equal(field.data, null);
+  assert.equal(field.prose, "Restraint — Say less, Grain");
+});
+
+check("summarize() itself falls back to prose, per lane", () => {
+  // The real integration, not just the helper: reverting search.ts to
+  // parseJson-only must fail here.
+  const { summarize } = loadModule(path.join(uiRoot, "src/lib/search.ts"));
+  assert.equal(
+    summarize("language", { philosophy: "Restraint over ornament." }),
+    "Restraint over ornament.",
+  );
+  assert.equal(
+    summarize("palette", { mood: "Overcast harbour light." }),
+    "Overcast harbour light.",
+  );
+  // Structured summaries still win, unchanged from master.
+  assert.equal(
+    summarize("language", { philosophy: JSON.stringify({ summary: "Quiet." }) }),
+    "Quiet.",
+  );
+  // No philosophy at all still drops to the tag join.
+  assert.equal(
+    summarize("language", { tags: JSON.stringify(["a", "b"]) }),
+    "a, b",
+  );
+  // A non-string summary must not throw.
+  assert.doesNotThrow(() =>
+    summarize("language", { philosophy: JSON.stringify({ summary: 42 }) }),
+  );
+});
+
+check("CJK prose is reduced to its first sentence", () => {
+  assert.equal(oneLine("第一句。 第二句。"), "第一句。");
+});
+
+check("non-plain objects are not treated as record data", () => {
+  // A Date is an object and non-array; taking the `data` branch would hand a
+  // section view something with none of the keys it reads.
+  const field = parseSpecField(new Date("2020-01-01T00:00:00Z"));
+  assert.equal(field.data, null, "a Date must not be handed back as record data");
 });
 
 check("array and primitive spec fields become prose, not blanks", () => {

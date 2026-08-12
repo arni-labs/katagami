@@ -129,10 +129,11 @@ function toHit(lane: SearchLane, hit: VectorHit, detailed: boolean): SearchHit {
   return base;
 }
 
-/** A short, human-legible line per kind, drawn from public fields. */
-function summarize(lane: SearchLane, fields: Record<string, unknown>): string {
-  // Contributor-authored philosophy/mood is often prose, not JSON. Fall back to
-  // it so those entries still carry a summary line instead of an empty one.
+/** A short, human-legible line per kind, drawn from public fields.
+ *  Exported for the contract test — this is the integration the fix touches. */
+export function summarize(lane: SearchLane, fields: Record<string, unknown>): string {
+  // philosophy/mood may hold prose instead of JSON. Fall back to it so those
+  // entries carry a summary line rather than dropping to the tag join.
   if (lane === "language") {
     const summary = specSummary(fields.philosophy);
     if (summary) return summary;

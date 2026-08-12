@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 import json
@@ -340,11 +341,15 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         # so the exemption widened the attestation surface for no consumer.
         # If human curators ever need these actions, the fix is a validated
         # principal, not a hole in the forbid.
+        # Pinning the one spelling `!(principal is Admin)` is not enough: the
+        # identical hole reappears as `unless { principal is Admin }` — or any
+        # other phrasing — with the assertion still green. Forbid the concept.
         service_only, _ = self._art_policy_blocks()
         self.assertNotIn(
-            "!(principal is Admin)",
+            "Admin",
             service_only,
-            "the finalizer lock must not be exempted on a self-declared Admin header",
+            "the finalizer lock must not reference Admin in any form — "
+            "x-temper-principal-kind: admin is caller-supplied and unvalidated",
         )
 
     def test_only_art_styles_reserve_submit_for_review_to_the_finalizer(self):
@@ -361,7 +366,17 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         )
         for policy_name in ["design_language", "palette_system", "writing_style"]:
             policy = (COMMONS / "policies" / f"{policy_name}.cedar").read_text()
-            for forbid_block in policy.split("forbid(")[1:]:
+            # Cedar allows whitespace before the paren, so splitting on the
+            # literal "forbid(" yields NO blocks for a policy written
+            # `forbid (` — the loop then asserts nothing and passes while the
+            # invariant is violated. Match the keyword, and require a hit.
+            forbid_blocks = re.split(r"forbid\s*\(", policy)[1:]
+            self.assertTrue(
+                forbid_blocks,
+                f"{policy_name}.cedar has no forbid blocks — this check would "
+                "be vacuous",
+            )
+            for forbid_block in forbid_blocks:
                 self.assertNotIn(
                     'Action::"SubmitForReview"',
                     forbid_block,
@@ -373,12 +388,22 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         # specs/policies/ is what `temper serve` and the e2e harness load.
         # A change to one that misses the other ships a policy that only
         # holds in one of the two runtimes.
-        for policy in sorted((COMMONS / "policies").glob("*.cedar")):
-            mirror = COMMONS / "specs" / "policies" / policy.name
-            self.assertTrue(mirror.exists(), f"specs/policies/{policy.name} is missing")
+        loaded = COMMONS / "policies"
+        served = COMMONS / "specs" / "policies"
+
+        # Compare the SETS first. Globbing only policies/ walks one direction,
+        # so a .cedar that exists solely in specs/policies/ — the copy `temper
+        # serve` and the e2e harness load — would never be noticed.
+        self.assertEqual(
+            sorted(p.name for p in loaded.glob("*.cedar")),
+            sorted(p.name for p in served.glob("*.cedar")),
+            "policies/ and specs/policies/ hold different .cedar files",
+        )
+
+        for policy in sorted(loaded.glob("*.cedar")):
             self.assertEqual(
                 policy.read_text(),
-                mirror.read_text(),
+                (served / policy.name).read_text(),
                 f"{policy.name} differs between policies/ and specs/policies/",
             )
 

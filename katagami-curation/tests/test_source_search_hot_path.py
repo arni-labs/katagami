@@ -53,6 +53,11 @@ def action_blocks(skill):
 UNDOCUMENTED_SPEC_PARAMS: set[str] = set()
 
 
+def strip_comments(body):
+    """Drop `#` comments so a param mentioned only in prose does not count."""
+    return "\n".join(line.split("#", 1)[0] for line in body.splitlines())
+
+
 def spec_action_params(spec_text, action_name):
     """The declared `params` list of one action in an .ioa.toml spec."""
     start = spec_text.find(f'name = "{action_name}"')
@@ -113,7 +118,13 @@ class SourceSearchHotPathTests(unittest.TestCase):
         declared = spec_action_params(spec, "SubmitDesignLanguage")
         self.assertTrue(declared, "could not read SubmitDesignLanguage params")
 
-        bodies = [b for action, b in action_blocks(skill) if action == "SubmitDesignLanguage"]
+        # Comments are stripped: documenting a param in a `#` note satisfies the
+        # letter of "the skill mentions it" while the agent still never sends it.
+        bodies = [
+            strip_comments(b)
+            for action, b in action_blocks(skill)
+            if action == "SubmitDesignLanguage"
+        ]
         self.assertTrue(bodies, "skill documents no SubmitDesignLanguage call")
 
         for param in declared:

@@ -1,3 +1,4 @@
+import { specSummary } from "@/lib/spec-summary";
 import type { CSSProperties } from "react";
 
 type JsonRecord = Record<string, unknown>;
@@ -507,6 +508,8 @@ export function shadcnComponentSpecMarkdown(
   const summary =
     typeof philosophy.summary === "string" && philosophy.summary.trim()
       ? philosophy.summary.trim()
+      : specSummary(source.philosophy)
+      ? specSummary(source.philosophy)
       : `shadcn/ui component recipes for the Katagami language ${name}.`;
 
   return [
