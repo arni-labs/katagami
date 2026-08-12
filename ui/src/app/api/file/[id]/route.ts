@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isPubliclyReadableFile } from "@/lib/file-visibility";
+import {
+  fetchServableFileBytes,
+  fileResponseHeaders,
+  REFUSAL_STATUS,
+} from "@/lib/file-visibility";
+import { isOwner } from "@/lib/owner";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
-const ASSET_BROWSER_CACHE_CONTROL =
-  "public, max-age=3600, stale-while-revalidate=86400";
-const ASSET_CDN_CACHE_CONTROL =
-  "public, s-maxage=86400, stale-while-revalidate=604800";
 
 function decodeBase64ImageValue(
   bytes: ArrayBuffer,
@@ -176,47 +177,38 @@ export async function GET(
   const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
   if (API_KEY) fetchHeaders["Authorization"] = `Bearer ${API_KEY}`;
 
-  // PawFS retains archived bytes for governed recovery, but Archived is a
-  // terminal public-revocation state. Always resolve the current projection
-  // before fetching bytes and fail closed for Created, Archived, malformed, or
-  // unavailable records. An authenticated server-side proxy must not turn
-  // backend retention into public access.
-  const metadataRes = await fetch(`${API_BASE}/tdata/Files('${id}')`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-  let metadata: unknown;
-  if (metadataRes.ok) {
-    try {
-      metadata = await metadataRes.json();
-    } catch {
-      metadata = null;
-    }
-  }
-  if (!metadataRes.ok || !isPubliclyReadableFile(metadata)) {
+  // This proxy holds the app's credential, so whatever it agrees to fetch is
+  // public. `fetchServableFileBytes` resolves the file's projection and judges
+  // it before requesting a single byte — see `isPubliclyServableFile`. State
+  // alone is not a permission: PawFS retains archived bytes for governed
+  // recovery, and `Ready` is equally true of every agent skill in the tenant.
+  //
+  // Every refusal — missing, off-surface, malformed, or upstream 401/403 —
+  // comes back as `null` and leaves here as a 404. Never a 403: a
+  // distinguishable "exists but forbidden" would let anyone enumerate real ids,
+  // and ids here are deterministic enough to guess.
+  // `isOwner` is passed as a thunk, not a value: it reads the session cookie,
+  // and the vast majority of requests here are published assets whose answer
+  // does not depend on who is asking. It runs only for the curation-queue trees.
+  const served = await fetchServableFileBytes(
+    fetch,
+    API_BASE,
+    fetchHeaders,
+    id,
+    isOwner,
+  );
+  if (!served) {
     return NextResponse.json(
       { error: "File not found" },
       {
-        status: 404,
+        status: REFUSAL_STATUS,
         headers: { "Cache-Control": "private, no-store" },
       },
     );
   }
 
-  const res = await fetch(`${API_BASE}/tdata/Files('${id}')/$value`, {
-    headers: fetchHeaders,
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "File not found" },
-      { status: res.status },
-    );
-  }
-
-  const upstreamType = res.headers.get("content-type") || "";
-  const upstreamBody = await res.arrayBuffer();
+  const upstreamType = served.upstreamContentType;
+  const upstreamBody = served.bytes;
   // Repair a generic/missing upstream mime by sniffing the bytes, so a file
   // uploaded as application/octet-stream (the browser DOWNLOADS those) still
   // renders as the HTML/image/etc. it actually is.
@@ -250,33 +242,18 @@ export async function GET(
       );
     }
   }
-  // Images are content-addressed and immutable, safe to cache for a day. HTML
-  // compositions (landing/embodiment/dashboard) are MUTABLE — they're re-PUT in
-  // place during curation — so a 24h CDN cache makes every fix invisible for a
-  // day. Short-cache HTML so edits appear within ~30s; long-cache images.
-  const browserCache = isImage
-    ? ASSET_BROWSER_CACHE_CONTROL
-    : "public, max-age=0, must-revalidate";
-  // For mutable HTML, drop stale-while-revalidate: `stale-while-revalidate=60`
-  // means the CDN may keep serving an already-cached (possibly wrong-bytes)
-  // response for up to 60s past its 30s freshness while it revalidates in the
-  // background — up to a 90s window in which a transient cross-id serve stays
-  // visible. `must-revalidate` forces a fresh upstream check the moment the 30s
-  // lapses, so the wrongness window is at most ~30s and never extended by stale
-  // serving. Images are immutable/content-addressed, so their long SWR stays.
-  const cdnCache = isImage
-    ? ASSET_CDN_CACHE_CONTROL
-    : "public, s-maxage=30, must-revalidate";
-  const responseHeaders = new Headers({
-    "Content-Type": contentType,
-    // These are design artifacts meant to render in-browser / inside iframes —
-    // never force a download, regardless of the stored mime.
-    "Content-Disposition": "inline",
-    "Cache-Control": browserCache,
-    "CDN-Cache-Control": cdnCache,
-    "Vercel-CDN-Cache-Control": cdnCache,
-  });
-  responseHeaders.set("Content-Length", String(body.byteLength));
+  // Cache directives and the owner-only `Vary` live in `fileResponseHeaders` so
+  // they are decided by a function a test can execute. Asserting them against
+  // this file's source let three regressions through — a deleted `Vary: Cookie`,
+  // an added shared `CDN-Cache-Control` on the owner path, and a 404 turned 403.
+  const responseHeaders = new Headers(
+    fileResponseHeaders({
+      visibility: served.visibility,
+      contentType,
+      isImage,
+      byteLength: body.byteLength,
+    }),
+  );
 
   return new NextResponse(body, {
     headers: responseHeaders,
