@@ -223,22 +223,32 @@ function canonicalPath(raw: string): string | null {
  *
  * A file with no readable PATH is `denied`. Every rule here is a path rule, so a
  * pathless file cannot be vetted, and an unapplied deny must never read as an
- * allow. That refusal has a measured cost and it is taken deliberately: 15 refs
- * on under-review DesignLanguages carry a `name` but neither a path nor a
- * workspace, and they serve today. Refusing them breaks the embodiment and
- * DESIGN.md of eight languages — lineplate-atelier,
+ * allow. That refusal cuts both ways, and conflating the two halves would
+ * misrepresent both:
+ *
+ * The COST. 15 refs on under-review DesignLanguages carry a `name` but neither a
+ * path nor a workspace, and they serve today. Refusing them breaks the
+ * embodiment and DESIGN.md of eight languages — lineplate-atelier,
  * memphis-postmodern-graphics-ui, nocturne-ink-screen-atlas,
  * vellum-wash-feature-editorial, expressive-line-digital-atmosphere,
  * mixed-media-inked-visual-essay, storyboard-product-humanism,
- * tokenized-spatial-minimalism.
+ * tokenized-spatial-minimalism. Confined to the owner's curation queue —
+ * `/under-review` is owner-gated, and none of the 1,273 ids the public site
+ * fetches is pathless. Accepted deliberately; the repair is data, not more proxy
+ * logic (ARN-313).
  *
- * The breakage is confined to the owner's curation queue: `/under-review` is
- * owner-gated, and none of the 1,273 ids the public site fetches is pathless.
- * The repair is data, not more proxy logic — backfill the paths (ARN-313). The
- * alternative, serving a pathless file because some entity references its id,
- * would add a second classification mechanism, in a hot path, to compensate for
- * missing metadata; that is a band-aid over a data bug and a rule reviewers
- * would have to reason about twice.
+ * The BENEFIT, which is larger. Enumerating `os-app-docs` found 115 pathless
+ * files there, 12 of 12 sampled publicly served at 85–180 KB each, identified as
+ * `repl_state.b64` — serialized interpreter state from curator sandbox sessions,
+ * carrying variable names, taste-rule fragments, log text and working data.
+ * Nothing on the public site renders those; they are agent working memory that
+ * anyone with an id could download. Refusing pathless files removes that
+ * exposure, so this branch is part of the fix and not only collateral.
+ *
+ * Serving a pathless file because some entity references its id was the
+ * alternative and is rejected: a second classification mechanism, in a hot path,
+ * compensating for missing metadata — a band-aid over a data bug, and it would
+ * have re-exposed the REPL state too.
  *
  * A `denied` result, and an `owner` result for a caller who is not the owner,
  * must both leave the route as a 404 — never a 403. A distinguishable "exists

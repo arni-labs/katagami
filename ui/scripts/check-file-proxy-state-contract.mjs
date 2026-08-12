@@ -248,7 +248,19 @@ assert.equal(
 // (ARN-313). Confined to the owner: /under-review is owner-gated and none of
 // the 1,273 ids the public site fetches is pathless.
 for (const meta of [
-  // The real shape: Ready, has a name, no path, no workspace.
+  // Agent REPL state: 115 of these sit in os-app-docs, 12/12 sampled publicly
+  // served at 85-180 KB, carrying serialized interpreter state from curator
+  // sandbox sessions. Refusing pathless files removes that exposure — this
+  // branch is part of the fix, not only a cost.
+  {
+    fields: {
+      Status: "Ready",
+      name: "repl_state.b64",
+      mime_type: "text/plain",
+      size_bytes: 131072,
+    },
+  },
+  // The real under-review shape: Ready, has a name, no path, no workspace.
   {
     fields: {
       Id: "fl-019ddbdc-f486-0000-0000-000000000000",
