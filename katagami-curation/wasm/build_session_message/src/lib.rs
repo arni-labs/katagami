@@ -824,17 +824,54 @@ fn load_instruction_doc(
     ))
 }
 
+/// The directory the app installs its own copy of the curator skills into.
+/// Refreshed on every app install, which is what makes it the one to prefer.
+const APP_SHIPPED_AGENT: &str = "curator";
+
+/// `/agents/<whatever>/skills/x/SKILL.md` -> `skills/x/SKILL.md`.
+///
+/// The agent directory is the part that varies between the app-shipped copy
+/// and a per-soul bootstrap snapshot; the tail is what actually names the
+/// skill, so it is the part worth keeping.
+fn agent_relative_tail(path: &str) -> Option<&str> {
+    let rest = path.strip_prefix("/agents/")?;
+    let (_agent_dir, tail) = rest.split_once('/')?;
+    if tail.is_empty() {
+        return None;
+    }
+    Some(tail)
+}
+
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
     // The app-shipped skill comes FIRST: it is refreshed on every app install,
     // so sessions always read the deployed version. The per-soul bootstrap
     // copy is a one-time snapshot that installs never update — preferring it
     // had every session reading a stale skill long after the app moved on.
     // It remains only as a fallback for skills the app does not ship.
-    let mut candidates = vec![configured_path.to_string()];
-    if let Some(rest) = configured_path.strip_prefix("/agents/curator/") {
-        candidates.push(format!("/agents/{stable_soul_id}/{rest}"));
+    //
+    // The preference is derived from the SKILL, not from the spelling of the
+    // configured path. The previous version only added the fallback when the
+    // path already began `/agents/curator/`, so a template configured with a
+    // bootstrap-snapshot path produced exactly one candidate — the snapshot —
+    // and the app-shipped copy was never even tried. Every seeded template in
+    // `seed-data/job_templates.toml` was configured that way, so the
+    // preference this function documents had never once applied in practice.
+    //
+    // Now any `/agents/<dir>/<tail>` path yields the same ordered pair: the
+    // app copy of `<tail>`, then the soul snapshot of `<tail>`. A path that
+    // names no agent directory is used as given.
+    let mut candidates: Vec<String> = Vec::new();
+    let push = |candidates: &mut Vec<String>, candidate: String| {
+        if !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    };
+
+    if let Some(tail) = agent_relative_tail(configured_path) {
+        push(&mut candidates, format!("/agents/{APP_SHIPPED_AGENT}/{tail}"));
+        push(&mut candidates, format!("/agents/{stable_soul_id}/{tail}"));
     }
-    candidates.dedup();
+    push(&mut candidates, configured_path.to_string());
     candidates
 }
 
@@ -968,18 +1005,62 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
         ),
     ];
 
+    knowledge_read_specs_for_known_skill(skill).unwrap_or(FULL_CURATION_KNOWLEDGE)
+}
+
+/// The knowledge a NAMED skill reads, or `None` when the app ships no such
+/// skill.
+///
+/// Split out from [`knowledge_read_specs_for_skill`] so that a skill name
+/// nobody ships is distinguishable from one that deliberately reads the whole
+/// corpus. It used to be a `_ =>` arm, which meant a misspelled skill silently
+/// got the corpus — and the parity test below asserted against
+/// `"review-language"`, a skill that does not exist, so it was really only
+/// asserting that the wildcard existed. It passed for two months while
+/// checking nothing.
+///
+/// Callers still fall back to the full corpus, so an unrecognised skill loses
+/// no context at runtime; the difference is that a typo is now findable.
+fn knowledge_read_specs_for_known_skill(
+    skill: &str,
+) -> Option<&'static [(&'static str, &'static str)]> {
+    const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
+        (
+            "/system/knowledge/design-principles.md",
+            "embodiment standards",
+        ),
+        (
+            "/system/knowledge/quality-standards.md",
+            "quality thresholds",
+        ),
+        (
+            "/system/knowledge/feedback-log.md",
+            "human feedback to incorporate",
+        ),
+    ];
+
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
-        "research-direction" => &[],
+        "research-direction" => Some(&[]),
         // Instruction PARITY with the native bake-off harnesses (owner
         // decision, 2026-07-24): synthesis gets exactly what a bake-off model
         // gets — the brief, the taste rulebook, and the skill. No auxiliary
         // corpus compensating for harness limits; harness flaws are fixed in
         // the harness.
-        "synthesize-language" => &[],
-        _ => FULL_CURATION_KNOWLEDGE,
+        "synthesize-language" => Some(&[]),
+        // Everything else the app ships reads the full curation corpus. Listed
+        // by name rather than caught by a wildcard, so that adding a skill is
+        // a decision about what it should read.
+        "review-quality"
+        | "organize-taxonomy"
+        | "taste-distillation"
+        | "synthesize-palette"
+        | "synthesize-art-style"
+        | "synthesize-writing-style"
+        | "immersive-landing" => Some(FULL_CURATION_KNOWLEDGE),
+        _ => None,
     }
 }
 
@@ -1201,7 +1282,8 @@ mod tests {
 
     use super::{
         completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
-        instruction_path_candidates, knowledge_read_specs_for_skill,
+        instruction_path_candidates, knowledge_read_specs_for_known_skill,
+        knowledge_read_specs_for_skill,
         normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
         render_reference_instruction_block, temper_read_command, LoadedDoc,
     };
@@ -1312,12 +1394,138 @@ mod tests {
     fn synthesis_prompt_has_instruction_parity_with_bakeoff_harnesses() {
         // Owner decision 2026-07-24: synthesis gets brief + rulebook + skill,
         // nothing else — the same instruction surface the native bake-off
-        // harnesses give. Review/other skills keep the curation corpus.
+        // harnesses give. Review keeps the curation corpus.
+        //
+        // The third assertion used to name "review-language", which is not a
+        // skill this app ships. It fell through the old `_ =>` wildcard to the
+        // full corpus and passed while checking nothing. The real skill is
+        // "review-quality".
         assert!(knowledge_read_specs_for_skill("research-direction").is_empty());
         assert!(knowledge_read_specs_for_skill("synthesize-language").is_empty());
-        assert!(knowledge_read_specs_for_skill("review-language")
+        assert!(knowledge_read_specs_for_skill("review-quality")
             .iter()
             .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
+    }
+
+    #[test]
+    fn a_skill_the_app_does_not_ship_is_not_silently_treated_as_one() {
+        // The property that makes the test above mean something.
+        assert!(knowledge_read_specs_for_known_skill("review-language").is_none());
+        assert!(knowledge_read_specs_for_known_skill("").is_none());
+        assert!(knowledge_read_specs_for_known_skill("review-quality").is_some());
+
+        // Runtime behaviour is unchanged for an unknown skill: it still gets
+        // the full corpus rather than nothing.
+        assert_eq!(
+            knowledge_read_specs_for_skill("review-language").len(),
+            knowledge_read_specs_for_skill("review-quality").len()
+        );
+    }
+
+    /// The templates as actually seeded. Compiled in, so the test cannot drift
+    /// away from the file the deploy reads.
+    const SEEDED_JOB_TEMPLATES: &str =
+        include_str!("../../../seed-data/job_templates.toml");
+
+    fn seeded_instruction_paths() -> Vec<String> {
+        SEEDED_JOB_TEMPLATES
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let value = line.strip_prefix("instruction_path")?.trim_start();
+                let value = value.strip_prefix('=')?.trim();
+                Some(value.trim_matches('"').to_string())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn every_seeded_template_resolves_the_app_shipped_skill_first() {
+        // The bug this file exists to prevent: a template configured with a
+        // bootstrap-snapshot path produced that path as its ONLY candidate, so
+        // every session read a skill frozen at install time while the app
+        // shipped newer ones. Walking the real seeded paths is the only way to
+        // notice — the unit test above passed throughout, because it fed in a
+        // path shape the seeds never used.
+        let paths = seeded_instruction_paths();
+        assert!(
+            !paths.is_empty(),
+            "no instruction_path entries parsed out of job_templates.toml"
+        );
+
+        for path in &paths {
+            let candidates =
+                instruction_path_candidates(path, "sl-bootstrap-agent-soul-curator");
+
+            assert!(
+                candidates[0].starts_with("/agents/curator/"),
+                "template '{path}' resolves '{}' first; the app-shipped copy must win",
+                candidates[0]
+            );
+            assert!(
+                candidates.len() > 1,
+                "template '{path}' has no fallback candidate at all"
+            );
+            assert!(
+                candidates
+                    .iter()
+                    .any(|c| c.starts_with("/agents/sl-bootstrap-agent-soul-curator/")),
+                "template '{path}' keeps no bootstrap fallback: {candidates:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn no_seeded_template_points_at_a_bootstrap_snapshot() {
+        for path in seeded_instruction_paths() {
+            assert!(
+                !path.contains("/agents/sl-bootstrap-agent-soul-"),
+                "seeded template still points at a bootstrap snapshot: {path}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_seeded_skill_is_one_the_app_actually_ships() {
+        // A template naming a skill nobody ships would have taken the old
+        // wildcard and looked fine.
+        for path in seeded_instruction_paths() {
+            let skill = path
+                .strip_prefix("/agents/curator/skills/")
+                .and_then(|rest| rest.split('/').next())
+                .unwrap_or_else(|| panic!("unexpected instruction_path shape: {path}"));
+            assert!(
+                knowledge_read_specs_for_known_skill(skill).is_some(),
+                "seeded template names '{skill}', which the app does not ship"
+            );
+        }
+    }
+
+    #[test]
+    fn a_snapshot_configured_template_still_prefers_the_app_copy() {
+        // The exact shape every seeded template used before this fix. Kept as a
+        // regression: reconfigured entities in a deployed tenant can still
+        // carry it, and it must resolve forward rather than pinning.
+        let candidates = instruction_path_candidates(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            "sl-bootstrap-agent-soul-curator",
+        );
+        assert_eq!(
+            candidates,
+            vec![
+                "/agents/curator/skills/review-quality/SKILL.md".to_string(),
+                "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
+                    .to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_path_outside_the_agents_tree_is_used_as_given() {
+        assert_eq!(
+            instruction_path_candidates("/system/knowledge/design-principles.md", "soul-x"),
+            vec!["/system/knowledge/design-principles.md".to_string()]
+        );
     }
 
     #[test]
