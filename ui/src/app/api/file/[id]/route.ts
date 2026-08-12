@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isPubliclyReadableFile } from "@/lib/file-visibility";
+import { isPubliclyServableFile } from "@/lib/file-visibility";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
@@ -176,11 +176,14 @@ export async function GET(
   const fetchHeaders: Record<string, string> = { "X-Tenant-Id": TENANT };
   if (API_KEY) fetchHeaders["Authorization"] = `Bearer ${API_KEY}`;
 
-  // PawFS retains archived bytes for governed recovery, but Archived is a
-  // terminal public-revocation state. Always resolve the current projection
-  // before fetching bytes and fail closed for Created, Archived, malformed, or
-  // unavailable records. An authenticated server-side proxy must not turn
-  // backend retention into public access.
+  // This proxy holds the app's credential, so whatever it agrees to fetch is
+  // public. Resolve the file's projection first and serve bytes only for files
+  // that sit on a known public surface — see `isPubliclyServableFile`. State
+  // alone is not a permission: PawFS retains archived bytes for governed
+  // recovery, and `Ready` is equally true of every agent skill in the tenant.
+  // Fail closed for Created, Archived, off-surface, malformed, or unavailable
+  // records. An authenticated server-side proxy must not turn backend retention
+  // or backend storage into public access.
   const metadataRes = await fetch(`${API_BASE}/tdata/Files('${id}')`, {
     headers: fetchHeaders,
     cache: "no-store",
@@ -193,7 +196,9 @@ export async function GET(
       metadata = null;
     }
   }
-  if (!metadataRes.ok || !isPubliclyReadableFile(metadata)) {
+  // 404, never 403. A distinguishable "exists but forbidden" would let anyone
+  // enumerate real ids, and ids here are deterministic enough to guess.
+  if (!metadataRes.ok || !isPubliclyServableFile(metadata)) {
     return NextResponse.json(
       { error: "File not found" },
       {
@@ -209,10 +214,10 @@ export async function GET(
   });
 
   if (!res.ok) {
-    return NextResponse.json(
-      { error: "File not found" },
-      { status: res.status },
-    );
+    // Collapse the upstream status too. Passing a 401/403 straight through
+    // would tell a caller that the id exists and is merely protected, which is
+    // the same disclosure the gate above refuses to make.
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 
   const upstreamType = res.headers.get("content-type") || "";
