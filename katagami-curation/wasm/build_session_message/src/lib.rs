@@ -19,6 +19,9 @@ struct JobTemplate {
 struct LoadedDoc {
     path: String,
     workspace_id: String,
+    /// The file the path resolved to. Kept so a lower-priority copy of the
+    /// same skill can be compared against the one that won.
+    file_id: String,
     content: Option<String>,
 }
 
@@ -811,9 +814,19 @@ fn load_instruction_doc(
 ) -> Result<LoadedDoc, String> {
     let candidates = instruction_path_candidates(configured_path, stable_soul_id);
     let mut errors = Vec::new();
-    for path in &candidates {
+    for (index, path) in candidates.iter().enumerate() {
         match load_doc_file(ctx, api_url, headers, path, inline_content) {
-            Ok(doc) => return Ok(doc),
+            Ok(doc) => {
+                warn_on_shadowed_instruction_copies(
+                    ctx,
+                    api_url,
+                    headers,
+                    &candidates[index + 1..],
+                    path,
+                    &doc.file_id,
+                );
+                return Ok(doc);
+            }
             Err(error) => errors.push(format!("{path}: {error}")),
         }
     }
@@ -824,17 +837,314 @@ fn load_instruction_doc(
     ))
 }
 
+/// Name every copy of the skill that lost, so an install cannot be ignored in
+/// silence.
+///
+/// The ordering below prefers the app-shipped copy, which is right for staleness
+/// and wrong for one case: `paw-skills`' agent-scoped install writes to
+/// `/agents/<agent-id>/skills/<slug>/SKILL.md` — a soul path. An operator who
+/// installs a corrected skill there gets a successful action, and every job
+/// afterwards keeps reading the app copy. That is precisely the shape of the
+/// workspace_fs shadowing bug, where an archived file masked a live one for
+/// months because nothing ever said which file had been chosen.
+///
+/// So whenever a candidate wins, the remaining candidates are resolved too, and
+/// a DIFFERENT file at a lower-priority path is reported at warn level with both
+/// paths and both file ids. The app copy still wins — that is the documented
+/// semantics, and it is what keeps a stale bootstrap snapshot from pinning a
+/// session — but choosing it is now an event somebody can see and act on.
+///
+/// Cost: one `ResolvePath` per lower-priority candidate — one in the ordinary
+/// case — plus one `Files('<id>')` row read each. The winning copy adds nothing,
+/// because `load_doc_file` already resolved it and its id is passed straight in.
+/// `ResolvePath` measured 581–1126ms in `.proofs/perf-036`, against a job that
+/// then runs an LLM session for minutes. Detecting a shadowed install cannot be
+/// done without looking for it, and a silent wrong skill is more expensive than
+/// a second of latency.
+///
+/// Every hash compared here comes from an id produced by that same resolver,
+/// scoped to `DOC_WORKSPACE_ID` — never from a path query. `Path` is not unique
+/// and a path listing spans workspaces, so comparing by path compares files no
+/// session would ever load. See `doc_content_hash`.
+///
+/// Which lower-priority copies are actually shadowing something.
+///
+/// Pure, so the decision can be tested without a server — and so that the
+/// decision is a thing somebody can look at. The first version compared FILE
+/// IDS, which are per-entity: two paths are two File entities, so the ids
+/// always differ and the warning fired on every job, for every template,
+/// forever. A signal that is always on is not a signal; the runbook's own query
+/// would have returned a hit whether or not anyone had installed anything,
+/// training the reader to ignore the one line that matters. That is how the
+/// original shadowing bug survived as long as it did.
+///
+/// `content_hash` answers the actual question — is a DIFFERENT skill being
+/// ignored? — and it is a first-class state field on the File entity
+/// (`paw-fs/specs/file.ioa.toml`, alongside `size_bytes` and `version_count`),
+/// readable from the row without fetching any body.
+///
+/// `None` means "could not be determined": either no file at that path, or the
+/// metadata read failed. Neither is evidence of a different skill sitting
+/// there, so neither warns.
+fn shadowed_paths<'a>(
+    winner_hash: Option<&str>,
+    lower_priority: &'a [(String, Option<String>)],
+) -> Vec<&'a str> {
+    let Some(winner_hash) = winner_hash else {
+        // Nothing to compare against; "shadowed" here would be a guess.
+        return Vec::new();
+    };
+    lower_priority
+        .iter()
+        .filter_map(|(path, hash)| match hash.as_deref() {
+            Some(hash) if hash != winner_hash => Some(path.as_str()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// `content_hash` as a `File` row spells it: nested under `fields`, snake_case.
+///
+/// Probed against openpaw-production, tenant `default`, on 2026-08-12, on both
+/// shapes this module can see — the `$filter` listing in `doc_content_hash`
+/// below, and a single-entity `GET /tdata/Files('<id>')`. Both nest it as
+/// `fields.content_hash`. Neither carries a top-level `ContentHash` or a
+/// top-level `content_hash`, so the top-level fallback this function used to
+/// keep was dead on every response the server actually returns; it is gone
+/// rather than left to read as a verified alternative shape.
+///
+/// `fields` mixes cases and the mix is not arbitrary: `Id`/`Name`/`Path`/
+/// `Status` come back PascalCase, while the entity's own state vars —
+/// `content_hash`, `size_bytes`, `version_count` — are snake_case. Read the
+/// snake_case spelling for anything declared in `paw-fs/specs/file.ioa.toml`.
+fn content_hash_from_file_row(row: &serde_json::Value) -> Option<String> {
+    row.get("fields")
+        .and_then(|fields| fields.get("content_hash"))
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
+}
+
+/// The content hash of one specific `File`, read by id.
+///
+/// By id, never by path. A path is not a key here: `Path` is not unique, and a
+/// `$filter=Path eq '…'` listing spans workspaces, so it can hand back a file
+/// the session never opened. Everything this check compares is therefore keyed
+/// on an id that came out of the same resolver the loader used.
+///
+/// **Do not add `$select`.** Without it the server returns the entity envelope —
+/// `{"fields": {...}, "counters": {...}, ...}` — which is what
+/// `content_hash_from_file_row` reads, and what `lookup_active_template` already
+/// relies on for `CurationJobTemplates`. `$select` projects properties instead
+/// and yields a flattened row (`{"Path": …, "WorkspaceId": …, "Id": …}`) with no
+/// `fields` object. Nothing would error on that: the hash would read as `None`
+/// everywhere, `shadowed_paths` would compare nothing, and shadow detection
+/// would switch off in silence. (The envelope shape is measured — 2026-08-12,
+/// see `content_hash_from_file_row`; the flattened `$select` shape is carried
+/// over from the ARN-305 probe notes and is not re-measured here.)
+///
+/// `Ok(None)` is a genuine miss — no such file. `Err` is a failure to find out,
+/// which must not be reported as either a miss or a match.
+fn file_content_hash(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    file_id: &str,
+) -> Result<Option<String>, String> {
+    let quoted = file_id.replace('\'', "''");
+    let resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files('{quoted}')"),
+            headers,
+            "",
+        )
+        .map_err(|err| format!("Files read failed for id '{file_id}': {err}"))?;
+    if resp.status == 404 {
+        return Ok(None);
+    }
+    if resp.status != 200 {
+        return Err(format!(
+            "Files read returned HTTP {} for id '{file_id}'",
+            resp.status
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|err| format!("Files read returned invalid JSON for id '{file_id}': {err}"))?;
+    Ok(content_hash_from_file_row(&parsed))
+}
+
+/// The content hash of whatever `path` resolves to **inside the doc workspace**.
+///
+/// This asks the question the loader asks, and that is the entire point: it
+/// resolves through `ResolvePath` scoped to `DOC_WORKSPACE_ID`, exactly as
+/// `load_doc_file` does, then reads the hash of that id. So the file compared is
+/// by construction the file a session would have loaded from this path.
+///
+/// The earlier version filtered `Files` on `Path` alone. That was unscoped and
+/// `Path` is not unique, so it compared across workspaces: measured on
+/// openpaw-production 2026-08-12, `/agents/curator/skills/review-quality/SKILL.md`
+/// returns two `File` entities (one in `os-app-docs`, one in `ws-019de271-…`)
+/// and the matching soul path returns three, two of them inside `os-app-docs`.
+/// Taking the first row of an unordered list read the winner's hash out of a
+/// workspace the session never touched, so it never matched and the warning
+/// fired on every job — the always-on signal that comparing hashes instead of
+/// ids was meant to end. Scoping the filter to the workspace would not have been
+/// enough either, because the soul path has two entities within `os-app-docs`;
+/// only the resolver disambiguates them.
+///
+/// `Ok(None)` means nothing resolves at that path in the doc workspace, which is
+/// a miss and never a warning.
+fn doc_content_hash(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Result<Option<String>, String> {
+    match resolve_doc_file_id_opt(ctx, api_url, headers, path)? {
+        Some(file_id) => file_content_hash(ctx, api_url, headers, &file_id),
+        None => Ok(None),
+    }
+}
+
+fn warn_on_shadowed_instruction_copies(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    lower_priority: &[String],
+    winning_path: &str,
+    winning_file_id: &str,
+) {
+    if lower_priority.is_empty() {
+        return;
+    }
+
+    // The winner is read by the id the loader already resolved, so it costs no
+    // extra ResolvePath and is by construction the file this session opened —
+    // there is no second lookup that could disagree with the load.
+    let winner_hash = match file_content_hash(ctx, api_url, headers, winning_file_id) {
+        Ok(hash) => hash,
+        Err(error) => {
+            // A failure to look is not a clean bill of health. Going quiet here
+            // is how a shadowed install during FS flakiness disappears without
+            // leaving a trace of the fact that nobody checked.
+            ctx.log(
+                "debug",
+                &format!(
+                    "build_session_message: shadow check skipped — could not read the content \
+                     hash of the winning copy. path='{winning_path}' \
+                     file_id='{winning_file_id}' error='{error}'"
+                ),
+            );
+            return;
+        }
+    };
+
+    let mut probed: Vec<(String, Option<String>)> = Vec::new();
+    for path in lower_priority {
+        match doc_content_hash(ctx, api_url, headers, path) {
+            Ok(hash) => probed.push((path.clone(), hash)),
+            Err(error) => {
+                ctx.log(
+                    "debug",
+                    &format!(
+                        "build_session_message: shadow check incomplete — could not read the \
+                         content hash of a lower-priority copy, so a shadowed install there \
+                         would go unreported. path='{path}' error='{error}'"
+                    ),
+                );
+                probed.push((path.clone(), None));
+            }
+        }
+    }
+
+    for path in shadowed_paths(winner_hash.as_deref(), &probed) {
+        ctx.log(
+            "warn",
+            &format!(
+                "build_session_message: instruction doc SHADOWED. A file with DIFFERENT content \
+                 exists at a lower-priority path and is NOT being used. \
+                 used_path='{winning_path}' used_hash='{}' shadowed_path='{path}' \
+                 workspace='{DOC_WORKSPACE_ID}'. The app-shipped copy wins by design, so that a \
+                 one-time bootstrap snapshot cannot pin a session to a stale skill. If you \
+                 installed a skill at the shadowed path and meant it to take effect, install it \
+                 to the app path instead, or reconfigure the template's instruction_path.",
+                winner_hash.as_deref().unwrap_or("")
+            ),
+        );
+    }
+}
+
+/// The directory the app installs its own copy of the curator skills into.
+/// Refreshed on every app install, which is what makes it the one to prefer.
+///
+/// Verified against the live tenant on 2026-08-12 (openpaw-production, tenant
+/// `default`, workspace `os-app-docs`): the app path carries materially more
+/// versions than the soul snapshot of the same skill — review-quality 17 vs 10,
+/// synthesize-language 9 vs 2 — with identical bytes at the time of the probe.
+/// So the two copies do drift apart in refresh rate, and preferring the app copy
+/// is not a no-op. See `docs/runbooks/arn-305-template-skill-paths.md` for how
+/// to re-run that check.
+const APP_SHIPPED_AGENT: &str = "curator";
+
+/// `/agents/<whatever>/skills/x/SKILL.md` -> `skills/x/SKILL.md`.
+///
+/// The agent directory is the part that varies between the app-shipped copy
+/// and a per-soul bootstrap snapshot; the tail is what actually names the
+/// skill, so it is the part worth keeping.
+fn agent_relative_tail(path: &str) -> Option<&str> {
+    let rest = path.strip_prefix("/agents/")?;
+    let (_agent_dir, tail) = rest.split_once('/')?;
+    if tail.is_empty() {
+        return None;
+    }
+    Some(tail)
+}
+
 fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> Vec<String> {
     // The app-shipped skill comes FIRST: it is refreshed on every app install,
     // so sessions always read the deployed version. The per-soul bootstrap
     // copy is a one-time snapshot that installs never update — preferring it
     // had every session reading a stale skill long after the app moved on.
     // It remains only as a fallback for skills the app does not ship.
-    let mut candidates = vec![configured_path.to_string()];
-    if let Some(rest) = configured_path.strip_prefix("/agents/curator/") {
-        candidates.push(format!("/agents/{stable_soul_id}/{rest}"));
+    //
+    // The preference is derived from the SKILL, not from the spelling of the
+    // configured path. The previous version only added the fallback when the
+    // path already began `/agents/curator/`, so a template configured with a
+    // bootstrap-snapshot path produced exactly one candidate — the snapshot —
+    // and the app-shipped copy was never even tried. Every seeded template in
+    // `seed-data/job_templates.toml` was configured that way, so the
+    // preference this function documents had never once applied in practice.
+    //
+    // Now any `/agents/<dir>/<tail>` path yields the same ordered pair: the
+    // app copy of `<tail>`, then the soul snapshot of `<tail>`. A path that
+    // names no agent directory is used as given.
+    let mut candidates: Vec<String> = Vec::new();
+    let push = |candidates: &mut Vec<String>, candidate: String| {
+        if !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    };
+
+    if let Some(tail) = agent_relative_tail(configured_path) {
+        push(&mut candidates, format!("/agents/{APP_SHIPPED_AGENT}/{tail}"));
+        push(&mut candidates, format!("/agents/{stable_soul_id}/{tail}"));
+        push(&mut candidates, configured_path.to_string());
+        // A soul-INDEPENDENT last resort.
+        //
+        // The old seed hardcoded the bootstrap soul in every template, so a job
+        // running under any soul_id still resolved that one fixed path.
+        // Deriving the fallback from the job's own soul_id narrows that: a job
+        // with an unusual soul_id, on a tenant where the app copy is missing,
+        // would be left with nothing to try — a hard failure where the old
+        // spelling succeeded. Naming the bootstrap soul explicitly at the end
+        // keeps that door open. It costs nothing when it duplicates one of the
+        // candidates above, which it does for the default soul.
+        let bootstrap_soul = normalize_bootstrapped_soul_id(APP_SHIPPED_AGENT);
+        push(&mut candidates, format!("/agents/{bootstrap_soul}/{tail}"));
+    } else {
+        push(&mut candidates, configured_path.to_string());
     }
-    candidates.dedup();
     candidates
 }
 
@@ -855,16 +1165,25 @@ fn load_doc_file(
     Ok(LoadedDoc {
         path: path.to_string(),
         workspace_id: DOC_WORKSPACE_ID.to_string(),
+        file_id,
         content,
     })
 }
 
-fn resolve_doc_file_id(
+/// Resolve `path` within `DOC_WORKSPACE_ID`, distinguishing "nothing there"
+/// from "could not find out".
+///
+/// A 200 that names no matching file is a real answer: the doc workspace has
+/// nothing at that exact path. A transport or status failure is not an answer at
+/// all. The shadow check needs to tell those apart — a path that simply has no
+/// lower-priority copy is the ordinary case and must stay quiet, while a failed
+/// lookup means nobody checked and has to say so.
+fn resolve_doc_file_id_opt(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     path: &str,
-) -> Result<String, String> {
+) -> Result<Option<String>, String> {
     let resp = ctx
         .http_call(
             "POST",
@@ -884,7 +1203,16 @@ fn resolve_doc_file_id(
     }
     let parsed: serde_json::Value = serde_json::from_str(&resp.body)
         .map_err(|err| format!("ResolvePath returned invalid JSON for '{path}': {err}"))?;
-    file_id_from_workspace_response(&parsed, path).ok_or_else(|| {
+    Ok(file_id_from_workspace_response(&parsed, path))
+}
+
+fn resolve_doc_file_id(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Result<String, String> {
+    resolve_doc_file_id_opt(ctx, api_url, headers, path)?.ok_or_else(|| {
         format!("ResolvePath did not return a file id for exact path '{path}' in workspace '{DOC_WORKSPACE_ID}'")
     })
 }
@@ -952,34 +1280,68 @@ fn temper_read_command(path: &str, loaded: Option<&LoadedDoc>) -> String {
     }
 }
 
-fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'static str)] {
-    const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
-        (
-            "/system/knowledge/design-principles.md",
-            "embodiment standards",
-        ),
-        (
-            "/system/knowledge/quality-standards.md",
-            "quality thresholds",
-        ),
-        (
-            "/system/knowledge/feedback-log.md",
-            "human feedback to incorporate",
-        ),
-    ];
+/// The curation corpus a skill reads unless it has a reason not to.
+///
+/// One definition. It was declared separately inside two functions, byte for
+/// byte, so the two could have drifted apart without any test noticing — the
+/// only test comparing them compared their lengths.
+const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
+    (
+        "/system/knowledge/design-principles.md",
+        "embodiment standards",
+    ),
+    (
+        "/system/knowledge/quality-standards.md",
+        "quality thresholds",
+    ),
+    (
+        "/system/knowledge/feedback-log.md",
+        "human feedback to incorporate",
+    ),
+];
 
+fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'static str)] {
+    knowledge_read_specs_for_known_skill(skill).unwrap_or(FULL_CURATION_KNOWLEDGE)
+}
+
+/// The knowledge a NAMED skill reads, or `None` when the app ships no such
+/// skill.
+///
+/// Split out from [`knowledge_read_specs_for_skill`] so that a skill name
+/// nobody ships is distinguishable from one that deliberately reads the whole
+/// corpus. It used to be a `_ =>` arm, which meant a misspelled skill silently
+/// got the corpus — and the parity test below asserted against
+/// `"review-language"`, a skill that does not exist, so it was really only
+/// asserting that the wildcard existed. It passed for two months while
+/// checking nothing.
+///
+/// Callers still fall back to the full corpus, so an unrecognised skill loses
+/// no context at runtime; the difference is that a typo is now findable.
+fn knowledge_read_specs_for_known_skill(
+    skill: &str,
+) -> Option<&'static [(&'static str, &'static str)]> {
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
         // review; loading them here adds turns and context without helping.
-        "research-direction" => &[],
+        "research-direction" => Some(&[]),
         // Instruction PARITY with the native bake-off harnesses (owner
         // decision, 2026-07-24): synthesis gets exactly what a bake-off model
         // gets — the brief, the taste rulebook, and the skill. No auxiliary
         // corpus compensating for harness limits; harness flaws are fixed in
         // the harness.
-        "synthesize-language" => &[],
-        _ => FULL_CURATION_KNOWLEDGE,
+        "synthesize-language" => Some(&[]),
+        // Everything else the app ships reads the full curation corpus. Listed
+        // by name rather than caught by a wildcard, so that adding a skill is
+        // a decision about what it should read.
+        "review-quality"
+        | "organize-taxonomy"
+        | "taste-distillation"
+        | "synthesize-palette"
+        | "synthesize-art-style"
+        | "synthesize-writing-style"
+        | "immersive-landing" => Some(FULL_CURATION_KNOWLEDGE),
+        _ => None,
     }
 }
 
@@ -1201,9 +1563,11 @@ mod tests {
 
     use super::{
         completion_params_block, config_bool, field_bool, file_id_from_workspace_response,
-        instruction_path_candidates, knowledge_read_specs_for_skill,
+        content_hash_from_file_row, instruction_path_candidates,
+        knowledge_read_specs_for_known_skill,
+        knowledge_read_specs_for_skill,
         normalize_bootstrapped_soul_id, parse_template, render_loaded_reference_block,
-        render_reference_instruction_block, temper_read_command, LoadedDoc,
+        render_reference_instruction_block, shadowed_paths, temper_read_command, LoadedDoc,
     };
 
     #[test]
@@ -1282,6 +1646,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: None,
         };
 
@@ -1312,12 +1677,397 @@ mod tests {
     fn synthesis_prompt_has_instruction_parity_with_bakeoff_harnesses() {
         // Owner decision 2026-07-24: synthesis gets brief + rulebook + skill,
         // nothing else — the same instruction surface the native bake-off
-        // harnesses give. Review/other skills keep the curation corpus.
+        // harnesses give. Review keeps the curation corpus.
+        //
+        // The third assertion used to name "review-language", which is not a
+        // skill this app ships. It fell through the old `_ =>` wildcard to the
+        // full corpus and passed while checking nothing. The real skill is
+        // "review-quality".
         assert!(knowledge_read_specs_for_skill("research-direction").is_empty());
         assert!(knowledge_read_specs_for_skill("synthesize-language").is_empty());
-        assert!(knowledge_read_specs_for_skill("review-language")
+        assert!(knowledge_read_specs_for_skill("review-quality")
             .iter()
             .any(|(path, _)| *path == "/system/knowledge/design-principles.md"));
+    }
+
+    #[test]
+    fn a_skill_the_app_does_not_ship_is_not_silently_treated_as_one() {
+        // The property that makes the test above mean something.
+        assert!(knowledge_read_specs_for_known_skill("review-language").is_none());
+        assert!(knowledge_read_specs_for_known_skill("").is_none());
+        assert!(knowledge_read_specs_for_known_skill("review-quality").is_some());
+
+        // Runtime behaviour is unchanged for an unknown skill: it still gets
+        // the full corpus rather than nothing.
+        assert_eq!(
+            knowledge_read_specs_for_skill("review-language").len(),
+            knowledge_read_specs_for_skill("review-quality").len()
+        );
+    }
+
+    /// The templates as actually seeded. Compiled in, so the test cannot drift
+    /// away from the file the deploy reads.
+    const SEEDED_JOB_TEMPLATES: &str =
+        include_str!("../../../seed-data/job_templates.toml");
+
+    /// `skill_id = "x"` values, in file order — the field the runtime actually
+    /// uses to choose knowledge, which is why it is read rather than inferred.
+    fn seeded_skill_ids() -> Vec<String> {
+        SEEDED_JOB_TEMPLATES
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let value = line.strip_prefix("skill_id")?.trim_start();
+                let value = value.strip_prefix('=')?.trim();
+                Some(value.trim_matches('"').to_string())
+            })
+            .collect()
+    }
+
+    fn seeded_instruction_paths() -> Vec<String> {
+        SEEDED_JOB_TEMPLATES
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let value = line.strip_prefix("instruction_path")?.trim_start();
+                let value = value.strip_prefix('=')?.trim();
+                Some(value.trim_matches('"').to_string())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn every_seeded_template_resolves_the_app_shipped_skill_first() {
+        // The bug this file exists to prevent: a template configured with a
+        // bootstrap-snapshot path produced that path as its ONLY candidate, so
+        // every session read a skill frozen at install time while the app
+        // shipped newer ones. Walking the real seeded paths is the only way to
+        // notice — the unit test above passed throughout, because it fed in a
+        // path shape the seeds never used.
+        let paths = seeded_instruction_paths();
+        assert!(
+            !paths.is_empty(),
+            "no instruction_path entries parsed out of job_templates.toml"
+        );
+
+        for path in &paths {
+            // Both halves, independently. Asserting only on the seeded spelling
+            // guards the seed and not the resolver: with the seed pointing at
+            // /agents/curator/ the OLD resolver also returns it first, because
+            // it returned the configured path verbatim. Feeding each skill in
+            // BOTH spellings is what makes reverting the resolver fail here.
+            let tail = path
+                .strip_prefix("/agents/curator/")
+                .unwrap_or_else(|| panic!("seeded template is not an app path: {path}"));
+            let snapshot_spelling =
+                format!("/agents/sl-bootstrap-agent-soul-curator/{tail}");
+
+            for spelling in [path.as_str(), snapshot_spelling.as_str()] {
+                let candidates =
+                    instruction_path_candidates(spelling, "sl-bootstrap-agent-soul-curator");
+
+                assert!(
+                    candidates[0].starts_with("/agents/curator/"),
+                    "'{spelling}' resolves '{}' first; the app-shipped copy must win",
+                    candidates[0]
+                );
+                assert_eq!(
+                    candidates[0],
+                    format!("/agents/curator/{tail}"),
+                    "'{spelling}' resolved a different skill than it names"
+                );
+                assert!(
+                    candidates
+                        .iter()
+                        .any(|c| c.starts_with("/agents/sl-bootstrap-agent-soul-curator/")),
+                    "'{spelling}' keeps no bootstrap fallback: {candidates:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_job_under_an_unusual_soul_keeps_a_soul_independent_fallback() {
+        // The old seed hardcoded the bootstrap soul, so any job resolved that
+        // one fixed path. Deriving the fallback from the job's soul_id alone
+        // would leave a job with an unusual soul nothing to try if the app copy
+        // were missing — a hard failure where the old spelling succeeded.
+        let candidates = instruction_path_candidates(
+            "/agents/curator/skills/review-quality/SKILL.md",
+            "sl-bootstrap-agent-soul-other",
+        );
+
+        assert_eq!(candidates[0], "/agents/curator/skills/review-quality/SKILL.md");
+        assert!(
+            candidates
+                .iter()
+                .any(|c| c == "/agents/sl-bootstrap-agent-soul-other/skills/review-quality/SKILL.md"),
+            "the job's own soul must still be tried: {candidates:?}"
+        );
+        assert!(
+            candidates.iter().any(
+                |c| c == "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
+            ),
+            "the soul-independent bootstrap copy must remain reachable: {candidates:?}"
+        );
+    }
+
+    #[test]
+    fn no_seeded_template_points_at_a_bootstrap_snapshot() {
+        for path in seeded_instruction_paths() {
+            assert!(
+                !path.contains("/agents/sl-bootstrap-agent-soul-"),
+                "seeded template still points at a bootstrap snapshot: {path}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_seeded_skill_id_is_one_the_app_actually_ships() {
+        // Reads `skill_id`, NOT the skill name embedded in instruction_path.
+        // `skill_id` is the field the runtime passes to
+        // knowledge_read_specs_for_skill, so a typo there is exactly the
+        // failure removing the wildcard was meant to expose — and deriving the
+        // name from the path would have missed it, because the path can be
+        // right while the id is wrong.
+        let skills = seeded_skill_ids();
+        assert!(!skills.is_empty(), "no skill_id entries parsed out of job_templates.toml");
+        for skill in skills {
+            assert!(
+                knowledge_read_specs_for_known_skill(&skill).is_some(),
+                "seeded template declares skill_id '{skill}', which the app does not ship"
+            );
+        }
+    }
+
+    #[test]
+    fn every_seeded_skill_id_matches_the_skill_in_its_instruction_path() {
+        // The two are written independently in the toml, so they can disagree.
+        // A job would then load one skill's SKILL.md and another skill's
+        // knowledge.
+        let skills = seeded_skill_ids();
+        let paths = seeded_instruction_paths();
+        // zip() truncates to the shorter side, so without this a template
+        // missing its skill_id would simply drop out of the comparison — and at
+        // runtime an empty skill_id falls through to the full corpus, which is
+        // exactly the failure removing the wildcard was meant to expose.
+        assert_eq!(
+            skills.len(),
+            paths.len(),
+            "every template must declare both a skill_id and an instruction_path"
+        );
+
+        for (skill, path) in skills.iter().zip(paths) {
+            let from_path = path
+                .rsplit('/')
+                .nth(1)
+                .unwrap_or_else(|| panic!("unexpected instruction_path shape: {path}"));
+            assert_eq!(
+                skill, from_path,
+                "skill_id '{skill}' disagrees with its instruction_path '{path}'"
+            );
+        }
+    }
+
+    #[test]
+    fn a_snapshot_configured_template_still_prefers_the_app_copy() {
+        // The exact shape every seeded template used before this fix. Kept as a
+        // regression: reconfigured entities in a deployed tenant can still
+        // carry it, and it must resolve forward rather than pinning.
+        let candidates = instruction_path_candidates(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            "sl-bootstrap-agent-soul-curator",
+        );
+        assert_eq!(
+            candidates,
+            vec![
+                "/agents/curator/skills/review-quality/SKILL.md".to_string(),
+                "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
+                    .to_string(),
+            ]
+        );
+    }
+
+    fn candidate(path: &str, hash: Option<&str>) -> (String, Option<String>) {
+        (path.to_string(), hash.map(|value| value.to_string()))
+    }
+
+    #[test]
+    fn identical_copies_do_not_warn() {
+        // THE regression. The first version compared file ids, which are
+        // per-entity: two paths are two File entities, so the ids always differ
+        // and the warning fired on every job, for every template. The live
+        // probe of 2026-08-12 is exactly this shape — review-quality at 17 and
+        // at 10 versions, same 29,657 bytes, same hash — and it must be silent.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some("sha256:03601d2a5620"),
+        )];
+        assert_eq!(
+            shadowed_paths(Some("sha256:03601d2a5620"), &probed),
+            Vec::<&str>::new()
+        );
+    }
+
+    #[test]
+    fn a_copy_with_different_content_warns() {
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", Some("sha256:bbbb"))];
+        assert_eq!(
+            shadowed_paths(Some("sha256:aaaa"), &probed),
+            vec!["/agents/soul/skills/x/SKILL.md"]
+        );
+    }
+
+    // Real values, read off openpaw-production (tenant `default`) on 2026-08-12
+    // by resolving each path through ResolvePath inside `os-app-docs` — the same
+    // resolver `load_doc_file` uses — and reading `fields.content_hash` of the id
+    // it returned. These are the files a session actually loads, which is why the
+    // hashes below are the ones the check must compare.
+    const APP_REVIEW_QUALITY: &str =
+        "sha256:03601d2a5620b3cce1c16d80540e7434c314f63e910f29b017eb9a6db8bdc4d1";
+    const SOUL_REVIEW_QUALITY: &str =
+        "sha256:b803f8d76cd034e97e372f6c28f3fba23715e4fa00bab133eb0e8ab1aad60b2b";
+    const APP_SYNTHESIZE_LANGUAGE: &str =
+        "sha256:f3b59011e7c77226b313c1d2aa85c95e619ad334bf9f694129fa48275a2e6d14";
+    const SOUL_SYNTHESIZE_LANGUAGE: &str =
+        "sha256:6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a";
+
+    #[test]
+    fn the_deployed_curator_skills_really_are_shadowed() {
+        // Not a hypothetical. Resolved inside `os-app-docs`, the soul paths land
+        // on `os-agent-skill-file-*` entities whose bytes differ from the app
+        // copies the sessions read — review-quality 33,178 vs 29,657 and
+        // synthesize-language 12,037 vs 20,070 — so the warning is TRUE on this
+        // tenant today and must fire. Anyone who expects silence here should read
+        // the runbook: the soul copies are not in sync with the app copies.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(SOUL_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"]
+        );
+
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+            Some(SOUL_SYNTHESIZE_LANGUAGE),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_SYNTHESIZE_LANGUAGE), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md"]
+        );
+    }
+
+    #[test]
+    fn copies_that_genuinely_match_stay_silent() {
+        // The other half of the contract, with a real hash: once a soul copy is
+        // brought back in line with the app copy, the line disappears. Without
+        // this the check could "work" by warning unconditionally.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(APP_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            Vec::<&str>::new()
+        );
+    }
+
+    #[test]
+    fn a_hash_from_another_workspace_is_never_what_gets_compared() {
+        // Regression guard for the defect this replaced. `Path` is not unique:
+        // `/agents/curator/skills/review-quality/SKILL.md` returns two File rows
+        // (os-app-docs `03601d2a…` and ws-019de271 `eb365ca4…`), and the soul
+        // path returns three, two of them inside os-app-docs. A path query taking
+        // the first row fed `eb365ca4…` in as the winner, which never equals the
+        // candidate, so every job warned. Resolving ids gives `03601d2a…`, and
+        // against the matching copy that is silence.
+        const OTHER_WORKSPACE_REVIEW_QUALITY: &str =
+            "sha256:eb365ca4b0c83aac8b720bf46799083db81b541d2fdd5ec15b7c27aa273df60b";
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(APP_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(OTHER_WORKSPACE_REVIEW_QUALITY), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"],
+            "the cross-workspace hash is what produced the always-on warning"
+        );
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            Vec::<&str>::new(),
+            "resolving inside the doc workspace is what makes the signal mean something"
+        );
+    }
+
+    #[test]
+    fn an_absent_copy_does_not_warn() {
+        // A genuine miss is the ordinary case: nothing is being ignored.
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", None)];
+        assert_eq!(shadowed_paths(Some("sha256:aaaa"), &probed), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn an_unreadable_winner_does_not_warn() {
+        // Failing to look is not evidence of shadowing. The caller logs that
+        // failure at debug, so "nobody checked" still leaves a trace.
+        let probed = [candidate("/agents/soul/skills/x/SKILL.md", Some("sha256:bbbb"))];
+        assert_eq!(shadowed_paths(None, &probed), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn several_lower_priority_copies_are_judged_independently() {
+        let probed = [
+            candidate("/a/same", Some("sha256:aaaa")),
+            candidate("/b/different", Some("sha256:bbbb")),
+            candidate("/c/absent", None),
+            candidate("/d/also-different", Some("sha256:cccc")),
+        ];
+        assert_eq!(
+            shadowed_paths(Some("sha256:aaaa"), &probed),
+            vec!["/b/different", "/d/also-different"]
+        );
+    }
+
+    #[test]
+    fn no_lower_priority_copies_means_nothing_to_report() {
+        assert_eq!(shadowed_paths(Some("sha256:aaaa"), &[]), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn content_hash_is_read_from_the_shape_the_server_returns() {
+        assert_eq!(
+            content_hash_from_file_row(&json!({"fields": {"content_hash": "sha256:aaaa"}})),
+            Some("sha256:aaaa".to_string())
+        );
+        // A flattened row is what `$select` would produce, and it carries no
+        // hash. `None` here is the honest answer — the alternative, a top-level
+        // fallback, was dead against the live server (probe 2026-08-12) and
+        // would have made a `$select` regression look like a working check.
+        assert_eq!(
+            content_hash_from_file_row(&json!({"ContentHash": "sha256:bbbb"})),
+            None
+        );
+        assert_eq!(
+            content_hash_from_file_row(&json!({"Path": "/p", "content_hash": "sha256:cccc"})),
+            None
+        );
+        assert_eq!(content_hash_from_file_row(&json!({"fields": {}})), None);
+        // An empty hash is not a hash. Treating it as one would make every
+        // other empty-hash row look identical to it.
+        assert_eq!(
+            content_hash_from_file_row(&json!({"fields": {"content_hash": ""}})),
+            None
+        );
+    }
+
+    #[test]
+    fn a_path_outside_the_agents_tree_is_used_as_given() {
+        assert_eq!(
+            instruction_path_candidates("/system/knowledge/design-principles.md", "soul-x"),
+            vec!["/system/knowledge/design-principles.md".to_string()]
+        );
     }
 
     #[test]
@@ -1351,6 +2101,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: None,
         };
 
@@ -1362,6 +2113,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: Some("# Synthesize".to_string()),
         };
 

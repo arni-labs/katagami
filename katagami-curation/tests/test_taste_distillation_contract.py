@@ -95,10 +95,15 @@ class TasteDistillationContractTests(unittest.TestCase):
         template = next(t for t in templates if t["job_type"] == "taste_distillation")
         self.assertEqual(template["skill_id"], "taste-distillation")
         self.assertEqual(template["completion_action"], "CompleteTasteDistillation")
+        # The app-shipped copy, not a per-soul bootstrap snapshot (ARN-305).
+        # The snapshot is written once when a soul is created and app installs
+        # never refresh it, so a template pointing there reads a skill frozen
+        # at bootstrap time forever. This assertion used to pin that path.
         self.assertEqual(
             template["instruction_path"],
-            "/agents/sl-bootstrap-agent-soul-curator/skills/taste-distillation/SKILL.md",
+            "/agents/curator/skills/taste-distillation/SKILL.md",
         )
+        self.assertNotIn("sl-bootstrap-agent-soul-", template["instruction_path"])
 
     def test_distillation_skill_uses_only_archive_and_featured_signals(self):
         skill = (
