@@ -310,6 +310,41 @@ class CaptureIdentityTest(unittest.TestCase):
         self.assertNotIn("def derive_trajectory_id", HOOK_SCRIPT.read_text())
         self.assertIn("derive_trajectory_id", HOOK_SCRIPT.read_text())
 
+    def test_every_path_that_emits_an_id_agrees_with_the_converter(self):
+        """The real guard on "one derivation" — behaviour, not a name.
+
+        Grepping for `def derive_trajectory_id` only catches a duplicate that
+        announces itself. An inlined `hashlib.sha256(...)` in any of these code
+        paths is exactly the drift the rule exists to prevent, and it passes
+        the grep. So every path that hands an id to a caller is compared
+        against the converter's own answer.
+        """
+        for session_id in ("9bd6-session", "iter-abc-3", "jcs-ledger-8fdc9a3135"):
+            expected = self.converter.derive_trajectory_id(session_id)
+
+            self.assertEqual(
+                self.hook.build_identity(session_id)["trajectory_id"],
+                expected,
+                f"build_identity disagrees with the converter for {session_id!r}",
+            )
+
+            derived = self._derive(session_id)
+            self.assertEqual(derived.returncode, 0, derived.stderr)
+            self.assertEqual(
+                json.loads(derived.stdout)["trajectory_id"],
+                expected,
+                f"`derive` disagrees with the converter for {session_id!r}",
+            )
+
+            self.hook.write_identity(session_id)
+            recorded = self._identity(session_id)
+            self.assertEqual(recorded.returncode, 0, recorded.stderr)
+            self.assertEqual(
+                json.loads(recorded.stdout)["trajectory_id"],
+                expected,
+                f"`identity` disagrees with the converter for {session_id!r}",
+            )
+
     def test_the_identity_carries_the_actor_spec_version(self):
         identity = self.hook.build_identity("9bd6-session")
         self.assertTrue(identity["spec_version"].startswith("sha256:"))
@@ -377,6 +412,89 @@ class CaptureIdentityTest(unittest.TestCase):
             text=True,
             env={**stripped, **env},
         )
+
+    def _derive(self, *args, **env):
+        stripped = {
+            k: v
+            for k, v in os.environ.items()
+            if k not in self.hook.SESSION_ID_ENV_VARS
+        }
+        return subprocess.run(
+            [sys.executable, str(HOOK_SCRIPT), "derive", *args],
+            capture_output=True,
+            text=True,
+            env={**stripped, **env},
+        )
+
+    def test_derive_answers_a_session_the_hook_never_saw(self):
+        # No write_identity call: this is the whole point of the subcommand.
+        result = self._derive("unhooked-session")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["session_id"], "unhooked-session")
+        self.assertEqual(
+            payload["trajectory_id"],
+            self.converter.derive_trajectory_id("unhooked-session"),
+        )
+
+    def test_derive_writes_no_queue_file(self):
+        # It answers for a session the hooks are NOT capturing; recording one
+        # would claim a capture that is not happening.
+        before = sorted(p.name for p in self.hook.identity_dir().glob("*.json"))
+        self._derive("unhooked-session")
+        after = sorted(p.name for p in self.hook.identity_dir().glob("*.json"))
+        self.assertEqual(before, after)
+
+    def test_derive_fails_loudly_when_the_derivation_is_unavailable(self):
+        """A null id is worse than no output — it is a hole that looks like data.
+
+        `_load_converter` returns None when the script is missing, so without
+        this the command printed `"trajectory_id": null` and exited 0. A caller
+        doing `derive $SID | jq -r .trajectory_id` captured the string "null",
+        wrote it onto ReceiveBrief, and the ledger pointed at a document that
+        will never exist — the exact failure this subcommand exists to prevent.
+        """
+        result = self._derive(
+            "unhooked-session",
+            KATAGAMI_TRAJECTORY_SCRIPT="/nonexistent/converter.py",
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("cannot derive a trajectory id", result.stderr)
+        self.assertNotIn("null", result.stdout)
+
+    def test_derive_refuses_what_identity_refuses(self):
+        # Both commands take a session id; only one of them used to treat it
+        # as an id rather than a path.
+        for bad in ("../../etc/passwd", "a/b", "", "   "):
+            result = self._derive(bad)
+            self.assertEqual(result.returncode, 1, f"{bad!r} was accepted")
+            self.assertEqual(result.stdout, "", f"{bad!r} produced output")
+
+    def test_derive_normalizes_the_id_the_same_way_identity_does(self):
+        spaced = self._derive("  spaced-id  ")
+        plain = self._derive("spaced-id")
+        self.assertEqual(spaced.returncode, 0, spaced.stderr)
+        self.assertEqual(
+            json.loads(spaced.stdout)["trajectory_id"],
+            json.loads(plain.stdout)["trajectory_id"],
+        )
+        self.assertEqual(json.loads(spaced.stdout)["session_id"], "spaced-id")
+
+    def test_derive_does_not_claim_claude_code_for_another_harness(self):
+        # `derive` exists for runs that are NOT Claude Code. Stamping
+        # "claude-code" unconditionally puts a false claim in the provenance
+        # the study reads.
+        self.assertEqual(
+            json.loads(self._derive("s-1", "codex").stdout)["harness"], "codex"
+        )
+        self.assertEqual(
+            json.loads(self._derive("s-1").stdout)["harness"], "claude-code"
+        )
+
+    def test_derive_rejects_the_wrong_number_of_arguments(self):
+        for args in ((), ("a", "b", "c")):
+            self.assertEqual(self._derive(*args).returncode, 2, str(args))
 
     def test_the_identity_subcommand_prints_it(self):
         self.hook.write_identity("9bd6-session")
@@ -449,13 +567,34 @@ class HookWiringTest(unittest.TestCase):
         self.assertTrue(resolved, "the shipped snippet resolves no actor spec")
         self.assertTrue(spec_version.compute_version(resolved))
 
-    def test_the_hook_script_implements_all_three_modes(self):
+    def test_the_hook_script_implements_all_four_modes(self):
         script = HOOK_SCRIPT.read_text()
         self.assertIn("def cmd_enqueue", script)
         self.assertIn("def cmd_process", script)
         self.assertIn("def cmd_identity", script)
+        self.assertIn("def cmd_derive", script)
         self.assertIn("session_id", script)
         self.assertIn("transcript_path", script)
+
+    def test_every_mode_is_reachable_from_the_command_line(self):
+        # A command implemented but not wired into main() is a command nobody
+        # can run; `derive` was added to main by hand rather than to COMMANDS.
+        for mode in ("enqueue", "process", "identity", "derive"):
+            result = subprocess.run(
+                [sys.executable, str(HOOK_SCRIPT), mode, "--help-probe"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotIn(
+                "usage: capture.py",
+                result.stderr if mode == "derive" else "",
+                f"{mode} is not routed",
+            )
+            self.assertNotEqual(
+                (result.returncode, "unknown command"),
+                (2, result.stderr.strip()),
+                f"{mode} is not a known command",
+            )
 
     def test_every_posted_document_is_archived_for_the_judge(self):
         # GET /api/ots/trajectories returns metadata rows without the document,

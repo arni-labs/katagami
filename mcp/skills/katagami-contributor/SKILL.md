@@ -35,8 +35,10 @@ There is one derivation, in one place
 (`scripts/trajectory/claude_session_to_ots.py::derive_trajectory_id`), and both
 sides read it.
 
-The hooks have to be installed **before the session starts** — they cannot be
-retrofitted onto a session already running, and a session they never saw is not
+The hooks have to be installed **before the session starts**; they cannot be
+added to a session already in progress. Resuming a session after installing them
+does work — `SessionStart` fires again under the same id, and the transcript on
+disk still holds the earlier turns — but a session that simply continues is not
 captured. If `capture.py identity` reports no identity for this session, that is
 what it is telling you. It exits non-zero; treat that as a stop, not a warning.
 
@@ -44,8 +46,12 @@ Outside Claude Code, or in a session the hooks never saw, mint a `session_id`
 yourself and derive the rest from it:
 
 ```bash
-python3 hooks/trajectory-capture/capture.py derive <session-id>
+python3 hooks/trajectory-capture/capture.py derive <session-id> [harness]
 ```
+
+Pass the harness name (`codex`, `grok`) when the run is not Claude Code — it
+defaults to `claude-code`, and an unset default becomes a false claim in the
+provenance the judge reads.
 
 Pass that `session_id` to the converter as `--session-id` and nothing else.
 **Do not pass `--trajectory-id`.** The converter derives it from the session id
@@ -136,7 +142,7 @@ x-temper-principal-id: katagami-contributor
 
 | # | Call | Body | When |
 |---|---|---|---|
-| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity`, unchanged. |
+| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity` — or `capture.py derive` for a session the hooks never saw — unchanged. |
 | 2 | `Temper.BeginDrafting` | `{}` | Before the first piece of design work. Moves to `Drafting`. Guarded on `has_brief`, so step 1 must have happened. |
 | 3 | `Temper.ClaimJob` / `Temper.ReleaseJob` | `{}` | Around each concurrent unit of work. `ClaimJob` is guarded at 10 in flight — the standing batch cap, enforced rather than remembered. |
 | 4 | `Temper.RecordDraft` | `draft_notes` | As the work takes shape. Call it more than once; it is a log, not a summary. |
