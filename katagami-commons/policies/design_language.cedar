@@ -1,4 +1,4 @@
-// DesignLanguage — open access for local development
+// DesignLanguage — STANCE: authoring open; publishing, advancing and curating are gated.
 permit(principal, action, resource is DesignLanguage);
 
 // Contributor boundary (ARN-151): agents submit, humans/pipeline publish.

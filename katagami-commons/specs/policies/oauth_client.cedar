@@ -1,3 +1,4 @@
+// OAuthClient — STANCE: closed to contributors entirely; registrations are the authorization server's alone.
 // OAuthClient — DCR registrations (ARN-151). Written only by the katagami.ai
 // authorization server; carries zero privilege. Contributor principals have
 // no business here — their clients are registered FOR them by the AS.

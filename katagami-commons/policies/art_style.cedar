@@ -1,4 +1,4 @@
-// ArtStyle — open access for local development
+// ArtStyle — STANCE: authoring open; the review lifecycle and every attestation are the finalizer's.
 permit(principal, action, resource is ArtStyle);
 
 // The finalizer calls these OData actions as Agent::"system". They are input

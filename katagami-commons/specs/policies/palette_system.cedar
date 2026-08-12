@@ -1,4 +1,4 @@
-// PaletteSystem — open access for local development
+// PaletteSystem — STANCE: authoring open; publishing, advancing and curating are gated.
 permit(principal, action, resource is PaletteSystem);
 
 // Contributor boundary (ARN-151): agents submit, humans/pipeline publish.

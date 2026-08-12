@@ -1,3 +1,4 @@
+// AgentGrant — STANCE: closed to contributors entirely; a grant is the human's kill switch over the agent.
 // AgentGrant — consent records (ARN-151). Created/rotated/revoked only by the
 // katagami.ai authorization server on the human's behalf. A contributor agent
 // must never see or touch grants (its own or anyone's) — revocation is the

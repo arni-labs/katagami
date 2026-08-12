@@ -1,4 +1,4 @@
-// WritingStyle — open access for local development
+// WritingStyle — STANCE: authoring open; publishing, curating and the verifier-owned attestations are gated.
 permit(principal, action, resource is WritingStyle);
 
 // Contributor boundary (ARN-151): agents submit, humans/pipeline publish.

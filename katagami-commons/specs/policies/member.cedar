@@ -1,3 +1,4 @@
+// Member — STANCE: closed to contributors entirely; identity is the substrate every other boundary rests on.
 // Member — identity substrate (ARN-151). Managed by trusted server-side
 // principals (the katagami.ai server, curators, the pipeline). Contributor
 // agents act THROUGH grants; they never read or write accounts directly.

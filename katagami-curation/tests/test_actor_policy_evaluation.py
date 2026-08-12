@@ -256,6 +256,115 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
                 f"{name}: a declared non-contributor agent must still publish",
             )
 
+    # ARN-303: the entity types that had no boundary at all until a stance was
+    # decided for each. (policy, resource type, a gated action, an authoring one)
+    STANCED = (
+        ("design_element", "DesignElement", "Verify", "Render"),
+        ("direction", "Direction", "Close", "SetDirection"),
+        ("element_manifest", "ElementManifest", "Activate", "SetElements"),
+        ("remix", "Remix", "Archive", "SetSelection"),
+        ("taxonomy", "Taxonomy", "Publish", "Define"),
+    )
+
+    # Deliberately open: every action on it is authoring. Named here so that
+    # "no boundary" stays a decision somebody made rather than a gap.
+    OPEN_BY_DESIGN = (("design_source", "DesignSource", "Index"),)
+
+    def test_every_commons_entity_type_has_a_policy_with_a_declared_stance(self):
+        """An entity with no policy file has no stance — it has an oversight.
+
+        The types this covers were open to everything, not because anyone
+        decided they should be, but because nobody had written the file.
+        """
+        specs = COMMONS_POLICIES.parent / "specs"
+        entity_specs = sorted(p.name.replace(".ioa.toml", "") for p in specs.glob("*.ioa.toml"))
+        self.assertTrue(entity_specs, "no commons entity specs found")
+
+        missing, unstated = [], []
+        for name in entity_specs:
+            path = COMMONS_POLICIES / f"{name}.cedar"
+            if not path.is_file():
+                missing.append(name)
+                continue
+            if "STANCE:" not in path.read_text().splitlines()[0]:
+                unstated.append(name)
+
+        self.assertEqual(missing, [], f"commons entity types with no policy file: {missing}")
+        self.assertEqual(
+            unstated,
+            [],
+            "these policies do not declare a stance on their first line, so a "
+            f"reader cannot tell open-by-design from nobody-decided: {unstated}",
+        )
+
+    def test_the_newly_stanced_types_refuse_undeclared_agents(self):
+        for name, resource_type, gated, _ in self.STANCED:
+            self.assertEqual(
+                self.decide(name, action=gated, resource_type=resource_type),
+                cedarpy.Decision.Deny,
+                f"{name}: an undeclared agent was allowed {gated}",
+            )
+
+    def test_the_newly_stanced_types_refuse_declared_contributors(self):
+        for name, resource_type, gated, _ in self.STANCED:
+            self.assertEqual(
+                self.decide(
+                    name,
+                    action=gated,
+                    resource_type=resource_type,
+                    attrs={"agent_type": "contributor"},
+                ),
+                cedarpy.Decision.Deny,
+                name,
+            )
+
+    def test_the_newly_stanced_types_leave_authoring_open(self):
+        # The pipeline must not notice this change. Authoring is what it does.
+        for name, resource_type, _, authoring in self.STANCED:
+            for attrs in ({}, {"agent_type": "contributor"}, {"agent_type": "system"}):
+                self.assertEqual(
+                    self.decide(
+                        name, action=authoring, resource_type=resource_type, attrs=attrs
+                    ),
+                    cedarpy.Decision.Allow,
+                    f"{name}: {authoring} refused for attrs={attrs}",
+                )
+
+    def test_the_prod_principals_are_unaffected_by_the_new_stances(self):
+        for label, agent_id, attrs, _ in self.LIVE_PRINCIPALS:
+            for name, resource_type, gated, authoring in self.STANCED:
+                # Authoring is open to everyone, the contributor included.
+                self.assertEqual(
+                    self.decide(
+                        name, action=authoring, resource_type=resource_type,
+                        agent_id=agent_id, attrs=attrs,
+                    ),
+                    cedarpy.Decision.Allow,
+                    f"{label}: {authoring} on {resource_type} refused",
+                )
+                # And every declared non-contributor still passes the gate.
+                if attrs.get("agent_type") != "contributor":
+                    self.assertEqual(
+                        self.decide(
+                            name, action=gated, resource_type=resource_type,
+                            agent_id=agent_id, attrs=attrs,
+                        ),
+                        cedarpy.Decision.Allow,
+                        f"{label}: {gated} on {resource_type} refused",
+                    )
+
+    def test_the_open_by_design_type_stays_open(self):
+        # DesignSource is the research lane's own index. Gating it would slow
+        # the pipeline and protect nothing, and the policy says so out loud.
+        for name, resource_type, action in self.OPEN_BY_DESIGN:
+            for attrs in ({}, {"agent_type": "contributor"}):
+                self.assertEqual(
+                    self.decide(name, action=action, resource_type=resource_type, attrs=attrs),
+                    cedarpy.Decision.Allow,
+                    name,
+                )
+            self.assertIn("open by design", commons_policy(name))
+
     def test_no_commons_policy_still_gates_only_on_the_attribute(self):
         # The generic form of the finding: a resource whose only agent
         # exclusion is `has agent_type` is a resource an agent can walk past.
