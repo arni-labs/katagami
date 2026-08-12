@@ -7,8 +7,7 @@ permit(
     resource is HttpEndpoint
 ) when {
     context.module == "build_session_message" ||
-    context.module == "finalize_spawned_session" ||
-    context.module == "launch_research"
+    context.module == "finalize_spawned_session"
 };
 
 // Allow WASM modules to access secrets (temper_api_url)
@@ -18,15 +17,14 @@ permit(
     resource is Secret
 ) when {
     context.module == "build_session_message" ||
-    context.module == "finalize_spawned_session" ||
-    context.module == "launch_research"
+    context.module == "finalize_spawned_session"
 };
 
 
 // Explicit runtime-service allow for governed WASM trigger execution.
 // Some tenants evaluate trigger HTTP calls under the wasm runtime service
 // agent rather than the curator Agent session. Keep this scoped to Katagami's
-// three declared WASM modules and the http_call action needed for session
+// two declared WASM modules and the http_call action needed for session
 // bootstrap/finalization.
 permit(
     principal == Agent::"service:wasm-runtime",
@@ -35,7 +33,6 @@ permit(
 ) when {
     context.module == "build_session_message" ||
     context.module == "finalize_spawned_session" ||
-    context.module == "launch_research" ||
     context.integration == "__trigger__:Submit:build_session_message" ||
     context.integration == "__trigger__:ConfigureAndSubmit:build_session_message"
 };
@@ -47,8 +44,7 @@ permit(
     resource is Secret
 ) when {
     context.module == "build_session_message" ||
-    context.module == "finalize_spawned_session" ||
-    context.module == "launch_research"
+    context.module == "finalize_spawned_session"
 };
 
 

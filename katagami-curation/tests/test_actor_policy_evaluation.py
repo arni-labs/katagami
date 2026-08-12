@@ -23,6 +23,8 @@ reviewed.
     pip install -r tests/requirements-dev.txt   # or install it yourself
 """
 
+import os
+import re
 import unittest
 from pathlib import Path
 
@@ -389,6 +391,212 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
             self.assertTrue(other.is_file(), f"missing mirror: {other}")
             self.assertEqual(
                 path.read_text(), other.read_text(), f"{path.name} mirrors diverged"
+            )
+
+
+class PlatformPermitDecisionTest(unittest.TestCase):
+    """Permits this app needs on the KERNEL's own resources (ARN-295).
+
+    Every other policy here governs an entity this app declares. These govern
+    the platform actions the app's agents ask the kernel for — today one pair,
+    `read_trajectories` on `Trajectory`, which gates the two endpoints layer 1
+    of the judge is built on:
+
+        POST /api/conformance/check
+        GET  /api/ots/trajectories/<id>/atif
+
+    Neither endpoint has a principal-kind bypass and the kernel ships no
+    built-in permit for the pair, so an app that does not grant it gets 403 on
+    both — which is how they shipped: reachable only after a policy rule was
+    posted by hand at runtime, and not by anything a test could have caught.
+    Hence `test_every_documented_platform_permit_is_granted` below, which is
+    the general form of that failure.
+
+    Decisions here are evaluated over the WHOLE policy set both apps load into
+    the tenant, not one file, because that is what the kernel merges and
+    because a permit is only as good as the forbids sitting next to it.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if cedarpy is None:
+            raise AssertionError(MISSING_CEDAR)
+
+    REPO_ROOT = POLICIES.parent.parent
+
+    # `permit for `action` on `Resource`` — the way the kernel's own denial
+    # body and the skills that quote it state a required permit.
+    DOCUMENTED_PERMIT = re.compile(
+        r"permit for (?:action )?`([a-z_]+)` on (?:resource )?`([A-Za-z]\w*)`"
+    )
+
+    # Every platform permit this app depends on, and the principal that must
+    # hold it. Adding a gated kernel endpoint to a skill means adding its pair
+    # here and shipping the policy that grants it.
+    PLATFORM_PERMITS = {
+        ("read_trajectories", "Trajectory"): ("Agent", "katagami-judge", {"agent_type": "judge"}),
+    }
+
+    def tenant_policies(self):
+        """Both apps' policies, concatenated the way the tenant loads them."""
+        return "\n".join(
+            path.read_text()
+            for directory in (POLICIES, COMMONS_POLICIES)
+            for path in sorted(directory.glob("*.cedar"))
+        )
+
+    def decide(self, principal, *, action="read_trajectories", resource_type="Trajectory"):
+        """One request shaped the way the endpoint builds it.
+
+        The resource carries NO attributes and its id is `unknown`: these
+        endpoints pass an empty attribute map, so Cedar sees
+        `Trajectory::"unknown"` and has nothing but the principal to decide on
+        (temper-authz engine::evaluate_request, resource_id_from_attrs).
+
+        `agentTypeVerified` is false, and not by omission. The endpoints build
+        their context through `SecurityContext::with_agent_context`, which
+        stamps it false on every request because the identity came off
+        unauthenticated headers (ARN-255). A permit conditioned on it being
+        true — the shape temper's own project-management app uses — would
+        refuse every caller these endpoints can have.
+        """
+        principal_type, principal_id, attrs = principal
+        entities = [
+            entity(principal_type, principal_id, {"id": principal_id, **attrs}),
+            {"uid": {"type": resource_type, "id": "unknown"}, "attrs": {}, "parents": []},
+        ]
+        return cedarpy.is_authorized(
+            {
+                "principal": {"type": principal_type, "id": principal_id},
+                "action": {"type": "Action", "id": action},
+                "resource": {"type": resource_type, "id": "unknown"},
+                "context": {"agentTypeVerified": False},
+            },
+            self.tenant_policies(),
+            entities,
+        ).decision
+
+    JUDGE = ("Agent", "katagami-judge", {"agent_type": "judge"})
+    PLATFORM = ("Agent", "system", {})
+    CONTRIBUTOR = ("Agent", "katagami-contributor", {"agent_type": "contributor"})
+    REVIEWER = ("Agent", "katagami-reviewer", {"agent_type": "reviewer"})
+    UNDECLARED_AGENT = ("Agent", "agent-sneaky", {})
+    ADMIN = ("Admin", "ops-1", {})
+    ANONYMOUS = ("Customer", "anonymous", {})
+    E2E_DRIVER = ("Agent", "e2e-driver", {"agent_type": "system"})
+
+    def test_the_judge_reads_the_run_it_is_judging(self):
+        # The whole point of the permit: without this decision, layer 1 of the
+        # two-layer judge cannot run in production at all.
+        self.assertEqual(self.decide(self.JUDGE), cedarpy.Decision.Allow)
+
+    def test_the_platform_reads_a_run_it_replays_itself(self):
+        # Same principal trajectory_verdict.cedar admits on Record, for the
+        # same reason: a verdict written from a replay implies reading the run.
+        self.assertEqual(self.decide(self.PLATFORM), cedarpy.Decision.Allow)
+
+    def test_the_judged_agent_cannot_read_the_corpus(self):
+        self.assertEqual(self.decide(self.CONTRIBUTOR), cedarpy.Decision.Deny)
+
+    def test_the_reviewer_has_no_business_in_the_trajectories(self):
+        # It rules on the artifacts, not on the run that produced them. Named
+        # here so that admitting it later is a decision somebody makes.
+        self.assertEqual(self.decide(self.REVIEWER), cedarpy.Decision.Deny)
+
+    def test_an_agent_that_declares_no_type_reads_nothing(self):
+        self.assertEqual(self.decide(self.UNDECLARED_AGENT), cedarpy.Decision.Deny)
+
+    def test_an_admin_kind_principal_gets_no_bypass_here(self):
+        # `require_trajectory_content_auth` drops the Admin/System shortcut the
+        # aggregate observe views keep, precisely because principal kind is a
+        # request header nothing authenticates. The policy must not put it back.
+        self.assertEqual(self.decide(self.ADMIN), cedarpy.Decision.Deny)
+
+    def test_an_unauthenticated_caller_reads_nothing(self):
+        self.assertEqual(self.decide(self.ANONYMOUS), cedarpy.Decision.Deny)
+
+    def test_a_test_credential_is_not_a_judge(self):
+        self.assertEqual(self.decide(self.E2E_DRIVER), cedarpy.Decision.Deny)
+
+    def test_the_permit_grants_that_one_action_and_no_other(self):
+        # `read_trajectories` is the only platform action on this resource the
+        # app has a use for; a permit written against `action` would have
+        # carried whatever the kernel adds to `Trajectory` later.
+        for action in ("write_trajectories", "delete_trajectories", "read_events"):
+            self.assertEqual(
+                self.decide(self.JUDGE, action=action),
+                cedarpy.Decision.Deny,
+                f"the judge was granted {action} on Trajectory",
+            )
+
+    def test_the_permit_does_not_reach_other_kernel_resources(self):
+        for resource_type in ("Entity", "Spec", "AgentAudit"):
+            self.assertEqual(
+                self.decide(self.JUDGE, resource_type=resource_type),
+                cedarpy.Decision.Deny,
+                f"read_trajectories was granted on {resource_type}",
+            )
+
+    def _markdown_files(self):
+        """Every prose file in the checkout, dependencies and dot-dirs aside.
+
+        `.md` is a path suffix here, not a promise of a file: the site routes
+        include a directory called `DESIGN.md`, which is the page that serves
+        one.
+        """
+        for directory, subdirs, filenames in os.walk(self.REPO_ROOT):
+            subdirs[:] = [
+                d for d in subdirs if not d.startswith(".") and d != "node_modules"
+            ]
+            for filename in filenames:
+                path = Path(directory) / filename
+                if path.suffix == ".md" and path.is_file():
+                    yield path
+
+    def test_every_documented_platform_permit_is_granted(self):
+        """A permit the docs say a caller needs must be one this app ships.
+
+        The generic form of the ARN-295 finding. A kernel endpoint that
+        requires a Cedar permit no policy grants is unreachable in production,
+        and nothing in this repo noticed: `read_trajectories` appeared in a
+        skill's 403 table and in no `.cedar` file, and the gap surfaced only
+        when a live run hit the endpoint and got 403.
+
+        So the skills' own documentation of the permit is what this reads. Any
+        pair written down as required has to be declared in PLATFORM_PERMITS
+        with the principal that needs it, and that principal has to actually be
+        allowed it by the policies as they stand.
+        """
+        documented = set()
+        for path in self._markdown_files():
+            for action, resource_type in self.DOCUMENTED_PERMIT.findall(
+                path.read_text(encoding="utf-8", errors="replace")
+            ):
+                documented.add((action, resource_type))
+
+        self.assertIn(
+            ("read_trajectories", "Trajectory"),
+            documented,
+            "the judge skill no longer documents the permit its endpoints "
+            "require, so this test can no longer tell whether one is missing",
+        )
+
+        undeclared = sorted(documented - set(self.PLATFORM_PERMITS))
+        self.assertEqual(
+            undeclared,
+            [],
+            "these Cedar permits are documented as required by an endpoint this "
+            "app calls, but no test says who needs them. Declare each in "
+            f"PLATFORM_PERMITS and ship the policy that grants it: {undeclared}",
+        )
+
+        for (action, resource_type), principal in sorted(self.PLATFORM_PERMITS.items()):
+            self.assertEqual(
+                self.decide(principal, action=action, resource_type=resource_type),
+                cedarpy.Decision.Allow,
+                f"no policy in this app grants `{action}` on `{resource_type}` to "
+                f"{principal[0]}::\"{principal[1]}\", so the endpoints behind it "
+                "answer 403 to the principal that has to call them",
             )
 
 
