@@ -193,6 +193,69 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
                 name,
             )
 
+    # Every principal shape that actually reaches these policies, read out of
+    # the code that sends the headers. The point of the list is that the fix
+    # must be invisible to all of them: it closes an omission, it does not
+    # change who may publish.
+    LIVE_PRINCIPALS = (
+        # mcp/src/temper.ts — contributors act through the MCP.
+        ("mcp contributor", "contrib:sub:client", {"agent_type": "contributor"}, False),
+        # katagami-curation/wasm/*/src/lib.rs — the finalizer.
+        ("wasm finalizer", "system", {"agent_type": "system"}, True),
+        # scripts/backfill-shadcn-exports.mjs — not named `system`, declares one.
+        ("shadcn backfill", "katagami-finalizer", {"agent_type": "system"}, True),
+        # katagami-curation/tests/e2e/*.py — the lane drivers.
+        ("e2e driver", "e2e-driver", {"agent_type": "system"}, True),
+    )
+
+    def test_the_pipeline_publishes_exactly_as_it_did_before(self):
+        """The fix must be invisible to every principal that really exists.
+
+        The pipeline agents legitimately publish languages on the artifact
+        side; only contributor-typed agents are forbidden. So this is NOT the
+        curation side's human-only rule, and it must never become one: what is
+        pinned here is that each real principal still gets the decision its
+        role requires, and that the only thing the fix took away was the
+        caller that declined to say what it was.
+        """
+        for label, agent_id, attrs, expected_allow in self.LIVE_PRINCIPALS:
+            for name, resource_type, gated, _ in self.ARTIFACTS:
+                if name == "art_style" and agent_id != "system":
+                    # ArtStyle's finalizer actions were system-only long before
+                    # this fix, by a separate attribute-independent forbid.
+                    continue
+                self.assertEqual(
+                    self.decide(
+                        name,
+                        action=gated,
+                        resource_type=resource_type,
+                        agent_id=agent_id,
+                        attrs=attrs,
+                    ),
+                    cedarpy.Decision.Allow if expected_allow else cedarpy.Decision.Deny,
+                    f"{label} on {resource_type}.{gated}: live behaviour changed",
+                )
+
+    def test_a_declared_pipeline_agent_is_never_excluded_by_type_alone(self):
+        # The regression this guards against is someone later "hardening" these
+        # into the curation side's `forbid(principal is Agent, action in
+        # [Publish, ...])` with no `unless`. That reads as stricter and would
+        # stop the pipeline publishing anything at all.
+        for name, resource_type, gated, _ in self.ARTIFACTS:
+            if name == "art_style":
+                continue  # system-only by a separate, older rule
+            self.assertEqual(
+                self.decide(
+                    name,
+                    action=gated,
+                    resource_type=resource_type,
+                    agent_id="some-pipeline",
+                    attrs={"agent_type": "operations"},
+                ),
+                cedarpy.Decision.Allow,
+                f"{name}: a declared non-contributor agent must still publish",
+            )
+
     def test_no_commons_policy_still_gates_only_on_the_attribute(self):
         # The generic form of the finding: a resource whose only agent
         # exclusion is `has agent_type` is a resource an agent can walk past.
