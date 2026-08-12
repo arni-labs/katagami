@@ -4,8 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   isPubliclyServableFile,
+  classifyFileVisibility,
   fetchServableFileBytes,
 } from "../src/lib/file-visibility.ts";
+
+const OWNER = async () => true;
+const ANON = async () => false;
 
 const PUBLIC_WS = "katagami-contrib";
 
@@ -80,20 +84,60 @@ assert.equal(
   "agent skills must never be served to an unauthenticated caller",
 );
 
-// Private trees are refused even inside the PUBLIC workspace. Not hypothetical:
-// the owner A/B tooling writes /feedback/ab-verdicts.jsonl into
-// katagami-contrib, so a workspace-only rule would publish it.
+// The agent/operator trees are refused for EVERYONE, even inside the public
+// workspace.
 for (const p of [
-  "/feedback/ab-verdicts.jsonl",
   "/agents/curator/skills/review-quality/SKILL.md",
   "/system/knowledge/design-principles.md",
 ]) {
   assert.equal(
-    isPubliclyServableFile({
+    classifyFileVisibility({
       fields: { Status: "Ready", Path: p, WorkspaceId: PUBLIC_WS },
     }),
+    "denied",
+    `${p} must be denied outright even inside ${PUBLIC_WS}`,
+  );
+}
+
+// katagami-contrib is NOT uniformly public. Live listing 2026-08-12 found six
+// top-level trees; these three are not catalogue content and are owner-only.
+// /contrib holds submissions awaiting curation, rendered only by /under-review
+// (owner desk); /iterate holds trajectory .jsonl; /feedback is where
+// ab/actions.ts creates the verdict log on first submission.
+for (const p of [
+  "/contrib/pyrite/embodiment.html",
+  "/contrib/pyrite/DESIGN.md",
+  "/contrib/pyrite/test.html",
+  "/iterate/iter-pushpin-1.jsonl",
+  "/feedback/ab-verdicts.jsonl",
+]) {
+  const meta = {
+    fields: { Status: "Ready", Path: p, WorkspaceId: PUBLIC_WS },
+  };
+  assert.equal(
+    classifyFileVisibility(meta),
+    "owner",
+    `${p} must be owner-only`,
+  );
+  assert.equal(
+    isPubliclyServableFile(meta),
     false,
-    `${p} must be refused even inside ${PUBLIC_WS}`,
+    `${p} must never be public`,
+  );
+}
+
+// The catalogue trees stay public.
+for (const p of [
+  "/languages/civic-press/v10/embodiment.html",
+  "/art-styles/some-style/proof-01.png",
+  "/palettes/ember-signal/thumb.png",
+]) {
+  assert.equal(
+    classifyFileVisibility({
+      fields: { Status: "Ready", Path: p, WorkspaceId: PUBLIC_WS },
+    }),
+    "public",
+    `${p} is catalogue content`,
   );
 }
 
@@ -179,8 +223,13 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
     "http://api",
     {},
     REAL_SKILL_FILE.Id,
+    OWNER,
   );
-  assert.equal(out, null, "the agent skill must be refused end to end");
+  assert.equal(
+    out,
+    null,
+    "the agent skill must be refused end to end, even for the owner",
+  );
   assert.equal(calls.length, 1, "exactly one upstream call for a refusal");
   assert.ok(
     !calls.some((u) => u.endsWith("/$value")),
@@ -202,6 +251,7 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
     "http://api",
     {},
     "fl-019ef224-4a00",
+    ANON,
   );
   assert.ok(out, "a live published embodiment must still be served");
   assert.equal(new TextDecoder().decode(out.bytes), "BYTES");
@@ -220,6 +270,7 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
     "http://api",
     {},
     "fl-does-not-exist",
+    ANON,
   );
   assert.equal(out, null, "an unknown id is refused");
   assert.ok(!calls.some((u) => u.endsWith("/$value")));
@@ -241,8 +292,63 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
     "http://api",
     {},
     "fl-019ef224-4a00",
+    ANON,
   );
   assert.equal(out, null, "an upstream 403 must collapse to a plain refusal");
+}
+
+{
+  // An owner-only tree: refused for anonymous with no byte fetch, served to the
+  // owner and marked so the route can suppress shared caching.
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/contrib/pyrite/embodiment.html",
+      WorkspaceId: PUBLIC_WS,
+    },
+  };
+
+  const anon = stubFetch(meta);
+  assert.equal(
+    await fetchServableFileBytes(anon.impl, "http://api", {}, "fl-c", ANON),
+    null,
+    "curation-queue content must be refused to an anonymous caller",
+  );
+  assert.ok(
+    !anon.calls.some((u) => u.endsWith("/$value")),
+    "an owner-only file's bytes must not be fetched for an anonymous caller",
+  );
+
+  const owner = stubFetch(meta);
+  const out = await fetchServableFileBytes(
+    owner.impl,
+    "http://api",
+    {},
+    "fl-c",
+    OWNER,
+  );
+  assert.ok(out, "the owner's curation queue must keep working");
+  assert.equal(out.visibility, "owner", "owner-only bytes must be labelled");
+}
+
+{
+  // The session is only consulted when the answer depends on it.
+  let asked = 0;
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/languages/civic-press/v10/embodiment.html",
+      WorkspaceId: PUBLIC_WS,
+    },
+  };
+  const { impl } = stubFetch(meta);
+  const out = await fetchServableFileBytes(impl, "http://api", {}, "fl-p", async () => {
+    asked += 1;
+    return false;
+  });
+  assert.ok(out, "published assets serve without a session");
+  assert.equal(out.visibility, "public");
+  assert.equal(asked, 0, "public files must not read the session cookie");
 }
 
 // ── Route wiring ──
@@ -267,5 +373,18 @@ assert.doesNotMatch(
   "upstream status must not be forwarded; it confirms the id exists",
 );
 assert.match(route, /Cache-Control": "private, no-store"/);
+// Owner-only bytes must never carry a shared cache directive: the CDN does not
+// know who asked, and would hand a cached curation asset to the next caller.
+assert.match(
+  route,
+  /const isOwnerOnly = served\.visibility === "owner"/,
+  "the route must branch on owner-only visibility",
+);
+for (const re of [
+  /const browserCache = isOwnerOnly\s*\?\s*"private, no-store"/,
+  /const cdnCache = isOwnerOnly\s*\?\s*"private, no-store"/,
+]) {
+  assert.match(route, re, "owner-only responses must not be shared-cached");
+}
 
 console.log("file proxy scope contract: pass");
