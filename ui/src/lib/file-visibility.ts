@@ -160,16 +160,26 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   }
 
   // Some files carry no workspace at all — not a projection artifact, genuinely
-  // absent from the single-entity read too. 34 of the 1,273 ids the live site
-  // fetches are like this (24 under `/katagami`, 10 under `/artstyles`, e.g.
-  // `/artstyles/opaline-soft-diffusion/opaline-melon.png`), and they are served
-  // publicly today. Refusing what we cannot place would have taken all of them
-  // dark, so a workspace-less file is classified on its path alone.
+  // absent from the single-entity read too, in every casing. 34 of the 1,273 ids
+  // the live site fetches are like this (24 under `/katagami`, 10 under
+  // `/artstyles`, e.g. `/artstyles/opaline-soft-diffusion/opaline-melon.png`),
+  // and they are served publicly today. Refusing what we cannot place would take
+  // all of them dark, so a workspace-less file is classified on its path alone.
   //
-  // That is a narrower statement than it looks. The deny trees above already ran
-  // and are absolute: a workspace-less file under `/agents/**` or `/system/**`
-  // is still refused, which is exactly the content this fix exists to protect.
-  // What falls through is content-shaped files in an older storage shape.
+  // EXPECT MORE OF THEM — this is not legacy data. Decoding the UUIDv7
+  // timestamps puts these files NEWER than the workspaced ones: 2026-06-24 to
+  // 2026-07-29, against 2026-06-22 for a current published hero. The cause looks
+  // like the agent-facing write tool, `temper.write(path, content)`, which takes
+  // no workspace argument at all (`katagami-curation/agents/curator/AGENT.md`)
+  // and is what writes exactly these trees — the curator's review-quality skill
+  // writes `/katagami/thumbnails/<slug>/desktop.jpg` that way. UI-side writes go
+  // through `Workspaces('<id>')/Paw.FS.CreateFile` and do carry one. So this
+  // branch is permanent behaviour until the writer is fixed, not a shim to
+  // delete later.
+  //
+  // The fallback is narrower than it looks. The deny trees above already ran and
+  // are absolute: a workspace-less file under `/agents/**` or `/system/**` is
+  // still refused, which is exactly the content this fix exists to protect.
   const workspaceId = readString(fields, projection, [
     "WorkspaceId",
     "workspace_id",
