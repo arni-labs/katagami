@@ -1110,11 +1110,21 @@ type = "field"
 field = "query_id"
 
 # The repair job's id is DERIVED by the verifier from the failed job and the
-# attempt number, so create_if_missing rather than create: the forward link
-# survives on the failed job (create mints an id the source never learns), and a
-# redelivered reaction lands on the same entity instead of minting a duplicate —
-# the second ConfigureAndSubmit is from-state-rejected on an already-started job
-# and harmlessly drops.
+# attempt number, so the follow-up is content-addressed: the failed job keeps a
+# forward link (a minted random id is one the source never learns), and a
+# redelivered reaction resolves to the same entity instead of a second agent
+# session — the repeat ConfigureAndSubmit is from-state-rejected on an
+# already-started job and drops.
+#
+# resolve_target is `field`, deliberately NOT `create_if_missing`: that resolver
+# falls back to "{source_id}-derived" on an empty id field, which would turn a
+# FailWithRepair carrying no id into a malformed job with no brief. `field`
+# returns nothing for an empty field, so the rule drops instead. Temper creates
+# the target on dispatch when it does not exist, so the follow-up is still
+# minted — just never from a blank verdict.
+#
+# drop_ok because two paths drop by design: an empty/absent repair_job_id, and a
+# redelivered verdict landing on a repair job that has already started.
 #
 # Note on ordering: reactions on an edge are dispatched in declaration order but
 # run async, so this being declared last does not GUARANTEE the propagation
@@ -1126,13 +1136,11 @@ kind = "entity"
 principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
+drop_ok = true
 
-# The declared set of lanes a repair may re-enter through. This is a sanity
-# gate, not the verdict — the verdict is the action. It exists because
-# create_if_missing falls back to "{source_id}-derived" when its id field is
-# empty, so a FailWithRepair dispatched with no repair params at all would
-# otherwise mint a job with no job_type and no brief. An empty or unknown
-# repair_job_type fails this guard and spawns nothing.
+# The declared set of lanes a repair may re-enter through. A sanity gate, not
+# the verdict — the verdict is the action. An empty or unknown repair_job_type
+# spawns nothing.
 [action.triggers.guard]
 type = "field_in"
 field = "repair_job_type"
@@ -1150,8 +1158,8 @@ provider = "repair_provider"
 direction_id = "repair_direction_id"
 
 [action.triggers.resolve_target]
-type = "create_if_missing"
-id_field = "repair_job_id"
+type = "field"
+field = "repair_job_id"
 
 # --- Retry ---
 

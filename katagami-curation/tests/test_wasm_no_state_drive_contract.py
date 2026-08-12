@@ -28,6 +28,7 @@ Do not add an entry to silence a failure; add one only to record a defect
 you have measured and cannot yet fix.
 """
 
+import collections
 import re
 import tomllib
 import unittest
@@ -88,13 +89,17 @@ DISPATCH_HELPER = "dispatch_action"
 # ---------------------------------------------------------------------------
 # The debt register.
 #
-# Each key is "<module>: <EntitySet>.<Action>". Each value says why the drive
-# is still imperative. Entries are removed as conversions land; new entries
-# require a deliberate edit and a reviewer who reads the reason.
+# Each key is "<module>: <EntitySet>.<Action>". Each value is
+# (call_sites, why_it_is_still_imperative). The count is pinned so that adding a
+# SECOND dispatch of an already-registered drive fails too — identity alone
+# would let imperative control flow grow silently under an existing entry.
+# Entries are removed as conversions land; new ones require a deliberate edit
+# and a reviewer who reads the reason.
 # ---------------------------------------------------------------------------
 KNOWN_WASM_DRIVEN_TRANSITIONS = {
     # --- DesignLanguage: the auto-publish path (ARN-320) ---
     "finalize_spawned_session: DesignLanguages.SubmitForReview": (
+        1,
         "ensure_language_under_review() walks Draft -> UnderReview for every id in "
         "the job's design_language_ids. Declarative equivalent is an "
         "[[action.triggers]] kind=\"entity\" block on the CurationJob's typed "
@@ -103,36 +108,43 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "fan-out resolver."
     ),
     "finalize_spawned_session: DesignLanguages.Publish": (
+        1,
         "ensure_language_published() walks UnderReview -> Published. This is what "
         "carries design languages past the human review gate with no human. Same "
         "blocker as SubmitForReview: no list fan-out target resolver."
     ),
     # --- ArtStyle / PaletteSystem: walk_lane_entity_to_published ---
     "finalize_spawned_session: ArtStyles.SubmitForReview": (
+        1,
         "walk_lane_entity_to_published() loops over the job's art_style_ids JSON "
         "array. Same blocker: no list fan-out target resolver."
     ),
     "finalize_spawned_session: ArtStyles.Publish": (
+        1,
         "walk_lane_entity_to_published() walks UnderReview -> Published with no "
         "human. Same blocker: the job carries a JSON array of ids and the kernel "
         "has no list fan-out target resolver."
     ),
     "finalize_spawned_session: PaletteSystems.SubmitForReview": (
+        1,
         "walk_lane_entity_to_published() loops over the job's palette_system_ids "
         "JSON array. Same blocker: no list fan-out target resolver."
     ),
     "finalize_spawned_session: PaletteSystems.Publish": (
+        1,
         "walk_lane_entity_to_published() walks UnderReview -> Published with no "
         "human. Same blocker: no list fan-out target resolver."
     ),
     # --- WritingStyle: stops at UnderReview by design (curator gate) ---
     "finalize_spawned_session: WritingStyles.SubmitForReview": (
+        1,
         "verify_synthesized_writing_styles() walks Draft -> UnderReview and STOPS "
         "there; the curator publishes. The stop is correct, the walk is still "
         "imperative. Loops over writing_style_ids. Same blocker."
     ),
     # --- Sessions: cross-app, needs the TARGET's own fields ---
     "finalize_spawned_session: Sessions.RecordResult": (
+        1,
         "record_session_success() reports the agent session's result. Declarative "
         "equivalent is a trigger on the CurationJob resolving session_id (a scalar "
         "field — the fan-out blocker does NOT apply here). BLOCKED differently: "
@@ -141,6 +153,7 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "can only copy fields from the SOURCE entity."
     ),
     "finalize_spawned_session: Sessions.Fail": (
+        1,
         "record_session_failure(). Convertible: scalar session_id target, and Fail "
         "takes only error_message, which the job already carries. Left in place in "
         "this change only because it shares record_session_* plumbing with "
@@ -148,6 +161,7 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
     ),
     # --- build_session_message ---
     "build_session_message: SessionLinks.Configure": (
+        1,
         "The module creates the SessionLink and configures it in the same breath, "
         "walking it Created -> Watching. There is no source entity whose spec could "
         "declare the trigger: resolve_target type=\"create\" would mint the id, but "
@@ -155,6 +169,7 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "is computed. Needs the computed values to land on a field first."
     ),
     "build_session_message: CurationJobs.SessionSpawned": (
+        1,
         "Ready -> Running on the module's OWN entity. CONVERTIBLE TODAY via the "
         "kernel callback: set_success_result(\"SessionSpawned\", {session_id, "
         "workspace_id}). Deliberately not converted in this change because PR #209 "
@@ -162,6 +177,7 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "resolving that conflict is not this change's call."
     ),
     "build_session_message: CurationJobs.Fail": (
+        1,
         "dispatch_curation_job_failure() on SessionLink setup failure. The trigger "
         "already declares on_failure = \"Fail\", so this is a duplicate imperative "
         "path; it exists to attach a specific error_message. Same PR #209 hold."
@@ -414,6 +430,25 @@ BARE_ACTION_SEGMENT_RE = re.compile(
 # PascalCase dotted literals that are DATA, not URL fragments. Each one has to
 # earn its place here by being read as a value rather than concatenated into a
 # path — the pattern above cannot tell the two apart structurally.
+HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"}
+
+# Only these can dispatch an action or change anything. A GET cannot drive a
+# state machine, so a read whose URL is bound to a variable one line earlier is
+# not this contract's business.
+MUTATING_HTTP_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+# Non-OData endpoints these modules legitimately call. Adding one is a
+# deliberate act; the point is that the whole path is visible in one literal.
+KNOWN_NON_ODATA_PATHS = {"/api/files/publish-artifact", "/embed", "/paw/"}
+
+# HTTP targets that are a bare variable rather than an inline format!. Each has
+# to earn its place: the value comes from trigger config, not from concatenating
+# an entity path with an action name.
+KNOWN_VARIABLE_URL_TARGETS = {
+    # The taste-embedding service URL, read from `katagami_embed_url` config.
+    "embed_url",
+}
+
 NON_URL_DOTTED_LITERALS = {
     # Stored on the SessionLink as ParentActionNamespace so paw-agent can build
     # ITS OWN callback to the parent job. Never concatenated here.
@@ -446,10 +481,15 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             raise AssertionError(f"unknown entity set '{entity_set}'")
         return automaton in self.transitions.get(action, set())
 
-    def _dispatch_sites(self, module_name, source):
-        """{(entity_set, action)} dispatched from one module, plus unresolved."""
+    def _dispatch_sites(self, module_name, source, count=False):
+        """Dispatches from one module, plus anything unresolvable.
+
+        With `count`, returns a {(entity_set, action): call_sites} mapping so a
+        second call site of an already-registered drive is visible; otherwise a
+        plain set.
+        """
         spans = _function_spans(source)
-        sites = set()
+        sites = collections.Counter()
         unresolved = []
 
         helper_span = next(
@@ -488,7 +528,7 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
 
             for entity_set in resolve(raw_set, "entity set"):
                 for action in resolve(raw_action, "action"):
-                    sites.add((entity_set, action))
+                    sites[(entity_set, action)] += 1
 
         for match in URL_ACTION_RE.finditer(source):
             action = match.group("action")
@@ -508,11 +548,139 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                         "through dispatch_action so the action is readable"
                     )
                 continue
-            sites.add((match.group("set"), action))
+            sites[(match.group("set"), action)] += 1
 
-        return sites, unresolved
+        return (sites if count else set(sites)), unresolved
 
     # -- the contract -----------------------------------------------------
+
+    def test_every_http_target_is_a_literal_this_contract_can_read(self):
+        """The last door: assembling the URL out of tokens.
+
+            let base = format!("{api_url}/tdata/CurationJobs('{id}')");
+            let ns = "Katagami.Curation";
+            let url = format!("{base}/{ns}.{}", actions[i]);
+            ctx.http_call("POST", &url, headers, "{}")
+
+        Every piece is individually innocent, and no complete action URL exists
+        anywhere in the file. The only way to see through that is to require
+        each HTTP call's target to be an INLINE format string whose literal
+        this contract recognizes. A URL held in a variable first, or a format
+        literal that is only fragments, fails here.
+        """
+        offenders = []
+        for path in self.modules:
+            module_name = path.parts[-3]
+            source = path.read_text()
+            spans = _function_spans(source)
+            wrapper = next(((s, e) for n, _, s, e in spans if n == "http_call"), None)
+            for match in re.finditer(r"(?<!fn )\bhttp_call\s*\(", source):
+                if wrapper and wrapper[0] <= match.start() <= wrapper[1]:
+                    # The module's own thin wrapper forwarding its arguments.
+                    # Its callers are what this loop checks.
+                    continue
+                args, _ = _split_call_args(source, match.end() - 1)
+                # ctx.http_call(method, url, headers, body) or
+                # http_call(ctx, method, url, headers, body)
+                url_arg = None
+                literal_method = False
+                for idx, arg in enumerate(args):
+                    value = _literal(arg)
+                    if value in HTTP_METHODS:
+                        literal_method = True
+                        if value not in MUTATING_HTTP_METHODS:
+                            break
+                        url_arg = args[idx + 1] if idx + 1 < len(args) else None
+                        break
+                if literal_method and url_arg is None:
+                    continue  # a read
+                if url_arg is None:
+                    offenders.append(
+                        f"{module_name}: http_call with a non-literal method — the "
+                        "verb has to be readable before the target can be judged"
+                    )
+                    continue
+                target = url_arg.strip().lstrip("&").strip()
+                if target in KNOWN_VARIABLE_URL_TARGETS:
+                    continue
+                fmt = re.match(r'format!\s*\(\s*(r#)?"((?:[^"\\]|\\.)*)"', target)
+                if not fmt:
+                    offenders.append(
+                        f"{module_name}: http_call target '{target[:60]}' is not an "
+                        "inline format! literal"
+                    )
+                    continue
+                literal = fmt.group(2)
+                if "/tdata/" in literal or any(
+                    p in literal for p in KNOWN_NON_ODATA_PATHS
+                ):
+                    continue
+                offenders.append(
+                    f"{module_name}: http_call format literal {literal!r} names no "
+                    "path this contract recognizes — it looks assembled from pieces"
+                )
+        self.assertEqual(
+            [],
+            offenders,
+            "every HTTP target in a WASM module must be an inline format! whose "
+            "literal shows the whole path, so the action scan can read it. Build "
+            "the URL in one place, or route the dispatch through "
+            f"{DISPATCH_HELPER}:\n  " + "\n  ".join(offenders),
+        )
+
+    def test_every_declared_wasm_module_has_readable_source(self):
+        """A binary with no source is a module this contract cannot read.
+
+        The scan works on Rust. Shipping `wasm/rogue/rogue.wasm` with a spec
+        trigger naming `module = "rogue"` and no Cargo project would leave every
+        assertion here green while that binary POSTs whatever it likes. So every
+        module the app declares must have source, and every committed `.wasm`
+        must belong to a declared module.
+        """
+        app = tomllib.loads((CURATION / "app.toml").read_text())
+        declared = {m["name"] for m in app.get("wasm_modules", [])}
+        self.assertTrue(declared, "app.toml declares no wasm_modules")
+
+        sourceless = sorted(
+            name for name in declared if not (WASM_ROOT / name / "src").is_dir()
+        )
+        self.assertEqual(
+            [],
+            sourceless,
+            "these modules are declared in app.toml but ship no readable Rust "
+            "source, so nothing can audit what they dispatch:\n  "
+            + "\n  ".join(sourceless),
+        )
+
+        # Committed binaries, ignoring cargo build output.
+        binaries = {
+            p.stem
+            for p in WASM_ROOT.rglob("*.wasm")
+            if "target" not in p.parts
+        }
+        undeclared = sorted(binaries - declared)
+        self.assertEqual(
+            [],
+            undeclared,
+            "these committed .wasm binaries belong to no module declared in "
+            "app.toml — an undeclared binary is an unaudited one:\n  "
+            + "\n  ".join(undeclared),
+        )
+
+        # Also pin the reverse direction against the specs: a trigger may only
+        # name a module the app declares.
+        for spec_path in sorted((CURATION / "specs").glob("*.ioa.toml")):
+            spec = tomllib.loads(spec_path.read_text())
+            for action in spec.get("action", []):
+                for trigger in action.get("triggers", []):
+                    if trigger.get("kind") != "wasm":
+                        continue
+                    self.assertIn(
+                        trigger["module"],
+                        declared,
+                        f"{spec_path.name}:{action['name']} fires WASM module "
+                        f"'{trigger['module']}', which app.toml does not declare",
+                    )
 
     def test_the_dispatch_helper_cannot_be_reached_under_another_name(self):
         """The scan finds calls by name, so the name must be the only handle.
@@ -638,10 +806,11 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
         for path in self.modules:
             module_name = path.parts[-3]
             source = path.read_text()
-            sites, _ = self._dispatch_sites(module_name, source)
-            for entity_set, action in sites:
+            sites, _ = self._dispatch_sites(module_name, source, count=True)
+            for (entity_set, action), n in sites.items():
                 if self._is_transition(entity_set, action):
-                    found[f"{module_name}: {entity_set}.{action}"] = True
+                    key = f"{module_name}: {entity_set}.{action}"
+                    found[key] = found.get(key, 0) + n
 
         actual = set(found)
         expected = set(KNOWN_WASM_DRIVEN_TRANSITIONS)
@@ -667,6 +836,23 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             "these imperative drives are gone — delete their entries from "
             "KNOWN_WASM_DRIVEN_TRANSITIONS so the register keeps telling the "
             "truth:\n  " + "\n  ".join(removed),
+        )
+
+        # Identity is not enough: a SECOND call site of an already-registered
+        # drive is more imperative control flow, and a set comparison would not
+        # notice it. The register pins how many.
+        grew = sorted(
+            f"{key}: {found[key]} call sites, register says "
+            f"{KNOWN_WASM_DRIVEN_TRANSITIONS[key][0]}"
+            for key in actual & expected
+            if found[key] != KNOWN_WASM_DRIVEN_TRANSITIONS[key][0]
+        )
+        self.assertEqual(
+            [],
+            grew,
+            "the number of imperative dispatch sites changed. Growing one is "
+            "not allowed; shrinking one means updating the count:\n  "
+            + "\n  ".join(grew),
         )
 
     def test_wasm_modules_do_not_mint_entities(self):
@@ -707,12 +893,13 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                 f"create-register entry '{key}' must say WHY it is still "
                 "imperative and what it is blocked on",
             )
-        for key, reason in KNOWN_WASM_DRIVEN_TRANSITIONS.items():
+        for key, (call_sites, reason) in KNOWN_WASM_DRIVEN_TRANSITIONS.items():
             self.assertRegex(
                 key,
                 r"^[a-z_]+: [A-Za-z]+\.[A-Za-z]+$",
                 f"register key '{key}' must be '<module>: <EntitySet>.<Action>'",
             )
+            self.assertGreater(call_sites, 0, f"register entry '{key}' claims no call sites")
             self.assertGreater(
                 len(reason.split()),
                 12,
@@ -803,16 +990,26 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             "repair_input",
             "the repair brief must travel from the failed job's own field",
         )
-        # create_if_missing, not create: the verifier derives the id, so the
-        # failed job keeps a forward link and a redelivered reaction resolves to
-        # the same entity instead of minting a second agent session.
-        self.assertEqual(trigger["resolve_target"]["type"], "create_if_missing")
-        self.assertEqual(trigger["resolve_target"]["id_field"], "repair_job_id")
+        # `field`, NOT `create_if_missing`. The latter falls back to
+        # "{source_id}-derived" on an empty id, turning a blank verdict into a
+        # malformed repair job with no brief; `field` resolves to nothing and
+        # the rule drops. The id itself is verifier-derived, so the failed job
+        # keeps a forward link and a redelivered verdict lands on the same
+        # entity instead of a second agent session.
+        self.assertEqual(trigger["resolve_target"]["type"], "field")
+        self.assertEqual(trigger["resolve_target"]["field"], "repair_job_id")
+        self.assertNotEqual(
+            trigger["resolve_target"]["type"],
+            "create_if_missing",
+            "create_if_missing fails OPEN on an empty id field",
+        )
+        self.assertTrue(
+            trigger.get("drop_ok"),
+            "two paths drop by design — a blank verdict and a redelivered one — "
+            "so the intentional drop has to be declared",
+        )
 
-        # The guard is a sanity gate, not the verdict. create_if_missing falls
-        # back to "{source_id}-derived" on an empty id field, so a
-        # FailWithRepair carrying no repair params would otherwise mint a job
-        # with no job_type and no brief. field_in fails closed on empty.
+        # A sanity gate, not the verdict. An empty or unknown lane spawns nothing.
         self.assertEqual(trigger["guard"]["type"], "field_in")
         self.assertEqual(trigger["guard"]["field"], "repair_job_type")
         self.assertNotIn(
