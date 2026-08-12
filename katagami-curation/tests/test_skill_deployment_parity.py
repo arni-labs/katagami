@@ -8,6 +8,18 @@ was trimmed to 6786 bytes in master while production kept serving the
 12037-byte text authored on an unmerged branch. This test is what makes that
 class of drift loud instead of invisible.
 
+KNOWN FAILING TODAY, ON PURPOSE: ``synthesize-language`` does not match its
+deployed copy, and this test will say so. That is not a bug in the test. The
+two sides genuinely disagree and neither contains the other. Master carries
+PR #200's correction — the publish call names ``SubmitDesignLanguage`` and
+sends the lineage params — while the deployed copy still names
+``AuthorComplete``, which appears in no spec and no code in this repository's
+entire history, and omits lineage entirely. The deployed copy in turn carries
+sections master lacks: the render-look-fix loop, the DESIGN.md lint contract,
+the shadcn artifact schemas, the thumbnail procedure. Reconciling them means
+authoring product text, which is Rita's call, tracked on ARN-305. Until she
+rules, this failure IS the correct report of the world.
+
 WHAT RUNS THIS TODAY: a human, with credentials. This repository has no CI —
 there is no ``.github/`` and no other runner config — so the network tests below
 skip in every environment as things stand. Wiring a runner that holds the
@@ -218,17 +230,25 @@ class SyncNoteExclusionTests(unittest.TestCase):
             strip_provenance_note(self._valid_note() + self.BODY), self.BODY
         )
 
-    def test_the_real_repo_file_carries_a_conforming_block(self):
-        text = (SKILL_DIR / "synthesize-language" / "SKILL.md").read_text()
-        self.assertTrue(
-            text.lstrip().startswith(NOTE_OPEN), "expected a leading sync note"
-        )
-        self.assertNotEqual(
-            strip_provenance_note(text),
-            text,
-            "the committed sync note does not match the provenance shape, so it "
-            "would be compared as skill text",
-        )
+    def test_no_repo_skill_smuggles_instructions_through_a_note(self):
+        """Whatever notes the repo carries, none may be silently excluded.
+
+        A repo file is only allowed to lose a leading block from the comparison
+        if that block is pure provenance. Prose notes (immersive-landing) stay
+        in, which is correct — they are identical on both sides.
+        """
+        for slug in _repo_slugs():
+            with self.subTest(skill=slug):
+                text = (SKILL_DIR / slug / "SKILL.md").read_text()
+                excluded = text[: len(text) - len(strip_provenance_note(text))]
+                if not excluded:
+                    continue
+                self.assertNotIn(
+                    "\n\n",
+                    excluded.strip(),
+                    f"{slug}: the excluded block spans a paragraph break, which "
+                    "is prose, not provenance",
+                )
 
     def test_instruction_text_appended_inside_a_block_is_not_excluded(self):
         note = self._valid_note().replace(

@@ -1461,3 +1461,94 @@ export function parseJson<T = unknown>(raw?: unknown): T | null {
     return null;
   }
 }
+
+export interface SpecField<T> {
+  /** Structured content, when the field holds a JSON **object**. */
+  data: T | null;
+  /** Trimmed free text, for every shape a section view cannot render. */
+  prose: string | null;
+}
+
+/**
+ * Spec fields (philosophy, tokens, rules, layout_principles, guidance,
+ * imagery_direction, …) hold EITHER structured JSON or plain prose. parseJson()
+ * returns null for prose, and every consumer read that null as "field absent",
+ * so a prose field rendered as an empty panel and its section vanished from the
+ * published DESIGN.md / KATAGAMI.MD. Keep both shapes so callers can render
+ * whichever one is there.
+ *
+ * How common is prose? Not measured for the published corpus — a spot check of
+ * 15 published languages found structured philosophy with a `summary` in all
+ * 15. This is a correctness fix for a shape the system accepts and stores, not
+ * a fix for a widespread outage; Draft/UnderReview entities were not sampled.
+ *
+ * `data` is a plain object ONLY. Every section view reads named keys off it
+ * (`summary`, `values`, `do`/`dont`, …), so handing back an array or a bare
+ * primitive would satisfy the `data` branch and then render nothing — the same
+ * blank panel this function exists to prevent. Arrays and primitives are real
+ * content, so they come back as readable prose rather than being dropped.
+ */
+export function parseSpecField<T = Record<string, unknown>>(
+  raw?: unknown,
+): SpecField<T> {
+  if (raw === null || raw === undefined) return EMPTY_SPEC_FIELD as SpecField<T>;
+
+  // Parse here rather than via parseJson(): that helper returns null both for
+  // "this was not JSON" and for a literal JSON `null`, and the two must not be
+  // conflated. `json.dumps(None)` sends the 4-char string "null" for any field
+  // the agent has nothing for; treating that as prose publishes a section whose
+  // body is the word "null" into DESIGN.md, which other agents then read.
+  if (typeof raw !== "string") return classifySpecValue<T>(raw);
+  const text = raw.trim();
+  if (!text) return EMPTY_SPEC_FIELD as SpecField<T>;
+  try {
+    return classifySpecValue<T>(JSON.parse(text) as unknown);
+  } catch {
+    // Not JSON at all — the raw text IS what the contributor wrote.
+    return { data: null, prose: text };
+  }
+}
+
+const EMPTY_SPEC_FIELD: SpecField<unknown> = { data: null, prose: null };
+
+/** Sort a decoded JSON value into the structured half or the prose half. */
+function classifySpecValue<T>(value: unknown): SpecField<T> {
+  if (isPlainObject(value)) {
+    return { data: value as T, prose: null };
+  }
+  return { data: null, prose: flattenSpecValue(value) || null };
+}
+
+/** A record the section views can read named keys off — not a Date, Map, etc.
+ *  Those are objects too, and would take the `data` branch and render blank. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+function flattenSpecValue(value: unknown, depth = 0): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (depth > 4) return "";
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => flattenSpecValue(entry, depth + 1))
+      .filter(Boolean)
+      .join(", ");
+  }
+  // An array of objects (`[{term, definition}, …]`) is real content that would
+  // otherwise flatten to "" and render as a blank section. Take the values —
+  // the keys are structure, the values are what a reader wants.
+  if (isPlainObject(value)) {
+    return Object.values(value)
+      .map((entry) => flattenSpecValue(entry, depth + 1))
+      .filter(Boolean)
+      .join(" — ");
+  }
+  return "";
+}
