@@ -23,6 +23,8 @@ reviewed.
     pip install -r tests/requirements-dev.txt   # or install it yourself
 """
 
+import os
+import re
 import unittest
 from pathlib import Path
 
@@ -389,6 +391,356 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
             self.assertTrue(other.is_file(), f"missing mirror: {other}")
             self.assertEqual(
                 path.read_text(), other.read_text(), f"{path.name} mirrors diverged"
+            )
+
+
+class PlatformPermitDecisionTest(unittest.TestCase):
+    """Permits this app needs on the KERNEL's own resources (ARN-295).
+
+    Every other policy here governs an entity this app declares. These govern
+    the platform actions the app's agents ask the kernel for — today one pair,
+    `read_trajectories` on `Trajectory`, which THREE kernel endpoints ask about
+    (KERNEL_CALL_SITES below). Two of them are the judge's and have no
+    principal-kind bypass; the third is the tenant-wide aggregate view, which
+    the same grant reaches whether or not anyone meant it to.
+
+    The kernel ships no built-in permit for the pair, so an app that does not
+    grant it gets 403 on the judge's two — which is how they shipped: reachable
+    only after a policy rule was posted by hand at runtime, and not by anything
+    a test could have caught. Hence
+    `test_every_documented_platform_permit_is_granted` below, the general form
+    of that failure.
+
+    Decisions here are evaluated over the WHOLE policy set both apps load into
+    the tenant, not one file, because that is what the kernel merges and a
+    permit is only as good as the forbids sitting next to it. The one test that
+    deliberately reads a single file says so, and says why.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if cedarpy is None:
+            raise AssertionError(MISSING_CEDAR)
+
+    REPO_ROOT = POLICIES.parent.parent
+
+    # A required permit as the docs state it: a permit/grant word, the action
+    # in backticks, `on`, the resource in backticks. Deliberately not locked to
+    # the kernel's exact denial sentence — the first version of this matched
+    # only that phrasing and let four of eight realistic paraphrases through,
+    # which is a poor guard for a rule whose whole job is to notice the pair
+    # nobody wrote a policy for. Snake_case action and PascalCase resource are
+    # what keep it precise: platform actions are snake_case, while this app's
+    # own entity actions are PascalCase and appear as `Action::"Publish"`.
+    DOCUMENTED_PERMIT = re.compile(
+        r"(?:permit\w*|grant\w*|authoriz\w+)\b[^`\n]{0,40}`([a-z][a-z0-9_]*)`"
+        r"[^`\n]{0,25}\bon\b\s*(?:resource\s+|the\s+)?`([A-Z][A-Za-z0-9_]*)`"
+    )
+
+    # Every platform permit this app depends on, and the principal that must
+    # hold it. Adding a gated kernel endpoint to a skill means adding its pair
+    # here and shipping the policy that grants it.
+    PLATFORM_PERMITS = {
+        ("read_trajectories", "Trajectory"): ("Agent", "katagami-judge", {"agent_type": "judge"}),
+    }
+
+    # Every kernel handler that asks Cedar about a Trajectory, and the helper
+    # it asks through. All three ask for the SAME action and resource type,
+    # which is exactly the point: one permit answers all of them, including the
+    # aggregate view the judge never calls and this app did not set out to
+    # open. `require_observe_auth` still returns early for an Admin- or
+    # System-kind principal, so the grant is not what holds that one open
+    # today — it becomes so when ARN-255 removes the bypass.
+    KERNEL_CALL_SITES = (
+        ("POST /api/conformance/check", "require_trajectory_content_auth"),
+        ("GET /api/ots/trajectories/<id>/atif", "require_trajectory_content_auth"),
+        ("GET /observe/trajectories", "require_observe_auth"),
+    )
+
+    def tenant_policies(self):
+        """Both apps' policies, concatenated the way the tenant loads them."""
+        return "\n".join(
+            path.read_text()
+            for directory in (POLICIES, COMMONS_POLICIES)
+            for path in sorted(directory.glob("*.cedar"))
+        )
+
+    def decide(self, principal, *, action="read_trajectories", resource_type="Trajectory"):
+        """One request shaped the way the endpoint builds it.
+
+        The resource carries NO attributes and its id is `unknown`: these
+        endpoints pass an empty attribute map, so Cedar sees
+        `Trajectory::"unknown"` and has nothing but the principal to decide on
+        (temper-authz engine::evaluate_request, resource_id_from_attrs).
+
+        `agentTypeVerified` is false, and not by omission. The endpoints build
+        their context through `SecurityContext::with_agent_context`, which
+        stamps it false on every request because the identity came off
+        unauthenticated headers (ARN-255). A permit conditioned on it being
+        true — the shape temper's own project-management app uses — would
+        refuse every caller these endpoints can have.
+        """
+        principal_type, principal_id, attrs = principal
+        entities = [
+            entity(principal_type, principal_id, {"id": principal_id, **attrs}),
+            {"uid": {"type": resource_type, "id": "unknown"}, "attrs": {}, "parents": []},
+        ]
+        return cedarpy.is_authorized(
+            {
+                "principal": {"type": principal_type, "id": principal_id},
+                "action": {"type": "Action", "id": action},
+                "resource": {"type": resource_type, "id": "unknown"},
+                "context": {"agentTypeVerified": False},
+            },
+            self.tenant_policies(),
+            entities,
+        ).decision
+
+    JUDGE = ("Agent", "katagami-judge", {"agent_type": "judge"})
+    PLATFORM = ("Agent", "system", {})
+    CONTRIBUTOR = ("Agent", "katagami-contributor", {"agent_type": "contributor"})
+    REVIEWER = ("Agent", "katagami-reviewer", {"agent_type": "reviewer"})
+    UNDECLARED_AGENT = ("Agent", "agent-sneaky", {})
+    ADMIN = ("Admin", "ops-1", {})
+    ANONYMOUS = ("Customer", "anonymous", {})
+    E2E_DRIVER = ("Agent", "e2e-driver", {"agent_type": "system"})
+
+    def test_the_judge_reads_the_run_it_is_judging(self):
+        # The whole point of the permit: without this decision, layer 1 of the
+        # two-layer judge cannot run in production at all.
+        self.assertEqual(self.decide(self.JUDGE), cedarpy.Decision.Allow)
+
+    def test_the_platform_reads_a_run_it_replays_itself(self):
+        # Same principal trajectory_verdict.cedar admits on Record, for the
+        # same reason: a verdict written from a replay implies reading the run.
+        self.assertEqual(self.decide(self.PLATFORM), cedarpy.Decision.Allow)
+
+    def test_the_judged_agent_cannot_read_the_corpus(self):
+        self.assertEqual(self.decide(self.CONTRIBUTOR), cedarpy.Decision.Deny)
+
+    def test_the_reviewer_has_no_business_in_the_trajectories(self):
+        # It rules on the artifacts, not on the run that produced them. Named
+        # here so that admitting it later is a decision somebody makes.
+        self.assertEqual(self.decide(self.REVIEWER), cedarpy.Decision.Deny)
+
+    def test_an_agent_that_declares_no_type_reads_nothing(self):
+        self.assertEqual(self.decide(self.UNDECLARED_AGENT), cedarpy.Decision.Deny)
+
+    def test_an_admin_kind_principal_gets_no_bypass_here(self):
+        # `require_trajectory_content_auth` drops the Admin/System shortcut the
+        # aggregate observe views keep, precisely because principal kind is a
+        # request header nothing authenticates. The policy must not put it back.
+        self.assertEqual(self.decide(self.ADMIN), cedarpy.Decision.Deny)
+
+    def test_an_unauthenticated_caller_reads_nothing(self):
+        self.assertEqual(self.decide(self.ANONYMOUS), cedarpy.Decision.Deny)
+
+    def test_a_test_credential_is_not_a_judge(self):
+        self.assertEqual(self.decide(self.E2E_DRIVER), cedarpy.Decision.Deny)
+
+    def test_the_grant_reaches_the_aggregate_observe_view_too(self):
+        """Three endpoints ask for this pair, not the two the judge uses.
+
+        `GET /observe/trajectories` — counts, per-action stats, and the most
+        recent failed entries for the tenant — asks Cedar the same question
+        through a different helper
+        (temper-server observe/evolution/trajectories.rs). So the grant reaches
+        it, and it reaches it silently: there is no second Cedar request to
+        notice, because the action and resource type are identical.
+
+        Pinned here so the reach is a thing the app states rather than
+        something a reader discovers. If a fourth call site appears, or the
+        aggregate view stops being covered, this list and the policy comment
+        have to be updated together.
+        """
+        for label, _helper in self.KERNEL_CALL_SITES:
+            self.assertEqual(
+                self.decide(self.JUDGE),
+                cedarpy.Decision.Allow,
+                f"{label}: the judge is not permitted the pair it asks for",
+            )
+
+        # And the policy names all three, so the reach cannot quietly lose one.
+        policy = (POLICIES / "trajectory.cedar").read_text()
+        for label, _helper in self.KERNEL_CALL_SITES:
+            path = label.split(" ", 1)[1]
+            self.assertIn(
+                path,
+                policy,
+                f"trajectory.cedar does not name {label}, an endpoint this "
+                "permit answers for",
+            )
+
+    def test_the_permit_grants_that_one_action_and_no_other(self):
+        # `read_trajectories` is the only platform action on this resource the
+        # app has a use for; a permit written against `action` would have
+        # carried whatever the kernel adds to `Trajectory` later.
+        for action in ("write_trajectories", "delete_trajectories", "read_events"):
+            self.assertEqual(
+                self.decide(self.JUDGE, action=action),
+                cedarpy.Decision.Deny,
+                f"the judge was granted {action} on Trajectory",
+            )
+
+    def test_the_permit_does_not_reach_other_kernel_resources(self):
+        """Read against THIS FILE alone, unlike every other test here.
+
+        The property belongs to the policy, not to the merged set, and the
+        merged set cannot answer it: every katagami-commons policy is a blanket
+        `permit(principal, action, resource is X)`, so `read_trajectories` on
+        `DesignLanguage` is Allow for everyone — including anonymous — no
+        matter what this file says (see
+        `test_the_commons_blanket_permits_grant_every_action_name` below, which
+        pins that as the pre-existing fact it is). Evaluating this over the
+        merged set would either fail for a reason that is not this policy's, or
+        pass only because the resource list happened to dodge the commons
+        types, which is worse.
+        """
+        one_file = (POLICIES / "trajectory.cedar").read_text()
+        for resource_type in ("Entity", "Spec", "AgentAudit", "DesignLanguage", "Member"):
+            entities = [
+                entity("Agent", "katagami-judge", {"id": "katagami-judge"}),
+                {"uid": {"type": resource_type, "id": "unknown"}, "attrs": {}, "parents": []},
+            ]
+            decision = cedarpy.is_authorized(
+                {
+                    "principal": {"type": "Agent", "id": "katagami-judge"},
+                    "action": {"type": "Action", "id": "read_trajectories"},
+                    "resource": {"type": resource_type, "id": "unknown"},
+                    "context": {"agentTypeVerified": False},
+                },
+                one_file,
+                entities,
+            ).decision
+            self.assertEqual(
+                decision,
+                cedarpy.Decision.Deny,
+                f"trajectory.cedar granted read_trajectories on {resource_type}",
+            )
+
+    def test_the_commons_blanket_permits_grant_every_action_name(self):
+        """Pre-existing, not introduced here, and pinned so it stays visible.
+
+        Every katagami-commons policy opens with
+        `permit(principal, action, resource is X)` — unconstrained action AND
+        unconstrained principal — with forbids layered on top. Two consequences
+        this app should not discover by accident:
+
+        1. Any action name at all is granted on those resources, including
+           kernel platform actions like `read_trajectories` and actions nobody
+           has invented yet. The curation-side actor policies deliberately do
+           the opposite and enumerate their alphabet.
+        2. Every commons forbid is written against `principal is Agent` or
+           `principal.agent_type`, so `Customer::"anonymous"` — the principal
+           the platform assigns when no identity was presented — matches none
+           of them.
+
+        Not reachable through the endpoints this PR is about: both trajectory
+        handlers hardcode the resource type `Trajectory`, so no request with
+        action `read_trajectories` ever names a commons resource. Recorded as a
+        finding rather than fixed here, because narrowing those permits is an
+        artifact-side change with its own blast radius on the pipeline.
+
+        This test asserts today's behaviour. If it starts failing because the
+        commons policies were tightened, that is good news — delete it.
+        """
+        design_language = commons_policy("design_language")
+        for action in ("read_trajectories", "Publish", "SomeActionInventedLater"):
+            entities = [
+                entity("Customer", "anonymous", {"id": "anonymous"}),
+                {"uid": {"type": "DesignLanguage", "id": "r1"}, "attrs": {}, "parents": []},
+            ]
+            decision = cedarpy.is_authorized(
+                {
+                    "principal": {"type": "Customer", "id": "anonymous"},
+                    "action": {"type": "Action", "id": action},
+                    "resource": {"type": "DesignLanguage", "id": "r1"},
+                    "context": {},
+                },
+                design_language,
+                entities,
+            ).decision
+            self.assertEqual(
+                decision,
+                cedarpy.Decision.Allow,
+                f"commons design_language.cedar no longer allows anonymous {action} "
+                "— if it was tightened on purpose, delete this test",
+            )
+
+    def _markdown_files(self):
+        """Every prose file in the checkout, dependencies and dot-dirs aside.
+
+        `.md` is a path suffix here, not a promise of a file: the site routes
+        include a directory called `DESIGN.md`, which is the page that serves
+        one.
+        """
+        for directory, subdirs, filenames in os.walk(self.REPO_ROOT):
+            subdirs[:] = [
+                d for d in subdirs if not d.startswith(".") and d != "node_modules"
+            ]
+            for filename in filenames:
+                path = Path(directory) / filename
+                if path.suffix == ".md" and path.is_file():
+                    yield path
+
+    def test_every_documented_platform_permit_is_granted(self):
+        """A permit the docs say a caller needs must be one this app ships.
+
+        The generic form of the ARN-295 finding. A kernel endpoint that
+        requires a Cedar permit no policy grants is unreachable in production,
+        and nothing in this repo noticed: `read_trajectories` appeared in a
+        skill's 403 table and in no `.cedar` file, and the gap surfaced only
+        when a live run hit the endpoint and got 403.
+
+        So the skills' own documentation of the permit is what this reads. Any
+        pair written down as required has to be declared in PLATFORM_PERMITS
+        with the principal that needs it, and that principal has to actually be
+        allowed it by the policies as they stand.
+        """
+        documented = set()
+        for path in self._markdown_files():
+            for action, resource_type in self.DOCUMENTED_PERMIT.findall(
+                path.read_text(encoding="utf-8", errors="replace")
+            ):
+                documented.add((action, resource_type))
+
+        self.assertIn(
+            ("read_trajectories", "Trajectory"),
+            documented,
+            "the judge skill no longer documents the permit its endpoints "
+            "require, so this test can no longer tell whether one is missing",
+        )
+
+        undeclared = sorted(documented - set(self.PLATFORM_PERMITS))
+        self.assertEqual(
+            undeclared,
+            [],
+            "these Cedar permits are documented as required by an endpoint this "
+            "app calls, but no test says who needs them. Declare each in "
+            f"PLATFORM_PERMITS and ship the policy that grants it: {undeclared}",
+        )
+
+        # The reverse direction. A platform permit this app ships but never
+        # writes down is the same failure wearing the other face: an operator
+        # reading the skill cannot tell which permit a 403 is asking for, and a
+        # reviewer cannot tell why the app holds a grant on the kernel's own
+        # resources at all.
+        undocumented = sorted(set(self.PLATFORM_PERMITS) - documented)
+        self.assertEqual(
+            undocumented,
+            [],
+            "these platform permits are declared and granted but documented "
+            "nowhere in the repo. Say in the skill or APP.md which endpoint "
+            f"requires each, in the words the 403 uses: {undocumented}",
+        )
+
+        for (action, resource_type), principal in sorted(self.PLATFORM_PERMITS.items()):
+            self.assertEqual(
+                self.decide(principal, action=action, resource_type=resource_type),
+                cedarpy.Decision.Allow,
+                f"no policy in this app grants `{action}` on `{resource_type}` to "
+                f"{principal[0]}::\"{principal[1]}\", so the endpoints behind it "
+                "answer 403 to the principal that has to call them",
             )
 
 

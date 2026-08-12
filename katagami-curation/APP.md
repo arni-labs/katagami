@@ -126,6 +126,26 @@ actually did, rather than what a transcript says the agent asked for.
 endpoint cannot be reached, and it tracks the kernel engine rather than drifting
 into a second opinion.
 
+Both endpoints the judge reads through — `POST /api/conformance/check` and
+`GET /api/ots/trajectories/<id>/atif` — return one named run's recorded
+content, so both require a Cedar permit for `read_trajectories` on `Trajectory`
+in the addressed tenant, and neither carries the principal-kind bypass the
+aggregate observe views keep: an Admin-kind caller no policy names is refused
+like anyone else. `policies/trajectory.cedar` is that permit. It admits
+`Agent::"katagami-judge"` and `Agent::"system"` and nobody else — not
+contributors, not the reviewer role, not an agent that declares no type, not an
+unauthenticated caller. Without it both endpoints answer 403 to every principal,
+which is what they did until ARN-295.
+
+A third endpoint asks Cedar for the same pair: `GET /observe/trajectories`, the
+tenant-wide aggregate view (counts, per-action stats, recent failed entries).
+That one still has the Admin/System principal-kind bypass, which is claimable
+from a request header, so the permit is not what holds it open today — it
+becomes the only thing holding it open for those two principals once ARN-255
+removes the bypass. The view stays tenant-local for them either way: an
+Agent-kind caller that sends no `X-Tenant-Id` is refused rather than handed the
+cross-tenant view.
+
 Neither engine claims more than it checked. Guards resolved against the entity
 graph at dispatch time (`cross_entity_state`), evidence never captured, a read
 that stopped at its row cap — all of it lands in `unverifiable` rather than
