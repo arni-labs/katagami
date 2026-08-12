@@ -1,18 +1,15 @@
-<!-- CANONICAL SYNC NOTE: apart from this comment block, this file must stay
-     byte-identical to the skill the curator actually runs — the
-     installer-maintained entity
-     os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language at
-     /agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md
-     in workspace os-app-docs, tenant default. When one side changes, mirror the
-     other in the same effort; tests/test_skill_deployment_parity.py enforces it.
-
-     PROVENANCE: these bytes were copied from that deployed entity on 2026-08-12,
-     sha256 6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a,
-     12037 bytes. They are verbatim git commit c070f054, which lives on branch
-     claude/arn269-tool-choice and has never been merged to master. Master's own
-     copy had regressed: 12bc27db trimmed it from 31932 to 6786 bytes, and
-     c070f054 restored the platform contracts that trim removed. Production was
-     therefore serving text that existed nowhere in master's history. -->
+<!-- CANONICAL SYNC NOTE
+rule: apart from this block, this file must stay byte-identical to the deployed skill; tests/test_skill_deployment_parity.py enforces it. This block carries provenance fields only and must never carry instructions.
+entity: os-agent-skill-file-sl-bootstrap-agent-soul-curator-synthesize-language
+path: /agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md
+workspace: os-app-docs
+tenant: default
+source-commit: c070f0543cd580d4c871fec8f22daf520e2b963d
+source-branch: claude/arn269-tool-choice
+sha256: 6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a
+bytes: 12037
+confirmed-live: 2026-08-12
+-->
 
 # Synthesize Language
 
