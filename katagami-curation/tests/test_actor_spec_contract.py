@@ -479,6 +479,48 @@ class ActorPolicyBoundaryTest(unittest.TestCase):
             self.assertTrue(mirrored.is_file(), f"missing mirror: {mirrored}")
             self.assertEqual(policy.read_text(), mirrored.read_text())
 
+    def test_every_policy_file_is_mirrored_byte_for_byte(self):
+        """Both copies are loaded, so a change to one of them is half a change.
+
+        The per-spec check above only looks at the four actor policies, and the
+        gap cost a merged fix: f0451470 set out to "remove dead launch_research
+        permits from wasm.cedar", edited specs/policies/wasm.cedar, and left
+        policies/wasm.cedar granting them — reviewed, merged, half applied.
+        Which copy a tenant loads depends on the install path, so a reader of
+        either one cannot tell what is actually enforced.
+        """
+        mirror = POLICIES.parent / "specs" / "policies"
+        primaries = sorted(p.name for p in POLICIES.glob("*.cedar"))
+        mirrored = sorted(p.name for p in mirror.glob("*.cedar"))
+        self.assertEqual(
+            primaries,
+            mirrored,
+            "these two directories do not hold the same policy files, so the "
+            "policy set a tenant gets depends on which one it loaded",
+        )
+        for name in primaries:
+            self.assertEqual(
+                (POLICIES / name).read_text(),
+                (mirror / name).read_text(),
+                f"{name}: the two copies have diverged",
+            )
+
+    def test_reading_recorded_agent_content_is_an_allowlist_not_a_default(self):
+        # ARN-295: the conformance and ATIF endpoints ask Cedar for
+        # `read_trajectories` on `Trajectory` and carry no principal-kind
+        # bypass, so without this policy both answer 403 to every caller.
+        policy = (POLICIES / "trajectory.cedar").read_text()
+        self.assertIn('Action::"read_trajectories"', policy)
+        self.assertIn("resource is Trajectory", policy)
+        self.assertIn('principal == Agent::"katagami-judge"', policy)
+        # The judge skill runs under exactly that principal, and documents the
+        # 403 an operator sees when the permit is absent.
+        judge = (
+            CURATION_ROOT.parent / "mcp" / "skills" / "katagami-judge" / "SKILL.md"
+        ).read_text()
+        self.assertIn("x-temper-principal-id: katagami-judge", judge)
+        self.assertIn("read_trajectories", judge)
+
     def test_no_agent_principal_may_publish_on_the_role_record(self):
         policy = (POLICIES / "human_curator.cedar").read_text()
         self.assertIn('forbid(', policy)
