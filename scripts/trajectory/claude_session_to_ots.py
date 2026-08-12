@@ -398,9 +398,10 @@ def _build_messages(
 # --------------------------------------------------------------------------
 # the kernel's decision contract
 #
-# These four literals are read by `temper-server/src/conformance/decisions.rs`
-# and are the whole coupling between this producer and the checker. The key is
-# the load-bearing one: rename it kernel-side and this module keeps writing
+# The first two literals belong to `temper-server/src/conformance/decisions.rs`
+# and are the whole coupling between this producer and the checker; the other
+# two are ours, written beside them. The key is the load-bearing one: rename it
+# kernel-side and this module keeps writing
 # `trajectory_actions`, `nested_actions()` returns empty, every governed call
 # reads as a harness tool, real violations disappear, and every test in this
 # repository stays green while the verdict flips to a clean pass.
