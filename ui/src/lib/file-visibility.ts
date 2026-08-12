@@ -127,8 +127,11 @@ function readString(
 /**
  * Who, if anyone, may read this file.
  *
- * Deny rules run before any allow, and anything that cannot be placed — no
- * workspace, no path, unreadable projection — is `denied` rather than served.
+ * Deny rules run before any allow. A file with no readable PATH is `denied` —
+ * the tree rules could not be applied, and an unapplied deny must never read as
+ * an allow. A file with no WORKSPACE is judged on its path instead of refused,
+ * because that shape exists in live public content; see the comment at that
+ * check.
  *
  * A `denied` result, and an `owner` result for a caller who is not the owner,
  * must both leave the route as a 404 — never a 403. A distinguishable "exists
@@ -156,11 +159,22 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
     return "denied";
   }
 
+  // Some files carry no workspace at all — not a projection artifact, genuinely
+  // absent from the single-entity read too. 34 of the 1,273 ids the live site
+  // fetches are like this (24 under `/katagami`, 10 under `/artstyles`, e.g.
+  // `/artstyles/opaline-soft-diffusion/opaline-melon.png`), and they are served
+  // publicly today. Refusing what we cannot place would have taken all of them
+  // dark, so a workspace-less file is classified on its path alone.
+  //
+  // That is a narrower statement than it looks. The deny trees above already ran
+  // and are absolute: a workspace-less file under `/agents/**` or `/system/**`
+  // is still refused, which is exactly the content this fix exists to protect.
+  // What falls through is content-shaped files in an older storage shape.
   const workspaceId = readString(fields, projection, [
     "WorkspaceId",
     "workspace_id",
   ]);
-  if (!workspaceId || !SERVABLE_WORKSPACE_IDS.has(workspaceId)) return "denied";
+  if (workspaceId && !SERVABLE_WORKSPACE_IDS.has(workspaceId)) return "denied";
 
   return OWNER_ONLY_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
     ? "owner"

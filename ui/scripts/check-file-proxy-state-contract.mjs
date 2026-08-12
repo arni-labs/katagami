@@ -148,7 +148,6 @@ for (const p of ["/iterate/iter-pushpin-1.jsonl", "/feedback/ab-verdicts.jsonl"]
 for (const meta of [
   null,
   {},
-  { fields: { Status: "Ready", Path: "/languages/x.html" } }, // no workspace
   { fields: { Status: "Ready", WorkspaceId: CONTRIB } }, // no path
   {
     fields: {
@@ -165,21 +164,58 @@ for (const meta of [
   );
 }
 
-// 34 of the 1,273 ids come back with NO workspace key at all in the COLLECTION
-// projection (the legacy generation). Refusing is the deliberate choice: a file
-// we cannot place must not be served. That is only safe because the route reads
-// the SINGLE-ENTITY shape, which does carry workspace_id — asserted below.
+// 34 of the 1,273 ids carry NO workspace field at all — not a projection
+// artifact: absent from the single-entity read too, in every casing. They are
+// served publicly today (verified live, 200 + ~2MB), so refusing what we cannot
+// place would take real public imagery dark. They are classified on path alone.
+// This is the exact field set those entities return.
+const WORKSPACELESS_LIVE = {
+  Id: "fl-019efaa4-6dd5-79b2-ba06-9ab54b73eaa3",
+  Status: "Ready",
+  path: "/artstyles/opaline-soft-diffusion/opaline-melon.png",
+  content_hash: "sha256:whatever",
+  created_by: "",
+  has_content: true,
+  mime_type: "image/png",
+  size_bytes: 2092392,
+  version_count: 1,
+  version_number: 1,
+};
+assert.equal(
+  classifyFileVisibility({ fields: WORKSPACELESS_LIVE }),
+  "public",
+  "workspace-less live content must still be served — it is public today",
+);
+for (const p of [
+  "/katagami/thumbnails/cultured-review-literary-journal-system/desktop.jpg",
+  "/artstyles/opaline-soft-diffusion/opaline-face.png",
+  "/artstyles/opaline-soft-diffusion/opaline-teapot.png",
+]) {
+  assert.equal(
+    classifyFileVisibility({ fields: { Status: "Ready", path: p } }),
+    "public",
+    `${p} is workspace-less live content and must be served`,
+  );
+}
+
+// The safety property that makes the fallback acceptable: the deny trees are
+// absolute, so a workspace-less file in a protected tree is STILL refused.
+for (const p of [
+  "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+  "/system/knowledge/design-principles.md",
+]) {
+  assert.equal(
+    classifyFileVisibility({ fields: { Status: "Ready", path: p } }),
+    "denied",
+    `${p} must stay denied even with no workspace to judge it by`,
+  );
+}
 assert.equal(
   classifyFileVisibility({
-    fields: {
-      Status: "Ready",
-      Path: "/katagami/thumbnails/legacy/desktop.jpg",
-      name: "desktop.jpg",
-      mime_type: "image/jpeg",
-    },
+    fields: { Status: "Ready", path: "/iterate/run.jsonl" },
   }),
-  "denied",
-  "a payload with no workspace key at all must fail closed",
+  "owner",
+  "owner-only trees keep their rule without a workspace",
 );
 
 // State is still necessary; it is simply no longer sufficient.
