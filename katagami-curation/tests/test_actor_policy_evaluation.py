@@ -258,6 +258,171 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
                 f"{name}: a declared non-contributor agent must still publish",
             )
 
+    # --- ARN-319: the contributor ownership boundary ----------------------
+    #
+    # The whole matrix, both directions, for the actions the finalizer lane
+    # owns. Every row is a principal shape that really reaches the policy, read
+    # out of the code that sends the headers; the expected decision is what that
+    # caller's role requires. A test that only proved the deny would be half a
+    # test — the same forbid, written one clause wrong, takes the curation
+    # pipeline down instead.
+    #
+    # (label, principal type, principal id, attrs, may perform the gated set)
+    OWNERSHIP_MATRIX = (
+        # mcp/src/temper.ts — the outside contributor lane. This row IS ARN-319:
+        # before the fix it got 409 from the SubmitForReview state guard and
+        # never 403 from Cedar.
+        ("mcp contributor", "Agent", "contrib:sub:client", {"agent_type": "contributor"}, False),
+        # The same contributor declining to declare a kind. `PrincipalKind`
+        # defaults to Customer both when `x-temper-principal-kind` is absent and
+        # when its value is unrecognized, so a forbid written against
+        # `principal is Agent` would have missed this shape entirely.
+        ("contributor sending no kind header", "Customer", "contrib:sub:client", {"agent_type": "contributor"}, False),
+        # And declaring nothing at all — the DEFAULT header shape. Before the
+        # fix this caller could publish a design language.
+        ("caller sending no principal headers", "Customer", "contrib:sub:client", {}, False),
+        # A spoofed kind: any unrecognized value lands on Customer, so
+        # "x-temper-principal-kind: system" is a Customer, not a System.
+        ("spoofed principal kind", "Customer", "contrib:sub:client", {}, False),
+        ("undeclared agent", "Agent", "some-agent", {}, False),
+        ("anonymous", "Customer", "anonymous", {}, False),
+        # katagami-curation/wasm/finalize_spawned_session/src/lib.rs:77-83 — the
+        # WASM finalizer, which drives SubmitForReview, MarkQualityPassed and
+        # Publish on every pipeline run. The three header strings are in the
+        # committed .wasm, not only in the source.
+        ("wasm finalizer", "Agent", "system", {"agent_type": "system"}, True),
+        # The finalizer named by identity alone, in case the agent-type header
+        # is ever dropped: it stays permitted, because denying it is how this
+        # change would take the whole pipeline down.
+        ("finalizer identity, no agent type", "Agent", "system", {}, True),
+        # katagami-curation/APP.md — the synthesize agent drives its own
+        # SubmitForReview in-session. It is a declared worker, not a contributor,
+        # and the ownership boundary is not supposed to touch it.
+        ("curator agent", "Agent", "worker-7", {"agent_type": "worker"}, True),
+        # katagami-curation/specs/curation_direction.ioa.toml — a trigger that
+        # declares `principal = "curation-service"` presents as
+        # Agent::"service:curation-service", NOT Agent::"system".
+        ("curation-service trigger", "Agent", "service:curation-service", {"agent_type": "curation-service"}, True),
+        ("review agent", "Agent", "katagami-judge", {"agent_type": "review"}, True),
+        # katagami-curation/tests/e2e/*.py and scripts/backfill-shadcn-exports.mjs.
+        ("e2e driver", "Agent", "e2e-driver", {"agent_type": "system"}, True),
+        ("shadcn backfill", "Agent", "katagami-finalizer", {"agent_type": "system"}, True),
+        # The platform API-key holder: a caller presenting the global API key
+        # without principal headers is rewritten to Admin::"api-key-holder" by
+        # the kernel's bearer-auth layer. The owner gallery controls
+        # (ui/src/app/actions.ts), the ops backfills (ui/scripts/backfill-*.mjs)
+        # and the local seed (scripts/seed-local-remix.mjs) all ride it.
+        ("platform api-key holder", "Admin", "api-key-holder", {}, True),
+        # The platform itself. A Cedar forbid beats every permit including the
+        # kernel's built-in permit(principal is System, ...), so a forbid that
+        # omitted `principal is System` from its allow-list would deny state
+        # timeouts and every router path that falls back to
+        # SecurityContext::system().
+        ("platform (System kind)", "System", "system", {}, True),
+    )
+
+    # The actions ARN-319 is about, plus one that must stay open to everybody:
+    # the boundary is about advancing and publishing, never about authoring.
+    OWNERSHIP_GATED = (
+        "SubmitForReview",
+        "MarkQualityPassed",
+        "Publish",
+        "AttachPublishedAssets",
+        "AttachVerifiedThumbnail",
+        "AttachTasteVector",
+        "AttachComputedFacets",
+    )
+    OWNERSHIP_AUTHORING = ("Create", "SetSpec", "SubmitDesignLanguage")
+
+    def _ownership_decision(self, principal_type, principal_id, attrs, action):
+        entities = [
+            entity(principal_type, principal_id, {"id": principal_id, **attrs}),
+            entity("DesignLanguage", "r1", {"id": "r1"}),
+        ]
+        return cedarpy.is_authorized(
+            {
+                "principal": {"type": principal_type, "id": principal_id},
+                "action": {"type": "Action", "id": action},
+                "resource": {"type": "DesignLanguage", "id": "r1"},
+                "context": {},
+            },
+            commons_policy("design_language"),
+            entities,
+        ).decision
+
+    def test_the_ownership_boundary_decides_the_same_way_for_every_principal(self):
+        """Both directions, one assertion per cell (ARN-319)."""
+        for label, ptype, pid, attrs, may in self.OWNERSHIP_MATRIX:
+            for action in self.OWNERSHIP_GATED:
+                self.assertEqual(
+                    self._ownership_decision(ptype, pid, attrs, action),
+                    cedarpy.Decision.Allow if may else cedarpy.Decision.Deny,
+                    f"{label} on DesignLanguage.{action}: wrong decision",
+                )
+
+    def test_the_contributor_is_refused_submit_for_review_by_cedar(self):
+        """The literal ARN-319 claim: 403 AuthorizationDenied, not 409.
+
+        The 409 came from the state machine — `guard is_true on 'has_philosophy'
+        requires true, found <missing>` — which means Cedar had already allowed
+        the caller and the transition was refused on its own merits. Cedar now
+        refuses the caller, so the request never reaches the guard.
+        """
+        for ptype, pid, attrs in (
+            ("Agent", "contrib:sub:client", {"agent_type": "contributor"}),
+            ("Customer", "contrib:sub:client", {"agent_type": "contributor"}),
+            ("Customer", "contrib:sub:client", {}),
+        ):
+            self.assertEqual(
+                self._ownership_decision(ptype, pid, attrs, "SubmitForReview"),
+                cedarpy.Decision.Deny,
+                f"{ptype}::{pid} attrs={attrs} still advances its own submission",
+            )
+
+    def test_the_boundary_does_not_touch_authoring(self):
+        # Contributors author. If this goes red the fix took the contribution
+        # lane down rather than bounding it.
+        for label, ptype, pid, attrs, _ in self.OWNERSHIP_MATRIX:
+            if pid == "anonymous":
+                continue  # nobody, by design — covered by its own row above
+            for action in self.OWNERSHIP_AUTHORING:
+                self.assertEqual(
+                    self._ownership_decision(ptype, pid, attrs, action),
+                    cedarpy.Decision.Allow,
+                    f"{label} can no longer {action} a design language",
+                )
+
+    def test_the_forbid_is_not_written_against_a_principal_type(self):
+        """The mutation this file exists to catch.
+
+        Rewriting the ARN-319 forbid as `forbid(principal is Agent, ...)` reads
+        stricter and passes every text assertion, while letting the default
+        header shape — no `x-temper-principal-kind` at all, hence Customer —
+        walk straight past it. This runs that mutation and requires it to fail.
+        """
+        text = commons_policy("design_language")
+        mutated = text.replace("forbid(\n  principal,", "forbid(\n  principal is Agent,")
+        self.assertNotEqual(mutated, text, "the forbids are no longer unconstrained")
+        entities = [
+            entity("Customer", "contrib:sub:client", {"id": "contrib:sub:client"}),
+            entity("DesignLanguage", "r1", {"id": "r1"}),
+        ]
+        self.assertEqual(
+            cedarpy.is_authorized(
+                {
+                    "principal": {"type": "Customer", "id": "contrib:sub:client"},
+                    "action": {"type": "Action", "id": "SubmitForReview"},
+                    "resource": {"type": "DesignLanguage", "id": "r1"},
+                    "context": {},
+                },
+                mutated,
+                entities,
+            ).decision,
+            cedarpy.Decision.Allow,
+            "the type-targeted mutation was already denied, so this test proves "
+            "nothing about why the forbid is unconstrained",
+        )
+
     # ARN-303: the entity types that had no boundary at all until a stance was
     # decided for each. (policy, resource type, a gated action, an authoring one)
     STANCED = (
@@ -370,12 +535,24 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
     def test_no_commons_policy_still_gates_only_on_the_attribute(self):
         # The generic form of the finding: a resource whose only agent
         # exclusion is `has agent_type` is a resource an agent can walk past.
+        #
+        # Comments are stripped first. This check used to read the raw file, so
+        # a policy that merely MENTIONED `principal is Agent` in a comment —
+        # design_language.cedar's ARN-319 note says it widened away from that
+        # spelling — satisfied it while the code did nothing of the kind.
+        #
+        # `unless { principal has agent_type ... }` on an unconstrained forbid
+        # counts too, and is the stronger form: it requires the declaration of
+        # every principal rather than only of Agent-kind ones.
         offenders = []
         for path in sorted(COMMONS_POLICIES.glob("*.cedar")):
-            text = path.read_text()
+            text = re.sub(r"//[^\n]*", "", path.read_text())
             if "principal has agent_type" not in text:
                 continue
-            if "principal is Agent" not in text:
+            declaration_required = re.search(
+                r"unless\s*\{[^}]*principal has agent_type", text, re.S
+            )
+            if "principal is Agent" not in text and not declaration_required:
                 offenders.append(path.name)
         self.assertEqual(
             offenders,
@@ -630,9 +807,9 @@ class PlatformPermitDecisionTest(unittest.TestCase):
            kernel platform actions like `read_trajectories` and actions nobody
            has invented yet. The curation-side actor policies deliberately do
            the opposite and enumerate their alphabet.
-        2. Every commons forbid is written against `principal is Agent` or
+        2. The commons forbids were written against `principal is Agent` or
            `principal.agent_type`, so `Customer::"anonymous"` — the principal
-           the platform assigns when no identity was presented — matches none
+           the platform assigns when no identity was presented — matched none
            of them.
 
         Not reachable through the endpoints this PR is about: both trajectory
@@ -641,30 +818,58 @@ class PlatformPermitDecisionTest(unittest.TestCase):
         finding rather than fixed here, because narrowing those permits is an
         artifact-side change with its own blast radius on the pipeline.
 
-        This test asserts today's behaviour. If it starts failing because the
-        commons policies were tightened, that is good news — delete it.
+        ARN-319 closed HALF of consequence 2 on design_language.cedar: the
+        actions the finalizer lane owns are now denied to every principal that
+        does not declare what it is, `Customer::"anonymous"` included. The rest
+        of the finding stands and is what the two halves below pin — an action
+        name nobody enumerated is still granted to nobody-in-particular, and
+        that is still true of the other commons policies.
         """
         design_language = commons_policy("design_language")
-        for action in ("read_trajectories", "Publish", "SomeActionInventedLater"):
+
+        def anonymous_decision(policy_text, action, resource_type):
             entities = [
                 entity("Customer", "anonymous", {"id": "anonymous"}),
-                {"uid": {"type": "DesignLanguage", "id": "r1"}, "attrs": {}, "parents": []},
+                {"uid": {"type": resource_type, "id": "r1"}, "attrs": {}, "parents": []},
             ]
-            decision = cedarpy.is_authorized(
+            return cedarpy.is_authorized(
                 {
                     "principal": {"type": "Customer", "id": "anonymous"},
                     "action": {"type": "Action", "id": action},
-                    "resource": {"type": "DesignLanguage", "id": "r1"},
+                    "resource": {"type": resource_type, "id": "r1"},
                     "context": {},
                 },
-                design_language,
+                policy_text,
                 entities,
             ).decision
+
+        # Still open: the blanket permit grants action names no forbid lists.
+        for action in ("read_trajectories", "SomeActionInventedLater"):
             self.assertEqual(
-                decision,
+                anonymous_decision(design_language, action, "DesignLanguage"),
                 cedarpy.Decision.Allow,
                 f"commons design_language.cedar no longer allows anonymous {action} "
-                "— if it was tightened on purpose, delete this test",
+                "— if the blanket permit was narrowed on purpose, delete this half",
+            )
+
+        # Closed by ARN-319: the enumerated finalizer-lane actions.
+        for action in ("SubmitForReview", "Publish", "MarkQualityPassed"):
+            self.assertEqual(
+                anonymous_decision(design_language, action, "DesignLanguage"),
+                cedarpy.Decision.Deny,
+                f"an unidentified caller regained {action} on a design language",
+            )
+
+        # And unchanged everywhere else, so the finding stays visible rather
+        # than looking fixed because one file moved.
+        for name, resource_type in (
+            ("palette_system", "PaletteSystem"),
+            ("writing_style", "WritingStyle"),
+        ):
+            self.assertEqual(
+                anonymous_decision(commons_policy(name), "Publish", resource_type),
+                cedarpy.Decision.Allow,
+                f"{name}.cedar was tightened too — good news, update this test",
             )
 
     def _markdown_files(self):

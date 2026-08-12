@@ -465,11 +465,30 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
         # wrong read: the asymmetry is deliberate (905aa864). The denials came
         # from a contributor skill instructing agents to call it on art styles.
         # This pins the shape both ways so neither side drifts again.
+        #
+        # The invariant is about WHO, not about whether the action name appears.
+        # ARN-319 added `SubmitForReview` to design_language.cedar's forbids —
+        # the outside contributor lane must get 403 rather than a 409 from the
+        # state guard — and that is compatible with the asymmetry, because those
+        # forbids are conditioned on being a contributor or on declaring
+        # nothing. The synthesize agent is a declared worker and still advances
+        # its own draft (katagami-curation/APP.md). What the other three lanes
+        # must never grow is ArtStyle's shape: a forbid whose only escape is
+        # BEING the finalizer.
+        #
+        # This is the text half. The decisions are asserted in
+        # test_actor_policy_evaluation.py::CommonsPolicyDecisionTest, which runs
+        # the whole principal matrix through Cedar.
         art = (COMMONS / "policies" / "art_style.cedar").read_text()
         self.assertIn(
             'Action::"SubmitForReview"',
             art,
             "art_style.cedar must keep SubmitForReview finalizer-locked",
+        )
+        self.assertIn(
+            'principal != Agent::"system"',
+            self._art_policy_blocks()[0],
+            "art_style.cedar's finalizer lock is the shape being pinned here",
         )
         for policy_name in ["design_language", "palette_system", "writing_style"]:
             policy = (COMMONS / "policies" / f"{policy_name}.cedar").read_text()
@@ -477,17 +496,34 @@ class LaneDeepVerificationContractTests(unittest.TestCase):
             # literal "forbid(" yields NO blocks for a policy written
             # `forbid (` — the loop then asserts nothing and passes while the
             # invariant is violated. Match the keyword, and require a hit.
-            forbid_blocks = re.split(r"forbid\s*\(", policy)[1:]
+            # Comments are stripped first, or a block that merely DISCUSSES
+            # `Agent::"system"` reads as one that locks to it.
+            forbid_blocks = re.split(
+                r"forbid\s*\(", re.sub(r"//[^\n]*", "", policy)
+            )[1:]
             self.assertTrue(
                 forbid_blocks,
                 f"{policy_name}.cedar has no forbid blocks — this check would "
                 "be vacuous",
             )
             for forbid_block in forbid_blocks:
+                if 'Action::"SubmitForReview"' not in forbid_block:
+                    continue
                 self.assertNotIn(
-                    'Action::"SubmitForReview"',
+                    'principal != Agent::"system"',
                     forbid_block,
-                    f"{policy_name}.cedar must let the agent advance its own draft",
+                    f"{policy_name}.cedar must let the agent advance its own "
+                    "draft — this is ArtStyle's finalizer lock, which is "
+                    "deliberately ArtStyle-only",
+                )
+                # And the escape hatch must not be the finalizer alone: a
+                # declared, non-contributor agent has to satisfy it.
+                self.assertIn(
+                    "principal has agent_type",
+                    forbid_block,
+                    f"{policy_name}.cedar forbids SubmitForReview without an "
+                    "escape for a declared non-contributor agent, which is the "
+                    "pipeline's own synthesize step",
                 )
 
     def test_loaded_and_serve_policy_copies_stay_identical(self):
