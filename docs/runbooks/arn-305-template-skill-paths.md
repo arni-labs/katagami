@@ -14,22 +14,39 @@ measurement.
 Probed **2026-08-12** against `openpaw-production`, tenant `default`, workspace
 `os-app-docs`:
 
-| Path | Exists | Bytes | Versions | Hash |
+Each row below is the file that `ResolvePath` returns for that path **inside
+`os-app-docs`** — the same resolver `load_doc_file` uses, so these are the files
+sessions actually load. That qualifier matters: `Path` is not unique, several
+`File` entities sit at each of these paths, and picking a different one gives
+different numbers. See "Reading these paths correctly" below.
+
+| Path | Resolved id | Bytes | Versions | Hash |
 |---|---|---|---|---|
-| `/agents/curator/skills/review-quality/SKILL.md` | yes | 29,657 | **17** | `03601d2a5620` |
-| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | yes | 29,657 | 10 | `03601d2a5620` |
-| `/agents/curator/skills/synthesize-language/SKILL.md` | yes | 20,070 | **9** | `f3b59011e7c7` |
-| `/agents/sl-bootstrap-agent-soul-curator/…/synthesize-language/SKILL.md` | yes | 20,070 | 2 | `f3b59011e7c7` |
+| `/agents/curator/skills/review-quality/SKILL.md` | `fl-019e17fd-8b33-…` | 29,657 | 17 | `03601d2a5620` |
+| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | `os-agent-skill-file-…-review-quality` | **33,178** | **36** | `b803f8d76cd0` |
+| `/agents/curator/skills/synthesize-language/SKILL.md` | `fl-019e17fd-a65d-…` | 20,070 | 9 | `f3b59011e7c7` |
+| `/agents/sl-bootstrap-agent-soul-curator/…/synthesize-language/SKILL.md` | `os-agent-skill-file-…-synthesize-language` | **12,037** | **58** | `6dc155d15cdf` |
 
-Both copies exist, and at the moment of the probe their bytes were identical —
-so this is not repairing a live divergence today. What it changes is which copy a
-session follows *when* they diverge, and the version counts show that they do:
-the app path took 17 revisions where the snapshot took 10, and 9 where the
-snapshot took 2. The snapshot lags by construction, so preferring the app copy is
-not a no-op.
+**The two copies are not in sync, and the snapshot is not the one that lags.**
+An earlier version of this table reported both copies at identical bytes with
+identical hashes and the app path ahead on version count (17 vs 10, 9 vs 2). That
+table was reading `fl-019e17fd-55a1-…`, a *different* entity that also sits at the
+soul path; `ResolvePath` does not return it. Measured against the entity that
+actually resolves, the soul copies differ in content and carry **more** revisions
+than the app copies — 36 against 17, and 58 against 9.
 
-Re-check with the `ResolvePath` loop in step 2 below, plus a `Files` read for
-`version_count` and the content hash.
+So the premise this fix rests on — "the app-shipped copy is the more frequently
+refreshed one" — is **not** supported by the deployed data. The
+`os-agent-skill-file-*` entities look like the app-installer-managed copies, keyed
+by agent and skill, and their version counts are the highest on the tenant. Which
+copy *should* win is a design question this runbook cannot settle by measurement
+alone, and it is worth settling before ARN-305 is closed: preferring the app path
+is currently preferring the less-revised file. What is settled is that the two
+differ, so the choice is not academic.
+
+Re-check with the `ResolvePath` loop in step 1 below, plus a `Files('<id>')` read
+for `version_count` and the content hash — always by resolved id, never by a path
+query.
 
 ## What was wrong
 
@@ -133,9 +150,17 @@ while read -r path; do
     "$TEMPER_API_URL/tdata/Workspaces('os-app-docs')/Temper.ResolvePath?await_integration=true" \
     -H 'Content-Type: application/json' "${AUTH[@]}" \
     -d "{\"path\":\"$path\"}" \
-  | jq -r '(.fields.last_file_id // .last_file_id) // "MISSING"'
+  | jq -r --arg p "$path" '
+      if ((.fields.last_file_path // .last_file_path) == $p)
+      then ((.fields.last_file_id // .last_file_id) // "MISSING")
+      else "STALE-RESPONSE" end'
 done < /tmp/arn305-app-paths.txt
 ```
+
+The `last_file_path` guard is not decoration. These fields hold the workspace's
+*last* resolve, so a response that has not caught up names a different path and a
+perfectly plausible id belonging to some other file. `await_integration=true`
+is what makes the response current; the guard is what proves it did.
 
 Every line must print a file id. A `MISSING` means the app does not ship that
 skill under `/agents/curator/`, so that template keeps reading its snapshot no
@@ -203,13 +228,16 @@ the one outcome this cannot produce.**
 
 **The comparison is `content_hash`, not file id.** That distinction is the whole
 difference between a signal and noise. Two paths are two `File` entities, so
-their ids *always* differ — the measured table above is exactly that case:
-identical bytes, identical hash, two paths, different version counts. Comparing
-ids would fire this warning on every job for every template forever, and a line
-that is always there is one people learn to scroll past. `content_hash` is a
-state field on the `File` entity (`paw-fs/specs/file.ioa.toml`, beside
-`size_bytes` and `version_count`), so reading it is a row read with no body
-fetch.
+their ids *always* differ: comparing ids fires this warning on every job for
+every template forever, and a line that is always there is one people learn to
+scroll past. `content_hash` is a state field on the `File` entity
+(`paw-fs/specs/file.ioa.toml`, beside `size_bytes` and `version_count`), so
+reading it is a row read with no body fetch.
+
+Comparing hashes is necessary but not sufficient — the hashes have to come from
+the right two files. Reading them off a path query reintroduced the always-on
+warning even though it compared content, because it compared content belonging to
+files from different workspaces. See "Reading these paths correctly" above.
 
 ## The `Files` response contract (recorded 2026-08-12)
 
@@ -255,50 +283,87 @@ Adding `$select` would project properties instead and return a flattened row
 (`{"Path": …, "WorkspaceId": …, "Id": …}`) with no `fields` object, which reads
 as "no hash" for every path and switches shadow detection off without erroring.
 
-## Known defect: the shadow check reads an unscoped path query
+## Reading these paths correctly
 
-**Measured 2026-08-12. The warning above currently fires on every job, and its
-`used_hash=` value names a file the session never read.**
+**`Path` is not a key. Never identify one of these files with a path query.**
 
-`Path` is not unique and the query is not scoped to the `os-app-docs` workspace,
-so it returns several `File` entities and the code takes the first of an
-unordered list:
+A `GET /tdata/Files?$filter=Path eq '<path>'` is not scoped to a workspace and
+`Path` is not unique, so it returns several entities. Measured 2026-08-12:
 
-| Path | Rows returned | Workspaces |
-|---|---|---|
-| `/agents/curator/skills/review-quality/SKILL.md` | 2 | `os-app-docs` (`03601d2a…`, 29,657 B), `ws-019de271-…` (`eb365ca4…`, 20,664 B) |
-| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | 3 | `os-app-docs` ×2 (`03601d2a…`, and `b803f8d7…` at 33,178 B), `ws-019de271-…` (`001fd44a…`) |
+| Path | Rows | Id | Workspace | Hash | Bytes | Versions |
+|---|---|---|---|---|---|---|
+| `/agents/curator/skills/review-quality/SKILL.md` | 2 | `fl-019e17fd-8b33-…` | `os-app-docs` | `03601d2a…` | 29,657 | 17 |
+| | | `fl-019deb06-d949-…` | `ws-019de271-…` | `eb365ca4…` | 20,664 | 10 |
+| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | 3 | `os-agent-skill-file-…-review-quality` | `os-app-docs` | `b803f8d7…` | 33,178 | 36 |
+| | | `fl-019e17fd-55a1-…` | `os-app-docs` | `03601d2a…` | 29,657 | 10 |
+| | | `fl-019e4dbe-dce3-…` | `ws-019de271-…` | `001fd44a…` | 22,484 | 1 |
 
-`load_doc_file` resolves strictly inside `os-app-docs` via `ResolvePath`, so the
-row this query picks is not the file the session read. In the measured state the
-winner's hash comes back from `ws-019de271-…` and never equals the candidate's,
-which is the always-on signal that comparing hashes instead of ids was supposed
-to end. Scoping the filter to the workspace is **not** sufficient on its own —
-the soul path has two entities inside `os-app-docs`.
+Two things follow, and both have already caused a wrong conclusion in this
+runbook. **Scoping to `os-app-docs` is not sufficient** — the soul path has two
+entities inside that workspace, and only `ResolvePath` says which one a session
+gets (it is `os-agent-skill-file-…`, not the `fl-…` one an earlier version of the
+premise table reported). And **a path query spans workspaces**, so a reader who
+takes the first row can end up describing a file from `ws-019de271-…` that no
+curation session has ever opened.
 
-The fix is to ask the same question the loader asks: reuse `LoadedDoc.file_id`
-for the winner, which `load_doc_file` has already resolved at no extra cost, run
-`ResolvePath` for each lower-priority candidate, then read `Files('<id>')` per
-id. That adds a `ResolvePath` per candidate to a step `.proofs/perf-036`
-deliberately trimmed, which is the tradeoff to weigh — see **Cost** below.
+Always resolve first, then read by id:
 
-Until that lands, treat a `SHADOWED` line as unproven: confirm by hand with the
-`ResolvePath` loop in step 1 before acting on it. The earlier claim here — that
-the warning is silent while the two copies are in sync — was not measured and is
-not true of the deployed system.
+```bash
+# id for a path, inside the doc workspace
+curl -sS -X POST \
+  "$TEMPER_API_URL/tdata/Workspaces('os-app-docs')/Temper.ResolvePath?await_integration=true" \
+  -H 'Content-Type: application/json' "${AUTH[@]}" -d "{\"path\":\"$path\"}" \
+| jq -r '(.fields.last_file_id // .last_file_id)'
 
-**Cost.** The shadow check reads one `File` row per path involved: the winner
-plus each lower-priority candidate, so two rows in the ordinary case. That is on
-top of the `ResolvePath` the load already did. `.proofs/perf-036` removed a
-runtime `ResolvePath` from this step because it measured 581–1126ms, so extra
-round trips here are not free, and this is a real addition to a step that was
-deliberately trimmed.
+# then the hash of THAT file
+curl -sS "$TEMPER_API_URL/tdata/Files('$file_id')" "${AUTH[@]}" \
+| jq -r '.fields.content_hash'
+```
 
-The trade, stated plainly: a couple of metadata reads against a job that then
-runs an LLM session for minutes, in exchange for making it impossible to install
-a skill and have it silently ignored. If the latency ever matters more than the
-signal, `warn_on_shadowed_instruction_copies` is one function and one call site
-— but delete it knowing that a shadowed install goes back to being invisible.
+`await_integration=true` is not optional. Without it the response carries the
+workspace's *previous* resolve — `last_file_path` will name some other path — and
+a script that ignores that mismatch will happily report the wrong file's hash.
+
+## How the shadow check identifies files
+
+The check resolves every path through `ResolvePath` scoped to `os-app-docs` and
+compares `content_hash` of the resulting ids, so the files it compares are by
+construction the files a session would load. The winning copy costs nothing extra:
+`load_doc_file` has already resolved it and passes its `file_id` straight in. Only
+the lower-priority candidates add a `ResolvePath` each.
+
+It previously filtered `Files` on `Path` alone and took the first row. Because
+that query is unscoped and unordered, the winner's hash came back from
+`ws-019de271-…` (`eb365ca4…`) while the candidate's came from `os-app-docs`
+(`03601d2a…`); they never matched, so **the warning fired on every job**, and the
+`used_hash=` it printed named a file the session never read. That is the
+always-on signal comparing hashes instead of ids was meant to end, reintroduced
+by comparing the wrong files. If anyone is tempted to trade the `ResolvePath`
+calls back for a single path query, that is the failure it returns to, silently.
+
+**On this tenant the warning is currently TRUE and will fire.** The soul copies
+really do differ from the app copies (33,178 vs 29,657 bytes for review-quality,
+12,037 vs 20,070 for synthesize-language), so every job running one of those
+templates logs a `SHADOWED` line until the copies are reconciled or the templates
+are pointed elsewhere. That is a real finding about the tenant, not noise — but
+expect the line, and read the premise section above before deciding which copy
+ought to win.
+
+**Cost.** Per lower-priority candidate: one `ResolvePath` plus one
+`Files('<id>')` row read — so one of each in the ordinary case, on top of the
+`ResolvePath` the load already did. The winning copy adds only its row read; its
+id comes from the load, so it costs no second resolve. `.proofs/perf-036` removed
+a runtime `ResolvePath` from this step because it measured 581–1126ms, so this is
+a real addition to a step that was deliberately trimmed.
+
+The trade, stated plainly: roughly one extra second against a job that then runs
+an LLM session for minutes, in exchange for making it impossible to install a
+skill and have it silently ignored. Identifying files by path instead would save
+the resolve and is the specific thing that broke this check before — a cheaper
+lookup that answers a different question is not an optimisation. If the latency
+ever matters more than the signal, `warn_on_shadowed_instruction_copies` is one
+function and one call site — but delete it knowing that a shadowed install goes
+back to being invisible.
 
 **A failed read is not a clean result.** If the winner's hash cannot be read the
 check is skipped, and if a candidate's cannot be read that candidate is left
@@ -307,6 +372,9 @@ is distinguishable from "nothing to report".
 
 ## What "done" looks like
 
+- The premise is settled: the soul copies currently differ from the app copies
+  and carry more revisions, so "which copy should win" needs an answer before
+  this closes. Preferring the app path today prefers the less-revised file.
 - Every `Active` template row carries `/agents/curator/...`.
 - Every app-shipped skill resolves to a file id.
 - One job of each type has run and read the app copy.

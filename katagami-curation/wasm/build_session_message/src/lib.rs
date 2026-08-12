@@ -823,6 +823,7 @@ fn load_instruction_doc(
                     headers,
                     &candidates[index + 1..],
                     path,
+                    &doc.file_id,
                 );
                 return Ok(doc);
             }
@@ -853,15 +854,19 @@ fn load_instruction_doc(
 /// semantics, and it is what keeps a stale bootstrap snapshot from pinning a
 /// session — but choosing it is now an event somebody can see and act on.
 ///
-/// Cost: one extra ResolvePath per job, on the path that succeeds. Measured at
-/// 581–1126ms in `.proofs/perf-036`, against a job that then runs an LLM session
-/// for minutes. Detecting a shadowed install cannot be done without looking for
-/// it, and a silent wrong skill is more expensive than a second of latency.
+/// Cost: one `ResolvePath` per lower-priority candidate — one in the ordinary
+/// case — plus one `Files('<id>')` row read each. The winning copy adds nothing,
+/// because `load_doc_file` already resolved it and its id is passed straight in.
+/// `ResolvePath` measured 581–1126ms in `.proofs/perf-036`, against a job that
+/// then runs an LLM session for minutes. Detecting a shadowed install cannot be
+/// done without looking for it, and a silent wrong skill is more expensive than
+/// a second of latency.
 ///
-/// The comparison is by file id, not content hash: identical content at two
-/// paths is two file objects, and asking for both bodies would double the
-/// content fetch. A differing id means "a different file is sitting there",
-/// which is the thing an operator needs to be told.
+/// Every hash compared here comes from an id produced by that same resolver,
+/// scoped to `DOC_WORKSPACE_ID` — never from a path query. `Path` is not unique
+/// and a path listing spans workspaces, so comparing by path compares files no
+/// session would ever load. See `doc_content_hash`.
+///
 /// Which lower-priority copies are actually shadowing something.
 ///
 /// Pure, so the decision can be tested without a server — and so that the
@@ -920,73 +925,86 @@ fn content_hash_from_file_row(row: &serde_json::Value) -> Option<String> {
         .map(|value| value.to_string())
 }
 
-/// The content hash recorded for a path, without reading a body.
+/// The content hash of one specific `File`, read by id.
 ///
-/// `Ok(None)` is a genuine miss — nothing at that path. `Err` is a failure to
-/// find out, which is a different thing and must not be reported as either a
-/// miss or a match.
+/// By id, never by path. A path is not a key here: `Path` is not unique, and a
+/// `$filter=Path eq '…'` listing spans workspaces, so it can hand back a file
+/// the session never opened. Everything this check compares is therefore keyed
+/// on an id that came out of the same resolver the loader used.
 ///
-/// **Do not add `$select` to the query below.** Without it the server returns
-/// the entity envelope — `{"fields": {...}, "counters": {...}, ...}` — which is
-/// what `content_hash_from_file_row` reads and what `lookup_active_template`
-/// already relies on for `CurationJobTemplates`. `$select` projects properties
-/// instead, producing a flattened row (`{"Path": …, "WorkspaceId": …, "Id": …}`)
-/// with no `fields` object at all. Nothing here would error on that: the hash
-/// would simply read as `None` for every path, `shadowed_paths` would compare
-/// nothing, and shadow detection would switch off in silence. That failure mode
-/// is the reason this note exists rather than a `$select` that trims the row.
-/// (The envelope shape is measured — 2026-08-12, see
-/// `content_hash_from_file_row`; the flattened `$select` shape is carried over
-/// from the ARN-305 probe notes and is not re-measured here.)
+/// **Do not add `$select`.** Without it the server returns the entity envelope —
+/// `{"fields": {...}, "counters": {...}, ...}` — which is what
+/// `content_hash_from_file_row` reads, and what `lookup_active_template` already
+/// relies on for `CurationJobTemplates`. `$select` projects properties instead
+/// and yields a flattened row (`{"Path": …, "WorkspaceId": …, "Id": …}`) with no
+/// `fields` object. Nothing would error on that: the hash would read as `None`
+/// everywhere, `shadowed_paths` would compare nothing, and shadow detection
+/// would switch off in silence. (The envelope shape is measured — 2026-08-12,
+/// see `content_hash_from_file_row`; the flattened `$select` shape is carried
+/// over from the ARN-305 probe notes and is not re-measured here.)
+///
+/// `Ok(None)` is a genuine miss — no such file. `Err` is a failure to find out,
+/// which must not be reported as either a miss or a match.
+fn file_content_hash(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    file_id: &str,
+) -> Result<Option<String>, String> {
+    let quoted = file_id.replace('\'', "''");
+    let resp = ctx
+        .http_call(
+            "GET",
+            &format!("{api_url}/tdata/Files('{quoted}')"),
+            headers,
+            "",
+        )
+        .map_err(|err| format!("Files read failed for id '{file_id}': {err}"))?;
+    if resp.status == 404 {
+        return Ok(None);
+    }
+    if resp.status != 200 {
+        return Err(format!(
+            "Files read returned HTTP {} for id '{file_id}'",
+            resp.status
+        ));
+    }
+    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
+        .map_err(|err| format!("Files read returned invalid JSON for id '{file_id}': {err}"))?;
+    Ok(content_hash_from_file_row(&parsed))
+}
+
+/// The content hash of whatever `path` resolves to **inside the doc workspace**.
+///
+/// This asks the question the loader asks, and that is the entire point: it
+/// resolves through `ResolvePath` scoped to `DOC_WORKSPACE_ID`, exactly as
+/// `load_doc_file` does, then reads the hash of that id. So the file compared is
+/// by construction the file a session would have loaded from this path.
+///
+/// The earlier version filtered `Files` on `Path` alone. That was unscoped and
+/// `Path` is not unique, so it compared across workspaces: measured on
+/// openpaw-production 2026-08-12, `/agents/curator/skills/review-quality/SKILL.md`
+/// returns two `File` entities (one in `os-app-docs`, one in `ws-019de271-…`)
+/// and the matching soul path returns three, two of them inside `os-app-docs`.
+/// Taking the first row of an unordered list read the winner's hash out of a
+/// workspace the session never touched, so it never matched and the warning
+/// fired on every job — the always-on signal that comparing hashes instead of
+/// ids was meant to end. Scoping the filter to the workspace would not have been
+/// enough either, because the soul path has two entities within `os-app-docs`;
+/// only the resolver disambiguates them.
+///
+/// `Ok(None)` means nothing resolves at that path in the doc workspace, which is
+/// a miss and never a warning.
 fn doc_content_hash(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     path: &str,
 ) -> Result<Option<String>, String> {
-    let quoted = path.replace('\'', "''");
-    let resp = ctx
-        .http_call(
-            "GET",
-            &format!("{api_url}/tdata/Files?$filter=Path eq '{quoted}'"),
-            headers,
-            "",
-        )
-        .map_err(|err| format!("Files query failed for '{path}': {err}"))?;
-    if resp.status != 200 {
-        return Err(format!(
-            "Files query returned HTTP {} for '{path}'",
-            resp.status
-        ));
+    match resolve_doc_file_id_opt(ctx, api_url, headers, path)? {
+        Some(file_id) => file_content_hash(ctx, api_url, headers, &file_id),
+        None => Ok(None),
     }
-    let parsed: serde_json::Value = serde_json::from_str(&resp.body)
-        .map_err(|err| format!("Files query returned invalid JSON for '{path}': {err}"))?;
-    // KNOWN DEFECT (ARN-305, measured 2026-08-12 — do not read this as correct):
-    // the filter above is on `Path` alone, so it is not scoped to
-    // `DOC_WORKSPACE_ID`, and `Path` is not unique. On openpaw-production the
-    // very paths this check runs against return several `File` entities across
-    // workspaces — `/agents/curator/skills/review-quality/SKILL.md` returns two
-    // (one in `os-app-docs`, one in `ws-019de271-…`), and the matching soul path
-    // returns three, two of which are inside `os-app-docs`. Taking `first()` of
-    // an unordered, unscoped list therefore picks a file the loader never read:
-    // `load_doc_file` resolves strictly inside `os-app-docs` via ResolvePath.
-    // Today that makes the winner's hash come from the wrong workspace, so it
-    // never equals the candidate's and the SHADOWED warning fires on every job —
-    // the always-on signal that comparing hashes instead of ids was meant to end
-    // — while `used_hash=` prints a hash from a workspace the session did not
-    // read. The fix is to ask the question the loader asks: reuse
-    // `LoadedDoc.file_id` for the winner (already resolved, free) and ResolvePath
-    // each lower-priority candidate, then read `Files('<id>')` per id. It is not
-    // done here because that adds a ResolvePath per candidate to a step
-    // `.proofs/perf-036` deliberately trimmed; see the runbook.
-    let Some(row) = parsed
-        .get("value")
-        .and_then(|value| value.as_array())
-        .and_then(|rows| rows.first())
-    else {
-        return Ok(None);
-    };
-    Ok(content_hash_from_file_row(row))
 }
 
 fn warn_on_shadowed_instruction_copies(
@@ -995,12 +1013,16 @@ fn warn_on_shadowed_instruction_copies(
     headers: &[(String, String)],
     lower_priority: &[String],
     winning_path: &str,
+    winning_file_id: &str,
 ) {
     if lower_priority.is_empty() {
         return;
     }
 
-    let winner_hash = match doc_content_hash(ctx, api_url, headers, winning_path) {
+    // The winner is read by the id the loader already resolved, so it costs no
+    // extra ResolvePath and is by construction the file this session opened —
+    // there is no second lookup that could disagree with the load.
+    let winner_hash = match file_content_hash(ctx, api_url, headers, winning_file_id) {
         Ok(hash) => hash,
         Err(error) => {
             // A failure to look is not a clean bill of health. Going quiet here
@@ -1010,7 +1032,8 @@ fn warn_on_shadowed_instruction_copies(
                 "debug",
                 &format!(
                     "build_session_message: shadow check skipped — could not read the content \
-                     hash of the winning copy. path='{winning_path}' error='{error}'"
+                     hash of the winning copy. path='{winning_path}' \
+                     file_id='{winning_file_id}' error='{error}'"
                 ),
             );
             return;
@@ -1147,12 +1170,20 @@ fn load_doc_file(
     })
 }
 
-fn resolve_doc_file_id(
+/// Resolve `path` within `DOC_WORKSPACE_ID`, distinguishing "nothing there"
+/// from "could not find out".
+///
+/// A 200 that names no matching file is a real answer: the doc workspace has
+/// nothing at that exact path. A transport or status failure is not an answer at
+/// all. The shadow check needs to tell those apart — a path that simply has no
+/// lower-priority copy is the ordinary case and must stay quiet, while a failed
+/// lookup means nobody checked and has to say so.
+fn resolve_doc_file_id_opt(
     ctx: &Context,
     api_url: &str,
     headers: &[(String, String)],
     path: &str,
-) -> Result<String, String> {
+) -> Result<Option<String>, String> {
     let resp = ctx
         .http_call(
             "POST",
@@ -1172,7 +1203,16 @@ fn resolve_doc_file_id(
     }
     let parsed: serde_json::Value = serde_json::from_str(&resp.body)
         .map_err(|err| format!("ResolvePath returned invalid JSON for '{path}': {err}"))?;
-    file_id_from_workspace_response(&parsed, path).ok_or_else(|| {
+    Ok(file_id_from_workspace_response(&parsed, path))
+}
+
+fn resolve_doc_file_id(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    path: &str,
+) -> Result<String, String> {
+    resolve_doc_file_id_opt(ctx, api_url, headers, path)?.ok_or_else(|| {
         format!("ResolvePath did not return a file id for exact path '{path}' in workspace '{DOC_WORKSPACE_ID}'")
     })
 }
@@ -1875,6 +1915,89 @@ mod tests {
         assert_eq!(
             shadowed_paths(Some("sha256:aaaa"), &probed),
             vec!["/agents/soul/skills/x/SKILL.md"]
+        );
+    }
+
+    // Real values, read off openpaw-production (tenant `default`) on 2026-08-12
+    // by resolving each path through ResolvePath inside `os-app-docs` — the same
+    // resolver `load_doc_file` uses — and reading `fields.content_hash` of the id
+    // it returned. These are the files a session actually loads, which is why the
+    // hashes below are the ones the check must compare.
+    const APP_REVIEW_QUALITY: &str =
+        "sha256:03601d2a5620b3cce1c16d80540e7434c314f63e910f29b017eb9a6db8bdc4d1";
+    const SOUL_REVIEW_QUALITY: &str =
+        "sha256:b803f8d76cd034e97e372f6c28f3fba23715e4fa00bab133eb0e8ab1aad60b2b";
+    const APP_SYNTHESIZE_LANGUAGE: &str =
+        "sha256:f3b59011e7c77226b313c1d2aa85c95e619ad334bf9f694129fa48275a2e6d14";
+    const SOUL_SYNTHESIZE_LANGUAGE: &str =
+        "sha256:6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a";
+
+    #[test]
+    fn the_deployed_curator_skills_really_are_shadowed() {
+        // Not a hypothetical. Resolved inside `os-app-docs`, the soul paths land
+        // on `os-agent-skill-file-*` entities whose bytes differ from the app
+        // copies the sessions read — review-quality 33,178 vs 29,657 and
+        // synthesize-language 12,037 vs 20,070 — so the warning is TRUE on this
+        // tenant today and must fire. Anyone who expects silence here should read
+        // the runbook: the soul copies are not in sync with the app copies.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(SOUL_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"]
+        );
+
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+            Some(SOUL_SYNTHESIZE_LANGUAGE),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_SYNTHESIZE_LANGUAGE), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md"]
+        );
+    }
+
+    #[test]
+    fn copies_that_genuinely_match_stay_silent() {
+        // The other half of the contract, with a real hash: once a soul copy is
+        // brought back in line with the app copy, the line disappears. Without
+        // this the check could "work" by warning unconditionally.
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(APP_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            Vec::<&str>::new()
+        );
+    }
+
+    #[test]
+    fn a_hash_from_another_workspace_is_never_what_gets_compared() {
+        // Regression guard for the defect this replaced. `Path` is not unique:
+        // `/agents/curator/skills/review-quality/SKILL.md` returns two File rows
+        // (os-app-docs `03601d2a…` and ws-019de271 `eb365ca4…`), and the soul
+        // path returns three, two of them inside os-app-docs. A path query taking
+        // the first row fed `eb365ca4…` in as the winner, which never equals the
+        // candidate, so every job warned. Resolving ids gives `03601d2a…`, and
+        // against the matching copy that is silence.
+        const OTHER_WORKSPACE_REVIEW_QUALITY: &str =
+            "sha256:eb365ca4b0c83aac8b720bf46799083db81b541d2fdd5ec15b7c27aa273df60b";
+        let probed = [candidate(
+            "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md",
+            Some(APP_REVIEW_QUALITY),
+        )];
+        assert_eq!(
+            shadowed_paths(Some(OTHER_WORKSPACE_REVIEW_QUALITY), &probed),
+            vec!["/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"],
+            "the cross-workspace hash is what produced the always-on warning"
+        );
+        assert_eq!(
+            shadowed_paths(Some(APP_REVIEW_QUALITY), &probed),
+            Vec::<&str>::new(),
+            "resolving inside the doc workspace is what makes the signal mean something"
         );
     }
 
