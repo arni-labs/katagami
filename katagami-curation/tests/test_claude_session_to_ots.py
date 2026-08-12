@@ -140,6 +140,82 @@ class AtifToOtsTests(unittest.TestCase):
         )
         self.assertEqual(forced["metadata"]["outcome"], "failure")
 
+    def test_a_harness_tool_is_an_envelope_not_a_governed_action_name(self):
+        # The whole point: `temper-server/src/conformance/decisions.rs` reads a
+        # bare `[A-Za-z0-9_.-]+` token as a governed action name and reports it
+        # as `unknown_action` when the actor's spec does not declare it. Every
+        # Claude Code tool call used to be written that way, so a clean run
+        # collected one violation per tool call and could never pass layer 1.
+        decisions = [d for turn in self.ots["turns"] for d in turn["decisions"]]
+        self.assertTrue(decisions)
+        for decision in decisions:
+            action = decision["choice"]["action"]
+            self.assertFalse(
+                converter._is_bare_token(action),
+                f"{action!r} would be checked as a governed action name",
+            )
+            self.assertTrue(action.startswith("claude-code tool: "))
+
+    def test_the_envelope_names_the_harness_it_came_from(self):
+        other = converter.atif_to_ots(
+            self.atif,
+            agent_id="a",
+            session_id="s",
+            trajectory_id="t",
+            harness="codex",
+        )
+        actions = [
+            d["choice"]["action"] for turn in other["turns"] for d in turn["decisions"]
+        ]
+        self.assertTrue(actions)
+        for action in actions:
+            self.assertTrue(action.startswith("codex tool: "))
+            self.assertFalse(converter._is_bare_token(action))
+
+    def test_a_governed_odata_call_surfaces_as_a_real_action(self):
+        # A curator reaches Temper over HTTP, so the action name is in the
+        # path. It has to reach `trajectory_actions`, or the run's own governed
+        # actions become invisible to the checker's decision walk.
+        choice = converter._tool_envelope(
+            "Bash",
+            "curl -X POST "
+            "http://127.0.0.1:3521/tdata/CuratorAgents('r1')/Temper.ReceiveBrief "
+            "-d '{\"brief\":\"x\"}'",
+            "claude-code",
+        )
+        self.assertEqual(
+            choice["arguments"]["trajectory_actions"],
+            [{"action": "ReceiveBrief", "params": {}}],
+        )
+        self.assertIn("tool_arguments", choice["arguments"])
+
+    def test_repeated_calls_to_one_action_are_listed_once(self):
+        choice = converter._tool_envelope(
+            "Bash",
+            "curl .../tdata/CuratorAgents('r1')/Temper.RecordDraft; "
+            "curl .../tdata/CuratorAgents('r1')/Temper.RecordDraft",
+            "claude-code",
+        )
+        self.assertEqual(
+            choice["arguments"]["trajectory_actions"],
+            [{"action": "RecordDraft", "params": {}}],
+        )
+
+    def test_an_ordinary_tool_call_lists_no_governed_actions(self):
+        # No `trajectory_actions` key at all is what makes the checker count it
+        # as a harness tool rather than walk it.
+        choice = converter._tool_envelope("Read", {"file_path": "/tmp/x.md"}, "claude-code")
+        self.assertNotIn("trajectory_actions", choice.get("arguments") or {})
+
+    def test_only_choices_own_fields_are_written(self):
+        # OTSChoice models action/arguments/rationale/confidence and the kernel
+        # drops the rest, so a key of our own would survive locally and vanish
+        # on the canonical path.
+        choice = converter._tool_envelope("Read", {"file_path": "/tmp/x.md"}, "claude-code")
+        self.assertLessEqual(
+            set(choice), {"action", "arguments", "rationale", "confidence"}
+        )
+
     def test_tool_calls_and_their_results_are_paired_as_messages(self):
         tool_turn = next(turn for turn in self.ots["turns"] if turn["decisions"])
         calls = [

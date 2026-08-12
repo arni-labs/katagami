@@ -74,6 +74,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -393,8 +394,110 @@ def _build_messages(
     return messages
 
 
+# A governed action reached over OData, as the curator skills call it:
+#   POST $TEMPER_API_URL/tdata/CuratorAgents('<run id>')/Temper.ReceiveBrief
+# Only the last dot-segment is the action name — the `Temper.` namespace prefix
+# is required in the path but is not part of it.
+GOVERNED_CALL_RE = re.compile(
+    r"/tdata/[A-Za-z0-9_]+\([^)]*\)/[A-Za-z0-9_]+\.([A-Za-z0-9_]+)"
+)
+
+# The kernel's rule for "this string names a governed action", mirrored from
+# `temper-server/src/conformance/decisions.rs::is_action_name`. It is duplicated
+# rather than imported because the two live in different languages; the tests
+# assert the envelope this module writes is NOT one of these, so the duplication
+# cannot drift silently.
+_BARE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def _is_bare_token(value: str) -> bool:
+    return bool(value) and bool(_BARE_TOKEN_RE.match(value))
+
+
+def _governed_actions(arguments: Any) -> list[dict[str, Any]]:
+    """The governed actions one harness call reached, read off its arguments.
+
+    A Claude Code agent reaches Temper by making an HTTP request — `curl` in a
+    Bash command, or any tool whose arguments carry the URL. The action name is
+    in the path, so the path is where it is read from.
+
+    Read from the *redacted* arguments, which is what the stored document
+    carries: a reader can check the extraction against the same bytes the
+    judge sees. Redaction never touches a `/tdata/` path, and if it ever did,
+    under-reporting is the safe direction — the kernel's own rows remain the
+    authority on what was actually dispatched.
+
+    Two things this deliberately does not do. It does not read tool *results*,
+    only the call, so a run that merely read a document naming an action is not
+    credited with attempting it. And it does not parse `temper.action(...)` out
+    of `mcp__temper__execute` code: a session that goes through MCP has its
+    governed actions recorded by the MCP server's own envelope and by the
+    kernel rows, so re-deriving them from Python source here would add a second,
+    more fragile parser for no new evidence.
+
+    The known limit: a Bash command that merely greps for the literal path
+    shape would be read as an attempt. The consequence is benign — a declared
+    action is counted, not violated, and an undeclared one should be reported.
+    """
+    if not isinstance(arguments, str):
+        try:
+            arguments = json.dumps(arguments, ensure_ascii=False, sort_keys=True)
+        except (TypeError, ValueError):
+            arguments = str(arguments)
+    seen: list[dict[str, Any]] = []
+    for name in GOVERNED_CALL_RE.findall(arguments):
+        entry = {"action": name, "params": {}}
+        if entry not in seen:
+            seen.append(entry)
+    return seen
+
+
+def _tool_envelope(tool_name: str, arguments: Any, harness: str) -> dict[str, Any]:
+    """One harness tool call, in the envelope shape the checker recognises.
+
+    `temper-server/src/conformance/decisions.rs` classifies a decision by its
+    `choice.action`: a bare token is read as a governed action name and checked
+    against the actor's alphabet, anything else is an envelope whose real
+    actions are listed under `choice.arguments.trajectory_actions`. Writing a
+    raw tool name here therefore claimed `Bash` was a CuratorAgent action and
+    produced one `unknown_action` violation per tool call.
+
+    Harness tool use is cognition: it belongs in the trajectory for the LLM
+    judge and must never reach the deterministic action walk. So the tool name
+    goes into an envelope string that is not a bare token, and the governed
+    actions the call actually reached — if any — go where the checker reads
+    them. This mirrors the MCP producer (`temper-mcp::record_execute_turn`),
+    which writes `"execute: <code>"` with the same `trajectory_actions` key.
+    """
+    envelope = f"{harness} tool: {tool_name}"
+    if _is_bare_token(envelope):
+        # Unreachable while the format carries a space and a colon, and worth
+        # failing on rather than silently emitting a decision the checker would
+        # score as a governed action.
+        raise ValueError(
+            f"envelope {envelope!r} reads as a governed action name; "
+            "the conformance checker would report it as an illegal action"
+        )
+    # Only OTSChoice's own fields are written. The kernel parses an upload into
+    # its model and drops every key it does not know, so a `tool` field of our
+    # own would read as absent on the canonical path while surviving in the
+    # local archive — the same trap the judge skill documents for metadata. The
+    # tool name is already in the envelope string and in the ATIF tool_calls.
+    choice: dict[str, Any] = {"action": envelope}
+    if arguments not in (None, {}, ""):
+        choice["arguments"] = arguments
+    governed = _governed_actions(arguments)
+    if governed:
+        # `arguments` has to be an object for the checker to find the key.
+        existing = choice.get("arguments")
+        choice["arguments"] = {"trajectory_actions": governed}
+        if existing not in (None, {}, ""):
+            choice["arguments"]["tool_arguments"] = existing
+    return choice
+
+
 def _build_decisions(
-    step: dict[str, Any], trajectory_id: str
+    step: dict[str, Any], trajectory_id: str, harness: str = DEFAULT_HARNESS
 ) -> list[dict[str, Any]]:
     """One decision per tool call, each linked to its observation by cause_id.
 
@@ -402,6 +505,12 @@ def _build_decisions(
     and a flat list of results into a causal chain: a judge reading the
     trajectory can say which observation a given choice produced, rather than
     inferring it from adjacency.
+
+    Every call is written as a harness envelope (`_tool_envelope`), because a
+    harness tool is cognition, not an attempt to act on the governed system.
+    The governed actions a call actually reached ride under
+    `choice.arguments.trajectory_actions`, which is where the conformance
+    checker looks for them.
     """
     step_id = step.get("step_id")
     results = _results_by_call(step)
@@ -430,10 +539,11 @@ def _build_decisions(
         decision: dict[str, Any] = {
             "decision_id": _stable_id("dec", trajectory_id, step_id, call_id),
             "decision_type": "tool_selection",
-            "choice": {
-                "action": call.get("function_name", ""),
-                "arguments": redact_value(call.get("arguments") or {}),
-            },
+            "choice": _tool_envelope(
+                call.get("function_name", ""),
+                redact_value(call.get("arguments") or {}),
+                harness,
+            ),
             "consequence": consequence,
         }
         if isinstance(call_id, str) and call_id:
@@ -530,7 +640,7 @@ def atif_to_ots(
             "error": any(_result_is_error(result) for result in results)
             or bool(_unobserved_calls(step)),
             "messages": _build_messages(step, trajectory_id, timestamp),
-            "decisions": _build_decisions(step, trajectory_id),
+            "decisions": _build_decisions(step, trajectory_id, harness),
         }
         turn.update(_turn_token_fields(step))
         turns.append(turn)

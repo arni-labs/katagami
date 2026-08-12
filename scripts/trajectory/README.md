@@ -134,10 +134,49 @@ uploaded so nobody has to guess.
 | `turns[]` | One per ATIF step, `turn_id` = `step_id`. |
 | `turns[].messages[]` | The step text, then one `tool_call` message per call and one `tool_response` message per result. |
 | `turns[].messages[].attachments` | Image parts kept as `{type, media_type, path}` references, with an `[image ...]` marker inline in the text. ATIF carries image locations rather than bytes. |
-| `turns[].decisions[]` | One `tool_selection` decision per tool call. A call with no observation is `success: false` with `error_type: "no_result"` — the outcome is unknown, and unknown is not success. |
+| `turns[].decisions[]` | One `tool_selection` decision per tool call, written as a harness envelope (see below). A call with no observation is `success: false` with `error_type: "no_result"` — the outcome is unknown, and unknown is not success. |
 | `turns[].decisions[].cause_id` | The tool_call id — what links a decision to the observation it produced. |
 | `turns[].prompt_token_ids` / `completion_token_ids` / `logprobs` | Copied from ATIF metrics **only when the serving stack supplied them**. Absent for ordinary Claude Code sessions, which record token counts but not ids. |
 | `context.custom_context` | JSON: harness, ATIF schema version, converter version, agent version, model, and the ATIF final metrics (token totals and cost). |
+
+## Harness tools are cognition, not governed actions
+
+A decision represents a governed action only when it is an attempt to act on
+the system. `Bash`, `Read`, `Write`, `Edit`, `Agent`, `ToolSearch`,
+`mcp__*` — those are how the agent thinks. They belong in the trajectory for
+the LLM judge, and they must never reach the deterministic action walk.
+
+The conformance checker classifies a decision by `choice.action`
+(`temper-server/src/conformance/decisions.rs`): a bare token
+(`[A-Za-z0-9_.-]+`) is read as a governed action name and checked against the
+actor's alphabet; anything else is an envelope, whose real actions it reads
+from `choice.arguments.trajectory_actions`. So each tool call is written as
+
+```json
+{
+  "action": "claude-code tool: Bash",
+  "arguments": {
+    "trajectory_actions": [{"action": "ReceiveBrief", "params": {}}],
+    "tool_arguments": "curl -X POST .../tdata/CuratorAgents('r1')/Temper.ReceiveBrief ..."
+  }
+}
+```
+
+with `trajectory_actions` present only when the call actually reached one —
+matching `temper-mcp::record_execute_turn`, which writes `"execute: <code>"`
+the same way. Writing the raw tool name here instead claimed `Bash` was a
+CuratorAgent action and produced one `unknown_action` violation per tool call,
+so a clean run could not pass.
+
+A governed action is recognised from the OData path in the call's arguments,
+`/tdata/<Set>('<id>')/Temper.<Action>`, which is how the curator skills reach
+Temper. Only the call is read, never its result, so a run that merely read a
+document naming an action is not credited with attempting it.
+`temper.action(...)` inside `mcp__temper__execute` is deliberately not parsed:
+those sessions already have the MCP server's own envelope and the kernel's
+rows, and a second parser here would add fragility without adding evidence.
+The known limit is that a Bash command grepping for that literal path shape
+reads as an attempt; a declared action is then counted rather than violated.
 
 `response_mask` is never written by this converter. It has no ATIF source, and
 a mask inferred from text rather than from the token stream would be wrong in
