@@ -19,6 +19,9 @@ struct JobTemplate {
 struct LoadedDoc {
     path: String,
     workspace_id: String,
+    /// The file the path resolved to. Kept so a lower-priority copy of the
+    /// same skill can be compared against the one that won.
+    file_id: String,
     content: Option<String>,
 }
 
@@ -811,9 +814,19 @@ fn load_instruction_doc(
 ) -> Result<LoadedDoc, String> {
     let candidates = instruction_path_candidates(configured_path, stable_soul_id);
     let mut errors = Vec::new();
-    for path in &candidates {
+    for (index, path) in candidates.iter().enumerate() {
         match load_doc_file(ctx, api_url, headers, path, inline_content) {
-            Ok(doc) => return Ok(doc),
+            Ok(doc) => {
+                warn_on_shadowed_instruction_copies(
+                    ctx,
+                    api_url,
+                    headers,
+                    &candidates[index + 1..],
+                    path,
+                    &doc,
+                );
+                return Ok(doc);
+            }
             Err(error) => errors.push(format!("{path}: {error}")),
         }
     }
@@ -824,8 +837,74 @@ fn load_instruction_doc(
     ))
 }
 
+/// Name every copy of the skill that lost, so an install cannot be ignored in
+/// silence.
+///
+/// The ordering below prefers the app-shipped copy, which is right for staleness
+/// and wrong for one case: `paw-skills`' agent-scoped install writes to
+/// `/agents/<agent-id>/skills/<slug>/SKILL.md` — a soul path. An operator who
+/// installs a corrected skill there gets a successful action, and every job
+/// afterwards keeps reading the app copy. That is precisely the shape of the
+/// workspace_fs shadowing bug, where an archived file masked a live one for
+/// months because nothing ever said which file had been chosen.
+///
+/// So whenever a candidate wins, the remaining candidates are resolved too, and
+/// a DIFFERENT file at a lower-priority path is reported at warn level with both
+/// paths and both file ids. The app copy still wins — that is the documented
+/// semantics, and it is what keeps a stale bootstrap snapshot from pinning a
+/// session — but choosing it is now an event somebody can see and act on.
+///
+/// Cost: one extra ResolvePath per job, on the path that succeeds. Measured at
+/// 581–1126ms in `.proofs/perf-036`, against a job that then runs an LLM session
+/// for minutes. Detecting a shadowed install cannot be done without looking for
+/// it, and a silent wrong skill is more expensive than a second of latency.
+///
+/// The comparison is by file id, not content hash: identical content at two
+/// paths is two file objects, and asking for both bodies would double the
+/// content fetch. A differing id means "a different file is sitting there",
+/// which is the thing an operator needs to be told.
+fn warn_on_shadowed_instruction_copies(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    lower_priority: &[String],
+    winning_path: &str,
+    winner: &LoadedDoc,
+) {
+    for path in lower_priority {
+        let Ok(shadowed_file_id) = resolve_doc_file_id(ctx, api_url, headers, path) else {
+            // Nothing there. The ordinary case, and not worth a line.
+            continue;
+        };
+        if shadowed_file_id == winner.file_id {
+            continue;
+        }
+        ctx.log(
+            "warn",
+            &format!(
+                "build_session_message: instruction doc SHADOWED. A different file exists at \
+                 a lower-priority path and is NOT being used. used_path='{winning_path}' \
+                 used_file_id='{}' shadowed_path='{path}' shadowed_file_id='{shadowed_file_id}' \
+                 workspace='{DOC_WORKSPACE_ID}'. The app-shipped copy wins by design so that a \
+                 one-time bootstrap snapshot cannot pin a session to a stale skill. If you \
+                 installed a skill at the shadowed path and meant it to take effect, install it \
+                 to the app path instead, or reconfigure the template's instruction_path.",
+                winner.file_id
+            ),
+        );
+    }
+}
+
 /// The directory the app installs its own copy of the curator skills into.
 /// Refreshed on every app install, which is what makes it the one to prefer.
+///
+/// Verified against the live tenant on 2026-08-12 (openpaw-production, tenant
+/// `default`, workspace `os-app-docs`): the app path carries materially more
+/// versions than the soul snapshot of the same skill — review-quality 17 vs 10,
+/// synthesize-language 9 vs 2 — with identical bytes at the time of the probe.
+/// So the two copies do drift apart in refresh rate, and preferring the app copy
+/// is not a no-op. See `docs/runbooks/arn-305-template-skill-paths.md` for how
+/// to re-run that check.
 const APP_SHIPPED_AGENT: &str = "curator";
 
 /// `/agents/<whatever>/skills/x/SKILL.md` -> `skills/x/SKILL.md`.
@@ -870,8 +949,22 @@ fn instruction_path_candidates(configured_path: &str, stable_soul_id: &str) -> V
     if let Some(tail) = agent_relative_tail(configured_path) {
         push(&mut candidates, format!("/agents/{APP_SHIPPED_AGENT}/{tail}"));
         push(&mut candidates, format!("/agents/{stable_soul_id}/{tail}"));
+        push(&mut candidates, configured_path.to_string());
+        // A soul-INDEPENDENT last resort.
+        //
+        // The old seed hardcoded the bootstrap soul in every template, so a job
+        // running under any soul_id still resolved that one fixed path.
+        // Deriving the fallback from the job's own soul_id narrows that: a job
+        // with an unusual soul_id, on a tenant where the app copy is missing,
+        // would be left with nothing to try — a hard failure where the old
+        // spelling succeeded. Naming the bootstrap soul explicitly at the end
+        // keeps that door open. It costs nothing when it duplicates one of the
+        // candidates above, which it does for the default soul.
+        let bootstrap_soul = normalize_bootstrapped_soul_id(APP_SHIPPED_AGENT);
+        push(&mut candidates, format!("/agents/{bootstrap_soul}/{tail}"));
+    } else {
+        push(&mut candidates, configured_path.to_string());
     }
-    push(&mut candidates, configured_path.to_string());
     candidates
 }
 
@@ -892,6 +985,7 @@ fn load_doc_file(
     Ok(LoadedDoc {
         path: path.to_string(),
         workspace_id: DOC_WORKSPACE_ID.to_string(),
+        file_id,
         content,
     })
 }
@@ -989,22 +1083,27 @@ fn temper_read_command(path: &str, loaded: Option<&LoadedDoc>) -> String {
     }
 }
 
-fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'static str)] {
-    const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
-        (
-            "/system/knowledge/design-principles.md",
-            "embodiment standards",
-        ),
-        (
-            "/system/knowledge/quality-standards.md",
-            "quality thresholds",
-        ),
-        (
-            "/system/knowledge/feedback-log.md",
-            "human feedback to incorporate",
-        ),
-    ];
+/// The curation corpus a skill reads unless it has a reason not to.
+///
+/// One definition. It was declared separately inside two functions, byte for
+/// byte, so the two could have drifted apart without any test noticing — the
+/// only test comparing them compared their lengths.
+const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
+    (
+        "/system/knowledge/design-principles.md",
+        "embodiment standards",
+    ),
+    (
+        "/system/knowledge/quality-standards.md",
+        "quality thresholds",
+    ),
+    (
+        "/system/knowledge/feedback-log.md",
+        "human feedback to incorporate",
+    ),
+];
 
+fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'static str)] {
     knowledge_read_specs_for_known_skill(skill).unwrap_or(FULL_CURATION_KNOWLEDGE)
 }
 
@@ -1024,21 +1123,6 @@ fn knowledge_read_specs_for_skill(skill: &str) -> &'static [(&'static str, &'sta
 fn knowledge_read_specs_for_known_skill(
     skill: &str,
 ) -> Option<&'static [(&'static str, &'static str)]> {
-    const FULL_CURATION_KNOWLEDGE: &[(&str, &str)] = &[
-        (
-            "/system/knowledge/design-principles.md",
-            "embodiment standards",
-        ),
-        (
-            "/system/knowledge/quality-standards.md",
-            "quality thresholds",
-        ),
-        (
-            "/system/knowledge/feedback-log.md",
-            "human feedback to incorporate",
-        ),
-    ];
-
     match skill {
         // Source search needs the research-direction skill contract and web
         // search/fetch tools. Embodiment and quality docs are for synthesis and
@@ -1364,6 +1448,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: None,
         };
 
@@ -1427,6 +1512,20 @@ mod tests {
     const SEEDED_JOB_TEMPLATES: &str =
         include_str!("../../../seed-data/job_templates.toml");
 
+    /// `skill_id = "x"` values, in file order — the field the runtime actually
+    /// uses to choose knowledge, which is why it is read rather than inferred.
+    fn seeded_skill_ids() -> Vec<String> {
+        SEEDED_JOB_TEMPLATES
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let value = line.strip_prefix("skill_id")?.trim_start();
+                let value = value.strip_prefix('=')?.trim();
+                Some(value.trim_matches('"').to_string())
+            })
+            .collect()
+    }
+
     fn seeded_instruction_paths() -> Vec<String> {
         SEEDED_JOB_TEMPLATES
             .lines()
@@ -1454,25 +1553,65 @@ mod tests {
         );
 
         for path in &paths {
-            let candidates =
-                instruction_path_candidates(path, "sl-bootstrap-agent-soul-curator");
+            // Both halves, independently. Asserting only on the seeded spelling
+            // guards the seed and not the resolver: with the seed pointing at
+            // /agents/curator/ the OLD resolver also returns it first, because
+            // it returned the configured path verbatim. Feeding each skill in
+            // BOTH spellings is what makes reverting the resolver fail here.
+            let tail = path
+                .strip_prefix("/agents/curator/")
+                .unwrap_or_else(|| panic!("seeded template is not an app path: {path}"));
+            let snapshot_spelling =
+                format!("/agents/sl-bootstrap-agent-soul-curator/{tail}");
 
-            assert!(
-                candidates[0].starts_with("/agents/curator/"),
-                "template '{path}' resolves '{}' first; the app-shipped copy must win",
-                candidates[0]
-            );
-            assert!(
-                candidates.len() > 1,
-                "template '{path}' has no fallback candidate at all"
-            );
-            assert!(
-                candidates
-                    .iter()
-                    .any(|c| c.starts_with("/agents/sl-bootstrap-agent-soul-curator/")),
-                "template '{path}' keeps no bootstrap fallback: {candidates:?}"
-            );
+            for spelling in [path.as_str(), snapshot_spelling.as_str()] {
+                let candidates =
+                    instruction_path_candidates(spelling, "sl-bootstrap-agent-soul-curator");
+
+                assert!(
+                    candidates[0].starts_with("/agents/curator/"),
+                    "'{spelling}' resolves '{}' first; the app-shipped copy must win",
+                    candidates[0]
+                );
+                assert_eq!(
+                    candidates[0],
+                    format!("/agents/curator/{tail}"),
+                    "'{spelling}' resolved a different skill than it names"
+                );
+                assert!(
+                    candidates
+                        .iter()
+                        .any(|c| c.starts_with("/agents/sl-bootstrap-agent-soul-curator/")),
+                    "'{spelling}' keeps no bootstrap fallback: {candidates:?}"
+                );
+            }
         }
+    }
+
+    #[test]
+    fn a_job_under_an_unusual_soul_keeps_a_soul_independent_fallback() {
+        // The old seed hardcoded the bootstrap soul, so any job resolved that
+        // one fixed path. Deriving the fallback from the job's soul_id alone
+        // would leave a job with an unusual soul nothing to try if the app copy
+        // were missing — a hard failure where the old spelling succeeded.
+        let candidates = instruction_path_candidates(
+            "/agents/curator/skills/review-quality/SKILL.md",
+            "sl-bootstrap-agent-soul-other",
+        );
+
+        assert_eq!(candidates[0], "/agents/curator/skills/review-quality/SKILL.md");
+        assert!(
+            candidates
+                .iter()
+                .any(|c| c == "/agents/sl-bootstrap-agent-soul-other/skills/review-quality/SKILL.md"),
+            "the job's own soul must still be tried: {candidates:?}"
+        );
+        assert!(
+            candidates.iter().any(
+                |c| c == "/agents/sl-bootstrap-agent-soul-curator/skills/review-quality/SKILL.md"
+            ),
+            "the soul-independent bootstrap copy must remain reachable: {candidates:?}"
+        );
     }
 
     #[test]
@@ -1486,17 +1625,36 @@ mod tests {
     }
 
     #[test]
-    fn every_seeded_skill_is_one_the_app_actually_ships() {
-        // A template naming a skill nobody ships would have taken the old
-        // wildcard and looked fine.
-        for path in seeded_instruction_paths() {
-            let skill = path
-                .strip_prefix("/agents/curator/skills/")
-                .and_then(|rest| rest.split('/').next())
-                .unwrap_or_else(|| panic!("unexpected instruction_path shape: {path}"));
+    fn every_seeded_skill_id_is_one_the_app_actually_ships() {
+        // Reads `skill_id`, NOT the skill name embedded in instruction_path.
+        // `skill_id` is the field the runtime passes to
+        // knowledge_read_specs_for_skill, so a typo there is exactly the
+        // failure removing the wildcard was meant to expose — and deriving the
+        // name from the path would have missed it, because the path can be
+        // right while the id is wrong.
+        let skills = seeded_skill_ids();
+        assert!(!skills.is_empty(), "no skill_id entries parsed out of job_templates.toml");
+        for skill in skills {
             assert!(
-                knowledge_read_specs_for_known_skill(skill).is_some(),
-                "seeded template names '{skill}', which the app does not ship"
+                knowledge_read_specs_for_known_skill(&skill).is_some(),
+                "seeded template declares skill_id '{skill}', which the app does not ship"
+            );
+        }
+    }
+
+    #[test]
+    fn every_seeded_skill_id_matches_the_skill_in_its_instruction_path() {
+        // The two are written independently in the toml, so they can disagree.
+        // A job would then load one skill's SKILL.md and another skill's
+        // knowledge.
+        for (skill, path) in seeded_skill_ids().iter().zip(seeded_instruction_paths()) {
+            let from_path = path
+                .rsplit('/')
+                .nth(1)
+                .unwrap_or_else(|| panic!("unexpected instruction_path shape: {path}"));
+            assert_eq!(
+                skill, from_path,
+                "skill_id '{skill}' disagrees with its instruction_path '{path}'"
             );
         }
     }
@@ -1559,6 +1717,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: None,
         };
 
@@ -1570,6 +1729,7 @@ mod tests {
         let doc = LoadedDoc {
             path: "/agents/curator/skills/synthesize-language/SKILL.md".to_string(),
             workspace_id: "os-app-docs".to_string(),
+            file_id: "file-fixture".to_string(),
             content: Some("# Synthesize".to_string()),
         };
 

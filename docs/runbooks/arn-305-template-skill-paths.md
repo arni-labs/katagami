@@ -5,6 +5,32 @@ not sufficient on its own: `CurationJobTemplate` rows already exist in the
 deployed tenant, and they carry whatever `instruction_path` they were last
 configured with. The seed file only decides what a *fresh* install gets.
 
+## The premise, measured
+
+The fix assumes the app-shipped copy exists and is the more frequently refreshed
+one. That was an assertion in a code comment for a long time; it is now a
+measurement.
+
+Probed **2026-08-12** against `openpaw-production`, tenant `default`, workspace
+`os-app-docs`:
+
+| Path | Exists | Bytes | Versions | Hash |
+|---|---|---|---|---|
+| `/agents/curator/skills/review-quality/SKILL.md` | yes | 29,657 | **17** | `03601d2a5620` |
+| `/agents/sl-bootstrap-agent-soul-curator/…/review-quality/SKILL.md` | yes | 29,657 | 10 | `03601d2a5620` |
+| `/agents/curator/skills/synthesize-language/SKILL.md` | yes | 20,070 | **9** | `f3b59011e7c7` |
+| `/agents/sl-bootstrap-agent-soul-curator/…/synthesize-language/SKILL.md` | yes | 20,070 | 2 | `f3b59011e7c7` |
+
+Both copies exist, and at the moment of the probe their bytes were identical —
+so this is not repairing a live divergence today. What it changes is which copy a
+session follows *when* they diverge, and the version counts show that they do:
+the app path took 17 revisions where the snapshot took 10, and 9 where the
+snapshot took 2. The snapshot lags by construction, so preferring the app copy is
+not a no-op.
+
+Re-check with the `ResolvePath` loop in step 2 below, plus a `Files` read for
+`version_count` and the content hash.
+
 ## What was wrong
 
 Every seeded template pointed at a per-soul bootstrap snapshot:
@@ -65,27 +91,41 @@ the rows are the truth.
 the fix makes things worse rather than better: the first candidate will miss
 and every read falls back to the snapshot anyway.
 
+**Derive the list from the rows, never from a list typed here.** Step 0 said the
+rows are the truth; a hardcoded skill list in this runbook would silently skip a
+row that points at an unseeded or misspelled skill — which is exactly the row
+worth catching.
+
 ```bash
-for skill in research-direction taste-distillation synthesize-language \
-             review-quality organize-taxonomy synthesize-palette \
-             synthesize-art-style; do
-  printf '%s: ' "$skill"
+AUTH=(-H "X-Tenant-Id: $TEMPER_TENANT_ID"
+      -H "Authorization: Bearer $TEMPER_API_KEY"
+      -H "x-temper-principal-kind: agent"
+      -H "x-temper-principal-id: system"
+      -H "x-temper-agent-type: system")
+
+# Every path the DEPLOYED templates actually name, deduped.
+curl -sS "$TEMPER_API_URL/tdata/CurationJobTemplates" "${AUTH[@]}" \
+| jq -r '.value[] | select(.Status == "Active") | .InstructionPath' \
+| sort -u > /tmp/arn305-configured-paths.txt
+
+# The app-shipped path each of them should resolve to.
+sed -E 's|^/agents/[^/]+/|/agents/curator/|' /tmp/arn305-configured-paths.txt \
+| sort -u > /tmp/arn305-app-paths.txt
+
+while read -r path; do
+  printf '%s: ' "$path"
   curl -sS -X POST \
     "$TEMPER_API_URL/tdata/Workspaces('os-app-docs')/Temper.ResolvePath?await_integration=true" \
-    -H 'Content-Type: application/json' \
-    -H "X-Tenant-Id: $TEMPER_TENANT_ID" \
-    -H "Authorization: Bearer $TEMPER_API_KEY" \
-    -H "x-temper-principal-kind: agent" \
-    -H "x-temper-principal-id: system" \
-    -H "x-temper-agent-type: system" \
-    -d "{\"path\":\"/agents/curator/skills/$skill/SKILL.md\"}" \
-  | jq -r '.file_id // "MISSING"'
-done
+    -H 'Content-Type: application/json' "${AUTH[@]}" \
+    -d "{\"path\":\"$path\"}" \
+  | jq -r '(.fields.last_file_id // .last_file_id) // "MISSING"'
+done < /tmp/arn305-app-paths.txt
 ```
 
-Every line must print a file id. A `MISSING` means the app did not ship that
-skill under `/agents/curator/`, and that template will keep reading its
-snapshot — investigate before going further.
+Every line must print a file id. A `MISSING` means the app does not ship that
+skill under `/agents/curator/`, so that template keeps reading its snapshot no
+matter what this fix does — **investigate before going further**. A `MISSING`
+whose skill name looks wrong is a misspelled row, not a missing skill.
 
 **2. Patch any row that still carries a snapshot path.** One call per row, using
 the id from the before-check:
@@ -117,6 +157,48 @@ resource:datadog  service:katagami  "instruction"
 
 Look for `/agents/curator/skills/...` in the rendered prompt, and for zero
 `failed to load required instruction doc` errors over the window.
+
+## If you install a skill at runtime, read this
+
+`paw-skills`' agent-scoped install writes to
+`/agents/<agent-id>/skills/<slug>/SKILL.md` — a **soul** path. Since the app copy
+now wins whenever it exists, an install to the soul path succeeds and then has no
+effect on any job. That is the documented behaviour, not a bug: it is what keeps
+a one-time bootstrap snapshot from pinning every session to a stale skill.
+
+It is also exactly how a shadowing bug hides, so it is not allowed to be silent.
+Whenever a copy wins and a **different** file exists at a lower-priority path,
+the job logs at warn level:
+
+```
+build_session_message: instruction doc SHADOWED. A different file exists at a
+lower-priority path and is NOT being used. used_path='…' used_file_id='…'
+shadowed_path='…' shadowed_file_id='…' workspace='os-app-docs'.
+```
+
+Watch for it after any runtime skill install:
+
+```
+resource:datadog  service:katagami  "instruction doc SHADOWED"
+```
+
+If you see it and you meant your install to take effect, either install to the
+app path or reconfigure that template's `instruction_path`. **A silent no-op is
+the one outcome this cannot produce.**
+
+The comparison is by file id rather than content hash — identical content at two
+paths is still two file objects, and fetching both bodies would double the
+content read. A differing id means "a different file is sitting there", which is
+what an operator needs to know.
+
+**Cost:** one extra `ResolvePath` per job, on the path that succeeds.
+`.proofs/perf-036` removed runtime `ResolvePath` from this step precisely because
+it measured 581–1126ms, so this is not free — it is one call against a job that
+then runs an LLM session for minutes. The common case is a hit on the first
+candidate (the app copy demonstrably exists, see the table above), so the total
+is two resolves rather than one; a miss on the app copy costs a third. The
+alternative was leaving a deliberate install silently ignored, which is more
+expensive than a second of latency.
 
 ## What "done" looks like
 
