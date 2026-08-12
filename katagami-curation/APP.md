@@ -44,6 +44,97 @@ Rules can be created by `taste_distillation` from catalog signals or extracted
 from already-approved Katagami foundation docs. Only `Accepted` rules are
 loaded by synthesis and quality-review jobs.
 
+### CuratorAgent
+
+The synthesis protocol one curator run must conform to (ARN-294). Self-review
+precedes submission, submission happens at most once, submitted work is already
+`UnderReview` on the entity side, and Publish is not in the actor's alphabet —
+all four by construction rather than by convention. `jobs_in_flight` is guarded
+at 10 concurrent claims, the standing batch cap.
+
+Produced entities are recorded as they land (`RecordDesignLanguage`,
+`RecordArtStyle`, `RecordPaletteSystem`, `RecordWritingStyle`), and there is one
+submit action per lane (`SubmitDesignLanguages`, `SubmitArtStyles`,
+`SubmitPaletteSystems`, `SubmitWritingStyles`), mirroring CurationJob's lane
+completions. Each submit guards its own id list with `cross_entity_state`, so
+the artifact requirements are read off the entity graph — reaching `UnderReview`
+means that entity's own `SubmitForReview` guard already proved DESIGN.md,
+embodiment, landing, thumbnail, proof shots, or corpus, depending on the lane —
+plus an `is_true has_<lane>_ids` guard, because the kernel treats a cross-entity
+guard over an empty list as vacuous truth and "produced nothing" must not read
+as "everything is fine".
+
+**States:** `BriefReceived` -> `Drafting` -> `SelfReviewed` -> `Submitted`,
+with `Abandoned` for a run that gives up or stalls.
+
+### ReviewAgent
+
+One machine review of one curator submission. `RecordVerdict` is what unlocks
+the human publish path: `HumanCurator.Publish` is guarded on the ReviewAgent it
+names having reached `VerdictRecorded`, and on that reference being present
+(`required = true` — the kernel resolves a cross-entity guard over an ABSENT ref
+as vacuously true, so without it an assignment that never linked a review
+published as though one had happened).
+
+What the guard does **not** check is that the linked review reviewed THIS
+submission. The kernel can compare a related entity's status, not its fields, so
+any ReviewAgent that has recorded a verdict satisfies it. `AssignSubmission`
+records `reviewed_submission_ids` from that record so a mismatch is at least
+visible to a reader and to a conformance judge; turning it into a gate needs a
+field-equality guard in the kernel. Until then it is the caller's obligation,
+caught in review rather than by construction.
+
+**States:** `SubmissionReceived` -> `Reviewing` -> `VerdictRecorded`, with
+`Abandoned` for a review that gives up or stalls.
+
+### HumanCurator
+
+The publishing ROLE — never a person. Identity lives on `Member`; this record
+points at the current holder through an opaque `assignee_ref` carrying that
+holder's principal id. Publish and ReturnWithCritique are closed to every agent
+principal in `policies/human_curator.cedar` — by the principal's TYPE, so an
+agent cannot shed the rule by omitting the optional `x-temper-agent-type`
+header — and bound to the assignment's own holder
+(`principal.id == resource.assignee_ref`), so one named human answers for the
+decision rather than any authenticated human at all.
+
+The artifact-side boundary is a different thing and worth stating plainly:
+`katagami-commons/policies/design_language.cedar` and `art_style.cedar` forbid
+contributor agents from publishing the artifacts. Nothing machine-checks that
+the DesignLanguage a human publishes is the one this assignment reviewed — the
+two records are linked by convention through `submission_ids`, not by a guard.
+Treat the artifact-side publish as governed by policy and process, not by
+construction.
+Both working states carry a 48h timeout onto `ReviewOverdue` -> `Escalated`, so
+an assignment nobody picks up surfaces instead of stalling the queue.
+
+**States:** `SubmissionAssigned` -> `Reviewing` -> `Published` |
+`ReturnedWithCritique`; `Escalated` -> `SubmissionAssigned` on reassignment.
+
+### TrajectoryVerdict
+
+One judged trajectory at one layer. `layer = "deterministic"` records the
+layer 1 result and is authoritative for everything rule-shaped; `layer = "llm"`
+records the katagami-judge skill's taste, quality, and reasoning judgement,
+which never overrides layer 1. Two layers means two rows, so a contradiction
+stays visible instead of merged away.
+
+Layer 1 is the kernel's conformance engine, `POST /api/conformance/check`. It
+replays the governed dispatch rows the kernel recorded — what the platform
+actually did, rather than what a transcript says the agent asked for.
+`scripts/trajectory/conformance_check.py` is the offline fallback for when that
+endpoint cannot be reached, and it tracks the kernel engine rather than drifting
+into a second opinion.
+
+Neither engine claims more than it checked. Guards resolved against the entity
+graph at dispatch time (`cross_entity_state`), evidence never captured, a read
+that stopped at its row cap — all of it lands in `unverifiable` rather than
+counting as satisfied, and `evidence_complete` is false whenever any of it
+happened. `passed && evidence_complete` is the only pair that means a fully
+checked conforming run.
+
+**States:** `Pending` -> `Recorded` (terminal).
+
 ## Natural Language Operations
 
 Operator and DM-facing agents should translate plain requests like "run taste

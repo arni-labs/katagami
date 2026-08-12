@@ -1,0 +1,9 @@
+# Trajectory capture dependencies (ARN-293).
+#
+# Harbor is pinned to a tag, not a range. The pin is also asserted in
+# harbor_adapter.py (HARBOR_PINNED_VERSION / HARBOR_PINNED_REF) and checked at
+# runtime, so a drifted install fails loudly instead of producing trajectories
+# nobody can trace back to a converter version.
+#
+# Everything else the pipeline needs is in the standard library.
+harbor @ git+https://github.com/harbor-framework/harbor.git@v0.21.0
