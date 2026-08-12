@@ -282,8 +282,9 @@ fn set_failed_job_callback(ctx: &Context, job_id: &str, job_type: &str, error: &
 /// is worth repairing is verification work — reading the budget, resolving the
 /// language, composing the brief. Creating and starting the job is a
 /// transition, and transitions belong to the spec (`failure_spawns_repair_job`
-/// on CurationJob.Fail).
+/// on CurationJob.FailWithRepair).
 struct RepairPlan {
+    job_id: String,
     job_type: String,
     input: String,
     language_id: String,
@@ -301,30 +302,37 @@ fn set_failed_job_callback_with_repair(
 ) {
     let payload = error.payload(job_id, job_type);
     let mut params = json!({"error_message": payload.to_string()});
-    if let Some(plan) = repair {
-        // "yes" is the positive marker the trigger guards on; see the
-        // repair_requested comment in curation_job.ioa.toml for why the guard
-        // is positive rather than an inverted emptiness check.
-        params["repair_requested"] = json!("yes");
-        params["repair_job_type"] = json!(plan.job_type);
-        params["repair_input"] = json!(plan.input);
-        params["repair_language_id"] = json!(plan.language_id);
-        params["repair_model"] = json!(plan.model);
-        params["repair_provider"] = json!(plan.provider);
-        params["repair_direction_id"] = json!(plan.direction_id);
-        ctx.log(
-            "info",
-            &format!(
-                "finalize_spawned_session: requesting repair of DesignLanguage '{}' after job '{job_id}' failed; failure_spawns_repair_job creates the follow-up",
-                plan.language_id
-            ),
-        );
-    }
     ctx.log(
         "warn",
         &format!("finalize_spawned_session: verification failed for job '{job_id}': {payload}"),
     );
-    set_success_result("Fail", &params);
+
+    // The verdict IS the action. A plain failure returns Fail, which spawns
+    // nothing; a failure that earned a repair returns FailWithRepair, whose
+    // declared trigger mints the follow-up. Carrying the verdict as a field on
+    // one Fail action instead would leave a marker that outlives Retry and
+    // re-arms on the next state timeout — see the FailWithRepair block in
+    // curation_job.ioa.toml.
+    let Some(plan) = repair else {
+        set_success_result("Fail", &params);
+        return;
+    };
+
+    params["repair_job_id"] = json!(plan.job_id);
+    params["repair_job_type"] = json!(plan.job_type);
+    params["repair_input"] = json!(plan.input);
+    params["repair_language_id"] = json!(plan.language_id);
+    params["repair_model"] = json!(plan.model);
+    params["repair_provider"] = json!(plan.provider);
+    params["repair_direction_id"] = json!(plan.direction_id);
+    ctx.log(
+        "info",
+        &format!(
+            "finalize_spawned_session: job '{job_id}' failed repairably; requesting repair job '{}' for DesignLanguage '{}' via failure_spawns_repair_job",
+            plan.job_id, plan.language_id
+        ),
+    );
+    set_success_result("FailWithRepair", &params);
 }
 
 /// Maximum number of chained repair sessions per original job before the
@@ -357,10 +365,15 @@ fn plan_repair_job(
 
     let input_raw = string_field_any(fields, "input", "{}");
     let input_json: serde_json::Value = serde_json::from_str(&input_raw).unwrap_or(json!({}));
+    // Clamped at zero: `repair_attempt` rides in the job input, which a caller
+    // can author. A negative counter would sail past the budget check and then
+    // climb one repair at a time from far below it, so an unbounded chain is a
+    // single minus sign away. Clamping makes the budget hold for any input.
     let attempt = input_json
         .get("repair_attempt")
         .and_then(|v| v.as_i64())
-        .unwrap_or(0);
+        .unwrap_or(0)
+        .max(0);
     if attempt >= MAX_REPAIR_ATTEMPTS {
         ctx.log(
             "warn",
@@ -439,6 +452,11 @@ fn plan_repair_job(
         ),
     );
     Some(RepairPlan {
+        // Content-addressed rather than random: the failed job keeps a forward
+        // link to its repair, and a redelivered reaction resolves to this same
+        // entity instead of minting a second agent session. The attempt number
+        // is in the id, so each rung of the chain is its own entity.
+        job_id: format!("{job_id}-repair-{next_attempt}"),
         // A repair always re-enters through the regenerate lane: the language
         // already exists, so the work is to fix it in place, not to synthesize
         // a new one. Carried as data rather than hardcoded in the trigger so

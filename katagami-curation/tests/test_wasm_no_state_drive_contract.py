@@ -44,19 +44,46 @@ EDM_NS = {"edm": "http://docs.oasis-open.org/odata/ns/edm"}
 # Entities owned by other apps (TemperPaw), so their IOA specs are not in this
 # repo. Their lifecycle transitions still count: a katagami WASM module POSTing
 # `Sessions('x')/OpenPaw.RecordResult` is driving somebody else's machine.
-# Keyed by OData entity set, valued by the actions that carry `to = "..."` in
-# the owning app's spec.
+#
+# Derived from temperpaw `os-apps/paw-agent/specs/session.ioa.toml`,
+# `os-apps/paw-agent/specs/session_link.ioa.toml`, and
+# `os-apps/paw-fs/specs/workspace.ioa.toml` by the same rule used for the local
+# specs — an action carrying `to = "..."` — MINUS self-loops (`from == [to]`),
+# which move nothing. That exclusion is why `Workspace.ResolvePath` (a stat,
+# Active -> Active) and `Session.CheckSandboxReady` are absent, and why
+# `Session.Configure` is absent entirely: it declares no `to` at all.
+#
+# Regenerate after a TemperPaw spec change; a stale set here can only
+# UNDER-report, which is the direction that matters.
 EXTERNAL_TRANSITION_ACTIONS = {
-    "Sessions": {"Configure", "RecordResult", "Fail", "Cancel", "Start"},
-    "SessionLinks": {"Configure", "Fail", "Complete"},
+    "Sessions": {
+        "Cancel", "CheckSteering", "CompactionAuthExpired", "CompactionAuthReady",
+        "CompactionComplete", "ContextReady", "ContextReadyAuthSkipped",
+        "ContinueWithSteering", "Fail", "FinalizeResult", "FinalizeResultNoReply",
+        "HandleToolResults", "NeedsCompaction", "PauseForApproval",
+        "PauseForPlanApproval", "ProcessToolCalls", "ProviderAuthExpired",
+        "ProviderAuthReady", "ProviderResponseReady", "Provision",
+        "ProvisionWorkspace", "RecordResult", "RecordResultInlineReply",
+        "RecordResultNoReply", "RecoverFromRestart", "RecoveryComplete", "Resume",
+        "ResumeAfterApproval", "ResumeFromCheckpoint", "ResumeWithPlanApproval",
+        "ResumeWithPlanChanges", "SandboxReady", "TimeoutFail", "WorkspaceReady",
+    },
+    "SessionLinks": {"Configure", "NotifyFailed", "ParentNotified"},
+    "Workspaces": {"Archive", "Freeze", "Thaw"},
 }
 
 # The sanctioned kernel mechanism: a WASM module returns ONE callback action,
 # and the kernel dispatches it against the module's OWN entity (the entity the
 # trigger fired on). See temper `state/dispatch/wasm.rs` ->
-# `dispatch_wasm_callback`, which is hardwired to `ctx.entity_ref`. These are
-# not drives; they are the verdict.
-CALLBACK_RESULT_FUNCTIONS = ("set_success_result", "set_terminal_job_callback")
+# `dispatch_wasm_callback`, which is hardwired to `ctx.entity_ref`. Those are
+# not drives; they are the verdict, and they never appear below because they
+# carry no entity set — there is nothing for the module to choose.
+#
+# `dispatch_action` is the ONE helper through which these modules may reach
+# another entity's action. The contract can only read what it can name, so the
+# identifier is also forbidden from appearing in any form that would let a call
+# hide behind another name (an alias, a re-export, a function pointer).
+DISPATCH_HELPER = "dispatch_action"
 
 # ---------------------------------------------------------------------------
 # The debt register.
@@ -120,16 +147,12 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "RecordResult; converting one without the other splits the path."
     ),
     # --- build_session_message ---
-    "build_session_message: Sessions.Configure": (
-        "The session's own configuration. The module creates the Session entity, so "
-        "there is no source entity whose spec could declare a trigger for it; "
-        "resolve_target type=\"create\" would mint the id but [action.triggers.params] "
-        "cannot carry the computed user_message. Needs the prompt to land on a field "
-        "first."
-    ),
     "build_session_message: SessionLinks.Configure": (
-        "Same shape as Sessions.Configure: the module creates the SessionLink and "
-        "configures it in the same breath."
+        "The module creates the SessionLink and configures it in the same breath, "
+        "walking it Created -> Watching. There is no source entity whose spec could "
+        "declare the trigger: resolve_target type=\"create\" would mint the id, but "
+        "[action.triggers.params] carries literals only and the link's configuration "
+        "is computed. Needs the computed values to land on a field first."
     ),
     "build_session_message: CurationJobs.SessionSpawned": (
         "Ready -> Running on the module's OWN entity. CONVERTIBLE TODAY via the "
@@ -142,6 +165,32 @@ KNOWN_WASM_DRIVEN_TRANSITIONS = {
         "dispatch_curation_job_failure() on SessionLink setup failure. The trigger "
         "already declares on_failure = \"Fail\", so this is a duplicate imperative "
         "path; it exists to attach a specific error_message. Same PR #209 hold."
+    ),
+}
+
+# Minting an entity is the other half of driving a machine — an entity comes
+# into existence in its initial state, which is a transition nothing declared.
+# The finalizer no longer does it (that was this change). What remains is
+# `build_session_message`, and it is pinned here so a new one is a deliberate
+# edit rather than a quiet habit.
+KNOWN_WASM_ENTITY_CREATES = {
+    "build_session_message: Sessions": (
+        "POSTs /tdata/Sessions to mint the agent session the job will run in. "
+        "The declarative form is [[action.triggers]] kind=\"entity\" with "
+        "resolve_target type=\"create\" on CurationJob.ConfigureAndSubmit, but "
+        "the session's Configure carries the computed user_message, which "
+        "[action.triggers.params] cannot hold — it takes literals only. Blocked "
+        "until the built prompt lands on a CurationJob field first."
+    ),
+    "build_session_message: SessionLinks": (
+        "POSTs /tdata/SessionLinks to mint the parent/child watch link. Same "
+        "blocker as Sessions: the link's configuration is computed here."
+    ),
+    "build_session_message: Workspaces": (
+        "POSTs /tdata/Workspaces to ensure the shared docs workspace exists. A "
+        "get-or-create, not a lifecycle drive; the declarative equivalent is "
+        "resolve_target type=\"create_if_missing\" from a source entity that "
+        "carries the workspace id, which no CurationJob field holds today."
     ),
 }
 
@@ -275,16 +324,52 @@ def _enclosing_function(spans, index):
     return best
 
 
-def _forwarded_literals(source, fn_name, param_index):
-    """Literals passed at `param_index` to every call of `fn_name` in source."""
+# A helper may forward through several layers (`walk_lane_entity_to_published`
+# takes a set name and hands it to `attach_taste_vector`, which hands it to
+# `dispatch_action`). Stopping at one layer would let a transition hide two
+# calls deep, so resolution follows the chain. The bound is a cycle guard, not
+# a design limit.
+MAX_FORWARD_DEPTH = 6
+
+
+def _forwarded_literals(source, spans, fn_name, param_index, depth=0, seen=None):
+    """Literals reaching `param_index` of `fn_name`, following forwarders.
+
+    A call site that passes a literal contributes it. A call site that passes
+    one of ITS OWN enclosing function's parameters recurses one level up.
+    Returns (literals, unresolved_descriptions).
+    """
+    seen = seen or set()
+    key = (fn_name, param_index)
+    if depth > MAX_FORWARD_DEPTH or key in seen:
+        return set(), [f"forwarding chain for {fn_name}(arg {param_index}) is cyclic or too deep"]
+    seen = seen | {key}
+
     literals = set()
-    for match in re.finditer(rf"\b{re.escape(fn_name)}\s*\(", source):
+    unresolved = []
+    for match in re.finditer(rf"(?<!fn )\b{re.escape(fn_name)}\s*\(", source):
         args, _ = _split_call_args(source, match.end() - 1)
-        if param_index < len(args):
-            value = _literal(args[param_index])
-            if value is not None:
-                literals.add(value)
-    return literals
+        if param_index >= len(args):
+            continue
+        raw = args[param_index]
+        value = _literal(raw)
+        if value is not None:
+            literals.add(value)
+            continue
+        identifier = raw.strip().lstrip("&").strip()
+        caller = _enclosing_function(spans, match.start())
+        if caller and identifier in caller[1]:
+            deeper, deeper_unresolved = _forwarded_literals(
+                source, spans, caller[0], caller[1].index(identifier), depth + 1, seen
+            )
+            literals |= deeper
+            unresolved.extend(deeper_unresolved)
+        else:
+            unresolved.append(
+                f"{fn_name}(arg {param_index}) receives non-literal '{identifier}' "
+                f"from fn {caller[0] if caller else '<top level>'}"
+            )
+    return literals, unresolved
 
 
 # `dispatch_action(ctx, api_url, headers, set_name, entity_id, action, params)`
@@ -316,12 +401,35 @@ URL_PLAIN_RE = re.compile(
 # are resolved from the call sites, not from this string.
 GENERIC_DISPATCH_TEMPLATE = "/tdata/{set_name}('{entity_id}')/Temper.{action}"
 
+# A dangling `Namespace.Action` suffix — the second half of a URL split across
+# two literals (`format!("{base}/Temper.Publish")`) so neither one looks like a
+# dispatch. Every component is required to be PascalCase, which is what keeps
+# ordinary paths out: `/DESIGN.md` and `/registry-theme.json` end in a lowercase
+# or hyphenated component, action names never do.
+BARE_ACTION_SEGMENT_RE = re.compile(
+    r"(?:^|/)(?:[A-Z][A-Za-z0-9_]*\.)+"
+    r"(?:[A-Z][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})$"
+)
+
+# PascalCase dotted literals that are DATA, not URL fragments. Each one has to
+# earn its place here by being read as a value rather than concatenated into a
+# path — the pattern above cannot tell the two apart structurally.
+NON_URL_DOTTED_LITERALS = {
+    # Stored on the SessionLink as ParentActionNamespace so paw-agent can build
+    # ITS OWN callback to the parent job. Never concatenated here.
+    "Katagami.Curation",
+}
+
 
 class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
     def setUp(self):
         self.transitions = _load_transition_actions()
         self.entity_sets = _load_entity_set_map()
-        self.modules = sorted(WASM_ROOT.glob("*/src/*.rs"))
+        # rglob, not glob: a module that grows a nested `src/foo/bar.rs` must
+        # not fall outside the contract just by moving into a subdirectory.
+        self.modules = sorted(
+            p for p in WASM_ROOT.rglob("*.rs") if "target" not in p.parts
+        )
         self.assertTrue(self.modules, "no WASM sources found under katagami-curation/wasm")
 
     # -- helpers ----------------------------------------------------------
@@ -332,7 +440,10 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             return action in external
         automaton = self.entity_sets.get(entity_set)
         if automaton is None:
-            return False
+            # Unreachable: test_every_dispatch_target_is_a_known_entity_set
+            # fails first. Never guess "not a transition" for an unknown set —
+            # that is how a drive hides.
+            raise AssertionError(f"unknown entity set '{entity_set}'")
         return automaton in self.transitions.get(action, set())
 
     def _dispatch_sites(self, module_name, source):
@@ -341,7 +452,11 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
         sites = set()
         unresolved = []
 
-        for match in re.finditer(r"(?<!fn )\bdispatch_action\s*\(", source):
+        helper_span = next(
+            ((s, e) for name, _, s, e in spans if name == DISPATCH_HELPER), None
+        )
+
+        for match in re.finditer(rf"(?<!fn )\b{DISPATCH_HELPER}\s*\(", source):
             args, _ = _split_call_args(source, match.end() - 1)
             if len(args) <= DISPATCH_ACTION_ARG:
                 unresolved.append(f"{module_name}: dispatch_action call with {len(args)} args")
@@ -357,11 +472,12 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                 value = _literal(raw)
                 if value is not None:
                     return {value}
-                identifier = raw.strip()
+                identifier = raw.strip().lstrip("&").strip()
                 if enclosing_name and identifier in enclosing_params:
-                    forwarded = _forwarded_literals(
-                        source, enclosing_name, enclosing_params.index(identifier)
+                    forwarded, forward_unresolved = _forwarded_literals(
+                        source, spans, enclosing_name, enclosing_params.index(identifier)
                     )
+                    unresolved.extend(f"{module_name}: {u}" for u in forward_unresolved)
                     if forwarded:
                         return forwarded
                 unresolved.append(
@@ -377,27 +493,84 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
         for match in URL_ACTION_RE.finditer(source):
             action = match.group("action")
             if action.startswith("{"):
-                # The generic `dispatch_action` helper's own URL template.
+                # An interpolated action name in a hand-built URL. Exactly ONE
+                # of these is legitimate: `dispatch_action`'s own template,
+                # whose set and action are resolved from its call sites above.
+                # Anywhere else it is the historical
+                # `.../KatagamiCuration.{action}` loop idiom — the very shape
+                # this contract exists to stop — so it is unresolved, not
+                # skipped.
+                inside_helper = helper_span and helper_span[0] <= match.start() <= helper_span[1]
+                if not inside_helper:
+                    unresolved.append(
+                        f"{module_name}: hand-built action URL with an interpolated "
+                        f"action '{action}' outside fn {DISPATCH_HELPER} — route it "
+                        "through dispatch_action so the action is readable"
+                    )
                 continue
             sites.add((match.group("set"), action))
 
         return sites, unresolved
 
-    def _callback_actions(self, source):
-        callbacks = set()
-        for fn in CALLBACK_RESULT_FUNCTIONS:
-            for match in re.finditer(rf"\b{fn}\s*\(", source):
-                args, _ = _split_call_args(source, match.end() - 1)
-                for arg in args:
-                    value = _literal(arg)
-                    if value:
-                        callbacks.add(value)
-                        break
-                    if _literal(arg) == "":
-                        break
-        return callbacks
-
     # -- the contract -----------------------------------------------------
+
+    def test_the_dispatch_helper_cannot_be_reached_under_another_name(self):
+        """The scan finds calls by name, so the name must be the only handle.
+
+        `use self::dispatch_action as post_action;` or `let d = dispatch_action;`
+        would give the module a second way to reach the same helper that the
+        call-site regex never sees. Every occurrence of the identifier must
+        therefore be either its definition or a direct call.
+        """
+        offenders = []
+        for path in self.modules:
+            module_name = path.parts[-3]
+            source = path.read_text()
+            for match in re.finditer(rf"\b{DISPATCH_HELPER}\b", source):
+                before = source[max(0, match.start() - 3):match.start()]
+                after = source[match.end():match.end() + 2]
+                if before.endswith("fn ") or after.lstrip().startswith("("):
+                    continue
+                line = source[:match.start()].count("\n") + 1
+                offenders.append(
+                    f"{module_name}:{line} '{DISPATCH_HELPER}' used as a value, "
+                    f"not called: ...{source[max(0, match.start() - 40):match.end() + 20].strip()}..."
+                )
+        self.assertEqual(
+            [],
+            offenders,
+            "the action-dispatch helper must only ever be defined and called by "
+            "its own name — aliasing it hides dispatches from this contract:\n  "
+            + "\n  ".join(offenders),
+        )
+
+    def test_every_dispatch_target_is_a_known_entity_set(self):
+        """An unknown target must fail, never default to 'not a transition'.
+
+        Classification needs the target's spec. When a module dispatches at an
+        entity set this repo has never heard of, the honest answer is "I cannot
+        tell", and the only safe rendering of that is a failure — silently
+        calling it a field write is how a drive hides.
+        """
+        unknown = set()
+        for path in self.modules:
+            module_name = path.parts[-3]
+            sites, _ = self._dispatch_sites(module_name, path.read_text())
+            for entity_set, _action in sites:
+                if entity_set in EXTERNAL_TRANSITION_ACTIONS:
+                    continue
+                if entity_set in self.entity_sets:
+                    continue
+                unknown.add(f"{module_name}: {entity_set}")
+        self.assertEqual(
+            set(),
+            unknown,
+            "these entity sets are in neither this repo's CSDL nor "
+            "EXTERNAL_TRANSITION_ACTIONS, so this contract cannot tell whether "
+            "the dispatched action is a lifecycle transition. Add the owning "
+            "app's transitions to EXTERNAL_TRANSITION_ACTIONS:\n  "
+            + "\n  ".join(sorted(unknown)),
+        )
 
     def test_every_wasm_action_dispatch_is_statically_resolvable(self):
         """A dispatch we cannot read is a dispatch we cannot govern."""
@@ -438,6 +611,18 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                 if URL_PLAIN_RE.match(fragment):
                     continue
                 offenders.append(f"{module_name}: {raw!r}")
+
+            # The other half of the split-URL trick: build the entity part in
+            # one literal (which passes as a plain read) and append the action
+            # segment in a second literal that never contains `/tdata/`. Any
+            # bare `Namespace.Action` fragment is therefore an offender too.
+            for raw in literal_re.findall(path.read_text()):
+                if "/tdata/" in raw:
+                    continue
+                if raw in NON_URL_DOTTED_LITERALS:
+                    continue
+                if BARE_ACTION_SEGMENT_RE.search(raw):
+                    offenders.append(f"{module_name}: bare action segment {raw!r}")
         self.assertEqual(
             [],
             offenders,
@@ -484,7 +669,44 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
             "truth:\n  " + "\n  ".join(removed),
         )
 
+    def test_wasm_modules_do_not_mint_entities(self):
+        """The other half of the offense, ratcheted the same way.
+
+        A POST to a bare collection creates an entity in its initial state — a
+        transition no spec declared. `create` / `create_if_missing` target
+        resolvers are the declarative form.
+        """
+        found = set()
+        collection_re = re.compile(r'"[^"]*/tdata/([A-Za-z][A-Za-z0-9_]*)"')
+        for path in self.modules:
+            module_name = path.parts[-3]
+            for entity_set in collection_re.findall(path.read_text()):
+                found.add(f"{module_name}: {entity_set}")
+
+        expected = set(KNOWN_WASM_ENTITY_CREATES)
+        self.assertEqual(
+            [],
+            sorted(found - expected),
+            "a WASM module must not mint entities by POSTing a collection — use "
+            "an [[action.triggers]] kind=\"entity\" block with resolve_target "
+            "type=\"create\" or \"create_if_missing\":\n  "
+            + "\n  ".join(sorted(found - expected)),
+        )
+        self.assertEqual(
+            [],
+            sorted(expected - found),
+            "these hand-rolled entity creates are gone — delete their entries "
+            "from KNOWN_WASM_ENTITY_CREATES:\n  " + "\n  ".join(sorted(expected - found)),
+        )
+
     def test_debt_register_entries_explain_themselves(self):
+        for key, reason in KNOWN_WASM_ENTITY_CREATES.items():
+            self.assertGreater(
+                len(reason.split()),
+                12,
+                f"create-register entry '{key}' must say WHY it is still "
+                "imperative and what it is blocked on",
+            )
         for key, reason in KNOWN_WASM_DRIVEN_TRANSITIONS.items():
             self.assertRegex(
                 key,
@@ -498,19 +720,23 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                 "what it is blocked on — a bare entry is how debt becomes design",
             )
 
-    def test_repair_job_creation_is_a_declared_trigger_not_an_imperative_walk(self):
-        """The conversion this change landed: no hand-rolled job Create/Submit.
+    def _curation_job_spec(self):
+        return tomllib.loads((CURATION / "specs" / "curation_job.ioa.toml").read_text())
 
-        `maybe_spawn_repair_job` used to POST /tdata/CurationJobs, then
-        Configure, then Submit — minting an entity and walking it Queued ->
-        Ready from inside the verifier. It now returns the repair brief in the
-        Fail callback params and a declared trigger creates the job.
-        """
+    @staticmethod
+    def _triggers(action):
+        return {t["name"]: t for t in action.get("triggers", [])}
+
+    def test_the_finalizer_no_longer_creates_or_submits_jobs_by_hand(self):
+        """`maybe_spawn_repair_job` POSTed /tdata/CurationJobs, then Configure,
+        then Submit — minting an entity and walking it Queued -> Ready from
+        inside a verifier. All three are gone."""
         source = (WASM_ROOT / "finalize_spawned_session" / "src" / "lib.rs").read_text()
         for gone in (
-            "/tdata/CurationJobs\"",
+            '/tdata/CurationJobs"',
             "KatagamiCuration.{action}",
             "KatagamiCuration.Configure",
+            "maybe_spawn_repair_job",
         ):
             self.assertNotIn(
                 gone,
@@ -519,39 +745,78 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
                 "the repair job is minted by the failure_spawns_repair_job trigger",
             )
 
-        spec = tomllib.loads((CURATION / "specs" / "curation_job.ioa.toml").read_text())
-        fail_action = next(a for a in spec["action"] if a["name"] == "Fail")
-        triggers = {t["name"]: t for t in fail_action.get("triggers", [])}
+    def test_the_repair_verdict_is_an_action_not_a_field_on_fail(self):
+        """The property that makes a stale re-arm impossible.
+
+        `sync_fields` only writes params PRESENT in a call, so a marker field
+        set by one failure outlives Retry and re-arms on the next state timeout
+        or WASM `on_failure` — neither of which can carry a clearing param.
+        Binding the spawn to a distinct ACTION removes the field the staleness
+        would live in.
+        """
+        spec = self._curation_job_spec()
+        fail = next(a for a in spec["action"] if a["name"] == "Fail")
+
+        self.assertEqual(
+            ["error_message"],
+            fail["params"],
+            "CurationJob.Fail must carry no repair params — a repair verdict "
+            "riding on the ordinary failure action is exactly the sticky-marker "
+            "bug this shape exists to prevent",
+        )
+        self.assertNotIn(
+            "failure_spawns_repair_job",
+            self._triggers(fail),
+            "the repair trigger must hang off FailWithRepair, not Fail: every "
+            "state_timeout and every WASM on_failure dispatches Fail",
+        )
+
+        for state_timeout in spec.get("state_timeout", []):
+            self.assertEqual(
+                "Fail",
+                state_timeout["on_timeout"],
+                "a state timeout must never take the repair path — it has no "
+                "verifier verdict behind it",
+            )
+
+    def test_repair_job_creation_is_a_declared_trigger_not_an_imperative_walk(self):
+        spec = self._curation_job_spec()
+        repair_fail = next(a for a in spec["action"] if a["name"] == "FailWithRepair")
+        fail = next(a for a in spec["action"] if a["name"] == "Fail")
+
+        self.assertEqual(repair_fail["kind"], "internal")
+        self.assertEqual(repair_fail["from"], fail["from"])
+        self.assertEqual(repair_fail["to"], fail["to"])
+
+        triggers = self._triggers(repair_fail)
         self.assertIn(
             "failure_spawns_repair_job",
             triggers,
-            "CurationJob.Fail must declare the repair-job trigger",
+            "CurationJob.FailWithRepair must declare the repair-job trigger",
         )
         trigger = triggers["failure_spawns_repair_job"]
         self.assertEqual(trigger["kind"], "entity")
         self.assertEqual(trigger["target_entity"], "CurationJob")
         self.assertEqual(trigger["target_action"], "ConfigureAndSubmit")
-        self.assertEqual(trigger["resolve_target"]["type"], "create")
         self.assertEqual(
             trigger["params_from"]["input"],
             "repair_input",
             "the repair brief must travel from the failed job's own field",
         )
-        # The guard is what keeps every ordinary failure from minting a job, and
-        # it is POSITIVE on purpose: a reaction `field_equals` guard reads a
-        # missing field as false, so an inverted "repair_input is not empty"
-        # guard would fire on every failure whose params never mentioned repair.
-        self.assertEqual(trigger["guard"]["type"], "field_equals")
-        self.assertEqual(trigger["guard"]["field"], "repair_requested")
-        self.assertEqual(trigger["guard"]["value"], "yes")
+        # create_if_missing, not create: the verifier derives the id, so the
+        # failed job keeps a forward link and a redelivered reaction resolves to
+        # the same entity instead of minting a second agent session.
+        self.assertEqual(trigger["resolve_target"]["type"], "create_if_missing")
+        self.assertEqual(trigger["resolve_target"]["id_field"], "repair_job_id")
         self.assertNotIn(
-            "not",
-            trigger["guard"],
-            "the repair guard must fail closed on a missing field, not open",
+            "guard",
+            trigger,
+            "no guard needed and none wanted: the ACTION is the verdict, and a "
+            "guard on a field would reintroduce the staleness it replaced",
         )
 
         for param in (
-            "repair_requested",
+            "repair_job_id",
             "repair_input",
             "repair_job_type",
             "repair_language_id",
@@ -561,10 +826,66 @@ class WasmDoesNotDriveTheStateMachineTests(unittest.TestCase):
         ):
             self.assertIn(
                 param,
-                fail_action["params"],
-                f"CurationJob.Fail must declare '{param}' so the finalizer's "
-                "verdict lands on a field the trigger can read",
+                repair_fail["params"],
+                f"CurationJob.FailWithRepair must declare '{param}' so the "
+                "finalizer's verdict lands on a field the trigger can read",
             )
+
+    def test_a_repairable_failure_propagates_exactly_like_an_ordinary_one(self):
+        """FailWithRepair must not quietly become a softer failure.
+
+        The propagation triggers live on Fail. A second failure action that
+        forgot to carry them would leave the direction and query un-failed —
+        the fan-out barrier would stall on a job that is already dead.
+        """
+        spec = self._curation_job_spec()
+        fail = self._triggers(next(a for a in spec["action"] if a["name"] == "Fail"))
+        repair = self._triggers(
+            next(a for a in spec["action"] if a["name"] == "FailWithRepair")
+        )
+
+        def propagation(triggers):
+            return {
+                (t["target_entity"], t["target_action"]): (
+                    t.get("guard"),
+                    t.get("params_from"),
+                    t.get("resolve_target"),
+                    t.get("drop_ok"),
+                )
+                for t in triggers.values()
+                if t["kind"] == "entity" and t["name"] != "failure_spawns_repair_job"
+            }
+
+        self.assertEqual(
+            propagation(fail),
+            propagation(repair),
+            "FailWithRepair must fail its direction and query exactly as Fail "
+            "does — same targets, same guards, same resolvers",
+        )
+        self.assertEqual(
+            {t["module"] for t in fail.values() if t["kind"] == "wasm"},
+            {t["module"] for t in repair.values() if t["kind"] == "wasm"},
+            "both failure actions must still run the finalizer so the agent "
+            "session is recorded as failed",
+        )
+
+    def test_the_finalizer_returns_both_failure_verdicts(self):
+        source = (WASM_ROOT / "finalize_spawned_session" / "src" / "lib.rs").read_text()
+        self.assertIn('set_success_result("Fail", &params)', source)
+        self.assertIn('set_success_result("FailWithRepair", &params)', source)
+        self.assertIn(
+            'format!("{job_id}-repair-{next_attempt}")',
+            source,
+            "the repair job id must be derived from the failed job and the "
+            "attempt, so create_if_missing is idempotent and the forward link "
+            "survives",
+        )
+        self.assertIn(
+            ".max(0)",
+            source,
+            "repair_attempt rides in caller-authorable job input; a negative "
+            "counter would sail past MAX_REPAIR_ATTEMPTS and climb from below it",
+        )
 
 
 if __name__ == "__main__":

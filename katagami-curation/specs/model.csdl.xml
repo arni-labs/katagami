@@ -33,8 +33,8 @@
         <Property Name="ProgressLog" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ErrorMessage" Type="Edm.String" Nullable="false" DefaultValue="" />
         <!-- Repair verdict: the finalizer's decision, read by the
-             failure_spawns_repair_job trigger on Fail. -->
-        <Property Name="RepairRequested" Type="Edm.String" Nullable="false" DefaultValue="" />
+             failure_spawns_repair_job trigger on FailWithRepair. -->
+        <Property Name="RepairJobId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="RepairInput" Type="Edm.String" Nullable="false" DefaultValue="{}" />
         <Property Name="RepairJobType" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="RepairLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />

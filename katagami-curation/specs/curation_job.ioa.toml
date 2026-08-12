@@ -115,18 +115,17 @@ initial = ""
 # --- Repair verdict (ARN-320) ---
 #
 # When the finalizer rejects a repairable job it does NOT create the repair job
-# itself. It records the repair BRIEF on this job as part of the Fail verdict,
-# and `failure_spawns_repair_job` below mints the job. The verifier decides
-# whether a repair is warranted (budget, resolvable language, repairable job
-# type) and writes what it decided; the spec decides what happens next.
+# itself. It records the repair BRIEF here as part of the FailWithRepair verdict,
+# and `failure_spawns_repair_job` mints the job. The verifier decides whether a
+# repair is warranted (budget, resolvable language, repairable job type) and
+# writes what it decided; the spec decides what happens next.
 #
-# repair_requested is the positive marker the trigger guards on. It is a
-# positive marker on purpose: a reaction `field_equals` guard reads `false` for
-# a missing field, so an inverted "repair_input is not empty" guard would fire
-# on every ordinary failure whose params never mentioned repair. This one fails
-# closed.
+# repair_job_id is derived by the verifier from the failed job id and the attempt
+# number, so the follow-up is content-addressed rather than randomly minted: the
+# failed job keeps a forward link to its repair, and a redelivered reaction
+# resolves to the same entity instead of a duplicate.
 [[state]]
-name = "repair_requested"
+name = "repair_job_id"
 type = "string"
 initial = ""
 
@@ -936,8 +935,8 @@ name = "Fail"
 kind = "input"
 from = ["Queued", "Ready", "Running", "Finalizing"]
 to = "Failed"
-params = ["error_message", "repair_requested", "repair_input", "repair_job_type", "repair_language_id", "repair_model", "repair_provider", "repair_direction_id"]
-hint = "Mark job as failed with error details. The repair_* params are the finalizer's repair verdict: when it judges a failure repairable and within budget, it passes the repair brief here and failure_spawns_repair_job mints the follow-up. An ordinary failure leaves them unset and nothing is spawned."
+params = ["error_message"]
+hint = "Mark job as failed with error details. Spawns nothing: a failure that has earned a repair arrives as FailWithRepair instead."
 effect = [{ type = "trigger", name = "finalize_spawned_session" }]
 
 # ADR-0046: inline trigger — migrated from [[integration]] below.
@@ -1028,30 +1027,105 @@ error_message = "error_message"
 type = "field"
 field = "query_id"
 
-# ARN-320: auto-repair used to be a hand-rolled walk inside the finalizer WASM —
-# POST /tdata/CurationJobs, then Configure, then Submit, minting an entity and
-# driving it Queued -> Ready from inside a verifier. Nothing in the spec said it
-# happened. Now the finalizer only DECIDES (is this failure repairable, is there
-# budget left, which language, which model) and records that decision in the Fail
-# verdict; this trigger is what creates the job. Same mint-a-job idiom as
-# direction_queue_synthesis_creates_job and the other three create-triggers.
+# --- Failure with an earned repair (ARN-320) ---
 #
-# Declared last of the three Fail triggers so the direction/query failure
-# propagation lands before a repair job starts competing for the barrier.
+# Auto-repair used to be a hand-rolled walk inside the finalizer WASM — POST
+# /tdata/CurationJobs, then Configure, then Submit, minting an entity and driving
+# it Queued -> Ready from inside a verifier. Nothing in the spec said it happened.
+#
+# Now the finalizer only DECIDES — is this failure repairable, is there budget
+# left, which language, which model, what brief — and the DECISION IS WHICH
+# ACTION IT RETURNS. A plain failure comes back as Fail; a failure that earned a
+# repair comes back as FailWithRepair, and the trigger below is what creates the
+# job.
+#
+# The verdict is an action rather than a field on Fail on purpose. A field is
+# sticky: `sync_fields` only writes params PRESENT in the call, so a marker set
+# by one failure survives Retry and would re-arm on the next state_timeout or
+# on_failure Fail — neither of which can carry a clearing param. Binding the
+# trigger to the action instead makes a stale re-arm structurally impossible,
+# and gives Cedar a distinct action name to scope if the blanket CurationJob
+# policy is ever narrowed.
+#
+# Failure propagation is duplicated from Fail below, deliberately: a repairable
+# failure must fail its direction and query exactly as an ordinary one does.
+[[action]]
+name = "FailWithRepair"
+kind = "internal"
+from = ["Queued", "Ready", "Running", "Finalizing"]
+to = "Failed"
+params = ["error_message", "repair_job_id", "repair_job_type", "repair_input", "repair_language_id", "repair_model", "repair_provider", "repair_direction_id"]
+hint = "The finalizer's verdict when a verification failure is repairable and still within the repair budget: fail this job AND mint the follow-up repair job carrying the brief it composed. Only the verifier returns this action; every other failure path (state timeouts, WASM on_failure, manual operator failure) uses Fail and spawns nothing."
+effect = [{ type = "trigger", name = "finalize_spawned_session" }]
+
+[[action.triggers]]
+name = "finalize_spawned_session"
+kind = "wasm"
+module = "finalize_spawned_session"
+timeout_secs = "300"
+
+[action.triggers.config]
+temper_api_url = "{secret:temper_api_url}"
+katagami_embed_url = "{secret:katagami_embed_url}"
+katagami_embed_key = "{secret:katagami_embed_key}"
+style_embed_url = "{secret:style_embed_url}"
+style_embed_key = "{secret:style_embed_key}"
+
+[[action.triggers]]
+name = "repair_failure_fails_direction"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationDirection"
+target_action = "Fail"
+# drop_ok: identical to job_failure_fails_direction on Fail — a direction that
+# already reached a terminal state must not be re-failed.
+drop_ok = true
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "direction_id"
+
+[[action.triggers]]
+name = "repair_failure_fails_query"
+kind = "entity"
+principal = "curation-service"
+target_entity = "CurationQuery"
+target_action = "Fail"
+# drop_ok: identical to job_failure_fails_query on Fail.
+drop_ok = true
+
+[action.triggers.guard]
+type = "field_equals"
+field = "direction_id"
+value = ""
+
+[action.triggers.params_from]
+error_message = "error_message"
+
+[action.triggers.resolve_target]
+type = "field"
+field = "query_id"
+
+# The repair job's id is DERIVED by the verifier from the failed job and the
+# attempt number, so create_if_missing rather than create: the forward link
+# survives on the failed job (create mints an id the source never learns), and a
+# redelivered reaction lands on the same entity instead of minting a duplicate —
+# the second ConfigureAndSubmit is from-state-rejected on an already-started job
+# and harmlessly drops.
+#
+# Note on ordering: reactions on an edge are dispatched in declaration order but
+# run async, so this being declared last does not GUARANTEE the propagation
+# above lands first. Nothing here depends on it — both propagation triggers are
+# drop_ok and the repair job does not touch the barrier.
 [[action.triggers]]
 name = "failure_spawns_repair_job"
 kind = "entity"
 principal = "curation-service"
 target_entity = "CurationJob"
 target_action = "ConfigureAndSubmit"
-
-# Fails closed: only a Fail that carries the finalizer's explicit repair marker
-# spawns anything. Every ordinary failure leaves repair_requested unset, and a
-# reaction field_equals guard reads a missing field as false.
-[action.triggers.guard]
-type = "field_equals"
-field = "repair_requested"
-value = "yes"
 
 [action.triggers.params]
 completion_contract = "typed-v1"
@@ -1065,7 +1139,8 @@ provider = "repair_provider"
 direction_id = "repair_direction_id"
 
 [action.triggers.resolve_target]
-type = "create"
+type = "create_if_missing"
+id_field = "repair_job_id"
 
 # --- Retry ---
 

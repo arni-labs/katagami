@@ -19,9 +19,10 @@ class ReactionResolverTypeTests(unittest.TestCase):
         # (SynthesisComplete barrier-open). The old query-level
         # barrier_open_creates_quality_review_job and the per-CompleteQualityReview
         # review_creates_organization_job are gone (review is per-direction; organize
-        # is created once on the query). ARN-320 adds a fifth on CurationJob.Fail:
-        # auto-repair, which used to be a hand-rolled Create/Configure/Submit walk
-        # inside the finalizer WASM.
+        # is created once on the query). ARN-320's auto-repair job is deliberately
+        # NOT in this set: it resolves create_if_missing off a verifier-derived id
+        # rather than minting a random one, and is pinned by
+        # test_wasm_no_state_drive_contract instead.
         root = Path(__file__).resolve().parents[1]
         direction_spec = tomllib.loads(
             (root / "specs" / "curation_direction.ioa.toml").read_text()
@@ -48,7 +49,6 @@ class ReactionResolverTypeTests(unittest.TestCase):
                 "direction_synthesized_creates_review_job",
                 "submit_creates_source_search_job",
                 "barrier_open_creates_organize_job",
-                "failure_spawns_repair_job",
             },
             {trigger["name"] for trigger in create_triggers},
         )
