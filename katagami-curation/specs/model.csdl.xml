@@ -165,22 +165,33 @@
         <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="BriefRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasBrief" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="DraftNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="DraftRevision" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="ReturnedFromRunId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReturnedCritique" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="CritiqueRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SiblingMechanics" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="CollisionChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionAnswers" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="JobsInFlight" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="JobsClaimedTotal" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="ImageryGenerated" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ImagerySlots" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="LandingFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DashboardFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="FilmstripRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ScrollTraversalVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HeroSwapVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LivePageOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RuleResults" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="OpenFindings" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="HasOpenFindings" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RevisionRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="SelfReviewComplete" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="SelfReviewNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="HasSubmission" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="SubmittedEntityType" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="DesignLanguageIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasDesignLanguageIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ArtStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasArtStyleIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="PaletteSystemIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasPaletteSystemIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="WritingStyleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasWritingStyleIds" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
@@ -196,18 +207,36 @@
         <Property Name="Id" Type="Edm.Guid" Nullable="false" />
         <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="SubmissionReceived" />
         <Property Name="CuratorAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ReviewedEntityId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SubmissionType" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="SubmissionIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="SubmissionRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasSubmission" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="RulebookLoaded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RulebookVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="LoadedRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
+        <Property Name="ArtifactsFetched" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HeroVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="ArtStyleResolved" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ArtStyleVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RulesChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ClaimsChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="Findings" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="HasFindings" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasRepairs" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="RepairRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="Verdict" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="VerdictRationale" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="HasVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ReviewedBy" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
