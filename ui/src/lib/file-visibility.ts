@@ -8,6 +8,16 @@
  * `Ready` and its id is deterministic (`os-agent-skill-file-<soul>-<skill>`).
  * State was never a permission and obscurity was never the control.
  *
+ * THIS GATE IS NOT THE ONLY DOOR, so do not read it as one. As of 2026-08-12 the
+ * production Temper API answers unauthenticated requests that simply declare
+ * themselves anonymous — `X-Temper-Principal-Kind: customer` plus
+ * `X-Temper-Principal-Id: anonymous` returns 200 on `/tdata/Files` where the
+ * same request without those headers returns 401 (ARN-315, critical). So skill
+ * bytes remain reachable through the governed API regardless of what this file
+ * decides. Closing that is ARN-315's job; closing the proxy path is this one's.
+ * Anyone tempted to relax a rule here because "the skills are protected" should
+ * check whether ARN-315 has actually shipped first.
+ *
  * Access is decided by PATH, and only by path. Workspace is deliberately not
  * consulted, because on this system it does not mean anything stable: it tracks
  * WHO WROTE the file, not what the file is. The agent-facing write tool is
