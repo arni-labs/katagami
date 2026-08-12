@@ -59,6 +59,25 @@ a call that was never attempted.
 | C26 | Landing and hero rules | same, rules 25–33 | same section, Execution | 2 |
 | C27 | Motion carries meaning | same, rule 34 | same section, Execution | 2 |
 | C28 | Self-review has real content | `SelfReview` hint; contributor skill | "Review your own work…", Evidence | — |
+| C29 | whoami, and read the current tool schema | contributor skill, "Before contributing" 1, 4 | "Orient before making anything" | — |
+| C30 | Search the commons for overlap | same, "Before contributing" 2 | same section, Evidence | — |
+| C31 | Remix starts from the remix tool; lineage preserved | same, "Before contributing" 3 | same section, Execution | — |
+| C32 | Tradition level, never a living artist | same, "ArtStyle contract"; "Rights and source review" | "Ground the style in a tradition, not a person" | 2 |
+| C33 | Independent source-basis review, by a different author | same, "Rights and source review" | same section, Evidence | — |
+| C34 | Credits name traditions; the name is not evidence | same, closing paragraph | same section, Execution | — |
+| C35 | One prompt carrying eight dimensions, no reference image | same, "One canonical prompt" | "Write one prompt that carries the whole technique" | 2 |
+| C36 | The prompt's exclusion list | same, "Do not include" | same section, Execution | — |
+| C37 | The same aesthetic facts to every model | same, closing paragraph | same section, Execution | — |
+| C38 | Four roles × four media × two models = eight outputs | same, "Portability evidence" | "Prove the style transfers before claiming it does" | — |
+| C39 | Style references are not the backbone | same, "Portability evidence" | same section, Evidence | — |
+| C40 | Locked ids and hashes bound to the generation record | same, the three numbered steps | same section, Execution | — |
+| C41 | Exactly eight proof items; shared source hash; thumbnail | same, final paragraph | same section, Execution | — |
+| C42 | Independent prompt review, non-overlapping evidence | same, "Independent prompt and visual review" | "Review it independently…", Evidence | — |
+| C43 | Blind portability review against fixed thresholds | same, the scoring list and thresholds | same section, Evidence | — |
+| C44 | Deterministic verdict; contradictions resolved explicitly | same, final paragraph | same section, Decision + Recovery | — |
+| C45 | Contributor owns its source and proof images | same, "Ownership boundary" | "Stay on your side of the finalizer boundary" | — |
+| C46 | Never calls finalizer-owned actions | same; `katagami-commons/policies/art_style.cedar` | same section, Execution | 1 (policy) |
+| C47 | Report the returned status, not the expected one | same, "Palettes and design languages" | same section, Execution | — |
 
 Condition B encodes C20–C27 as a rulebook the actor is expected to follow, not as
 guards. This is the honest position: they are layer 2 in both conditions. The
@@ -127,10 +146,10 @@ does better anywhere, it should be here.
 
 | | Layer 1 | Layer 2 | Convention | Total |
 |---|---|---|---|---|
-| CuratorAgent | 19 | 8 | 1 | 28 |
+| CuratorAgent | 20 | 10 | 17 | 47 |
 | ReviewAgent | 14 | 2 | 0 | 16 |
 | HumanCurator | 17 | 2 | 3 | 22 |
-| **All** | **50** | **12** | **4** | **66** |
+| **All** | **51** | **14** | **20** | **85** |
 
 The layer-1 count here (49) is larger than the "machine" count in the inventory
 (34) because policy items are layer-1 checkable too: an authorization decision is

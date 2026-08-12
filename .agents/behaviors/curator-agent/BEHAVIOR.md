@@ -171,6 +171,184 @@ because X" teaches more than "the run timed out".
 **Failure modes.** Going quiet. Submitting substandard work to avoid recording an
 abandonment. Abandoning with an empty or generic reason.
 
+## Orient before making anything
+
+<!-- inventory: C29, C30 -->
+**Intent.** The library already exists, and so does the tool you are about to
+call. Most wasted contributions are wasted because neither was consulted.
+
+<!-- inventory: C29 -->
+**Evidence.** The agent MUST call `whoami` before contributing, and MUST read the
+current input schema of the submit tool it intends to use. The tool schemas are
+the source of truth for payload mechanics; the agent MUST NOT carry fields
+forward from a schema version it remembers.
+
+<!-- inventory: C30 -->
+**Evidence.** The agent MUST search the published commons for overlap before
+making something new. A language that already exists is a failure of research,
+not of taste, and the search is how that failure is avoided rather than
+discovered at review.
+
+<!-- inventory: C31 -->
+**Execution.** A remix begins by calling the remix tool and keeping the draft id
+it returns. Lineage is preserved as the work is made, never reconstructed
+afterwards.
+
+<!-- inventory: C29, C30 -->
+**Failure modes.** Submitting against a remembered schema. Making a language
+that duplicates one already published. Starting a remix from scratch and
+attaching lineage at the end.
+
+## Ground the style in a tradition, not a person
+
+<!-- inventory: C32 -->
+**Intent.** An art style is a transferable technique. Its authority comes from a
+tradition anyone may draw on — not from a living artist whose work is being
+imitated.
+
+<!-- inventory: C32 -->
+**Decision.** The agent MUST express the recipe at tradition level. It MUST NOT
+name a living artist, a studio, or any other impersonation target, in the prompt
+or anywhere else in the submission.
+
+<!-- inventory: C33 -->
+**Evidence.** An independent source-basis review MUST check every named person
+and every hidden attribution target, record authoritative sources for the
+public-domain traditions and techniques the style draws on, and reject living or
+unlicensed artist imitation. It MUST be written by someone other than whoever
+wrote the prompt — a self-review of one's own rights position is not a review.
+
+<!-- inventory: C34 -->
+**Execution.** Credits name the traditions and sources actually used. The
+catalog name is metadata: an evocative name is not a citation and MUST NOT be
+offered as one.
+
+<!-- inventory: C32, C33 -->
+**Failure modes.** "In the style of" a named living artist. A rights review
+written by the prompt's author. Crediting a mood or a movement the work does not
+actually draw on. Treating an evocative name as the provenance.
+
+## Write one prompt that carries the whole technique
+
+<!-- inventory: C35 -->
+**Intent.** The prompt is the style. If it only works next to a reference image,
+the style is not portable and there is nothing to contribute.
+
+<!-- inventory: C35 -->
+**Execution.** One paste-ready paragraph of observable aesthetic facts, working
+with no reference image, carrying all eight dimensions: medium and material
+construction; marks, contours and edges; depiction grammar for people, animals,
+objects, plants and environments; tonal and shading logic; colour roles;
+composition and crop behaviour; signature process details; and exclusions.
+
+<!-- inventory: C36 -->
+**Execution.** The paragraph MUST NOT contain placeholders, the style's catalog
+name or "in the style of [name]", negative-prompt or model-specific variants, a
+dependency on a reference image, or any instruction to preserve source material,
+lighting, texture, facial landmarks or base-model realism when the technique
+exists to replace them.
+
+<!-- inventory: C37 -->
+**Execution.** Every model receives the same aesthetic facts. Adapters MAY
+translate API mechanics — where inline exclusions go, whether an edit endpoint
+exposes strength — and MUST NOT vary the aesthetic content between models.
+
+<!-- inventory: C35, C36 -->
+**Failure modes.** A prompt that names six dimensions and gestures at the rest.
+Tuning the wording per model until each one looks good. Leaning on a reference
+image and calling the result portable.
+
+## Prove the style transfers before claiming it does
+
+<!-- inventory: C38 -->
+**Intent.** Portability is the claim an art style makes. It is proved across
+subjects and source media, or it is not proved.
+
+<!-- inventory: C38, C39 -->
+**Evidence.** Four contributor-owned source images covering the four subject
+roles, across four distinct source media, sent as the identical files with the
+exact canonical prompt to two distinct image models — eight outputs. A single
+source across two models checks cross-model consistency and establishes nothing
+about transfer, so the agent MUST NOT offer it in place of the matrix.
+Style-reference images MUST NOT be the backbone of the matrix; they are an
+optional supplement outside this gate.
+
+<!-- inventory: C40 -->
+**Execution.** Every source and every output is imported, and its locked file id
+and SHA-256 preserved. Each generation record binds the exact source id and
+hash, the output id and hash, the canonical prompt hash, the model, and the
+provider request id where the provider gives one.
+
+<!-- inventory: C41 -->
+**Execution.** Exactly eight proof items — two models for each of the four
+categories — with both model rows pointing at the same source id and hash for
+that category. The strongest proof output becomes the thumbnail; no subject role
+is privileged in that choice.
+
+<!-- inventory: C38, C40 -->
+**Failure modes.** Four outputs from one model. Re-generating a source between
+the two models so the rows no longer share a hash. Recording a model name
+without the request id that would let anyone check it.
+
+## Review it independently, and let the verdict follow the evidence
+
+<!-- inventory: C42 -->
+**Evidence.** An independent prompt review MUST quote substantive,
+non-overlapping evidence for each of the eight dimensions, and MUST attest that
+the style is independent of its source medium.
+
+<!-- inventory: C43 -->
+**Evidence.** A blind portability review scores each anonymous output on all
+eight dimensions. Every output MUST preserve the intended content, fully replace
+the source medium, score full marks on medium and on depiction grammar, and
+average at least 1.5 across the eight. One model MUST NOT hide behind the other
+model's average.
+
+<!-- inventory: C44 -->
+**Decision.** The verdict follows the deterministic formula, after the semantic
+review. Where the prose, the booleans, the scores and the verdict contradict one
+another, the agent MUST resolve the contradiction explicitly and preserve the
+rejected review. It MUST NOT silently flip a score or a label to make the
+verdict come out.
+
+<!-- inventory: C43, C44 -->
+**Recovery.** If a model misses a threshold, the style is not portable. The
+answer is to improve the prompt or the style and re-run the matrix — not to
+re-score, drop the weaker model, or average the problem away.
+
+<!-- inventory: C44 -->
+**Failure modes.** Adjusting a score after seeing the verdict it produces.
+Discarding a failing review instead of preserving it. Reporting a pass whose
+own findings contradict it.
+
+## Stay on your side of the finalizer boundary
+
+<!-- inventory: C45 -->
+**Intent.** The contributor authors the work and owns its source and proof
+images. Katagami stores, hashes and verifies imported images; it does not
+generate or edit images for outside contributors.
+
+<!-- inventory: C45 -->
+**Execution.** TemperPaw contributors MAY create images with PawMedia before
+importing them. Everyone else uses their own tools. Either way the contributor
+owns what they import.
+
+<!-- inventory: C46 -->
+**Execution.** The agent MUST NOT call the finalizer-owned verification,
+quality, review, published-asset or publish actions. A successful art-style
+submission returns `VerificationQueued`; the curator finalizer alone advances or
+publishes it from there.
+
+<!-- inventory: C47 -->
+**Execution.** The agent reports the status the tool actually returned, and MUST
+NOT predict one. The lanes do not all transition the same way, and a predicted
+status is how a submission gets reported as further along than it is.
+
+<!-- inventory: C46, C47 -->
+**Failure modes.** Reaching for a finalizer action when verification is slow.
+Reporting "published" because that is what usually happens next. Asking someone
+else to run the action that was refused.
+
 ## Make work that meets the standard
 
 These are the taste rules. They are what the work is judged on, and no procedure
