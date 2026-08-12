@@ -39,8 +39,15 @@ python3 hooks/trajectory-capture/capture.py identity
 
 `SessionStart` writes that file; the skills read it and use those exact values
 on every Temper call and on the actor record. Without the hooks installed, mint
-a session id yourself and pass `--session-id` **and** `--trajectory-id` to the
-converter so both sides still agree.
+a session id yourself and derive the rest with `capture.py derive <session-id>`
+(pass the harness name — `codex`, `grok` — when the run is not Claude Code).
+Give that id to the converter as `--session-id` and nothing else: it derives the
+trajectory id from the session id through the same single derivation, so passing
+`--trajectory-id` can only make the two disagree.
+
+Minting an id is half the job. The id names a document that does not exist until
+a real transcript is converted into it, so a run that mints an id and never runs
+the converter leaves an actor record pointing at nothing.
 
 The identity is stored **per session**, at
 `~/.katagami/trajectory-queue/identity/<session-id>.json`. Two Claude Code

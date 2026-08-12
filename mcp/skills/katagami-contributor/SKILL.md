@@ -35,9 +35,37 @@ There is one derivation, in one place
 (`scripts/trajectory/claude_session_to_ots.py::derive_trajectory_id`), and both
 sides read it.
 
-Outside Claude Code, or with the hooks not installed, mint a `session_id`
-yourself and pass **both** `--session-id` and `--trajectory-id` to the
-converter, so the actor record and the stored trajectory still agree.
+The hooks have to be installed **before the session starts**; they cannot be
+added to a session already in progress. Resuming a session after installing them
+does work — `SessionStart` fires again under the same id, and the transcript on
+disk still holds the earlier turns — but a session that simply continues is not
+captured. If `capture.py identity` reports no identity for this session, that is
+what it is telling you. It exits non-zero; treat that as a stop, not a warning.
+
+Outside Claude Code, or in a session the hooks never saw, mint a `session_id`
+yourself and derive the rest from it:
+
+```bash
+python3 hooks/trajectory-capture/capture.py derive <session-id> [harness]
+```
+
+Pass the harness name (`codex`, `grok`) when the run is not Claude Code — it
+defaults to `claude-code`, and an unset default becomes a false claim in the
+provenance the judge reads.
+
+Pass that `session_id` to the converter as `--session-id` and nothing else.
+**Do not pass `--trajectory-id`.** The converter derives it from the session id
+through the same single derivation; overriding it is how the actor record and
+the stored trajectory come to disagree — the failure described just above.
+
+Minting a session id is only half the job. The id names a document that does
+not exist until you convert a real transcript into it. A run that mints an id,
+writes it onto `ReceiveBrief` and never converts a transcript produces a perfect
+ledger that nothing can judge: layer 1 answers `indeterminate` because the
+trajectory names no spec version, and neither layer-2 input can be assembled at
+all. **A study run must be captured, not merely minted** — either start the
+session with the hooks installed, or convert the transcript yourself and confirm
+the ingest accepted it before treating the run as evidence.
 
 Then:
 
@@ -59,7 +87,11 @@ Then:
    it from `CuratorAgent` in the checkout and refuses to post without one; put
    that same value on `ReceiveBrief`. A verdict is only meaningful against the
    contract in force at the time, and `python3 scripts/trajectory/spec_version.py
-   CuratorAgent` prints it.
+   CuratorAgent` prints it. Note where each copy is read from: the judge takes
+   the version off the **trajectory**, not off the ledger entity, so the value on
+   `ReceiveBrief` is the run's own record and does not stand in for a captured
+   trajectory. A ledger carrying the right version alongside no trajectory still
+   judges `indeterminate`.
 
 ## The run ledger — drive it, do not just read about it
 
@@ -110,7 +142,7 @@ x-temper-principal-id: katagami-contributor
 
 | # | Call | Body | When |
 |---|---|---|---|
-| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity`, unchanged. |
+| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity` — or `capture.py derive` for a session the hooks never saw — unchanged. |
 | 2 | `Temper.BeginDrafting` | `{}` | Before the first piece of design work. Moves to `Drafting`. Guarded on `has_brief`, so step 1 must have happened. |
 | 3 | `Temper.ClaimJob` / `Temper.ReleaseJob` | `{}` | Around each concurrent unit of work. `ClaimJob` is guarded at 10 in flight — the standing batch cap, enforced rather than remembered. |
 | 4 | `Temper.RecordDraft` | `draft_notes` | As the work takes shape. Call it more than once; it is a log, not a summary. |

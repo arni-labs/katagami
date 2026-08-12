@@ -39,9 +39,29 @@ trajectory under the harness session id, so a self-minted `iter-...` id on the
 actor record resolves to nothing. There is one derivation, in one place
 (`scripts/trajectory/claude_session_to_ots.py::derive_trajectory_id`).
 
-Outside Claude Code, or with the hooks not installed, mint a `session_id`
-yourself (`iter-<lang_id-short>-<n>` is fine) and pass **both** `--session-id`
-and `--trajectory-id` to the converter, so both sides still agree.
+The hooks have to be installed **before the session starts**; they cannot be
+added to a session already in progress. Resuming a session after installing them
+does work — `SessionStart` fires again under the same id and the transcript on
+disk still holds the earlier turns — but a session that simply continues is not
+captured. If `capture.py identity` reports no identity for this session, that is
+what it is telling you; it exits non-zero, so treat it as a stop.
+
+Outside Claude Code, or in a session the hooks never saw, mint a `session_id`
+yourself (`iter-<lang_id-short>-<n>` is fine) and derive the rest from it:
+
+```bash
+python3 hooks/trajectory-capture/capture.py derive <session-id> [harness]
+```
+
+Give that `session_id` to the converter as `--session-id` and nothing else.
+**Do not pass `--trajectory-id`.** The converter derives it from the session id
+through the same single derivation; overriding it is the one way to make the
+actor record and the stored trajectory disagree.
+
+Minting an id is only half the job. The id names a document that does not exist
+until you convert a real transcript into it. An iterate run that mints
+`iter-abc-3`, writes it onto the step log, and never converts a transcript
+produces a complete-looking record that nothing can judge.
 
 Then:
 

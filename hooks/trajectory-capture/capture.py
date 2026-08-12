@@ -163,7 +163,7 @@ def _spec_version(converter, agent_id: str | None):
     return stamp.version, stamp.source, list(stamp.warnings), None
 
 
-def build_identity(session_id: str) -> dict:
+def build_identity(session_id: str, harness: str = "claude-code") -> dict:
     """The ids this session is captured under, derived rather than invented."""
     converter = _load_converter()
     agent_id = os.environ.get("KATAGAMI_AGENT_ID")
@@ -176,7 +176,7 @@ def build_identity(session_id: str) -> dict:
     identity = {
         "session_id": session_id,
         "trajectory_id": trajectory_id,
-        "harness": "claude-code",
+        "harness": harness,
         "agent_id": agent_id,
         "actor_spec": os.environ.get("KATAGAMI_ACTOR_SPEC"),
         "spec_version": version,
@@ -231,9 +231,12 @@ def cmd_identity(session_id: str | None = None) -> int:
         if not recorded:
             print(
                 "katagami-trajectory: no capture identity recorded yet. The SessionStart "
-                "hook writes it; if the hooks are not installed, mint the ids yourself and "
-                "pass --session-id/--trajectory-id to claude_session_to_ots.py so the "
-                "actor record and the stored trajectory agree.",
+                "hook writes it. Without the hooks, mint a session id and run "
+                "`capture.py derive <session-id>` for the rest — do not invent a "
+                "trajectory id, and do not pass --trajectory-id to "
+                "claude_session_to_ots.py: it derives the same id from --session-id, "
+                "and overriding it is how the actor record and the stored trajectory "
+                "end up disagreeing.",
                 file=sys.stderr,
             )
             return 1
@@ -256,11 +259,62 @@ def cmd_identity(session_id: str | None = None) -> int:
         print(
             f"katagami-trajectory: no capture identity for session {resolved!r} (from "
             f"{how}) at {path}. The SessionStart hook writes it; a session that started "
-            "before the hooks were installed has none.",
+            "before the hooks were installed has none, and the hooks cannot be "
+            "retrofitted onto a session already in progress. This session's transcript "
+            "will not be captured automatically: either restart with the hooks "
+            "installed, or run `capture.py derive <session-id>` for the ids and convert "
+            "the transcript yourself with claude_session_to_ots.py --transcript.",
             file=sys.stderr,
         )
         return 1
     print(path.read_text(encoding="utf-8").rstrip())
+    return 0
+
+
+def cmd_derive(session_id: str, harness: str = "claude-code") -> int:
+    """The same ids, for a session the SessionStart hook never saw.
+
+    Outside Claude Code — or in a session that started before the hooks were
+    installed — there is no recorded identity to read. The ids still have to
+    come from the one derivation rather than be invented, so this prints what
+    `identity` would have printed, without writing a queue file for a session
+    the hooks are not capturing.
+
+    Fails loudly rather than printing a hole. An identity whose `trajectory_id`
+    is null is worse than no output at all: a caller reading the field gets the
+    string "null", writes it onto `ReceiveBrief`, and the ledger points at a
+    document that will never exist — which is the failure this command was
+    added to prevent.
+    """
+    try:
+        session_id = _safe_session_name(session_id)
+    except ValueError as exc:
+        print(f"katagami-trajectory: {exc}", file=sys.stderr)
+        return 1
+
+    identity = build_identity(session_id, harness=harness)
+
+    if identity["trajectory_id"] is None:
+        print(
+            f"katagami-trajectory: cannot derive a trajectory id — the converter "
+            f"{converter_script()} could not be loaded, so the one derivation is "
+            "unavailable. Do NOT invent one: the id names a document the ingest "
+            "files under the same derivation, and an invented id resolves to "
+            "nothing. Set $KATAGAMI_TRAJECTORY_SCRIPT to the converter, or run "
+            "from a checkout that has it.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # The spec version is not required to derive the ids, so this is a warning
+    # rather than a failure — but it is a warning the caller has to see, because
+    # a trajectory posted without one cannot enter either judgement layer.
+    if error := identity.get("spec_version_error"):
+        print(f"katagami-trajectory: WARNING: spec version: {error}", file=sys.stderr)
+    for warning in identity.get("spec_version_warnings") or []:
+        print(f"katagami-trajectory: WARNING: {warning}", file=sys.stderr)
+
+    print(json.dumps(identity, indent=2))
     return 0
 
 
@@ -458,14 +512,26 @@ def cmd_process() -> int:
 
 COMMANDS = {"enqueue": cmd_enqueue, "process": cmd_process, "identity": cmd_identity}
 
-USAGE = "usage: capture.py {enqueue|process|identity [session-id]}"
+USAGE = (
+    "usage: capture.py {enqueue|process|identity [session-id]"
+    "|derive <session-id> [harness]}"
+)
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) < 2 or argv[1] not in COMMANDS:
+    if len(argv) < 2 or (argv[1] not in COMMANDS and argv[1] != "derive"):
         print(USAGE, file=sys.stderr)
         return 2
     command, rest = argv[1], argv[2:]
+    if command == "derive":
+        # `harness` is optional and defaults to claude-code, but it is settable
+        # because `derive` exists for the case where the run is NOT Claude Code.
+        # Stamping "claude-code" onto a Codex or Grok run puts a false claim in
+        # the study's own provenance.
+        if not 1 <= len(rest) <= 2:
+            print(USAGE, file=sys.stderr)
+            return 2
+        return cmd_derive(rest[0], rest[1] if len(rest) == 2 else "claude-code")
     if command == "identity":
         if len(rest) > 1:
             print(USAGE, file=sys.stderr)
