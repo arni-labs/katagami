@@ -231,9 +231,12 @@ def cmd_identity(session_id: str | None = None) -> int:
         if not recorded:
             print(
                 "katagami-trajectory: no capture identity recorded yet. The SessionStart "
-                "hook writes it; if the hooks are not installed, mint the ids yourself and "
-                "pass --session-id/--trajectory-id to claude_session_to_ots.py so the "
-                "actor record and the stored trajectory agree.",
+                "hook writes it. Without the hooks, mint a session id and run "
+                "`capture.py derive <session-id>` for the rest — do not invent a "
+                "trajectory id, and do not pass --trajectory-id to "
+                "claude_session_to_ots.py: it derives the same id from --session-id, "
+                "and overriding it is how the actor record and the stored trajectory "
+                "end up disagreeing.",
                 file=sys.stderr,
             )
             return 1
@@ -256,11 +259,31 @@ def cmd_identity(session_id: str | None = None) -> int:
         print(
             f"katagami-trajectory: no capture identity for session {resolved!r} (from "
             f"{how}) at {path}. The SessionStart hook writes it; a session that started "
-            "before the hooks were installed has none.",
+            "before the hooks were installed has none, and the hooks cannot be "
+            "retrofitted onto a session already in progress. This session's transcript "
+            "will not be captured automatically: either restart with the hooks "
+            "installed, or run `capture.py derive <session-id>` for the ids and convert "
+            "the transcript yourself with claude_session_to_ots.py --transcript.",
             file=sys.stderr,
         )
         return 1
     print(path.read_text(encoding="utf-8").rstrip())
+    return 0
+
+
+def cmd_derive(session_id: str) -> int:
+    """The same ids, for a session the SessionStart hook never saw.
+
+    Outside Claude Code — or in a session that started before the hooks were
+    installed — there is no recorded identity to read. The ids still have to
+    come from the one derivation rather than be invented, so this prints what
+    `identity` would have printed, without writing a queue file for a session
+    the hooks are not capturing.
+    """
+    if not session_id.strip():
+        print("katagami-trajectory: derive needs a session id", file=sys.stderr)
+        return 1
+    print(json.dumps(build_identity(session_id), indent=2))
     return 0
 
 
@@ -458,14 +481,19 @@ def cmd_process() -> int:
 
 COMMANDS = {"enqueue": cmd_enqueue, "process": cmd_process, "identity": cmd_identity}
 
-USAGE = "usage: capture.py {enqueue|process|identity [session-id]}"
+USAGE = "usage: capture.py {enqueue|process|identity [session-id]|derive <session-id>}"
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) < 2 or argv[1] not in COMMANDS:
+    if len(argv) < 2 or (argv[1] not in COMMANDS and argv[1] != "derive"):
         print(USAGE, file=sys.stderr)
         return 2
     command, rest = argv[1], argv[2:]
+    if command == "derive":
+        if len(rest) != 1:
+            print(USAGE, file=sys.stderr)
+            return 2
+        return cmd_derive(rest[0])
     if command == "identity":
         if len(rest) > 1:
             print(USAGE, file=sys.stderr)
