@@ -146,6 +146,29 @@ removes the bypass. The view stays tenant-local for them either way: an
 Agent-kind caller that sends no `X-Tenant-Id` is refused rather than handed the
 cross-tenant view.
 
+One more kernel pair, for a different reader. A verdict only means something
+against the spec version the run actually executed under, and capture reads that
+version from the kernel rather than computing it: `GET /observe/specs/{entity}`
+reports the digest of the registered IOA source, which is what a conformance
+check compares against. That read needs a Cedar permit for `read_specs` on
+`Spec`, and `policies/spec.cedar` is it. The principals are the judge and the
+capture pipeline — and the pipeline runs under the identity of the session it is
+capturing, so the ids that hold this permit are `Agent::"katagami-judge"`,
+`Agent::"katagami-contributor"` and `Agent::"katagami-reviewer"`. Without it the
+read answers 403 and capture falls back to a hash computed from its own
+checkout, stamping `spec-version-source: local` on every trajectory — a version
+that is right only if the deploy registered those exact bytes, and which the
+judge skill tells the reader to discount. That is what shipped until ARN-296.
+
+That permit admits the contributor where `trajectory.cedar` refuses it, on
+purpose: a trajectory is somebody else's recorded run, while a spec is the
+actor's own operating contract, which it cannot conform to without reading and
+already holds in the checkout. It reaches `GET /observe/specs` — the list of
+every spec in the caller's tenant scope — as well, because both handlers ask for
+the same pair. Both keep the Admin/System principal-kind bypass, so this permit
+is not what protects spec text today; it is what lets the agent-kind principals
+the pipeline uses read it at all.
+
 Neither engine claims more than it checked. Guards resolved against the entity
 graph at dispatch time (`cross_entity_state`), evidence never captured, a read
 that stopped at its row cap — all of it lands in `unverifiable` rather than

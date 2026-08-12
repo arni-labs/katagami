@@ -165,6 +165,14 @@ the capture says so loudly — the deploy is not holding the spec this checkout
 has, which is worth knowing the moment it becomes true rather than months later
 as an unexplained 409.
 
+The registry read is authorized. `GET /observe/specs/{entity}` asks Cedar to
+permit `read_specs` on `Spec`, and the request carries the configured
+`TEMPER_PRINCIPAL_ID` as an agent-kind principal — so the tenant needs a policy
+naming that id. `katagami-curation/policies/spec.cedar` names
+`katagami-contributor`, `katagami-reviewer` and `katagami-judge`. Configured
+under any other id, the read answers 403 and every capture silently stamps
+`local`.
+
 ## When something goes wrong
 
 Failures are visible on purpose:
@@ -185,6 +193,7 @@ Common causes:
 | `refusing to post without TEMPER_API_KEY` | No credential. An unauthenticated post could claim any agent and any tenant. |
 | `no actor spec version could be resolved` | `KATAGAMI_ACTOR_SPEC` names no known actor and the agent id maps to none. A trajectory without a spec version cannot be judged, so it is not posted. |
 | `OTS ingest unreachable` | `TEMPER_API_URL` wrong, or the host is down. Entries stay in `failed/` and can be replayed by moving them back to `pending/`. |
+| `.../observe/specs/<Actor> answered HTTP 403` | The tenant has no Cedar policy naming this principal for the spec read, so the registered digest cannot be read and the trajectory stamps `local`. Capture continues; the provenance is what degrades. |
 
 To retry a failed entry, move it back:
 

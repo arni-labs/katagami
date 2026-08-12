@@ -395,19 +395,29 @@ class CommonsPolicyDecisionTest(unittest.TestCase):
 
 
 class PlatformPermitDecisionTest(unittest.TestCase):
-    """Permits this app needs on the KERNEL's own resources (ARN-295).
+    """Permits this app needs on the KERNEL's own resources (ARN-295, ARN-296).
 
     Every other policy here governs an entity this app declares. These govern
-    the platform actions the app's agents ask the kernel for — today one pair,
-    `read_trajectories` on `Trajectory`, which THREE kernel endpoints ask about
-    (KERNEL_CALL_SITES below). Two of them are the judge's and have no
-    principal-kind bypass; the third is the tenant-wide aggregate view, which
-    the same grant reaches whether or not anyone meant it to.
+    the platform actions the app's agents ask the kernel for — today two pairs:
 
-    The kernel ships no built-in permit for the pair, so an app that does not
-    grant it gets 403 on the judge's two — which is how they shipped: reachable
-    only after a policy rule was posted by hand at runtime, and not by anything
-    a test could have caught. Hence
+      `read_trajectories` on `Trajectory`  THREE endpoints (KERNEL_CALL_SITES).
+                                           Two are the judge's and have no
+                                           principal-kind bypass; the third is
+                                           the tenant-wide aggregate view, which
+                                           the same grant reaches whether or not
+                                           anyone meant it to.
+      `read_specs` on `Spec`               TWO endpoints (SPEC_CALL_SITES), both
+                                           of which DO keep the bypass. So that
+                                           permit is not what protects spec text
+                                           today; it is what lets the agent-kind
+                                           principals the pipeline actually uses
+                                           read it at all.
+
+    The kernel ships no built-in permit for either pair, so an app that does not
+    grant one gets 403 — which is how both shipped: the first reachable only
+    after a policy rule was posted by hand at runtime, the second silently
+    degrading every capture to a locally computed spec version. Neither was
+    caught by anything a test could see. Hence
     `test_every_documented_platform_permit_is_granted` below, the general form
     of that failure.
 
@@ -437,11 +447,22 @@ class PlatformPermitDecisionTest(unittest.TestCase):
         r"[^`\n]{0,25}\bon\b\s*(?:resource\s+|the\s+)?`([A-Z][A-Za-z0-9_]*)`"
     )
 
-    # Every platform permit this app depends on, and the principal that must
+    # Every platform permit this app depends on, and EVERY principal that must
     # hold it. Adding a gated kernel endpoint to a skill means adding its pair
     # here and shipping the policy that grants it.
+    #
+    # A tuple of principals rather than one, because `read_specs` is needed by
+    # two roles for two different reasons and a contract test that checked only
+    # the first would let the other's 403 ship again.
     PLATFORM_PERMITS = {
-        ("read_trajectories", "Trajectory"): ("Agent", "katagami-judge", {"agent_type": "judge"}),
+        ("read_trajectories", "Trajectory"): (
+            ("Agent", "katagami-judge", {"agent_type": "judge"}),
+        ),
+        ("read_specs", "Spec"): (
+            ("Agent", "katagami-judge", {"agent_type": "judge"}),
+            ("Agent", "katagami-contributor", {"agent_type": "contributor"}),
+            ("Agent", "katagami-reviewer", {"agent_type": "reviewer"}),
+        ),
     }
 
     # Every kernel handler that asks Cedar about a Trajectory, and the helper
@@ -455,6 +476,15 @@ class PlatformPermitDecisionTest(unittest.TestCase):
         ("POST /api/conformance/check", "require_trajectory_content_auth"),
         ("GET /api/ots/trajectories/<id>/atif", "require_trajectory_content_auth"),
         ("GET /observe/trajectories", "require_observe_auth"),
+    )
+
+    # The same list for `read_specs` on `Spec`. Both go through
+    # `require_observe_auth`, so both keep the Admin/System principal-kind
+    # bypass — this permit decides what the agent-kind principals can read, and
+    # nothing else, until ARN-255 removes that shortcut.
+    SPEC_CALL_SITES = (
+        ("GET /observe/specs", "require_observe_auth"),
+        ("GET /observe/specs/{entity}", "require_observe_auth"),
     )
 
     def tenant_policies(self):
@@ -580,6 +610,152 @@ class PlatformPermitDecisionTest(unittest.TestCase):
                 self.decide(self.JUDGE, action=action),
                 cedarpy.Decision.Deny,
                 f"the judge was granted {action} on Trajectory",
+            )
+
+    # ----------------------------------------------------------------------
+    # `read_specs` on `Spec` (ARN-296)
+    # ----------------------------------------------------------------------
+
+    def spec_decision(self, principal, *, action="read_specs"):
+        return self.decide(principal, action=action, resource_type="Spec")
+
+    def test_the_judge_reads_the_contract_it_judges_against(self):
+        # The judge reads the deployed copy of the actor's automaton — states,
+        # actions with their guards and effects, invariants — as the ground for
+        # a finding.
+        self.assertEqual(self.spec_decision(self.JUDGE), cedarpy.Decision.Allow)
+
+    def test_the_capture_pipeline_reads_the_registered_version(self):
+        """The decision the whole permit exists for.
+
+        Capture runs under the identity of the session it is capturing, and the
+        shipped hook configuration sets `katagami-contributor`. When this read
+        is refused the pipeline does not fail — it falls back to a hash computed
+        from the local checkout and stamps `spec-version-source: local`, which
+        the judge skill instructs the reader to discount. A silent downgrade of
+        every verdict's provenance, which is why it went unnoticed.
+        """
+        self.assertEqual(self.spec_decision(self.CONTRIBUTOR), cedarpy.Decision.Allow)
+
+    def test_a_captured_reviewer_run_reads_its_own_contract_too(self):
+        # `ACTOR_SPEC_BY_AGENT_ID` maps this id to the ReviewAgent contract, so
+        # a captured review run asks the same question under this principal.
+        self.assertEqual(self.spec_decision(self.REVIEWER), cedarpy.Decision.Allow)
+
+    def test_the_contributor_grant_is_this_pair_only(self):
+        """The divergence from trajectory.cedar, pinned so it stays deliberate.
+
+        That policy refuses the contributor on the ground that an actor which
+        can read what a passing run looked like is being shown the answer sheet.
+        The contract it must execute is a different thing — it cannot conform to
+        a contract it may not read, and it already ships with those bytes in the
+        checkout. So the contributor is admitted HERE and must stay refused
+        THERE; a future edit that admits it to the corpus fails this test rather
+        than riding along on the precedent set by this one.
+        """
+        self.assertEqual(self.spec_decision(self.CONTRIBUTOR), cedarpy.Decision.Allow)
+        self.assertEqual(self.decide(self.CONTRIBUTOR), cedarpy.Decision.Deny)
+
+    def test_the_platform_is_not_granted_the_spec_pair(self):
+        """Deliberately unlike trajectory.cedar, which admits `Agent::"system"`.
+
+        Both spec endpoints go through `require_observe_auth`, which returns
+        early for a System-kind principal before Cedar is asked, and platform
+        code acting as System is covered by the kernel's built-in
+        `system-platform` permit. A grant here would be dead policy — and dead
+        policy inside an allowlist reads to the next person as evidence that a
+        call site exists.
+        """
+        self.assertEqual(self.spec_decision(self.PLATFORM), cedarpy.Decision.Deny)
+
+    def test_an_agent_that_declares_no_type_reads_no_contract(self):
+        self.assertEqual(self.spec_decision(self.UNDECLARED_AGENT), cedarpy.Decision.Deny)
+
+    def test_an_admin_kind_principal_is_not_named_by_the_spec_permit(self):
+        """Cedar denies it. The kernel, today, never asks.
+
+        Both handlers keep the Admin/System principal-kind shortcut, and the
+        kind is a request header nothing authenticates — so an Admin-kind caller
+        reads these endpoints whatever this file says. This asserts the policy
+        does not ALSO grant it by id, which is the only half a policy can own.
+        Stated plainly rather than left to imply the endpoints are closed.
+        """
+        self.assertEqual(self.spec_decision(self.ADMIN), cedarpy.Decision.Deny)
+
+    def test_an_unauthenticated_caller_reads_no_contract(self):
+        self.assertEqual(self.spec_decision(self.ANONYMOUS), cedarpy.Decision.Deny)
+
+    def test_a_test_credential_is_not_a_capture_pipeline(self):
+        # `e2e-driver` declares `agent_type = "system"`. An allowlist of ids is
+        # what keeps that from being enough.
+        self.assertEqual(self.spec_decision(self.E2E_DRIVER), cedarpy.Decision.Deny)
+
+    def test_the_spec_permit_grants_that_one_action_and_no_other(self):
+        # A permit written against `action` would have carried whatever the
+        # kernel adds to `Spec` later — `load_specs` and `submit_specs` are the
+        # write paths on this same resource.
+        for action in ("submit_specs", "load_specs", "delete_specs", "read_events"):
+            self.assertEqual(
+                self.spec_decision(self.CONTRIBUTOR, action=action),
+                cedarpy.Decision.Deny,
+                f"the capture pipeline was granted {action} on Spec",
+            )
+
+    def test_the_spec_permit_does_not_reach_other_kernel_resources(self):
+        """Read against THIS FILE alone, for the reason the sibling test gives.
+
+        The commons policies are blanket `permit(principal, action, resource is
+        X)` grants, so `read_specs` on `DesignLanguage` is Allow for everyone in
+        the merged set no matter what this file says. Evaluating this property
+        over the merge would answer a different question.
+        """
+        one_file = (POLICIES / "spec.cedar").read_text()
+        for resource_type in ("Entity", "Trajectory", "AgentAudit", "DesignLanguage", "Member"):
+            entities = [
+                entity("Agent", "katagami-judge", {"id": "katagami-judge"}),
+                {"uid": {"type": resource_type, "id": "unknown"}, "attrs": {}, "parents": []},
+            ]
+            decision = cedarpy.is_authorized(
+                {
+                    "principal": {"type": "Agent", "id": "katagami-judge"},
+                    "action": {"type": "Action", "id": "read_specs"},
+                    "resource": {"type": resource_type, "id": "unknown"},
+                    "context": {"agentTypeVerified": False},
+                },
+                one_file,
+                entities,
+            ).decision
+            self.assertEqual(
+                decision,
+                cedarpy.Decision.Deny,
+                f"spec.cedar granted read_specs on {resource_type}",
+            )
+
+    def test_the_spec_grant_reaches_both_endpoints_and_names_them(self):
+        """Two endpoints ask for this pair, not the one the fix was about.
+
+        `GET /observe/specs` lists every spec in the tenants the caller is
+        scoped to; the permit reaches it silently, because the action and
+        resource type are identical to the detail endpoint's. Pinned so the
+        reach is something the app states rather than something a reader
+        discovers, and so a third call site cannot appear without this list and
+        the policy comment being updated together.
+        """
+        for label, _helper in self.SPEC_CALL_SITES:
+            self.assertEqual(
+                self.spec_decision(self.CONTRIBUTOR),
+                cedarpy.Decision.Allow,
+                f"{label}: the capture pipeline is not permitted the pair it asks for",
+            )
+
+        policy = (POLICIES / "spec.cedar").read_text()
+        for label, _helper in self.SPEC_CALL_SITES:
+            path = label.split(" ", 1)[1]
+            self.assertIn(
+                path,
+                policy,
+                f"spec.cedar does not name {label}, an endpoint this permit "
+                "answers for",
             )
 
     def test_the_permit_does_not_reach_other_kernel_resources(self):
@@ -710,6 +886,13 @@ class PlatformPermitDecisionTest(unittest.TestCase):
             "the judge skill no longer documents the permit its endpoints "
             "require, so this test can no longer tell whether one is missing",
         )
+        self.assertIn(
+            ("read_specs", "Spec"),
+            documented,
+            "nothing in the repo documents the permit the spec-version read "
+            "requires, so an operator seeing that 403 cannot tell which permit "
+            "it is asking for",
+        )
 
         undeclared = sorted(documented - set(self.PLATFORM_PERMITS))
         self.assertEqual(
@@ -734,14 +917,15 @@ class PlatformPermitDecisionTest(unittest.TestCase):
             f"requires each, in the words the 403 uses: {undocumented}",
         )
 
-        for (action, resource_type), principal in sorted(self.PLATFORM_PERMITS.items()):
-            self.assertEqual(
-                self.decide(principal, action=action, resource_type=resource_type),
-                cedarpy.Decision.Allow,
-                f"no policy in this app grants `{action}` on `{resource_type}` to "
-                f"{principal[0]}::\"{principal[1]}\", so the endpoints behind it "
-                "answer 403 to the principal that has to call them",
-            )
+        for (action, resource_type), principals in sorted(self.PLATFORM_PERMITS.items()):
+            for principal in principals:
+                self.assertEqual(
+                    self.decide(principal, action=action, resource_type=resource_type),
+                    cedarpy.Decision.Allow,
+                    f"no policy in this app grants `{action}` on `{resource_type}` to "
+                    f"{principal[0]}::\"{principal[1]}\", so the endpoints behind it "
+                    "answer 403 to the principal that has to call them",
+                )
 
 
 class TestsLeaveTheRealArchiveAloneTest(unittest.TestCase):

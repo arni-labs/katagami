@@ -7,6 +7,7 @@ actions do NOT exist. `temper verify --specs-dir specs` proves the specs are
 internally sound; this file proves they say what the protocol requires.
 """
 
+import json
 import tomllib
 import unittest
 import xml.etree.ElementTree as ElementTree
@@ -520,6 +521,44 @@ class ActorPolicyBoundaryTest(unittest.TestCase):
         ).read_text()
         self.assertIn("x-temper-principal-id: katagami-judge", judge)
         self.assertIn("read_trajectories", judge)
+
+    def test_reading_the_registered_contract_is_an_allowlist_not_a_default(self):
+        # ARN-296, the sibling gap. `GET /observe/specs/{entity}` asks Cedar
+        # for `read_specs` on `Spec`; no policy granted it, so the capture
+        # pipeline's registry read answered 403 and every trajectory stamped
+        # `spec-version-source: local` — the provenance the judge skill tells
+        # the reader to discount.
+        policy = (POLICIES / "spec.cedar").read_text()
+        self.assertIn('Action::"read_specs"', policy)
+        self.assertIn("resource is Spec", policy)
+        self.assertIn('principal == Agent::"katagami-judge"', policy)
+        # The capture pipeline runs under the identity of the session it is
+        # capturing rather than one of its own, so the principal that has to
+        # hold this permit is the id the shipped hook configuration sets.
+        self.assertIn('principal == Agent::"katagami-contributor"', policy)
+        snippet = json.loads(
+            (
+                CURATION_ROOT.parent
+                / "hooks"
+                / "trajectory-capture"
+                / "settings.snippet.json"
+            ).read_text()
+        )
+        self.assertEqual(
+            snippet["env"]["KATAGAMI_AGENT_ID"],
+            "katagami-contributor",
+            "the shipped capture configuration no longer runs under the "
+            "principal spec.cedar grants, so the registry read this permit "
+            "exists for answers 403 again",
+        )
+        # And that id is what reaches the kernel as the principal: the registry
+        # read sends the agent id in the header Cedar decides on, rather than
+        # claiming a principal kind that would bypass Cedar entirely.
+        registry_read = (
+            CURATION_ROOT.parent / "scripts" / "trajectory" / "spec_version.py"
+        ).read_text()
+        self.assertIn("x-temper-principal-id", registry_read)
+        self.assertIn('headers["x-temper-principal-kind"] = "agent"', registry_read)
 
     def test_no_agent_principal_may_publish_on_the_role_record(self):
         policy = (POLICIES / "human_curator.cedar").read_text()
