@@ -97,9 +97,19 @@ Also produce (same language, same quality bar):
 Author everything in ONE call. `SubmitDesignLanguage` is the whole-language
 hot path — it re-sets the core spec, attaches every artifact file id, and sets
 every `SubmitForReview` guard var. It does NOT transition state: the entity
-stays in `Draft` until `SubmitForReview`. Every object and array param is
-`json.dumps(...)`, exactly as in `SetSpec` above — the bare file-id and version
-params are plain strings:
+stays in `Draft` until `SubmitForReview`.
+
+Serialization is per-param, and the payload below is the reference — copy its
+shapes exactly rather than applying a blanket rule:
+
+- **`json.dumps(...)`** for the spec objects (`philosophy`, `tokens`, `rules`,
+  `layout_principles`, `guidance`, `imagery_direction`), `tags`, the manifests,
+  `design_md_lint_result`, and `model_provenance`.
+- **Native** for `parent_ids` (a real list) and `generation_number` (a real
+  int) — these are the two exceptions, and they match what the MCP submit path
+  sends.
+- **Plain strings** for every file id, format version, `lineage_type`,
+  `provenance_tier`, and `provenance`.
 
 ```python
 temper.action('DesignLanguages', eid, 'SubmitDesignLanguage', {
@@ -131,7 +141,8 @@ temper.action('DesignLanguages', eid, 'SubmitDesignLanguage', {
     'lineage_type': lineage_type,            # 'original' | 'evolution' | 'remix'
     'generation_number': generation_number,  # 0 for an original, else parent's + 1
     'model_provenance': json.dumps(model_provenance),
-    'provenance_tier': provenance_tier,      # e.g. 'agent_generated'
+    'provenance_tier': provenance_tier,      # plain string, e.g. 'agent_generated'
+    'provenance': provenance,                # plain string; '' when there is nothing to record
     'direction_id': direction_id, 'curator_notes': curator_notes,
 })
 ```
@@ -161,5 +172,5 @@ top of this prompt.
 
 - The `json` helper is preloaded. Use `json.dumps(...)` and `json.loads(...)`
   without importing it. Other imports are not available in the Monty REPL.
-- **ALL array and object parameters MUST use `json.dumps(...)`.** NEVER use `str()` or Python repr — these produce single-quoted strings that break JSON parsing in the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken).
+- **Serialize array and object parameters with `json.dumps(...)`, never `str()` or Python repr** — repr produces single-quoted strings that are not JSON and are permanently unreadable by the UI. Example: `json.dumps(['a', 'b'])` -> `'["a", "b"]'` (correct), NOT `str(['a', 'b'])` -> `"['a', 'b']"` (broken). The exceptions are `parent_ids` and `generation_number`, which go native — the payload above is the authority on which params take which shape.
 - No f-strings with nested quotes.

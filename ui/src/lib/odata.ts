@@ -1450,9 +1450,9 @@ export function parseJson<T = unknown>(raw?: unknown): T | null {
 }
 
 export interface SpecField<T> {
-  /** Structured content, when the field holds a JSON object or array. */
+  /** Structured content, when the field holds a JSON **object**. */
   data: T | null;
-  /** Trimmed free text, when the field holds prose instead of JSON. */
+  /** Trimmed free text, for every shape a section view cannot render. */
   prose: string | null;
 }
 
@@ -1463,22 +1463,43 @@ export interface SpecField<T> {
  * prose, and every consumer read that null as "field absent", so those panels
  * rendered empty and the published DESIGN.md / KATAGAMI.MD dropped the whole
  * section. Keep both shapes so callers can render whichever one is there.
+ *
+ * `data` is a plain object ONLY. Every section view reads named keys off it
+ * (`summary`, `values`, `do`/`dont`, …), so handing back an array or a bare
+ * primitive would satisfy the `data` branch and then render nothing — the same
+ * blank panel this function exists to prevent. Arrays and primitives are real
+ * content, so they come back as readable prose rather than being dropped.
  */
 export function parseSpecField<T = Record<string, unknown>>(
   raw?: unknown,
 ): SpecField<T> {
   const parsed = parseJson(raw);
-  if (parsed !== null && typeof parsed === "object") {
+  if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
     return { data: parsed as T, prose: null };
   }
-  // Prefer the decoded value for JSON-quoted prose ("\"a sentence\""), and fall
-  // back to the raw text for anything JSON.parse rejected.
-  const text =
-    typeof parsed === "string"
-      ? parsed
-      : typeof raw === "string"
-        ? raw
-        : "";
-  const prose = text.trim();
-  return { data: null, prose: prose || null };
+  return { data: null, prose: specProse(parsed, raw) };
+}
+
+/** Render a non-object spec value as human-readable prose, or null if empty. */
+function specProse(parsed: unknown, raw: unknown): string | null {
+  const value = parsed === null && typeof raw !== "string" ? raw : parsed;
+  const text = flattenSpecValue(value);
+  // JSON.parse rejected it outright (malformed JSON, bare prose) — the raw
+  // text IS the content the contributor wrote.
+  if (!text && typeof raw === "string") return raw.trim() || null;
+  return text || null;
+}
+
+function flattenSpecValue(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => flattenSpecValue(entry))
+      .filter(Boolean)
+      .join(", ");
+  }
+  return "";
 }

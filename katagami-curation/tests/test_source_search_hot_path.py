@@ -15,6 +15,23 @@ SPEC_FIELDS = (
     "imagery_direction",
 )
 
+# The rest of the structured params on the one-call hot path. These were left
+# out of SPEC_FIELDS at first, so the audit passed while a manifest or the lint
+# result could quietly go back to str(...) — the same unreadable single-quoted
+# value, just in a field nobody was checking.
+STRUCTURED_PARAMS = SPEC_FIELDS + (
+    "design_md_lint_result",
+    "shadcn_export_manifest",
+    "shadcn_component_spec_manifest",
+    "shadcn_preview_shots_manifest",
+    "model_provenance",
+)
+
+# Params that are deliberately NOT json.dumps: real Python types on the wire,
+# matching what mcp/src/tools.ts sends. Pinned so "serialize everything" edits
+# cannot quietly convert them.
+NATIVE_PARAMS = ("parent_ids", "generation_number")
+
 _ACTION_BLOCK = re.compile(
     r"temper\.action\(\s*'[^']+',\s*[^,]+,\s*'(?P<action>\w+)',\s*\{"
     r"(?P<body>.*?)\n\}\)",
@@ -27,12 +44,13 @@ def action_blocks(skill):
     return [(m.group("action"), m.group("body")) for m in _ACTION_BLOCK.finditer(skill)]
 
 
-# Params the spec accepts that the skill deliberately does not document.
-# `provenance` is declared on SubmitDesignLanguage but is referenced nowhere in
-# this repo — no writer sets it, no reader consumes it, and it carries no hint
-# distinct from the action's own. Documenting a shape nobody has ever written
-# would be a guess, so it stays out until something actually uses it.
-UNDOCUMENTED_SPEC_PARAMS = {"provenance"}
+# Every param the spec declares must appear in the documented payload. There is
+# no exemption list on purpose: `provenance` was briefly exempted here on the
+# grounds that nothing in the repo reads it, but the MCP submit path does send
+# it (`provenance: ""` in mcp/src/tools.ts), so exempting it let the skill and
+# the real submission path disagree — which is exactly the drift this test is
+# for. If a param genuinely has no shape, the fix is to drop it from the spec.
+UNDOCUMENTED_SPEC_PARAMS: set[str] = set()
 
 
 def spec_action_params(spec_text, action_name):
@@ -144,7 +162,7 @@ class SourceSearchHotPathTests(unittest.TestCase):
 
         covered = set()
         for action, body in spec_blocks:
-            for field in SPEC_FIELDS:
+            for field in STRUCTURED_PARAMS:
                 for match in keys_in(body, field):
                     covered.add(field)
                     value = body[match.end() :]
@@ -156,7 +174,29 @@ class SourceSearchHotPathTests(unittest.TestCase):
                             "f-string" % (action, field, value.split("\n")[0]),
                         )
 
-        self.assertEqual(set(SPEC_FIELDS), covered)
+        self.assertEqual(set(SPEC_FIELDS), covered & set(SPEC_FIELDS))
+
+        # The two exceptions go the other way: json.dumps on these sends a
+        # string where the spec wants a list/int, so pin them explicitly.
+        for action, body in blocks:
+            for field in NATIVE_PARAMS:
+                for match in keys_in(body, field):
+                    value = body[match.end() :]
+                    with self.subTest(action=action, field=field):
+                        self.assertFalse(
+                            value.startswith("json.dumps("),
+                            "%s passes '%s' through json.dumps(...), but the "
+                            "submit path sends it natively" % (action, field),
+                        )
+
+        # No payload anywhere may fall back to repr.
+        for action, body in blocks:
+            with self.subTest(action=action):
+                self.assertNotIn(
+                    ": str(",
+                    body,
+                    "%s serializes a param with str(): repr is not JSON" % action,
+                )
 
     def test_synthesis_uses_generated_entity_ids_not_slugs(self):
         root = Path(__file__).resolve().parents[1]

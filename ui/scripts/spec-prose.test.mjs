@@ -100,10 +100,20 @@ check("already-parsed object → data", () => {
   assert.equal(field.prose, null);
 });
 
-check("array → data", () => {
+check("array → prose, never data", () => {
+  // Every section view reads named keys off `data` (summary, values, do/dont),
+  // so returning an array here satisfied the structured branch and then
+  // rendered nothing. Arrays are real content: flatten them to readable prose.
   const field = parseSpecField('["a","b"]');
-  assert.deepEqual(field.data, ["a", "b"]);
-  assert.equal(field.prose, null);
+  assert.equal(field.data, null);
+  assert.equal(field.prose, "a, b");
+});
+
+check("primitives → prose, never dropped", () => {
+  assert.equal(parseSpecField("42").prose, "42");
+  assert.equal(parseSpecField("true").prose, "true");
+  assert.equal(parseSpecField(42).prose, "42");
+  assert.equal(parseSpecField(true).prose, "true");
 });
 
 check("prose → trimmed prose", () => {
@@ -281,6 +291,59 @@ check("prose philosophy replaces the boilerplate overview line", () => {
     !md.includes("is an agent-curated design language from Katagami."),
     "boilerplate must not replace real prose",
   );
+});
+
+// ── search summaries ────────────────────────────────────────────────────────
+// summarize() in search.ts is the other consumer of parseSpecField, and it
+// shipped untested because search.ts is `server-only` and loads the embedding
+// model. The pure half lives in spec-summary.ts so these vectors can run.
+const { specSummary, oneLine, MAX_SUMMARY_CHARS } = loadModule(
+  path.join(uiRoot, "src/lib/spec-summary.ts"),
+);
+
+check("search summary uses a structured summary field", () => {
+  const out = specSummary(JSON.stringify({ summary: "Quiet, papery, precise." }));
+  assert.equal(out, "Quiet, papery, precise.");
+});
+
+check("search summary falls back to prose", () => {
+  const out = specSummary(PROSE_PROPS.philosophy);
+  assert.ok(out, "prose philosophy produced no summary");
+  assert.ok(typeof out === "string" && out.length > 0);
+});
+
+check("search summary never throws on a non-string summary", () => {
+  // A contributor-authored {"summary": 42} used to reach 42.trim() and take
+  // down /api/search for that query instead of falling through.
+  for (const bad of [42, true, null, ["a"], { nested: 1 }]) {
+    const out = specSummary(JSON.stringify({ summary: bad }));
+    assert.ok(
+      out === null || typeof out === "string",
+      `threw or leaked on ${JSON.stringify(bad)}`,
+    );
+  }
+});
+
+check("search summary clamps a long prose philosophy to one line", () => {
+  const long = "Considered restraint in every measure and margin ".repeat(80);
+  const out = specSummary(long);
+  assert.ok(out.length <= MAX_SUMMARY_CHARS + 1, `summary was ${out.length} chars`);
+  assert.ok(!out.includes("\n"), "summary leaked a newline");
+});
+
+check("search summary keeps a short first sentence intact", () => {
+  assert.equal(oneLine("Quiet. Then louder."), "Quiet.");
+  assert.equal(oneLine("   "), null);
+});
+
+check("array and primitive spec fields become prose, not blanks", () => {
+  // typeof [] === "object", so an array used to satisfy the structured branch
+  // and then render nothing — the blank panel this whole file exists to stop.
+  assert.equal(specSummary(JSON.stringify(["Quiet", "Restrained"])), "Quiet, Restrained");
+  assert.equal(specSummary(JSON.stringify(42)), "42");
+  const { data, prose } = parseSpecField(JSON.stringify(["Quiet", "Restrained"]));
+  assert.equal(data, null, "an array must not be handed back as record data");
+  assert.equal(prose, "Quiet, Restrained");
 });
 
 if (fails) {
