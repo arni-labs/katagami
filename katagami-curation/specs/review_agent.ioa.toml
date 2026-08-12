@@ -302,6 +302,7 @@ name = "FetchArtifacts"
 kind = "input"
 from = ["Reviewing"]
 params = ["fetched_file_ids"]
+guard = [{ type = "is_false", var = "artifacts_fetched" }]
 effect = [{ type = "set_bool", var = "artifacts_fetched", value = "true" }]
 hint = "Resolve every artifact file id OFF THE ENTITY — embodiment, landing, dashboard, DESIGN.md, shadcn component spec and preview shots — through its File record, and read the actual bytes. A body that is not what its declared format claims (an SVG recovery placeholder, a JSON error, a stub, anything without <html or <!doctype for an HTML embodiment) is a finding, not an artifact. Reviewing a path the agent guessed from the slug instead of the file id the entity points at is the failure this exists to prevent. Unguarded because fetching is always safe; the constraint that matters is downstream — nothing may be rendered before this ran, and RecordRepair clears this bit so a repaired artifact must be re-fetched."
 
@@ -310,7 +311,10 @@ name = "RenderLanding"
 kind = "input"
 from = ["Reviewing"]
 params = ["landing_render_manifest"]
-guard = [{ type = "is_true", var = "artifacts_fetched" }]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "landing_rendered" },
+]
 effect = [{ type = "set_bool", var = "landing_rendered", value = "true" }]
 hint = "Launch the browser and screenshot the landing FROM THE FETCHED BYTES at desktop 1440x960, tablet 768 and mobile 375, recording the output paths and exit status. This produces evidence; it does not consume any."
 
@@ -319,7 +323,10 @@ name = "InspectLandingRender"
 kind = "input"
 from = ["Reviewing"]
 params = ["landing_observation"]
-guard = [{ type = "is_true", var = "landing_rendered" }]
+guard = [
+  { type = "is_true", var = "landing_rendered" },
+  { type = "is_false", var = "landing_inspected" },
+]
 effect = [{ type = "set_bool", var = "landing_inspected", value = "true" }]
 hint = "Read the landing screenshots back into context as images and write an observation naming something only visible in the image — a clipped edge, an overlap, a truncated label, the signature mechanic present or absent. A run that wrote the PNG and never read it back cannot reach this bit, and an observation phrased from the spec fields ('tokens are applied') is not one."
 
@@ -328,7 +335,10 @@ name = "RenderEmbodiment"
 kind = "input"
 from = ["Reviewing"]
 params = ["embodiment_render_manifest"]
-guard = [{ type = "is_true", var = "artifacts_fetched" }]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "embodiment_rendered" },
+]
 effect = [{ type = "set_bool", var = "embodiment_rendered", value = "true" }]
 hint = "Screenshot the embodiment from the fetched bytes at the same three viewports."
 
@@ -337,7 +347,10 @@ name = "InspectEmbodimentRender"
 kind = "input"
 from = ["Reviewing"]
 params = ["embodiment_observation"]
-guard = [{ type = "is_true", var = "embodiment_rendered" }]
+guard = [
+  { type = "is_true", var = "embodiment_rendered" },
+  { type = "is_false", var = "embodiment_inspected" },
+]
 effect = [{ type = "set_bool", var = "embodiment_inspected", value = "true" }]
 hint = "Read the embodiment screenshots back as images and write an observation about the composed specimen that could not have been made from the spec fields — whether every primitive appears in every state, whether the signature mechanic actually recolours through them."
 
@@ -346,7 +359,10 @@ name = "RenderDashboard"
 kind = "input"
 from = ["Reviewing"]
 params = ["dashboard_render_manifest"]
-guard = [{ type = "is_true", var = "artifacts_fetched" }]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "dashboard_rendered" },
+]
 effect = [{ type = "set_bool", var = "dashboard_rendered", value = "true" }]
 hint = "Screenshot the dashboard from the fetched bytes at the same three viewports. This is the surface most often skipped, which is exactly why RecordVerdict refuses without it."
 
@@ -355,7 +371,10 @@ name = "InspectDashboardRender"
 kind = "input"
 from = ["Reviewing"]
 params = ["dashboard_observation"]
-guard = [{ type = "is_true", var = "dashboard_rendered" }]
+guard = [
+  { type = "is_true", var = "dashboard_rendered" },
+  { type = "is_false", var = "dashboard_inspected" },
+]
 effect = [{ type = "set_bool", var = "dashboard_inspected", value = "true" }]
 hint = "Read the dashboard screenshots back as images and write an observation about the real product content — nav, stat cards, the chart drawn in the language's own graphic system, the table, the form — rather than about whether a dashboard file exists."
 
@@ -364,7 +383,10 @@ name = "VerifyHeroReplaceable"
 kind = "input"
 from = ["Reviewing"]
 params = ["hero_swap_report"]
-guard = [{ type = "is_true", var = "landing_inspected" }]
+guard = [
+  { type = "is_true", var = "landing_inspected" },
+  { type = "is_false", var = "hero_verified" },
+]
 effect = [{ type = "set_bool", var = "hero_verified", value = "true" }]
 hint = "Render the same landing file id twice with different --hero-image values, read both screenshots back into context, and confirm the imagery changed while composition, display type and choreography did not. Guarded on landing_inspected because the agent must have SEEN the original hero before it can say the replacement changed anything. No write to the landing file between the two renders — editing the markup to make the swap work is a rebuild, not a swap — and a single render or a CSS grep cannot produce this pair."
 
@@ -373,7 +395,10 @@ name = "ResolveArtStyle"
 kind = "input"
 from = ["Reviewing"]
 params = ["art_style_id"]
-guard = [{ type = "is_true", var = "artifacts_fetched" }]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "art_style_resolved" },
+]
 effect = [{ type = "set_bool", var = "art_style_resolved", value = "true" }]
 hint = "Read default_art_style_id OFF the DesignLanguage, then get that ArtStyle and its canonical prompt. The art_style_id recorded here must be the id the entity returned, not one the agent chose — NOT ENFORCED by the kernel (no field-equality guard across entities); the trajectory must show the read that produced it."
 
@@ -385,6 +410,7 @@ params = ["art_style_judgement"]
 guard = [
   { type = "is_true", var = "art_style_resolved" },
   { type = "is_true", var = "landing_inspected" },
+  { type = "is_false", var = "art_style_verified" },
   { type = "cross_entity_state", entity_type = "ArtStyle", entity_id_source = "art_style_id", required_status = ["UnderReview", "Published"], required = true },
 ]
 effect = [{ type = "set_bool", var = "art_style_verified", value = "true" }]
@@ -400,6 +426,7 @@ guard = [
   { type = "is_true", var = "landing_inspected" },
   { type = "is_true", var = "embodiment_inspected" },
   { type = "is_true", var = "dashboard_inspected" },
+  { type = "is_false", var = "rules_checked" },
 ]
 effect = [{ type = "set_bool", var = "rules_checked", value = "true" }]
 hint = "Hold each rendered surface against the LOADED rulebook, rule by rule and viewport by viewport: borders, accent count and rationing, radius set, body size, spacing above titles, contrast, light-mode default, no emoji on buttons, responsive reflow with no horizontal overflow, one full-bleed hero, motion that carries meaning. Every failure names the rule id, the surface and the viewport screenshot it was seen in. A rule list derived from the spec fields rather than the renders is visible because it cites no image; a global impression is not a rule list; and passing a rule at desktop without testing it at 375 is how mobile-only breakage ships."
@@ -413,6 +440,7 @@ guard = [
   { type = "is_true", var = "landing_inspected" },
   { type = "is_true", var = "embodiment_inspected" },
   { type = "is_true", var = "dashboard_inspected" },
+  { type = "is_false", var = "claims_checked" },
 ]
 effect = [{ type = "set_bool", var = "claims_checked", value = "true" }]
 hint = "Quote the curator's self-review and curator_notes claim by claim and mark each confirmed or contradicted against a NAMED screenshot or file read, turning every contradicted claim into a finding. Guarded on all three surfaces having been inspected, because a claim can only be tested against something the agent has seen. This is where the reviewer stops inheriting the curator's blind spots — the specific failure where a run says 'the hero is replaceable and the dashboard is responsive' and the review's only source for both statements is that sentence."
@@ -528,6 +556,19 @@ params = { abandon_reason = "ReviewAgent held Reviewing for 2h without recording
 [[invariant]]
 name = "InspectionRequiresRender"
 assert = "(landing_rendered || !landing_inspected) && (embodiment_rendered || !embodiment_inspected) && (dashboard_rendered || !dashboard_inspected)"
+
+# (a) FALSIFIABLE, and added because a mutation test showed the invariant below
+# it was one-directional. `InspectionRequiresRender` catches an inspection that
+# outlives its render; it does NOT catch a RENDER flag that survives a repair —
+# and that is the dangerous half, because InspectLandingRender is guarded only on
+# landing_rendered, so a stale render flag lets the agent "inspect" bytes that no
+# longer exist. Every perception flag is cleared by RecordRepair together with
+# artifacts_fetched, and every render action requires artifacts_fetched, so no
+# perception may exist while the agent does not hold the current bytes. A repair
+# that forgets ANY clear breaks this line.
+[[invariant]]
+name = "PerceptionRequiresCurrentBytes"
+assert = "artifacts_fetched || (!landing_rendered && !landing_inspected && !embodiment_rendered && !embodiment_inspected && !dashboard_rendered && !dashboard_inspected && !hero_verified && !art_style_resolved && !art_style_verified && !rules_checked && !claims_checked)"
 
 # (a) FALSIFIABLE by the same class of edit: a judgement may never outlive the
 # perception it rests on. rules_checked and claims_checked both require all
