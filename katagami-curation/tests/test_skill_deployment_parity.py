@@ -89,16 +89,24 @@ RULE_LINE = (
     "deployed skill; tests/test_skill_deployment_parity.py enforces it. This "
     "block carries provenance fields only and must never carry instructions."
 )
+# The only free-text lines allowed, and both are exact-match constants, so
+# neither can become a channel for instructions.
+REASON_LINE = (
+    "reason: this text reconciles the two sources named below because neither "
+    "contained the other; it is ahead of the deployed copy until ARN-317 ships "
+    "it, so the parity test is expected to fail until then."
+)
+CONSTANT_LINES = {"rule": RULE_LINE, "reason": REASON_LINE}
 FIELD_PATTERNS = {
     "entity": r"[A-Za-z0-9._-]+",
     "path": r"/[A-Za-z0-9._/-]+",
     "workspace": r"[A-Za-z0-9._-]+",
     "tenant": r"[A-Za-z0-9._-]+",
-    "source-commit": r"[0-9a-f]{7,40}",
-    "source-branch": r"[A-Za-z0-9._/-]+",
-    "sha256": r"[0-9a-f]{64}",
-    "bytes": r"[0-9]+",
-    "confirmed-live": r"[0-9]{4}-[0-9]{2}-[0-9]{2}",
+    "reconciles-master-commit": r"[0-9a-f]{7,40}",
+    "reconciles-deployed-sha256": r"[0-9a-f]{64}",
+    "reconciles-deployed-bytes": r"[0-9]+",
+    "reconciled-on": r"[0-9]{4}-[0-9]{2}-[0-9]{2}",
+    "deploy-tracked-by": r"[A-Z]+-[0-9]+",
 }
 
 API_URL = (os.environ.get("TEMPER_API_URL") or "").strip().rstrip("/")
@@ -160,10 +168,14 @@ def strip_provenance_note(text):
         candidate = line.strip()
         if not candidate:
             return text  # blank lines would let prose hide between fields
-        if candidate == RULE_LINE:
-            if "rule" in seen:
+        constant = next(
+            (name for name, text_ in CONSTANT_LINES.items() if candidate == text_),
+            None,
+        )
+        if constant is not None:
+            if constant in seen:
                 return text
-            seen.add("rule")
+            seen.add(constant)
             continue
         key, separator, value = candidate.partition(":")
         if not separator or key not in FIELD_PATTERNS or key in seen:
@@ -172,7 +184,7 @@ def strip_provenance_note(text):
             return text
         seen.add(key)
 
-    if seen != {"rule", *FIELD_PATTERNS}:
+    if seen != {*CONSTANT_LINES, *FIELD_PATTERNS}:
         return text
 
     return remainder.lstrip("\n")
@@ -215,15 +227,17 @@ class SyncNoteExclusionTests(unittest.TestCase):
             "path": "/agents/sl-bootstrap-agent-soul-curator/skills/x/SKILL.md",
             "workspace": "os-app-docs",
             "tenant": "default",
-            "source-commit": "c070f0543cd580d4c871fec8f22daf520e2b963d",
-            "source-branch": "claude/arn269-tool-choice",
-            "sha256": "6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a",
-            "bytes": "12037",
-            "confirmed-live": "2026-08-12",
+            "reconciles-master-commit": "0bf7fe5a96eb314610382e45e6beffecdaf14a19",
+            "reconciles-deployed-sha256": (
+                "6dc155d15cdf8bd7320627d1c7c2b7152c78fffbee3ea2a883cbf5485fabb57a"
+            ),
+            "reconciles-deployed-bytes": "12037",
+            "reconciled-on": "2026-08-12",
+            "deploy-tracked-by": "ARN-317",
         }
         fields.update(overrides)
         body = "\n".join(f"{key}: {value}" for key, value in fields.items())
-        return f"{NOTE_OPEN}\n{RULE_LINE}\n{body}\n{NOTE_CLOSE}\n\n"
+        return f"{NOTE_OPEN}\n{RULE_LINE}\n{REASON_LINE}\n{body}\n{NOTE_CLOSE}\n\n"
 
     def test_a_wellformed_provenance_block_is_excluded(self):
         self.assertEqual(
@@ -294,7 +308,9 @@ class SyncNoteExclusionTests(unittest.TestCase):
     def test_a_missing_field_is_not_excluded(self):
         note = self._valid_note()
         note = "\n".join(
-            line for line in note.splitlines() if not line.startswith("sha256:")
+            line
+            for line in note.splitlines()
+            if not line.startswith("reconciles-deployed-sha256:")
         )
         self.assertEqual(strip_provenance_note(note + self.BODY), note + self.BODY)
 
