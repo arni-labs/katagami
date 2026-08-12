@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchServableFileBytes } from "@/lib/file-visibility";
+import {
+  fetchServableFileBytes,
+  fileResponseHeaders,
+  REFUSAL_STATUS,
+} from "@/lib/file-visibility";
 import { isOwner } from "@/lib/owner";
 
 const API_BASE = process.env.NEXT_PUBLIC_TEMPER_API_URL || "http://localhost:3500";
 const TENANT = process.env.NEXT_PUBLIC_TEMPER_TENANT || "default";
 const API_KEY = process.env.TEMPER_API_KEY || "";
-const ASSET_BROWSER_CACHE_CONTROL =
-  "public, max-age=3600, stale-while-revalidate=86400";
-const ASSET_CDN_CACHE_CONTROL =
-  "public, s-maxage=86400, stale-while-revalidate=604800";
 
 function decodeBase64ImageValue(
   bytes: ArrayBuffer,
@@ -201,7 +201,7 @@ export async function GET(
     return NextResponse.json(
       { error: "File not found" },
       {
-        status: 404,
+        status: REFUSAL_STATUS,
         headers: { "Cache-Control": "private, no-store" },
       },
     );
@@ -242,43 +242,18 @@ export async function GET(
       );
     }
   }
-  // Images are content-addressed and immutable, safe to cache for a day. HTML
-  // compositions (landing/embodiment/dashboard) are MUTABLE — they're re-PUT in
-  // place during curation — so a 24h CDN cache makes every fix invisible for a
-  // day. Short-cache HTML so edits appear within ~30s; long-cache images.
-  const isOwnerOnly = served.visibility === "owner";
-  const browserCache = isOwnerOnly
-    ? "private, no-store"
-    : isImage
-      ? ASSET_BROWSER_CACHE_CONTROL
-      : "public, max-age=0, must-revalidate";
-  // For mutable HTML, drop stale-while-revalidate: `stale-while-revalidate=60`
-  // means the CDN may keep serving an already-cached (possibly wrong-bytes)
-  // response for up to 60s past its 30s freshness while it revalidates in the
-  // background — up to a 90s window in which a transient cross-id serve stays
-  // visible. `must-revalidate` forces a fresh upstream check the moment the 30s
-  // lapses, so the wrongness window is at most ~30s and never extended by stale
-  // serving. Images are immutable/content-addressed, so their long SWR stays.
-  // Owner-only bytes must never carry a SHARED cache directive. The CDN does
-  // not know who asked; a cached curation-queue asset would be handed to the
-  // next anonymous caller, turning the owner's own page load into the leak this
-  // fix closes.
-  const cdnCache = isOwnerOnly
-    ? "private, no-store"
-    : isImage
-      ? ASSET_CDN_CACHE_CONTROL
-      : "public, s-maxage=30, must-revalidate";
-  const responseHeaders = new Headers({
-    "Content-Type": contentType,
-    // These are design artifacts meant to render in-browser / inside iframes —
-    // never force a download, regardless of the stored mime.
-    "Content-Disposition": "inline",
-    "Cache-Control": browserCache,
-    "CDN-Cache-Control": cdnCache,
-    "Vercel-CDN-Cache-Control": cdnCache,
-  });
-  if (isOwnerOnly) responseHeaders.set("Vary", "Cookie");
-  responseHeaders.set("Content-Length", String(body.byteLength));
+  // Cache directives and the owner-only `Vary` live in `fileResponseHeaders` so
+  // they are decided by a function a test can execute. Asserting them against
+  // this file's source let three regressions through — a deleted `Vary: Cookie`,
+  // an added shared `CDN-Cache-Control` on the owner path, and a 404 turned 403.
+  const responseHeaders = new Headers(
+    fileResponseHeaders({
+      visibility: served.visibility,
+      contentType,
+      isImage,
+      byteLength: body.byteLength,
+    }),
+  );
 
   return new NextResponse(body, {
     headers: responseHeaders,

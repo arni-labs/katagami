@@ -6,6 +6,8 @@ import {
   isPubliclyServableFile,
   classifyFileVisibility,
   fetchServableFileBytes,
+  fileResponseHeaders,
+  REFUSAL_STATUS,
 } from "../src/lib/file-visibility.ts";
 
 const OWNER = async () => true;
@@ -412,6 +414,42 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
 }
 
 {
+  // The id comes off the URL and must be escaped before it is interpolated into
+  // the OData key. Unescaped, `os-app-guide-paw-agent')?x=` closed the key and
+  // returned entity JSON including the full event history to an anonymous
+  // caller.
+  const meta = {
+    fields: {
+      Status: "Ready",
+      Path: "/languages/x.html",
+      WorkspaceId: CONTRIB,
+    },
+  };
+  const { impl, calls } = stubFetch(meta);
+  await fetchServableFileBytes(
+    impl,
+    "http://api",
+    {},
+    "os-app-guide-paw-agent')?x=",
+    ANON,
+  );
+  for (const url of calls) {
+    assert.ok(
+      !/'\)\?/.test(url) && !url.includes("')?x="),
+      `the OData key must be escaped, got ${url}`,
+    );
+  }
+
+  // Load-bearing: the COLLECTION projection omits workspace_id for the legacy
+  // generation. Reading the single-entity shape is what keeps those assets
+  // classifiable, so the metadata read must never become a filtered listing.
+  assert.ok(
+    calls[0].includes("/tdata/Files('") && !calls[0].includes("$filter"),
+    `metadata must be a single-entity read, got ${calls[0]}`,
+  );
+}
+
+{
   // Unknown id: upstream 404 on metadata, so no byte fetch and no result.
   const { impl, calls } = stubFetch(null, { metadataStatus: 404 });
   const out = await fetchServableFileBytes(
@@ -446,26 +484,114 @@ function stubFetch(metadata, { metadataStatus = 200, valueStatus = 200 } = {}) {
   assert.equal(out, null, "an upstream 403 must collapse to a plain refusal");
 }
 
-// ── The rule lists themselves ──
-// Pinned so that deleting a deny rule fails loudly instead of quietly widening
-// access, and so that admitting a workspace is a deliberate, reviewed edit.
-const lib = fs.readFileSync(
-  path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "../src/lib/file-visibility.ts",
-  ),
-  "utf8",
-);
-for (const literal of [
-  '"/agents/"',
-  '"/system/"',
-  '"/iterate/"',
-  '"/feedback/"',
+// ── Protected trees ──
+// ARN-309 review P0-1: the kernel installs every OS app's operations manual
+// under a THIRD prefix in the SAME workspace as the skills —
+// `APP_DOCS_ROOT_PATH = "/apps"` writes `/apps/{app}/APP.md` to `os-app-docs`
+// with the deterministic id `os-app-guide-{app_slug}`. 17 of 19 os-apps
+// answered 200 unauthenticated before this rule denied the tree.
+// P0-2: `/projects/**` is the third skill-install scope
+// (`skill_installer` writes `/projects/{scope}/skills/{slug}/SKILL.md`, and
+// `context_preparer` loads it into the agent prompt). The kernel's own
+// protected-tree predicate names /system, /agents and /projects.
+for (const p of [
+  "/apps/katagami-curation/APP.md",
+  "/apps/paw-patrol/APP.md",
+  "/apps/katagami-commons/adrs/0001-whatever.md",
+  "/projects/proj-123/skills/review-quality/SKILL.md",
+  "/agents/curator/skills/review-quality/SKILL.md",
+  "/agents/sl-bootstrap-agent-soul-curator/skills/synthesize-language/SKILL.md",
+  "/system/knowledge/design-principles.md",
 ]) {
-  assert.ok(
-    lib.includes(literal),
-    `${literal} must remain in the rule lists; removing it changes who can read what`,
+  for (const ws of ["os-app-docs", CONTRIB, undefined]) {
+    assert.equal(
+      classifyFileVisibility({
+        fields: { Status: "Ready", Path: p, ...(ws ? { WorkspaceId: ws } : {}) },
+      }),
+      "denied",
+      `${p} must be denied in ${ws ?? "no workspace"}`,
+    );
+  }
+}
+
+// ── Path canonicalization ──
+// The deny used to compare the raw stored string, so every one of these named a
+// protected file and classified public.
+for (const p of [
+  "//agents/curator/skills/x/SKILL.md",
+  "/./agents/curator/skills/x/SKILL.md",
+  "/rebuild/../agents/curator/skills/x/SKILL.md",
+  "/Agents/curator/skills/x/SKILL.md",
+  "/AGENTS/curator/skills/x/SKILL.md",
+  "/%61gents/curator/skills/x/SKILL.md",
+  "/agents%2Fcurator/skills/x/SKILL.md",
+  "/ agents/curator/skills/x/SKILL.md",
+  "/apps/../apps/paw-patrol/APP.md",
+  "/%61pps/paw-patrol/APP.md",
+  "/Projects/p/skills/x/SKILL.md",
+  "/languages/a/../../agents/curator/SKILL.md",
+  "\\agents\\curator\\SKILL.md",
+  "relative/agents/x.md",
+  "/languages/bad%ZZescape.html",
+]) {
+  assert.equal(
+    classifyFileVisibility({
+      fields: { Status: "Ready", Path: p, WorkspaceId: CONTRIB },
+    }),
+    "denied",
+    `${p} must not reach a protected tree past the deny`,
   );
+}
+// Real paths are canonical and keep their case — /contrib/pyrite/DESIGN.md is
+// live content, so canonicalization must not lowercase or otherwise rewrite it.
+for (const p of [
+  "/contrib/pyrite/DESIGN.md",
+  "/languages/civic-press/v10/DESIGN.md",
+  "/artstyles/opaline-soft-diffusion/opaline-melon.png",
+]) {
+  assert.equal(
+    classifyFileVisibility({
+      fields: { Status: "Ready", Path: p, WorkspaceId: CONTRIB },
+    }),
+    "public",
+    `${p} is canonical live content and must serve`,
+  );
+}
+
+// ── Response shape, executed ──
+// These three properties were previously asserted by grepping the route source,
+// and all three mutations survived that: deleting `Vary: Cookie`, adding a
+// shared CDN directive on the owner branch, and turning the 404 into a 403.
+assert.equal(REFUSAL_STATUS, 404, "refusals must not confirm an id exists");
+{
+  const owner = fileResponseHeaders({
+    visibility: "owner",
+    contentType: "text/html",
+    isImage: false,
+    byteLength: 10,
+  });
+  assert.equal(owner["Cache-Control"], "private, no-store");
+  assert.equal(owner["CDN-Cache-Control"], "private, no-store");
+  assert.equal(owner["Vercel-CDN-Cache-Control"], "private, no-store");
+  assert.equal(owner["Vary"], "Cookie", "owner responses must vary on cookie");
+  for (const [k, v] of Object.entries(owner)) {
+    assert.ok(
+      !/public/.test(v),
+      `owner-only response must carry no shared cache directive (${k}: ${v})`,
+    );
+  }
+
+  const pub = fileResponseHeaders({
+    visibility: "public",
+    contentType: "image/png",
+    isImage: true,
+    byteLength: 10,
+  });
+  assert.match(pub["Cache-Control"], /^public,/);
+  assert.match(pub["CDN-Cache-Control"], /^public,/);
+  assert.equal(pub["Vary"], undefined, "public responses need no cookie vary");
+  assert.equal(pub["Content-Disposition"], "inline");
+  assert.equal(pub["Content-Length"], "10");
 }
 
 // ── Route wiring ──
@@ -481,14 +607,6 @@ assert.match(
   /fetchServableFileBytes\(/,
   "the route must go through the gated reader",
 );
-// Load-bearing: the collection projection omits workspace_id for the legacy
-// generation, and a file with no workspace fails closed. Reading the
-// single-entity shape is what keeps those assets classifiable.
-assert.match(
-  lib,
-  /\$\{apiBase\}\/tdata\/Files\('\$\{id\}'\)`/,
-  "metadata must be read as a single entity, not a collection query",
-);
 assert.doesNotMatch(
   route,
   /\$\{API_BASE\}\/tdata\/Files\('\$\{id\}'\)\/\$value/,
@@ -499,17 +617,5 @@ assert.doesNotMatch(
   /status:\s*res\.status/,
   "upstream status must not be forwarded; it confirms the id exists",
 );
-assert.match(route, /Cache-Control": "private, no-store"/);
-assert.match(
-  route,
-  /const isOwnerOnly = served\.visibility === "owner"/,
-  "the route must branch on owner-only visibility",
-);
-for (const re of [
-  /const browserCache = isOwnerOnly\s*\?\s*"private, no-store"/,
-  /const cdnCache = isOwnerOnly\s*\?\s*"private, no-store"/,
-]) {
-  assert.match(route, re, "owner-only responses must not be shared-cached");
-}
 
 console.log("file proxy scope contract: pass");

@@ -57,12 +57,33 @@ const PUBLIC_FILE_STATES = new Set(["Ready", "Locked"]);
 /**
  * Trees never served to anyone, in any workspace.
  *
- * The agent instruction tree and the operator knowledge base — every file this
- * fix exists to protect. Path-based on purpose: the same content appears in
- * `os-app-docs`, in per-soul bootstrap snapshots, and in agent sandboxes, and
- * only the path is common to all of them.
+ * **This list must track the platform's own protected-tree predicate**
+ * (`monty_repl/src/entity_ops.rs:2001-2008`, which names `/system`, `/agents`
+ * and `/projects`). That predicate is the authority on what the kernel treats as
+ * protected; a list assembled by reading this repo alone has already been wrong
+ * twice, so when they disagree, follow the kernel and update here.
+ *
+ * - `/agents/` — installed skills and per-soul bootstrap snapshots.
+ * - `/system/` — the operator knowledge base agents read.
+ * - `/projects/` — the third skill-install scope. `paw-skills`'
+ *   `skill_installer` writes `/projects/{scope_id}/skills/{slug}/SKILL.md` and
+ *   `context_preparer` loads that prefix into the agent system prompt beside the
+ *   other two. Latent on this tenant, one governed action away from not being.
+ * - `/apps/` — every OS app's operations manual. The kernel writes
+ *   `/apps/{app}/APP.md` into `os-app-docs` with the deterministic id
+ *   `os-app-guide-{app_slug}`, plus ADRs as `os-app-adr-{app}-{file}`. This one
+ *   is NOT in the kernel predicate and was world-readable in production: 17 of
+ *   19 os-apps answered 200 unauthenticated, ids derivable from app names.
+ *
+ * Path-based on purpose: the same content appears in `os-app-docs`, in per-soul
+ * snapshots, and in agent sandboxes, and only the path is common to all of them.
  */
-const NEVER_SERVED_PATH_PREFIXES = ["/agents/", "/system/"] as const;
+const NEVER_SERVED_PATH_PREFIXES = [
+  "/agents/",
+  "/system/",
+  "/projects/",
+  "/apps/",
+] as const;
 
 /**
  * Trees inside a servable workspace that only the owner may read.
@@ -133,6 +154,52 @@ function readString(
 }
 
 /**
+ * The path in canonical form, or `null` if it has none.
+ *
+ * The deny rules used to compare the raw stored string, which meant they were
+ * only as good as every writer's discipline: `//agents/x`, `/./agents/x`,
+ * `/rebuild/../agents/x`, `/%61gents/x`, `/agents%2Fcurator/x` and `/ agents/x`
+ * all slipped past a `startsWith("/agents/")` check while naming a protected
+ * file. No live bypass exists today because writers happen to normalize, but
+ * `pawfs_normalize_path` resolves neither `.`/`..` nor percent-escapes, so that
+ * was an invariant depended on and never enforced.
+ *
+ * Decodes percent-escapes, collapses repeated separators, resolves `.` and
+ * `..`, and trims whitespace around each segment. Case is preserved — real
+ * paths contain `DESIGN.md` — and folded only when comparing prefixes.
+ */
+function canonicalPath(raw: string): string | null {
+  let decoded = raw;
+  for (let i = 0; i < 3; i += 1) {
+    let next: string;
+    try {
+      next = decodeURIComponent(decoded);
+    } catch {
+      // A malformed escape is not something to guess at.
+      return null;
+    }
+    if (next === decoded) break;
+    decoded = next;
+  }
+  if (!decoded.startsWith("/")) return null;
+  // A NUL or backslash in a stored path is never legitimate here and both are
+  // classic separator-confusion tricks.
+  if (decoded.includes("\0") || decoded.includes("\\")) return null;
+
+  const out: string[] = [];
+  for (const rawSegment of decoded.split("/")) {
+    const segment = rawSegment.trim();
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      out.pop();
+      continue;
+    }
+    out.push(segment);
+  }
+  return `/${out.join("/")}`;
+}
+
+/**
  * Who, if anyone, may read this file.
  *
  * Deny rules run before any allow. Workspace is not consulted at all.
@@ -176,9 +243,18 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   ]);
   if (!state || !PUBLIC_FILE_STATES.has(state)) return "denied";
 
-  const path = readString(fields, projection, ["Path", "path"]);
-  if (!path || !path.startsWith("/")) return "denied";
-  if (NEVER_SERVED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+  const stored = readString(fields, projection, ["Path", "path"]);
+  if (!stored) return "denied";
+  const path = canonicalPath(stored);
+  if (!path) return "denied";
+  // A stored path that is not already canonical is refused outright rather than
+  // classified on its cleaned-up form. Something wrote it oddly, and this is a
+  // security decision — the safe answer to "why does this path need rewriting
+  // before I can judge it?" is not to judge it.
+  if (path !== stored) return "denied";
+
+  const lowered = path.toLowerCase();
+  if (NEVER_SERVED_PATH_PREFIXES.some((prefix) => lowered.startsWith(prefix))) {
     return "denied";
   }
 
@@ -187,7 +263,7 @@ export function classifyFileVisibility(value: unknown): FileVisibility {
   // hold under-review assets, 70 refs have no workspace at all, and 23 live
   // assets sit inside `os-app-docs` beside the skills. The path deny above has
   // already refused everything this fix protects, in every one of those places.
-  return OWNER_ONLY_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
+  return OWNER_ONLY_PATH_PREFIXES.some((prefix) => lowered.startsWith(prefix))
     ? "owner"
     : "public";
 }
@@ -230,10 +306,19 @@ export async function fetchServableFileBytes(
   id: string,
   isOwner: () => Promise<boolean>,
 ): Promise<ServableFile | null> {
+  // The id comes straight off the URL, so it is escaped before it is
+  // interpolated. Unescaped, `os-app-guide-paw-agent')?x=` closed the OData key
+  // and returned 9,742 bytes of entity JSON — including the full event history —
+  // to an anonymous caller. It was not a deny bypass (both URLs derive from the
+  // same string, so a denied file still denied), but it is unvalidated input in
+  // a security path, it disclosed event logs, and it broke the guarantee that
+  // this is a single-entity read.
+  const key = encodeURIComponent(id);
+
   // PawFS retains archived bytes for governed recovery, and every agent skill
   // in the tenant is `Ready`, so the projection has to be resolved and judged
   // before a single byte is requested.
-  const metadataRes = await fetchImpl(`${apiBase}/tdata/Files('${id}')`, {
+  const metadataRes = await fetchImpl(`${apiBase}/tdata/Files('${key}')`, {
     headers,
     cache: "no-store",
   });
@@ -251,7 +336,7 @@ export async function fetchServableFileBytes(
   if (visibility === "denied") return null;
   if (visibility === "owner" && !(await isOwner())) return null;
 
-  const res = await fetchImpl(`${apiBase}/tdata/Files('${id}')/$value`, {
+  const res = await fetchImpl(`${apiBase}/tdata/Files('${key}')/$value`, {
     headers,
     cache: "no-store",
   });
@@ -262,4 +347,63 @@ export async function fetchServableFileBytes(
     upstreamContentType: res.headers.get("content-type") || "",
     visibility,
   };
+}
+
+/**
+ * The status a refusal is served with. 404, never 403.
+ *
+ * A distinguishable "exists but forbidden" confirms which ids are real, and
+ * these ids are guessable by construction (`os-agent-skill-file-<soul>-<skill>`,
+ * `os-app-guide-<app>`). Exported so the route cannot drift from it and a test
+ * can execute it rather than grep for it.
+ */
+export const REFUSAL_STATUS = 404;
+
+/**
+ * Response headers for a served file.
+ *
+ * Pulled out of the route handler because three properties this fix depends on
+ * were previously asserted by pattern-matching the route's source, and a source
+ * assertion proves the code says the right thing rather than that it does it.
+ * Deleting `Vary: Cookie`, or adding a shared `CDN-Cache-Control` after the
+ * owner branch — the exact leak the owner path was designed against — both
+ * survived that. They do not survive an executed test.
+ *
+ * Owner-only bytes must never carry a shared cache directive: a CDN does not
+ * know who asked, so a cached curation asset from the owner's own page load
+ * would be handed to the next anonymous caller.
+ */
+export function fileResponseHeaders(opts: {
+  visibility: Exclude<FileVisibility, "denied">;
+  contentType: string;
+  isImage: boolean;
+  byteLength: number;
+}): Record<string, string> {
+  const ownerOnly = opts.visibility === "owner";
+  const browserCache = ownerOnly
+    ? "private, no-store"
+    : opts.isImage
+      ? "public, max-age=3600, stale-while-revalidate=86400"
+      : "public, max-age=0, must-revalidate";
+  // Images are content-addressed and immutable. HTML compositions are re-PUT in
+  // place during curation, so a long CDN cache makes every fix invisible for a
+  // day; short-cache them instead.
+  const cdnCache = ownerOnly
+    ? "private, no-store"
+    : opts.isImage
+      ? "public, s-maxage=86400, stale-while-revalidate=604800"
+      : "public, s-maxage=30, must-revalidate";
+
+  const out: Record<string, string> = {
+    "Content-Type": opts.contentType,
+    // Design artifacts meant to render in-browser or inside iframes — never
+    // force a download, regardless of the stored mime.
+    "Content-Disposition": "inline",
+    "Cache-Control": browserCache,
+    "CDN-Cache-Control": cdnCache,
+    "Vercel-CDN-Cache-Control": cdnCache,
+    "Content-Length": String(opts.byteLength),
+  };
+  if (ownerOnly) out["Vary"] = "Cookie";
+  return out;
 }
