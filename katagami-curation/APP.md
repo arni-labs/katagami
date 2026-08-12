@@ -100,7 +100,13 @@ decision rather than any authenticated human at all.
 
 The artifact-side boundary is a different thing and worth stating plainly:
 `katagami-commons/policies/design_language.cedar` and `art_style.cedar` forbid
-contributor agents from publishing the artifacts. Nothing machine-checks that
+contributor agents from publishing the artifacts, and — since ARN-319 — from
+advancing a DesignLanguage to review either. `SubmitForReview` used to be
+refused only by the state machine, which is a 409 rather than a 403 and leaves
+no authorization record; it is now a denial for contributor principals and for
+callers that declare nothing at all. The pipeline's own synthesize step is a
+declared worker rather than a contributor, so it still drives its own draft to
+review. Nothing machine-checks that
 the DesignLanguage a human publishes is the one this assignment reviewed — the
 two records are linked by convention through `submission_ids`, not by a guard.
 Treat the artifact-side publish as governed by policy and process, not by
