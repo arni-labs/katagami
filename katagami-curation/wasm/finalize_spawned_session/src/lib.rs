@@ -1,3 +1,5 @@
+#[cfg(target_arch = "wasm32")]
+use sha2::{Digest, Sha256};
 use temper_wasm_sdk::prelude::*;
 
 mod art_style_review;
@@ -1501,7 +1503,87 @@ fn verify_file_artifact(
         embodiment_format,
         &mime_type,
         &body,
+    )?;
+    if artifact_kind == "composition_landing" {
+        verify_landing_hero_file(ctx, api_url, headers, owner_id, file_id, &body)?;
+    }
+    Ok(())
+}
+
+/// The landing's --hero-image URL must point at a file that actually exists
+/// and serves image bytes. The URL-shape gate alone let a landing ship with a
+/// dead reference (Madori, 2026-07-26): the referenced file was never
+/// created, the page rendered flat, and no repair fired.
+fn verify_landing_hero_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    landing_file_id: &str,
+    body: &str,
+) -> Result<(), VerificationError> {
+    let Some(hero_id) = extract_hero_file_id(body) else {
+        // The /api/file/ presence gate already ran; nothing parseable means
+        // the reference is malformed enough to treat as a dead hero.
+        return Err(hero_error(owner_id, landing_file_id, "unparseable reference"));
+    };
+    let hero = load_entity(ctx, api_url, headers, "Files", &hero_id)?
+        .ok_or_else(|| hero_error(owner_id, landing_file_id, "file does not exist"))?;
+    let status = hero
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    if status != "Ready" {
+        return Err(hero_error(
+            owner_id,
+            landing_file_id,
+            &format!("file '{hero_id}' status is '{status}', not Ready"),
+        ));
+    }
+    let hero_fields = entity_fields(&hero);
+    let mime = first_nonempty(&[
+        string_field_any(&hero_fields, "mime_type", ""),
+        string_field_any(&hero_fields, "MimeType", ""),
+    ])
+    .to_ascii_lowercase();
+    if !(mime.starts_with("image/") || mime == "application/octet-stream" || mime.is_empty()) {
+        return Err(hero_error(
+            owner_id,
+            landing_file_id,
+            &format!("file '{hero_id}' has non-image MIME '{mime}'"),
+        ));
+    }
+    let size = numeric_field_any(&hero, &["size_bytes", "SizeBytes"]);
+    if size > 0 && size < 1024 {
+        return Err(hero_error(
+            owner_id,
+            landing_file_id,
+            &format!("file '{hero_id}' is only {size} bytes"),
+        ));
+    }
+    Ok(())
+}
+
+fn hero_error(owner_id: &str, landing_file_id: &str, detail: &str) -> VerificationError {
+    VerificationError::new(
+        "landing_hero_file_dead",
+        format!(
+            "DesignLanguage '{owner_id}' landing --hero-image references a generated image that does not serve ({detail}); regenerate the hero via MediaGenerationRequests, confirm the file reaches Ready, and re-reference it"
+        ),
     )
+    .entity("DesignLanguage", owner_id)
+    .artifact("composition_landing", landing_file_id)
+}
+
+/// Pull the first `/api/file/<id>` reference out of the landing markup.
+fn extract_hero_file_id(body: &str) -> Option<String> {
+    let idx = body.find("/api/file/")?;
+    let rest = &body[idx + "/api/file/".len()..];
+    let id: String = rest
+        .chars()
+        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .collect();
+    if id.len() >= 8 { Some(id) } else { None }
 }
 
 fn verify_ready_file_artifact(
@@ -2422,6 +2504,18 @@ fn verify_synthesized_art_styles(
     headers: &[(String, String)],
     fields: &serde_json::Value,
 ) -> Result<serde_json::Value, VerificationError> {
+    let receipt_key = ctx
+        .config
+        .get("art_style_proof_receipt_key")
+        .filter(|value| !value.is_empty() && !value.contains("{secret:"))
+        .ok_or_else(|| {
+            VerificationError::new(
+                "art_style_proof_receipt_key_missing",
+                "ArtStyle finalization requires the governed proof-receipt verifier key",
+            )
+            .field("art_style_proof_receipt_key")
+            .repairable(false)
+        })?;
     let ids = lane_ids_from_job(fields, &["art_style_ids", "artstyle_ids"]);
     if ids.is_empty() {
         return Err(VerificationError::new(
@@ -2492,11 +2586,19 @@ fn verify_synthesized_art_styles(
             art_style_review::verify_source_basis(id, &lane_fields, &prompt_template)?;
         let prompt_review =
             art_style_review::verify_prompt_review(id, &lane_fields, &prompt_template)?;
-        let portability_report = art_style_review::verify_portability_report(
+        let verified_portability = art_style_review::verify_portability_report(
             id,
             &lane_fields,
             &prompt_template,
             &proof_ids,
+            receipt_key,
+        )?;
+        verify_art_style_proof_receipt_files(
+            ctx,
+            api_url,
+            headers,
+            id,
+            &verified_portability.proof_receipts,
         )?;
 
         dispatch_action(
@@ -2509,7 +2611,7 @@ fn verify_synthesized_art_styles(
             &json!({
                 "source_basis": source_basis.to_string(),
                 "prompt_review": prompt_review.to_string(),
-                "portability_report": portability_report.to_string(),
+                "portability_report": verified_portability.report.to_string(),
             }),
         )?;
 
@@ -2850,6 +2952,223 @@ fn verify_lane_image_file(
         .artifact(artifact_kind, file_id));
     }
     Ok(())
+}
+
+fn verify_art_style_proof_receipt_files(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    receipts: &[art_style_review::VerifiedProofReceipt],
+) -> Result<(), VerificationError> {
+    let mut verified_sources = std::collections::BTreeSet::new();
+    let mut verified_outputs = std::collections::BTreeSet::new();
+    for receipt in receipts {
+        if verified_sources.insert(receipt.source_file_id.clone()) {
+            verify_art_style_receipt_file(
+                ctx,
+                api_url,
+                headers,
+                owner_id,
+                &receipt.source_file_id,
+                &receipt.source_sha256,
+                true,
+                "proof_source",
+            )?;
+        }
+        if !verified_outputs.insert(receipt.output_file_id.clone()) {
+            return Err(VerificationError::new(
+                "art_style_proof_output_duplicate",
+                format!(
+                    "ArtStyle '{owner_id}' proof receipt repeats output file '{}'",
+                    receipt.output_file_id
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact("proof_output", &receipt.output_file_id));
+        }
+        verify_art_style_receipt_file(
+            ctx,
+            api_url,
+            headers,
+            owner_id,
+            &receipt.output_file_id,
+            &receipt.output_sha256,
+            true,
+            "proof_output",
+        )?;
+    }
+    if verified_sources.len() != 4 || verified_outputs.len() != 8 {
+        return Err(VerificationError::new(
+            "art_style_proof_file_matrix_incomplete",
+            format!(
+                "ArtStyle '{owner_id}' receipts must resolve to four immutable sources and eight unique outputs"
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .field("proof_shots_manifest"));
+    }
+    Ok(())
+}
+
+fn verify_art_style_receipt_file(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    expected_sha256: &str,
+    require_locked: bool,
+    artifact_kind: &'static str,
+) -> Result<(), VerificationError> {
+    let file = load_entity(ctx, api_url, headers, "Files", file_id)?.ok_or_else(|| {
+        VerificationError::new(
+            "art_style_proof_receipt_file_missing",
+            format!("ArtStyle '{owner_id}' proof receipt points to missing file '{file_id}'"),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id)
+    })?;
+    let status = entity_status_value(&file);
+    let status_valid = if require_locked {
+        status == "Locked"
+    } else {
+        matches!(status.as_str(), "Ready" | "Locked")
+    };
+    if !status_valid {
+        return Err(VerificationError::new(
+            "art_style_proof_receipt_file_state_invalid",
+            format!(
+                "ArtStyle '{owner_id}' receipt file '{file_id}' is in state '{status}'{}",
+                if require_locked {
+                    ", expected immutable Locked file"
+                } else {
+                    ", expected Ready or Locked output"
+                }
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    let actual_sha256 =
+        read_art_style_receipt_file_sha256(ctx, api_url, headers, owner_id, file_id, artifact_kind)?;
+    if actual_sha256 != expected_sha256 {
+        return Err(VerificationError::new(
+            "art_style_proof_receipt_file_hash_mismatch",
+            format!(
+                "ArtStyle '{owner_id}' receipt file '{file_id}' does not match its signed SHA-256"
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id));
+    }
+    Ok(())
+}
+
+fn read_art_style_receipt_file_sha256(
+    ctx: &Context,
+    api_url: &str,
+    headers: &[(String, String)],
+    owner_id: &str,
+    file_id: &str,
+    artifact_kind: &'static str,
+) -> Result<String, VerificationError> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = ctx;
+        let url = format!("{api_url}/tdata/Files('{file_id}')/$value");
+        let stream_headers: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let (request_body, mut response_body, response_head) =
+            temper_wasm_sdk::http_stream::streaming_call("GET", &url, &stream_headers)
+                .map_err(|error| {
+                    VerificationError::new(
+                        "art_style_proof_receipt_file_read_failed",
+                        format!("Failed to open proof receipt file '{file_id}': {error}"),
+                    )
+                    .entity("ArtStyle", owner_id)
+                    .artifact(artifact_kind, file_id)
+                    .repairable(false)
+                })?;
+        request_body.finish().map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to finish proof receipt request for '{file_id}': {error}"),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        let head = response_head().map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to read proof receipt response head for '{file_id}': {error}"),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        if !(200..300).contains(&head.status) {
+            let _ = response_body.close();
+            return Err(VerificationError::new(
+                "art_style_proof_receipt_file_read_failed",
+                format!(
+                    "Proof receipt file '{file_id}' returned HTTP {}", head.status
+                ),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact(artifact_kind, file_id));
+        }
+
+        let hash_result = (|| -> Result<String, VerificationError> {
+            let mut hasher = Sha256::new();
+            let mut buffer = vec![0_u8; 64 * 1024];
+            loop {
+                match response_body.read_next_chunk(&mut buffer) {
+                    Ok(Some(0)) | Ok(None) => break,
+                    Ok(Some(count)) => hasher.update(&buffer[..count]),
+                    Err(error) => {
+                        return Err(VerificationError::new(
+                            "art_style_proof_receipt_file_read_failed",
+                            format!("Failed while hashing proof receipt file '{file_id}': {error}"),
+                        )
+                        .entity("ArtStyle", owner_id)
+                        .artifact(artifact_kind, file_id)
+                        .repairable(false));
+                    }
+                }
+            }
+            Ok(format!("{:x}", hasher.finalize()))
+        })();
+        let close_result = response_body.close();
+        let hash = hash_result?;
+        close_result.map_err(|error| {
+            VerificationError::new(
+                "art_style_proof_receipt_file_read_failed",
+                format!("Failed to close proof receipt file '{file_id}': {error}"),
+            )
+            .entity("ArtStyle", owner_id)
+            .artifact(artifact_kind, file_id)
+            .repairable(false)
+        })?;
+        Ok(hash)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (ctx, api_url, headers);
+        Err(VerificationError::new(
+            "art_style_proof_receipt_file_read_failed",
+            format!(
+                "Proof receipt hashing for file '{file_id}' runs in the deployed WASM finalizer"
+            ),
+        )
+        .entity("ArtStyle", owner_id)
+        .artifact(artifact_kind, file_id)
+        .repairable(false))
+    }
 }
 
 fn read_lane_image_prefix(
@@ -5555,6 +5874,26 @@ mod host_stubs {
         ) -> i32 {
             -1
         }
+}
+
+#[cfg(test)]
+mod hero_gate_tests {
+    use super::extract_hero_file_id;
+
+    #[test]
+    fn extracts_hero_file_id_from_css_url() {
+        let body = ":root{--hero-image:url('https://katagami.ai/api/file/fl-019f99d3-0eaf-7a11-9f56-497b3b6336c7')}";
+        assert_eq!(
+            extract_hero_file_id(body).as_deref(),
+            Some("fl-019f99d3-0eaf-7a11-9f56-497b3b6336c7")
+        );
+    }
+
+    #[test]
+    fn rejects_truncated_or_missing_references() {
+        assert_eq!(extract_hero_file_id("no reference here"), None);
+        assert_eq!(extract_hero_file_id("/api/file/x)"), None);
+    }
 }
 
 #[cfg(test)]

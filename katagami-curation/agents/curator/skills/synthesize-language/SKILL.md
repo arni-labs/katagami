@@ -17,14 +17,39 @@ surfaces separated by tone not borders, components built once from tokens.
 Explicitly style every form control. Give the language ONE ownable idea,
 expressed as a signature mechanic that recurs on every surface.
 
-## SURFACE 1 — the landing
+## SURFACE 1 — the landing (scroll-cinematic — the Katagami landing standard)
 
-A believable, EXPRESSIVE product landing with one full-bleed hero — a real
-product world, never a spec sheet (no token swatches, chip rows, or specimen
-framing). Generate a real hero image (MediaGenerationRequests) and build the
-page around it: the image is the page's dominant material, with display type
-composed over it. Strong editorial composition, confident type, real copy in
-a real product scene with concrete verbs and invented product names.
+A believable, EXPRESSIVE product landing — a real product world, never a
+spec sheet (no token swatches, chip rows, or specimen framing). One
+full-bleed generated hero (MediaGenerationRequests) as the page's dominant
+material, display type composed over it, real copy with concrete verbs and
+invented product names.
+
+The page is a scroll FILM, not a stack of sections:
+
+- **One controlling metaphor with physics** — the scroll must MEAN something
+  the reader does (enter, climb, descend, develop, pull a print). One
+  sentence, one verb, derived from YOUR language's soul.
+- **One material + one continuity object** persisting through every scene;
+  scenes hand off THROUGH the material — transformation, never a reset or
+  crossfade. Real state changes: things count, draw themselves, ignite when
+  elements align. A page that only fades in is dead.
+- **Two-extreme type scale** (giant display + micro caps labels; no
+  comfortable middle) and a rationed accent: ≥80% restraint, then ONE
+  climax where the accent floods.
+- **Storyboard 5–8 scenes** before building: each scene's composition + the
+  mechanism by which it becomes the next (mask, scale-through, curtain,
+  flood, ignite-on-alignment). Name the single climax.
+- **Engineering**: GSAP ScrollTrigger (+ Lenis) scroll-scrubbed
+  choreography; transform/opacity only; native scroll — never scroll-jack;
+  `prefers-reduced-motion` fallback that de-pins and keeps all content;
+  real DOM text; mobile art-directed, not shrunk; 60fps.
+- **Banned defaults**: gradient text, glassmorphism, bento grids, pill
+  badges, fade-up-on-everything with identical staggers, decorative motion
+  without narrative purpose. Strong static composition FIRST, then
+  choreography; before each new section re-check "what is still generic
+  here?" — drifting back to the template mean by the fifth section is the
+  #1 failure mode.
 
 ## SURFACE 2 — the embodiment
 

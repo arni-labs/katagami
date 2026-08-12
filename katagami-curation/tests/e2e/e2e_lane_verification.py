@@ -5,16 +5,19 @@ Drives the REAL production flow against a locally served Temper with paw-fs +
 katagami-commons + katagami-curation installed and the actual
 finalize_spawned_session WASM registered:
 
-  real image Files (PUT $value) -> ArtStyle (SubmitArtStyle, no references)
+  four Locked generated-source Files + eight HMAC-bound proof Files
+  -> ArtStyle (SubmitArtStyle, no references)
   -> CurationJob Start -> CompleteArtStyleSynthesis (fires the finalizer WASM)
   -> assert ArtStyle Published (happy) / job Failed + style unpublished
-     (HTML posing as one portability proof image)
+     (HTML posing as one proof; caller-forged receipt)
 
   plus the PaletteSystem happy/reject pair.
 """
 import io
 import os
 import json
+import hashlib
+import hmac
 import random
 import sys
 import time
@@ -31,6 +34,38 @@ HDRS = {
 }
 
 PASS, FAIL = [], []
+RECEIPT_KEY = "katagami-e2e-proof-receipt-key"
+SOURCE_ENDPOINT = "fal-ai/flux/schnell"
+EDIT_ENDPOINTS = [
+    "openai/gpt-image-2/edit",
+    "fal-ai/nano-banana-2/edit",
+]
+PROOF_CASES = [
+    {
+        "category": "human_portrait",
+        "subject": "night-shift printer beside a blank paper stack",
+        "composition": "waist-up three-quarter portrait with open space to one side",
+        "source_medium": "documentary photograph",
+    },
+    {
+        "category": "nonhuman_living",
+        "subject": "urban pigeon lifting into flight",
+        "composition": "single bird crossing the frame diagonally with wings spread",
+        "source_medium": "black-ink line drawing",
+    },
+    {
+        "category": "still_life_object",
+        "subject": "cassette player with headphones and tape cases",
+        "composition": "overhead product arrangement with deliberate gaps",
+        "source_medium": "neutral synthetic 3d render",
+    },
+    {
+        "category": "landscape_environment",
+        "subject": "hillside neighborhood with stairs and water tanks",
+        "composition": "wide cityscape rising diagonally across the frame",
+        "source_medium": "flat vector illustration",
+    },
+]
 
 
 def report(name, ok, detail=""):
@@ -118,7 +153,7 @@ def set_secret(key, value):
     print(f"  secret '{key}' set")
 
 
-def make_file(name, payload, mime):
+def make_file(name, payload, mime, lock=False):
     st, body = req("POST", "/tdata/Files", {"Name": name, "Path": f"/e2e/{name}", "MimeType": mime})
     assert 200 <= st < 300, (name, st, body)
     fid = entity_id_of(body)
@@ -126,10 +161,24 @@ def make_file(name, payload, mime):
     assert 200 <= st < 300, ("$value", name, st, body)
     for _ in range(20):
         ent = get_entity("Files", fid)
-        if entity_status(ent) in ("Ready", "Locked"):
-            return fid
+        current = entity_status(ent)
+        if current in ("Ready", "Locked"):
+            if lock and current == "Ready":
+                st, body = act("Files", fid, "Lock")
+                if not 200 <= st < 300:
+                    # Blob finalization can race this read and make the File
+                    # Locked before the explicit action is dispatched. The
+                    # query projection may still lag that transition, so poll
+                    # again instead of treating one stale read as a failure.
+                    raced = get_entity("Files", fid)
+                    if entity_status(raced) != "Locked":
+                        time.sleep(0.25)
+                        continue
+                continue
+            if not lock or current == "Locked":
+                return fid
         time.sleep(0.5)
-    raise AssertionError(f"file {name} never became Ready: {json.dumps(ent)[:300]}")
+    raise AssertionError(f"file {name} never became Ready/Locked: {json.dumps(ent)[:300]}")
 
 
 def wait_fields(set_name, eid, field_names, timeout=15):
@@ -171,8 +220,49 @@ def sizable_png_bytes():
     return payload
 
 
-def run_art_style_case(label, expect_published, fake_proof_index=None):
-    """Exercise reference-free publication, optionally corrupting one proof image."""
+def sha256(value):
+    payload = value.encode() if isinstance(value, str) else value
+    return hashlib.sha256(payload).hexdigest()
+
+
+def sign_generation_receipt(receipt):
+    source = receipt["source"]
+    output = receipt["output"]
+    message = "\n".join([
+        receipt["schema_version"],
+        receipt["issuer"],
+        receipt["kind"],
+        receipt["style_slug"],
+        receipt["category"],
+        receipt["subject"],
+        receipt["composition"],
+        receipt["source_medium"],
+        source["file_id"],
+        source["sha256"],
+        source["endpoint"],
+        source["request_id"],
+        source["prompt_sha256"],
+        output["file_id"],
+        output["sha256"],
+        output["endpoint"],
+        output["request_id"],
+        output["prompt_sha256"],
+        output["seed"],
+    ])
+    receipt["signature"] = hmac.new(
+        RECEIPT_KEY.encode(), message.encode(), hashlib.sha256
+    ).hexdigest()
+    return receipt
+
+
+def run_art_style_case(
+    label,
+    expect_published,
+    fake_proof_index=None,
+    forged_receipt_index=None,
+    expected_error_code="lane_file_not_image",
+):
+    """Exercise reference-free publication with optional proof/consent failures."""
     jpg = jpeg_bytes()
     sizable_png = sizable_png_bytes()
     fake_html = (b"<!doctype html><html><body>" + b"not an image " * 40 + b"</body></html>")
@@ -194,42 +284,103 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
         "signature_details": "slight ink spread and irregular hand pressure",
         "exclusions": "Avoid photorealistic skin, glossy surfaces, gradients, and smooth vector geometry",
     }
+    source_payloads = [jpg, sizable_png, jpg, sizable_png]
+    source_records = []
+    for index, (case, payload) in enumerate(zip(PROOF_CASES, source_payloads)):
+        extension = "png" if index in (1, 3) else "jpg"
+        mime = "image/png" if extension == "png" else "image/jpeg"
+        file_id = make_file(
+            f"{label}-generated-source-{index}.{extension}",
+            payload,
+            mime,
+            lock=True,
+        )
+        source_records.append({
+            "file_id": file_id,
+            "sha256": sha256(payload),
+            "endpoint": SOURCE_ENDPOINT,
+            "request_id": f"{label}-source-request-{index}",
+            "prompt_sha256": sha256(
+                f"neutral source {case['category']} {case['subject']} {case['composition']} {case['source_medium']}"
+            ),
+        })
+
     proof_specs = [
-        ("fixture-a", "portrait", "watercolor"),
-        ("fixture-a", "landscape", "photograph"),
-        ("fixture-a", "object", "line drawing"),
-        ("fixture-b", "portrait", "watercolor"),
-        ("fixture-b", "landscape", "photograph"),
-        ("fixture-b", "object", "line drawing"),
+        (model, case_index)
+        for model in EDIT_ENDPOINTS
+        for case_index in range(len(PROOF_CASES))
     ]
     proof_ids = []
-    for index, (model, subject, _) in enumerate(proof_specs):
+    proof_records = []
+    cases_by_model = {model: [] for model in EDIT_ENDPOINTS}
+    for index, (model, case_index) in enumerate(proof_specs):
+        case = PROOF_CASES[case_index]
         if index == fake_proof_index:
             payload, extension, mime = fake_html, "jpg", "image/jpeg"
         elif index == 0:
             payload, extension, mime = sizable_png, "png", "image/png"
         else:
             payload, extension, mime = jpg, "jpg", "image/jpeg"
-        proof_ids.append(
-            make_file(
-                f"{label}-proof-{model}-{subject}.{extension}",
-                payload,
-                mime,
-            )
+        model_label = model.replace("/", "-")
+        file_id = make_file(
+            f"{label}-proof-{model_label}-{case_index}.{extension}",
+            payload,
+            mime,
+            lock=True,
         )
-    thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
-    cases_by_model = {}
-    for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs):
-        cases_by_model.setdefault(model, []).append({
+        proof_ids.append(file_id)
+        seed = f"{label}-{model_label}-{case_index}"
+        receipt = sign_generation_receipt({
+            "schema_version": "1",
+            "issuer": "katagami-mcp",
+            "kind": "art_style_proof",
+            "style_slug": f"e2e-{label}",
+            "category": case["category"],
+            "subject": case["subject"],
+            "composition": case["composition"],
+            "source_medium": case["source_medium"],
+            "source": source_records[case_index].copy(),
+            "output": {
+                "file_id": file_id,
+                "sha256": sha256(payload),
+                "endpoint": model,
+                "request_id": f"{label}-output-request-{model_label}-{case_index}",
+                "prompt_sha256": sha256(prompt),
+                "seed": seed,
+            },
+            "signature": "",
+        })
+        if index == forged_receipt_index:
+            receipt["signature"] = "00" * 32
+        record = {
             "file_id": file_id,
-            "subject": subject,
-            "source_medium": source_medium,
+            "category": case["category"],
+            "subject": case["subject"],
+            "composition": case["composition"],
+            "source_medium": case["source_medium"],
             "mode": "image_edit",
-            "seed": f"{label}-{model}-{subject}",
+            "seed": seed,
+            "style_reference_used": False,
+            "model": {"provider": "fal", "model": model},
+            "generation_receipt": receipt,
+        }
+        proof_records.append(record)
+        cases_by_model[model].append({
+            "file_id": file_id,
+            "category": case["category"],
+            "subject": case["subject"],
+            "composition": case["composition"],
+            "source_medium": case["source_medium"],
+            "mode": "image_edit",
+            "seed": seed,
             "prompt": prompt,
             "style_reference_used": False,
+            "content_preserved": True,
+            "source_medium_replaced": True,
+            "generation_receipt": receipt,
             "scores": {dimension: 2 for dimension in dimensions},
         })
+    thumb_id = make_file(f"{label}-thumb.jpg", jpg, "image/jpeg")
     portability_report = {
         "schema_version": "1",
         "verdict": "pass",
@@ -237,7 +388,7 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
         "blind_evaluation": True,
         "evaluator": {"provider": "local", "model": "fixture-vision-reviewer"},
         "models": [
-            {"provider": "local", "model": model, "cases": cases}
+            {"provider": "fal", "model": model, "cases": cases}
             for model, cases in cases_by_model.items()
         ],
     }
@@ -253,23 +404,18 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
         "reference_image_file_ids": [],
         "reference_manifest": json.dumps({"items": []}),
         "proof_shots_file_ids": proof_ids,
-        "proof_shots_manifest": json.dumps({"items": [
-            {
-                "file_id": file_id,
-                "subject": subject,
-                "source_medium": source_medium,
-                "mode": "image_edit",
-                "seed": f"{label}-{model}-{subject}",
-                "style_reference_used": False,
-                "model": {"model": model, "provider": "local"},
-            }
-            for file_id, (model, subject, source_medium) in zip(proof_ids, proof_specs)
-        ]}),
+        "proof_shots_manifest": json.dumps({
+            "schema_version": "2",
+            "items": proof_records,
+        }),
         "thumbnail_file_id": thumb_id,
         "parent_ids": [],
         "lineage_type": "original",
         "generation_number": "0",
-        "model_provenance": json.dumps({"style": {"provider": "local", "model": "fixture-author"}, "images": [{"model": model, "provider": "local"} for model in cases_by_model]}),
+        "model_provenance": json.dumps({
+            "style": {"provider": "local", "model": "fixture-author"},
+            "images": [{"model": model, "provider": "fal"} for model in cases_by_model],
+        }),
         "credits": json.dumps([{"name": "E2E tradition", "kind": "tradition", "note": "local run"}]),
         "source_basis": json.dumps({
             "schema_version": "1",
@@ -285,6 +431,7 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
             "reviewer": {"provider": "local", "model": "fixture-reviewer"},
             "reference_independent": True,
             "subject_independent": True,
+            "source_medium_independent": True,
             "model_agnostic": True,
             "style_name_independent": True,
             "contradictions": [],
@@ -320,7 +467,11 @@ def run_art_style_case(label, expect_published, fake_proof_index=None):
         report(f"art_style/{label}: style Published", art_status == "Published", f"style={art_status}")
     else:
         report(f"art_style/{label}: job Failed", job_status == "Failed", f"job={job_status}")
-        report(f"art_style/{label}: rejection names the fake proof image", "lane_file_not_image" in err, f"err={err}")
+        report(
+            f"art_style/{label}: rejection names the failing gate",
+            expected_error_code in err,
+            f"err={err}",
+        )
         report(f"art_style/{label}: style NOT published", art_status != "Published", f"style={art_status}")
     return job_id, art_id
 
@@ -401,6 +552,7 @@ def main():
     set_secret("published_blob_endpoint", "http://127.0.0.1:3910")
     set_secret("published_blob_bucket", "katagami-e2e")
     set_secret("published_blob_public_base_url", "http://127.0.0.1:3910/public")
+    set_secret("art_style_proof_receipt_key", RECEIPT_KEY)
 
     print("== stage 1: art style happy path (no reference images) ==")
     _, good_art_id = run_art_style_case("good", expect_published=True)
@@ -411,7 +563,15 @@ def main():
     print("== stage 2: art style rejection (HTML posing as a proof image) ==")
     run_art_style_case("fake", expect_published=False, fake_proof_index=1)
 
-    print("== stage 3: palette happy path ==")
+    print("== stage 3: art style rejection (caller-forged generation receipt) ==")
+    run_art_style_case(
+        "forged-receipt",
+        expect_published=False,
+        forged_receipt_index=0,
+        expected_error_code="art_style_proof_receipt_signature_invalid",
+    )
+
+    print("== stage 4: palette happy path ==")
     good_tokens = "/* E2E — Katagami palette tokens */\n:root {\n" + "".join(
         f"  --ds-{k}: {v};\n" for k, v in {
             "bg": "#faf7f0", "surface": "#ffffff", "ink": "#1c1a16", "muted": "#6b655a",
@@ -420,7 +580,7 @@ def main():
     ) + "}\n/* DTCG */\n" + json.dumps({"color": {"accent": {"$type": "color", "$value": "#7c6f57"}}})
     run_palette_case("good", good_tokens, expect_published=True)
 
-    print("== stage 4: palette rejection (garbage tokens export) ==")
+    print("== stage 5: palette rejection (garbage tokens export) ==")
     run_palette_case("bad", "oops, not a tokens document", expect_published=False)
 
     print()

@@ -311,6 +311,16 @@ pub extern "C" fn run(_ctx_ptr: i32, _ctx_len: i32) -> i32 {
             // silently completes the session and orphans the job). max_turns bounds
             // the loop.
             "tool_choice": "required",
+            // Design synthesis runs at high reasoning effort: the previous
+            // hardcoded medium produced the same safe modal design on every
+            // run of a brief (Mullion/Madori: near-identical palettes/type
+            // across independent runs). Non-design jobs keep the provider
+            // default.
+            "provider_options_json": if skill == "synthesize-language" {
+                "{\"reasoning_effort\":\"high\"}"
+            } else {
+                ""
+            },
         });
 
         if !parent_session_id.is_empty() {
