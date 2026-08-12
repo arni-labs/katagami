@@ -46,9 +46,15 @@
 // three ids named here and for nothing else. Written down so that is a
 // decision on the record rather than a discovery later.
 //
-// Tenant scope is separate and still applies: `observe_tenant_scope` refuses an
-// Agent-kind caller that sends no `X-Tenant-Id` in multi-tenant mode, so
-// neither endpoint hands a principal below the cross-tenant view.
+// Tenant scope is separate and conditional, so it is stated as the condition it
+// is: in MULTI-tenant mode `observe_tenant_scope` refuses an Agent-kind caller
+// that sends no `X-Tenant-Id`, which keeps the principals below inside one
+// tenant. In single-tenant mode a header-less caller gets the unscoped view and
+// `require_observe_auth` evaluates against tenant `system`, which falls back to
+// the global policy set. A single-tenant deployment that loads these policies
+// globally therefore does hand a principal below the whole registry listing.
+// That is a deployment shape this repo's own `temper serve` e2e path uses, so
+// it is a real configuration rather than a hypothetical one.
 //
 // # Why an allowlist of ids
 //
@@ -94,23 +100,47 @@
 // Cedar here: the pair carries no resource attributes, so a permit cannot be
 // narrowed to "the caller's own actor", to the detail endpoint, or to the
 // `spec_version` field. A principal below can therefore read any registered
-// spec in its tenant and list them all. Admitted knowingly: the same specs are
-// files in the repository these agents work in, so the endpoint discloses
-// nothing they do not already hold — but if that stops being true, this is the
-// permit to revisit.
+// spec in its tenant and list them all.
+//
+// Do not read that as harmless on the ground that these specs are files in this
+// repository. The shipped capture configuration runs in tenant `default` on the
+// shared TemperPaw server, and that tenant carries the platform's own entity
+// types and any other app installed beside this one — contracts that are NOT
+// files here. So `GET /observe/specs` under this grant enumerates the states,
+// actions, guards and invariants of every app registered on that tenant, which
+// is reconnaissance surface, not a restatement of the checkout.
+//
+// Admitted anyway, with the reason stated as it actually is: nothing is
+// exposed today that a request header does not already expose to anyone
+// (`require_observe_auth` still lets an Admin-kind caller past Cedar), and the
+// capture pipeline cannot stamp an attested spec version without it. What
+// closes the gap properly is not narrowing this permit — Cedar has nothing to
+// narrow on — but giving the capture pipeline a tenant of its own, or giving
+// the `Spec` resource attributes a policy could test. Whoever removes the
+// Admin-kind bypass (ARN-255) inherits this decision and should revisit it in
+// the same change, because that is the moment this permit starts being the
+// thing that holds the listing open.
 //
 // # Deliberately NOT admitted
 //
 //   Agent::"system"                unlike trajectory.cedar, which grants it.
-//                                  Both endpoints here go through
-//                                  `require_observe_auth`, which returns early
-//                                  for a System-kind principal, and platform
-//                                  code that legitimately acts as System is
-//                                  covered by the kernel's built-in
-//                                  `system-platform` permit (ADR-0046). A grant
-//                                  here would be dead policy, and dead policy
-//                                  in an allowlist reads as a call site that
-//                                  exists.
+//                                  Not because a grant would be unreachable —
+//                                  it would not be. The early return in
+//                                  `require_observe_auth` keys on principal
+//                                  KIND, and the kernel's built-in permit is
+//                                  written `principal is System` (ADR-0046);
+//                                  neither covers a caller that sends
+//                                  `kind: agent, id: system`, which is the
+//                                  shape the commons finalizer uses and which
+//                                  reaches Cedar as exactly this principal.
+//                                  Such a caller is DENIED here, and that is
+//                                  the whole reason to say so: an operator
+//                                  debugging that 403 should find it named in
+//                                  this file rather than conclude the policy
+//                                  layer is not involved. It is left out
+//                                  because nothing in this repo reads a spec
+//                                  under that identity — add it when a call
+//                                  site exists, not by analogy.
 //   Agent::"katagami-finalizer"    declares `agent_type = "system"` but is not
 //                                  the platform; it backfills exports and reads
 //                                  no spec.

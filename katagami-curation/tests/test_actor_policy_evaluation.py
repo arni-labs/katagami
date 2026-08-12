@@ -49,6 +49,28 @@ MISSING_CEDAR = (
 COMMONS_POLICIES = POLICIES.parent.parent / "katagami-commons" / "policies"
 
 
+def temper_checkout():
+    """A temper source tree to check kernel-side claims against, or None.
+
+    Named by `$TEMPER_REPO` / `$KATAGAMI_TEMPER_REPO`, or a sibling of this
+    repository. Verified by looking for the file the caller wants rather than by
+    the directory name, because `~/Development/temper` is a BARE git repo on at
+    least one machine here — the working trees live elsewhere, and a name-only
+    check would hand back a path with no sources in it.
+    """
+    candidates = []
+    for name in ("TEMPER_REPO", "KATAGAMI_TEMPER_REPO"):
+        value = (os.environ.get(name) or "").strip()
+        if value:
+            candidates.append(Path(value).expanduser())
+    repo_root = POLICIES.parent.parent
+    candidates.append(repo_root.parent / "temper")
+    for candidate in candidates:
+        if (candidate / "crates" / "temper-server" / "src").is_dir():
+            return candidate
+    return None
+
+
 def policy(name):
     return (POLICIES / f"{name}.cedar").read_text()
 
@@ -740,13 +762,19 @@ class PlatformPermitDecisionTest(unittest.TestCase):
         reach is something the app states rather than something a reader
         discovers, and so a third call site cannot appear without this list and
         the policy comment being updated together.
+
+        There is deliberately ONE decision assertion rather than one per call
+        site. Cedar sees the same request from both handlers — same action, same
+        `Spec::"unknown"` resource, no attribute that could tell them apart — so
+        a per-endpoint loop over `decide` would re-run one identical evaluation
+        and read as coverage it is not. The per-endpoint half of this test is
+        the naming check below, which is the only half that can actually differ.
         """
-        for label, _helper in self.SPEC_CALL_SITES:
-            self.assertEqual(
-                self.spec_decision(self.CONTRIBUTOR),
-                cedarpy.Decision.Allow,
-                f"{label}: the capture pipeline is not permitted the pair it asks for",
-            )
+        self.assertEqual(
+            self.spec_decision(self.CONTRIBUTOR),
+            cedarpy.Decision.Allow,
+            "the capture pipeline is not permitted the pair both handlers ask for",
+        )
 
         policy = (POLICIES / "spec.cedar").read_text()
         for label, _helper in self.SPEC_CALL_SITES:
@@ -757,6 +785,50 @@ class PlatformPermitDecisionTest(unittest.TestCase):
                 f"spec.cedar does not name {label}, an endpoint this permit "
                 "answers for",
             )
+
+    def test_the_spec_call_sites_are_the_ones_the_kernel_actually_has(self):
+        """`SPEC_CALL_SITES` is hand-maintained; check it against the kernel.
+
+        The list above says which handlers ask Cedar for this pair, and nothing
+        in this repository can see the kernel to know. A third call site
+        appearing there — or one of these two moving — would leave the policy
+        comment quietly describing a reach that no longer matches, which is the
+        same silent-drift failure this whole file exists to prevent.
+
+        So when a temper checkout is discoverable this reads the source and
+        compares. A runner without one skips, rather than passing on a check it
+        did not perform.
+        """
+        checkout = temper_checkout()
+        if checkout is None:
+            self.skipTest(
+                "no temper checkout found; set $TEMPER_REPO to pin the kernel "
+                "call sites for `read_specs` on `Spec`"
+            )
+        source = (checkout / "crates" / "temper-server" / "src" / "observe" / "specs.rs").read_text()
+        asks = source.count('require_observe_auth(&state, &headers, "read_specs", "Spec")')
+        self.assertEqual(
+            asks,
+            len(self.SPEC_CALL_SITES),
+            f"observe/specs.rs asks for `read_specs` on `Spec` {asks} time(s), but "
+            f"SPEC_CALL_SITES lists {len(self.SPEC_CALL_SITES)}. Update the list and "
+            "the policy comment together.",
+        )
+        # And no OTHER kernel file asks for the pair, which is what makes two
+        # call sites the whole story rather than the part we happened to look at.
+        crates = checkout / "crates"
+        elsewhere = sorted(
+            path.relative_to(checkout).as_posix()
+            for path in crates.rglob("*.rs")
+            if path.name != "specs.rs"
+            and '"read_specs"' in path.read_text(encoding="utf-8", errors="replace")
+        )
+        self.assertEqual(
+            elsewhere,
+            [],
+            f"these kernel files also ask for `read_specs` and this app's policy "
+            f"comment does not name them: {elsewhere}",
+        )
 
     def test_the_permit_does_not_reach_other_kernel_resources(self):
         """Read against THIS FILE alone, unlike every other test here.

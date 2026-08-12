@@ -169,6 +169,17 @@ the same pair. Both keep the Admin/System principal-kind bypass, so this permit
 is not what protects spec text today; it is what lets the agent-kind principals
 the pipeline uses read it at all.
 
+The listing is the part worth stating plainly. Capture runs in tenant `default`
+on the shared server, which carries the platform's own entity types and whatever
+else is installed beside this app — contracts that are not files in this
+repository. So the grant lets those three ids enumerate every registered app's
+states, actions, guards and invariants on that tenant. It is accepted because
+nothing there is currently protected from anyone who claims an admin principal
+kind in a header, and because the capture pipeline cannot attest a spec version
+without it. Cedar has no attribute to narrow on, so the real fixes are a
+dedicated capture tenant or resource attributes on `Spec`; whoever removes the
+principal-kind bypass should revisit this permit in the same change.
+
 Neither engine claims more than it checked. Guards resolved against the entity
 graph at dispatch time (`cross_entity_state`), evidence never captured, a read
 that stopped at its row cap — all of it lands in `unverifiable` rather than
