@@ -177,3 +177,78 @@ like these, and an agent's own measurement is a source that needs checking like
 any other. The real defect in that area was different and is fixed separately:
 the fallback guidance told agents to pass `--trajectory-id`, which the converter
 derives on its own, and overriding it is how the two ids come to disagree.
+
+A second measurement error from the same session belongs here too. This
+investigation reported four contract suites failing on master. It is three.
+`test_actor_policy_evaluation` passes — it is the only place the Cedar policies
+are evaluated rather than grepped, and by design it fails loudly instead of
+skipping when `cedarpy` is missing (`tests/requirements-dev.txt:5-8`,
+`test_actor_policy_evaluation.py:32,72`). The comparison that produced the wrong
+count ran master in a scratch worktree that was missing the binding too, so both
+sides failed identically for a reason that had nothing to do with the code.
+Re-run with `cedarpy` installed: 89 tests, **3 failed, 86 passed**, at both
+`b0f6fc4d` and this branch. Same shape as the `head` mistake — a harness detail
+read as a property of the code — which is why environment parity is not
+sufficient evidence that a failure is real.
+
+---
+
+## 2026-08-12 — A red test ran for 18 days and the loop routed around it
+
+**Checked:** why three contract suites fail on master —
+`test_artifact_ready_contract`, `test_design_md_contract`,
+`test_thumbnail_contract`. They had been dismissed, including in this
+investigation's own handover, as "pre-existing failures on master".
+
+**Found:** they are not ambient breakage. They are the surviving alarm from a
+single destructive commit. `12bc27db` ("chore: reconcile Genesis curation
+state", 2026-07-25) is **+138 / −663**, of which
+`katagami-curation/agents/curator/skills/synthesize-language/SKILL.md` is
+**−681**. A Genesis reconcile — `rsync -a --delete` under "Genesis wins" —
+replaced newer repo work with Genesis's older, smaller copy in one step, and the
+sync script reports nothing when a reconcile deletes.
+
+The skill's size across the timeline tells it plainly:
+
+| commit | date | bytes | has `DRIVE-TO-REVIEW PHASE` |
+|---|---|---|---|
+| `6381f29a` in-session self-heal (C1–C5) | 2026-06-22 | 35,449 | yes |
+| `12c7e11d` | 2026-07-23 | 31,932 | yes |
+| **`12bc27db` Genesis reconcile** | **2026-07-25** | **6,786** | **no** |
+| five commits `aa345450` … `38e02174` | 2026-08-12 | 12,037 → 15,657 | no |
+
+Verified rather than inferred: the same **3 failed / 86 passed** at `0bf7fe5a`,
+`e6f7a02b` and `b0f6fc4d`, so neither PR #202 nor #203 caused or fixed them. And
+swapping the pre-loss `12c7e11d` skill into master's tree still fails all three —
+the tests were tightened at `6381f29a` against the 35,449-byte version, so a
+straight revert is not the fix either. The recovery target is `6381f29a`, and the
+three red tests are the checklist of what is still missing.
+
+**Caught by:** a machine, correctly, immediately, and continuously for 18 days.
+The check was never wrong and never went quiet.
+
+**What failed was the loop.** Humans and agents together read a persistent red
+signal as ambient conditions and worked around it. The five commits on
+2026-08-12 were partial recovery by people who did not know what had been lost,
+each restoring some of the missing text without the causal story. This
+investigation did the same thing: it ran the suites, saw identical failures at
+`origin/master`, labelled them "pre-existing", and moved on — one bisect short of
+the answer.
+
+**Cost/saved:** 18 days of a curator skill running at a fifth of its documented
+size, five partial-recovery attempts, and a class of destructive sync that still
+reports success while deleting. Found only because someone declined to accept
+"pre-existing on master" as an explanation.
+
+**Why this entry matters most.** It cuts against the easy version of the thesis.
+The comfortable story is that formal checks catch what humans miss; here the
+formal check did its job perfectly and the joint system still lost three weeks,
+because a signal that stays red becomes background. **The machine check was not
+the weak link — the human-machine loop's handling of a persistent red signal
+was.** A verification apparatus is worth what the loop around it does with a
+failure that does not go away on its own, and "pre-existing" is the phrase that
+turns a finding into furniture.
+
+**Reference:** commit `12bc27db`; ARN-312 carries the full bisect table and
+method. No skill content is restored here — recovery is a per-contract decision
+for Rita, and PR #199 is open against the same file.
