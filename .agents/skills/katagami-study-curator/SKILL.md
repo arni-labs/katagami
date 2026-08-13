@@ -1,18 +1,32 @@
 ---
 name: katagami-study-curator
-description: Drive one CuratorAgent ledger through the craft-level machine while synthesizing a design language. Study arm. Never publish.
+description: Drive one CuratorAgent ledger while working the live Katagami pipeline — source_search then synthesize. Study arm. Never publish.
 ---
 
-# Study curator — drive the machine, then make the work
+# Study curator — work the live app, keep the ledger
 
-You are the CuratorAgent in the JCS comparison. The artifact work still follows
-`katagami-contributor`. This file is the **ledger**: you walk the craft-level
-states as you work. A run that makes the language and skips the ledger is not a
-study run.
+You are the curator principal. The pipeline is the existing Katagami app:
+
+```
+CurationQuery.Submit
+  → source_search CurationJob
+      → CurationJob.SpawnDirection   (mints CurationDirection)
+      → CurationJob.CompleteResearch
+  → synthesize CurationJob per direction
+      → DesignLanguage writes + DesignLanguage.SubmitForReview
+      → CurationJob.CompleteSynthesis
+```
+
+`CuratorAgent` is your ledger of that work. It does not replace the query,
+direction, job, or language. A run that does the work and skips the ledger
+is not a study run. A run that invents a second pipeline on the ledger is
+not a study run.
+
+This phase: **source_search** and **synthesize** only. Do not claim
+`quality_review`, `organize_taxonomy`, `evolve_language`, or
+`taste_distillation`.
 
 ## Capture identity — read, do not invent
-
-Before the first Temper call:
 
 ```bash
 python3 hooks/trajectory-capture/capture.py identity
@@ -25,48 +39,46 @@ saw this session, in which case:
 python3 hooks/trajectory-capture/capture.py derive <session-id> claude-code
 ```
 
-Put those exact `session_id`, `trajectory_id`, `spec_version`, `harness` values
-on `RecordBriefRef`. Send `X-Session-Id` and `X-Intent` on every Temper call.
+Put those exact `session_id`, `trajectory_id`, `spec_version`, `harness`
+values on `RecordCapture`. Send `X-Session-Id` and `X-Intent` on every
+Temper call.
 
-## Create the run
+## Create the ledger
 
 ```
 POST $TEMPER_API_URL/tdata/CuratorAgents
 {}
 ```
 
-Use `entity_id` from the 201 body. Every later call is:
+Use `entity_id` from the 201 body.
 
 ```
 POST $TEMPER_API_URL/tdata/CuratorAgents('<id>')/Temper.<Action>
 ```
 
 Headers on every call: `X-Tenant-Id`, `Authorization`, `X-Session-Id`,
-`X-Intent`, `x-temper-principal-kind: agent`, `x-temper-principal-id` for this
-role.
+`X-Intent`, `x-temper-principal-kind: agent`, `x-temper-principal-id` for
+this role.
 
-## Sequence (craft-level)
+## Sequence
 
-| When | Action | Notes |
+| When | On the ledger | On the live app |
 |---|---|---|
-| Immediately | `RecordBriefRef` | direction_id, brief, returned_from_run_id (empty if fresh), session_id, trajectory_id, spec_version, harness |
-| Then | `AcceptBrief` | `{}` — zero params. 409 if the direction is not Synthesizing |
-| Then | `ReadSiblingMechanics` | three mechanics read off published landings |
-| Then | `DeriveDirection` | the seven derivation answers |
-| Imagery | `GenerateImagery` then `InspectImagery` | looking is a separate call after the image is in context |
-| Pages | `AuthorSurfaces` then `RenderSurfaces` then `InspectRender` | same split |
-| Look | `ReadFilmstrip`, `TraverseScroll`, `VerifyHeroReplaceable` | inside RenderInspected |
-| Rules | `VerifyAgainstRules`, `RecordRuleFailure` if needed, `OpenLivePage` | |
-| Fix | `RecordCraftFix` | only with an open finding; max 12; clears every perception flag |
-| Clean | `DeclareCraftClean` then `SelfReview` | |
-| Last | `SubmitDesignLanguage` | only after the DesignLanguage entity is already UnderReview |
+| First | `RecordCapture` | — |
+| Research | `AcceptResearchJob` with the running `source_search` job id and query id | The job is already `Running` |
+| Then | `RecordResearchQuery` | Confirm `CurationQuery` is `Researching` |
+| Each movement | `RecordDirectionSpawned` | `CurationJob.SpawnDirection` |
+| End research | `FinishResearch` | After `CurationJob.CompleteResearch` |
+| Synthesize | `AcceptSynthesizeJob` with that job, query, and direction | The synthesize job is `Running` |
+| Then | `RecordSynthesizeQuery`, `RecordDirection`, `RecordLanguage` | Write the `DesignLanguage` |
+| Look | `RecordLook` | After the embodiment is in context as images |
+| Fix | `RecordSynthesizeFix` | After a `DesignLanguage` write; max 12 |
+| End synthesize | `FinishSynthesize` | After `DesignLanguage.SubmitForReview` and `CurationJob.CompleteSynthesis` |
 
-`Abandon` with a reason is the honest ending. Use it.
-
-A 409 names the guard. Record the body. Do not route around it. Retrying a
-denied action with nothing changed is itself a violation.
+A 409 names the guard. Record the body. Do not route around it.
 
 ## What you never do
 
-No `Publish`. No `MarkQualityPassed`. No inventing a trajectory id. No
-submitting from any state except `CraftClean` after self-review.
+No `Publish`. No `MarkQualityPassed`. No `CompleteQualityReview`. No
+inventing a trajectory id. No finishing synthesize while the language is
+still `Draft`.

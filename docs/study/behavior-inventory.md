@@ -30,92 +30,80 @@ it back.
 
 ---
 
-# CuratorAgent — the run that makes the work
+# CuratorAgent — one curator principal in the live app
 
-One record per curator run against one brief.
+One ledger for the curator while it works the existing path:
+`CurationQuery` → `CurationDirection` → typed `CurationJob` → `DesignLanguage`.
+This phase the accepted jobs are `source_search` and `synthesize`.
 Source: `katagami-curation/specs/curator_agent.ioa.toml`,
 `katagami-curation/policies/curator_agent.cedar`.
 
-Its life: `BriefReceived` → `DirectionDerived` → `ImageryInspected` →
-`SurfacesAuthored` → `SurfacesRendered` → `RenderInspected` → `RulesChecked` →
-`CraftClean` → `Submitted`, or `Abandoned` from any live state.
+Its life: `Idle` → `Researching` → `Idle` → `Synthesizing` → `Idle`,
+or `Abandoned` from a working hold.
 
 ### Order of work
 
-**C1. A run records the brief it is answering before it starts.** — machine
-`RecordBriefRef` is the one-shot store of the direction, the brief text, and
-the capture identity. It sets `brief_recorded` and claims nothing.
-*Source: spec, action `RecordBriefRef`.*
+**C1. A run records its capture identity before it takes a job.** — machine
+`RecordCapture` is the one-shot store of session, trajectory, spec version
+and harness. Accepting a job is guarded on that bit.
+*Source: spec, action `RecordCapture`; `AcceptResearchJob` / `AcceptSynthesizeJob` guard `is_true capture_recorded`.*
 
-**C2. A run cannot derive a direction against a brief it never accepted.** — machine
-`AcceptBrief` takes no parameters and is guarded on `brief_recorded` plus the
-named `CurationDirection` actually being in `Synthesizing`. `DeriveDirection`
-is only reachable from `BriefReceived` after that bit is set.
-*Source: spec, action `AcceptBrief` guards; action `DeriveDirection`.*
+**C2. A research hold starts only on a running source-search job.** — machine
+`AcceptResearchJob` is reachable only from `Idle` and is guarded on the
+named `CurationJob` being `Running`.
+*Source: spec, action `AcceptResearchJob`.*
 
-**C3. Surfaces are authored only after imagery has been inspected.** — machine
-`AuthorSurfaces` is reachable only from `ImageryInspected`. Writing pages
-before looking at the generated images has no legal source state.
-*Source: spec, action `AuthorSurfaces` `from = ["ImageryInspected"]`.*
+**C3. A research hold names the query it is answering.** — machine
+`RecordResearchQuery` requires the named `CurationQuery` to be `Researching`.
+*Source: spec, action `RecordResearchQuery`.*
 
-**C4. A run reviews its own work before submitting, and that is the only route to
-submission.** — machine
-`SelfReview` is available only from `CraftClean`. `SubmitDesignLanguage` is
-guarded on `self_review_complete`, and the invariant `SubmittedRequiresSelfReview`
-holds it at the terminal state.
-*Source: spec, action `SelfReview`; action `SubmitDesignLanguage` from `CraftClean` + guard `is_true self_review_complete`; invariant `SubmittedRequiresSelfReview`.*
+**C4. A research hold records directions the job actually minted.** — machine
+`RecordDirectionSpawned` requires a real `CurationDirection` in `Discovered`
+or `Synthesizing`. Spawn itself lives on `CurationJob`.
+*Source: spec, action `RecordDirectionSpawned`.*
 
-**C5. A run submits once.** — machine
-`SubmitDesignLanguage` lands in `Submitted`, which is terminal, so a second
-submission has no legal source state.
-*Source: spec, invariant `SubmittedIsFinal`; action `SubmitDesignLanguage` `to = "Submitted"`.*
+**C5. Research finishes only after the job has left Running.** — machine
+`FinishResearch` is guarded on the held job being `Finalizing` or `Completed`.
+*Source: spec, action `FinishResearch`.*
 
-### What may be submitted
+**C6. A synthesize hold starts only on a running synthesize job.** — machine
+`AcceptSynthesizeJob` is reachable only from `Idle` and is guarded on the
+named `CurationJob` being `Running`.
+*Source: spec, action `AcceptSynthesizeJob`.*
 
-**C6. A run can only submit a language it actually produced.** — machine
-`design_language_id` is a required scalar. An empty ref fails the
-cross-entity guard outright, so a run that produced nothing cannot submit.
-*Source: spec, `SubmitDesignLanguage` guard `cross_entity_state` with `required = true` on `design_language_id`.*
+**C7. A synthesize hold names the direction it is answering.** — machine
+`RecordDirection` requires the named `CurationDirection` to be `Synthesizing`.
+*Source: spec, action `RecordDirection`.*
 
-**C7. A run can only submit work that already passed its own artifact gate.** — machine
-The named DesignLanguage must already be `UnderReview`, read off the entity
-graph rather than off the run's claim about it. That state is only reachable
-through the artifact's own `SubmitForReview` guard.
-*Source: spec, `SubmitDesignLanguage` guard `cross_entity_state` on `DesignLanguage`, `required_status = ["UnderReview"]`.*
+**C8. A synthesize hold names the language it is writing.** — machine
+`RecordLanguage` requires a real `DesignLanguage` in `Draft` or `UnderReview`.
+*Source: spec, action `RecordLanguage`.*
 
-**C8. A run submits a design language, not a generic lane.** — machine
-There is one submit action, `SubmitDesignLanguage`. Companion lanes are not
-on this actor; they have their own craft contracts.
-*Source: spec, action list — the only submit is `SubmitDesignLanguage`.*
+**C9. Synthesize finishes only when that language is UnderReview.** — machine
+`FinishSynthesize` reads `DesignLanguage` off the graph. That state is only
+reachable through `DesignLanguage.SubmitForReview`.
+*Source: spec, action `FinishSynthesize` guard `required_status = ["UnderReview"]`.*
 
-### Budget
-
-**C9. A run holds at most ten curation jobs at once.** — machine
-`ClaimJob` is guarded at ten, strictly, which is the standing batch cap.
-*Source: spec, action `ClaimJob` guard `max_count jobs_in_flight max = 10`.*
-
-**C10. A run releases every claimed job before it submits.** — machine
-Submission is guarded on fewer than one job in flight, which means zero: a run
-cannot submit while work is still outstanding.
-*Source: spec, every `Submit*` action guard `max_count jobs_in_flight max = 1`.*
+**C10. A run holds one job at a time.** — machine
+Both accept actions leave `Idle`. There is no edge from `Researching` to
+`Synthesizing` without finishing or abandoning first.
+*Source: spec, `AcceptResearchJob` / `AcceptSynthesizeJob` `from = ["Idle"]`.*
 
 ### What this actor may never do
 
 **C11. Publishing is not in this actor's vocabulary at all.** — machine
 There is no `Publish` action on `CuratorAgent`. Publishing belongs to
-`HumanCurator`. This is a stronger statement than forbidding it: there is
-nothing to forbid.
+`HumanCurator`.
 *Source: spec, action list — no `Publish` action exists.*
 
 **C12. An action that is not on the list is refused.** — policy
-The Cedar permit names the alphabet rather than granting everything, so an action
-added to the spec later arrives denied and has to be admitted deliberately.
+The Cedar permit names the alphabet rather than granting everything.
 *Source: `policies/curator_agent.cedar`, the enumerated `permit(...)`.*
 
-**C13. The review handoff is a platform trigger, never a caller action.** — policy
-Reaching `Submitted` creates a `ReviewAgent` via `curator_submission_opens_review`.
-That trigger is not in the Cedar permit; an agent cannot invoke it.
-*Source: spec, `[[action.triggers]]` on `SubmitDesignLanguage`; `policies/curator_agent.cedar` omits the trigger from the permit.*
+**C13. Quality review is not in this actor's vocabulary.** — machine
+There is no `CompleteQualityReview` action on `CuratorAgent`. Review belongs
+to `ReviewAgent` and to the `quality_review` job type.
+*Source: spec, action list — no quality-review completion exists.*
 
 **C14. A caller with no identity gets nothing.** — policy
 *Source: `policies/curator_agent.cedar`, forbid on `principal.id == "anonymous"`.*
@@ -123,31 +111,28 @@ That trigger is not in the Cedar permit; an agent cannot invoke it.
 ### Giving up, and running out of time
 
 **C15. A run that gives up says so, and that ending is final.** — machine
-`Abandon` is available from every working state, carries a reason, and lands in
-`Abandoned`, which is terminal. A stalled run is still a judgeable record rather
-than a silence.
+`Abandon` is available from both working states, carries a reason, and lands
+in `Abandoned`, which is terminal.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
-**C16. A run that stops making progress is abandoned automatically.** — machine
-Every live state carries a timeout onto `Abandon`. A run that renders and never
-looks ends rather than sitting in `SurfacesRendered` looking like work.
-*Source: spec, `[[state_timeout]]` on every non-terminal state, each `on_timeout = "Abandon"`.*
+**C16. A hold that stops making progress is abandoned automatically.** — machine
+`Researching` and `Synthesizing` carry a timeout onto `Abandon`.
+*Source: spec, `[[state_timeout]]` on every working state.*
 
 ### The record it leaves
 
 **C17. A run records the identity its trajectory is captured under.** — machine
-Session id, trajectory id, the version of this spec it ran under, and which
-harness drove it — all on `RecordBriefRef`, so a verdict can point back at the
-exact run. The fields are stored; they are not checked against a real capture.
-*Source: spec, action `RecordBriefRef` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
+Session id, trajectory id, spec version and harness live on `RecordCapture`.
+*Source: spec, action `RecordCapture` params.*
 
-**C18. A submitted run completed a self-review after the perceptual loop.** — machine
-*Source: spec, invariant `SubmittedRequiresSelfReview`.*
+**C18. Synthesize finishes only after a look at the current bytes.** — machine
+`FinishSynthesize` is guarded on `look_recorded`. `RecordSynthesizeFix`
+clears that bit.
+*Source: spec, action `RecordLook`; action `FinishSynthesize`.*
 
-**C19. Craft-fix and reopen rounds are counted and gated at twelve.** — machine
-`RecordCraftFix` and `ReopenAfterSelfReview` increment `revision_rounds` under
-`max_count 12`. An unbounded fix loop would defeat termination.
-*Source: spec, both fix edges; invariant `RevisionLoopBounded`.*
+**C19. Look-fix rounds are counted and gated at twelve.** — machine
+`RecordSynthesizeFix` increments `revision_rounds` under `max_count 12`.
+*Source: spec, action `RecordSynthesizeFix`; invariant `RevisionLoopBounded`.*
 
 ### What only a person can judge
 
@@ -573,10 +558,10 @@ pipeline finalizer is named by id, so neither pays for it.
 
 | Actor | Items | machine | policy | judgment | convention |
 |---|---|---|---|---|---|
-| CuratorAgent | 47 (C1–C47) | 16 | 4 | 10 | 17 |
+| CuratorAgent | 47 (C1–C47) | 17 | 3 | 10 | 17 |
 | ReviewAgent | 16 (R1–R16) | 10 | 4 | 0 | 2 |
 | HumanCurator | 22 (H1–H22) | 8 | 9 | 1 | 4 |
-| **Total** | **85** | **34** | **17** | **11** | **23** |
+| **Total** | **85** | **35** | **16** | **11** | **23** |
 
 These counts are recomputed from the items themselves by
 `katagami-curation/tests/test_behavior_inventory_contract.py`, so the table

@@ -59,82 +59,75 @@ class CuratorAgentSpecTest(unittest.TestCase):
         self.actions = actions(self.spec)
         self.states = states(self.spec)
 
-    def test_the_protocol_states_are_present_in_order(self):
+    def test_the_protocol_states_are_present(self):
         self.assertEqual(self.spec["automaton"]["name"], "CuratorAgent")
-        self.assertEqual(self.spec["automaton"]["initial"], "BriefReceived")
-        for state in (
-            "BriefReceived",
-            "DirectionDerived",
-            "ImageryInspected",
-            "SurfacesAuthored",
-            "SurfacesRendered",
-            "RenderInspected",
-            "RulesChecked",
-            "CraftClean",
-            "Submitted",
-            "Abandoned",
-        ):
+        self.assertEqual(self.spec["automaton"]["initial"], "Idle")
+        for state in ("Idle", "Researching", "Synthesizing", "Abandoned"):
             self.assertIn(state, self.spec["automaton"]["states"])
 
-    def test_there_is_exactly_one_submit_action(self):
-        submits = [name for name in self.actions if name.startswith("Submit")]
-        self.assertEqual(submits, ["SubmitDesignLanguage"])
+    def test_accepts_leave_idle_only(self):
+        self.assertEqual(self.actions["AcceptResearchJob"]["from"], ["Idle"])
+        self.assertEqual(self.actions["AcceptSynthesizeJob"]["from"], ["Idle"])
+        self.assertEqual(self.actions["AcceptResearchJob"]["to"], "Researching")
+        self.assertEqual(self.actions["AcceptSynthesizeJob"]["to"], "Synthesizing")
 
-    def test_submit_is_only_reachable_from_craft_clean_after_self_review(self):
-        action = self.actions["SubmitDesignLanguage"]
-        self.assertEqual(action["from"], ["CraftClean"])
-        self.assertIn(
-            {"type": "is_true", "var": "self_review_complete"},
-            guards(action),
-        )
-        self.assertEqual(self.actions["SelfReview"]["from"], ["CraftClean"])
+    def test_accepts_require_a_running_job(self):
+        for name in ("AcceptResearchJob", "AcceptSynthesizeJob"):
+            cross = [
+                g
+                for g in guards(self.actions[name])
+                if g.get("type") == "cross_entity_state"
+            ]
+            self.assertEqual(len(cross), 1, name)
+            self.assertEqual(cross[0]["entity_type"], "CurationJob")
+            self.assertEqual(cross[0]["required_status"], ["Running"])
+            self.assertTrue(cross[0].get("required"), name)
 
-    def test_submit_happens_at_most_once_per_run(self):
-        self.assertEqual(self.actions["SubmitDesignLanguage"]["to"], "Submitted")
-        self.assertEqual(
-            invariants(self.spec)["SubmittedIsFinal"]["assert"],
-            "no_further_transitions",
-        )
-        from_submitted = [
-            name
-            for name, action in self.actions.items()
-            if "Submitted" in action.get("from", [])
-        ]
-        self.assertEqual(from_submitted, [])
-
-    def test_submit_checks_the_language_against_the_entity_graph(self):
-        action = self.actions["SubmitDesignLanguage"]
+    def test_research_records_the_live_query(self):
         cross = [
+            g
+            for g in guards(self.actions["RecordResearchQuery"])
+            if g.get("type") == "cross_entity_state"
+        ]
+        self.assertEqual(cross[0]["entity_type"], "CurationQuery")
+        self.assertEqual(cross[0]["required_status"], ["Researching"])
+
+    def test_synthesize_records_direction_and_language(self):
+        direction = [
+            g
+            for g in guards(self.actions["RecordDirection"])
+            if g.get("type") == "cross_entity_state"
+        ][0]
+        self.assertEqual(direction["entity_type"], "CurationDirection")
+        self.assertEqual(direction["required_status"], ["Synthesizing"])
+        language = [
+            g
+            for g in guards(self.actions["RecordLanguage"])
+            if g.get("type") == "cross_entity_state"
+        ][0]
+        self.assertEqual(language["entity_type"], "DesignLanguage")
+
+    def test_finish_synthesize_requires_language_under_review(self):
+        action = self.actions["FinishSynthesize"]
+        self.assertEqual(action["from"], ["Synthesizing"])
+        self.assertEqual(action["to"], "Idle")
+        language = [
             g
             for g in guards(action)
             if g.get("type") == "cross_entity_state"
+            and g.get("entity_type") == "DesignLanguage"
         ]
-        self.assertEqual(len(cross), 1)
-        self.assertEqual(cross[0]["entity_type"], "DesignLanguage")
-        self.assertEqual(cross[0]["entity_id_source"], "design_language_id")
-        self.assertEqual(cross[0]["required_status"], ["UnderReview"])
-        self.assertTrue(cross[0].get("required"))
+        self.assertEqual(len(language), 1)
+        self.assertEqual(language[0]["required_status"], ["UnderReview"])
+        self.assertTrue(language[0].get("required"))
+        self.assertIn({"type": "is_true", "var": "look_recorded"}, guards(action))
 
-    def test_authoring_surfaces_requires_imagery_inspected(self):
-        self.assertEqual(
-            self.actions["AuthorSurfaces"]["from"], ["ImageryInspected"]
+    def test_a_fix_clears_the_look(self):
+        effects = self.actions["RecordSynthesizeFix"].get("effect", [])
+        self.assertIn(
+            {"type": "set_bool", "var": "look_recorded", "value": "false"},
+            effects,
         )
-
-    def test_a_fix_invalidates_every_perception_flag(self):
-        cleared = {
-            "filmstrip_read",
-            "scroll_traversal_verified",
-            "hero_swap_verified",
-            "live_page_opened",
-            "self_review_complete",
-        }
-        for name in ("RecordCraftFix", "ReopenAfterSelfReview"):
-            vars_cleared = {
-                e["var"]
-                for e in self.actions[name].get("effect", [])
-                if e.get("type") == "set_bool" and e.get("value") == "false"
-            }
-            self.assertTrue(cleared <= vars_cleared, name)
 
     def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
         commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
@@ -155,49 +148,28 @@ class CuratorAgentSpecTest(unittest.TestCase):
         ):
             self.assertIn(expected, required, expected)
 
-    def test_the_curator_has_no_publish_action(self):
-        # Publishing belongs to HumanCurator. Not "should not be called" —
-        # not present.
+    def test_the_curator_has_no_publish_or_quality_review_action(self):
         for name in self.actions:
             self.assertNotIn("publish", name.lower(), f"{name} is a publish action")
-
-    def test_the_concurrency_budget_caps_the_run_at_ten_jobs(self):
-        claim = self.actions["ClaimJob"]
-        # max_count is strict (val < max), so max=10 admits ten held claims.
-        self.assertIn(
-            {"type": "max_count", "var": "jobs_in_flight", "max": 10}, guards(claim)
-        )
-        self.assertIn(
-            {"type": "increment", "var": "jobs_in_flight"}, claim.get("effect", [])
-        )
-        self.assertIn("jobs_in_flight", self.states)
-        self.assertEqual(self.states["jobs_in_flight"]["type"], "counter")
-
-    def test_a_run_cannot_submit_with_work_still_outstanding(self):
-        self.assertIn(
-            {"type": "max_count", "var": "jobs_in_flight", "max": 1},
-            guards(self.actions["SubmitDesignLanguage"]),
-        )
+            self.assertNotIn("quality", name.lower(), f"{name} is a quality-review action")
 
     def test_capture_identity_is_recorded_on_the_run(self):
         for field in ("session_id", "trajectory_id", "spec_version", "harness"):
             self.assertIn(field, self.states)
-            self.assertIn(field, self.actions["RecordBriefRef"]["params"])
+            self.assertIn(field, self.actions["RecordCapture"]["params"])
 
-    def test_a_stalled_run_is_abandoned_rather_than_left_hanging(self):
-        live = set(self.spec["automaton"]["states"]) - {"Submitted", "Abandoned"}
+    def test_a_stalled_hold_is_abandoned_rather_than_left_hanging(self):
+        live = {"Researching", "Synthesizing"}
         timed_out = {t["state"] for t in self.spec["state_timeout"]}
         self.assertEqual(timed_out, live)
         for timeout in self.spec["state_timeout"]:
             self.assertEqual(timeout["on_timeout"], "Abandon")
 
     def test_revision_rounds_are_bounded(self):
-        for name in ("RecordCraftFix", "ReopenAfterSelfReview"):
-            self.assertIn(
-                {"type": "max_count", "var": "revision_rounds", "max": 12},
-                guards(self.actions[name]),
-                name,
-            )
+        self.assertIn(
+            {"type": "max_count", "var": "revision_rounds", "max": 12},
+            guards(self.actions["RecordSynthesizeFix"]),
+        )
         self.assertEqual(
             invariants(self.spec)["RevisionLoopBounded"]["assert"],
             "revision_rounds <= 12",
@@ -228,6 +200,16 @@ class ReviewAgentSpecTest(unittest.TestCase):
             invariants(self.spec)["VerdictRecordedIsFinal"]["assert"],
             "no_further_transitions",
         )
+
+    def test_accept_submission_requires_the_language_under_review(self):
+        cross = [
+            g
+            for g in guards(self.actions["AcceptSubmission"])
+            if g.get("type") == "cross_entity_state"
+        ]
+        self.assertEqual(cross[0]["entity_type"], "DesignLanguage")
+        self.assertEqual(cross[0]["required_status"], ["UnderReview"])
+        self.assertTrue(cross[0].get("required"))
 
     def test_the_review_agent_has_no_publish_action(self):
         for name in self.actions:

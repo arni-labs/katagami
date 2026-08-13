@@ -262,10 +262,10 @@ params = []
 guard = [
   { type = "is_true", var = "submission_recorded" },
   { type = "is_false", var = "has_submission" },
-  { type = "cross_entity_state", entity_type = "CuratorAgent", entity_id_source = "curator_agent_id", required_status = ["Submitted"], required = true },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "reviewed_entity_id", required_status = ["UnderReview"], required = true },
 ]
 effect = [{ type = "set_bool", var = "has_submission", value = "true" }]
-hint = "Accept the submission. ZERO PARAMETERS: there is nothing here for a caller to assert, so the bit means only what the guard means — the CuratorAgent run named by curator_agent_id exists and actually reached Submitted, which is itself reachable only from CraftClean at the end of the curator's full perceptual loop. required = true is load-bearing: without it a review that never recorded a curator id would satisfy 'a curator submitted this' by naming no curator at all."
+hint = "Accept the submission. ZERO PARAMETERS: the guard means the DesignLanguage named by reviewed_entity_id exists and is UnderReview — the state only DesignLanguage.SubmitForReview can reach. required = true: an empty ref cannot pretend a language was handed over."
 
 [[action]]
 name = "LoadRulebook"

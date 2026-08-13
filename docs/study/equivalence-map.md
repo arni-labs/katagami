@@ -31,25 +31,25 @@ a call that was never attempted.
 
 | # | Behavior | Condition B (spec / policy) | Condition A (BEHAVIOR.md) | Layer |
 |---|---|---|---|---|
-| C1 | Records its brief first | `curator_agent.ioa.toml` action `RecordBriefRef` | "Derive the direction from the brief before building any page" | 1 |
-| C2 | Cannot derive without accepting the brief | `AcceptBrief` guards; `DeriveDirection` | same section | 1 |
-| C3 | Surfaces authored only after imagery inspected | `AuthorSurfaces` from `ImageryInspected` | "Look at every generated image before building anything around it" | 1 |
-| C4 | Self-review precedes submission | `SelfReview` from `CraftClean`; `SubmitDesignLanguage` guard; invariant `SubmittedRequiresSelfReview` | "Judge each taste rule against a named frame" | 1 |
-| C5 | Submits at most once | invariant `SubmittedIsFinal` | same | 1 |
-| C6 | Only submits the language it produced | `design_language_id` required scalar | same | 1 |
-| C7 | Only submits review-ready artifacts | guard `cross_entity_state` on `DesignLanguage` | same | 1 |
-| C8 | One submit action, design language only | `SubmitDesignLanguage` | same | 1 |
-| C9 | At most ten jobs in flight | `ClaimJob` guard `max_count 10` | same | 1 |
-| C10 | Releases every job before submitting | `SubmitDesignLanguage` guard `max_count jobs_in_flight 1` | same | 1 |
-| C11 | Cannot publish | no `Publish` action in the alphabet | same | 1 |
+| C1 | Records capture identity before taking a job | `RecordCapture`; accept guards | "Record how this run will be found before taking a job" | 1 |
+| C2 | Research hold only on a running job | `AcceptResearchJob` | "Pick up the research job the pipeline already started" | 1 |
+| C3 | Names the query it is researching | `RecordResearchQuery` | "Name the query the search is answering" | 1 |
+| C4 | Records minted directions | `RecordDirectionSpawned` | "Record each direction the search minted" | 1 |
+| C5 | Finishes research only after the job left Running | `FinishResearch` | "Finish research only after the job has left running" | 1 |
+| C6 | Synthesize hold only on a running job | `AcceptSynthesizeJob` | "Pick up the synthesize job the direction queued" | 1 |
+| C7 | Names the direction it is synthesizing | `RecordDirection` | "Name the query and the direction this synthesize answers" | 1 |
+| C8 | Names the language it is writing | `RecordLanguage` | "Name the language this job is writing" | 1 |
+| C9 | Finishes synthesize only when language is UnderReview | `FinishSynthesize` cross-entity guard | "Finish synthesize only after the language is under review" | 1 |
+| C10 | Holds one job at a time | both accepts `from = ["Idle"]` | "Pick up the synthesize job the direction queued" | 1 |
+| C11 | Cannot publish | no `Publish` action | "Leave publishing and review to the people who own them" | 1 |
 | C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same | 1 (policy) |
-| C13 | Handoff is a trigger, not a caller action | `curator_submission_opens_review` is a trigger; omitted from permit | same | 1 (policy) |
+| C13 | Cannot complete quality review | no `CompleteQualityReview` on the actor | same | 1 |
 | C14 | Anonymous refused | `curator_agent.cedar` forbid on `anonymous` | same | 1 (policy) |
-| C15 | Abandons explicitly, finally | action `Abandon`; invariant `AbandonedIsFinal` | "End honestly when you cannot finish" | 1 |
-| C16 | Stalls time out | `[[state_timeout]]` on every live state | same | 1 |
-| C17 | Records capture identity | `RecordBriefRef` params | same | 1 |
-| C18 | Submitted requires self-review | invariant `SubmittedRequiresSelfReview` | same | 1 |
-| C19 | Revision rounds counted and gated at 12 | `RecordCraftFix` / `ReopenAfterSelfReview`; invariant `RevisionLoopBounded` | same | 1 |
+| C15 | Abandons explicitly, finally | `Abandon`; `AbandonedIsFinal` | "End honestly when it cannot finish the hold" | 1 |
+| C16 | Working holds time out | `[[state_timeout]]` on Researching and Synthesizing | same | 1 |
+| C17 | Records capture identity | `RecordCapture` params | "Record how this run will be found before taking a job" | 1 |
+| C18 | Look before finishing synthesize | `RecordLook`; `FinishSynthesize` | "Look at the current embodiment before treating synthesize as finished" | 1 |
+| C19 | Revision rounds counted and gated at 12 | `RecordSynthesizeFix`; `RevisionLoopBounded` | "Fix, look again, and stop by twelve" | 1 |
 | C20 | One ownable idea, never generic | `knowledge/rules/design-language.md` 1–2 | "Make work that meets the standard", Intent | 2 |
 | C21 | Ships as one coherent set | same, rule 3 | same section, Intent | 2 |
 | C22 | Copy is a real product scene | same, rule 4 | same section, Execution | 2 |

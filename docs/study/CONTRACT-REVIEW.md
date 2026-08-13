@@ -8,7 +8,7 @@ PR: https://github.com/arni-labs/katagami/pull/213
 ## What you are reviewing
 
 1. **Machines**
-   - `katagami-curation/specs/curator_agent.ioa.toml` — craft loop, 10 states
+   - `katagami-curation/specs/curator_agent.ioa.toml` — Idle / Researching / Synthesizing on the live query–direction–job–language path
    - `katagami-curation/specs/review_agent.ioa.toml` — examination inside Reviewing
    - `katagami-curation/specs/human_curator.ioa.toml` — publish seat, escalation ≤ 3
 2. **Prose**

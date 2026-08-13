@@ -1,12 +1,12 @@
 ---
 name: katagami-study-reviewer
-description: Drive one ReviewAgent ledger through the craft-level examination and record a verdict. Study arm. Never publish.
+description: Drive one ReviewAgent ledger against a DesignLanguage that is already UnderReview. Study arm. Never publish.
 ---
 
 # Study reviewer — look, then rule
 
 You are the ReviewAgent. You do not make the language. You do not publish.
-You examine the submitted bytes and record one verdict.
+You examine a language that is already `UnderReview` and record one verdict.
 
 Use a **different principal** from the curator that made the work
 (`katagami-reviewer`, never the contributor id).
@@ -17,12 +17,9 @@ Use a **different principal** from the curator that made the work
 python3 hooks/trajectory-capture/capture.py identity
 ```
 
-If that fails, stop. Same rule as the study curator.
+If that fails, stop.
 
 ## Open the review
-
-A curator `SubmitDesignLanguage` should have created this record via trigger.
-If you must open one by hand:
 
 ```
 POST $TEMPER_API_URL/tdata/ReviewAgents
@@ -33,8 +30,8 @@ Then:
 
 | When | Action |
 |---|---|
-| First | `RecordSubmissionRef` — curator_agent_id, reviewed_entity_id, submission_type, session_id, trajectory_id, spec_version, harness |
-| Then | `AcceptSubmission` — `{}` |
+| First | `RecordSubmissionRef` — curator_agent_id (may be empty this phase), reviewed_entity_id = the language id, submission_type, session_id, trajectory_id, spec_version, harness |
+| Then | `AcceptSubmission` — `{}`. 409 unless that `DesignLanguage` is `UnderReview` |
 | Then | `LoadRulebook` — accepted TasteRules ids and version |
 | Then | `BeginReview` |
 
@@ -54,8 +51,7 @@ every perception flag**. You start the examination again before any verdict.
 `RecordVerdict` once: pass, revise, or reject. The rationale names at least
 one thing per surface that you saw in a render.
 
-`Abandon` if the browser will not run or the scope is empty. An empty
-submission is not a reason to go hunting in the commons.
+`Abandon` if the browser will not run or the scope is empty.
 
 ## What you never do
 

@@ -1,120 +1,44 @@
-# CuratorAgent — I/O Automaton Specification (craft-level)
+# CuratorAgent — one curator principal inside the live Katagami app.
 #
-# One run makes ONE design language for ONE brief, in one session. The run is
-# finished when the agent has looked at the rendered pages, judged them against
-# the rulebook, fixed what it saw, and looked again.
+# This actor is a slice of the existing pipeline, not a second Katagami.
+# CurationQuery, CurationDirection, CurationJob, and DesignLanguage keep
+# owning the work objects. This machine owns the curator's CONDUCT while
+# working those objects.
 #
-# The distinction the whole contract turns on: writing a PNG to disk is not
-# looking at the PNG. Only the second is a behaviour, and in a recorded
-# trajectory it appears as the image coming back into the agent's context as an
-# image. That is why "an image was produced" and "the agent saw the image" are
-# two DIFFERENT STATES here (DirectionDerived vs ImageryInspected;
-# SurfacesRendered vs RenderInspected) rather than two booleans.
+# The live path this phase:
+#   CurationQuery.Submit
+#     → source_search CurationJob (Running)
+#         → CurationJob.SpawnDirection  (mints CurationDirection)
+#         → CurationJob.CompleteResearch
+#     → synthesize CurationJob per direction (Running)
+#         → DesignLanguage writes + DesignLanguage.SubmitForReview
+#         → CurationJob.CompleteSynthesis  (language must already be UnderReview)
 #
-# WHAT THIS MACHINE GOVERNS — and what it does not:
+# The curator principal calls those existing actions. This ledger records
+# which query, direction, job, and language it is working, and refuses to
+# finish a synthesize hold unless the language is actually UnderReview.
+# Publishing is not in this alphabet. Quality review is not in this alphabet.
 #
-#   This is an ACTOR spec. It constrains the agent's CONDUCT: which step it
-#   took, in which order, with what already behind it. It says nothing about
-#   properties of the artifact. Whether the landing file exists, whether
-#   DESIGN.md lints clean, whether every File is Ready — all of that belongs to
-#   the DesignLanguage entity and is already guarded there
-#   (katagami-commons/specs/design_language.ioa.toml, SubmitForReview/Publish).
-#   Restating an entity guard here would be a weaker copy of a stronger check.
+# This phase the job types are source_search and synthesize only
+# (D24). organize / evolve / taste stay on CurationJob and on the live
+# curator process; they are not accepted here yet.
 #
-# STATES, NOT FLAGS:
-#
-#   Where a state already records a step, no boolean repeats it. RenderSurfaces
-#   is the only edge into SurfacesRendered and InspectRender the only edge out
-#   of it, so `landing_rendered` / `all_breakpoints_rendered` style flags are
-#   deleted: the PATH is the record. The booleans that survive are exactly the
-#   ones a state cannot express — acts that happen as SELF-LOOPS inside one
-#   state (filmstrip_read, scroll_traversal_verified, hero_swap_verified,
-#   live_page_opened, self_review_complete) and the one fact that varies
-#   (has_open_findings).
-#
-# THE FIX LOOP IS THE POINT:
-#
-#   RecordCraftFix routes RulesChecked -> SurfacesAuthored and CLEARS every
-#   perception flag, because every one of those perceptions was of bytes that no
-#   longer exist. Since SurfacesAuthored -> SurfacesRendered -> RenderInspected
-#   -> RulesChecked is the only way forward, "the render finally judged is of
-#   the bytes finally submitted" holds BY SHAPE — no flag asserts it, and none
-#   can be forgotten. FixInvalidatesPerception is the invariant that catches a
-#   forgotten reset, which is the one thing the shape cannot enforce.
-#
-# WHAT IS DELIBERATELY NOT ENFORCED (stated plainly rather than implied):
-#
-#   Nothing here checks that the recorded brief is the CurationDirection's text,
-#   that the generation prompt equals the ArtStyle's prompt_template, or that
-#   `filmstrip_read` corresponds to 24 real frames. The kernel has no
-#   field-equality guard across entities and no way to read a string. Those
-#   flags are the agent's assertions; what the machine proves is that the
-#   assertion was made at the right point in the run, with the right work
-#   already behind it. The trajectory is where the assertion gets checked
-#   against the images that did or did not come back.
-#
-# SCOPE (changed from the previous generation of this spec): the craft loop
-# below — three surfaces, four breakpoints, filmstrip, hero swap, live page — is
-# specific to a DESIGN LANGUAGE. The previous spec carried four submission lanes
-# (DesignLanguage / ArtStyle / PaletteSystem / WritingStyle) behind one generic
-# Drafting state and no craft obligations at all. An ArtStyle or WritingStyle
-# run has a different perceptual loop (blind-scored proof shots; corpus and
-# bands) and needs its own craft contract; it is not served by pretending one
-# generic Submit covers all four.
-#
-# PUBLISHING IS NOT IN THIS ACTOR'S ALPHABET. There is no Publish action here
-# and none may be added: publishing belongs to HumanCurator
-# (human_curator.ioa.toml) and stays governed by the commons policies
-# (katagami-commons/policies/design_language.cedar and art_style.cedar already
-# forbid contributor agents from Publish / MarkQualityPassed /
-# AttachPublishedAssets).
+# STATES, NOT FLAGS: Holding research vs holding synthesize are two states.
+# job_type is not a boolean on this actor.
 #
 # Lifecycle:
-#   BriefReceived -> DirectionDerived -> ImageryInspected -> SurfacesAuthored
-#     -> SurfacesRendered -> RenderInspected -> RulesChecked -> CraftClean
-#     -> Submitted
-#   RulesChecked -> SurfacesAuthored   (RecordCraftFix — reopens the whole loop)
-#   CraftClean   -> SurfacesAuthored   (ReopenAfterSelfReview — same)
-#   any non-terminal -> Abandoned      (give up, or a state timeout fires)
+#   Idle --AcceptResearchJob--> Researching --FinishResearch--> Idle
+#   Idle --AcceptSynthesizeJob--> Synthesizing --FinishSynthesize--> Idle
+#   Researching | Synthesizing --Abandon--> Abandoned
 
 [automaton]
 name = "CuratorAgent"
-states = [
-  "BriefReceived",
-  "DirectionDerived",
-  "ImageryInspected",
-  "SurfacesAuthored",
-  "SurfacesRendered",
-  "RenderInspected",
-  "RulesChecked",
-  "CraftClean",
-  "Submitted",
-  "Abandoned",
-]
-initial = "BriefReceived"
+states = ["Idle", "Researching", "Synthesizing", "Abandoned"]
+initial = "Idle"
+allow_indefinite_states = ["Idle", "Abandoned"]
 
-# Only the two terminal states may sit forever. Every live state below carries a
-# [[state_timeout]] onto Abandon, so a run that renders and never looks ends
-# rather than sitting in SurfacesRendered looking like work in progress.
-allow_indefinite_states = ["Submitted", "Abandoned"]
+# --- Capture identity -------------------------------------------------------
 
-# --- Run identity -----------------------------------------------------------
-
-# The CurationDirection this run answers. Also the entity_id_source for
-# AcceptBrief's cross-entity guard.
-[[state]]
-name = "direction_id"
-type = "string"
-initial = ""
-
-[[state]]
-name = "brief"
-type = "string"
-initial = ""
-
-# Capture identity (ARN-293). Every Temper call this run makes carries
-# session_id; the captured OTS trajectory carries trajectory_id. Together they
-# let a TrajectoryVerdict point back at the exact run that was judged.
 [[state]]
 name = "session_id"
 type = "string"
@@ -125,200 +49,69 @@ name = "trajectory_id"
 type = "string"
 initial = ""
 
-# The version of THIS spec the run executed under, mirrored onto the captured
-# trajectory's OTS metadata so a verdict is always read against the contract
-# that was actually in force.
 [[state]]
 name = "spec_version"
 type = "string"
 initial = ""
 
-# "temperpaw" | "claude-code" | other. Which harness drove the run.
 [[state]]
 name = "harness"
 type = "string"
 initial = ""
 
-# --- Brief intake -----------------------------------------------------------
-
-# Set by RecordBriefRef, which stores the identity fields and claims nothing.
-# Separate from has_brief so the storing call is one-shot: an unguarded
-# identical-state self-loop is a legal cycle that defeats every liveness
-# property on this entity.
 [[state]]
-name = "brief_recorded"
+name = "capture_recorded"
 type = "bool"
 initial = "false"
 
-# Set by AcceptBrief, which takes NO parameters — there is nothing for a caller
-# to forge — and is guarded on the named CurationDirection actually being in
-# Synthesizing.
-[[state]]
-name = "has_brief"
-type = "bool"
-initial = "false"
+# --- The live entities this run is working ----------------------------------
 
-# The HumanCurator run that returned a submission with critique, when this run
-# is a successor to a returned one. Empty on a fresh brief, which is why
-# ReadReturnedCritique's cross-entity guard carries required = true: an absent
-# ref must BLOCK the read rather than satisfy it vacuously.
 [[state]]
-name = "returned_from_run_id"
+name = "job_id"
 type = "string"
 initial = ""
 
 [[state]]
-name = "returned_critique"
+name = "query_id"
 type = "string"
 initial = ""
 
 [[state]]
-name = "critique_read"
-type = "bool"
-initial = "false"
-
-# Three signature mechanics read off three recent published languages, each
-# attributed to the language it came from.
-[[state]]
-name = "sibling_mechanics"
+name = "direction_id"
 type = "string"
-initial = "[]"
+initial = ""
 
-[[state]]
-name = "collision_checked"
-type = "bool"
-initial = "false"
-
-# --- The artifact this run makes --------------------------------------------
-
-# ONE language per run. A scalar id rather than a list: the kernel's cross-entity
-# resolver treats an EMPTY LIST as vacuous truth unless the guard is marked
-# required, and an empty SCALAR ref under required = true fails the guard
-# outright (temper-server/src/state/dispatch/cross_entity.rs). One run, one id,
-# no companion boolean needed to close the "produced nothing" hole.
 [[state]]
 name = "design_language_id"
 type = "string"
 initial = ""
 
-# The paired ArtStyle whose canonical prompt the imagery is generated from.
 [[state]]
-name = "art_style_id"
-type = "string"
-initial = ""
-
-# The seven derivation answers, written before the first byte of landing.html.
-[[state]]
-name = "direction_answers"
-type = "string"
-initial = ""
-
-# --- Work budget ------------------------------------------------------------
-
-# Concurrency ledger for the standing 10-concurrent batch cap.
-[[state]]
-name = "jobs_in_flight"
-type = "counter"
-initial = 0
-
-# Monotone claim count. jobs_in_flight alone makes ClaimJob/ReleaseJob an
-# increment/decrement pair that returns to an identical state — a legal cycle
-# that defeats liveness. This counter never decreases, so the pair always makes
-# progress and the bounded checker terminates.
-[[state]]
-name = "jobs_claimed_total"
-type = "counter"
-initial = 0
-
-# --- Imagery ----------------------------------------------------------------
-
-[[state]]
-name = "imagery_generated"
+name = "query_recorded"
 type = "bool"
 initial = "false"
 
 [[state]]
-name = "imagery_slots"
-type = "string"
-initial = "[]"
-
-# --- Surfaces ---------------------------------------------------------------
-
-[[state]]
-name = "landing_file_id"
-type = "string"
-initial = ""
-
-[[state]]
-name = "embodiment_file_id"
-type = "string"
-initial = ""
-
-[[state]]
-name = "dashboard_file_id"
-type = "string"
-initial = ""
-
-# --- Perception acts that happen INSIDE a state (self-loops) ----------------
-#
-# These four are the only perception facts a state cannot express, because they
-# are repeated acts within RenderInspected / RulesChecked rather than steps
-# between states. All four are cleared by RecordCraftFix and
-# ReopenAfterSelfReview.
-
-[[state]]
-name = "filmstrip_read"
+name = "direction_recorded"
 type = "bool"
 initial = "false"
 
 [[state]]
-name = "scroll_traversal_verified"
+name = "language_recorded"
 type = "bool"
 initial = "false"
 
 [[state]]
-name = "hero_swap_verified"
+name = "look_recorded"
 type = "bool"
 initial = "false"
 
-[[state]]
-name = "live_page_opened"
-type = "bool"
-initial = "false"
-
-# --- Judgement --------------------------------------------------------------
-
-[[state]]
-name = "rule_results"
-type = "string"
-initial = "[]"
-
-[[state]]
-name = "open_findings"
-type = "string"
-initial = "[]"
-
-[[state]]
-name = "has_open_findings"
-type = "bool"
-initial = "false"
-
-# Bounded by RecordCraftFix's max_count guard. Without a bound the fix loop is
-# an unbounded cycle and no termination property can hold.
+# Look-fix rounds while synthesizing. The language entity owns the bytes
+# and SubmitForReview; this counter is the curator's own revision loop (C19).
 [[state]]
 name = "revision_rounds"
 type = "counter"
 initial = 0
-
-[[state]]
-name = "self_review_complete"
-type = "bool"
-initial = "false"
-
-[[state]]
-name = "self_review_notes"
-type = "string"
-initial = ""
 
 [[state]]
 name = "abandon_reason"
@@ -326,497 +119,219 @@ type = "string"
 initial = ""
 
 # ============================================================================
-# BriefReceived — the run has an identity and a brief. It has decided nothing
-# and made nothing.
+# Idle — between jobs. Capture identity is recorded here once.
 # ============================================================================
 
 [[action]]
-name = "RecordBriefRef"
+name = "RecordCapture"
 kind = "input"
-from = ["BriefReceived"]
-params = ["direction_id", "brief", "returned_from_run_id", "session_id", "trajectory_id", "spec_version", "harness"]
-guard = [{ type = "is_false", var = "brief_recorded" }]
-effect = [{ type = "set_bool", var = "brief_recorded", value = "true" }]
-hint = "Store what this run is answering and how it can be found again: the CurationDirection id, the brief text as read from that entity, the HumanCurator run id if this run answers a returned critique (empty otherwise), and the capture identity — session id on every Temper call, trajectory id of the captured OTS document, this spec's version, and the harness. Stores only; claims nothing. One-shot: a run cannot re-point itself at a different direction after the fact. NOT ENFORCED: that `brief` is the Direction entity's own text. The kernel has no field-equality guard across entities; the trajectory must show a read of the Direction in the same session whose response IS this text."
+from = ["Idle"]
+params = ["session_id", "trajectory_id", "spec_version", "harness"]
+guard = [{ type = "is_false", var = "capture_recorded" }]
+effect = [{ type = "set_bool", var = "capture_recorded", value = "true" }]
+hint = "Store the capture identity this run will carry on every Temper call. One-shot. Does not claim a job."
 
 [[action]]
-name = "AcceptBrief"
+name = "AcceptResearchJob"
 kind = "input"
-from = ["BriefReceived"]
-params = []
+from = ["Idle"]
+to = "Researching"
+params = ["job_id", "query_id"]
 guard = [
-  { type = "is_true", var = "brief_recorded" },
-  { type = "is_false", var = "has_brief" },
+  { type = "is_true", var = "capture_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Running"], required = true },
+]
+effect = [
+  { type = "set_bool", var = "query_recorded", value = "false" },
+  { type = "set_bool", var = "direction_recorded", value = "false" },
+  { type = "set_bool", var = "language_recorded", value = "false" },
+  { type = "set_bool", var = "look_recorded", value = "false" },
+]
+hint = "Pick up the live source_search CurationJob the pipeline already started. The job must be Running. The curator then calls CurationJob.SpawnDirection and CurationJob.CompleteResearch on that job — those actions live on CurationJob, not here."
+
+[[action]]
+name = "AcceptSynthesizeJob"
+kind = "input"
+from = ["Idle"]
+to = "Synthesizing"
+params = ["job_id", "query_id", "direction_id"]
+guard = [
+  { type = "is_true", var = "capture_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Running"], required = true },
+]
+effect = [
+  { type = "set_bool", var = "query_recorded", value = "false" },
+  { type = "set_bool", var = "direction_recorded", value = "false" },
+  { type = "set_bool", var = "language_recorded", value = "false" },
+  { type = "set_bool", var = "look_recorded", value = "false" },
+]
+hint = "Pick up the live synthesize CurationJob the pipeline queued for one CurationDirection. The job must be Running. Writing the language and SubmitForReview live on DesignLanguage; CompleteSynthesis lives on CurationJob."
+
+# ============================================================================
+# Researching — holding one source_search job.
+# ============================================================================
+
+[[action]]
+name = "RecordResearchQuery"
+kind = "input"
+from = ["Researching"]
+params = ["query_id"]
+guard = [
+  { type = "is_false", var = "query_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationQuery", entity_id_source = "query_id", required_status = ["Researching"], required = true },
+]
+effect = [{ type = "set_bool", var = "query_recorded", value = "true" }]
+hint = "Name the CurationQuery this search is answering. The query must actually be Researching. required = true: an empty ref cannot pretend a query exists."
+
+[[action]]
+name = "RecordDirectionSpawned"
+kind = "input"
+from = ["Researching"]
+params = ["direction_id"]
+guard = [
+  { type = "is_true", var = "query_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationDirection", entity_id_source = "direction_id", required_status = ["Discovered", "Synthesizing"], required = true },
+]
+effect = [{ type = "set_bool", var = "direction_recorded", value = "true" }]
+hint = "Record a CurationDirection that this job minted via CurationJob.SpawnDirection. The spawn itself is not this action. Callable after each spawn; the last recorded id is the one the ledger holds."
+
+[[action]]
+name = "FinishResearch"
+kind = "input"
+from = ["Researching"]
+to = "Idle"
+guard = [
+  { type = "is_true", var = "query_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Finalizing", "Completed"], required = true },
+]
+hint = "Put the ledger down only after the source_search job has left Running — which means CurationJob.CompleteResearch (or Fail) already committed on the job. The actor cannot declare research finished while the job is still Running."
+
+# ============================================================================
+# Synthesizing — holding one synthesize job for one direction.
+# ============================================================================
+
+[[action]]
+name = "RecordSynthesizeQuery"
+kind = "input"
+from = ["Synthesizing"]
+params = ["query_id"]
+guard = [
+  { type = "is_false", var = "query_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationQuery", entity_id_source = "query_id", required_status = ["Researching", "Synthesizing"], required = true },
+]
+effect = [{ type = "set_bool", var = "query_recorded", value = "true" }]
+hint = "Name the CurationQuery whose fan-out produced this synthesize job."
+
+[[action]]
+name = "RecordDirection"
+kind = "input"
+from = ["Synthesizing"]
+params = ["direction_id"]
+guard = [
+  { type = "is_true", var = "query_recorded" },
+  { type = "is_false", var = "direction_recorded" },
   { type = "cross_entity_state", entity_type = "CurationDirection", entity_id_source = "direction_id", required_status = ["Synthesizing"], required = true },
 ]
-effect = [{ type = "set_bool", var = "has_brief", value = "true" }]
-hint = "Accept the brief. ZERO PARAMETERS is the point: there is nothing here for a caller to assert, so the bit means only what the guard means — the CurationDirection named by direction_id exists and is actually in Synthesizing. required = true is load-bearing: the kernel resolves a cross-entity guard over an ABSENT ref as vacuously true, so without it a run that never recorded a direction would satisfy 'the pipeline asked for this work' by having no direction at all."
+effect = [{ type = "set_bool", var = "direction_recorded", value = "true" }]
+hint = "Name the CurationDirection this synthesize job is answering. The direction must be Synthesizing."
 
 [[action]]
-name = "ReadSiblingMechanics"
+name = "RecordLanguage"
 kind = "input"
-from = ["BriefReceived"]
-params = ["sibling_mechanics"]
-guard = [{ type = "is_false", var = "collision_checked" }]
-effect = [
-  { type = "list_append", var = "sibling_mechanics" },
-  { type = "set_bool", var = "collision_checked", value = "true" },
-]
-hint = "Record the signature mechanic of each of three recent published languages, read in THIS run — their landings, not their names — each attributed to the language id it came from. What the trajectory must contain: three GETs against three distinct published DesignLanguage ids and their landing bytes or screenshots in context. One-shot, because the anti-collision check is a precondition of deriving a direction, not an ongoing activity. NOT ENFORCED: that three languages were actually fetched, or that the named mechanics are theirs."
-
-[[action]]
-name = "ReadReturnedCritique"
-kind = "input"
-from = ["BriefReceived"]
-params = ["returned_critique"]
+from = ["Synthesizing"]
+params = ["design_language_id"]
 guard = [
-  { type = "is_false", var = "critique_read" },
-  { type = "cross_entity_state", entity_type = "HumanCurator", entity_id_source = "returned_from_run_id", required_status = ["ReturnedWithCritique"], required = true },
+  { type = "is_true", var = "direction_recorded" },
+  { type = "is_false", var = "language_recorded" },
+  { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["Draft", "UnderReview"], required = true },
 ]
-effect = [{ type = "set_bool", var = "critique_read", value = "true" }]
-hint = "Read the critique a human wrote when returning an earlier submission, so the derivation below answers it. Only available when the HumanCurator run named by returned_from_run_id actually reached ReturnedWithCritique — required = true means a fresh brief (empty ref) cannot pretend to be answering a critique, and a run cannot claim a return the human seat never made."
+effect = [{ type = "set_bool", var = "language_recorded", value = "true" }]
+hint = "Name the DesignLanguage this job is writing. The language entity owns philosophy, tokens, embodiment, and SubmitForReview. This only binds the ledger to that id."
 
 [[action]]
-name = "DeriveDirection"
+name = "RecordLook"
 kind = "input"
-from = ["BriefReceived"]
-to = "DirectionDerived"
-params = ["direction_answers", "design_language_id", "art_style_id"]
+from = ["Synthesizing"]
 guard = [
-  { type = "is_true", var = "has_brief" },
-  { type = "is_true", var = "collision_checked" },
+  { type = "is_true", var = "language_recorded" },
+  { type = "is_false", var = "look_recorded" },
 ]
-hint = "Write the seven derivation answers — the one physical truth; what the reader does by scrolling, in one sentence with one verb; the single material and the object that persists through every scene; five to seven scenes with the named transformation mechanism between each pair; the climax and which accent detonates there; what carries real state in the language's own vocabulary; the anti-collision answer — and name the DesignLanguage this run is making plus the ArtStyle it is paired with. This is the ONLY edge out of BriefReceived that leads anywhere, and it is guarded on both the accepted brief and the sibling read, so a direction cannot be derived against a brief the run never accepted or without knowing what three siblings already did. Answers written after the page are a caption, not a direction; the timestamps in the trajectory are where that is checked."
-
-# ============================================================================
-# DirectionDerived — direction fixed, imagery generation allowed, no surface
-# bytes exist.
-# ============================================================================
+effect = [{ type = "set_bool", var = "look_recorded", value = "true" }]
+hint = "Assert that the current embodiment came back into context as images and was looked at. Writing a PNG is not this. Cleared by RecordSynthesizeFix so a look of old bytes cannot carry a finish."
 
 [[action]]
-name = "ClaimJob"
+name = "RecordSynthesizeFix"
 kind = "input"
-from = ["DirectionDerived"]
-guard = [{ type = "max_count", var = "jobs_in_flight", max = 10 }]
-effect = [
-  { type = "increment", var = "jobs_in_flight" },
-  { type = "increment", var = "jobs_claimed_total" },
-]
-hint = "Claim one concurrent unit of parallel work. max_count is strict (val < max), so max = 10 admits 0..9 claims before the increment and holds the run at 10 concurrent jobs — the standing batch cap. jobs_claimed_total is monotone so the claim/release pair always makes progress."
-
-[[action]]
-name = "ReleaseJob"
-kind = "input"
-from = ["DirectionDerived"]
-guard = [{ type = "min_count", var = "jobs_in_flight", min = 1 }]
-effect = [{ type = "decrement", var = "jobs_in_flight" }]
-hint = "Release one claimed unit when it completes or fails, including on the error path. Guarded on there being something to release: the kernel's decrement saturates at zero, so an unguarded release let a run drive the ledger to zero without ever having claimed anything — and the submit guard's 'no work outstanding' check reads that same ledger."
-
-[[action]]
-name = "GenerateImagery"
-kind = "input"
-from = ["DirectionDerived"]
-params = ["imagery_slots"]
+from = ["Synthesizing"]
+params = ["fix_note"]
 guard = [
-  { type = "cross_entity_state", entity_type = "ArtStyle", entity_id_source = "art_style_id", required_status = ["Draft", "UnderReview", "Published"], required = true },
-]
-effect = [
-  { type = "list_append", var = "imagery_slots" },
-  { type = "set_bool", var = "imagery_generated", value = "true" },
-]
-hint = "Generate the hero or one scene plate through the governed image path, sending the paired art style's canonical prompt byte for byte and varying only the subject. One call per slot; record the returned file id against the slot name. The guard proves the style is a real entity the run is entitled to build on. NOT ENFORCED: that the prompt sent equals the style's prompt_template — the kernel cannot compare one entity's field with a call argument. The trajectory must show a read of prompt_template followed by generation calls whose prompt argument is that text."
-
-[[action]]
-name = "InspectImagery"
-kind = "input"
-from = ["DirectionDerived"]
-to = "ImageryInspected"
-params = ["imagery_verdicts"]
-guard = [{ type = "is_true", var = "imagery_generated" }]
-hint = "Look at every generated image and record, per image, what is actually in the frame and whether it is usable in the slot it was made for. Rejected images are regenerated and re-inspected before this transition — GenerateImagery stays available right up to it. THIS TRANSITION IS THE WHOLE POINT OF THE STATE SPLIT: generating the hero proves nothing; the image coming back into the agent's context as an image content block, not a path and not a URL, is the behaviour. Surfaces can only be authored from ImageryInspected, so a page built around imagery nobody saw has no legal path."
-
-# ============================================================================
-# ImageryInspected — every generated image came back into context and was
-# accepted or rejected per slot. The only state surfaces may be authored from.
-# ============================================================================
-
-[[action]]
-name = "AuthorSurfaces"
-kind = "input"
-from = ["ImageryInspected"]
-to = "SurfacesAuthored"
-params = ["landing_file_id", "embodiment_file_id", "dashboard_file_id", "surface_rationales"]
-hint = "Author and upload all three surfaces from one token set, and state for each what makes it that surface rather than the other two: the landing is the scroll-cinematic film the derivation describes, built around the full-bleed hero; the embodiment is the component library with the signature mechanic recolouring through it; the dashboard is a product a team would operate, with in-world content. Each consumes its imagery through the swappable slots. Whether the files exist, parse and are durably stored is the DesignLanguage entity's business — its SubmitForReview carries the File Ready/Locked guards."
-
-# ============================================================================
-# SurfacesAuthored — bytes exist and are uploaded. Nothing rendered. Arriving
-# here, first time or after a fix, means no current render and no current look.
-# ============================================================================
-
-[[action]]
-name = "RenderSurfaces"
-kind = "input"
-from = ["SurfacesAuthored"]
-to = "SurfacesRendered"
-params = ["render_manifest"]
-hint = "Load the CURRENT bytes of each surface in a real browser and capture screenshots at 1920 / 1440 / 768 / true-390 — the 390 capture taken inside a 390px frame, not a headless window clamped to 500px, which is a different layout from the one users get. The trajectory must show navigations to the uploaded file URLs timestamped after the last byte write. Nobody has looked yet: this transition produces evidence, it does not consume it."
-
-# ============================================================================
-# SurfacesRendered — a real browser loaded the current bytes and produced
-# screenshots. Nobody has looked yet.
-# ============================================================================
-
-[[action]]
-name = "InspectRender"
-kind = "input"
-from = ["SurfacesRendered"]
-to = "RenderInspected"
-params = ["render_observations"]
-hint = "Read every captured screenshot back into context as an image and write what is in each one — the composition, what is clipped, what collides, what is starved, what reads as generic — including the ones expected to be fine. Screenshots written to a path and never opened do not satisfy this even though the files exist; a programmatic check (scrollWidth == clientWidth, a contrast calculation) is useful and is not looking. SurfacesRendered and RenderInspected are separate states precisely so that 'the evidence exists' and 'the agent consumed it' are different facts."
-
-# ============================================================================
-# RenderInspected — the screenshots returned into context. The three deeper
-# looks run here as self-loops, because they are repeated acts within one state
-# rather than steps between states.
-# ============================================================================
-
-[[action]]
-name = "ReadFilmstrip"
-kind = "input"
-from = ["RenderInspected"]
-params = ["filmstrip_notes"]
-guard = [{ type = "is_false", var = "filmstrip_read" }]
-effect = [{ type = "set_bool", var = "filmstrip_read", value = "true" }]
-hint = "Read the landing as a filmstrip, not as four stills: at least 24 frames per breakpoint, roughly every 4% of scroll, at all four breakpoints, returned into context as images and judged together as a contact sheet — no dead frame, no fragmentary frame, no element that appears and disappears inside a gesture, no text on busy artwork at any depth. Record which frame indices failed and why. NOT ENFORCED: that 24 real frames exist. The kernel cannot count; the contact sheet in the trajectory is the evidence."
-
-[[action]]
-name = "TraverseScroll"
-kind = "input"
-from = ["RenderInspected"]
-params = ["traversal_report"]
-guard = [{ type = "is_false", var = "scroll_traversal_verified" }]
-effect = [{ type = "set_bool", var = "scroll_traversal_verified", value = "true" }]
-hint = "Drive the scroll and confirm the film actually moves: captures at roughly 10/35/60/85% depth that differ in COMPOSITION rather than only opacity, a measured frame-rate series across a scripted traversal, a reduced-motion render showing the settled readable document, and a 200 for every external script URL so a blocked CDN does not leave a blank page. Inferring choreography from the presence of ScrollTrigger calls in the source is not this."
-
-[[action]]
-name = "VerifyHeroReplaceable"
-kind = "input"
-from = ["RenderInspected"]
-params = ["hero_swap_report"]
-guard = [{ type = "is_false", var = "hero_swap_verified" }]
-effect = [{ type = "set_bool", var = "hero_swap_verified", value = "true" }]
-hint = "Render the SAME landing file id twice with two different values injected into the hero slot (and the plate slots), read both screenshots back, and confirm the imagery changed while composition, type and choreography did not. An edit to the HTML between the two renders disqualifies it — that is a rebuild, not a swap. Replaceability is a step with a trace, not a property of the file: whether the markup declares a var(--hero-image) slot is lintable on the artifact and belongs to the entity."
-
-[[action]]
-name = "VerifyAgainstRules"
-kind = "input"
-from = ["RenderInspected"]
-to = "RulesChecked"
-params = ["rule_results"]
-guard = [
-  { type = "is_true", var = "filmstrip_read" },
-  { type = "is_true", var = "scroll_traversal_verified" },
-  { type = "is_true", var = "hero_swap_verified" },
-]
-effect = [{ type = "list_append", var = "rule_results" }]
-hint = "Judge rule by rule from the PIXELS, one record per claimed rule naming the rule, the specific frame it was judged from, and pass or fail: body size, contrast, radius consistency, accent count, spacing above titles, no boxed nav, no clipped display type at 390, the signature mechanic actually visible in the embodiment, the hero not collapsed into the generic startup composition. A verdict with no frame reference behind it is not a judgement. The guard is what makes the three deeper looks load-bearing rather than optional."
-
-# ============================================================================
-# RulesChecked — judged. Failures are open findings; fixes go back to
-# SurfacesAuthored and reopen the whole perceptual loop.
-# ============================================================================
-
-[[action]]
-name = "RecordRuleFailure"
-kind = "input"
-from = ["RulesChecked"]
-params = ["open_findings"]
-effect = [
-  { type = "list_append", var = "open_findings" },
-  { type = "set_bool", var = "has_open_findings", value = "true" },
-]
-hint = "Record one rule the render failed: the rule, the surface, the breakpoint, the frame it was seen in. Callable once per failure. A rule check that finds nothing simply never calls this, which is why has_open_findings starts false — the machine does not demand failures, it demands that found failures be closed by a fix and a fresh look rather than by declaring the run finished."
-
-[[action]]
-name = "OpenLivePage"
-kind = "input"
-from = ["RulesChecked"]
-params = ["live_page_url", "live_page_observation"]
-guard = [
-  { type = "is_false", var = "has_open_findings" },
-  { type = "is_false", var = "live_page_opened" },
-]
-effect = [{ type = "set_bool", var = "live_page_opened", value = "true" }]
-hint = "Flush the site cache, open the katagami.ai URL a curator will actually use, and LOOK at what comes back: the hero renders, the fonts load, the imagery resolves, and it matches the local render. Confirming a 200 without looking at the page is not this, and flushing the cache without re-opening is not this. Cleared by every fix, so the live page checked is always the live page finally submitted. This is where 'the link doesn't open' gets caught by the maker instead of the curator."
-
-[[action]]
-name = "RecordCraftFix"
-kind = "input"
-from = ["RulesChecked"]
-to = "SurfacesAuthored"
-params = ["fix_note", "closes_finding_id", "landing_file_id", "embodiment_file_id", "dashboard_file_id"]
-guard = [
-  { type = "is_true", var = "has_open_findings" },
+  { type = "is_true", var = "language_recorded" },
   { type = "max_count", var = "revision_rounds", max = 12 },
 ]
 effect = [
   { type = "increment", var = "revision_rounds" },
-  { type = "set_bool", var = "has_open_findings", value = "false" },
-  { type = "set_bool", var = "filmstrip_read", value = "false" },
-  { type = "set_bool", var = "scroll_traversal_verified", value = "false" },
-  { type = "set_bool", var = "hero_swap_verified", value = "false" },
-  { type = "set_bool", var = "live_page_opened", value = "false" },
-  { type = "set_bool", var = "self_review_complete", value = "false" },
+  { type = "set_bool", var = "look_recorded", value = "false" },
 ]
-hint = "Answer an open finding with a byte diff and a re-upload, naming the finding it closes. THE CLEARING IS THE MECHANISM: every perception this run had was of bytes that no longer exist, so all of it is discarded and the run lands back in SurfacesAuthored, from which the only way forward is a full render / inspect / rule-check pass on the new bytes. 'Edited after looking' is therefore unreachable rather than merely discouraged, and the render finally judged is necessarily of the bytes finally submitted. Bounded at 12 rounds: an unbounded fix loop is a run that never ends."
+hint = "Record that the language bytes changed after a look. The write itself is DesignLanguage actions. This clears look_recorded so the next look is of the new bytes. Bounded at 12 (C19)."
 
 [[action]]
-name = "DeclareCraftClean"
+name = "FinishSynthesize"
 kind = "input"
-from = ["RulesChecked"]
-to = "CraftClean"
+from = ["Synthesizing"]
+to = "Idle"
 guard = [
-  { type = "is_false", var = "has_open_findings" },
-  { type = "is_true", var = "live_page_opened" },
-]
-hint = "Declare the craft clean. Nothing new happens here — this is the gate that makes every preceding step load-bearing. A run that never rendered, never looked, never read the filmstrip, never drove the scroll, never swapped the hero, never rule-checked or never opened the live page has no path to this state, because each of those steps is either a state it must pass through or a flag this guard and VerifyAgainstRules read."
-
-# ============================================================================
-# CraftClean — no open findings, the last look was at the current bytes, hero
-# swap exercised, live page opened and looked at. The only state a submission
-# is reachable from.
-# ============================================================================
-
-[[action]]
-name = "SelfReview"
-kind = "input"
-from = ["CraftClean"]
-params = ["self_review_notes"]
-guard = [{ type = "is_false", var = "self_review_complete" }]
-effect = [{ type = "set_bool", var = "self_review_complete", value = "true" }]
-hint = "Write what was checked, what was wrong, and what changed as a result — traceable to specific findings and specific edits earlier in this run. NOT ENFORCED: that the notes say anything; the kernel cannot read a string. What IS enforced is that the self-review happens after the whole perceptual loop rather than instead of it, and that a fix invalidates it (RecordCraftFix clears this bit) so 'looks good' written before the last edit cannot carry a submission."
-
-[[action]]
-name = "ReopenAfterSelfReview"
-kind = "input"
-from = ["CraftClean"]
-to = "SurfacesAuthored"
-params = ["reopen_reason"]
-guard = [{ type = "max_count", var = "revision_rounds", max = 12 }]
-effect = [
-  { type = "increment", var = "revision_rounds" },
-  { type = "set_bool", var = "filmstrip_read", value = "false" },
-  { type = "set_bool", var = "scroll_traversal_verified", value = "false" },
-  { type = "set_bool", var = "hero_swap_verified", value = "false" },
-  { type = "set_bool", var = "live_page_opened", value = "false" },
-  { type = "set_bool", var = "self_review_complete", value = "false" },
-]
-hint = "Act on something the self-review found. Without this edge CraftClean is a one-way trap and the only exits are submit or abandon — which structurally rewards the self-review that finds nothing, the sharpest defect in the previous generation of this spec. Reopening routes back through SurfacesAuthored and clears every perception flag, exactly like a craft fix, so acting on a late doubt costs a full re-look and can never shortcut one."
-
-[[action]]
-name = "SubmitDesignLanguage"
-kind = "input"
-from = ["CraftClean"]
-to = "Submitted"
-guard = [
-  { type = "is_true", var = "self_review_complete" },
-  { type = "is_false", var = "has_open_findings" },
-  { type = "max_count", var = "jobs_in_flight", max = 1 },
+  { type = "is_true", var = "query_recorded" },
+  { type = "is_true", var = "direction_recorded" },
+  { type = "is_true", var = "language_recorded" },
+  { type = "is_true", var = "look_recorded" },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Finalizing", "Completed"], required = true },
   { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["UnderReview"], required = true },
 ]
-hint = "Hand the language to review, once, naming the id this run made, with every parallel job released (max_count 1 means zero in flight). THE CROSS-ENTITY GUARD IS THE SEAM OF THE JOINT SYSTEM: the language must ALREADY be UnderReview, a state reachable only through DesignLanguage's own SubmitForReview gate — where the artifact requirements live (all five spec sections, embodiment, Landing + Dashboard compositions, thumbnail, DESIGN.md with a clean lint, the three shadcn artifacts, and every referenced File Ready or Locked). The actor cannot announce a submission of something the artifact machine has not accepted, and the definition of 'complete' stays in one place instead of two that drift. required = true closes the case where design_language_id was never set. Submitted is terminal, so a second or amended submission has no source state."
-
-[[action.triggers]]
-name = "curator_submission_opens_review"
-kind = "entity"
-principal = "curation-service"
-to_state = "Submitted"
-target_entity = "ReviewAgent"
-target_action = "RecordSubmissionRef"
-
-[action.triggers.params_from]
-curator_agent_id = "id"
-reviewed_entity_id = "design_language_id"
-session_id = "session_id"
-trajectory_id = "trajectory_id"
-spec_version = "spec_version"
-harness = "harness"
-
-# A create resolver, not a field resolver: reaching Submitted is what BRINGS
-# THE REVIEW RECORD INTO EXISTENCE. No curator submission, no ReviewAgent
-# record at all — which is the strongest form the "every submission is reviewed"
-# link can take in this vocabulary, and it also means the reaction can never be
-# dropped onto a review record that has already ended.
-[action.triggers.resolve_target]
-type = "create"
+hint = "Put the ledger down only after (1) CurationJob.CompleteSynthesis already committed and (2) the named DesignLanguage is UnderReview — which is only reachable through DesignLanguage.SubmitForReview. The actor cannot announce a finished synthesize of a Draft language."
 
 # ============================================================================
-# Give up — always available, and fired by every live state's timeout.
+# Give up
 # ============================================================================
 
 [[action]]
 name = "Abandon"
 kind = "input"
-from = [
-  "BriefReceived",
-  "DirectionDerived",
-  "ImageryInspected",
-  "SurfacesAuthored",
-  "SurfacesRendered",
-  "RenderInspected",
-  "RulesChecked",
-  "CraftClean",
-]
+from = ["Researching", "Synthesizing"]
 to = "Abandoned"
 params = ["abandon_reason"]
-hint = "End the run without submitting and say which step could not be completed and why — which surfaces and which breakpoints were never rendered or never looked at. Ending honestly is always available and is the safe direction: an abandoned run makes publication of this submission unreachable. Going quiet and letting the timeout end the run is worse than abandoning, because the timeout records no reason of its own."
-
-# --- Stall detection — every live state is bounded --------------------------
+hint = "End the hold without finishing. The job still has its own Fail path; this only ends the actor ledger."
 
 [[state_timeout]]
-state = "BriefReceived"
-after_seconds = 900
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held BriefReceived for 15m without deriving a direction." }
-
-[[state_timeout]]
-state = "DirectionDerived"
+state = "Researching"
 after_seconds = 3600
 on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held DirectionDerived for 1h without inspecting generated imagery." }
+params = { abandon_reason = "CuratorAgent held a source_search job for 1h without finishing." }
 
 [[state_timeout]]
-state = "ImageryInspected"
-after_seconds = 3600
+state = "Synthesizing"
+after_seconds = 7200
 on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held ImageryInspected for 1h without authoring surfaces." }
-
-[[state_timeout]]
-state = "SurfacesAuthored"
-after_seconds = 1800
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held SurfacesAuthored for 30m without rendering them." }
-
-[[state_timeout]]
-state = "SurfacesRendered"
-after_seconds = 900
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent rendered the surfaces but did not look at the screenshots within 15m." }
-
-[[state_timeout]]
-state = "RenderInspected"
-after_seconds = 3600
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held RenderInspected for 1h without completing the rule check." }
-
-[[state_timeout]]
-state = "RulesChecked"
-after_seconds = 3600
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent held RulesChecked for 1h without fixing, opening the live page, or declaring the craft clean." }
-
-[[state_timeout]]
-state = "CraftClean"
-after_seconds = 900
-on_timeout = "Abandon"
-params = { abandon_reason = "CuratorAgent reached CraftClean but did not submit within 15m." }
+params = { abandon_reason = "CuratorAgent held a synthesize job for 2h without finishing." }
 
 # ============================================================================
-# Safety invariants
-#
-# Read the audit before adding to this list: an invariant that restates a
-# conjunct of the only guard into the state it constrains is discharged for
-# free and proves nothing about the machine. The ordering properties this
-# contract cares about — inspection after render, no making after judgement,
-# submit only from CraftClean — are carried by the FROM-LISTS, and that is
-# where they should stay. What is declared below is either (a) genuinely
-# falsifiable by a reachable path, or (b) an explicit regression fence over a
-# structural fact, labelled as such.
+# Invariants
 # ============================================================================
 
-# (a) FALSIFIABLE. This is the one invariant here that a plausible edit breaks.
-# Both fix edges must clear all five perception flags plus the finding bit; if
-# a future edit adds a third edge into SurfacesAuthored, or drops one clear from
-# an existing one, the run arrives at SurfacesAuthored or SurfacesRendered still
-# claiming a perception of bytes that no longer exist, and this fires. The
-# kernel has no way to bind a boolean to the artifact it witnesses, so
-# invalidation is hand-written per action — which makes it exactly the kind of
-# discipline that needs a checker rather than a comment.
 [[invariant]]
-name = "FixInvalidatesPerception"
-when = ["SurfacesAuthored", "SurfacesRendered"]
-assert = "!filmstrip_read && !scroll_traversal_verified && !hero_swap_verified && !live_page_opened && !has_open_findings && !self_review_complete"
+name = "IdleHoldsNoLook"
+when = ["Idle"]
+assert = "!look_recorded"
 
-# (a) FALSIFIABLE by a changed or added claim edge. Checked in EVERY reachable
-# state (no `when`), so it also covers states nobody thought about. The cap is
-# claimed in this file's header and enforced only by ClaimJob's guard; nothing
-# else would catch a second claiming action or a widened max.
-[[invariant]]
-name = "ConcurrencyCapHolds"
-assert = "jobs_in_flight <= 10"
-
-# (a) FALSIFIABLE by an unbounded fix edge. The bound is what makes termination
-# arguable at all; without it the fix loop is an infinite cycle.
 [[invariant]]
 name = "RevisionLoopBounded"
 assert = "revision_rounds <= 12"
-
-# (a) FALSIFIABLE by any future edge into Submitted that does not carry the
-# max_count guard. Unlike a boolean witness this reads a counter the model
-# actually tracks: a run cannot submit while it still holds claimed work.
-[[invariant]]
-name = "SubmittedHoldsNoWork"
-when = ["Submitted"]
-assert = "jobs_in_flight == 0"
-
-# (b) FENCE over a structural fact. SubmitDesignLanguage is the only edge into
-# Submitted and carries this conjunct; nothing in Submitted can clear it. It is
-# declared so that an added edge that forgets the conjunct fails verification
-# rather than passing silently.
-[[invariant]]
-name = "SubmittedRequiresSelfReview"
-when = ["Submitted"]
-assert = "self_review_complete"
-
-# (b) FENCE. Likewise structural today: RecordRuleFailure is confined to
-# RulesChecked and the only edge forward out of it requires the bit clear.
-[[invariant]]
-name = "CraftCleanHasNoOpenFindings"
-when = ["CraftClean"]
-assert = "!has_open_findings"
-
-# (b) FENCES over the from-lists. Note the known blind spot, unchanged by this
-# spec: check_no_further_transitions calls evaluate_guard, which reports a
-# CrossEntityState guard as not locally enabled — so an added edge out of a
-# terminal state written in this file's own cross-entity-guarded style would be
-# invisible to these two. The real fix is a spec-level lint rejecting any action
-# whose from-list names a state carrying a no_further_transitions invariant.
-[[invariant]]
-name = "SubmittedIsFinal"
-when = ["Submitted"]
-assert = "no_further_transitions"
 
 [[invariant]]
 name = "AbandonedIsFinal"
 when = ["Abandoned"]
 assert = "no_further_transitions"
 
-# --- Liveness ---------------------------------------------------------------
-#
-# Declared because the previous generation of this spec declared none, and
-# "nothing states that any run ever finishes" was the single largest hole in the
-# audit. It holds WEAKLY — Abandon is enabled from every live state, so what is
-# proved is that the graph cannot TRAP a run, not that any run does good work.
-# It is provable at all only because the three cycles that would defeat it are
-# bounded: the intake self-loops are one-shot, ClaimJob/ReleaseJob always
-# advances the monotone jobs_claimed_total, and both fix edges advance
-# revision_rounds under a max_count guard.
-#
-# Exactly one ReachesState property is declared, deliberately: the checker
-# merges every ReachesState property on an entity into a single predicate and
-# ignores `from`, so a second one would weaken this one rather than add to it.
-
 [[liveness]]
-name = "RunEventuallyTerminal"
-from = ["BriefReceived"]
-reaches = ["Submitted", "Abandoned"]
+name = "WorkingEventuallyResolves"
+from = ["Researching"]
+reaches = ["Idle", "Abandoned"]

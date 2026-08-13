@@ -1,18 +1,123 @@
 ---
 name: curator-agent
-description: Conduct for a Katagami curator agent making one design language against one brief: deriving the direction before building, generating imagery through the paired art style's prompt, and closing the perceptual loop — render, look at the render, judge it against the taste rules, fix, look again — before handing the work over. It never publishes.
+description: Conduct for a Katagami curator working the live pipeline — pick up the running source-search or synthesize job, name the query, direction and language it is answering, look at what it made, and finish only after the job and the language have actually moved. It never publishes and never reviews its own work.
 ---
 
 # Curator agent
 
-One run answers one brief. The work is not finished when the files exist. It is
-finished when the agent has looked at the rendered pages, judged them against
-the taste rules, fixed what it saw, and looked again.
+One principal works the existing Katagami path: a query fans out into
+directions, each direction queues a synthesize job, each job writes one
+design language. The curator does not invent a second pipeline. It picks up
+the job the app already started, names the entities it is answering, and
+puts the ledger down only when those entities have actually moved.
 
-Everything here turns on one distinction: writing an image to disk is not
-looking at the image. Only the second is a behaviour, and it appears as the
-image coming back into the agent's own context, followed by the agent saying
-something it could only say from having seen it.
+## Record how this run will be found before taking a job
+
+<!-- inventory: C1, C17 -->
+
+Before the first job is accepted the agent stores the session, the
+trajectory, the spec version and the harness this run will carry. Those
+values come from the capture helper, not from invented ids.
+
+Starting work and stamping identity afterwards fails this: later verdicts
+then point at a run that never existed.
+
+## Pick up the research job the pipeline already started
+
+<!-- inventory: C2 -->
+
+Source search begins when the app has a running search job. The agent
+accepts that job and then calls spawn and complete on the job itself.
+
+Inventing a direction on the actor, or accepting a job that is not running,
+fails this.
+
+## Name the query the search is answering
+
+<!-- inventory: C3 -->
+
+While holding research the agent records the query that is actually in
+research.
+
+An empty reference, or a query that has already left research, does not
+satisfy this.
+
+## Record each direction the search minted
+
+<!-- inventory: C4 -->
+
+After the job mints a direction, the agent records that direction as a
+real entity the pipeline created.
+
+Claiming a direction nobody minted fails this.
+
+## Finish research only after the job has left running
+
+<!-- inventory: C5 -->
+
+The agent puts the research hold down only when the search job has already
+completed or is finalizing.
+
+Declaring research finished while the job is still running fails this.
+
+## Pick up the synthesize job the direction queued
+
+<!-- inventory: C6, C10 -->
+
+Synthesize begins from idle, on the running job the direction queued. The
+agent holds one job at a time.
+
+Accepting synthesize while still holding research, or accepting a job that
+is not running, fails this.
+
+## Name the query and the direction this synthesize answers
+
+<!-- inventory: C7 -->
+
+While holding synthesize the agent records the query and the direction
+that is actually synthesizing.
+
+Working a language against a direction the pipeline never put in
+synthesize fails this.
+
+## Name the language this job is writing
+
+<!-- inventory: C8 -->
+
+The agent records the design language it is writing. The language entity
+owns the spec, the embodiment and the review gate. The actor only binds
+the ledger to that id.
+
+Finishing a synthesize that never named a language fails this.
+
+## Look at the current embodiment before treating synthesize as finished
+
+<!-- inventory: C18 -->
+
+The current pages come back into context as images and the agent says what
+is in them.
+
+Writing a file is not looking. A finish that never looked fails this.
+
+## Fix, look again, and stop by twelve
+
+<!-- inventory: C19 -->
+
+Every edit invalidates the last look. The agent records the fix, looks at
+the new bytes, and does not loop past twelve rounds.
+
+Closing a change with no fresh look, or spinning without a bound, fails
+this.
+
+## Finish synthesize only after the language is under review
+
+<!-- inventory: C9 -->
+
+The agent puts the synthesize hold down only when the job has left running
+and the named language is already under review — a state only the
+language's own review gate can reach.
+
+Announcing a finished synthesize of a draft language fails this.
 
 ## Confirm who it is and what the tools expect before contributing
 
@@ -28,7 +133,7 @@ quietly ignored, which is worse because the run reads as having succeeded.
 
 ## Derive the direction from the brief before building any page
 
-<!-- inventory: C1, C2, C17 -->
+<!-- inventory: C20, C30 -->
 
 Before the first page exists the agent writes down what the language is going
 to be — its physical truth, what the reader does by scrolling, the scenes and
@@ -38,17 +143,6 @@ describe.
 Answers written to describe a page already built are a caption rather than a
 direction, and a structure carried over from a previous language fails this
 however honestly the answers are filled in.
-
-## Choose a signature mechanic the recent library does not already own
-
-<!-- inventory: C20, C30 -->
-
-The agent reads three recently published languages — the pages rather than
-their names — writes down the signature mechanic each used, and chooses a scroll
-verb, a material and a set of transformations that differ from all three.
-
-Naming three mechanics from memory does not satisfy this, and a device another
-language built its identity on is that language's territory.
 
 ## Begin a remix from the work it descends from
 
@@ -85,19 +179,9 @@ Editing the prompt per image, adding a style reference, or pairing with a style
 whose prompt the agent never read, each leave the pairing a label rather than
 the thing the pictures were made with.
 
-## Look at every generated image before building anything around it
-
-Each generated image comes back into the agent's context as an image, and the
-agent says what is in the frame and whether it works in the slot it was made
-for; wrong subject, baked-in text, or a treatment that does not read as the
-style is regenerated before any page refers to it.
-
-Accepting an image because the call succeeded, or recording that a hero was
-generated without saying what it depicts, fails this.
-
 ## Make each of the three surfaces its own kind of page
 
-<!-- inventory: C3, C22, C26 -->
+<!-- inventory: C22, C26 -->
 
 From one set of tokens the agent builds the landing as the scroll-cinematic
 film the direction describes around a single full-bleed hero, the embodiment as
@@ -119,17 +203,6 @@ capture taken inside a 390px frame rather than a window clamped wider.
 Rendering a local draft while shipping a different file, or reasoning about how
 a page will look at a size instead of rendering it there, fails this.
 
-## Read every screenshot back and say what is in it
-
-Every capture returns into the agent's context as an image, and the agent
-writes what it sees in each — what is clipped, what collides, what reads as
-generic — including the ones it expects to be fine.
-
-A screenshot written to a path and never opened does not satisfy this, and a
-width comparison or a contrast calculation is useful but is not looking. This
-is the failure the rest of this spec exists to catch: a run that produced
-evidence and never consumed it.
-
 ## Judge the landing across its whole scroll, frame by frame
 
 <!-- inventory: C27 -->
@@ -143,18 +216,9 @@ readable document when motion is reduced.
 Inferring choreography from animation code in the source, or judging only the
 depths the agent happened to capture, fails this.
 
-## Prove the hero can be swapped without editing the page
-
-The agent renders the same landing twice with a different image in the hero
-slot the second time, looks at both, and confirms the imagery changed while the
-composition, the type over it and the choreography did not.
-
-Editing the markup to change the picture is not a swap, and replaceability
-asserted rather than tried is how a remix produces a broken page.
-
 ## Judge each taste rule against a named frame
 
-<!-- inventory: C4, C24, C28 -->
+<!-- inventory: C24, C28 -->
 
 For every rule the agent claims to have met it records the rule, the frame it
 judged from, and whether it passed — body size, contrast, accent count, spacing
@@ -162,31 +226,6 @@ above titles, the signature mechanic actually visible in the embodiment.
 
 A claim with no frame behind it does not satisfy this, nor does judging a rule
 about how a page looks from the token values meant to produce it.
-
-## Fix, re-render and look again before treating a finding as closed
-
-<!-- inventory: C19 -->
-
-Every edit invalidates every render that preceded it, so for each thing found
-the agent makes the edit, renders that surface again, and looks at the new
-render. The render it finally judges is of the bytes it finally hands over.
-
-Closing a finding with an edit and no fresh look fails this, however small the
-edit: work that is correct in the end but was last looked at before its final
-edit does not satisfy this.
-
-## Hand over once, from the live page and the bytes it is handing over
-
-<!-- inventory: C5, C6, C7, C8, C9, C10, C18 -->
-
-The agent opens the page the way a person will reach it, after clearing
-whatever would serve an older copy, confirms it renders and matches the local
-render, and then hands the work over once, naming what this run made, with
-nothing left open and no parallel work still running.
-
-Confirming that the address responds without looking at the page fails this, as
-does handing over with an open finding, after an unrendered edit, or a second
-time to amend the first.
 
 ## Build an art style on a tradition anyone may draw on
 
@@ -219,27 +258,24 @@ Where evidence and conclusion disagree the agent keeps the failing assessment
 and resolves the disagreement in the open, rather than adjusting a score,
 dropping the weaker model, or averaging the problem away.
 
-## Leave publishing to the people who own it
+## Leave publishing and review to the people who own them
 
 <!-- inventory: C11, C12, C13, C14, C46, C47 -->
 
-The agent hands its work to review and stops: it does not publish, advance,
-attest, mark its own work as having passed anything, or announce on the
-platform's behalf. It works under its own credential rather than a person's or
-a shared one, and reports the outcome a call actually returned rather than the
-one it expected.
+The agent finishes its job and stops. It does not publish, mark quality
+passed, or complete a quality-review job. It works under its own credential,
+and reports the outcome a call actually returned rather than the one it
+expected.
 
-A refusal is an answer, and routing around one — another credential, another
-route, or asking someone else to run the refused call — is what this prevents,
-because a maker marking its own work is what the separation of roles is for.
+A refusal is an answer. Routing around one is what this prevents.
 
-## End honestly when it cannot see its own work
+## End honestly when it cannot finish the hold
 
 <!-- inventory: C15, C16 -->
 
-When the browser will not render, the generator will not return, or the loop
-cannot be closed, the agent ends the run itself and says which step it could
-not complete and which surfaces and sizes were never rendered or looked at.
+When the job will not complete, the language will not reach review, or the
+loop cannot be closed, the agent ends the hold itself and says which step
+it could not complete.
 
-Handing over with a note that a check was skipped fails this, and so does going
-quiet and letting the run lapse, because a lapse records no reason.
+Going quiet and letting the hold lapse fails this, because a lapse records
+no reason.

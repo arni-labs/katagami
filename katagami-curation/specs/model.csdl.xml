@@ -159,48 +159,29 @@
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
 
-      <!-- CuratorAgent: one curator run against one brief, in one session.
-           The actor spec layer 1 conformance replays a trajectory against
-           (specs/curator_agent.ioa.toml). -->
+      <!-- CuratorAgent: one curator principal working the live
+           CurationQuery / CurationDirection / CurationJob / DesignLanguage
+           path (specs/curator_agent.ioa.toml). -->
       <EntityType Name="CuratorAgent">
         <Key>
           <PropertyRef Name="Id" />
         </Key>
         <Property Name="Id" Type="Edm.Guid" Nullable="false" />
-        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="BriefReceived" />
-        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="Brief" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="State" Type="Edm.String" Nullable="false" DefaultValue="Idle" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SpecVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="Harness" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="BriefRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HasBrief" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ReturnedFromRunId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="ReturnedCritique" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="CritiqueRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="SiblingMechanics" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="CollisionChecked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="CaptureRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="JobId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="ArtStyleId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="DirectionAnswers" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="JobsInFlight" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
-        <Property Name="JobsClaimedTotal" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
-        <Property Name="ImageryGenerated" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ImagerySlots" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="LandingFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="EmbodimentFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="DashboardFileId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="FilmstripRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="ScrollTraversalVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="HeroSwapVerified" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="LivePageOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="RuleResults" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="OpenFindings" Type="Edm.String" Nullable="false" DefaultValue="[]" />
-        <Property Name="HasOpenFindings" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="QueryRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DirectionRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LanguageRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LookRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="RevisionRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
-        <Property Name="SelfReviewComplete" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="SelfReviewNotes" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
