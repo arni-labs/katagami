@@ -46,13 +46,8 @@ ACTOR_SPEC_FILES = {
     "human-curator": "human_curator.ioa.toml",
 }
 
-# `human-curator` has not been rewritten yet: it still uses the labelled
-# Intent/Evidence/Decision block style the other two shed, and its headings
-# still name actions from its machine. The exemption is here rather than in a
-# silent skip so it reads as a queue of one. DELETE THIS SET, and this comment,
-# when that file is rewritten — the assertions below are what should be holding
-# it to the same bar as the other two.
-PENDING_REWRITE = {"human-curator"}
+# Empty: all three behavior docs are held to the same judgeable-prose bar.
+PENDING_REWRITE = set()
 
 
 def _machine_vocabulary(actor):

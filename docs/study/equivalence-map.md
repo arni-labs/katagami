@@ -31,25 +31,25 @@ a call that was never attempted.
 
 | # | Behavior | Condition B (spec / policy) | Condition A (BEHAVIOR.md) | Layer |
 |---|---|---|---|---|
-| C1 | Records its brief first | `curator_agent.ioa.toml` action `ReceiveBrief` | "Take the brief before starting" | 1 |
-| C2 | Cannot draft without a brief | `BeginDrafting` guard `is_true has_brief`; invariant `DraftingRequiresBrief` | same section, Decision | 1 |
-| C3 | Making happens while Drafting | `Record*` actions `from = ["Drafting"]` | "Do the making in the open" | 1 |
-| C4 | Self-review precedes submission | `SelfReview`; `Submit*` `from = ["SelfReviewed"]` + guard; invariant `SubmittedRequiresSelfReview` | "Review your own work before handing it over" | 1 |
-| C5 | Submits at most once | invariant `SubmittedIsFinal` | "Submit once, and only what is ready" | 1 |
-| C6 | Only submits a lane it produced | guard `is_true has_<lane>_ids` | same section, Evidence + Decision | 1 |
-| C7 | Only submits review-ready artifacts | guard `cross_entity_state` on the artifact type | same section, Evidence | 1 |
-| C8 | Names what it submitted | `Submit*` params `submitted_entity_type` | same section, Evidence | 1 |
-| C9 | At most ten jobs in flight | `ClaimJob` guard `max_count 10` | "Respect the concurrency budget" | 1 |
-| C10 | Releases every job before submitting | `Submit*` guard `max_count jobs_in_flight 1` | same section, Execution + Recovery | 1 |
-| C11 | Cannot publish | no `Publish` action in the alphabet | "Never publish" | 1 |
-| C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same section, Execution | 1 (policy) |
-| C13 | Output event not callable | `CuratorSubmittedEvent` is `kind = "output"`, omitted from permit | same section, Execution | 1 (policy) |
-| C14 | Anonymous refused | `curator_agent.cedar` forbid on `anonymous` | same section, Execution | 1 (policy) |
+| C1 | Records its brief first | `curator_agent.ioa.toml` action `RecordBriefRef` | "Derive the direction from the brief before building any page" | 1 |
+| C2 | Cannot derive without accepting the brief | `AcceptBrief` guards; `DeriveDirection` | same section | 1 |
+| C3 | Surfaces authored only after imagery inspected | `AuthorSurfaces` from `ImageryInspected` | "Look at every generated image before building anything around it" | 1 |
+| C4 | Self-review precedes submission | `SelfReview` from `CraftClean`; `SubmitDesignLanguage` guard; invariant `SubmittedRequiresSelfReview` | "Judge each taste rule against a named frame" | 1 |
+| C5 | Submits at most once | invariant `SubmittedIsFinal` | same | 1 |
+| C6 | Only submits the language it produced | `design_language_id` required scalar | same | 1 |
+| C7 | Only submits review-ready artifacts | guard `cross_entity_state` on `DesignLanguage` | same | 1 |
+| C8 | One submit action, design language only | `SubmitDesignLanguage` | same | 1 |
+| C9 | At most ten jobs in flight | `ClaimJob` guard `max_count 10` | same | 1 |
+| C10 | Releases every job before submitting | `SubmitDesignLanguage` guard `max_count jobs_in_flight 1` | same | 1 |
+| C11 | Cannot publish | no `Publish` action in the alphabet | same | 1 |
+| C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same | 1 (policy) |
+| C13 | Handoff is a trigger, not a caller action | `curator_submission_opens_review` is a trigger; omitted from permit | same | 1 (policy) |
+| C14 | Anonymous refused | `curator_agent.cedar` forbid on `anonymous` | same | 1 (policy) |
 | C15 | Abandons explicitly, finally | action `Abandon`; invariant `AbandonedIsFinal` | "End honestly when you cannot finish" | 1 |
-| C16 | Stalls time out | `[[state_timeout]]` ×3 | same section, Recovery | 1 |
-| C17 | Records capture identity | `ReceiveBrief` params | "Take the brief before starting", Evidence | 1 |
-| C18 | Submitted implies a submission | invariant `SubmittedRequiresSubmission` | "Submit once, and only what is ready" | 1 |
-| C19 | Revisions counted, not gated | `RecordDraft` effect `increment` | "Do the making in the open" | 1 |
+| C16 | Stalls time out | `[[state_timeout]]` on every live state | same | 1 |
+| C17 | Records capture identity | `RecordBriefRef` params | same | 1 |
+| C18 | Submitted requires self-review | invariant `SubmittedRequiresSelfReview` | same | 1 |
+| C19 | Revision rounds counted and gated at 12 | `RecordCraftFix` / `ReopenAfterSelfReview`; invariant `RevisionLoopBounded` | same | 1 |
 | C20 | One ownable idea, never generic | `knowledge/rules/design-language.md` 1–2 | "Make work that meets the standard", Intent | 2 |
 | C21 | Ships as one coherent set | same, rule 3 | same section, Intent | 2 |
 | C22 | Copy is a real product scene | same, rule 4 | same section, Execution | 2 |
@@ -102,7 +102,7 @@ better on C1–C19, where one of them can actually refuse.
 | R10 | Anonymous refused | `review_agent.cedar` forbid on `anonymous` | "Never rule on your own work", Execution | 1 (policy) |
 | R11 | Abandons explicitly; leaves it unpublishable | action `Abandon`; invariant `AbandonedIsFinal` | "End honestly when you cannot rule" | 1 |
 | R12 | Stalls time out | `[[state_timeout]]` ×2 | same section, Recovery | 1 |
-| R13 | Records capture identity | `ReceiveSubmission` params | "Take the submission…", Evidence | 1 |
+| R13 | Records capture identity | `RecordSubmissionRef` params | "Fix the scope and the standard before examining anything" | 1 |
 | R14 | Names the run and artifacts in scope | `ReceiveSubmission` params | same section, Evidence | 1 |
 | R15 | Findings are specific and actionable | `RecordFinding` hint | "Look before ruling", Execution | 2 |
 | R16 | Verdict vocabulary; rationale supports it | `RecordVerdict` hint; `verdict` is a free string | "Rule once…", Execution + Recovery | 2 |

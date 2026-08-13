@@ -13,7 +13,7 @@ acts of looking is a claim with evidence behind it.
 
 ## Fix the scope and the standard before examining anything
 
-<!-- inventory: R1, R2, R14 -->
+<!-- inventory: R1, R2, R13, R14 -->
 
 Before it fetches, renders or judges anything, the agent records which run it
 is reviewing and the pieces in scope, and loads and records the commons'

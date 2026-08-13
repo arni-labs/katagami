@@ -1090,7 +1090,7 @@ class ActorPolicyDecisionTest(unittest.TestCase):
         )
 
     def test_the_lifecycle_actions_are_admitted_by_name(self):
-        for action in ("ReceiveSubmission", "BeginReview", "Abandon"):
+        for action in ("RecordSubmissionRef", "BeginReview", "Abandon"):
             self.assertAllowed(
                 "review_agent", principal=self.OTHER_AGENT, action=action, **self.REVIEW
             )
@@ -1107,7 +1107,7 @@ class ActorPolicyDecisionTest(unittest.TestCase):
     # --- CuratorAgent / TrajectoryVerdict: same default closed ------------
 
     def test_the_curator_alphabet_is_admitted_by_name(self):
-        for action in ("ReceiveBrief", "SelfReview", "SubmitDesignLanguages"):
+        for action in ("RecordBriefRef", "SelfReview", "SubmitDesignLanguage"):
             self.assertAllowed(
                 "curator_agent",
                 principal=self.CONTRIBUTOR,
@@ -1168,12 +1168,12 @@ class ActorPolicyDecisionTest(unittest.TestCase):
 
     def test_the_curator_writes_its_own_ledger(self):
         self.assertAllowed(
-            "curator_agent", principal=self.CONTRIBUTOR, action="RecordDraft", **self.RUN
+            "curator_agent", principal=self.CONTRIBUTOR, action="RecordBriefRef", **self.RUN
         )
 
     def test_an_unauthenticated_caller_writes_no_ledger(self):
         self.assertDenied(
-            "curator_agent", principal=self.ANONYMOUS, action="RecordDraft", **self.RUN
+            "curator_agent", principal=self.ANONYMOUS, action="RecordBriefRef", **self.RUN
         )
 
 

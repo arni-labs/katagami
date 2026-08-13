@@ -29,8 +29,9 @@
 # 2. The human is never a silent single point of failure: both working states
 #    carry a state timeout onto ReviewOverdue -> Escalated, so an assignment
 #    nobody picks up surfaces as an escalation instead of stalling the queue
-#    forever. Escalated is recoverable — Reassign returns it to
-#    SubmissionAssigned under a new holder.
+#    forever. Escalated is recoverable at most three times — Reassign returns
+#    it to SubmissionAssigned under a new holder. After the third escalation
+#    Reassign is blocked and the assignment stops circulating.
 #
 # Lifecycle: SubmissionAssigned -> Reviewing -> Published | ReturnedWithCritique
 #            SubmissionAssigned | Reviewing -> Escalated -> SubmissionAssigned
@@ -232,8 +233,9 @@ kind = "input"
 from = ["SubmissionAssigned", "Reviewing"]
 to = "Escalated"
 params = ["escalation_reason"]
+guard = [{ type = "max_count", var = "escalation_count", max = 3 }]
 effect = [{ type = "increment", var = "escalation_count" }]
-hint = "The assignment went unanswered past its window. Fired by the state timeouts below, or by hand. Escalated is visible and countable, so a queue waiting on an absent human is a surfaced condition rather than silence."
+hint = "The assignment went unanswered past its window. Fired by the state timeouts below, or by hand. Escalated is visible and countable, so a queue waiting on an absent human is a surfaced condition rather than silence. Bounded at 3: after the third escalation the assignment stops circulating."
 
 [[action]]
 name = "Reassign"
@@ -241,7 +243,8 @@ kind = "input"
 from = ["Escalated"]
 to = "SubmissionAssigned"
 params = ["assignee_ref"]
-hint = "Hand the escalated assignment to another holder of the role. The submission stays unpublished until someone reviews it; escalation is a re-route, not a bypass."
+guard = [{ type = "max_count", var = "escalation_count", max = 3 }]
+hint = "Hand the escalated assignment to another holder of the role. The submission stays unpublished until someone reviews it; escalation is a re-route, not a bypass. Blocked once escalation_count has reached 3, so a neglected assignment becomes a parked human problem rather than an infinite rota."
 
 [[action]]
 name = "ReviewEscalatedEvent"
@@ -283,3 +286,17 @@ assert = "no_further_transitions"
 name = "ReturnedIsFinal"
 when = ["ReturnedWithCritique"]
 assert = "no_further_transitions"
+
+# (a) FALSIFIABLE by a widened ReviewOverdue or Reassign guard. After three
+# unanswered escalations the assignment is parked.
+[[invariant]]
+name = "EscalationLoopBounded"
+assert = "escalation_count <= 3"
+
+# Weak liveness: the graph cannot trap an assignment in a live state with no
+# exit. Escalated is a legal terminal after the third overdue. Exactly one
+# ReachesState property — the checker merges them.
+[[liveness]]
+name = "AssignmentEventuallyResolved"
+from = ["SubmissionAssigned"]
+reaches = ["Published", "ReturnedWithCritique", "Escalated"]

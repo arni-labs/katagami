@@ -28,7 +28,7 @@ quietly ignored, which is worse because the run reads as having succeeded.
 
 ## Derive the direction from the brief before building any page
 
-<!-- inventory: C1, C2 -->
+<!-- inventory: C1, C2, C17 -->
 
 Before the first page exists the agent writes down what the language is going
 to be — its physical truth, what the reader does by scrolling, the scenes and
@@ -165,6 +165,8 @@ about how a page looks from the token values meant to produce it.
 
 ## Fix, re-render and look again before treating a finding as closed
 
+<!-- inventory: C19 -->
+
 Every edit invalidates every render that preceded it, so for each thing found
 the agent makes the edit, renders that surface again, and looks at the new
 render. The render it finally judges is of the bytes it finally hands over.
@@ -175,7 +177,7 @@ edit does not satisfy this.
 
 ## Hand over once, from the live page and the bytes it is handing over
 
-<!-- inventory: C5, C6, C8, C10, C18 -->
+<!-- inventory: C5, C6, C7, C8, C9, C10, C18 -->
 
 The agent opens the page the way a person will reach it, after clearing
 whatever would serve an older copy, confirms it renders and matches the local

@@ -1,0 +1,51 @@
+{
+  "ok": true,
+  "run_id": "en-019ff8d9-cd03-7e43-bbd7-f283ef643990",
+  "illegal_submit_http": 409,
+  "refusal_in_trace": true,
+  "events": [
+    {
+      "action": "Create",
+      "http": 201,
+      "body": {
+        "entity_type": "CuratorAgent",
+        "entity_id": "en-019ff8d9-cd03-7e43-bbd7-f283ef643990",
+        "status": "BriefReceived",
+        "item_count": 0,
+        "counters": {},
+        "booleans": {},
+        "lists": {},
+        "fields": {
+          "Id": "en-019ff8d9-cd03-7e43-bbd7-f283ef643990",
+          "Status": "BriefReceived"
+        },
+        "events": [
+          {
+            "action": "Created",
+            "from_status": "",
+            "to_status": "BriefReceived",
+            "timestamp": "2026-08-13T02:00:51.208447Z",
+            "params": {}
+          }
+        ],
+        "total_event_count": 1,
+        "events_since_snapshot": 1,
+        "last_snapshot_sequence_nr": 0,
+        "sequence_nr": 1,
+        "processed_idempotency_keys": {},
+        "@odata.context": "$metadata#CuratorAgents/$entity",
+        "@odata.id": "CuratorAgents('en-019ff8d9-cd03-7e43-bbd7-f283ef643990')"
+      }
+    },
+    {
+      "action": "SubmitDesignLanguage",
+      "http": 409,
+      "body": {
+        "error": {
+          "code": "ActionFailed",
+          "message": "Action 'SubmitDesignLanguage' not valid from state 'BriefReceived'"
+        }
+      }
+    }
+  ]
+}

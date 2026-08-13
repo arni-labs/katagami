@@ -36,59 +36,57 @@ One record per curator run against one brief.
 Source: `katagami-curation/specs/curator_agent.ioa.toml`,
 `katagami-curation/policies/curator_agent.cedar`.
 
-Its life: `BriefReceived` → `Drafting` → `SelfReviewed` → `Submitted`, or
-`Abandoned` from anywhere along the way.
+Its life: `BriefReceived` → `DirectionDerived` → `ImageryInspected` →
+`SurfacesAuthored` → `SurfacesRendered` → `RenderInspected` → `RulesChecked` →
+`CraftClean` → `Submitted`, or `Abandoned` from any live state.
 
 ### Order of work
 
 **C1. A run records the brief it is answering before it starts.** — machine
-`ReceiveBrief` is the only action available in the opening state, and it is what
-sets `has_brief`.
-*Source: spec, action `ReceiveBrief`.*
+`RecordBriefRef` is the one-shot store of the direction, the brief text, and
+the capture identity. It sets `brief_recorded` and claims nothing.
+*Source: spec, action `RecordBriefRef`.*
 
-**C2. A run cannot start drafting against a brief it never received.** — machine
-`BeginDrafting` is guarded on `has_brief`, and the invariant `DraftingRequiresBrief`
-says the same thing about the state itself.
-*Source: spec, action `BeginDrafting` guard `is_true has_brief`; invariant `DraftingRequiresBrief`.*
+**C2. A run cannot derive a direction against a brief it never accepted.** — machine
+`AcceptBrief` takes no parameters and is guarded on `brief_recorded` plus the
+named `CurationDirection` actually being in `Synthesizing`. `DeriveDirection`
+is only reachable from `BriefReceived` after that bit is set.
+*Source: spec, action `AcceptBrief` guards; action `DeriveDirection`.*
 
-**C3. All the making happens in one state.** — machine
-Recording drafts, and recording each artifact produced, are legal only while
-`Drafting`.
-*Source: spec, actions `RecordDraft`, `RecordDesignLanguage`, `RecordArtStyle`, `RecordPaletteSystem`, `RecordWritingStyle` — all `from = ["Drafting"]`.*
+**C3. Surfaces are authored only after imagery has been inspected.** — machine
+`AuthorSurfaces` is reachable only from `ImageryInspected`. Writing pages
+before looking at the generated images has no legal source state.
+*Source: spec, action `AuthorSurfaces` `from = ["ImageryInspected"]`.*
 
 **C4. A run reviews its own work before submitting, and that is the only route to
 submission.** — machine
-`SelfReview` is the single edge into `SelfReviewed`, and `SelfReviewed` is the
-single source state for every submit action. Submission is additionally guarded
-on `self_review_complete`, and the invariant `SubmittedRequiresSelfReview` holds
-it at the state.
-*Source: spec, action `SelfReview`; every `Submit*` action `from = ["SelfReviewed"]` + guard `is_true self_review_complete`; invariant `SubmittedRequiresSelfReview`.*
+`SelfReview` is available only from `CraftClean`. `SubmitDesignLanguage` is
+guarded on `self_review_complete`, and the invariant `SubmittedRequiresSelfReview`
+holds it at the terminal state.
+*Source: spec, action `SelfReview`; action `SubmitDesignLanguage` from `CraftClean` + guard `is_true self_review_complete`; invariant `SubmittedRequiresSelfReview`.*
 
 **C5. A run submits once.** — machine
-Every submit lands in `Submitted`, which is terminal, so a second submission of
-any lane has no legal source state.
-*Source: spec, invariant `SubmittedIsFinal`; every `Submit*` action `to = "Submitted"`.*
+`SubmitDesignLanguage` lands in `Submitted`, which is terminal, so a second
+submission has no legal source state.
+*Source: spec, invariant `SubmittedIsFinal`; action `SubmitDesignLanguage` `to = "Submitted"`.*
 
 ### What may be submitted
 
-**C6. A run can only submit a kind of work it actually produced.** — machine
-Each lane's submit is guarded on that lane's `has_*_ids` flag, which is only set
-by recording an id. Without it, the entity-graph check below would be vacuously
-true over an empty list, and a run that produced nothing would submit
-successfully.
-*Source: spec, e.g. `SubmitDesignLanguages` guard `is_true has_design_language_ids`.*
+**C6. A run can only submit a language it actually produced.** — machine
+`design_language_id` is a required scalar. An empty ref fails the
+cross-entity guard outright, so a run that produced nothing cannot submit.
+*Source: spec, `SubmitDesignLanguage` guard `cross_entity_state` with `required = true` on `design_language_id`.*
 
 **C7. A run can only submit work that already passed its own artifact gate.** — machine
-Every recorded id must already be `UnderReview` or `Published`, read off the
-entity graph rather than off the run's claim about it. Those states are only
-reachable through each artifact's own submission guard, which is where the real
-requirements live (DESIGN.md, embodiment, landing, thumbnail and shadcn export
-for a design language; medium, portable prompt and proof shots for an art style;
-corpus, bands and VOICE.md for a writing style).
-*Source: spec, e.g. `SubmitDesignLanguages` guard `cross_entity_state` on `DesignLanguage`, `required_status = ["UnderReview", "Published"]`.*
+The named DesignLanguage must already be `UnderReview`, read off the entity
+graph rather than off the run's claim about it. That state is only reachable
+through the artifact's own `SubmitForReview` guard.
+*Source: spec, `SubmitDesignLanguage` guard `cross_entity_state` on `DesignLanguage`, `required_status = ["UnderReview"]`.*
 
-**C8. A run names the kind of thing it submitted.** — machine
-*Source: spec, every `Submit*` action `params = ["submitted_entity_type"]`.*
+**C8. A run submits a design language, not a generic lane.** — machine
+There is one submit action, `SubmitDesignLanguage`. Companion lanes are not
+on this actor; they have their own craft contracts.
+*Source: spec, action list — the only submit is `SubmitDesignLanguage`.*
 
 ### Budget
 
@@ -114,10 +112,10 @@ The Cedar permit names the alphabet rather than granting everything, so an actio
 added to the spec later arrives denied and has to be admitted deliberately.
 *Source: `policies/curator_agent.cedar`, the enumerated `permit(...)`.*
 
-**C13. `CuratorSubmittedEvent` is announced, never called.** — policy
-It is an output action, emitted by the platform when a run submits, and is
-deliberately absent from the permit list.
-*Source: spec, action `CuratorSubmittedEvent` (`kind = "output"`); `policies/curator_agent.cedar` omits it from the permit.*
+**C13. The review handoff is a platform trigger, never a caller action.** — policy
+Reaching `Submitted` creates a `ReviewAgent` via `curator_submission_opens_review`.
+That trigger is not in the Cedar permit; an agent cannot invoke it.
+*Source: spec, `[[action.triggers]]` on `SubmitDesignLanguage`; `policies/curator_agent.cedar` omits the trigger from the permit.*
 
 **C14. A caller with no identity gets nothing.** — policy
 *Source: `policies/curator_agent.cedar`, forbid on `principal.id == "anonymous"`.*
@@ -131,24 +129,25 @@ than a silence.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
 **C16. A run that stops making progress is abandoned automatically.** — machine
-Fifteen minutes holding the brief without starting, two hours drafting without
-self-reviewing, fifteen minutes self-reviewed without submitting.
-*Source: spec, `[[state_timeout]]` on `BriefReceived` (900s), `Drafting` (7200s), `SelfReviewed` (900s), each `on_timeout = "Abandon"`.*
+Every live state carries a timeout onto `Abandon`. A run that renders and never
+looks ends rather than sitting in `SurfacesRendered` looking like work.
+*Source: spec, `[[state_timeout]]` on every non-terminal state, each `on_timeout = "Abandon"`.*
 
 ### The record it leaves
 
 **C17. A run records the identity its trajectory is captured under.** — machine
 Session id, trajectory id, the version of this spec it ran under, and which
-harness drove it — all on the opening action, so a verdict can point back at the
-exact run.
-*Source: spec, action `ReceiveBrief` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
+harness drove it — all on `RecordBriefRef`, so a verdict can point back at the
+exact run. The fields are stored; they are not checked against a real capture.
+*Source: spec, action `RecordBriefRef` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
 
-**C18. A submitted run has a submission recorded.** — machine
-*Source: spec, invariant `SubmittedRequiresSubmission`.*
+**C18. A submitted run completed a self-review after the perceptual loop.** — machine
+*Source: spec, invariant `SubmittedRequiresSelfReview`.*
 
-**C19. Drafting revisions are counted, not gated.** — machine
-The count is the run's visible work; nothing depends on its value.
-*Source: spec, action `RecordDraft` effect `increment draft_revision`.*
+**C19. Craft-fix and reopen rounds are counted and gated at twelve.** — machine
+`RecordCraftFix` and `ReopenAfterSelfReview` increment `revision_rounds` under
+`max_count 12`. An unbounded fix loop would defeat termination.
+*Source: spec, both fix edges; invariant `RevisionLoopBounded`.*
 
 ### What only a person can judge
 
@@ -389,18 +388,18 @@ That is the safe direction: no verdict means no publish.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
 **R12. A review that stalls is abandoned automatically** — fifteen minutes before
-starting, one hour without a verdict. — machine
-*Source: spec, `[[state_timeout]]` on `SubmissionReceived` (900s) and `Reviewing` (3600s).*
+starting, two hours without a verdict. — machine
+*Source: spec, `[[state_timeout]]` on `SubmissionReceived` (900s) and `Reviewing` (7200s).*
 
 ### The record it leaves
 
 **R13. A review records its own capture identity, the same way a curator run
 does.** — machine
-*Source: spec, action `ReceiveSubmission` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
+*Source: spec, action `RecordSubmissionRef` params `session_id`, `trajectory_id`, `spec_version`, `harness`.*
 
-**R14. A review names the curator run and the specific submissions it is ruling
+**R14. A review names the curator run and the specific artifact it is ruling
 on.** — machine
-*Source: spec, action `ReceiveSubmission` params `curator_agent_id`, `submission_type`, `submission_ids`.*
+*Source: spec, action `RecordSubmissionRef` params `curator_agent_id`, `submission_type`, `reviewed_entity_id`.*
 
 ### What only a person can judge
 
