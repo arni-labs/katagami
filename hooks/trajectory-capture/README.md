@@ -176,6 +176,17 @@ Failures are visible on purpose:
 - `process` exits non-zero when any entry failed. That warns without blocking
   the session (only exit code 2 blocks).
 
+Harbor must be installed in `<repo>/.venv-trajectory` (or `$KATAGAMI_TRAJECTORY_PYTHON`).
+The hook's `python3` usually does not have it. One-time:
+
+```
+python3 -m venv .venv-trajectory
+.venv-trajectory/bin/pip install -r scripts/trajectory/requirements.txt
+```
+
+`capture.py process` then uses that interpreter. Without it, sessions land in
+`failed/` with `harbor is not installed` and OTS stays empty.
+
 Common causes:
 
 | Message | Cause |

@@ -115,7 +115,7 @@ Live Temper: isolated `:3472`. Specs loaded with `merge: true`. Claude Code drov
 - ReviewAgent or HumanCurator driven live.
 - End-to-end JCS through publish (we will not fake the human).
 - A **complete** composite proof of the eight-type join. Incomplete ≠ fail; it is also not verified.
-- OTS / conformance API on `:3472` (404; judges used live entity events + 409 bodies).
+- ~~OTS / conformance API 404~~ — both study sessions now have OTS + ATIF on `:3472` and in `~/.katagami/trajectory-queue/archive/`.
 - Engine-spawned synthesize jobs (TemperFS). Study path is `Start` + `BeginSynthesis`.
 
 **Next, if we continue the study**
