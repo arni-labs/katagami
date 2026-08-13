@@ -31,10 +31,10 @@ PR: https://github.com/arni-labs/katagami/pull/213
 
 Overrule any of these by changing the number.
 
-## Prose-arm exemptions (D2)
+## Prose-arm exemptions (D2, D23)
 
-Scored on the machine only: **C7, C9, C17, R13**.
-C19 is **not** exempt — it now gates at 12.
+Out of the comparison entirely (neither arm): **C7, C9, C17, R13**.
+**C19 stays in both arms.** It is the agent's own look-fix loop, gated at 12 — conduct the agent chooses, not a platform batch cap.
 
 ## Invariants (proposed, already in the specs)
 
@@ -69,9 +69,33 @@ Human: `ReviewingRequiresAssignment`, `PublishedRequiresReviewVerdict`,
   `Action 'SubmitDesignLanguage' not valid from state 'BriefReceived'`. That
   refusal is in `/tmp/jcs-smoke-refusal.json`.
 
+## Course correction (13 Aug)
+
+The overnight machines are a parallel craft pipeline. That is not the study.
+
+The study adds three actor machines onto the **existing** Katagami graph
+(`CurationQuery` → `CurationDirection` fan-out → typed `CurationJob` →
+`DesignLanguage` / lane artifact) and composite-verifies the actors **with
+that entire graph**. BEHAVIOR.md is the prose comparison arm only; the
+machines are the source of conduct.
+
+Actor split (D22) — one machine per principal, not per skill:
+
+| Principal | Machine | Claims |
+|---|---|---|
+| Curator process | `CuratorAgent` | `source_search`, `synthesize`, `organize_taxonomy`, `evolve_language`, `taste_distillation` |
+| Review process | `ReviewAgent` | `quality_review` only (different principal — otherwise reviewer = author) |
+| Human | `HumanCurator` | Publish / return / escalate |
+
+Temper verify must finish the joint proof before anyone runs (D20). Runtime
+denial is not that proof.
+
 ## What is still not done (named residuals)
 
-- Temper kernel composite-scoping (cross-entity guards are still free booleans).
+- Actor specs still describe a parallel craft loop. They need to sit on the
+  existing job/query/direction/language machines (D21).
+- Composite verify now closes over read-guards and can load both apps; the
+  live Katagami union has not yet been run to a finished VERIFIED.
 - Kernel does not write a denied call onto the **entity** event log. The study
   judges the **Claude Code / harness transcript**, where the 409 is visible.
 - No scored study run yet. No deploy. No Genesis sync. Linear not updated.
