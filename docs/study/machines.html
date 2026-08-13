@@ -3,527 +3,534 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Study machines — Curator · Language · Review · Human</title>
+<title>Four machines — the joint path</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Iowan+Old+Style:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#fff; --ink:#101010; --muted:#6E6960; --paper:#F4F1EA; --paper2:#ECE7DC;
-    --rule:#1A1A1A; --cyan:#00AEEF; --verm:#FF3B1F; --acid:#F6E800; --green:#158A4A; --violet:#6B21E8;
-    --serif:"Iowan Old Style",Palatino,Georgia,serif;
+    --bg:#FFFFFF; --ink:#101010; --muted:#6E6960; --paper:#F4F1EA; --paper2:#ECE7DC;
+    --cyan:#00AEEF; --verm:#FF3B1F; --acid:#F6E800; --violet:#6B21E8; --blue:#1F4FE0;
     --sans:"IBM Plex Sans",system-ui,sans-serif;
     --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);letter-spacing:-.015em}
-  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 120px}
-  h1{font:600 42px/1.05 var(--serif);letter-spacing:-.02em;margin:8px 0 12px;max-width:22ch}
-  h2{font:600 28px/1.15 var(--serif);letter-spacing:-.02em;margin:0 0 8px}
-  h3{font:600 20px/1.25 var(--serif);margin:0 0 8px}
-  .eyebrow{font:500 11.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .lede{color:var(--muted);max-width:72ch;margin:0 0 22px}
-  p{margin:0 0 12px;max-width:76ch}
-  a{color:var(--ink);text-decoration:none;box-shadow:inset 0 -1.5px 0 var(--cyan)}
-  a:hover{background:var(--acid)}
-  .hr{height:4px;background:var(--rule);margin:48px 0 28px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
-  .chip{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:9999px}
-  .c-ship{background:var(--paper2);color:var(--muted)}
-  .c-craft{background:#F2F5FE;color:#1F4FE0}
-  .c-night{background:#F6F2FE;color:var(--violet)}
-  .c-sug{background:#FFF3F1;color:var(--verm)}
-  nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
-  nav.jump a{font:500 12.5px var(--mono);padding:7px 12px;border-radius:9999px;background:var(--paper2);box-shadow:none}
-  nav.jump a:hover{background:var(--ink);color:#fff}
-  .q{background:var(--paper);border-radius:16px;padding:20px 22px;margin:0 0 10px}
-  .q b{display:block;font:600 15px var(--sans);margin:0 0 6px}
-  .q p{margin:0;font-size:16px;color:#2E2E2E}
-  table{border-collapse:collapse;width:100%;font-size:14.5px}
-  th{text-align:left;font:500 11px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 10px;border-bottom:1px solid var(--rule)}
-  td{padding:11px 10px;vertical-align:top;border-bottom:1px solid #E8E4DC}
-  td.k{font:500 12.5px var(--mono);white-space:nowrap}
-  .tw{overflow-x:auto}
-  .lane{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 8px}
-  .lane .box{background:var(--paper);border-radius:16px;padding:14px 14px 16px;min-height:86px}
-  .lane .nm{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-  .lane .st{font:600 15px var(--serif)}
-  .lane .arr{text-align:center;color:var(--muted);font:12px var(--mono);padding-top:34px}
-  .states{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
-  button.st{appearance:none;border:0;background:var(--paper);color:var(--ink);font:500 13px var(--mono);padding:8px 12px;border-radius:9999px;cursor:pointer}
-  button.st:hover,button.st.on{background:var(--ink);color:#fff}
-  button.st.term{background:#101010;color:#fff}
-  button.st.term.on{background:var(--violet)}
-  .panel{background:var(--paper);border-radius:16px;padding:20px 22px;min-height:88px;margin-bottom:22px}
-  .panel .empty{color:var(--muted)}
-  .panel h3{margin-bottom:10px}
-  .edge{margin:0 0 10px;font-size:15.5px}
-  .edge code{font:500 12.5px var(--mono);background:var(--paper2);padding:1px 5px}
-  .g{color:var(--muted);font-size:14px;margin-top:3px}
-  footer{margin-top:64px;padding-top:14px;border-top:1px solid var(--rule);font:11.5px var(--mono);color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  @media(max-width:820px){.lane{grid-template-columns:1fr 1fr}h1{font-size:32px}.wrap{padding:22px 16px 80px}}
-  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 var(--sans);letter-spacing:-.015em;overflow:hidden}
+  #stage{position:fixed;inset:0}
+  #stage canvas{display:block}
+  .label3d{
+    font:500 12px/1.15 var(--mono);
+    color:var(--ink);
+    background:rgba(255,255,255,.92);
+    padding:5px 8px;
+    border-radius:9999px;
+    white-space:nowrap;
+    pointer-events:none;
+    letter-spacing:-.02em;
+  }
+  .label3d.term{background:#101010;color:#fff}
+  .label3d.on{background:var(--violet);color:#fff}
+  .label3d.lane{
+    font:500 11px var(--mono);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    background:transparent;
+    padding:0;
+    color:var(--muted);
+  }
+  header.bar{
+    position:fixed;top:0;left:0;right:0;z-index:4;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    padding:18px 22px 14px;
+    background:#FFFFFF;
+    pointer-events:none;
+  }
+  header.bar > *{pointer-events:auto}
+  .eyebrow{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  h1{font:600 28px/1.05 var(--sans);letter-spacing:-.03em;margin-top:4px}
+  .controls{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:52vw}
+  .controls button{
+    appearance:none;border:0;background:var(--paper);color:var(--ink);
+    font:500 12px var(--mono);padding:8px 11px;border-radius:9999px;cursor:pointer;
+  }
+  .controls button:hover,.controls button.on{background:#101010;color:#fff}
+  .legend{
+    position:fixed;left:22px;bottom:22px;z-index:4;
+    display:flex;flex-direction:column;gap:7px;
+    font:12.5px/1.3 var(--sans);color:var(--muted);
+  }
+  .legend b{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-weight:500}
+  .legend i{display:inline-block;width:22px;height:3px;vertical-align:middle;margin-right:8px}
+  .legend .cy{background:var(--cyan)}
+  .legend .vi{background:var(--violet)}
+  .legend .ve{background:var(--verm)}
+  .legend .ink{background:#101010}
+  aside.dock{
+    position:fixed;top:92px;right:16px;bottom:16px;width:min(380px,38vw);z-index:5;
+    background:var(--paper);border-radius:24px;padding:22px 22px 20px;
+    overflow:auto;transform:translateX(110%);transition:transform .35s ease;
+  }
+  aside.dock.open{transform:none}
+  aside.dock h2{font:600 22px/1.15 var(--sans);letter-spacing:-.02em;margin:6px 0 8px}
+  aside.dock .meta{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  aside.dock p{font-size:15.5px;margin:0 0 12px;color:#2E2E2E}
+  aside.dock .edge{margin:0 0 10px}
+  aside.dock code{font:500 12px var(--mono);background:var(--paper2);padding:1px 5px}
+  aside.dock .g{color:var(--muted);font-size:13.5px;margin-top:2px}
+  aside.dock .chip{display:inline-block;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:9999px;background:var(--paper2);margin:0 6px 8px 0}
+  aside.dock .chip.night{background:#F6F2FE;color:var(--violet)}
+  aside.dock .chip.sug{background:#FFF3F1;color:var(--verm)}
+  aside.dock .close{
+    position:absolute;top:14px;right:14px;border:0;background:transparent;
+    font:500 12px var(--mono);cursor:pointer;color:var(--muted);
+  }
+  .hint{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:3;
+    font:12px var(--mono);color:var(--muted);pointer-events:none;
+  }
+  @media(max-width:820px){
+    h1{font-size:22px}
+    .controls{max-width:100%}
+    header.bar{flex-direction:column;align-items:flex-start}
+    aside.dock{top:auto;left:10px;right:10px;bottom:10px;width:auto;height:42vh;border-radius:16px}
+    .legend{display:none}
+    .hint{bottom:auto;top:auto;display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    aside.dock{transition:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-<p class="eyebrow">Katagami · JCS study · contract review</p>
-<h1>The four machines the study is about</h1>
-<p class="lede">One language is made, looked at, ruled on, and either published or sent back. These four specs are that path. Click a state to see what can happen there. Every invariant and liveness line says whether it is already in the spec, added last night, or still only a suggestion.</p>
-
-<div class="chips">
-  <span class="chip c-ship">Shipped — already on the entity in production</span>
-  <span class="chip c-craft">Craft — already in PR #211, stacked last night</span>
-  <span class="chip c-night">Last night — I added this</span>
-  <span class="chip c-sug">Suggested — not in any spec yet</span>
-</div>
-
-<nav class="jump">
-  <a href="#answers">The questions</a>
-  <a href="#joint">Joint path</a>
-  <a href="#curator">CuratorAgent</a>
-  <a href="#language">DesignLanguage</a>
-  <a href="#review">ReviewAgent</a>
-  <a href="#human">HumanCurator</a>
-  <a href="#props">Invariants &amp; liveness</a>
-  <a href="#behavior">Behavior headings</a>
-</nav>
-
-<div class="hr" id="answers"></div>
-<h2>Answers first</h2>
-<p class="lede">These are the leftover phrases. None of them is a contract decision.</p>
-
-<div class="q">
-  <b>D2 — exempt C7, C9, C17, R13 from the prose score</b>
-  <p>The study scores the same list two ways. Four items on that list are not “how the agent behaved.” They are platform mechanism: C7 is “the DesignLanguage entity is already UnderReview,” C9 is the number ten, C17 and R13 are session-id fields that can be empty strings. A <code>BEHAVIOR.md</code> judge cannot fairly score those. So the prose arm skips them, the machine arm still has them, and we report that as a finding: the machine can say things prose cannot. C19 used to be in that list (“a counter that gated nothing”). The craft machine now gates it at 12, so it is scored.</p>
-</div>
-<div class="q">
-  <b>D5 — judge the Claude Code transcript, not kernel rows alone</b>
-  <p>Temper’s entity log only records transitions that <em>succeeded</em>. A refused <code>Submit</code> is a 409 in the HTTP response. It never becomes a row on the entity. If the judge only reads kernel rows, the machine’s whole point — it said no — is invisible. Claude Code’s session transcript already contains that 409 as a tool result. So the study judge reads that transcript. Same events, including the denials.</p>
-</div>
-<div class="q">
-  <b>Why extra study skills? Why so many things an agent reads?</b>
-  <p>There are not four theories of curation. There are three <em>places a copy lives</em>, and last night I added a fourth instead of editing production. That was a convenience, and it is the confusion. What each copy is:</p>
-</div>
-<div class="tw" style="margin-bottom:14px">
-<table>
-  <thead><tr><th>What</th><th>Who actually reads it</th><th>What it is</th></tr></thead>
-  <tbody>
-    <tr><td class="k">Curator AGENT.md + synthesize-language SKILL</td><td>The TemperPaw curator in the Katagami app</td><td>Production maker. Three live copies currently disagree (running / Genesis / GitHub).</td></tr>
-    <tr><td class="k">review-quality SKILL</td><td>The same TemperPaw agent, different job</td><td>Production “reviewer” that <em>repairs</em> and does not record a verdict.</td></tr>
-    <tr><td class="k">katagami-contributor</td><td>Claude Code / Codex / Grok as outside contributors</td><td>How to build and submit via HTTP. Taste rulebook embedded. Does not walk CuratorAgent states.</td></tr>
-    <tr><td class="k">katagami-study-curator / reviewer</td><td>Nobody in production. Study only.</td><td>Last night. Tells the agent to drive the new ledger (<code>RecordBriefRef</code> …). I added these so I would not overwrite the app skills before you reviewed the machines.</td></tr>
-    <tr><td class="k">BEHAVIOR.md × 3</td><td>The <em>judge</em>, not the working agent</td><td>The prose arm’s spec. The agent is not supposed to be steered by these during a run.</td></tr>
-    <tr><td class="k">The four .ioa.toml machines</td><td>Temper, at runtime, as refusals</td><td>The machine arm’s spec. Governs what calls are legal.</td></tr>
-  </tbody>
-</table>
-</div>
-<div class="q">
-  <b>How the copies make agents think differently</b>
-  <p>The app curator is told a procedure (render, look, fix) but today can still call <code>SubmitForReview</code> without walking CuratorAgent states — those records are not wired into the live pipeline. The contributor skill thinks in HTTP submit composites. The study skills think in actor states. The machines, if wired, refuse illegal order regardless of which prose the agent read. <strong>Recommendation when you are ready:</strong> one maker skill (the app’s), one reviewer skill (rules, does not publish), both driving the actor ledger. Delete the study siblings. Do not keep a fourth copy.</p>
-</div>
-<div class="q">
-  <b>Why I did not install capture hooks in <code>~/.claude/settings.json</code></b>
-  <p><code>settings.json</code> is global. A <code>SessionEnd</code> hook would fire on <em>every</em> Claude Code session on this machine — mail, other repos, this chat — and upload the whole transcript to Temper. I would not flip that while you were asleep. To turn it on later: merge the snippet in <code>hooks/trajectory-capture/settings.snippet.json</code> into <code>~/.claude/settings.json</code>, set <code>TEMPER_API_KEY</code> and <code>KATAGAMI_AGENT_ID</code> in the environment, and only then start a study session. Already-open sessions are not captured; the next new session is.</p>
-</div>
-<div class="q">
-  <b>Composite INCOMPLETE at 107k states — why, what to do</b>
-  <p>The verifier tried to walk CuratorAgent and ReviewAgent <em>together</em>. It explored 107,053 combined states, hit the shipped budget (250,000), stopped, printed INCOMPLETE, and still exited 0. So it did not finish the joint proof, and it looked green. That does not make the machines wrong. It means we do not yet have a finished formal proof of the pair. <strong>Do:</strong> raise the budget for this verify (a million completed an earlier pair). <strong>Do not:</strong> treat a green INCOMPLETE as evidence. Not needed for you to review the contract. Not needed to run the LLM-judge study.</p>
-</div>
-<div class="q">
-  <b>Kernel does not persist denials — why, what to do</b>
-  <p>A 409 is a rejected transition. The entity log is a history of transitions that happened. So the denial lives in the HTTP response, not on the entity. Last night’s smoke: create → 201, illegal submit → 409, and that 409 is in <code>docs/study/evidence/smoke-refusal.json</code> because the <em>harness</em> kept the response. <strong>Study:</strong> judge transcripts (D5) — already decided. <strong>Kernel, later:</strong> write a <code>Denied</code> envelope onto the OTS trajectory from the server, so a run that never went through Claude Code still has the refusal. Temper repo, not this PR.</p>
-</div>
-<div class="q">
-  <b>Cross-entity guards are free booleans — why, what to do</b>
-  <p>When Temper verifies CuratorAgent alone, the guard “DesignLanguage is UnderReview” is not looking at a real DesignLanguage. It is a maybe. So any property that depends on that guard is not actually proved. Runtime still enforces it (the 409 is real). The gap is only the <em>proof</em>. <strong>Do:</strong> a Temper change so composite verification follows those guards, not only trigger edges. <strong>Do not:</strong> block the study or your contract review on it. Rita already deferred Layer-1 replay; the study uses the LLM judge.</p>
-</div>
-
-<div class="hr" id="joint"></div>
-<h2>The joint path</h2>
-<p class="lede">Left to right is one language’s life. The seams are the only facts that make this one system rather than four solo agents.</p>
-
-<div class="lane">
-  <div class="box">
-    <div class="nm">CuratorAgent</div>
-    <div class="st">Brief → look → CraftClean → Submitted</div>
+<div id="stage"></div>
+<header class="bar">
+  <div>
+    <div class="eyebrow">Katagami · one language, four machines</div>
+    <h1>How they touch</h1>
   </div>
-  <div class="box">
-    <div class="nm">DesignLanguage</div>
-    <div class="st">Draft → UnderReview</div>
+  <div class="controls">
+    <button data-cam="overview" class="on">Overview</button>
+    <button data-cam="seams">Seams only</button>
+    <button data-cam="front">Flat</button>
+    <button data-play>Play one language</button>
+    <button data-props>Invariants</button>
   </div>
-  <div class="box">
-    <div class="nm">ReviewAgent</div>
-    <div class="st">Examine → VerdictRecorded</div>
-  </div>
-  <div class="box">
-    <div class="nm">HumanCurator</div>
-    <div class="st">Publish or return</div>
-  </div>
+</header>
+<div class="legend">
+  <b>How to read</b>
+  <span><i class="ink"></i>steps inside one machine</span>
+  <span><i class="cy"></i>needs the language UnderReview</span>
+  <span><i class="vi"></i>curator Submitted opens a review</span>
+  <span><i class="ve"></i>human may publish only after a verdict</span>
+  Drag to orbit · scroll to zoom · click a state
 </div>
-<p class="lede">Seam 1 — the curator may only <code>SubmitDesignLanguage</code> if that language is already <code>UnderReview</code> (the artifact’s own gate). Seam 2 — submitting <em>creates</em> the ReviewAgent record. Seam 3 — the human may only publish if that review is <code>VerdictRecorded</code>. Seam 3 is in the HumanCurator spec. A single joint invariant “Published ⇒ same ids were made and ruled on” is <span class="chip c-sug">suggested</span> and does not exist yet.</p>
+<div class="hint">Time runs downward. One language walks left to right.</div>
+<aside class="dock" id="dock">
+  <button class="close" type="button">close</button>
+  <div class="meta" id="dock-meta"></div>
+  <h2 id="dock-title">Select a state</h2>
+  <div id="dock-body"><p>Click any state in the space. The coloured arcs are the only facts that make this one system.</p></div>
+</aside>
 
-<!-- CURATOR -->
-<div class="hr" id="curator"></div>
-<p class="eyebrow">Actor · craft · #211</p>
-<h2>CuratorAgent</h2>
-<p class="lede">One run, one language. Writing a PNG and looking at the PNG are different states. Last night I did not change this machine’s shape. Revision cap stays 12.</p>
-<div class="states" id="curator-states"></div>
-<div class="panel" id="curator-panel"><p class="empty">Click a state.</p></div>
-<div class="tw">
-<table>
-<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">RecordBriefRef</td><td>BriefReceived ↺</td><td>One-shot store of brief + capture ids. Claims nothing.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">AcceptBrief</td><td>BriefReceived ↺</td><td>Zero params. Direction must exist and be Synthesizing.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ReadSiblingMechanics</td><td>BriefReceived ↺</td><td>One-shot. Three published mechanics, from pages not names.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ReadReturnedCritique</td><td>BriefReceived ↺</td><td>Only if a HumanCurator named here is ReturnedWithCritique.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">DeriveDirection</td><td>BriefReceived → DirectionDerived</td><td>Has accepted brief + sibling read. Names the language and art style ids.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">GenerateImagery</td><td>DirectionDerived ↺</td><td>ArtStyle entity must exist.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">InspectImagery</td><td>DirectionDerived → ImageryInspected</td><td>Imagery was generated. This is the look.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">AuthorSurfaces</td><td>ImageryInspected → SurfacesAuthored</td><td>No other source. Pages cannot be written before images were looked at.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RenderSurfaces</td><td>SurfacesAuthored → SurfacesRendered</td><td>Browser captures. Nobody has looked yet.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">InspectRender</td><td>SurfacesRendered → RenderInspected</td><td>Screenshots return into context as images.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ReadFilmstrip / TraverseScroll / VerifyHeroReplaceable</td><td>RenderInspected ↺</td><td>Each one-shot. All three required before rules.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">VerifyAgainstRules</td><td>RenderInspected → RulesChecked</td><td>The three looks above must already have happened.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RecordRuleFailure</td><td>RulesChecked ↺</td><td>Opens findings.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">OpenLivePage</td><td>RulesChecked ↺</td><td>No open findings. Look at the live URL.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RecordCraftFix</td><td>RulesChecked → SurfacesAuthored</td><td>Open finding required. Max 12. Clears every perception flag.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">DeclareCraftClean</td><td>RulesChecked → CraftClean</td><td>No open findings + live page opened.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">SelfReview</td><td>CraftClean ↺</td><td>One-shot notes. Kernel cannot read the string.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ReopenAfterSelfReview</td><td>CraftClean → SurfacesAuthored</td><td>Max 12. Same full reset as a fix.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">SubmitDesignLanguage</td><td>CraftClean → Submitted</td><td>Self-reviewed, no findings, no jobs in flight, language already UnderReview.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">Abandon</td><td>any live → Abandoned</td><td>Always available. Timeouts fire it too.</td><td><span class="chip c-craft">craft</span></td></tr>
-</tbody>
-</table>
-</div>
-
-<!-- LANGUAGE -->
-<div class="hr" id="language"></div>
-<p class="eyebrow">Artifact · shipped in commons</p>
-<h2>DesignLanguage</h2>
-<p class="lede">The thing being made. The actor machines are not allowed to restate these gates. Last night I did not edit this file.</p>
-<div class="states" id="lang-states"></div>
-<div class="panel" id="lang-panel"><p class="empty">Click a state.</p></div>
-<div class="tw">
-<table>
-<thead><tr><th>Action that changes status</th><th>From → to</th><th>Gate</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">SubmitForReview</td><td>Draft → UnderReview</td><td>Five spec sections, embodiment, landing, dashboard, thumbnail, DESIGN.md + lint, three shadcn files, every File Ready/Locked.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">Publish</td><td>UnderReview → Published</td><td>Same files + quality_review_passed + published assets. Cedar, not this table, is what keeps contributors off this action.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">ReturnToDraft</td><td>UnderReview → Draft</td><td>Curator reject or owner withdraw.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">Revise</td><td>Published → UnderReview</td><td>Pull back with notes.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">Archive / Restore</td><td>any → Archived → UnderReview</td><td>Preserve a way back.</td><td><span class="chip c-ship">shipped</span></td></tr>
-</tbody>
-</table>
-</div>
-<p class="lede">Attach/Set* actions stay in Draft or UnderReview and only flip readiness bits. They are the artifact’s paperwork, not the study’s conduct.</p>
-
-<!-- REVIEW -->
-<div class="hr" id="review"></div>
-<p class="eyebrow">Actor · craft · #211</p>
-<h2>ReviewAgent</h2>
-<p class="lede">One review, one language. Rendered and inspected are different flags. A repair wipes every look. Last night I did not change this machine’s shape. Repair cap stays 6.</p>
-<div class="states" id="review-states"></div>
-<div class="panel" id="review-panel"><p class="empty">Click a state.</p></div>
-<div class="tw">
-<table>
-<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">RecordSubmissionRef</td><td>SubmissionReceived ↺</td><td>One-shot. Curator id, language id, capture ids. The curator’s submit trigger creates this record.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">AcceptSubmission</td><td>SubmissionReceived ↺</td><td>Zero params. That curator run must be Submitted.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">LoadRulebook</td><td>SubmissionReceived ↺</td><td>One-shot. Accepted TasteRules, stamped.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">BeginReview</td><td>SubmissionReceived → Reviewing</td><td>Submission accepted + rulebook loaded + language UnderReview or Published.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">FetchArtifacts</td><td>Reviewing ↺</td><td>Ids off the entity, not guessed. Repair clears this.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">Render* / Inspect* × 3</td><td>Reviewing ↺</td><td>Inspect requires the matching render. Three surfaces.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">VerifyHeroReplaceable / ResolveArtStyle / VerifyArtStyleRendered</td><td>Reviewing ↺</td><td>Hero swap and style check against the linked style, not a name.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">VerifyAgainstRules / CheckCuratorClaims</td><td>Reviewing ↺</td><td>All three surfaces inspected first. Claims tested against what was seen.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RecordFinding</td><td>Reviewing ↺</td><td>Artifacts fetched. One finding per call.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RecordRepair</td><td>Reviewing ↺</td><td>A finding exists. Max 6. Clears every perception flag.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RecordVerdict</td><td>Reviewing → VerdictRecorded</td><td>Eight looks + language still UnderReview/Published. Once.</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">Abandon</td><td>either live → Abandoned</td><td>Leaves the language unpublishable. Correct answer to empty scope.</td><td><span class="chip c-craft">craft</span></td></tr>
-</tbody>
-</table>
-</div>
-
-<!-- HUMAN -->
-<div class="hr" id="human"></div>
-<p class="eyebrow">Role · shipped + last night’s bound</p>
-<h2>HumanCurator</h2>
-<p class="lede">A seat, not a person. The only new conduct last night: after three escalations, reassignment stops.</p>
-<div class="states" id="human-states"></div>
-<div class="panel" id="human-panel"><p class="empty">Click a state.</p></div>
-<div class="tw">
-<table>
-<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">AssignSubmission</td><td>SubmissionAssigned ↺</td><td>Holder principal id, linked review, capture ids.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">RecordReviewVerdict</td><td>Assigned or Reviewing ↺</td><td>Copies the machine verdict onto the assignment.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">BeginReview</td><td>Assigned → Reviewing</td><td>Must have an assignment.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">Publish</td><td>Reviewing → Published</td><td>Assignment + verdict flag + linked ReviewAgent is VerdictRecorded. Does <em>not</em> check it was <em>this</em> language — kernel cannot compare fields.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">ReturnWithCritique</td><td>Reviewing → Returned</td><td>Written critique. Training signal.</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">ReviewOverdue</td><td>Assigned or Reviewing → Escalated</td><td>48h timeout or by hand. <strong>Now max 3.</strong></td><td><span class="chip c-night">last night</span> bound; action was shipped</td></tr>
-<tr><td class="k">Reassign</td><td>Escalated → Assigned</td><td>New holder. <strong>Blocked after the third escalation.</strong></td><td><span class="chip c-night">last night</span> bound; action was shipped</td></tr>
-</tbody>
-</table>
-</div>
-
-<!-- PROPS -->
-<div class="hr" id="props"></div>
-<h2>Invariants and liveness</h2>
-<p class="lede">If a line is “in spec,” Temper already checks it (or tries to). If it is “suggested,” it is not in any file — you would be approving a change, not confirming existing text.</p>
-
-<h3>CuratorAgent</h3>
-<div class="tw"><table>
-<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">FixInvalidatesPerception</td><td>After a fix, no look flags remain. Catches a stale screenshot of an edited page.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ConcurrencyCapHolds</td><td>jobs_in_flight ≤ 10</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RevisionLoopBounded</td><td>revision_rounds ≤ 12</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">SubmittedHoldsNoWork</td><td>No claimed jobs at submit</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">SubmittedRequiresSelfReview</td><td>Fence on the only edge into Submitted</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">CraftCleanHasNoOpenFindings</td><td>Fence</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">SubmittedIsFinal / AbandonedIsFinal</td><td>No further transitions. Known hole: a new cross-entity edge out of the terminal would be invisible to this check.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RunEventuallyTerminal</td><td>From BriefReceived, eventually Submitted or Abandoned. Weak: Abandon is always enabled. Provable because loops are bounded.</td><td>Liveness</td><td><span class="chip c-craft">craft</span></td></tr>
-</tbody>
-</table></div>
-
-<h3>ReviewAgent</h3>
-<div class="tw"><table>
-<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">InspectionRequiresRender</td><td>Cannot inspect a surface that was not rendered</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">PerceptionRequiresCurrentBytes</td><td>A repair that forgets to clear a render flag is caught. Mutation test found this.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">JudgementRequiresInspection</td><td>Rules / claims / style / hero cannot outlive the look they rest on</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">RepairLoopBounded</td><td>repair_rounds ≤ 6</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">VerdictRequires* × 7</td><td>Fences: landing, embodiment, dashboard, hero, art style, rules, claims</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">ReviewingRequiresSubmissionAndRulebook</td><td>Fence</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">VerdictRecordedIsFinal / AbandonedIsFinal</td><td>Same terminal fence, same known hole</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
-<tr><td class="k">EveryReviewEventuallyRules</td><td>From SubmissionReceived, eventually VerdictRecorded or Abandoned</td><td>Liveness</td><td><span class="chip c-craft">craft</span></td></tr>
-</tbody>
-</table></div>
-
-<h3>HumanCurator</h3>
-<div class="tw"><table>
-<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">ReviewingRequiresAssignment</td><td>Cannot review with no assignment</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">PublishedRequiresReviewVerdict</td><td>A verdict flag is set. Weaker than the cross-entity guard on Publish.</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">PublishedIsFinal / ReturnedIsFinal</td><td>Terminal</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">EscalationLoopBounded</td><td>escalation_count ≤ 3</td><td>Invariant</td><td><span class="chip c-night">last night</span></td></tr>
-<tr><td class="k">AssignmentEventuallyResolved</td><td>From Assigned, eventually Published, Returned, or Escalated</td><td>Liveness</td><td><span class="chip c-night">last night</span></td></tr>
-</tbody>
-</table></div>
-
-<h3>DesignLanguage</h3>
-<div class="tw"><table>
-<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">PublishedRequiresEmbodiment / Compositions / Thumbnail / AllSections / ValidDesignMd / PublicAssets / QualityReview</td><td>Seven fences on Published. These are artifact properties. They belong here, not on the actors.</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
-<tr><td class="k">— none —</td><td>No liveness. Draft can sit forever. You already decided languages stop at UnderReview and wait; that pause is intended, so a “must leave Draft” liveness would be wrong.</td><td>Liveness</td><td>absent on purpose</td></tr>
-</tbody>
-</table></div>
-
-<h3>Joint — not in any file</h3>
-<div class="tw"><table>
-<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
-<tbody>
-<tr><td class="k">PublishedWasMadeAndRuled</td><td>No language reaches Published unless a CuratorAgent is Submitted and a ReviewAgent is VerdictRecorded on the same id.</td><td>Cross-invariant</td><td><span class="chip c-sug">suggested</span> — the thesis. Kernel cannot field-compare ids today. HumanCurator.Publish checks the review’s <em>status</em>, not that it reviewed <em>this</em> language.</td></tr>
-<tr><td class="k">SubmitCreatesReview</td><td>Every curator Submitted creates a ReviewAgent. The trigger is in the curator spec. Not yet an asserted joint property.</td><td>Trigger, not invariant</td><td><span class="chip c-craft">craft trigger</span> · <span class="chip c-sug">suggested as proof</span></td></tr>
-</tbody>
-</table></div>
-
-<p class="lede">HANDOFF also listed “keep 22 / remove 2 / add 17.” I did not land that list last night. What is in the tables above is what the files actually contain, plus the one bound I added. Do not approve a list that is not on this page.</p>
-
-<!-- BEHAVIOR -->
-<div class="hr" id="behavior"></div>
-<h2>Behavior headings the judge will score</h2>
-<p class="lede">These are the <code>##</code> units in the three <code>BEHAVIOR.md</code> files. They must not name states or actions. The human-curator file was rewritten last night to this style; the other two came from PR #212.</p>
-<div class="tw"><table>
-<thead><tr><th>Doc</th><th>Headings</th><th>Origin</th></tr></thead>
-<tbody>
-<tr>
-  <td class="k">curator-agent</td>
-  <td>Confirm who it is… · Derive the direction… · Choose a signature mechanic… · Begin a remix… · Name the language like a masthead · Generate the imagery… · Look at every generated image… · Make each of the three surfaces… · Render every surface… · Read every screenshot back… · Judge the landing across its whole scroll… · Prove the hero can be swapped… · Judge each taste rule… · Fix, re-render and look again… · Hand over once… · Build an art style on a tradition… · Prove an art style transfers… · Leave publishing to the people who own it · End honestly…</td>
-  <td><span class="chip c-craft">#212</span></td>
-</tr>
-<tr>
-  <td class="k">review-agent</td>
-  <td>Fix the scope and the standard… · Read the submitted bytes themselves · Render every surface itself… · Read every screenshot back… · Test the maker’s own claims… · Make every finding located… · plus the remaining headings in that file (never repair silently, re-read after repair, one verdict, never publish, refuse empty scope, end honestly)</td>
-  <td><span class="chip c-craft">#212</span></td>
-</tr>
-<tr>
-  <td class="k">human-curator</td>
-  <td>Pick up the assignment… · Confirm the machine review ruled on this submission · Let only the named holder decide · Decide once, and finally · Escalate an unanswered assignment… · Keep the assignment publish and the artifact publish as two different acts</td>
-  <td><span class="chip c-night">last night</span></td>
-</tr>
-</tbody>
-</table></div>
-
-<footer>
-  <span>docs/study/machines.html · PR 213 · Galley tokens · click a state</span>
-  <span>Shipped = production · Craft = #211/#212 · Last night = this branch · Suggested = not in a spec</span>
-</footer>
-</div>
-
-<script>
-const M = {
-  curator: {
-    states: [
-      "BriefReceived","DirectionDerived","ImageryInspected","SurfacesAuthored",
-      "SurfacesRendered","RenderInspected","RulesChecked","CraftClean","Submitted","Abandoned"
-    ],
-    term: ["Submitted","Abandoned"],
-    edges: {
-      BriefReceived: [
-        ["RecordBriefRef","stay","store brief + capture ids, once"],
-        ["AcceptBrief","stay","Direction must be Synthesizing"],
-        ["ReadSiblingMechanics","stay","three published mechanics, once"],
-        ["ReadReturnedCritique","stay","only if a human actually returned"],
-        ["DeriveDirection","DirectionDerived","brief accepted + siblings read"],
-        ["Abandon","Abandoned","give up"]
-      ],
-      DirectionDerived: [
-        ["GenerateImagery","stay","ArtStyle must exist"],
-        ["InspectImagery","ImageryInspected","look at every generated image"],
-        ["ClaimJob / ReleaseJob","stay","cap 10"],
-        ["Abandon","Abandoned",""]
-      ],
-      ImageryInspected: [
-        ["AuthorSurfaces","SurfacesAuthored","only legal source for writing pages"],
-        ["Abandon","Abandoned",""]
-      ],
-      SurfacesAuthored: [
-        ["RenderSurfaces","SurfacesRendered","browser captures, no look yet"],
-        ["Abandon","Abandoned",""]
-      ],
-      SurfacesRendered: [
-        ["InspectRender","RenderInspected","screenshots into context"],
-        ["Abandon","Abandoned",""]
-      ],
-      RenderInspected: [
-        ["ReadFilmstrip","stay","once"],
-        ["TraverseScroll","stay","once"],
-        ["VerifyHeroReplaceable","stay","once"],
-        ["VerifyAgainstRules","RulesChecked","requires the three looks"],
-        ["Abandon","Abandoned",""]
-      ],
-      RulesChecked: [
-        ["RecordRuleFailure","stay","opens findings"],
-        ["OpenLivePage","stay","no open findings"],
-        ["RecordCraftFix","SurfacesAuthored","finding required, max 12, clears looks"],
-        ["DeclareCraftClean","CraftClean","no findings + live page"],
-        ["Abandon","Abandoned",""]
-      ],
-      CraftClean: [
-        ["SelfReview","stay","once"],
-        ["ReopenAfterSelfReview","SurfacesAuthored","max 12, full reset"],
-        ["SubmitDesignLanguage","Submitted","self-reviewed, language already UnderReview"],
-        ["Abandon","Abandoned",""]
-      ],
-      Submitted: [],
-      Abandoned: []
-    }
-  },
-  lang: {
-    states: ["Draft","UnderReview","Published","Archived"],
-    term: ["Published","Archived"],
-    edges: {
-      Draft: [
-        ["Attach / Set*","stay","flip readiness bits"],
-        ["SubmitForReview","UnderReview","full artifact gate + files Ready"],
-        ["Archive","Archived",""]
-      ],
-      UnderReview: [
-        ["Publish","Published","same files + quality passed + assets"],
-        ["ReturnToDraft","Draft","reject or withdraw"],
-        ["Archive","Archived",""]
-      ],
-      Published: [
-        ["Revise","UnderReview",""],
-        ["Archive","Archived",""]
-      ],
-      Archived: [
-        ["Restore","UnderReview",""]
-      ]
-    }
-  },
-  review: {
-    states: ["SubmissionReceived","Reviewing","VerdictRecorded","Abandoned"],
-    term: ["VerdictRecorded","Abandoned"],
-    edges: {
-      SubmissionReceived: [
-        ["RecordSubmissionRef","stay","once"],
-        ["AcceptSubmission","stay","curator must be Submitted"],
-        ["LoadRulebook","stay","accepted TasteRules"],
-        ["BeginReview","Reviewing","all three preconditions"],
-        ["Abandon","Abandoned","empty scope ends here"]
-      ],
-      Reviewing: [
-        ["Fetch / Render / Inspect × 3","stay","inspect needs render"],
-        ["Hero / art style / rules / claims","stay","need the looks first"],
-        ["RecordFinding","stay",""],
-        ["RecordRepair","stay","needs a finding, max 6, clears all looks"],
-        ["RecordVerdict","VerdictRecorded","eight looks, once"],
-        ["Abandon","Abandoned",""]
-      ],
-      VerdictRecorded: [],
-      Abandoned: []
-    }
-  },
-  human: {
-    states: ["SubmissionAssigned","Reviewing","Published","ReturnedWithCritique","Escalated"],
-    term: ["Published","ReturnedWithCritique"],
-    edges: {
-      SubmissionAssigned: [
-        ["AssignSubmission","stay","name the holder"],
-        ["RecordReviewVerdict","stay",""],
-        ["BeginReview","Reviewing",""],
-        ["ReviewOverdue","Escalated","48h or by hand, max 3"]
-      ],
-      Reviewing: [
-        ["Publish","Published","linked review is VerdictRecorded"],
-        ["ReturnWithCritique","ReturnedWithCritique","written critique"],
-        ["ReviewOverdue","Escalated","48h, max 3"]
-      ],
-      Escalated: [
-        ["Reassign","SubmissionAssigned","blocked after 3"]
-      ],
-      Published: [],
-      ReturnedWithCritique: []
-    }
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
   }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const LANES = {
+  curator: { x: -16, color: 0x101010, title: "CuratorAgent", origin: "craft #211" },
+  language:{ x: -5,  color: 0x6B21E8, title: "DesignLanguage", origin: "shipped" },
+  review:  { x: 6,   color: 0x1F4FE0, title: "ReviewAgent", origin: "craft #211" },
+  human:   { x: 16,  color: 0x101010, title: "HumanCurator", origin: "shipped + last night" }
 };
 
-function mount(key, btnBox, panel){
-  const m = M[key];
-  const box = document.getElementById(btnBox);
-  const pan = document.getElementById(panel);
-  m.states.forEach(s => {
-    const b = document.createElement("button");
-    b.className = "st" + (m.term.includes(s) ? " term" : "");
-    b.textContent = s;
-    b.addEventListener("click", () => {
-      box.querySelectorAll("button").forEach(x => x.classList.remove("on"));
-      b.classList.add("on");
-      const edges = m.edges[s] || [];
-      if (!edges.length){
-        pan.innerHTML = "<h3>"+s+"</h3><p class='empty'>Terminal. Nothing leaves this state.</p>";
-        return;
-      }
-      pan.innerHTML = "<h3>"+s+"</h3>" + edges.map(e => {
-        const to = e[1] === "stay" ? "stays here" : ("→ "+e[1]);
-        return "<div class='edge'><code>"+e[0]+"</code> "+to+"<div class='g'>"+e[2]+"</div></div>";
-      }).join("");
-    });
-    box.appendChild(b);
+const STATES = {
+  curator: [
+    "BriefReceived","DirectionDerived","ImageryInspected","SurfacesAuthored",
+    "SurfacesRendered","RenderInspected","RulesChecked","CraftClean","Submitted","Abandoned"
+  ],
+  language: ["Draft","UnderReview","Published","Archived"],
+  review: ["SubmissionReceived","Reviewing","VerdictRecorded","Abandoned"],
+  human: ["SubmissionAssigned","Reviewing","Published","ReturnedWithCritique","Escalated"]
+};
+
+const TERM = {
+  curator: new Set(["Submitted","Abandoned"]),
+  language: new Set(["Published","Archived"]),
+  review: new Set(["VerdictRecorded","Abandoned"]),
+  human: new Set(["Published","ReturnedWithCritique"])
+};
+
+const EDGES = {
+  curator: [
+    ["BriefReceived","BriefReceived","RecordBriefRef / AcceptBrief / siblings"],
+    ["BriefReceived","DirectionDerived","DeriveDirection"],
+    ["DirectionDerived","ImageryInspected","InspectImagery"],
+    ["ImageryInspected","SurfacesAuthored","AuthorSurfaces"],
+    ["SurfacesAuthored","SurfacesRendered","RenderSurfaces"],
+    ["SurfacesRendered","RenderInspected","InspectRender"],
+    ["RenderInspected","RulesChecked","VerifyAgainstRules"],
+    ["RulesChecked","CraftClean","DeclareCraftClean"],
+    ["RulesChecked","SurfacesAuthored","RecordCraftFix · max 12"],
+    ["CraftClean","SurfacesAuthored","ReopenAfterSelfReview"],
+    ["CraftClean","Submitted","SubmitDesignLanguage"],
+    ["BriefReceived","Abandoned","Abandon"],
+    ["CraftClean","Abandoned","Abandon"]
+  ],
+  language: [
+    ["Draft","UnderReview","SubmitForReview · files Ready"],
+    ["UnderReview","Published","Publish · quality + assets"],
+    ["UnderReview","Draft","ReturnToDraft"],
+    ["Published","UnderReview","Revise"],
+    ["UnderReview","Archived","Archive"],
+    ["Archived","UnderReview","Restore"]
+  ],
+  review: [
+    ["SubmissionReceived","Reviewing","BeginReview"],
+    ["Reviewing","Reviewing","look / repair · max 6"],
+    ["Reviewing","VerdictRecorded","RecordVerdict"],
+    ["SubmissionReceived","Abandoned","Abandon"],
+    ["Reviewing","Abandoned","Abandon"]
+  ],
+  human: [
+    ["SubmissionAssigned","Reviewing","BeginReview"],
+    ["Reviewing","Published","Publish"],
+    ["Reviewing","ReturnedWithCritique","ReturnWithCritique"],
+    ["SubmissionAssigned","Escalated","ReviewOverdue · max 3"],
+    ["Reviewing","Escalated","ReviewOverdue · max 3"],
+    ["Escalated","SubmissionAssigned","Reassign · blocked after 3"]
+  ]
+};
+
+const SEAMS = [
+  { from:["curator","CraftClean"], to:["language","UnderReview"], color:0x00AEEF, label:"Submit only if language is already UnderReview", kind:"needs" },
+  { from:["curator","Submitted"], to:["review","SubmissionReceived"], color:0x6B21E8, label:"Submitting creates the ReviewAgent record", kind:"creates" },
+  { from:["review","SubmissionReceived"], to:["curator","Submitted"], color:0x6B21E8, label:"AcceptSubmission: that curator run must be Submitted", kind:"needs" },
+  { from:["review","SubmissionReceived"], to:["language","UnderReview"], color:0x00AEEF, label:"BeginReview: language must be UnderReview", kind:"needs" },
+  { from:["human","Reviewing"], to:["review","VerdictRecorded"], color:0xFF3B1F, label:"Human Publish: linked review must be VerdictRecorded", kind:"needs" },
+  { from:["curator","BriefReceived"], to:["human","ReturnedWithCritique"], color:0x158A4A, label:"ReadReturnedCritique: only if a human actually returned", kind:"needs", quiet:true }
+];
+
+const DETAIL = {
+  "curator:BriefReceived": { body:"Store the brief and capture ids, accept the Direction (must be Synthesizing), read three sibling mechanics, then derive. Nothing is built yet.", edges:[["RecordBriefRef","stay"],["AcceptBrief","stay"],["ReadSiblingMechanics","stay"],["DeriveDirection","DirectionDerived"],["Abandon","Abandoned"]] },
+  "curator:DirectionDerived": { body:"Generate imagery through the paired art style. Looking at those images is a different state.", edges:[["GenerateImagery","stay"],["InspectImagery","ImageryInspected"]] },
+  "curator:ImageryInspected": { body:"Every generated image came back into context. Pages may be written only from here.", edges:[["AuthorSurfaces","SurfacesAuthored"]] },
+  "curator:SurfacesAuthored": { body:"Bytes exist. Nobody has rendered them yet. A fix lands back here and clears every look.", edges:[["RenderSurfaces","SurfacesRendered"]] },
+  "curator:SurfacesRendered": { body:"A browser produced screenshots. That is evidence, not a look.", edges:[["InspectRender","RenderInspected"]] },
+  "curator:RenderInspected": { body:"Screenshots are in context. Filmstrip, scroll, hero-swap must all run before rules.", edges:[["ReadFilmstrip","stay"],["TraverseScroll","stay"],["VerifyHeroReplaceable","stay"],["VerifyAgainstRules","RulesChecked"]] },
+  "curator:RulesChecked": { body:"Judged. Open findings force a fix back to SurfacesAuthored (max 12). Live page must be opened to go clean.", edges:[["RecordCraftFix","SurfacesAuthored"],["OpenLivePage","stay"],["DeclareCraftClean","CraftClean"]] },
+  "curator:CraftClean": { body:"Self-review, then submit. Submit is legal only if the DesignLanguage is already UnderReview.", edges:[["SelfReview","stay"],["ReopenAfterSelfReview","SurfacesAuthored"],["SubmitDesignLanguage","Submitted"]] },
+  "curator:Submitted": { body:"Terminal. Creates the ReviewAgent. Cannot publish.", edges:[] },
+  "curator:Abandoned": { body:"Terminal. Honest stop. Timeouts land here.", edges:[] },
+  "language:Draft": { body:"Attach files, set tokens. SubmitForReview is the artifact gate — sections, files Ready.", edges:[["SubmitForReview","UnderReview"]] },
+  "language:UnderReview": { body:"Waiting. Curator may announce Submitted. Reviewer may begin. Human has not published.", edges:[["Publish","Published"],["ReturnToDraft","Draft"]] },
+  "language:Published": { body:"Live. Requires quality_review_passed and public assets. Cedar keeps contributors off Publish.", edges:[["Revise","UnderReview"]] },
+  "language:Archived": { body:"Out of the commons. Restore returns it to UnderReview.", edges:[["Restore","UnderReview"]] },
+  "review:SubmissionReceived": { body:"Created by the curator’s submit. Load the accepted rulebook. Begin only if that curator Submitted and the language is UnderReview.", edges:[["RecordSubmissionRef","stay"],["AcceptSubmission","stay"],["LoadRulebook","stay"],["BeginReview","Reviewing"]] },
+  "review:Reviewing": { body:"Render and inspect are different flags. A repair (max 6) wipes every look. Eight looks stand before a verdict.", edges:[["Fetch / Render / Inspect","stay"],["RecordRepair","stay"],["RecordVerdict","VerdictRecorded"]] },
+  "review:VerdictRecorded": { body:"Terminal. This is what unlocks HumanCurator.Publish — by status, not by matching ids.", edges:[] },
+  "review:Abandoned": { body:"Terminal. Leaves the language unpublishable. Correct answer to empty scope.", edges:[] },
+  "human:SubmissionAssigned": { body:"A seat, not a person. Pick it up, or after 48h it escalates (max 3).", edges:[["BeginReview","Reviewing"],["ReviewOverdue","Escalated"]] },
+  "human:Reviewing": { body:"Publish only if the linked ReviewAgent is VerdictRecorded. Or return with a written critique.", edges:[["Publish","Published"],["ReturnWithCritique","ReturnedWithCritique"],["ReviewOverdue","Escalated"]] },
+  "human:Published": { body:"Terminal for the seat. Publishing the assignment is not automatically publishing the artifact.", edges:[] },
+  "human:ReturnedWithCritique": { body:"Terminal. The critique is the training signal. A later curator run may read it.", edges:[] },
+  "human:Escalated": { body:"Visible neglect. Reassign is blocked after the third time — last night’s bound.", edges:[["Reassign","SubmissionAssigned"]] }
+};
+
+const PLAY = [
+  ["language","Draft"],
+  ["curator","BriefReceived"],
+  ["curator","DirectionDerived"],
+  ["curator","ImageryInspected"],
+  ["curator","SurfacesAuthored"],
+  ["curator","SurfacesRendered"],
+  ["curator","RenderInspected"],
+  ["curator","RulesChecked"],
+  ["language","UnderReview"],
+  ["curator","CraftClean"],
+  ["curator","Submitted"],
+  ["review","SubmissionReceived"],
+  ["review","Reviewing"],
+  ["review","VerdictRecorded"],
+  ["human","SubmissionAssigned"],
+  ["human","Reviewing"],
+  ["human","Published"],
+  ["language","Published"]
+];
+
+const PROPS = `
+<p>Coloured chips: <span class="chip">shipped</span> <span class="chip">craft #211</span> <span class="chip night">last night</span> <span class="chip sug">not in a spec</span></p>
+<p><b>Curator</b> — FixInvalidatesPerception, ConcurrencyCapHolds, RevisionLoopBounded (≤12), SubmittedHoldsNoWork, SubmittedRequiresSelfReview, CraftCleanHasNoOpenFindings, terminals. Liveness: RunEventuallyTerminal. All craft.</p>
+<p><b>Review</b> — InspectionRequiresRender, PerceptionRequiresCurrentBytes, JudgementRequiresInspection, RepairLoopBounded (≤6), seven VerdictRequires*, terminals. Liveness: EveryReviewEventuallyRules. All craft.</p>
+<p><b>Human</b> — ReviewingRequiresAssignment, PublishedRequiresReviewVerdict, terminals <span class="chip">shipped</span>. EscalationLoopBounded (≤3) and AssignmentEventuallyResolved <span class="chip night">last night</span>.</p>
+<p><b>Language</b> — seven PublishedRequires* fences. No liveness: sitting in UnderReview is the point. <span class="chip">shipped</span></p>
+<p><b>Joint</b> — “Published only if the same language was Submitted and VerdictRecorded” is <span class="chip sug">not in any spec</span>. Publish checks the review’s status, not that it reviewed this id.</p>
+`;
+
+const Y = {
+  "curator:BriefReceived": 11,
+  "curator:DirectionDerived": 9.2,
+  "curator:ImageryInspected": 7.6,
+  "curator:SurfacesAuthored": 6.2,
+  "curator:SurfacesRendered": 4.8,
+  "curator:RenderInspected": 3.4,
+  "curator:RulesChecked": 2.0,
+  "curator:CraftClean": 0.6,
+  "curator:Submitted": -1.2,
+  "curator:Abandoned": -7.2,
+  "language:Draft": 11,
+  "language:UnderReview": -1.2,
+  "language:Published": -5.4,
+  "language:Archived": -7.2,
+  "review:SubmissionReceived": -1.2,
+  "review:Reviewing": -3.2,
+  "review:VerdictRecorded": -5.4,
+  "review:Abandoned": -7.2,
+  "human:SubmissionAssigned": 11,
+  "human:Reviewing": -3.2,
+  "human:Published": -5.4,
+  "human:ReturnedWithCritique": -7.2,
+  "human:Escalated": -8.8
+};
+const posOf = (lane, name) => new THREE.Vector3(LANES[lane].x, Y[lane+":"+name], 0);
+
+const root = document.getElementById("stage");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 1, 36);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+root.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+labelRenderer.domElement.style.position = "absolute";
+labelRenderer.domElement.style.inset = "0";
+labelRenderer.domElement.style.pointerEvents = "none";
+root.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 16;
+controls.maxDistance = 80;
+controls.target.set(0, 1, 0);
+if (reduce) controls.enableRotate = false;
+
+scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+const key = new THREE.DirectionalLight(0xffffff, 0.55);
+key.position.set(8, 18, 20);
+scene.add(key);
+
+const mats = {
+  node: new THREE.MeshStandardMaterial({ color: 0x101010, roughness: 0.45, metalness: 0 }),
+  term: new THREE.MeshStandardMaterial({ color: 0x6B21E8, roughness: 0.4, metalness: 0 }),
+  dim:  new THREE.MeshStandardMaterial({ color: 0xC9C4B8, roughness: 0.6, metalness: 0 }),
+  on:   new THREE.MeshStandardMaterial({ color: 0x00AEEF, roughness: 0.35, metalness: 0 })
+};
+
+const nodes = {};
+const nodeMeshes = [];
+const localLines = [];
+const seamLines = [];
+
+function makeLine(a, b, color, dashed=false){
+  const pts = [];
+  const mid = a.clone().lerp(b, 0.5);
+  if (Math.abs(a.x - b.x) > 0.1){
+    mid.z = dashed ? 3.2 : 2.2;
+    pts.push(a, mid, b);
+  } else {
+    pts.push(a, b);
+  }
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  const m = dashed
+    ? new THREE.LineDashedMaterial({ color, dashSize: 0.45, gapSize: 0.28, transparent: true, opacity: 0.95 })
+    : new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 });
+  const line = new THREE.Line(g, m);
+  if (dashed) line.computeLineDistances();
+  scene.add(line);
+  return line;
+}
+
+for (const [lane, spec] of Object.entries(LANES)){
+  const list = STATES[lane];
+  const top = posOf(lane, list[0]);
+  const bot = posOf(lane, list[list.length-1]);
+  const spine = makeLine(top.clone().setY(top.y+1.4), bot.clone().setY(bot.y-1.2), 0xE4DFD4);
+  localLines.push(spine);
+
+  const head = document.createElement("div");
+  head.className = "label3d lane";
+  head.textContent = spec.title;
+  const ho = new CSS2DObject(head);
+  ho.position.set(spec.x, 12.6, 0);
+  scene.add(ho);
+
+  list.forEach((name, i) => {
+    const p = posOf(lane, name);
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(TERM[lane].has(name) ? 0.38 : 0.28, 24, 16),
+      TERM[lane].has(name) ? mats.term : mats.node
+    );
+    mesh.position.copy(p);
+    mesh.userData = { lane, name, key: lane+":"+name };
+    scene.add(mesh);
+    const hit = new THREE.Mesh(
+      new THREE.SphereGeometry(0.9, 8, 8),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.position.copy(p);
+    hit.userData = mesh.userData;
+    scene.add(hit);
+    nodeMeshes.push(hit);
+
+    const el = document.createElement("div");
+    el.className = "label3d" + (TERM[lane].has(name) ? " term" : "");
+    el.textContent = name;
+    const lab = new CSS2DObject(el);
+    lab.position.set(p.x, p.y - 0.72, p.z);
+    scene.add(lab);
+    nodes[lane+":"+name] = { mesh, el, pos: p };
+  });
+
+  EDGES[lane].forEach(([a,b]) => {
+    if (a === b) return;
+    const line = makeLine(posOf(lane,a), posOf(lane,b), 0x101010);
+    line.userData.local = true;
+    localLines.push(line);
   });
 }
-mount("curator","curator-states","curator-panel");
-mount("lang","lang-states","lang-panel");
-mount("review","review-states","review-panel");
-mount("human","human-states","human-panel");
+
+SEAMS.forEach(s => {
+  const a = posOf(s.from[0], s.from[1]);
+  const b = posOf(s.to[0], s.to[1]);
+  const line = makeLine(a, b, s.color, true);
+  line.userData.seam = s;
+  if (s.quiet) line.visible = false;
+  seamLines.push(line);
+});
+
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let selected = null;
+let playTimer = 0;
+let playIdx = -1;
+let seamsOnly = false;
+
+const dock = document.getElementById("dock");
+const dockTitle = document.getElementById("dock-title");
+const dockMeta = document.getElementById("dock-meta");
+const dockBody = document.getElementById("dock-body");
+
+function select(key, extra=""){
+  selected = key;
+  Object.values(nodes).forEach(n => n.el.classList.remove("on"));
+  if (key && nodes[key]) nodes[key].el.classList.add("on");
+  const [lane, name] = (key||"").split(":");
+  if (!lane){
+    dock.classList.remove("open");
+    return;
+  }
+  const d = DETAIL[key] || { body:"", edges:[] };
+  dock.classList.add("open");
+  dockMeta.textContent = LANES[lane].title + " · " + LANES[lane].origin;
+  dockTitle.textContent = name;
+  const edges = (d.edges||[]).map(e =>
+    `<div class="edge"><code>${e[0]}</code> → ${e[1]}</div>`
+  ).join("");
+  dockBody.innerHTML = `<p>${d.body}${extra?" "+extra:""}</p>` + edges;
+}
+
+function setSeamsOnly(on){
+  seamsOnly = on;
+  localLines.forEach(l => { l.visible = !on; });
+  seamLines.forEach(l => { l.visible = on || !l.userData.seam.quiet; });
+  Object.values(nodes).forEach(n => { n.el.style.opacity = on ? ".45" : "1"; });
+}
+
+const cams = {
+  overview: { pos:[18, 6, 32], target:[0,1,0] },
+  seams:    { pos:[0, -1, 34], target:[0,-1,0] },
+  front:    { pos:[0, 1, 36], target:[0,1,0] }
+};
+function goCam(name){
+  const c = cams[name];
+  camera.position.set(...c.pos);
+  controls.target.set(...c.target);
+  setSeamsOnly(name === "seams");
+  document.querySelectorAll("[data-cam]").forEach(b => b.classList.toggle("on", b.dataset.cam===name));
+}
+
+function stopPlay(){
+  playIdx = -1;
+  clearTimeout(playTimer);
+}
+function play(){
+  if (reduce){ select("curator:CraftClean"); return; }
+  stopPlay();
+  playIdx = 0;
+  const tick = () => {
+    if (playIdx < 0 || playIdx >= PLAY.length){ playIdx = -1; return; }
+    const [lane, name] = PLAY[playIdx];
+    select(lane+":"+name, playIdx===8 ? "Seam: the language must already be UnderReview before the curator can submit." :
+      playIdx===10 ? "Submitting creates the review record." :
+      playIdx===13 ? "A verdict is what the human publish path waits on." :
+      playIdx===16 ? "Human published. The language’s own Publish is a separate act." : "");
+    const p = posOf(lane, name);
+    controls.target.lerp(new THREE.Vector3(p.x * 0.15, p.y, 0), 0.1);
+    playIdx++;
+    playTimer = setTimeout(tick, 900);
+  };
+  clearTimeout(playTimer);
+  tick();
+}
+
+renderer.domElement.addEventListener("pointerdown", e => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(nodeMeshes)[0];
+  if (hit) select(hit.object.userData.key);
+});
+
+document.querySelectorAll("[data-cam]").forEach(b => b.addEventListener("click", () => { stopPlay(); goCam(b.dataset.cam); }));
+document.querySelector("[data-play]").addEventListener("click", play);
+document.querySelector("[data-props]").addEventListener("click", () => {
+  stopPlay();
+  dock.classList.add("open");
+  dockMeta.textContent = "Invariants & liveness";
+  dockTitle.textContent = "What is proved";
+  dockBody.innerHTML = PROPS;
+});
+document.querySelector(".close").addEventListener("click", () => dock.classList.remove("open"));
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+});
+
+function frame(){
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+goCam("front");
+frame();
 </script>
 </body>
 </html>
