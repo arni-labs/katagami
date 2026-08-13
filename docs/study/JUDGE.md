@@ -15,8 +15,10 @@ POST $TEMPER_API_URL/api/conformance/check
 ```
 
 Layer 1 is authoritative for order, guards, and exactly-once. Do not
-re-litigate it. Then judge layer 2 (taste, finish, reasoning) against
-**only** the reference below for this arm.
+re-litigate it. Then judge **conduct** against **only** the reference
+below for this arm — did the ATIF show the act the unit names, not
+merely a ledger mark. Do not score taste or whether the language is
+good (C20–C27 are not tagged).
 
 Write two `TrajectoryVerdict` rows (`deterministic`, then `llm`).
 

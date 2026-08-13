@@ -38,4 +38,6 @@ Each row is a choice I made without you. Overrule any of them.
 | D31 | Authoring is one mark (`AuthorLanguage`) after every named part exists. Many file writes / one `SubmitDesignLanguage` call is fine. | Rita: one call is fine as long as it authored everything. |
 | D32 | BEHAVIOR / inventory drop the leftover contributor-path items (whoami, remix, art-style portability, C28–C47). Those were copied from the old `katagami-contributor` skill. This phase is source_search + synthesize. Taste judgment C20–C27 stays. | Rita: "why is art style portability there? or remix or who am I?" |
 
+| D33 | BEHAVIOR.md is Braintrust-short: heading + **Intent** + **Fail**. No essay under each title. C20–C27 (taste / judgment of the work) are **not** tagged in curator BEHAVIOR. This experiment scores conduct the ATIF can show, not whether Keyblock is a good language. | Rita: the free-form files were too long; titles plus intent are enough. Judgment of the work is not this experiment. |
+
 Last updated as work proceeds. New rows append; existing rows are not silently rewritten.

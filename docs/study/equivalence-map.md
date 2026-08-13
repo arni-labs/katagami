@@ -9,8 +9,8 @@ is measuring coverage rather than approach, and the result means nothing.
 
 - **Inventory:** `docs/study/behavior-inventory.md`
 - **Condition A (prose):** `.agents/behaviors/<actor>/BEHAVIOR.md`, in Braintrust's
-  Agent Behavior format. Each statement is tagged with its inventory number in an
-  HTML comment, so the mapping is checkable line by line.
+  Agent Behavior format (heading + Intent + Fail). Each statement is tagged with
+  its inventory number in an HTML comment. C20–C27 are not tagged (D33).
 - **Condition B (formal):** the IOA actor specs and the Cedar policies.
 
 ## Layers
