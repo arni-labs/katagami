@@ -1,0 +1,58 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "keyblock",
+  "type": "registry:theme",
+  "title": "Keyblock",
+  "description": "Ukiyo-e keyblock ink on a Swiss modular grid — indigo ink, paper, and a vermillion plate slipping out of register. Radius 0, no borders, one shared control height.",
+  "cssVars": {
+    "theme": {
+      "font-sans": "Inter, sans-serif",
+      "font-display": "Archivo, sans-serif",
+      "radius": "0rem"
+    },
+    "light": {
+      "background": "#FFFFFF",
+      "foreground": "#131A38",
+      "card": "#EEF1F8",
+      "card-foreground": "#131A38",
+      "popover": "#131A38",
+      "popover-foreground": "#FFFFFF",
+      "primary": "#E23A21",
+      "primary-foreground": "#FFFFFF",
+      "secondary": "#EEF1F8",
+      "secondary-foreground": "#131A38",
+      "muted": "#EEF1F8",
+      "muted-foreground": "#5B647F",
+      "accent": "#24359E",
+      "accent-foreground": "#FFFFFF",
+      "destructive": "#C22F18",
+      "destructive-foreground": "#FFFFFF",
+      "success": "#1E7A4F",
+      "warning": "#C27A00",
+      "border": "transparent",
+      "input": "#EEF1F8",
+      "ring": "#24359E",
+      "chart-1": "#131A38",
+      "chart-2": "#E23A21",
+      "chart-3": "#24359E",
+      "chart-4": "#5B647F",
+      "chart-5": "#EEF1F8",
+      "radius": "0rem"
+    }
+  },
+  "componentManifest": {
+    "format": "component-recipes-v1",
+    "componentsFile": "components.md",
+    "previewShotsFile": "preview-shots.json",
+    "primitives": [
+      "button", "card", "input", "textarea", "select", "dialog", "sheet",
+      "tabs", "badge", "separator", "checkbox", "switch", "slider",
+      "tooltip", "dropdown-menu", "table"
+    ],
+    "signature": {
+      "mechanic": "kento-registration",
+      "description": "A flat color plate (ink #131A38, vermillion #E23A21, or registration blue #24359E) offset 8-10px behind the component face; the primary button reveals its ink plate on hover via translate(-3px,-3px) + hard shadow.",
+      "cornerMark": "Section titles open with a vermillion right-angle kento notch (14x4px + 4x14px rectangles)."
+    }
+  }
+}

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kento — the reading desk for serialized essays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;
+  --surface:#EEF1F8;
+  --text:#131A38;
+  --muted:#5B647F;
+  --border:transparent;
+  --accent:#E23A21;
+  --on-accent:#FFFFFF;
+  --success:#1E7A4F;
+  --warning:#C27A00;
+  --error:#C22F18;
+  --info:#24359E;
+  --hero-image:url('./hero.jpg');
+  --plate-shift:10px;
+  --font-display:'Archivo',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:17px;line-height:1.6;color:var(--text);background:var(--bg)}
+img{max-width:100%;display:block}
+
+/* ---------- kento corner mark (registration notch) ---------- */
+.kento{position:relative;display:inline-block;padding-left:26px}
+.kento::before{content:"";position:absolute;left:0;top:.32em;width:14px;height:4px;background:var(--accent)}
+.kento::after{content:"";position:absolute;left:0;top:.32em;width:4px;height:14px;background:var(--accent)}
+
+/* ---------- slipped plate (signature mechanic) ---------- */
+.plate{position:relative}
+.plate::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translate(var(--plate-shift),var(--plate-shift));z-index:0;transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.plate>.plate-face{position:relative;z-index:1;background:var(--surface);height:100%}
+.plate.plate-ink::before{background:var(--text)}
+.plate.plate-info::before{background:var(--info)}
+.plate:hover::before{transform:translate(calc(var(--plate-shift) * 1.6),calc(var(--plate-shift) * 1.6))}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+section{padding:112px 0}
+
+/* ---------- hero ---------- */
+.hero{position:relative;width:100vw;height:100svh;min-height:640px;overflow:hidden}
+.hero-img{position:absolute;inset:0;background-image:var(--hero-image);background-size:cover;background-position:center 38%;transform-origin:center}
+@media (max-width:640px){.hero-img{background-position:68% 38%}}
+.anim .hero-img{animation:kenburns 18s ease-out forwards}
+@keyframes kenburns{from{transform:scale(1.06)}to{transform:scale(1)}}
+.hero-inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+nav{display:flex;align-items:center;justify-content:space-between;padding:28px 40px}
+.mast{font-family:var(--font-display);font-weight:900;font-size:26px;letter-spacing:-0.02em;background:var(--text);color:var(--bg);padding:10px 18px;text-decoration:none}
+.nav-links{display:flex;gap:8px}
+.nav-links a{font-weight:600;font-size:15.5px;color:var(--text);background:var(--bg);text-decoration:none;padding:9px 16px;transition:background .2s,color .2s}
+.nav-links a:hover{background:var(--text);color:var(--bg)}
+.hero-title{margin-top:auto;padding:0 40px 64px;max-width:880px}
+.press{display:inline-block;background:var(--text);color:var(--bg);padding:20px 28px 24px}
+.press h1{font-family:var(--font-display);font-weight:900;font-size:clamp(42px,6.2vw,84px);line-height:1.02;letter-spacing:-0.02em}
+.press h1 em{font-style:normal;color:var(--accent)}
+.hero-sub{display:inline-block;background:var(--bg);color:var(--text);padding:14px 22px;margin-top:0;font-size:19px;font-weight:500;max-width:560px}
+.hero-cta{display:flex;gap:16px;margin-top:26px;flex-wrap:wrap}
+
+/* ---------- buttons ---------- */
+.btn{font-family:var(--font-body);font-weight:700;font-size:17px;padding:15px 30px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:transform .2s,background .2s,color .2s;border:0}
+.btn-primary{background:var(--accent);color:var(--on-accent);position:relative}
+.btn-primary:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 0 var(--text)}
+.btn-secondary{background:var(--bg);color:var(--text)}
+.btn-secondary:hover{background:var(--surface)}
+.btn:focus-visible{outline:3px solid var(--info);outline-offset:3px}
+
+/* ---------- section headers ---------- */
+.sec-eyebrow{font-weight:700;font-size:16px;color:var(--muted);margin-bottom:18px}
+h2{font-family:var(--font-display);font-weight:900;font-size:clamp(34px,4vw,54px);letter-spacing:-0.02em;line-height:1.06;max-width:760px}
+.sec-lede{font-size:19px;color:var(--muted);max-width:640px;margin-top:22px}
+
+/* ---------- desk features ---------- */
+.features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px;margin-top:72px}
+.feature .plate-face{padding:36px 32px 40px}
+.feature h3{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-0.02em;margin-bottom:14px;padding-top:8px}
+.feature p{color:var(--muted);font-size:17px}
+.glyph{width:44px;height:44px;margin-bottom:22px}
+
+/* ---------- stats band ---------- */
+.stats{background:var(--text);color:var(--bg)}
+.stats .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:48px}
+.stat-num{font-family:var(--font-display);font-weight:900;font-size:clamp(40px,4.4vw,64px);letter-spacing:-0.02em;line-height:1}
+.stat-num .u{color:var(--accent)}
+.stat-label{margin-top:12px;font-size:16.5px;color:var(--surface);opacity:.75}
+
+/* ---------- how the desk works ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px;margin-top:72px}
+.step-num{font-family:var(--font-display);font-weight:900;font-size:72px;line-height:1;color:var(--surface);-webkit-text-stroke:2px var(--info);margin-bottom:20px}
+.step h3{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-0.02em;margin-bottom:12px}
+.step p{color:var(--muted)}
+
+/* ---------- serials shelf ---------- */
+.shelf{background:var(--surface)}
+.shelf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px;margin-top:72px}
+.serial .plate-face{background:var(--bg);padding:32px 30px 36px}
+.serial-tag{display:inline-block;font-size:13.5px;font-weight:700;padding:5px 10px;margin-bottom:18px}
+.tag-run{background:var(--info);color:var(--on-accent)}
+.tag-new{background:var(--accent);color:var(--on-accent)}
+.tag-done{background:var(--success);color:var(--on-accent)}
+.serial h3{font-family:var(--font-display);font-weight:900;font-size:26px;letter-spacing:-0.02em;line-height:1.15;margin-bottom:10px}
+.serial .by{font-size:15.5px;color:var(--muted);margin-bottom:18px}
+.serial p{font-size:16.5px;color:var(--muted)}
+.serial-meta{margin-top:24px;display:flex;gap:20px;font-size:14.5px;font-weight:600;color:var(--text)}
+
+/* ---------- pull quote ---------- */
+.quote-band .press{max-width:900px;padding:36px 44px}
+.quote-band .press p{font-family:var(--font-display);font-weight:700;font-size:clamp(24px,3vw,38px);letter-spacing:-0.02em;line-height:1.25}
+.quote-band .press p span{color:var(--accent)}
+.quote-who{margin-top:26px;font-size:16.5px;color:var(--muted)}
+
+/* ---------- closing cta ---------- */
+.closing{background:var(--surface);text-align:left}
+.closing .wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:64px;align-items:center}
+.closing-cta{display:flex;gap:16px;flex-wrap:wrap;margin-top:36px}
+
+/* ---------- footer ---------- */
+footer{background:var(--text);color:var(--bg);padding:64px 0}
+footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:40px;flex-wrap:wrap}
+.foot-mast{font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:-0.02em}
+.foot-links{display:flex;gap:28px;flex-wrap:wrap}
+.foot-links a{color:var(--surface);opacity:.8;text-decoration:none;font-size:15.5px}
+.foot-links a:hover{opacity:1}
+.foot-note{width:100%;margin-top:36px;font-size:14.5px;opacity:.55}
+
+/* ---------- scroll reveal ---------- */
+.anim .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.anim .reveal.in{opacity:1;transform:none}
+.anim .reveal-plate{--plate-shift:0px;transition:--plate-shift .5s}
+@media (prefers-reduced-motion: reduce){
+  .anim .reveal{opacity:1;transform:none;transition:none}
+  .anim .hero-img{animation:none}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px){
+  .features,.steps,.shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .closing .wrap{grid-template-columns:minmax(0,1fr)}
+  .nav-links a:nth-child(n+3){display:none}
+}
+@media (max-width: 640px){
+  .wrap{padding:0 20px}
+  section{padding:72px 0}
+  .features,.steps,.shelf-grid{grid-template-columns:minmax(0,1fr)}
+  .stats .wrap{grid-template-columns:minmax(0,1fr);gap:36px}
+  nav{padding:20px}
+  .hero-title{padding:0 20px 44px}
+  .nav-links a{display:none}
+  .nav-links a:first-child{display:inline-flex}
+}
+@media (min-width: 2000px){
+  .wrap{max-width:1440px}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-img"></div>
+  <div class="hero-inner">
+    <nav>
+      <a class="mast" href="#">Kento</a>
+      <div class="nav-links">
+        <a href="#desk">The desk</a>
+        <a href="#serials">Serials</a>
+        <a href="#how">How it works</a>
+      </div>
+    </nav>
+    <div class="hero-title">
+      <div class="press">
+        <h1>Read long.<br>Read <em>whole.</em></h1>
+      </div>
+      <br>
+      <div class="hero-sub">Kento is the reading desk for serialized essays — queue a season, keep your place across months, and finish what you start.</div>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#desk">Open your desk</a>
+        <a class="btn btn-secondary" href="#serials">Browse the shelf</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="desk">
+  <div class="wrap">
+    <div class="sec-eyebrow reveal">The desk</div>
+    <h2 class="kento reveal">Everything registers in its place</h2>
+    <p class="sec-lede reveal">Long reading falls apart when the pieces scatter. Kento holds the queue, the place, and the margins on one desk — so a twelve-part essay reads like one book.</p>
+    <div class="features">
+      <div class="feature plate reveal">
+        <div class="plate-face">
+          <svg class="glyph" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="6" width="24" height="6" fill="#131A38"/><rect x="4" y="19" width="36" height="6" fill="#E23A21"/><rect x="4" y="32" width="30" height="6" fill="#131A38"/></svg>
+          <h3>The queue</h3>
+          <p>Pin a season of installments in reading order. Kento meters the backlog — 40 minutes tonight, the finale by Friday.</p>
+        </div>
+      </div>
+      <div class="feature plate plate-ink reveal">
+        <div class="plate-face">
+          <svg class="glyph" viewBox="0 0 44 44" aria-hidden="true"><rect x="6" y="4" width="6" height="36" fill="#E23A21"/><rect x="18" y="4" width="22" height="10" fill="#131A38"/><rect x="18" y="20" width="22" height="4" fill="#5B647F"/><rect x="18" y="28" width="16" height="4" fill="#5B647F"/></svg>
+          <h3>The place</h3>
+          <p>Your line, not just your page. Come back after three weeks and the desk reopens mid-sentence, with a two-line recap above it.</p>
+        </div>
+      </div>
+      <div class="feature plate plate-info reveal">
+        <div class="plate-face">
+          <svg class="glyph" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="4" width="26" height="36" fill="#EEF1F8"/><rect x="8" y="10" width="18" height="3" fill="#131A38"/><rect x="8" y="17" width="18" height="3" fill="#131A38"/><rect x="8" y="24" width="12" height="3" fill="#131A38"/><rect x="32" y="14" width="8" height="20" fill="#E23A21"/></svg>
+          <h3>The margins</h3>
+          <p>Press a note into the margin as you read. Notes stack into a private commonplace book, indexed by serial and author.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrap">
+    <div class="reveal"><div class="stat-num"><span class="count" data-to="1284">0</span></div><div class="stat-label">serials on the shelf</div></div>
+    <div class="reveal"><div class="stat-num"><span class="count" data-to="46210">0</span></div><div class="stat-label">installments queued this season</div></div>
+    <div class="reveal"><div class="stat-num"><span class="count" data-to="83">0</span><span class="u">%</span></div><div class="stat-label">of started serials finished</div></div>
+    <div class="reveal"><div class="stat-num"><span class="count" data-to="41">0</span><span class="u">min</span></div><div class="stat-label">median evening sitting</div></div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-eyebrow reveal">How it works</div>
+    <h2 class="kento reveal">Three passes, like a print</h2>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3>Set the block</h3>
+        <p>Choose a serial and Kento lays the whole run on your desk — every installment, its length, and where the season pauses.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h3>Pull the proof</h3>
+        <p>Read in a quiet, typeset page. The desk keeps your exact line and folds in recaps when a gap gets long.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h3>Register the color</h3>
+        <p>Margins, highlights, and finished marks press onto the run. When the finale lands, your whole reading is one bound record.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="shelf" id="serials">
+  <div class="wrap">
+    <div class="sec-eyebrow reveal">On the shelf now</div>
+    <h2 class="kento reveal">Serials worth a season</h2>
+    <div class="shelf-grid">
+      <div class="serial plate reveal">
+        <div class="plate-face">
+          <span class="serial-tag tag-run">Running · Part 7 of 12</span>
+          <h3>The Paper Harbor</h3>
+          <div class="by">Mirei Okazaki · Harbor Almanac</div>
+          <p>A year inside the last hand-set print shop in Kanazawa, and the apprentices betting their twenties on ink.</p>
+          <div class="serial-meta"><span>7,200 readers</span><span>38 min/part</span></div>
+        </div>
+      </div>
+      <div class="serial plate plate-ink reveal">
+        <div class="plate-face">
+          <span class="serial-tag tag-new">New · Part 1 just landed</span>
+          <h3>Gridlock Republic</h3>
+          <div class="by">Tomas Ferreira · The Long Gallery</div>
+          <p>Twelve cities, twelve grids: how street plans quietly decide who meets whom, and what a corner is worth.</p>
+          <div class="serial-meta"><span>2,940 readers</span><span>44 min/part</span></div>
+        </div>
+      </div>
+      <div class="serial plate plate-info reveal">
+        <div class="plate-face">
+          <span class="serial-tag tag-done">Complete · 9 parts</span>
+          <h3>Vermilion Ledger</h3>
+          <div class="by">Ada Okonkwo · Field &amp; Folio</div>
+          <p>Following one pigment from a Kyoto storehouse through auction rooms, forgeries, and a museum basement.</p>
+          <div class="serial-meta"><span>11,480 readers</span><span>5h 40m total</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-band">
+  <div class="wrap">
+    <div class="press reveal">
+      <p>"I had abandoned every serial I ever started. Kento got me through all nine parts of the <span>Vermilion Ledger</span> — and I could tell you where every margin note sits."</p>
+    </div>
+    <div class="quote-who reveal">Amaia Ibarra — reader in Bilbao, 14 serials finished</div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <div>
+      <h2 class="kento reveal">Put tonight's reading in register</h2>
+      <p class="sec-lede reveal">Your first season is free. Queue one serial, keep one place, press one margin note — the desk does the rest.</p>
+      <div class="closing-cta reveal">
+        <a class="btn btn-primary" href="#">Start a season</a>
+        <a class="btn btn-secondary" href="#">See sample desk</a>
+      </div>
+    </div>
+    <div class="plate reveal"><div class="plate-face" style="padding:36px 32px">
+      <div style="font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:-0.02em;margin-bottom:16px">Tonight on your desk</div>
+      <div style="display:flex;justify-content:space-between;font-size:16px;padding:12px 0"><span>The Paper Harbor · Part 7</span><strong>38 min</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px;padding:12px 0;background:var(--bg);margin:0 -12px;padding-left:12px;padding-right:12px"><span>Gridlock Republic · Part 1</span><strong>44 min</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px;padding:12px 0"><span>Margin notes to file</span><strong>3</strong></div>
+    </div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-mast">Kento</div>
+    <div class="foot-links">
+      <a href="#">The desk</a>
+      <a href="#">Serials</a>
+      <a href="#">For publishers</a>
+      <a href="#">Reading notes</a>
+      <a href="#">About</a>
+    </div>
+    <div class="foot-note">Kento — a reading desk for serialized essays. Set the block, pull the proof, register the color.</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  function runCounts(scope){
+    scope.querySelectorAll('.count').forEach(function(c){
+      if(c.dataset.done) return; c.dataset.done = '1';
+      var to = parseInt(c.dataset.to,10), t0 = null;
+      function tick(t){ if(!t0) t0 = t; var p = Math.min((t - t0)/1400, 1);
+        c.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString();
+        if(p < 1) requestAnimationFrame(tick); }
+      requestAnimationFrame(tick);
+    });
+  }
+  function activate(el){ el.classList.add('in'); runCounts(el); }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.querySelectorAll('.count').forEach(function(c){
+      c.textContent = parseInt(c.dataset.to,10).toLocaleString(); c.dataset.done = '1';
+    });
+    return;
+  }
+  document.documentElement.classList.add('anim');
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ activate(e.target); io.unobserve(e.target); }
+    });
+  },{threshold:0.12});
+  var reveals = document.querySelectorAll('.reveal');
+  reveals.forEach(function(el){ io.observe(el); });
+  /* settled-state failsafe: nothing may stay hidden if the observer never fires */
+  setTimeout(function(){ reveals.forEach(activate); }, 2500);
+})();
+</script>
+</body>
+</html>

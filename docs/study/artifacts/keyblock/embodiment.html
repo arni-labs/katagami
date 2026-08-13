@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyblock — design language embodiment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#EEF1F8; --text:#131A38; --muted:#5B647F;
+  --border:transparent; --accent:#E23A21; --on-accent:#FFFFFF;
+  --success:#1E7A4F; --warning:#C27A00; --error:#C22F18; --info:#24359E;
+  --plate-shift:10px;
+  --font-display:'Archivo',sans-serif; --font-body:'Inter',sans-serif;
+  --control-h:52px;
+}
+*{margin:0;padding:0;box-sizing:border-box;min-width:0}
+body{font-family:var(--font-body);font-size:17px;line-height:1.6;color:var(--text);background:var(--bg)}
+
+.kento{position:relative;display:inline-block;padding-left:26px}
+.kento::before{content:"";position:absolute;left:0;top:.32em;width:14px;height:4px;background:var(--accent)}
+.kento::after{content:"";position:absolute;left:0;top:.32em;width:4px;height:14px;background:var(--accent)}
+
+.plate{position:relative}
+.plate::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translate(var(--plate-shift),var(--plate-shift));z-index:0}
+.plate>.plate-face{position:relative;z-index:1;background:var(--surface);height:100%}
+.plate-ink::before{background:var(--text)}
+.plate-info::before{background:var(--info)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:0 36px}
+section{padding:72px 0 0}
+section:last-of-type{padding-bottom:96px}
+
+/* masthead */
+.masthead{background:var(--text);color:var(--bg);padding:88px 0 72px}
+.masthead .name{font-family:var(--font-display);font-weight:900;font-size:clamp(56px,8vw,120px);letter-spacing:-0.02em;line-height:.95}
+.masthead .name em{font-style:normal;color:var(--accent)}
+.masthead .strap{margin-top:28px;font-size:19px;max-width:640px;color:var(--surface);opacity:.85}
+.mast-chips{display:flex;gap:12px;margin-top:36px;flex-wrap:wrap}
+.chip{background:var(--bg);color:var(--text);font-weight:700;font-size:14.5px;padding:8px 14px}
+.chip.red{background:var(--accent);color:var(--on-accent)}
+.chip.blue{background:var(--info);color:var(--on-accent)}
+
+.sec-title{font-family:var(--font-display);font-weight:900;font-size:34px;letter-spacing:-0.02em;margin-bottom:14px}
+.sec-note{color:var(--muted);max-width:620px;margin-bottom:44px}
+
+/* palette */
+.swatches{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:20px}
+.swatch{height:150px;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 16px;font-weight:700;font-size:13.5px}
+.swatch small{font-weight:500;opacity:.75}
+
+/* type */
+.type-specimen{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:56px;align-items:start}
+.ts-display{font-family:var(--font-display);font-weight:900;letter-spacing:-0.02em;line-height:1}
+.ts-1{font-size:76px}
+.ts-2{font-size:48px;margin-top:20px}
+.ts-3{font-size:30px;margin-top:20px;font-weight:700}
+.type-body p{margin-bottom:16px}
+.type-body .lead{font-size:20px;font-weight:500}
+.type-body .small{font-size:14.5px;color:var(--muted)}
+
+/* buttons & controls */
+.row{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.btn{font-weight:700;font-size:17px;height:var(--control-h);padding:0 28px;cursor:pointer;display:inline-flex;align-items:center;border:0;font-family:var(--font-body);transition:transform .2s,box-shadow .2s,background .2s}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 0 var(--text)}
+.btn-secondary{background:var(--surface);color:var(--text)}
+.btn-secondary:hover{background:var(--text);color:var(--bg)}
+.btn-ghost{background:var(--bg);color:var(--info);font-weight:600}
+.btn-ghost:hover{background:var(--surface)}
+.btn-danger{background:var(--bg);color:var(--error);font-weight:600}
+.btn-danger:hover{background:var(--error);color:var(--on-accent)}
+.btn:disabled{background:var(--surface);color:var(--muted);cursor:not-allowed;transform:none;box-shadow:none}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--info);outline-offset:2px}
+
+.controls-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:44px;margin-top:8px}
+.field{display:flex;flex-direction:column;gap:9px;margin-bottom:26px}
+label{font-weight:600;font-size:15.5px}
+input[type=text],input[type=email],select,textarea{font-family:var(--font-body);font-size:17px;color:var(--text);background:var(--surface);border:0;height:var(--control-h);padding:0 18px;width:100%;appearance:none;border-radius:0}
+textarea{height:auto;min-height:120px;padding:14px 18px;resize:vertical}
+select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' stroke='%23131A38' stroke-width='2.5' fill='none'/></svg>");background-repeat:no-repeat;background-position:right 18px center;padding-right:48px}
+.hint{font-size:14.5px;color:var(--muted)}
+.field.error input{box-shadow:inset 0 0 0 3px var(--error)}
+.field.error .hint{color:var(--error);font-weight:600}
+
+.check-row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+input[type=checkbox]{appearance:none;width:26px;height:26px;background:var(--surface);cursor:pointer;position:relative;flex:none}
+input[type=checkbox]:checked{background:var(--text)}
+input[type=checkbox]:checked::after{content:"";position:absolute;left:9px;top:4px;width:6px;height:12px;border-right:3px solid var(--on-accent);border-bottom:3px solid var(--on-accent);transform:rotate(45deg)}
+.switch{position:relative;width:58px;height:30px;flex:none;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .track{position:absolute;inset:0;background:var(--surface);transition:background .2s}
+.switch .thumb{position:absolute;top:4px;left:4px;width:22px;height:22px;background:var(--text);transition:transform .2s}
+.switch input:checked ~ .track{background:var(--accent)}
+.switch input:checked ~ .thumb{transform:translateX(28px);background:var(--on-accent)}
+.slider-row{display:flex;align-items:center;gap:18px;max-width:420px}
+input[type=range]{appearance:none;flex:1;height:6px;background:var(--surface);border-radius:0}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;background:var(--accent);cursor:pointer;border-radius:0}
+.slider-val{font-weight:700;min-width:56px;text-align:right}
+
+/* badges, tabs, tooltip */
+.badge{display:inline-block;font-size:13.5px;font-weight:700;padding:5px 11px}
+.badge.b-run{background:var(--info);color:var(--on-accent)}
+.badge.b-new{background:var(--accent);color:var(--on-accent)}
+.badge.b-ok{background:var(--success);color:var(--on-accent)}
+.badge.b-warn{background:var(--warning);color:var(--on-accent)}
+.badge.b-muted{background:var(--surface);color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--surface);padding:5px;width:max-content;max-width:100%}
+.tab{font-weight:600;font-size:15.5px;padding:10px 20px;cursor:pointer;color:var(--muted);background:transparent;border:0;font-family:var(--font-body)}
+.tab[aria-selected=true]{background:var(--text);color:var(--bg)}
+.tooltip-demo{position:relative;display:inline-block}
+.tooltip{position:absolute;bottom:calc(100% + 12px);left:0;background:var(--text);color:var(--bg);font-size:14.5px;font-weight:500;padding:9px 14px;white-space:nowrap}
+.tooltip::after{content:"";position:absolute;top:100%;left:22px;width:10px;height:10px;background:var(--text);clip-path:polygon(0 0,100% 0,50% 100%)}
+
+/* cards & table */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px}
+.card-pad{padding:30px 28px 34px}
+.card-pad h4{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:-0.02em;margin-bottom:10px;padding-top:6px}
+.card-pad p{color:var(--muted);font-size:16px}
+
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+thead th{font-family:var(--font-display);font-weight:700;text-align:left;font-size:14.5px;letter-spacing:0;padding:14px 18px;background:var(--text);color:var(--bg)}
+tbody td{padding:15px 18px}
+tbody tr:nth-child(even){background:var(--surface)}
+tbody tr:hover{background:var(--text);color:var(--bg)}
+tbody tr:hover .badge.b-muted{background:var(--bg);color:var(--text)}
+td.num{font-weight:700;text-align:right}
+
+/* chart strip */
+.chart{display:flex;align-items:flex-end;gap:26px;height:220px;padding-top:12px}
+.bar{flex:1;position:relative;background:var(--text)}
+.bar::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translate(7px,7px);z-index:-1}
+.bar span{position:absolute;top:-30px;left:0;right:0;text-align:center;font-weight:700;font-size:14.5px}
+.chart-labels{display:flex;gap:26px;margin-top:14px}
+.chart-labels div{flex:1;text-align:center;font-size:14.5px;color:var(--muted)}
+
+@media (max-width:980px){
+  .swatches{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .type-specimen,.controls-grid{grid-template-columns:minmax(0,1fr)}
+  .cards{grid-template-columns:minmax(0,1fr)}
+  .ts-1{font-size:56px}
+  table th:nth-child(4),table td:nth-child(4){display:none}
+}
+@media (max-width:640px){
+  .wrap{padding:0 20px}
+  .swatches{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chart{gap:12px}
+  .chart-labels{gap:12px}
+  table th:nth-child(3),table td:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="name">Key<em>block</em></div>
+    <div class="strap">Ukiyo-e keyblock ink on a Swiss modular grid. Flat plates of indigo, paper, and vermillion slip just out of register — the color never quite sits still under the line.</div>
+    <div class="mast-chips">
+      <span class="chip">Indigo ink #131A38</span>
+      <span class="chip red">Vermillion #E23A21</span>
+      <span class="chip blue">Registration #24359E</span>
+      <span class="chip">Radius 0 · Archivo 900 · Inter 17</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">The palette</h2>
+    <p class="sec-note">Three plates and their paper. Indigo ink carries every line; vermillion is the lamp — one highlighter, never a wash; registration blue marks links and focus.</p>
+    <div class="swatches">
+      <div class="swatch" style="background:#131A38;color:#FFF">Ink<br><small>#131A38</small></div>
+      <div class="swatch" style="background:#E23A21;color:#FFF">Vermillion<br><small>#E23A21</small></div>
+      <div class="swatch" style="background:#24359E;color:#FFF">Registration<br><small>#24359E</small></div>
+      <div class="swatch" style="background:#EEF1F8;color:#131A38">Washed paper<br><small>#EEF1F8</small></div>
+      <div class="swatch" style="background:#FFFFFF;color:#131A38;box-shadow:inset 0 0 0 1px #EEF1F8">Paper<br><small>#FFFFFF</small></div>
+      <div class="swatch" style="background:#5B647F;color:#FFF">Slate<br><small>#5B647F</small></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">The type block</h2>
+    <p class="sec-note">Archivo 900 cuts the display like a keyblock; Inter sets the reading text at 17px. Display always tracks -0.02em.</p>
+    <div class="type-specimen">
+      <div>
+        <div class="ts-display ts-1">The evening press run</div>
+        <div class="ts-display ts-2" style="color:var(--accent)">Forty-one minutes to the finale</div>
+        <div class="ts-display ts-3" style="color:var(--muted)">Installment seven, in register</div>
+      </div>
+      <div class="type-body">
+        <p class="lead">The apprentices lift the first proof at dusk, and the indigo is still wet enough to mirror the window.</p>
+        <p>Every serial on the desk keeps its own kento notch — the reader's line, the margin notes, and the finished marks all register to it, part after part.</p>
+        <p class="small">Caption / metadata — Inter 14.5, slate on paper.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">Buttons &amp; actions</h2>
+    <p class="sec-note">One shared control height (52px). The primary carries vermillion; on hover it lifts off the sheet and shows its ink plate. Everything else stays quiet.</p>
+    <div class="row" style="margin-bottom:28px">
+      <button class="btn btn-primary">Queue the season</button>
+      <button class="btn btn-secondary">Preview installment</button>
+      <button class="btn btn-ghost">View margins</button>
+      <button class="btn btn-danger">Remove from desk</button>
+      <button class="btn btn-primary" disabled>Queue the season</button>
+    </div>
+    <div class="row">
+      <span class="badge b-new">New part</span>
+      <span class="badge b-run">Running</span>
+      <span class="badge b-ok">Complete</span>
+      <span class="badge b-warn">On pause</span>
+      <span class="badge b-muted">Draft</span>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true">Queue</button>
+        <button class="tab" role="tab" aria-selected="false">Margins</button>
+        <button class="tab" role="tab" aria-selected="false">Finished</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:72px">
+      <div class="tooltip-demo">
+        <span class="tooltip">Recap folds in after 14 quiet days</span>
+        <button class="btn btn-secondary">Recap rule</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">The form plate</h2>
+    <p class="sec-note">Controls sit on washed paper — no outlines anywhere. Focus is a registration-blue ring; an error re-inks the field in vermillion-red.</p>
+    <div class="controls-grid">
+      <div>
+        <div class="field">
+          <label for="t1">Serial title</label>
+          <input type="text" id="t1" value="The Paper Harbor">
+        </div>
+        <div class="field">
+          <label for="s1">Publication</label>
+          <select id="s1"><option>Harbor Almanac</option><option>The Long Gallery</option><option>Field &amp; Folio</option></select>
+        </div>
+        <div class="field error">
+          <label for="e1">Reader email</label>
+          <input type="text" id="e1" value="mirei@harbor">
+          <span class="hint">That address is missing its domain — check the line.</span>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label for="ta1">Margin note</label>
+          <textarea id="ta1">The kento notch is the whole ethic of the shop: cut the register first, then let every color find it.</textarea>
+        </div>
+        <div class="check-row"><input type="checkbox" id="c1" checked><label for="c1">Fold a recap in after long gaps</label></div>
+        <div class="check-row"><input type="checkbox" id="c2"><label for="c2">Send the finale as one sitting</label></div>
+        <div class="check-row">
+          <span class="switch"><input type="checkbox" checked><span class="track"></span><span class="thumb"></span></span>
+          <label>Evening quiet mode</label>
+        </div>
+        <div class="slider-row">
+          <label for="r1" style="flex:none">Sitting length</label>
+          <input type="range" id="r1" min="10" max="90" value="41">
+          <span class="slider-val">41 min</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">Cards in register</h2>
+    <p class="sec-note">The signature mechanic: a flat color plate slips 10px out of register beneath each paper card. Ink, vermillion, and registration blue rotate — never more than three.</p>
+    <div class="cards">
+      <div class="plate"><div class="plate-face card-pad">
+        <span class="badge b-run">Running</span>
+        <h4>The Paper Harbor</h4>
+        <p>Part 7 of 12 · Mirei Okazaki. The shop takes its first commercial commission in a decade.</p>
+      </div></div>
+      <div class="plate plate-ink"><div class="plate-face card-pad">
+        <span class="badge b-new">New part</span>
+        <h4>Gridlock Republic</h4>
+        <p>Part 1 · Tomas Ferreira. Barcelona's chamfered corners, measured in strangers met per block.</p>
+      </div></div>
+      <div class="plate plate-info"><div class="plate-face card-pad">
+        <span class="badge b-ok">Complete</span>
+        <h4>Vermilion Ledger</h4>
+        <p>9 parts · Ada Okonkwo. The pigment reaches the museum basement, and the ledger closes.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">The reading curve</h2>
+    <p class="sec-note">Charts are drawn in the language's own system: ink bars with a vermillion plate slipping out beneath — data printed, not plotted.</p>
+    <div class="chart">
+      <div class="bar" style="height:34%"><span>34</span></div>
+      <div class="bar" style="height:52%"><span>52</span></div>
+      <div class="bar" style="height:41%"><span>41</span></div>
+      <div class="bar" style="height:78%"><span>78</span></div>
+      <div class="bar" style="height:100%"><span>96</span></div>
+      <div class="bar" style="height:64%"><span>64</span></div>
+      <div class="bar" style="height:47%"><span>47</span></div>
+    </div>
+    <div class="chart-labels"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title kento">The run sheet</h2>
+    <p class="sec-note">Tables alternate paper and washed paper; a hovered row takes the full ink plate.</p>
+    <table>
+      <thead><tr><th>Installment</th><th>Serial</th><th>Author</th><th>Words</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Part 7 — The Commission</td><td>The Paper Harbor</td><td>Mirei Okazaki</td><td class="num">9,420</td><td><span class="badge b-run">Running</span></td></tr>
+        <tr><td>Part 1 — Chamfer</td><td>Gridlock Republic</td><td>Tomas Ferreira</td><td class="num">11,080</td><td><span class="badge b-new">New part</span></td></tr>
+        <tr><td>Part 9 — The Basement</td><td>Vermilion Ledger</td><td>Ada Okonkwo</td><td class="num">8,660</td><td><span class="badge b-ok">Complete</span></td></tr>
+        <tr><td>Part 3 — Night Ferry</td><td>The Paper Harbor</td><td>Mirei Okazaki</td><td class="num">10,140</td><td><span class="badge b-muted">Draft</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</body>
+</html>
