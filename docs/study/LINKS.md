@@ -43,6 +43,15 @@ The live recipe is:
 Study server: **http://127.0.0.1:3472** tenant `default`.
 Evidence of load-dir: `docs/study/evidence/load-dir-*.txt`.
 
+`load-dir` **replaces** the tenant entity-set map unless you pass `"merge": true`.
+A second load-dir without merge wiped commons (no DesignLanguages). Restore with
+merge. Live ids: `docs/study/evidence/live-ids-3472.txt`.
+
+`CurationQuery.Submit` triggers WASM `build_session_message` (needs the module
+uploaded *and* `llm_model` in the vault). The study job used
+`CurationJob.Configure` + `Start` instead — Start is "execute without session
+spawning." That is how Claude drives the job.
+
 ## Judge
 
 Prompt: `docs/study/JUDGE.md`.

@@ -1,0 +1,8 @@
+TEMPER_URL=http://127.0.0.1:3472
+TENANT=default
+CurationQuery=en-019ffcc1-42f6-7ca0-8f49-34abe81d35f0
+CurationJob=en-019ffcc1-e540-73f3-a6cc-6d2545ff642a
+job_status=Running
+query_status=Researching
+job_type=source_search
+note=Job was Configure+Start (no Paw WASM session). Failed sibling jobs were WASM missing then llm_model missing.

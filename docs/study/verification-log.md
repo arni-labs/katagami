@@ -27,8 +27,11 @@ or a person caught it, what it cost or saved.
 ## What this log is not evidence of, yet
 
 The entry this study most wants — *Temper flagged an invariant violation on a
-real run, so we changed the state machine* — **does not exist here.** Nothing is
-wired: no invariant has yet been checked against a governed run doing real work.
+real run, so we changed the state machine* — still does not exist as an
+*invariant* trip. What now exists is a **live guard refusal**: Claude's
+`TakeQuery` on `CuratorAgent` `en-019ffcc3-09ce-7700-af9f-e271c904bd55`
+returned 409 because the job_id it sent was not a `CurationJob` in
+`Running`. See the 2026-08-13 live-run entry.
 
 What the entries below actually are:
 
@@ -49,6 +52,35 @@ That is worth having, and it is not the same claim. A reader should leave this
 file knowing the machinery has been probed and found to have holes — not that it
 has been proven to catch things in flight. Every entry so far is a person
 driving the machine on purpose; none is the machine catching a real run.
+
+---
+
+## 2026-08-13 — Live TakeQuery 409: the job was not Running under the id sent
+
+**Checked:** Claude Code trial against isolated Temper `:3472`, ledger
+`CuratorAgent` `en-019ffcc3-09ce-7700-af9f-e271c904bd55`. A source_search
+job `en-019ffcc1-e540-73f3-a6cc-6d2545ff642a` was `Running` and query
+`en-019ffcc1-42f6-7ca0-8f49-34abe81d35f0` was `Researching`.
+
+**Found:** `POST .../Temper.TakeQuery` returned **409**. Server:
+
+`guard cross_entity_state on 'job_id' requires CurationJob status in [Running], found <unsatisfied>`
+
+RecordCapture had already succeeded (200). The machine let the capture
+mark through and refused the next act. `<unsatisfied>` means the related
+entity was missing or not Running under the id in the payload — Claude
+did not hand the Running job's id through correctly. That is a real
+governed refusal on a real run, not a unit test.
+
+**Who caught it:** the machine (runtime guard), 2026-08-13T20:15:17Z,
+twice (Claude retried 10s later, same 409).
+
+**What it costs:** the trial is paused on a caller mistake the spec is
+supposed to catch. If Claude retries with
+`job_id=en-019ffcc1-e540-73f3-a6cc-6d2545ff642a` it should pass.
+
+**What it is not:** an invariant failure, and not a reason to loosen
+TakeQuery.
 
 ---
 
