@@ -72,14 +72,14 @@ on the spec and uses `max(2, those)`. CuratorAgent then:
 | Machine | L0 | L1 | L2 | L3 |
 |---|---|---|---|---|
 | CuratorAgent | PASS (17 guards, 6 invariants inductive, 10 unreachable, 6 abstract cross-entity) | PASS 37 754 states | PASS | PASS |
-| ReviewAgent | PASS | PASS 23 548 | PASS | PASS |
-| HumanCurator | PASS | PASS 45 | PASS | PASS |
+| ReviewAgent | PASS | PASS 144 608 | PASS | PASS |
+| HumanCurator | PASS | PASS 50 | PASS | PASS |
 | CurationQuery | PASS | PASS 68 | PASS | PASS |
 | CurationJob | PASS (1 abstract cross-entity) | PASS 6 | PASS | PASS |
 
 Curation-only cascade: **ALL PASSED** (9 entity types). Composite then
-started (`budget 250000`) and is a separate question — INCOMPLETE is not a
-pass. Liveness on the curator machine is declared and locally inhabited:
+ran and is **INCOMPLETE**, not a pass — see the next entry. Liveness on
+the curator machine is declared and locally inhabited:
 `QueryEventuallyResolves`, `DirectionEventuallyResolves`,
 `LanguageEventuallyResolves`. Invariants that are actually about the craft
 (not "look"): `SeenBeforeSubmit`, `OneLanguageOneSubmit`,
@@ -97,6 +97,28 @@ alone already exhausted 250 000 joint states earlier today.
 **What it is not:** a live run. Entity sets still only appear after
 `POST /api/specs/load-dir`. `temper serve --app` verifies and does not
 register OData.
+
+---
+
+## 2026-08-13 — Composite said "budget exhausted" when the plan could not build
+
+**Checked:** the same curation-only `temper verify --specs-dir katagami-curation/specs --composite-budget 250000` after CuratorAgent passed. Full stdout is now the rest of `docs/study/evidence/temper-verify-curator-boundfix-2026-08-13.txt`.
+
+**Found:** composite is **INCOMPLETE**. The printed lines:
+
+| Seed | Scope | States | What the printer said | What it actually was |
+|---|---|---|---|---|
+| CurationDirection | `[CurationDirection]` | 0 | BFS budget exhausted | Plan build failed. Direction triggers a commons type (`DesignLanguage` / `ArtStyle`) that is not in this `--specs-dir`. `verify_all_with_budget` records `other_violations = ["plan build failed (unknown trigger target?)"]` and the CLI printed the budget sentence for every Incomplete. |
+| HumanCurator | `[HumanCurator, ReviewAgent]` | 61 109 | BFS budget exhausted | This one really did hit 250 000. Review and human live in the same trigger/guard component; they compose. |
+| CurationJobTemplate, TasteRule, TrajectoryVerdict | themselves | 2–4 | PASS | Tiny closed machines. |
+
+CuratorAgent does not appear as its own seed. `seed_cover` picks the lexicographically smallest member of each connected component. Curator, Query, Job, and Direction sit in one component; the root is **CurationDirection**. So the failed Direction plan *is* the curator/job joint proof, and it never started.
+
+**Who caught it:** a person reading `verify.rs:241-254` after the printer blamed the budget. The machine did surface Incomplete; it named the wrong reason.
+
+**What it costs:** a curation-only composite cannot prove the study graph. The machines join commons. The next run has to pass both `--specs-dir`s. The CLI must print `other_violations` on Incomplete (fix on `grok/composite-budget`).
+
+**What it is not:** a broken actor invariant. Direction is supposed to queue a language. The checker just did not have the language spec in the room.
 
 ---
 
