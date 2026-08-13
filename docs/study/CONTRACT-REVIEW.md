@@ -79,13 +79,16 @@ The study adds three actor machines onto the **existing** Katagami graph
 that entire graph**. BEHAVIOR.md is the prose comparison arm only; the
 machines are the source of conduct.
 
-Actor split (D22) — one machine per principal, not per skill:
+Actor split (D22, D24) — one machine per principal, not per skill.
+This phase the curator alphabet is **source_search + synthesize only**.
 
-| Principal | Machine | Claims |
+| Principal | Machine | This phase |
 |---|---|---|
-| Curator process | `CuratorAgent` | `source_search`, `synthesize`, `organize_taxonomy`, `evolve_language`, `taste_distillation` |
+| Curator process | `CuratorAgent` | Holds a `source_search` job or a `synthesize` job. Calls existing `CurationJob.SpawnDirection` / `CompleteResearch` / `CompleteSynthesis`. Does not invent a second pipeline. |
 | Review process | `ReviewAgent` | `quality_review` only (different principal — otherwise reviewer = author) |
 | Human | `HumanCurator` | Publish / return / escalate |
+
+The overnight craft loop (BriefReceived → … → Submitted) is being replaced, not kept as a parallel app. The actor records which job it holds. The job, query, direction, and language machines stay as they are.
 
 Temper verify must finish the joint proof before anyone runs (D20). Runtime
 denial is not that proof.
