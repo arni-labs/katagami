@@ -37,7 +37,7 @@ flowchart TB
 
 State machines: [CuratorAgent](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curator_agent.ioa.toml), [ReviewAgent](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/review_agent.ioa.toml), [HumanCurator](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/human_curator.ioa.toml), [CurationQuery](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_query.ioa.toml), [CurationJob](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_job.ioa.toml), [CurationDirection](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-curation/specs/curation_direction.ioa.toml), [DesignLanguage](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/katagami-commons/specs/design_language.ioa.toml).
 
-Two properties the per-entity checker actually runs on CuratorAgent:
+Examples of properties the per-entity checker runs on CuratorAgent (not the full set):
 
 - **Invariant** `SeenBeforeSubmit`: when the language is UnderReview, the landing, embodiment, and dashboard have each been looked at.
 - **Liveness** `QueryEventuallyResolves`: from ReadingQuery the hold reaches Idle or Abandoned.
