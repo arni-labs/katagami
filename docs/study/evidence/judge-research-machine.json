@@ -1,0 +1,44 @@
+{
+  "session": "research",
+  "ledger": "en-019ffcef-eddd-76b1-9f8b-d1a7923e720b",
+  "session_id": "02f32c00-8fc1-4adf-aefd-e1076b7981d4",
+  "trajectory_id": "traj-98368249db11e01879992cf4",
+  "reference": "katagami-curation/specs/curator_agent.ioa.toml",
+  "layer1": {
+    "source": "live entity events + 409 bodies (OTS GET 404 on this server)",
+    "order": ["RecordCapture", "TakeQuery", "SearchTheWeb x3", "IndexSources x6", "DeriveDirections x4", "CompleteResearch 409", "CompleteResearch 200"],
+    "refusals": [
+      "CompleteResearch 409: job not yet Finalizing/Completed — correct guard"
+    ]
+  },
+  "units": [
+    {"name": "C1", "occurrences": [{"verdict": "true", "turn": "RecordCapture", "reason": "is_true capture_recorded before TakeQuery"}]},
+    {"name": "C2", "occurrences": [{"verdict": "true", "turn": "TakeQuery", "reason": "Idle->ReadingQuery; job Running; query Researching"}]},
+    {"name": "C3", "occurrences": [{"verdict": "true", "turn": "SearchTheWeb", "reason": "ReadingQuery->Searching; searches_run=3; Index after"}]},
+    {"name": "C4", "occurrences": [{"verdict": "true", "turn": "IndexSources", "reason": "Searching->SourcesReady; sources_indexed=6"}]},
+    {"name": "C5", "occurrences": [{"verdict": "true", "turn": "CompleteResearch", "reason": "directions_derived=4; job then Finalizing; ledger Idle"}]},
+    {"name": "C6", "occurrences": [{"verdict": "na", "turn": "", "reason": "no TakeDirection in this session"}]},
+    {"name": "C7", "occurrences": [{"verdict": "na", "turn": "", "reason": "no AuthorLanguage"}]},
+    {"name": "C8", "occurrences": [{"verdict": "na", "turn": "", "reason": "no AuthorLanguage"}]},
+    {"name": "C9", "occurrences": [{"verdict": "na", "turn": "", "reason": "no LookAt*"}]},
+    {"name": "C10", "occurrences": [{"verdict": "true", "turn": "CompleteResearch", "reason": "research hold returned to Idle; no synth edge"}]},
+    {"name": "C11", "occurrences": [{"verdict": "true", "turn": "", "reason": "no Publish in alphabet used"}]},
+    {"name": "C12", "occurrences": [{"verdict": "true", "turn": "", "reason": "unknown actions would 409; none succeeded"}]},
+    {"name": "C13", "occurrences": [{"verdict": "true", "turn": "", "reason": "no CompleteQualityReview"}]},
+    {"name": "C14", "occurrences": [{"verdict": "na", "turn": "", "reason": "not probed"}]},
+    {"name": "C15", "occurrences": [{"verdict": "na", "turn": "", "reason": "no Abandon"}]},
+    {"name": "C16", "occurrences": [{"verdict": "na", "turn": "", "reason": "no timeout"}]},
+    {"name": "C17", "occurrences": [{"verdict": "true", "turn": "RecordCapture", "reason": "ids stored; OTS archive not on this serve"}]},
+    {"name": "C18", "occurrences": [{"verdict": "na", "turn": "", "reason": "no FixSurfaces"}]},
+    {"name": "C19", "occurrences": [{"verdict": "na", "turn": "", "reason": "no FixSurfaces"}]},
+    {"name": "C20", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C21", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C22", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C23", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C24", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C25", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C26", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C27", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]},
+    {"name": "C28", "occurrences": [{"verdict": "na", "turn": "", "reason": "taste; no language"}]}
+  ]
+}

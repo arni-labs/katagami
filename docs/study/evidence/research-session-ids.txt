@@ -1,6 +1,15 @@
 query=en-019ffcec-6991-78c1-b882-bce38b08f578
 job=en-019ffcec-69ba-7ec2-a76d-dc21b4cabe2c
-query_status=Researching
-job_status=Running
-job_type=source_search
-note=Configure+Start. Query.Submit used only to reach Researching.
+query_status=Synthesizing
+job_status=Completed
+ledger=en-019ffcef-eddd-76b1-9f8b-d1a7923e720b
+session_id=02f32c00-8fc1-4adf-aefd-e1076b7981d4
+trajectory_id=traj-98368249db11e01879992cf4
+searches_run=3
+sources_indexed=6
+directions_derived=4
+directions=Keyblock Grid, Nishiki Modernism, Ukiyo Measure, Flat Wave Rationalism
+directions_status=Failed (engine synthesize WASM: TemperFS skill path missing)
+judge_fold_prose=true
+judge_fold_machine=true
+
