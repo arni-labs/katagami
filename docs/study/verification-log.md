@@ -82,6 +82,22 @@ supposed to catch. If Claude retries with
 **What it is not:** an invariant failure, and not a reason to loosen
 TakeQuery.
 
+Same session, 20:18:57Z: Claude then called `IndexSources` from `Idle`.
+409: `Action 'IndexSources' not valid from state 'Idle'`. The order is
+TakeQuery → SearchTheWeb → IndexSources. Skipping is refused.
+
+Later the same ledger finished research (CompleteResearch 200, job
+Completed). `TakeDirection` then 409'd: the guard reads state `job_id`,
+which still names the **search** job (Completed), not the synthesize job
+in the payload. One curator doing search then synthesize cannot leave
+Idle. Spec fix: `TakeDirection` guards on param `held_job_id`.
+
+Also: `POST DesignSources` was 423 until DesignSource was merge-loaded
+alone (full commons load-dir stuck on DesignLanguage). `load-dir`
+without `merge` replaces the tenant map. Engine synthesize jobs fail
+without an Active `CurationJobTemplate` and without TemperFS skill
+docs — study path uses `CurationJob.Start`.
+
 ---
 
 ## 2026-08-13 — Checker universe smaller than the story; bound-from-spec makes CuratorAgent inhabit
@@ -129,6 +145,11 @@ alone already exhausted 250 000 joint states earlier today.
 **What it is not:** a live run. Entity sets still only appear after
 `POST /api/specs/load-dir`. `temper serve --app` verifies and does not
 register OData.
+
+A follow-up both-dirs run at `--composite-budget 2000000` is in
+`docs/study/evidence/temper-verify-both-dirs-2m-2026-08-13.txt`. 250k was
+not enough to finish the DesignLanguage join. 2M is the budget we are
+actually waiting on.
 
 ---
 

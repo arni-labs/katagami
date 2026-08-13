@@ -83,6 +83,11 @@ type = "string"
 initial = ""
 
 [[state]]
+name = "held_job_id"
+type = "string"
+initial = ""
+
+[[state]]
 name = "query_id"
 type = "string"
 initial = ""
@@ -280,10 +285,10 @@ name = "TakeDirection"
 kind = "input"
 from = ["Idle"]
 to = "ReadingDirection"
-params = ["job_id", "query_id", "direction_id"]
+params = ["held_job_id", "job_id", "query_id", "direction_id"]
 guard = [
   { type = "is_true", var = "capture_recorded" },
-  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "job_id", required_status = ["Running"], required = true },
+  { type = "cross_entity_state", entity_type = "CurationJob", entity_id_source = "held_job_id", required_status = ["Running"], required = true },
   { type = "cross_entity_state", entity_type = "CurationDirection", entity_id_source = "direction_id", required_status = ["Synthesizing"], required = true },
 ]
 effect = [

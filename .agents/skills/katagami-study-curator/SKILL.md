@@ -62,7 +62,7 @@ On the ledger, in that order:
 
 | After you… | Mark |
 |---|---|
-| Have the running synthesize job and direction | `TakeDirection` |
+| Have the running synthesize job and direction | `TakeDirection` (`held_job_id` = the Running synthesize job; `job_id` the same) |
 | Have read design-language.md | `ReadDesignRules` |
 | Have authored every named part (one submit call is fine) | `AuthorLanguage` |
 | Have rendered them | `RenderSurfaces` |
