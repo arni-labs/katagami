@@ -1,5 +1,7 @@
 # Where to review (do not wait — the trial keeps running)
 
+Shareable status (what ran, what did not): [JCS.md](JCS.md) · [on GitHub](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/JCS.md)
+
 ## Contract
 
 | What | Link |
