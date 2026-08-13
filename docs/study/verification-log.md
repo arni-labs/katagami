@@ -66,11 +66,16 @@ job `en-019ffcc1-e540-73f3-a6cc-6d2545ff642a` was `Running` and query
 
 `guard cross_entity_state on 'job_id' requires CurationJob status in [Running], found <unsatisfied>`
 
-RecordCapture had already succeeded (200). The machine let the capture
-mark through and refused the next act. `<unsatisfied>` means the related
-entity was missing or not Running under the id in the payload — Claude
-did not hand the Running job's id through correctly. That is a real
-governed refusal on a real run, not a unit test.
+First reading (same day) blamed the caller’s ids. The clean research
+session (ledger `en-019ffcef-eddd-76b1-9f8b-d1a7923e720b`) reproduced the
+409 **with the correct Running job and Researching query in the payload**.
+The runtime resolves `cross_entity_state` from the entity’s **persisted
+fields**, not from action params. A ledger created with `POST {}` has
+empty `job_id`, so the guard cannot see the payload. Creating the ledger
+with `job_id`/`query_id` set made every later guard pass in order.
+
+That is a real governed refusal, and the first diagnosis was wrong. The
+useful Temper fact is the field-vs-payload contract.
 
 **Who caught it:** the machine (runtime guard), 2026-08-13T20:15:17Z,
 twice (Claude retried 10s later, same 409).

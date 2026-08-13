@@ -13,11 +13,14 @@ research ledger.
 
 ```
 python3 hooks/trajectory-capture/capture.py identity
-POST /tdata/CuratorAgents {}
+POST /tdata/CuratorAgents {"job_id":"<Running synthesize>","query_id":"...","direction_id":"..."}
 POST .../Temper.RecordCapture
 POST .../Temper.TakeDirection {job_id, query_id, direction_id}
   # job_id = THIS session's Running synthesize job (Start, not WASM spawn)
 ```
+
+Create the ledger **with** those ids set. Guards read persisted fields,
+not the payload.
 
 Then: `ReadDesignRules` (file `knowledge/rules/design-language.md`, never
 TasteRule entities) → `AuthorLanguage` (every named part) → `RenderSurfaces`

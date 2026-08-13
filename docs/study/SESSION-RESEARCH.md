@@ -14,10 +14,14 @@ python3 hooks/trajectory-capture/capture.py identity
 Stop if that fails. Then:
 
 ```
-POST /tdata/CuratorAgents {}
+POST /tdata/CuratorAgents {"job_id":"<Running source_search>","query_id":"<Researching query>"}
 POST .../Temper.RecordCapture   {session_id, trajectory_id, spec_version, harness}
-POST .../Temper.TakeQuery       {job_id, query_id}   # the Running source_search job
+POST .../Temper.TakeQuery       {job_id, query_id}
 ```
+
+Create the ledger **with** `job_id` and `query_id` already set. Cross-entity
+guards read persisted fields, not the action payload. `POST {}` then
+`TakeQuery` with the right ids still 409s.
 
 Then, in order: `SearchTheWeb` → create/index `DesignSources` + `IndexSources` →
 `CurationJobs.SpawnDirection` 3–5 times + `DeriveDirections` each time →
