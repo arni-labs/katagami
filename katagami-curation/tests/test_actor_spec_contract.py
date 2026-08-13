@@ -213,10 +213,10 @@ class CuratorAgentSpecTest(unittest.TestCase):
             guards(self.actions["FixSurfaces"]),
         )
         self.assertEqual(
-            invariants(self.spec)["LookFixBounded"]["assert"],
+            invariants(self.spec)["FixRoundsBounded"]["assert"],
             "revision_rounds <= 12",
         )
-        self.assertIn("SubmitNeedsCurrentLooks", invariants(self.spec))
+        self.assertIn("SeenBeforeSubmit", invariants(self.spec))
         self.assertIn("OneLanguageOneSubmit", invariants(self.spec))
         self.assertIn("LanguageHasEveryPart", invariants(self.spec))
 

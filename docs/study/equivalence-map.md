@@ -39,7 +39,7 @@ a call that was never attempted.
 | C6 | Takes the live direction before authoring | `TakeDirection` | "Take the direction the pipeline queued" | 1 |
 | C7 | Authors every named language part before rendering | `AuthorConcept` … `AuthorThumbnail`; `LanguageHasEveryPart` | "Author every named part of the language" | 1 |
 | C8 | Authors surfaces, shadcn and thumbnail as named parts | `AuthorLanding` / `AuthorEmbodiment` / `AuthorDashboard` / `AuthorShadcn` / `AuthorThumbnail` | "Make each of the three surfaces its own kind of page" | 1 |
-| C9 | Looks at each surface before submitting | `LookAtLanding` / `LookAtEmbodiment` / `LookAtDashboard`; `SubmitNeedsCurrentLooks` | "Look at each surface before handing the language over" | 1 |
+| C9 | Looks at each surface before submitting | `LookAtLanding` / `LookAtEmbodiment` / `LookAtDashboard`; `SeenBeforeSubmit` | "Look at each surface before handing the language over" | 1 |
 | C10 | Research and synthesize are separate holds from Idle | `TakeQuery` / `TakeDirection` from Idle | "Take the query…" / "Take the direction…" | 1 |
 | C11 | Cannot publish | no `Publish` action | "Leave publishing and review to the people who own them" | 1 |
 | C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same | 1 (policy) |
@@ -48,8 +48,8 @@ a call that was never attempted.
 | C15 | Abandons explicitly, finally | `Abandon`; `AbandonedIsFinal` | "End honestly when it cannot finish the hold" | 1 |
 | C16 | Working holds time out | `[[state_timeout]]` on every working act | same | 1 |
 | C17 | Records capture identity | `RecordCapture` params | "Record how this run will be found before taking a query" | 1 |
-| C18 | A fix kills the last look | `FixSurfaces` to `Authoring`; `SubmitNeedsCurrentLooks` | "Look at each surface before handing the language over" | 1 |
-| C19 | Revision rounds counted and gated at 12 | `FixSurfaces`; `LookFixBounded` | "Fix, look again, and stop by twelve" | 1 |
+| C18 | A fix kills the last look | `FixSurfaces` to `Authoring`; `SeenBeforeSubmit` | "Look at each surface before handing the language over" | 1 |
+| C19 | Fix rounds counted and gated at 12 | `FixSurfaces`; `FixRoundsBounded` | "Fix, look again, and stop by twelve" | 1 |
 | C20 | One ownable idea, never generic | `knowledge/rules/design-language.md` 1–2 | "Make work that meets the standard", Intent | 2 |
 | C21 | Ships as one coherent set | same, rule 3 | same section, Intent | 2 |
 | C22 | Copy is a real product scene | same, rule 4 | same section, Execution | 2 |

@@ -22,7 +22,7 @@
 #
 # Action max_count on search / index / derive is checker fuel so the graph
 # stays finite. It is not a story invariant. Story invariants have names
-# like SubmitNeedsCurrentLooks.
+# like SeenBeforeSubmit.
 #
 # This phase: source_search + synthesize only (D24).
 #
@@ -597,7 +597,7 @@ params = { abandon_reason = "Language under review but synthesize job never comp
 # ============================================================================
 
 [[invariant]]
-name = "SubmitNeedsCurrentLooks"
+name = "SeenBeforeSubmit"
 when = ["LanguageUnderReview"]
 assert = "landing_looked && embodiment_looked && dashboard_looked"
 
@@ -612,7 +612,7 @@ when = ["LanguageUnderReview"]
 assert = "design_rules_read && concept_authored && tokens_authored && katagami_spec_authored && design_md_authored && landing_authored && embodiment_authored && dashboard_authored && shadcn_authored && thumbnail_authored"
 
 [[invariant]]
-name = "LookFixBounded"
+name = "FixRoundsBounded"
 assert = "revision_rounds <= 12"
 
 [[invariant]]

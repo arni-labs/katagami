@@ -115,7 +115,7 @@ a:hover{background:var(--acid)}
 </svg>
 
 <div class="note cyan">
-<p>Human conduct: pick up the assignment, confirm the review ruled on this work, look, <em>approve</em> publish or return with a critique. An agent may execute publish after that approval. Review conduct: read design-language.md, open the listed artifacts, render, look, fix, rule. Story invariants have names like SubmitNeedsCurrentLooks. Action max_count on search is checker fuel, not a story.</p>
+<p>Human conduct: pick up the assignment, confirm the review ruled on this work, look, <em>approve</em> publish or return with a critique. An agent may execute publish after that approval. Review conduct: read design-language.md, open the listed artifacts, render, look, fix, rule. Story invariants have names like SeenBeforeSubmit. Action max_count on search is checker fuel, not a story.</p>
 </div>
 
 <h2>What to review</h2>
@@ -152,7 +152,7 @@ a:hover{background:var(--acid)}
 #
 # Action max_count on search / index / derive is checker fuel so the graph
 # stays finite. It is not a story invariant. Story invariants have names
-# like SubmitNeedsCurrentLooks.
+# like SeenBeforeSubmit.
 #
 # This phase: source_search + synthesize only (D24).
 #
@@ -727,7 +727,7 @@ params = { abandon_reason = &quot;Language under review but synthesize job never
 # ============================================================================
 
 [[invariant]]
-name = &quot;SubmitNeedsCurrentLooks&quot;
+name = &quot;SeenBeforeSubmit&quot;
 when = [&quot;LanguageUnderReview&quot;]
 assert = &quot;landing_looked &amp;&amp; embodiment_looked &amp;&amp; dashboard_looked&quot;
 
@@ -742,7 +742,7 @@ when = [&quot;LanguageUnderReview&quot;]
 assert = &quot;design_rules_read &amp;&amp; concept_authored &amp;&amp; tokens_authored &amp;&amp; katagami_spec_authored &amp;&amp; design_md_authored &amp;&amp; landing_authored &amp;&amp; embodiment_authored &amp;&amp; dashboard_authored &amp;&amp; shadcn_authored &amp;&amp; thumbnail_authored&quot;
 
 [[invariant]]
-name = &quot;LookFixBounded&quot;
+name = &quot;FixRoundsBounded&quot;
 assert = &quot;revision_rounds &lt;= 12&quot;
 
 [[invariant]]

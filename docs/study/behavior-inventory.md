@@ -88,7 +88,7 @@ Each has its own one-shot action inside `Authoring`.
 `LookAtLanding`, `LookAtEmbodiment` and `LookAtDashboard` are the only edges
 into `Looking`. `SubmitLanguage` is only from `Looking`, requires all three
 current looks, and requires the language already `UnderReview`.
-*Source: spec, actions `LookAtLanding`, `LookAtEmbodiment`, `LookAtDashboard`; action `SubmitLanguage`; invariant `SubmitNeedsCurrentLooks`.*
+*Source: spec, actions `LookAtLanding`, `LookAtEmbodiment`, `LookAtDashboard`; action `SubmitLanguage`; invariant `SeenBeforeSubmit`.*
 
 **C10. Research and synthesize are two holds from Idle, not one mixed state.** — machine
 `TakeQuery` and `TakeDirection` both leave `Idle`. There is no edge from a
@@ -134,11 +134,11 @@ Session id, trajectory id, spec version and harness live on `RecordCapture`.
 **C18. A look of old bytes cannot carry a submit.** — machine
 `FixSurfaces` returns to `Authoring` and clears every look, so render and
 look must happen again. `SubmitLanguage` is only from `Looking`.
-*Source: spec, action `FixSurfaces` `to = "Authoring"`; invariant `SubmitNeedsCurrentLooks`.*
+*Source: spec, action `FixSurfaces` `to = "Authoring"`; invariant `SeenBeforeSubmit`.*
 
-**C19. Look-fix rounds are counted and gated at twelve.** — machine
+**C19. Fix rounds are counted and gated at twelve.** — machine
 `FixSurfaces` increments `revision_rounds` under `max_count 12`.
-*Source: spec, action `FixSurfaces`; invariant `LookFixBounded`.*
+*Source: spec, action `FixSurfaces`; invariant `FixRoundsBounded`.*
 
 **C48. The agent reads design-language.md and never lists Accepted TasteRule entities.** — machine
 `ReadDesignRules` is the only way into `Authoring`. The hint names the file.

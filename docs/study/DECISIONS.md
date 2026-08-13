@@ -33,6 +33,6 @@ Each row is a choice I made without you. Overrule any of them.
 | D26 | A finished search yields **3–5 directions**. Skills ask that; the machine refuses fewer. | Rita. |
 | D27 | Agents and reviewers read `knowledge/rules/design-language.md` and must produce the thumbnail. They do **not** list Accepted TasteRule entities. | Rita. |
 | D28 | **Human decides, agent may publish.** `ApprovePublish` is the decision. `Publish` may be executed by Rita or by an agent after that approval. | Rita: she often asks the agent to publish on a synthesize. |
-| D29 | Action `max_count` on search / index / derive is **checker fuel**, not a story invariant. Story invariants keep names like `SubmitNeedsCurrentLooks`. | Rita asked what "loop fuel" meant. The bound keeps the reachable graph finite so liveness can be proved. It is not a claim about taste. |
+| D29 | Action `max_count` on search / index / derive is **checker fuel**, not a story invariant. Story invariants keep names like `SeenBeforeSubmit`. | Rita asked what "loop fuel" meant. The bound keeps the reachable graph finite so liveness can be proved. It is not a claim about taste. |
 
 Last updated as work proceeds. New rows append; existing rows are not silently rewritten.
