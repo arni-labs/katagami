@@ -40,12 +40,63 @@ What the entries below actually are:
   violations on a clean run;
 - **one withdrawn conclusion**, kept in place;
 - **one checker-vs-join finding** (2026-08-13): CuratorAgent cannot finish
-  research as a closed machine, and the cascade aborts before the joint proof.
+  research as a closed machine, and the cascade aborts before the joint proof;
+- **one instrument fix** (same day): the cascade now inhabits the spec's own
+  `min_count` / `max_count`, and CuratorAgent then passes locally. Composite
+  on the joint graph is still running / not yet a pass.
 
 That is worth having, and it is not the same claim. A reader should leave this
 file knowing the machinery has been probed and found to have holes — not that it
 has been proven to catch things in flight. Every entry so far is a person
 driving the machine on purpose; none is the machine catching a real run.
+
+---
+
+## 2026-08-13 — Checker universe smaller than the story; bound-from-spec makes CuratorAgent inhabit
+
+**Checked:** same `curator_agent.ioa.toml` as the FAIL below, after changing
+the verifier (temper `grok/composite-budget`, uncommitted `cascade.rs` on
+top of `c2af92b2`). Command:
+
+```
+temper verify --specs-dir katagami-curation/specs --composite-budget 250000
+```
+
+Full stdout: `docs/study/evidence/temper-verify-curator-boundfix-2026-08-13.txt`.
+
+**Found:** the previous FAIL was the instrument, not the machine. Cascade
+defaulted `max_counter: 2`. `CompleteResearch` needs `directions_derived >= 3`.
+`counter_bound_from_ioa` now scans `MinCount` / `MaxCount` / `ListLengthMin`
+on the spec and uses `max(2, those)`. CuratorAgent then:
+
+| Machine | L0 | L1 | L2 | L3 |
+|---|---|---|---|---|
+| CuratorAgent | PASS (17 guards, 6 invariants inductive, 10 unreachable, 6 abstract cross-entity) | PASS 37 754 states | PASS | PASS |
+| ReviewAgent | PASS | PASS 23 548 | PASS | PASS |
+| HumanCurator | PASS | PASS 45 | PASS | PASS |
+| CurationQuery | PASS | PASS 68 | PASS | PASS |
+| CurationJob | PASS (1 abstract cross-entity) | PASS 6 | PASS | PASS |
+
+Curation-only cascade: **ALL PASSED** (9 entity types). Composite then
+started (`budget 250000`) and is a separate question — INCOMPLETE is not a
+pass. Liveness on the curator machine is declared and locally inhabited:
+`QueryEventuallyResolves`, `DirectionEventuallyResolves`,
+`LanguageEventuallyResolves`. Invariants that are actually about the craft
+(not "look"): `SeenBeforeSubmit`, `OneLanguageOneSubmit`,
+`LanguageHasEveryPart`, `FixRoundsBounded`, `AbandonedIsFinal`.
+
+**Who caught it:** a person, after the machine's earlier dead-guard report.
+The useful Temper feedback was the dead `CompleteResearch` edge. The
+wrong first reading (blaming the job join) is kept in the next entry.
+
+**What it costs:** we now have a local closed-machine proof of the three
+actor specs plus the curation objects. We still do not have a finished
+composite proof of Curator ⋈ Job ⋈ Language. Commons DesignLanguage
+alone already exhausted 250 000 joint states earlier today.
+
+**What it is not:** a live run. Entity sets still only appear after
+`POST /api/specs/load-dir`. `temper serve --app` verifies and does not
+register OData.
 
 ---
 
@@ -64,27 +115,23 @@ temper verify \
 
 Full stdout: `docs/study/evidence/temper-verify-2026-08-13.txt`.
 
-**Found:** Temper refused to certify `CuratorAgent`. The refusal is about the
-*design of the ledger*, not a mistyped command.
+**Found:** Temper refused to certify `CuratorAgent`. First reading (same
+day, earlier paragraph) blamed the `CurationJob` join. That was wrong.
+The cascade default `max_counter` is **2**. `CompleteResearch` requires
+`directions_derived >= 3`. In a universe that only has 0, 1, 2, that
+guard is unsatisfiable. L0: `dead guards: CompleteResearch`. L1: 190
+states, dead `CompleteResearch [DirectionsReady → Idle]`.
 
-`CompleteResearch` (DirectionsReady → Idle) is guarded on
-`CurationJob` being `Finalizing` or `Completed`. That is the join we wrote on
-purpose: do not mark research done unless the live job has actually completed.
-Single-entity L0/L1 cannot see `CurationJob`, so they report:
+The job-status join is a separate, abstract cross-entity guard (one of
+six). It is *not* what made the edge dead. The checker universe was
+smaller than the story (D26: 3–5 directions).
 
-- L0: `dead guards: CompleteResearch`; 6 transitions use abstract
-  cross-entity guards
-- L1: `190 states explored, 1 dead transition(s): CompleteResearch`
+The cascade then **stops**. Commons is never opened. Composite never
+runs. Liveness properties stay declared, not proved.
 
-The cascade then **stops**. Commons is never opened. Composite (the joint
-proof D20 asked for) never runs. Liveness
-`QueryEventuallyResolves` / `DirectionEventuallyResolves` /
-`LanguageEventuallyResolves` are therefore **declared, not proved**.
-
-That is useful. The checker is saying: *this actor cannot finish research by
-itself*. That is exactly the join. It is also saying: *I will not go on to
-prove the join, because I treat a locally-dead success edge as a failed
-machine.* So we cannot get the proof we designed the edge to need.
+That is useful: we wrote a machine the default checker cannot inhabit.
+The fix is not to require fewer directions. It is to verify in a bound
+at least as large as the spec's own `min_count` / `max_count`.
 
 HumanCurator and ReviewAgent *did* pass locally on this same run:
 

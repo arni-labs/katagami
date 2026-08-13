@@ -1,0 +1,49 @@
+# Where to review (do not wait — the trial keeps running)
+
+## Contract
+
+| What | Link |
+|---|---|
+| Machines + BEHAVIOR + skills in one page | [http://127.0.0.1:8765/docs/study/review.html](http://127.0.0.1:8765/docs/study/review.html) |
+| Curator machine | `katagami-curation/specs/curator_agent.ioa.toml` |
+| Review machine | `katagami-curation/specs/review_agent.ioa.toml` |
+| Human machine | `katagami-curation/specs/human_curator.ioa.toml` |
+| Curator BEHAVIOR | `.agents/behaviors/curator-agent/BEHAVIOR.md` |
+| Review BEHAVIOR | `.agents/behaviors/review-agent/BEHAVIOR.md` |
+| Human BEHAVIOR | `.agents/behaviors/human-curator/BEHAVIOR.md` |
+| Inventory | `docs/study/behavior-inventory.md` |
+| Decisions | `docs/study/DECISIONS.md` |
+| Temper findings | `docs/study/verification-log.md` |
+| Judge prompt | `docs/study/JUDGE.md` |
+| PR | https://github.com/arni-labs/katagami/pull/213 |
+
+## What Claude is given in a trial
+
+- **Research job:** production `katagami-curation/agents/curator/skills/research-direction/SKILL.md` plus mark `CuratorAgent` after each act.
+- **Synthesize job:** production `synthesize-language/SKILL.md` plus the same ledger.
+- **Review:** `.agents/skills/katagami-study-reviewer/SKILL.md` (no production equivalent).
+- **Human:** you. No skill unless Claude is pretending to be you.
+
+## Publish
+
+Human `ApprovePublish`, then human or a declared non-contributor agent may `Publish`.
+Cedar: `katagami-curation/specs/policies/human_curator.cedar` — no Agent may
+`ApprovePublish`; `Publish` only after `has_publish_approval`.
+
+## Live server (do not use :3470 / :3468)
+
+`--app` and `--specs-dir` verify. They do **not** register OData entity sets.
+The live recipe is:
+
+1. Isolated `temper serve` (fresh file DB, no `--app`).
+2. `POST /api/specs/load-dir` for commons, then curation.
+3. Create `CurationQuery` → `Configure` → `Submit` (that trigger mints the
+   `source_search` job).
+
+Study server: **http://127.0.0.1:3472** tenant `default`.
+Evidence of load-dir: `docs/study/evidence/load-dir-*.txt`.
+
+## Judge
+
+Prompt: `docs/study/JUDGE.md`.
+Fold: `python3 scripts/trajectory/judge_both_arms.py --prose prose.json --machine machine.json`.
