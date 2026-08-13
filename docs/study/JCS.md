@@ -2,7 +2,7 @@
 
 **Branch:** [`grok/jcs-study-setup`](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup) · **PR:** [arni-labs/katagami#213](https://github.com/arni-labs/katagami/pull/213) · **Date:** 2026-08-13
 
-We are defining Katagami’s live curation pipeline as a joint cognitive system: a human and two agent principals, plus the existing app objects, with conduct specified three ways — a skill (what we tell the agent), a `BEHAVIOR.md` (what a judge reads as prose), and an IOA state machine (what Temper refuses or allows). The evaluation is: run Claude Code on the live app, capture the trajectory, and score the same inventory twice — once against `BEHAVIOR.md`, once against the machine — to see whether the two encodings agree, and where they do not.
+We are defining Katagami’s live curation pipeline as a joint cognitive system: a human and two agent principals, plus the existing app objects, with conduct specified three ways — a skill (what we tell the agent), a `BEHAVIOR.md` (what a judge reads as prose), and an IOA state machine (what Temper refuses or allows). The evaluation is: run Claude Code on the live app, capture an ATIF trajectory (below), and score the same **conduct** inventory twice — once against `BEHAVIOR.md`, once against the machine — to see whether the two encodings agree. The judge looks at the ATIF for whether the act happened, not only at ledger marks. Taste / whether the language is good is not this experiment (D33).
 
 Temper verifier changes (budget counted as unique states; projecting fat catalog types down to `status` in the joint BFS) are **parked**. Not in this write-up’s next work.
 
@@ -82,13 +82,43 @@ Out of score (D2): C7, C9, C17, R13.
 
 ---
 
+## Trajectories
+
+The judge reads a **trajectory**, not the ledger marks alone. Temper only sees that Claude changed an entity. The trajectory is the record of whether it actually searched, opened the rulebook, rendered, looked at images.
+
+**Formats**
+
+| Format | What it is |
+|---|---|
+| Claude Code `.jsonl` | Raw session transcript the harness writes. |
+| **ATIF v1.7** | Harbor’s Agent Trajectory Interchange Format (`steps[]`: messages, tool calls, results). This is what the judge opens. |
+| **OTS 0.1.0** | Temper’s stored document (`turns[]`). The kernel exports it as ATIF. |
+
+Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.com/harbor-framework/harbor) → ATIF → mapped to OTS → `POST /api/ots/trajectories`. How: [`hooks/trajectory-capture/`](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/hooks/trajectory-capture). Converter: [`scripts/trajectory/claude_session_to_ots.py`](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/scripts/trajectory/claude_session_to_ots.py).
+
+`capture.py identity` mints `session_id` + `trajectory_id` from the harness session **before** work starts; those same ids go on `RecordCapture`. SessionEnd enqueues conversion; Harbor must be in `.venv-trajectory` or the queue fails and OTS stays empty.
+
+**Where they live**
+
+- Server: `GET http://127.0.0.1:3472/api/ots/trajectories/<id>/atif`
+- Offline: `~/.katagami/trajectory-queue/archive/<id>.json` (OTS) and `<id>.atif.json` (ATIF)
+
+| Session | `trajectory_id` | ATIF |
+|---|---|---|
+| Research | `traj-98368249db11e01879992cf4` | 49 steps |
+| Keyblock synthesize | `traj-1ec04abc2c522975dfc9ac1a` | 103 steps |
+
+The first research judge ran **before** these existed (ledger + 409 bodies only). Both sessions now have ATIF. That is what a re-judge or the Keyblock judge should use.
+
+---
+
 ## What we have run
 
 Live Temper: isolated `:3472`. Specs loaded with `merge: true`. Claude Code drove the curator.
 
-**Research (judged).** One CC session. Ledger `en-019ffcef-eddd-76b1-9f8b-d1a7923e720b`. 3 searches, 6 sources, 4 directions (Keyblock Grid, Nishiki Modernism, Ukiyo Measure, Flat Wave Rationalism). First `CompleteResearch` 409 until the job was Finalizing, then 200. Both judges: fold **true / 1.0 / 25 units**, every unit the same verdict. 9 true (C1–C5, C10–C13, C17); 16 na. Taste units C20–C28 were na — there was no language. Agreement here is almost tautological: both encodings restated the same 200/409 order the machine already enforced. Evidence: [`judge-research-fold.txt`](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-fold.txt).
+**Research (judged from ledger + 409s, not ATIF).** One CC session. Ledger `en-019ffcef-eddd-76b1-9f8b-d1a7923e720b`. 3 searches, 6 sources, 4 directions. First `CompleteResearch` 409 until the job was Finalizing, then 200. Both judges: fold **true / 1.0**. The scored units were order the live guards already enforced. Evidence: [`judge-research-fold.txt`](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-fold.txt). ATIF now exists for a re-judge.
 
-**Synthesize (not judged).** A second CC session on direction Keyblock Grid. Ledger `en-019ffd07-7549-7d12-a618-3b985e5155fa`. Language [Keyblock](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/artifacts/keyblock/DESIGN.md) `en-019ffd07-2349-7e22-94f5-174852213c0b` reached **UnderReview**. Nothing published. The synthesize **job** did not reach `Completed` (file-id / finalizer shape on this server). This is the session where the two judges can actually diverge (C6–C9, C20–C28). We have not scored it.
+**Synthesize (ATIF ready, not judged).** A second CC session on direction Keyblock Grid. Ledger `en-019ffd07-7549-7d12-a618-3b985e5155fa`. Language [Keyblock](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/artifacts/keyblock/DESIGN.md) reached **UnderReview**. Nothing published. The synthesize **job** did not reach `Completed` (file-id / finalizer). Conduct to score from ATIF: C6, C18, C19, C25, C28, C11–C13.
 
 **Review + human publish.** Not run.
 
@@ -110,7 +140,7 @@ Live Temper: isolated `:3472`. Specs loaded with `merge: true`. Claude Code drov
 
 **Not confirmed**
 
-- That `BEHAVIOR.md` and the machine measure the same thing. Research could not show a split (taste units na). Synthesize is not judged.
+- That `BEHAVIOR.md` and the machine measure the same thing when the judge reads ATIF (did the act happen), not only ledger marks. Synthesize is not judged yet.
 - Coherence of skill ↔ machine ↔ `BEHAVIOR.md` under more than one research sample.
 - ReviewAgent or HumanCurator driven live.
 - End-to-end JCS through publish (we will not fake the human).
