@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study machines — Curator · Language · Review · Human</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Iowan+Old+Style:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fff; --ink:#101010; --muted:#6E6960; --paper:#F4F1EA; --paper2:#ECE7DC;
+    --rule:#1A1A1A; --cyan:#00AEEF; --verm:#FF3B1F; --acid:#F6E800; --green:#158A4A; --violet:#6B21E8;
+    --serif:"Iowan Old Style",Palatino,Georgia,serif;
+    --sans:"IBM Plex Sans",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--sans);letter-spacing:-.015em}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 120px}
+  h1{font:600 42px/1.05 var(--serif);letter-spacing:-.02em;margin:8px 0 12px;max-width:22ch}
+  h2{font:600 28px/1.15 var(--serif);letter-spacing:-.02em;margin:0 0 8px}
+  h3{font:600 20px/1.25 var(--serif);margin:0 0 8px}
+  .eyebrow{font:500 11.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lede{color:var(--muted);max-width:72ch;margin:0 0 22px}
+  p{margin:0 0 12px;max-width:76ch}
+  a{color:var(--ink);text-decoration:none;box-shadow:inset 0 -1.5px 0 var(--cyan)}
+  a:hover{background:var(--acid)}
+  .hr{height:4px;background:var(--rule);margin:48px 0 28px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+  .chip{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:9999px}
+  .c-ship{background:var(--paper2);color:var(--muted)}
+  .c-craft{background:#F2F5FE;color:#1F4FE0}
+  .c-night{background:#F6F2FE;color:var(--violet)}
+  .c-sug{background:#FFF3F1;color:var(--verm)}
+  nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+  nav.jump a{font:500 12.5px var(--mono);padding:7px 12px;border-radius:9999px;background:var(--paper2);box-shadow:none}
+  nav.jump a:hover{background:var(--ink);color:#fff}
+  .q{background:var(--paper);border-radius:16px;padding:20px 22px;margin:0 0 10px}
+  .q b{display:block;font:600 15px var(--sans);margin:0 0 6px}
+  .q p{margin:0;font-size:16px;color:#2E2E2E}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th{text-align:left;font:500 11px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 10px;border-bottom:1px solid var(--rule)}
+  td{padding:11px 10px;vertical-align:top;border-bottom:1px solid #E8E4DC}
+  td.k{font:500 12.5px var(--mono);white-space:nowrap}
+  .tw{overflow-x:auto}
+  .lane{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 8px}
+  .lane .box{background:var(--paper);border-radius:16px;padding:14px 14px 16px;min-height:86px}
+  .lane .nm{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .lane .st{font:600 15px var(--serif)}
+  .lane .arr{text-align:center;color:var(--muted);font:12px var(--mono);padding-top:34px}
+  .states{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+  button.st{appearance:none;border:0;background:var(--paper);color:var(--ink);font:500 13px var(--mono);padding:8px 12px;border-radius:9999px;cursor:pointer}
+  button.st:hover,button.st.on{background:var(--ink);color:#fff}
+  button.st.term{background:#101010;color:#fff}
+  button.st.term.on{background:var(--violet)}
+  .panel{background:var(--paper);border-radius:16px;padding:20px 22px;min-height:88px;margin-bottom:22px}
+  .panel .empty{color:var(--muted)}
+  .panel h3{margin-bottom:10px}
+  .edge{margin:0 0 10px;font-size:15.5px}
+  .edge code{font:500 12.5px var(--mono);background:var(--paper2);padding:1px 5px}
+  .g{color:var(--muted);font-size:14px;margin-top:3px}
+  footer{margin-top:64px;padding-top:14px;border-top:1px solid var(--rule);font:11.5px var(--mono);color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  @media(max-width:820px){.lane{grid-template-columns:1fr 1fr}h1{font-size:32px}.wrap{padding:22px 16px 80px}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">Katagami · JCS study · contract review</p>
+<h1>The four machines the study is about</h1>
+<p class="lede">One language is made, looked at, ruled on, and either published or sent back. These four specs are that path. Click a state to see what can happen there. Every invariant and liveness line says whether it is already in the spec, added last night, or still only a suggestion.</p>
+
+<div class="chips">
+  <span class="chip c-ship">Shipped — already on the entity in production</span>
+  <span class="chip c-craft">Craft — already in PR #211, stacked last night</span>
+  <span class="chip c-night">Last night — I added this</span>
+  <span class="chip c-sug">Suggested — not in any spec yet</span>
+</div>
+
+<nav class="jump">
+  <a href="#answers">The questions</a>
+  <a href="#joint">Joint path</a>
+  <a href="#curator">CuratorAgent</a>
+  <a href="#language">DesignLanguage</a>
+  <a href="#review">ReviewAgent</a>
+  <a href="#human">HumanCurator</a>
+  <a href="#props">Invariants &amp; liveness</a>
+  <a href="#behavior">Behavior headings</a>
+</nav>
+
+<div class="hr" id="answers"></div>
+<h2>Answers first</h2>
+<p class="lede">These are the leftover phrases. None of them is a contract decision.</p>
+
+<div class="q">
+  <b>D2 — exempt C7, C9, C17, R13 from the prose score</b>
+  <p>The study scores the same list two ways. Four items on that list are not “how the agent behaved.” They are platform mechanism: C7 is “the DesignLanguage entity is already UnderReview,” C9 is the number ten, C17 and R13 are session-id fields that can be empty strings. A <code>BEHAVIOR.md</code> judge cannot fairly score those. So the prose arm skips them, the machine arm still has them, and we report that as a finding: the machine can say things prose cannot. C19 used to be in that list (“a counter that gated nothing”). The craft machine now gates it at 12, so it is scored.</p>
+</div>
+<div class="q">
+  <b>D5 — judge the Claude Code transcript, not kernel rows alone</b>
+  <p>Temper’s entity log only records transitions that <em>succeeded</em>. A refused <code>Submit</code> is a 409 in the HTTP response. It never becomes a row on the entity. If the judge only reads kernel rows, the machine’s whole point — it said no — is invisible. Claude Code’s session transcript already contains that 409 as a tool result. So the study judge reads that transcript. Same events, including the denials.</p>
+</div>
+<div class="q">
+  <b>Why extra study skills? Why so many things an agent reads?</b>
+  <p>There are not four theories of curation. There are three <em>places a copy lives</em>, and last night I added a fourth instead of editing production. That was a convenience, and it is the confusion. What each copy is:</p>
+</div>
+<div class="tw" style="margin-bottom:14px">
+<table>
+  <thead><tr><th>What</th><th>Who actually reads it</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Curator AGENT.md + synthesize-language SKILL</td><td>The TemperPaw curator in the Katagami app</td><td>Production maker. Three live copies currently disagree (running / Genesis / GitHub).</td></tr>
+    <tr><td class="k">review-quality SKILL</td><td>The same TemperPaw agent, different job</td><td>Production “reviewer” that <em>repairs</em> and does not record a verdict.</td></tr>
+    <tr><td class="k">katagami-contributor</td><td>Claude Code / Codex / Grok as outside contributors</td><td>How to build and submit via HTTP. Taste rulebook embedded. Does not walk CuratorAgent states.</td></tr>
+    <tr><td class="k">katagami-study-curator / reviewer</td><td>Nobody in production. Study only.</td><td>Last night. Tells the agent to drive the new ledger (<code>RecordBriefRef</code> …). I added these so I would not overwrite the app skills before you reviewed the machines.</td></tr>
+    <tr><td class="k">BEHAVIOR.md × 3</td><td>The <em>judge</em>, not the working agent</td><td>The prose arm’s spec. The agent is not supposed to be steered by these during a run.</td></tr>
+    <tr><td class="k">The four .ioa.toml machines</td><td>Temper, at runtime, as refusals</td><td>The machine arm’s spec. Governs what calls are legal.</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="q">
+  <b>How the copies make agents think differently</b>
+  <p>The app curator is told a procedure (render, look, fix) but today can still call <code>SubmitForReview</code> without walking CuratorAgent states — those records are not wired into the live pipeline. The contributor skill thinks in HTTP submit composites. The study skills think in actor states. The machines, if wired, refuse illegal order regardless of which prose the agent read. <strong>Recommendation when you are ready:</strong> one maker skill (the app’s), one reviewer skill (rules, does not publish), both driving the actor ledger. Delete the study siblings. Do not keep a fourth copy.</p>
+</div>
+<div class="q">
+  <b>Why I did not install capture hooks in <code>~/.claude/settings.json</code></b>
+  <p><code>settings.json</code> is global. A <code>SessionEnd</code> hook would fire on <em>every</em> Claude Code session on this machine — mail, other repos, this chat — and upload the whole transcript to Temper. I would not flip that while you were asleep. To turn it on later: merge the snippet in <code>hooks/trajectory-capture/settings.snippet.json</code> into <code>~/.claude/settings.json</code>, set <code>TEMPER_API_KEY</code> and <code>KATAGAMI_AGENT_ID</code> in the environment, and only then start a study session. Already-open sessions are not captured; the next new session is.</p>
+</div>
+<div class="q">
+  <b>Composite INCOMPLETE at 107k states — why, what to do</b>
+  <p>The verifier tried to walk CuratorAgent and ReviewAgent <em>together</em>. It explored 107,053 combined states, hit the shipped budget (250,000), stopped, printed INCOMPLETE, and still exited 0. So it did not finish the joint proof, and it looked green. That does not make the machines wrong. It means we do not yet have a finished formal proof of the pair. <strong>Do:</strong> raise the budget for this verify (a million completed an earlier pair). <strong>Do not:</strong> treat a green INCOMPLETE as evidence. Not needed for you to review the contract. Not needed to run the LLM-judge study.</p>
+</div>
+<div class="q">
+  <b>Kernel does not persist denials — why, what to do</b>
+  <p>A 409 is a rejected transition. The entity log is a history of transitions that happened. So the denial lives in the HTTP response, not on the entity. Last night’s smoke: create → 201, illegal submit → 409, and that 409 is in <code>docs/study/evidence/smoke-refusal.json</code> because the <em>harness</em> kept the response. <strong>Study:</strong> judge transcripts (D5) — already decided. <strong>Kernel, later:</strong> write a <code>Denied</code> envelope onto the OTS trajectory from the server, so a run that never went through Claude Code still has the refusal. Temper repo, not this PR.</p>
+</div>
+<div class="q">
+  <b>Cross-entity guards are free booleans — why, what to do</b>
+  <p>When Temper verifies CuratorAgent alone, the guard “DesignLanguage is UnderReview” is not looking at a real DesignLanguage. It is a maybe. So any property that depends on that guard is not actually proved. Runtime still enforces it (the 409 is real). The gap is only the <em>proof</em>. <strong>Do:</strong> a Temper change so composite verification follows those guards, not only trigger edges. <strong>Do not:</strong> block the study or your contract review on it. Rita already deferred Layer-1 replay; the study uses the LLM judge.</p>
+</div>
+
+<div class="hr" id="joint"></div>
+<h2>The joint path</h2>
+<p class="lede">Left to right is one language’s life. The seams are the only facts that make this one system rather than four solo agents.</p>
+
+<div class="lane">
+  <div class="box">
+    <div class="nm">CuratorAgent</div>
+    <div class="st">Brief → look → CraftClean → Submitted</div>
+  </div>
+  <div class="box">
+    <div class="nm">DesignLanguage</div>
+    <div class="st">Draft → UnderReview</div>
+  </div>
+  <div class="box">
+    <div class="nm">ReviewAgent</div>
+    <div class="st">Examine → VerdictRecorded</div>
+  </div>
+  <div class="box">
+    <div class="nm">HumanCurator</div>
+    <div class="st">Publish or return</div>
+  </div>
+</div>
+<p class="lede">Seam 1 — the curator may only <code>SubmitDesignLanguage</code> if that language is already <code>UnderReview</code> (the artifact’s own gate). Seam 2 — submitting <em>creates</em> the ReviewAgent record. Seam 3 — the human may only publish if that review is <code>VerdictRecorded</code>. Seam 3 is in the HumanCurator spec. A single joint invariant “Published ⇒ same ids were made and ruled on” is <span class="chip c-sug">suggested</span> and does not exist yet.</p>
+
+<!-- CURATOR -->
+<div class="hr" id="curator"></div>
+<p class="eyebrow">Actor · craft · #211</p>
+<h2>CuratorAgent</h2>
+<p class="lede">One run, one language. Writing a PNG and looking at the PNG are different states. Last night I did not change this machine’s shape. Revision cap stays 12.</p>
+<div class="states" id="curator-states"></div>
+<div class="panel" id="curator-panel"><p class="empty">Click a state.</p></div>
+<div class="tw">
+<table>
+<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">RecordBriefRef</td><td>BriefReceived ↺</td><td>One-shot store of brief + capture ids. Claims nothing.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">AcceptBrief</td><td>BriefReceived ↺</td><td>Zero params. Direction must exist and be Synthesizing.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ReadSiblingMechanics</td><td>BriefReceived ↺</td><td>One-shot. Three published mechanics, from pages not names.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ReadReturnedCritique</td><td>BriefReceived ↺</td><td>Only if a HumanCurator named here is ReturnedWithCritique.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">DeriveDirection</td><td>BriefReceived → DirectionDerived</td><td>Has accepted brief + sibling read. Names the language and art style ids.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">GenerateImagery</td><td>DirectionDerived ↺</td><td>ArtStyle entity must exist.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">InspectImagery</td><td>DirectionDerived → ImageryInspected</td><td>Imagery was generated. This is the look.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">AuthorSurfaces</td><td>ImageryInspected → SurfacesAuthored</td><td>No other source. Pages cannot be written before images were looked at.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RenderSurfaces</td><td>SurfacesAuthored → SurfacesRendered</td><td>Browser captures. Nobody has looked yet.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">InspectRender</td><td>SurfacesRendered → RenderInspected</td><td>Screenshots return into context as images.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ReadFilmstrip / TraverseScroll / VerifyHeroReplaceable</td><td>RenderInspected ↺</td><td>Each one-shot. All three required before rules.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">VerifyAgainstRules</td><td>RenderInspected → RulesChecked</td><td>The three looks above must already have happened.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RecordRuleFailure</td><td>RulesChecked ↺</td><td>Opens findings.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">OpenLivePage</td><td>RulesChecked ↺</td><td>No open findings. Look at the live URL.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RecordCraftFix</td><td>RulesChecked → SurfacesAuthored</td><td>Open finding required. Max 12. Clears every perception flag.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">DeclareCraftClean</td><td>RulesChecked → CraftClean</td><td>No open findings + live page opened.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">SelfReview</td><td>CraftClean ↺</td><td>One-shot notes. Kernel cannot read the string.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ReopenAfterSelfReview</td><td>CraftClean → SurfacesAuthored</td><td>Max 12. Same full reset as a fix.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">SubmitDesignLanguage</td><td>CraftClean → Submitted</td><td>Self-reviewed, no findings, no jobs in flight, language already UnderReview.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">Abandon</td><td>any live → Abandoned</td><td>Always available. Timeouts fire it too.</td><td><span class="chip c-craft">craft</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- LANGUAGE -->
+<div class="hr" id="language"></div>
+<p class="eyebrow">Artifact · shipped in commons</p>
+<h2>DesignLanguage</h2>
+<p class="lede">The thing being made. The actor machines are not allowed to restate these gates. Last night I did not edit this file.</p>
+<div class="states" id="lang-states"></div>
+<div class="panel" id="lang-panel"><p class="empty">Click a state.</p></div>
+<div class="tw">
+<table>
+<thead><tr><th>Action that changes status</th><th>From → to</th><th>Gate</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">SubmitForReview</td><td>Draft → UnderReview</td><td>Five spec sections, embodiment, landing, dashboard, thumbnail, DESIGN.md + lint, three shadcn files, every File Ready/Locked.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">Publish</td><td>UnderReview → Published</td><td>Same files + quality_review_passed + published assets. Cedar, not this table, is what keeps contributors off this action.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">ReturnToDraft</td><td>UnderReview → Draft</td><td>Curator reject or owner withdraw.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">Revise</td><td>Published → UnderReview</td><td>Pull back with notes.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">Archive / Restore</td><td>any → Archived → UnderReview</td><td>Preserve a way back.</td><td><span class="chip c-ship">shipped</span></td></tr>
+</tbody>
+</table>
+</div>
+<p class="lede">Attach/Set* actions stay in Draft or UnderReview and only flip readiness bits. They are the artifact’s paperwork, not the study’s conduct.</p>
+
+<!-- REVIEW -->
+<div class="hr" id="review"></div>
+<p class="eyebrow">Actor · craft · #211</p>
+<h2>ReviewAgent</h2>
+<p class="lede">One review, one language. Rendered and inspected are different flags. A repair wipes every look. Last night I did not change this machine’s shape. Repair cap stays 6.</p>
+<div class="states" id="review-states"></div>
+<div class="panel" id="review-panel"><p class="empty">Click a state.</p></div>
+<div class="tw">
+<table>
+<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">RecordSubmissionRef</td><td>SubmissionReceived ↺</td><td>One-shot. Curator id, language id, capture ids. The curator’s submit trigger creates this record.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">AcceptSubmission</td><td>SubmissionReceived ↺</td><td>Zero params. That curator run must be Submitted.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">LoadRulebook</td><td>SubmissionReceived ↺</td><td>One-shot. Accepted TasteRules, stamped.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">BeginReview</td><td>SubmissionReceived → Reviewing</td><td>Submission accepted + rulebook loaded + language UnderReview or Published.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">FetchArtifacts</td><td>Reviewing ↺</td><td>Ids off the entity, not guessed. Repair clears this.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">Render* / Inspect* × 3</td><td>Reviewing ↺</td><td>Inspect requires the matching render. Three surfaces.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">VerifyHeroReplaceable / ResolveArtStyle / VerifyArtStyleRendered</td><td>Reviewing ↺</td><td>Hero swap and style check against the linked style, not a name.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">VerifyAgainstRules / CheckCuratorClaims</td><td>Reviewing ↺</td><td>All three surfaces inspected first. Claims tested against what was seen.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RecordFinding</td><td>Reviewing ↺</td><td>Artifacts fetched. One finding per call.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RecordRepair</td><td>Reviewing ↺</td><td>A finding exists. Max 6. Clears every perception flag.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RecordVerdict</td><td>Reviewing → VerdictRecorded</td><td>Eight looks + language still UnderReview/Published. Once.</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">Abandon</td><td>either live → Abandoned</td><td>Leaves the language unpublishable. Correct answer to empty scope.</td><td><span class="chip c-craft">craft</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- HUMAN -->
+<div class="hr" id="human"></div>
+<p class="eyebrow">Role · shipped + last night’s bound</p>
+<h2>HumanCurator</h2>
+<p class="lede">A seat, not a person. The only new conduct last night: after three escalations, reassignment stops.</p>
+<div class="states" id="human-states"></div>
+<div class="panel" id="human-panel"><p class="empty">Click a state.</p></div>
+<div class="tw">
+<table>
+<thead><tr><th>Action</th><th>From → to</th><th>What it actually requires</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">AssignSubmission</td><td>SubmissionAssigned ↺</td><td>Holder principal id, linked review, capture ids.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">RecordReviewVerdict</td><td>Assigned or Reviewing ↺</td><td>Copies the machine verdict onto the assignment.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">BeginReview</td><td>Assigned → Reviewing</td><td>Must have an assignment.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">Publish</td><td>Reviewing → Published</td><td>Assignment + verdict flag + linked ReviewAgent is VerdictRecorded. Does <em>not</em> check it was <em>this</em> language — kernel cannot compare fields.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">ReturnWithCritique</td><td>Reviewing → Returned</td><td>Written critique. Training signal.</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">ReviewOverdue</td><td>Assigned or Reviewing → Escalated</td><td>48h timeout or by hand. <strong>Now max 3.</strong></td><td><span class="chip c-night">last night</span> bound; action was shipped</td></tr>
+<tr><td class="k">Reassign</td><td>Escalated → Assigned</td><td>New holder. <strong>Blocked after the third escalation.</strong></td><td><span class="chip c-night">last night</span> bound; action was shipped</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- PROPS -->
+<div class="hr" id="props"></div>
+<h2>Invariants and liveness</h2>
+<p class="lede">If a line is “in spec,” Temper already checks it (or tries to). If it is “suggested,” it is not in any file — you would be approving a change, not confirming existing text.</p>
+
+<h3>CuratorAgent</h3>
+<div class="tw"><table>
+<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">FixInvalidatesPerception</td><td>After a fix, no look flags remain. Catches a stale screenshot of an edited page.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ConcurrencyCapHolds</td><td>jobs_in_flight ≤ 10</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RevisionLoopBounded</td><td>revision_rounds ≤ 12</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">SubmittedHoldsNoWork</td><td>No claimed jobs at submit</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">SubmittedRequiresSelfReview</td><td>Fence on the only edge into Submitted</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">CraftCleanHasNoOpenFindings</td><td>Fence</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">SubmittedIsFinal / AbandonedIsFinal</td><td>No further transitions. Known hole: a new cross-entity edge out of the terminal would be invisible to this check.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RunEventuallyTerminal</td><td>From BriefReceived, eventually Submitted or Abandoned. Weak: Abandon is always enabled. Provable because loops are bounded.</td><td>Liveness</td><td><span class="chip c-craft">craft</span></td></tr>
+</tbody>
+</table></div>
+
+<h3>ReviewAgent</h3>
+<div class="tw"><table>
+<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">InspectionRequiresRender</td><td>Cannot inspect a surface that was not rendered</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">PerceptionRequiresCurrentBytes</td><td>A repair that forgets to clear a render flag is caught. Mutation test found this.</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">JudgementRequiresInspection</td><td>Rules / claims / style / hero cannot outlive the look they rest on</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">RepairLoopBounded</td><td>repair_rounds ≤ 6</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">VerdictRequires* × 7</td><td>Fences: landing, embodiment, dashboard, hero, art style, rules, claims</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">ReviewingRequiresSubmissionAndRulebook</td><td>Fence</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">VerdictRecordedIsFinal / AbandonedIsFinal</td><td>Same terminal fence, same known hole</td><td>Invariant</td><td><span class="chip c-craft">craft</span></td></tr>
+<tr><td class="k">EveryReviewEventuallyRules</td><td>From SubmissionReceived, eventually VerdictRecorded or Abandoned</td><td>Liveness</td><td><span class="chip c-craft">craft</span></td></tr>
+</tbody>
+</table></div>
+
+<h3>HumanCurator</h3>
+<div class="tw"><table>
+<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">ReviewingRequiresAssignment</td><td>Cannot review with no assignment</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">PublishedRequiresReviewVerdict</td><td>A verdict flag is set. Weaker than the cross-entity guard on Publish.</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">PublishedIsFinal / ReturnedIsFinal</td><td>Terminal</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">EscalationLoopBounded</td><td>escalation_count ≤ 3</td><td>Invariant</td><td><span class="chip c-night">last night</span></td></tr>
+<tr><td class="k">AssignmentEventuallyResolved</td><td>From Assigned, eventually Published, Returned, or Escalated</td><td>Liveness</td><td><span class="chip c-night">last night</span></td></tr>
+</tbody>
+</table></div>
+
+<h3>DesignLanguage</h3>
+<div class="tw"><table>
+<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">PublishedRequiresEmbodiment / Compositions / Thumbnail / AllSections / ValidDesignMd / PublicAssets / QualityReview</td><td>Seven fences on Published. These are artifact properties. They belong here, not on the actors.</td><td>Invariant</td><td><span class="chip c-ship">shipped</span></td></tr>
+<tr><td class="k">— none —</td><td>No liveness. Draft can sit forever. You already decided languages stop at UnderReview and wait; that pause is intended, so a “must leave Draft” liveness would be wrong.</td><td>Liveness</td><td>absent on purpose</td></tr>
+</tbody>
+</table></div>
+
+<h3>Joint — not in any file</h3>
+<div class="tw"><table>
+<thead><tr><th>Name</th><th>Says</th><th>Kind</th><th>Origin</th></tr></thead>
+<tbody>
+<tr><td class="k">PublishedWasMadeAndRuled</td><td>No language reaches Published unless a CuratorAgent is Submitted and a ReviewAgent is VerdictRecorded on the same id.</td><td>Cross-invariant</td><td><span class="chip c-sug">suggested</span> — the thesis. Kernel cannot field-compare ids today. HumanCurator.Publish checks the review’s <em>status</em>, not that it reviewed <em>this</em> language.</td></tr>
+<tr><td class="k">SubmitCreatesReview</td><td>Every curator Submitted creates a ReviewAgent. The trigger is in the curator spec. Not yet an asserted joint property.</td><td>Trigger, not invariant</td><td><span class="chip c-craft">craft trigger</span> · <span class="chip c-sug">suggested as proof</span></td></tr>
+</tbody>
+</table></div>
+
+<p class="lede">HANDOFF also listed “keep 22 / remove 2 / add 17.” I did not land that list last night. What is in the tables above is what the files actually contain, plus the one bound I added. Do not approve a list that is not on this page.</p>
+
+<!-- BEHAVIOR -->
+<div class="hr" id="behavior"></div>
+<h2>Behavior headings the judge will score</h2>
+<p class="lede">These are the <code>##</code> units in the three <code>BEHAVIOR.md</code> files. They must not name states or actions. The human-curator file was rewritten last night to this style; the other two came from PR #212.</p>
+<div class="tw"><table>
+<thead><tr><th>Doc</th><th>Headings</th><th>Origin</th></tr></thead>
+<tbody>
+<tr>
+  <td class="k">curator-agent</td>
+  <td>Confirm who it is… · Derive the direction… · Choose a signature mechanic… · Begin a remix… · Name the language like a masthead · Generate the imagery… · Look at every generated image… · Make each of the three surfaces… · Render every surface… · Read every screenshot back… · Judge the landing across its whole scroll… · Prove the hero can be swapped… · Judge each taste rule… · Fix, re-render and look again… · Hand over once… · Build an art style on a tradition… · Prove an art style transfers… · Leave publishing to the people who own it · End honestly…</td>
+  <td><span class="chip c-craft">#212</span></td>
+</tr>
+<tr>
+  <td class="k">review-agent</td>
+  <td>Fix the scope and the standard… · Read the submitted bytes themselves · Render every surface itself… · Read every screenshot back… · Test the maker’s own claims… · Make every finding located… · plus the remaining headings in that file (never repair silently, re-read after repair, one verdict, never publish, refuse empty scope, end honestly)</td>
+  <td><span class="chip c-craft">#212</span></td>
+</tr>
+<tr>
+  <td class="k">human-curator</td>
+  <td>Pick up the assignment… · Confirm the machine review ruled on this submission · Let only the named holder decide · Decide once, and finally · Escalate an unanswered assignment… · Keep the assignment publish and the artifact publish as two different acts</td>
+  <td><span class="chip c-night">last night</span></td>
+</tr>
+</tbody>
+</table></div>
+
+<footer>
+  <span>docs/study/machines.html · PR 213 · Galley tokens · click a state</span>
+  <span>Shipped = production · Craft = #211/#212 · Last night = this branch · Suggested = not in a spec</span>
+</footer>
+</div>
+
+<script>
+const M = {
+  curator: {
+    states: [
+      "BriefReceived","DirectionDerived","ImageryInspected","SurfacesAuthored",
+      "SurfacesRendered","RenderInspected","RulesChecked","CraftClean","Submitted","Abandoned"
+    ],
+    term: ["Submitted","Abandoned"],
+    edges: {
+      BriefReceived: [
+        ["RecordBriefRef","stay","store brief + capture ids, once"],
+        ["AcceptBrief","stay","Direction must be Synthesizing"],
+        ["ReadSiblingMechanics","stay","three published mechanics, once"],
+        ["ReadReturnedCritique","stay","only if a human actually returned"],
+        ["DeriveDirection","DirectionDerived","brief accepted + siblings read"],
+        ["Abandon","Abandoned","give up"]
+      ],
+      DirectionDerived: [
+        ["GenerateImagery","stay","ArtStyle must exist"],
+        ["InspectImagery","ImageryInspected","look at every generated image"],
+        ["ClaimJob / ReleaseJob","stay","cap 10"],
+        ["Abandon","Abandoned",""]
+      ],
+      ImageryInspected: [
+        ["AuthorSurfaces","SurfacesAuthored","only legal source for writing pages"],
+        ["Abandon","Abandoned",""]
+      ],
+      SurfacesAuthored: [
+        ["RenderSurfaces","SurfacesRendered","browser captures, no look yet"],
+        ["Abandon","Abandoned",""]
+      ],
+      SurfacesRendered: [
+        ["InspectRender","RenderInspected","screenshots into context"],
+        ["Abandon","Abandoned",""]
+      ],
+      RenderInspected: [
+        ["ReadFilmstrip","stay","once"],
+        ["TraverseScroll","stay","once"],
+        ["VerifyHeroReplaceable","stay","once"],
+        ["VerifyAgainstRules","RulesChecked","requires the three looks"],
+        ["Abandon","Abandoned",""]
+      ],
+      RulesChecked: [
+        ["RecordRuleFailure","stay","opens findings"],
+        ["OpenLivePage","stay","no open findings"],
+        ["RecordCraftFix","SurfacesAuthored","finding required, max 12, clears looks"],
+        ["DeclareCraftClean","CraftClean","no findings + live page"],
+        ["Abandon","Abandoned",""]
+      ],
+      CraftClean: [
+        ["SelfReview","stay","once"],
+        ["ReopenAfterSelfReview","SurfacesAuthored","max 12, full reset"],
+        ["SubmitDesignLanguage","Submitted","self-reviewed, language already UnderReview"],
+        ["Abandon","Abandoned",""]
+      ],
+      Submitted: [],
+      Abandoned: []
+    }
+  },
+  lang: {
+    states: ["Draft","UnderReview","Published","Archived"],
+    term: ["Published","Archived"],
+    edges: {
+      Draft: [
+        ["Attach / Set*","stay","flip readiness bits"],
+        ["SubmitForReview","UnderReview","full artifact gate + files Ready"],
+        ["Archive","Archived",""]
+      ],
+      UnderReview: [
+        ["Publish","Published","same files + quality passed + assets"],
+        ["ReturnToDraft","Draft","reject or withdraw"],
+        ["Archive","Archived",""]
+      ],
+      Published: [
+        ["Revise","UnderReview",""],
+        ["Archive","Archived",""]
+      ],
+      Archived: [
+        ["Restore","UnderReview",""]
+      ]
+    }
+  },
+  review: {
+    states: ["SubmissionReceived","Reviewing","VerdictRecorded","Abandoned"],
+    term: ["VerdictRecorded","Abandoned"],
+    edges: {
+      SubmissionReceived: [
+        ["RecordSubmissionRef","stay","once"],
+        ["AcceptSubmission","stay","curator must be Submitted"],
+        ["LoadRulebook","stay","accepted TasteRules"],
+        ["BeginReview","Reviewing","all three preconditions"],
+        ["Abandon","Abandoned","empty scope ends here"]
+      ],
+      Reviewing: [
+        ["Fetch / Render / Inspect × 3","stay","inspect needs render"],
+        ["Hero / art style / rules / claims","stay","need the looks first"],
+        ["RecordFinding","stay",""],
+        ["RecordRepair","stay","needs a finding, max 6, clears all looks"],
+        ["RecordVerdict","VerdictRecorded","eight looks, once"],
+        ["Abandon","Abandoned",""]
+      ],
+      VerdictRecorded: [],
+      Abandoned: []
+    }
+  },
+  human: {
+    states: ["SubmissionAssigned","Reviewing","Published","ReturnedWithCritique","Escalated"],
+    term: ["Published","ReturnedWithCritique"],
+    edges: {
+      SubmissionAssigned: [
+        ["AssignSubmission","stay","name the holder"],
+        ["RecordReviewVerdict","stay",""],
+        ["BeginReview","Reviewing",""],
+        ["ReviewOverdue","Escalated","48h or by hand, max 3"]
+      ],
+      Reviewing: [
+        ["Publish","Published","linked review is VerdictRecorded"],
+        ["ReturnWithCritique","ReturnedWithCritique","written critique"],
+        ["ReviewOverdue","Escalated","48h, max 3"]
+      ],
+      Escalated: [
+        ["Reassign","SubmissionAssigned","blocked after 3"]
+      ],
+      Published: [],
+      ReturnedWithCritique: []
+    }
+  }
+};
+
+function mount(key, btnBox, panel){
+  const m = M[key];
+  const box = document.getElementById(btnBox);
+  const pan = document.getElementById(panel);
+  m.states.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "st" + (m.term.includes(s) ? " term" : "");
+    b.textContent = s;
+    b.addEventListener("click", () => {
+      box.querySelectorAll("button").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+      const edges = m.edges[s] || [];
+      if (!edges.length){
+        pan.innerHTML = "<h3>"+s+"</h3><p class='empty'>Terminal. Nothing leaves this state.</p>";
+        return;
+      }
+      pan.innerHTML = "<h3>"+s+"</h3>" + edges.map(e => {
+        const to = e[1] === "stay" ? "stays here" : ("→ "+e[1]);
+        return "<div class='edge'><code>"+e[0]+"</code> "+to+"<div class='g'>"+e[2]+"</div></div>";
+      }).join("");
+    });
+    box.appendChild(b);
+  });
+}
+mount("curator","curator-states","curator-panel");
+mount("lang","lang-states","lang-panel");
+mount("review","review-states","review-panel");
+mount("human","human-states","human-panel");
+</script>
+</body>
+</html>
