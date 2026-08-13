@@ -177,10 +177,9 @@
         <Property Name="QueryId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DirectionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="DesignLanguageId" Type="Edm.String" Nullable="false" DefaultValue="" />
-        <Property Name="QueryRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="DirectionRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="LanguageRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
-        <Property Name="LookRecorded" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="SearchesRun" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="SourcesIndexed" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
+        <Property Name="DirectionsDerived" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="RevisionRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />

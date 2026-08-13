@@ -31,25 +31,25 @@ a call that was never attempted.
 
 | # | Behavior | Condition B (spec / policy) | Condition A (BEHAVIOR.md) | Layer |
 |---|---|---|---|---|
-| C1 | Records capture identity before taking a job | `RecordCapture`; accept guards | "Record how this run will be found before taking a job" | 1 |
-| C2 | Research hold only on a running job | `AcceptResearchJob` | "Pick up the research job the pipeline already started" | 1 |
-| C3 | Names the query it is researching | `RecordResearchQuery` | "Name the query the search is answering" | 1 |
-| C4 | Records minted directions | `RecordDirectionSpawned` | "Record each direction the search minted" | 1 |
-| C5 | Finishes research only after the job left Running | `FinishResearch` | "Finish research only after the job has left running" | 1 |
-| C6 | Synthesize hold only on a running job | `AcceptSynthesizeJob` | "Pick up the synthesize job the direction queued" | 1 |
-| C7 | Names the direction it is synthesizing | `RecordDirection` | "Name the query and the direction this synthesize answers" | 1 |
-| C8 | Names the language it is writing | `RecordLanguage` | "Name the language this job is writing" | 1 |
-| C9 | Finishes synthesize only when language is UnderReview | `FinishSynthesize` cross-entity guard | "Finish synthesize only after the language is under review" | 1 |
-| C10 | Holds one job at a time | both accepts `from = ["Idle"]` | "Pick up the synthesize job the direction queued" | 1 |
+| C1 | Records capture identity before taking a query | `RecordCapture`; `TakeQuery` guard | "Record how this run will be found before taking a query" | 1 |
+| C2 | Takes the live query before searching | `TakeQuery` | "Take the query the pipeline is researching" | 1 |
+| C3 | Searches the web before indexing sources | `SearchTheWeb`; `IndexSources` min_count | "Search the web before indexing anything" | 1 |
+| C4 | Indexes sources before deriving directions | `IndexSources`; `DeriveDirections` min_count | "Index sources before deriving a direction" | 1 |
+| C5 | Derives a direction before completing research | `DeriveDirections`; `CompleteResearch` | "Derive at least one direction before finishing research" | 1 |
+| C6 | Takes the live direction before authoring | `TakeDirection` | "Take the direction the pipeline queued" | 1 |
+| C7 | Authors the language before building pages | `AuthorLanguage` | "Author the language from the direction before building pages" | 1 |
+| C8 | Authors surfaces after the language exists | `AuthorSurfaces` | "Make each of the three surfaces its own kind of page" | 1 |
+| C9 | Looks at the render before submitting | `LookAtRenders`; `SubmitLanguage` | "Look at every generated image before building anything around it" / submit after a look | 1 |
+| C10 | Research and synthesize are separate holds from Idle | `TakeQuery` / `TakeDirection` from Idle | "Take the query…" / "Take the direction…" | 1 |
 | C11 | Cannot publish | no `Publish` action | "Leave publishing and review to the people who own them" | 1 |
 | C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same | 1 (policy) |
 | C13 | Cannot complete quality review | no `CompleteQualityReview` on the actor | same | 1 |
 | C14 | Anonymous refused | `curator_agent.cedar` forbid on `anonymous` | same | 1 (policy) |
 | C15 | Abandons explicitly, finally | `Abandon`; `AbandonedIsFinal` | "End honestly when it cannot finish the hold" | 1 |
-| C16 | Working holds time out | `[[state_timeout]]` on Researching and Synthesizing | same | 1 |
-| C17 | Records capture identity | `RecordCapture` params | "Record how this run will be found before taking a job" | 1 |
-| C18 | Look before finishing synthesize | `RecordLook`; `FinishSynthesize` | "Look at the current embodiment before treating synthesize as finished" | 1 |
-| C19 | Revision rounds counted and gated at 12 | `RecordSynthesizeFix`; `RevisionLoopBounded` | "Fix, look again, and stop by twelve" | 1 |
+| C16 | Working holds time out | `[[state_timeout]]` on every working act | same | 1 |
+| C17 | Records capture identity | `RecordCapture` params | "Record how this run will be found before taking a query" | 1 |
+| C18 | A fix kills the last look | `FixSurfaces` to `SurfacesReady`; `SubmitLanguage` from `RendersSeen` | "Fix, look again, and stop by twelve" | 1 |
+| C19 | Revision rounds counted and gated at 12 | `FixSurfaces`; `RevisionLoopBounded` | same | 1 |
 | C20 | One ownable idea, never generic | `knowledge/rules/design-language.md` 1–2 | "Make work that meets the standard", Intent | 2 |
 | C21 | Ships as one coherent set | same, rule 3 | same section, Intent | 2 |
 | C22 | Copy is a real product scene | same, rule 4 | same section, Execution | 2 |

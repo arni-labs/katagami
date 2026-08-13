@@ -62,72 +62,80 @@ class CuratorAgentSpecTest(unittest.TestCase):
     def test_the_protocol_states_are_present(self):
         self.assertEqual(self.spec["automaton"]["name"], "CuratorAgent")
         self.assertEqual(self.spec["automaton"]["initial"], "Idle")
-        for state in ("Idle", "Researching", "Synthesizing", "Abandoned"):
+        for state in (
+            "Idle",
+            "ReadingQuery",
+            "Searching",
+            "SourcesReady",
+            "DirectionsReady",
+            "ReadingDirection",
+            "LanguageReady",
+            "SurfacesReady",
+            "SurfacesRendered",
+            "RendersSeen",
+            "LanguageUnderReview",
+            "Abandoned",
+        ):
             self.assertIn(state, self.spec["automaton"]["states"])
 
-    def test_accepts_leave_idle_only(self):
-        self.assertEqual(self.actions["AcceptResearchJob"]["from"], ["Idle"])
-        self.assertEqual(self.actions["AcceptSynthesizeJob"]["from"], ["Idle"])
-        self.assertEqual(self.actions["AcceptResearchJob"]["to"], "Researching")
-        self.assertEqual(self.actions["AcceptSynthesizeJob"]["to"], "Synthesizing")
+    def test_research_is_take_query_then_search_then_index_then_derive(self):
+        self.assertEqual(self.actions["TakeQuery"]["from"], ["Idle"])
+        self.assertEqual(self.actions["TakeQuery"]["to"], "ReadingQuery")
+        self.assertEqual(self.actions["SearchTheWeb"]["to"], "Searching")
+        self.assertEqual(self.actions["IndexSources"]["to"], "SourcesReady")
+        self.assertEqual(self.actions["DeriveDirections"]["to"], "DirectionsReady")
+        self.assertEqual(self.actions["CompleteResearch"]["from"], ["DirectionsReady"])
 
-    def test_accepts_require_a_running_job(self):
-        for name in ("AcceptResearchJob", "AcceptSynthesizeJob"):
-            cross = [
-                g
-                for g in guards(self.actions[name])
-                if g.get("type") == "cross_entity_state"
-            ]
-            self.assertEqual(len(cross), 1, name)
-            self.assertEqual(cross[0]["entity_type"], "CurationJob")
-            self.assertEqual(cross[0]["required_status"], ["Running"])
-            self.assertTrue(cross[0].get("required"), name)
-
-    def test_research_records_the_live_query(self):
-        cross = [
-            g
-            for g in guards(self.actions["RecordResearchQuery"])
+    def test_take_query_requires_the_live_query_and_job(self):
+        types = {
+            g["entity_type"]
+            for g in guards(self.actions["TakeQuery"])
             if g.get("type") == "cross_entity_state"
-        ]
-        self.assertEqual(cross[0]["entity_type"], "CurationQuery")
-        self.assertEqual(cross[0]["required_status"], ["Researching"])
+        }
+        self.assertEqual(types, {"CurationJob", "CurationQuery"})
 
-    def test_synthesize_records_direction_and_language(self):
-        direction = [
-            g
-            for g in guards(self.actions["RecordDirection"])
-            if g.get("type") == "cross_entity_state"
-        ][0]
-        self.assertEqual(direction["entity_type"], "CurationDirection")
-        self.assertEqual(direction["required_status"], ["Synthesizing"])
-        language = [
-            g
-            for g in guards(self.actions["RecordLanguage"])
-            if g.get("type") == "cross_entity_state"
-        ][0]
-        self.assertEqual(language["entity_type"], "DesignLanguage")
+    def test_cannot_index_before_searching(self):
+        self.assertIn(
+            {"type": "min_count", "var": "searches_run", "min": 1},
+            guards(self.actions["IndexSources"]),
+        )
 
-    def test_finish_synthesize_requires_language_under_review(self):
-        action = self.actions["FinishSynthesize"]
-        self.assertEqual(action["from"], ["Synthesizing"])
-        self.assertEqual(action["to"], "Idle")
+    def test_cannot_derive_before_indexing(self):
+        self.assertIn(
+            {"type": "min_count", "var": "sources_indexed", "min": 1},
+            guards(self.actions["DeriveDirections"]),
+        )
+
+    def test_synthesize_is_direction_then_language_then_surfaces_then_look(self):
+        self.assertEqual(self.actions["TakeDirection"]["to"], "ReadingDirection")
+        self.assertEqual(self.actions["AuthorLanguage"]["to"], "LanguageReady")
+        self.assertEqual(self.actions["AuthorSurfaces"]["to"], "SurfacesReady")
+        self.assertEqual(self.actions["RenderSurfaces"]["from"], ["SurfacesReady"])
+        self.assertEqual(self.actions["LookAtRenders"]["from"], ["SurfacesRendered"])
+        self.assertEqual(self.actions["SubmitLanguage"]["from"], ["RendersSeen"])
+
+    def test_take_direction_requires_the_live_direction_and_job(self):
+        types = {
+            g["entity_type"]
+            for g in guards(self.actions["TakeDirection"])
+            if g.get("type") == "cross_entity_state"
+        }
+        self.assertEqual(types, {"CurationJob", "CurationDirection"})
+
+    def test_submit_language_requires_under_review_after_a_look(self):
+        action = self.actions["SubmitLanguage"]
+        self.assertEqual(action["from"], ["RendersSeen"])
         language = [
             g
             for g in guards(action)
             if g.get("type") == "cross_entity_state"
-            and g.get("entity_type") == "DesignLanguage"
         ]
-        self.assertEqual(len(language), 1)
+        self.assertEqual(language[0]["entity_type"], "DesignLanguage")
         self.assertEqual(language[0]["required_status"], ["UnderReview"])
-        self.assertTrue(language[0].get("required"))
-        self.assertIn({"type": "is_true", "var": "look_recorded"}, guards(action))
 
-    def test_a_fix_clears_the_look(self):
-        effects = self.actions["RecordSynthesizeFix"].get("effect", [])
-        self.assertIn(
-            {"type": "set_bool", "var": "look_recorded", "value": "false"},
-            effects,
-        )
+    def test_a_fix_returns_to_surfaces_so_the_look_must_happen_again(self):
+        self.assertEqual(self.actions["FixSurfaces"]["from"], ["RendersSeen"])
+        self.assertEqual(self.actions["FixSurfaces"]["to"], "SurfacesReady")
 
     def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
         commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
@@ -159,7 +167,7 @@ class CuratorAgentSpecTest(unittest.TestCase):
             self.assertIn(field, self.actions["RecordCapture"]["params"])
 
     def test_a_stalled_hold_is_abandoned_rather_than_left_hanging(self):
-        live = {"Researching", "Synthesizing"}
+        live = set(self.spec["automaton"]["states"]) - {"Idle", "Abandoned"}
         timed_out = {t["state"] for t in self.spec["state_timeout"]}
         self.assertEqual(timed_out, live)
         for timeout in self.spec["state_timeout"]:
@@ -168,7 +176,7 @@ class CuratorAgentSpecTest(unittest.TestCase):
     def test_revision_rounds_are_bounded(self):
         self.assertIn(
             {"type": "max_count", "var": "revision_rounds", "max": 12},
-            guards(self.actions["RecordSynthesizeFix"]),
+            guards(self.actions["FixSurfaces"]),
         )
         self.assertEqual(
             invariants(self.spec)["RevisionLoopBounded"]["assert"],

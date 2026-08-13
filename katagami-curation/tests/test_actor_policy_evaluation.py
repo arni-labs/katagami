@@ -1107,7 +1107,7 @@ class ActorPolicyDecisionTest(unittest.TestCase):
     # --- CuratorAgent / TrajectoryVerdict: same default closed ------------
 
     def test_the_curator_alphabet_is_admitted_by_name(self):
-        for action in ("RecordCapture", "AcceptResearchJob", "FinishSynthesize"):
+        for action in ("RecordCapture", "TakeQuery", "CompleteSynthesis"):
             self.assertAllowed(
                 "curator_agent",
                 principal=self.CONTRIBUTOR,

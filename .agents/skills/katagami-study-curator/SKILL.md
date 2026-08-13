@@ -1,47 +1,25 @@
 ---
 name: katagami-study-curator
-description: Drive one CuratorAgent ledger while working the live Katagami pipeline — source_search then synthesize. Study arm. Never publish.
+description: Drive CuratorAgent through the expected research then synthesize conduct on the live Katagami app. Study arm. Never publish.
 ---
 
-# Study curator — work the live app, keep the ledger
+# Study curator — do the skill work, and mark each act
 
-You are the curator principal. The pipeline is the existing Katagami app:
+You are the curator. Do the work `research-direction` and
+`synthesize-language` already ask for, on the live objects. After each
+act, mark it on `CuratorAgent` so the trajectory is the behavior, not
+only the side effects.
 
-```
-CurationQuery.Submit
-  → source_search CurationJob
-      → CurationJob.SpawnDirection   (mints CurationDirection)
-      → CurationJob.CompleteResearch
-  → synthesize CurationJob per direction
-      → DesignLanguage writes + DesignLanguage.SubmitForReview
-      → CurationJob.CompleteSynthesis
-```
+This phase: **source_search** then **synthesize**. Do not do quality
+review. Do not publish.
 
-`CuratorAgent` is your ledger of that work. It does not replace the query,
-direction, job, or language. A run that does the work and skips the ledger
-is not a study run. A run that invents a second pipeline on the ledger is
-not a study run.
-
-This phase: **source_search** and **synthesize** only. Do not claim
-`quality_review`, `organize_taxonomy`, `evolve_language`, or
-`taste_distillation`.
-
-## Capture identity — read, do not invent
+## Capture identity
 
 ```bash
 python3 hooks/trajectory-capture/capture.py identity
 ```
 
-If that exits non-zero, stop. Do not mint ids by hand unless the hooks never
-saw this session, in which case:
-
-```bash
-python3 hooks/trajectory-capture/capture.py derive <session-id> claude-code
-```
-
-Put those exact `session_id`, `trajectory_id`, `spec_version`, `harness`
-values on `RecordCapture`. Send `X-Session-Id` and `X-Intent` on every
-Temper call.
+If that fails, stop. Put the printed ids on `RecordCapture`.
 
 ## Create the ledger
 
@@ -50,35 +28,48 @@ POST $TEMPER_API_URL/tdata/CuratorAgents
 {}
 ```
 
-Use `entity_id` from the 201 body.
+Then `RecordCapture`.
 
-```
-POST $TEMPER_API_URL/tdata/CuratorAgents('<id>')/Temper.<Action>
-```
+## Research — same acts as research-direction
 
-Headers on every call: `X-Tenant-Id`, `Authorization`, `X-Session-Id`,
-`X-Intent`, `x-temper-principal-kind: agent`, `x-temper-principal-id` for
-this role.
+On the live app: read the query, `temper.web_search`, create
+`DesignSources`, `CurationJob.SpawnDirection`, `CompleteResearch`.
 
-## Sequence
+On the ledger, in that order:
 
-| When | On the ledger | On the live app |
-|---|---|---|
-| First | `RecordCapture` | — |
-| Research | `AcceptResearchJob` with the running `source_search` job id and query id | The job is already `Running` |
-| Then | `RecordResearchQuery` | Confirm `CurationQuery` is `Researching` |
-| Each movement | `RecordDirectionSpawned` | `CurationJob.SpawnDirection` |
-| End research | `FinishResearch` | After `CurationJob.CompleteResearch` |
-| Synthesize | `AcceptSynthesizeJob` with that job, query, and direction | The synthesize job is `Running` |
-| Then | `RecordSynthesizeQuery`, `RecordDirection`, `RecordLanguage` | Write the `DesignLanguage` |
-| Look | `RecordLook` | After the embodiment is in context as images |
-| Fix | `RecordSynthesizeFix` | After a `DesignLanguage` write; max 12 |
-| End synthesize | `FinishSynthesize` | After `DesignLanguage.SubmitForReview` and `CurationJob.CompleteSynthesis` |
+| After you… | Mark |
+|---|---|
+| Have the running search job and query | `TakeQuery` |
+| Have searched | `SearchTheWeb` |
+| Have indexed a source | `IndexSources` |
+| Have spawned a direction | `DeriveDirections` |
+| Have completed the search job | `CompleteResearch` |
 
-A 409 names the guard. Record the body. Do not route around it.
+You cannot index before you search. You cannot derive before you index.
+You cannot complete research with zero directions.
+
+## Synthesize — same acts as synthesize-language
+
+On the live app: read the direction, `DesignLanguage` SetSpec / surfaces /
+render / look / `SubmitForReview`, `CurationJob.CompleteSynthesis`.
+
+On the ledger, in that order:
+
+| After you… | Mark |
+|---|---|
+| Have the running synthesize job and direction | `TakeDirection` |
+| Have authored the draft language | `AuthorLanguage` |
+| Have written the three surfaces | `AuthorSurfaces` |
+| Have rendered them | `RenderSurfaces` |
+| Have looked at the shots as images | `LookAtRenders` |
+| Have changed bytes after a look | `FixSurfaces` (then render and look again; max 12) |
+| The language is UnderReview | `SubmitLanguage` |
+| The synthesize job has completed | `CompleteSynthesis` |
+
+Looking is a different act from rendering. `SubmitLanguage` is refused
+unless you have looked and the language is already `UnderReview`.
 
 ## What you never do
 
-No `Publish`. No `MarkQualityPassed`. No `CompleteQualityReview`. No
-inventing a trajectory id. No finishing synthesize while the language is
-still `Draft`.
+No `Publish`. No `CompleteQualityReview`. No inventing trajectory ids. No
+skipping search, sources, look, or the language review gate.

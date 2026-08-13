@@ -5,119 +5,102 @@ description: Conduct for a Katagami curator working the live pipeline — pick u
 
 # Curator agent
 
-One principal works the existing Katagami path: a query fans out into
-directions, each direction queues a synthesize job, each job writes one
-design language. The curator does not invent a second pipeline. It picks up
-the job the app already started, names the entities it is answering, and
-puts the ledger down only when those entities have actually moved.
+One principal does the work the skills already ask for, on the live
+Katagami path. Research means: take the query, search the web, index
+sources, derive directions. Synthesize means: take the direction, author
+the language, author the surfaces, render, look, fix, submit. The objects
+stay the app's. The machine is the expected conduct.
 
-## Record how this run will be found before taking a job
+## Record how this run will be found before taking a query
 
 <!-- inventory: C1, C17 -->
 
-Before the first job is accepted the agent stores the session, the
+Before the first query is taken the agent stores the session, the
 trajectory, the spec version and the harness this run will carry. Those
 values come from the capture helper, not from invented ids.
 
 Starting work and stamping identity afterwards fails this: later verdicts
 then point at a run that never existed.
 
-## Pick up the research job the pipeline already started
+## Take the query the pipeline is researching
 
-<!-- inventory: C2 -->
+<!-- inventory: C2, C10 -->
 
-Source search begins when the app has a running search job. The agent
-accepts that job and then calls spawn and complete on the job itself.
+Research starts by taking the live query — a search job that is already
+running. The agent reads the scope from that query before searching.
 
-Inventing a direction on the actor, or accepting a job that is not running,
-fails this.
+Inventing a direction without a query, or taking synthesize while still
+researching, fails this.
 
-## Name the query the search is answering
+## Search the web before indexing anything
 
 <!-- inventory: C3 -->
 
-While holding research the agent records the query that is actually in
-research.
+The agent searches the web for movements and sources with focused queries,
+then shortlists.
 
-An empty reference, or a query that has already left research, does not
-satisfy this.
+Indexing a source it never searched for, or deriving a direction from
+memory, fails this.
 
-## Record each direction the search minted
+## Index sources before deriving a direction
 
 <!-- inventory: C4 -->
 
-After the job mints a direction, the agent records that direction as a
-real entity the pipeline created.
+Each shortlisted source is indexed as a real source record. Only then
+does a direction get derived.
 
-Claiming a direction nobody minted fails this.
+A direction with no indexed source behind it fails this.
 
-## Finish research only after the job has left running
+## Derive at least one direction before finishing research
 
 <!-- inventory: C5 -->
 
-The agent puts the research hold down only when the search job has already
-completed or is finalizing.
+The agent derives one direction per movement by asking the running search
+job to spawn it, then completes research only after at least one
+direction exists and the job has actually completed.
 
-Declaring research finished while the job is still running fails this.
+Finishing research with zero directions, or declaring it done while the
+job is still running, fails this.
 
-## Pick up the synthesize job the direction queued
+## Take the direction the pipeline queued
 
-<!-- inventory: C6, C10 -->
+<!-- inventory: C6 -->
 
-Synthesize begins from idle, on the running job the direction queued. The
-agent holds one job at a time.
+Synthesize starts by taking the live direction that is already
+synthesizing, and reading that brief.
 
-Accepting synthesize while still holding research, or accepting a job that
-is not running, fails this.
+Authoring a language against a direction the pipeline never queued fails
+this.
 
-## Name the query and the direction this synthesize answers
+## Author the language from the direction before building pages
 
 <!-- inventory: C7 -->
 
-While holding synthesize the agent records the query and the direction
-that is actually synthesizing.
+The agent writes the language — one ownable idea, tokens, rules — from
+the direction, as a real design-language entity still in draft.
 
-Working a language against a direction the pipeline never put in
-synthesize fails this.
+Pages built first and a language written to describe them afterwards
+fail this.
 
-## Name the language this job is writing
+## Look at the renders before handing the language over
 
-<!-- inventory: C8 -->
+<!-- inventory: C9, C18 -->
 
-The agent records the design language it is writing. The language entity
-owns the spec, the embodiment and the review gate. The actor only binds
-the ledger to that id.
+The agent renders the current bytes, looks at the screenshots as images,
+and only then hands the language to review — and only once that language
+is already under review.
 
-Finishing a synthesize that never named a language fails this.
-
-## Look at the current embodiment before treating synthesize as finished
-
-<!-- inventory: C18 -->
-
-The current pages come back into context as images and the agent says what
-is in them.
-
-Writing a file is not looking. A finish that never looked fails this.
+Submitting a draft, or submitting without looking, fails this.
 
 ## Fix, look again, and stop by twelve
 
 <!-- inventory: C19 -->
 
-Every edit invalidates the last look. The agent records the fix, looks at
-the new bytes, and does not loop past twelve rounds.
+Every edit invalidates the last look. The agent fixes what it saw, renders
+again, and looks at the new bytes. It does not loop past twelve rounds.
 
 Closing a change with no fresh look, or spinning without a bound, fails
 this.
-
-## Finish synthesize only after the language is under review
-
-<!-- inventory: C9 -->
-
-The agent puts the synthesize hold down only when the job has left running
-and the named language is already under review — a state only the
-language's own review gate can reach.
-
-Announcing a finished synthesize of a draft language fails this.
 
 ## Confirm who it is and what the tools expect before contributing
 
@@ -181,7 +164,7 @@ the thing the pictures were made with.
 
 ## Make each of the three surfaces its own kind of page
 
-<!-- inventory: C22, C26 -->
+<!-- inventory: C8, C22, C26 -->
 
 From one set of tokens the agent builds the landing as the scroll-cinematic
 film the direction describes around a single full-bleed hero, the embodiment as

@@ -74,49 +74,48 @@ a:hover{background:var(--acid)}
 </aside>
 <main>
 <p class="eyebrow">Katagami · JCS actor contract</p>
-<h1>The agents and the human sit on the live app</h1>
-<p class="lead">Not a second Katagami. Not a stub. The curator, the reviewer and the human are actors on <em>CurationQuery</em>, <em>CurationDirection</em>, <em>CurationJob</em> and <em>DesignLanguage</em>.</p>
+<h1>The machine is the expected conduct</h1>
+<p class="lead">Same acts as the skills and as BEHAVIOR.md. The live query, direction, job and language are the join — not the behavior itself.</p>
 <p><span class="scrap cyan">moves</span><span class="scrap hold">holds</span><span class="scrap verm">stops</span></p>
 
 <div class="note verm">
-<p><strong>What “thin” was not.</strong> It was a bad word for “do not invent a parallel craft pipeline.” The overnight machine (BriefReceived → CraftClean → Submitted) re-implemented the app. This rewrite keeps the existing objects and adds conduct on top of them.</p>
+<p><strong>What was wrong last pass.</strong> The ledger recorded job plumbing: accept job, record query id, finish when the job left Running. That is the system. What we need encoded is what we expect the agent to do: take the query, search the web, index sources, derive directions; then author the language, author the surfaces, render, look, fix, submit.</p>
 </div>
 
-<h2>The path this phase</h2>
-<p>Source search and synthesize only. Review is a different principal. Publish is the human seat.</p>
-<svg class="flow" viewBox="0 0 1100 280" role="img" aria-label="Query to direction to job to language, with three actors">
-  <rect x="20" y="40" width="200" height="72" fill="#F4F1EA" stroke="#1A1A1A"/>
-  <text x="120" y="72" text-anchor="middle" font-family="IBM Plex Mono" font-size="13">CurationQuery</text>
-  <text x="120" y="92" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#6E6960">Submit</text>
-  <rect x="280" y="40" width="220" height="72" fill="#F4F1EA" stroke="#1A1A1A"/>
-  <text x="390" y="72" text-anchor="middle" font-family="IBM Plex Mono" font-size="13">CurationJob</text>
-  <text x="390" y="92" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#6E6960">source_search · Running</text>
-  <rect x="560" y="40" width="230" height="72" fill="#F4F1EA" stroke="#1A1A1A"/>
-  <text x="675" y="72" text-anchor="middle" font-family="IBM Plex Mono" font-size="13">CurationDirection</text>
-  <text x="675" y="92" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#6E6960">SpawnDirection</text>
-  <rect x="850" y="40" width="230" height="72" fill="#F4F1EA" stroke="#1A1A1A"/>
-  <text x="965" y="72" text-anchor="middle" font-family="IBM Plex Mono" font-size="13">CurationJob</text>
-  <text x="965" y="92" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#6E6960">synthesize · Running</text>
-  <rect x="850" y="160" width="230" height="72" fill="#F4F1EA" stroke="#1A1A1A"/>
-  <text x="965" y="192" text-anchor="middle" font-family="IBM Plex Mono" font-size="13">DesignLanguage</text>
-  <text x="965" y="212" text-anchor="middle" font-family="IBM Plex Sans" font-size="12" fill="#6E6960">Draft → UnderReview</text>
-  <path d="M220 76 H280" stroke="#00AEEF" stroke-width="2" fill="none"/>
-  <path d="M500 76 H560" stroke="#00AEEF" stroke-width="2" fill="none"/>
-  <path d="M790 76 H850" stroke="#00AEEF" stroke-width="2" fill="none"/>
-  <path d="M965 112 V160" stroke="#00AEEF" stroke-width="2" fill="none"/>
-  <rect x="20" y="160" width="200" height="72" fill="#101010"/>
-  <text x="120" y="192" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="13">CuratorAgent</text>
-  <text x="120" y="212" text-anchor="middle" fill="#F4F1EA" font-family="IBM Plex Sans" font-size="12">Idle · Researching · Synthesizing</text>
-  <rect x="280" y="160" width="220" height="72" fill="#101010"/>
-  <text x="390" y="192" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="13">ReviewAgent</text>
-  <text x="390" y="212" text-anchor="middle" fill="#F4F1EA" font-family="IBM Plex Sans" font-size="12">language must be UnderReview</text>
-  <rect x="560" y="160" width="230" height="72" fill="#101010"/>
-  <text x="675" y="192" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono" font-size="13">HumanCurator</text>
-  <text x="675" y="212" text-anchor="middle" fill="#F4F1EA" font-family="IBM Plex Sans" font-size="12">Publish or return</text>
+<h2>Research, then synthesize</h2>
+<p>Each box is an act we expect, not a status on the pipeline.</p>
+<svg class="flow" viewBox="0 0 1100 320" role="img" aria-label="Expected curator conduct">
+  <text x="20" y="28" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">RESEARCH</text>
+  <rect x="20" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="95" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Take the query</text>
+  <rect x="190" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="265" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Search the web</text>
+  <rect x="360" y="40" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="435" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Index sources</text>
+  <rect x="530" y="40" width="170" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="615" y="74" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Derive directions</text>
+  <text x="20" y="148" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">SYNTHESIZE</text>
+  <rect x="20" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="95" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Take direction</text>
+  <rect x="190" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="265" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Author language</text>
+  <rect x="360" y="160" width="150" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="435" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Author surfaces</text>
+  <rect x="530" y="160" width="120" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="590" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Render</text>
+  <rect x="670" y="160" width="100" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="720" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Look</text>
+  <rect x="790" y="160" width="120" height="56" fill="#F4F1EA" stroke="#1A1A1A"/>
+  <text x="850" y="194" text-anchor="middle" font-family="IBM Plex Sans" font-size="13">Submit</text>
+  <path d="M170 68 H190 M340 68 H360 M510 68 H530" stroke="#00AEEF" stroke-width="2"/>
+  <path d="M170 188 H190 M340 188 H360 M510 188 H530 M650 188 H670 M770 188 H790" stroke="#00AEEF" stroke-width="2"/>
+  <path d="M720 216 V250 H435 V216" stroke="#FF3B1F" stroke-width="2" fill="none"/>
+  <text x="560" y="270" font-family="IBM Plex Mono" font-size="11" fill="#FF3B1F">fix — then render and look again, max 12</text>
+  <text x="20" y="310" font-family="IBM Plex Mono" font-size="12" fill="#6E6960">Guards join the app: query Researching, direction Synthesizing, language UnderReview, job Running then Completed.</text>
 </svg>
 
 <div class="note cyan">
-<p>The curator <em>calls</em> <code>CurationJob.SpawnDirection</code>, <code>CompleteResearch</code>, <code>DesignLanguage.SubmitForReview</code>, and <code>CompleteSynthesis</code>. The ledger only records which entities it is holding and refuses to finish a synthesize hold unless that language is already UnderReview.</p>
+<p>Human conduct is already the expected acts: pick up the assignment, confirm the review ruled on this work, look, publish or return with a critique. Review conduct is already: load the language and the accepted rules, render, look, fix, rule. Those two were closer. The curator was the one that had drifted into plumbing.</p>
 </div>
 
 <h2>What to review</h2>
@@ -126,50 +125,54 @@ a:hover{background:var(--acid)}
   <button type="button" role="tab" aria-selected="false" data-tab="review">Review</button>
   <button type="button" role="tab" aria-selected="false" data-tab="human">Human</button>
 </div>
-
 <section class="panel on" id="curator" role="tabpanel">
   <p class="path">katagami-curation/specs/curator_agent.ioa.toml</p>
   <h3>Spec</h3>
-  <pre class='plate'># CuratorAgent — one curator principal inside the live Katagami app.
+  <pre class='plate'># CuratorAgent — expected curator *conduct* on the live Katagami app.
 #
-# This actor is a slice of the existing pipeline, not a second Katagami.
-# CurationQuery, CurationDirection, CurationJob, and DesignLanguage keep
-# owning the work objects. This machine owns the curator&#x27;s CONDUCT while
-# working those objects.
+# This machine encodes what we expect the agent to DO, the same acts as
+# research-direction and synthesize-language. It is not a second pipeline
+# and not a job-status ledger.
 #
-# The live path this phase:
-#   CurationQuery.Submit
-#     → source_search CurationJob (Running)
-#         → CurationJob.SpawnDirection  (mints CurationDirection)
-#         → CurationJob.CompleteResearch
-#     → synthesize CurationJob per direction (Running)
-#         → DesignLanguage writes + DesignLanguage.SubmitForReview
-#         → CurationJob.CompleteSynthesis  (language must already be UnderReview)
+# The live objects stay themselves:
+#   CurationQuery, CurationDirection, CurationJob, DesignLanguage, DesignSource
+# The agent still calls SpawnDirection / CompleteResearch / SetSpec /
+# SubmitForReview / CompleteSynthesis on those objects. This ledger is the
+# ordered behavior we will judge: take the query, search the web, index
+# sources, derive directions; then take the direction, author the language,
+# author the surfaces, render, look, fix, submit.
 #
-# The curator principal calls those existing actions. This ledger records
-# which query, direction, job, and language it is working, and refuses to
-# finish a synthesize hold unless the language is actually UnderReview.
-# Publishing is not in this alphabet. Quality review is not in this alphabet.
+# Cross-entity guards are the join to the app. Behavior without the matching
+# object state is refused.
 #
-# This phase the job types are source_search and synthesize only
-# (D24). organize / evolve / taste stay on CurationJob and on the live
-# curator process; they are not accepted here yet.
+# This phase: source_search + synthesize only (D24).
 #
-# STATES, NOT FLAGS: Holding research vs holding synthesize are two states.
-# job_type is not a boolean on this actor.
-#
-# Lifecycle:
-#   Idle --AcceptResearchJob--&gt; Researching --FinishResearch--&gt; Idle
-#   Idle --AcceptSynthesizeJob--&gt; Synthesizing --FinishSynthesize--&gt; Idle
-#   Researching | Synthesizing --Abandon--&gt; Abandoned
+# Research:
+#   Idle -&gt; ReadingQuery -&gt; Searching -&gt; SourcesReady -&gt; DirectionsReady -&gt; Idle
+# Synthesize:
+#   Idle -&gt; ReadingDirection -&gt; LanguageReady -&gt; SurfacesReady
+#        -&gt; SurfacesRendered -&gt; RendersSeen -&gt; LanguageUnderReview -&gt; Idle
+#   RendersSeen -&gt; SurfacesReady   (FixSurfaces — look-fix, max 12)
+# Working states -&gt; Abandoned
 
 [automaton]
 name = &quot;CuratorAgent&quot;
-states = [&quot;Idle&quot;, &quot;Researching&quot;, &quot;Synthesizing&quot;, &quot;Abandoned&quot;]
+states = [
+  &quot;Idle&quot;,
+  &quot;ReadingQuery&quot;,
+  &quot;Searching&quot;,
+  &quot;SourcesReady&quot;,
+  &quot;DirectionsReady&quot;,
+  &quot;ReadingDirection&quot;,
+  &quot;LanguageReady&quot;,
+  &quot;SurfacesReady&quot;,
+  &quot;SurfacesRendered&quot;,
+  &quot;RendersSeen&quot;,
+  &quot;LanguageUnderReview&quot;,
+  &quot;Abandoned&quot;,
+]
 initial = &quot;Idle&quot;
 allow_indefinite_states = [&quot;Idle&quot;, &quot;Abandoned&quot;]
-
-# --- Capture identity -------------------------------------------------------
 
 [[state]]
 name = &quot;session_id&quot;
@@ -196,8 +199,6 @@ name = &quot;capture_recorded&quot;
 type = &quot;bool&quot;
 initial = &quot;false&quot;
 
-# --- The live entities this run is working ----------------------------------
-
 [[state]]
 name = &quot;job_id&quot;
 type = &quot;string&quot;
@@ -219,27 +220,20 @@ type = &quot;string&quot;
 initial = &quot;&quot;
 
 [[state]]
-name = &quot;query_recorded&quot;
-type = &quot;bool&quot;
-initial = &quot;false&quot;
+name = &quot;searches_run&quot;
+type = &quot;counter&quot;
+initial = 0
 
 [[state]]
-name = &quot;direction_recorded&quot;
-type = &quot;bool&quot;
-initial = &quot;false&quot;
+name = &quot;sources_indexed&quot;
+type = &quot;counter&quot;
+initial = 0
 
 [[state]]
-name = &quot;language_recorded&quot;
-type = &quot;bool&quot;
-initial = &quot;false&quot;
+name = &quot;directions_derived&quot;
+type = &quot;counter&quot;
+initial = 0
 
-[[state]]
-name = &quot;look_recorded&quot;
-type = &quot;bool&quot;
-initial = &quot;false&quot;
-
-# Look-fix rounds while synthesizing. The language entity owns the bytes
-# and SubmitForReview; this counter is the curator&#x27;s own revision loop (C19).
 [[state]]
 name = &quot;revision_rounds&quot;
 type = &quot;counter&quot;
@@ -251,7 +245,7 @@ type = &quot;string&quot;
 initial = &quot;&quot;
 
 # ============================================================================
-# Idle — between jobs. Capture identity is recorded here once.
+# Idle
 # ============================================================================
 
 [[action]]
@@ -261,165 +255,154 @@ from = [&quot;Idle&quot;]
 params = [&quot;session_id&quot;, &quot;trajectory_id&quot;, &quot;spec_version&quot;, &quot;harness&quot;]
 guard = [{ type = &quot;is_false&quot;, var = &quot;capture_recorded&quot; }]
 effect = [{ type = &quot;set_bool&quot;, var = &quot;capture_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Store the capture identity this run will carry on every Temper call. One-shot. Does not claim a job.&quot;
+hint = &quot;Store how this run will be found. One-shot. Not work yet.&quot;
 
 [[action]]
-name = &quot;AcceptResearchJob&quot;
+name = &quot;TakeQuery&quot;
 kind = &quot;input&quot;
 from = [&quot;Idle&quot;]
-to = &quot;Researching&quot;
+to = &quot;ReadingQuery&quot;
 params = [&quot;job_id&quot;, &quot;query_id&quot;]
 guard = [
   { type = &quot;is_true&quot;, var = &quot;capture_recorded&quot; },
   { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Running&quot;], required = true },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationQuery&quot;, entity_id_source = &quot;query_id&quot;, required_status = [&quot;Researching&quot;], required = true },
 ]
-effect = [
-  { type = &quot;set_bool&quot;, var = &quot;query_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;direction_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;language_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;look_recorded&quot;, value = &quot;false&quot; },
-]
-hint = &quot;Pick up the live source_search CurationJob the pipeline already started. The job must be Running. The curator then calls CurationJob.SpawnDirection and CurationJob.CompleteResearch on that job — those actions live on CurationJob, not here.&quot;
+hint = &quot;Take the live query. The source_search job is already Running and the query is Researching. The next act is to search the web, not to invent a direction on this ledger.&quot;
+
+# ============================================================================
+# Research conduct — same order as research-direction
+# ============================================================================
 
 [[action]]
-name = &quot;AcceptSynthesizeJob&quot;
+name = &quot;SearchTheWeb&quot;
+kind = &quot;input&quot;
+from = [&quot;ReadingQuery&quot;, &quot;Searching&quot;]
+to = &quot;Searching&quot;
+params = [&quot;search_notes&quot;]
+guard = [{ type = &quot;max_count&quot;, var = &quot;searches_run&quot;, max = 4 }]
+effect = [{ type = &quot;increment&quot;, var = &quot;searches_run&quot; }]
+hint = &quot;Search the web for movements and sources. Matches research-direction steps 3–4: varied focused queries, then a shortlist. Bounded at four searches for a targeted job.&quot;
+
+[[action]]
+name = &quot;IndexSources&quot;
+kind = &quot;input&quot;
+from = [&quot;Searching&quot;, &quot;SourcesReady&quot;]
+to = &quot;SourcesReady&quot;
+params = [&quot;source_notes&quot;]
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;searches_run&quot;, min = 1 },
+  { type = &quot;max_count&quot;, var = &quot;sources_indexed&quot;, max = 8 },
+]
+effect = [{ type = &quot;increment&quot;, var = &quot;sources_indexed&quot; }]
+hint = &quot;Index a source as a DesignSource on the commons. The create/Submit/Index calls live on DesignSource. This records that the agent actually did that work. Cannot run before at least one search.&quot;
+
+[[action]]
+name = &quot;DeriveDirections&quot;
+kind = &quot;input&quot;
+from = [&quot;SourcesReady&quot;, &quot;DirectionsReady&quot;]
+to = &quot;DirectionsReady&quot;
+params = [&quot;movement_name&quot;]
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;sources_indexed&quot;, min = 1 },
+  { type = &quot;max_count&quot;, var = &quot;directions_derived&quot;, max = 4 },
+]
+effect = [{ type = &quot;increment&quot;, var = &quot;directions_derived&quot; }]
+hint = &quot;Derive one direction from the research. The mint is CurationJob.SpawnDirection on the held job — this ledger step is the conduct. Targeted jobs spawn one or two; the bound is four.&quot;
+
+[[action]]
+name = &quot;CompleteResearch&quot;
+kind = &quot;input&quot;
+from = [&quot;DirectionsReady&quot;]
+to = &quot;Idle&quot;
+guard = [
+  { type = &quot;min_count&quot;, var = &quot;directions_derived&quot;, min = 1 },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Finalizing&quot;, &quot;Completed&quot;], required = true },
+]
+hint = &quot;Stop researching only after at least one direction was derived and CurationJob.CompleteResearch has already committed. Completing with zero directions is the empty-fan-out fail on the job, not a success here.&quot;
+
+# ============================================================================
+# Synthesize conduct — same order as synthesize-language
+# ============================================================================
+
+[[action]]
+name = &quot;TakeDirection&quot;
 kind = &quot;input&quot;
 from = [&quot;Idle&quot;]
-to = &quot;Synthesizing&quot;
+to = &quot;ReadingDirection&quot;
 params = [&quot;job_id&quot;, &quot;query_id&quot;, &quot;direction_id&quot;]
 guard = [
   { type = &quot;is_true&quot;, var = &quot;capture_recorded&quot; },
   { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Running&quot;], required = true },
-]
-effect = [
-  { type = &quot;set_bool&quot;, var = &quot;query_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;direction_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;language_recorded&quot;, value = &quot;false&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;look_recorded&quot;, value = &quot;false&quot; },
-]
-hint = &quot;Pick up the live synthesize CurationJob the pipeline queued for one CurationDirection. The job must be Running. Writing the language and SubmitForReview live on DesignLanguage; CompleteSynthesis lives on CurationJob.&quot;
-
-# ============================================================================
-# Researching — holding one source_search job.
-# ============================================================================
-
-[[action]]
-name = &quot;RecordResearchQuery&quot;
-kind = &quot;input&quot;
-from = [&quot;Researching&quot;]
-params = [&quot;query_id&quot;]
-guard = [
-  { type = &quot;is_false&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationQuery&quot;, entity_id_source = &quot;query_id&quot;, required_status = [&quot;Researching&quot;], required = true },
-]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;query_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Name the CurationQuery this search is answering. The query must actually be Researching. required = true: an empty ref cannot pretend a query exists.&quot;
-
-[[action]]
-name = &quot;RecordDirectionSpawned&quot;
-kind = &quot;input&quot;
-from = [&quot;Researching&quot;]
-params = [&quot;direction_id&quot;]
-guard = [
-  { type = &quot;is_true&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationDirection&quot;, entity_id_source = &quot;direction_id&quot;, required_status = [&quot;Discovered&quot;, &quot;Synthesizing&quot;], required = true },
-]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;direction_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Record a CurationDirection that this job minted via CurationJob.SpawnDirection. The spawn itself is not this action. Callable after each spawn; the last recorded id is the one the ledger holds.&quot;
-
-[[action]]
-name = &quot;FinishResearch&quot;
-kind = &quot;input&quot;
-from = [&quot;Researching&quot;]
-to = &quot;Idle&quot;
-guard = [
-  { type = &quot;is_true&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Finalizing&quot;, &quot;Completed&quot;], required = true },
-]
-hint = &quot;Put the ledger down only after the source_search job has left Running — which means CurationJob.CompleteResearch (or Fail) already committed on the job. The actor cannot declare research finished while the job is still Running.&quot;
-
-# ============================================================================
-# Synthesizing — holding one synthesize job for one direction.
-# ============================================================================
-
-[[action]]
-name = &quot;RecordSynthesizeQuery&quot;
-kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
-params = [&quot;query_id&quot;]
-guard = [
-  { type = &quot;is_false&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationQuery&quot;, entity_id_source = &quot;query_id&quot;, required_status = [&quot;Researching&quot;, &quot;Synthesizing&quot;], required = true },
-]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;query_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Name the CurationQuery whose fan-out produced this synthesize job.&quot;
-
-[[action]]
-name = &quot;RecordDirection&quot;
-kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
-params = [&quot;direction_id&quot;]
-guard = [
-  { type = &quot;is_true&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;is_false&quot;, var = &quot;direction_recorded&quot; },
   { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationDirection&quot;, entity_id_source = &quot;direction_id&quot;, required_status = [&quot;Synthesizing&quot;], required = true },
 ]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;direction_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Name the CurationDirection this synthesize job is answering. The direction must be Synthesizing.&quot;
+hint = &quot;Take the direction the pipeline queued. Read the brief from that CurationDirection before authoring a language.&quot;
 
 [[action]]
-name = &quot;RecordLanguage&quot;
+name = &quot;AuthorLanguage&quot;
 kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
+from = [&quot;ReadingDirection&quot;]
+to = &quot;LanguageReady&quot;
 params = [&quot;design_language_id&quot;]
 guard = [
-  { type = &quot;is_true&quot;, var = &quot;direction_recorded&quot; },
-  { type = &quot;is_false&quot;, var = &quot;language_recorded&quot; },
-  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;Draft&quot;, &quot;UnderReview&quot;], required = true },
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;Draft&quot;], required = true },
 ]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;language_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Name the DesignLanguage this job is writing. The language entity owns philosophy, tokens, embodiment, and SubmitForReview. This only binds the ledger to that id.&quot;
+hint = &quot;Author the language from the direction: one ownable idea, tokens, rules. The write is DesignLanguage.SetSpec / SubmitDesignLanguage. This step is the conduct — a page without a language first is a caption.&quot;
 
 [[action]]
-name = &quot;RecordLook&quot;
+name = &quot;AuthorSurfaces&quot;
 kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
-guard = [
-  { type = &quot;is_true&quot;, var = &quot;language_recorded&quot; },
-  { type = &quot;is_false&quot;, var = &quot;look_recorded&quot; },
-]
-effect = [{ type = &quot;set_bool&quot;, var = &quot;look_recorded&quot;, value = &quot;true&quot; }]
-hint = &quot;Assert that the current embodiment came back into context as images and was looked at. Writing a PNG is not this. Cleared by RecordSynthesizeFix so a look of old bytes cannot carry a finish.&quot;
+from = [&quot;LanguageReady&quot;, &quot;SurfacesReady&quot;]
+to = &quot;SurfacesReady&quot;
+params = [&quot;surface_notes&quot;]
+hint = &quot;Author the three surfaces — landing, embodiment, dashboard — from that language. File writes live on DesignLanguage. Arriving here from a fix means the previous look is dead.&quot;
 
 [[action]]
-name = &quot;RecordSynthesizeFix&quot;
+name = &quot;RenderSurfaces&quot;
 kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
+from = [&quot;SurfacesReady&quot;]
+to = &quot;SurfacesRendered&quot;
+params = [&quot;render_notes&quot;]
+hint = &quot;Render the current bytes in a real browser. This produces evidence. It is not looking.&quot;
+
+[[action]]
+name = &quot;LookAtRenders&quot;
+kind = &quot;input&quot;
+from = [&quot;SurfacesRendered&quot;]
+to = &quot;RendersSeen&quot;
+params = [&quot;look_notes&quot;]
+hint = &quot;Look at the screenshots as images in context and say what is in them. Writing a PNG is not this. SurfacesRendered and RendersSeen are different facts.&quot;
+
+[[action]]
+name = &quot;FixSurfaces&quot;
+kind = &quot;input&quot;
+from = [&quot;RendersSeen&quot;]
+to = &quot;SurfacesReady&quot;
 params = [&quot;fix_note&quot;]
-guard = [
-  { type = &quot;is_true&quot;, var = &quot;language_recorded&quot; },
-  { type = &quot;max_count&quot;, var = &quot;revision_rounds&quot;, max = 12 },
-]
-effect = [
-  { type = &quot;increment&quot;, var = &quot;revision_rounds&quot; },
-  { type = &quot;set_bool&quot;, var = &quot;look_recorded&quot;, value = &quot;false&quot; },
-]
-hint = &quot;Record that the language bytes changed after a look. The write itself is DesignLanguage actions. This clears look_recorded so the next look is of the new bytes. Bounded at 12 (C19).&quot;
+guard = [{ type = &quot;max_count&quot;, var = &quot;revision_rounds&quot;, max = 12 }]
+effect = [{ type = &quot;increment&quot;, var = &quot;revision_rounds&quot; }]
+hint = &quot;Fix what the look found. Lands back in SurfacesReady so the only way forward is render then look again. Bounded at twelve (C19).&quot;
 
 [[action]]
-name = &quot;FinishSynthesize&quot;
+name = &quot;SubmitLanguage&quot;
 kind = &quot;input&quot;
-from = [&quot;Synthesizing&quot;]
+from = [&quot;RendersSeen&quot;]
+to = &quot;LanguageUnderReview&quot;
+guard = [
+  { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;UnderReview&quot;], required = true },
+]
+hint = &quot;Hand the language to review. DesignLanguage.SubmitForReview is the gate; this step is only legal once that entity is already UnderReview. You cannot skip the look: this action is only from RendersSeen.&quot;
+
+[[action]]
+name = &quot;CompleteSynthesis&quot;
+kind = &quot;input&quot;
+from = [&quot;LanguageUnderReview&quot;]
 to = &quot;Idle&quot;
 guard = [
-  { type = &quot;is_true&quot;, var = &quot;query_recorded&quot; },
-  { type = &quot;is_true&quot;, var = &quot;direction_recorded&quot; },
-  { type = &quot;is_true&quot;, var = &quot;language_recorded&quot; },
-  { type = &quot;is_true&quot;, var = &quot;look_recorded&quot; },
   { type = &quot;cross_entity_state&quot;, entity_type = &quot;CurationJob&quot;, entity_id_source = &quot;job_id&quot;, required_status = [&quot;Finalizing&quot;, &quot;Completed&quot;], required = true },
   { type = &quot;cross_entity_state&quot;, entity_type = &quot;DesignLanguage&quot;, entity_id_source = &quot;design_language_id&quot;, required_status = [&quot;UnderReview&quot;], required = true },
 ]
-hint = &quot;Put the ledger down only after (1) CurationJob.CompleteSynthesis already committed and (2) the named DesignLanguage is UnderReview — which is only reachable through DesignLanguage.SubmitForReview. The actor cannot announce a finished synthesize of a Draft language.&quot;
+hint = &quot;Put the synthesize job down only after CurationJob.CompleteSynthesis committed and the language is still UnderReview.&quot;
 
 # ============================================================================
 # Give up
@@ -428,35 +411,97 @@ hint = &quot;Put the ledger down only after (1) CurationJob.CompleteSynthesis al
 [[action]]
 name = &quot;Abandon&quot;
 kind = &quot;input&quot;
-from = [&quot;Researching&quot;, &quot;Synthesizing&quot;]
+from = [
+  &quot;ReadingQuery&quot;,
+  &quot;Searching&quot;,
+  &quot;SourcesReady&quot;,
+  &quot;DirectionsReady&quot;,
+  &quot;ReadingDirection&quot;,
+  &quot;LanguageReady&quot;,
+  &quot;SurfacesReady&quot;,
+  &quot;SurfacesRendered&quot;,
+  &quot;RendersSeen&quot;,
+  &quot;LanguageUnderReview&quot;,
+]
 to = &quot;Abandoned&quot;
 params = [&quot;abandon_reason&quot;]
-hint = &quot;End the hold without finishing. The job still has its own Fail path; this only ends the actor ledger.&quot;
+hint = &quot;End the work and say which act could not be finished.&quot;
 
 [[state_timeout]]
-state = &quot;Researching&quot;
+state = &quot;ReadingQuery&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Took the query and never searched.&quot; }
+
+[[state_timeout]]
+state = &quot;Searching&quot;
+after_seconds = 1800
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Searched and never indexed sources.&quot; }
+
+[[state_timeout]]
+state = &quot;SourcesReady&quot;
+after_seconds = 1800
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Indexed sources and never derived a direction.&quot; }
+
+[[state_timeout]]
+state = &quot;DirectionsReady&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Derived directions and never completed research.&quot; }
+
+[[state_timeout]]
+state = &quot;ReadingDirection&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Took the direction and never authored a language.&quot; }
+
+[[state_timeout]]
+state = &quot;LanguageReady&quot;
 after_seconds = 3600
 on_timeout = &quot;Abandon&quot;
-params = { abandon_reason = &quot;CuratorAgent held a source_search job for 1h without finishing.&quot; }
+params = { abandon_reason = &quot;Authored a language and never built the surfaces.&quot; }
 
 [[state_timeout]]
-state = &quot;Synthesizing&quot;
-after_seconds = 7200
+state = &quot;SurfacesReady&quot;
+after_seconds = 1800
 on_timeout = &quot;Abandon&quot;
-params = { abandon_reason = &quot;CuratorAgent held a synthesize job for 2h without finishing.&quot; }
+params = { abandon_reason = &quot;Authored surfaces and never rendered them.&quot; }
 
-# ============================================================================
-# Invariants
-# ============================================================================
+[[state_timeout]]
+state = &quot;SurfacesRendered&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Rendered and never looked.&quot; }
 
-[[invariant]]
-name = &quot;IdleHoldsNoLook&quot;
-when = [&quot;Idle&quot;]
-assert = &quot;!look_recorded&quot;
+[[state_timeout]]
+state = &quot;RendersSeen&quot;
+after_seconds = 3600
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Looked and never fixed or submitted.&quot; }
+
+[[state_timeout]]
+state = &quot;LanguageUnderReview&quot;
+after_seconds = 900
+on_timeout = &quot;Abandon&quot;
+params = { abandon_reason = &quot;Language under review but synthesize job never completed.&quot; }
 
 [[invariant]]
 name = &quot;RevisionLoopBounded&quot;
 assert = &quot;revision_rounds &lt;= 12&quot;
+
+[[invariant]]
+name = &quot;SearchBoundHolds&quot;
+assert = &quot;searches_run &lt;= 4&quot;
+
+[[invariant]]
+name = &quot;SourceBoundHolds&quot;
+assert = &quot;sources_indexed &lt;= 8&quot;
+
+[[invariant]]
+name = &quot;DirectionBoundHolds&quot;
+assert = &quot;directions_derived &lt;= 4&quot;
 
 [[invariant]]
 name = &quot;AbandonedIsFinal&quot;
@@ -465,30 +510,32 @@ assert = &quot;no_further_transitions&quot;
 
 [[liveness]]
 name = &quot;WorkingEventuallyResolves&quot;
-from = [&quot;Researching&quot;]
+from = [&quot;ReadingQuery&quot;]
 reaches = [&quot;Idle&quot;, &quot;Abandoned&quot;]
 </pre>
   <p class="path">katagami-curation/policies/curator_agent.cedar</p>
   <h3>Cedar</h3>
-  <pre class='plate'>// CuratorAgent — one curator principal on the live pipeline (ARN-294).
-// The permit enumerates the alphabet. Publish and quality-review completions
-// are absent on purpose. Artifact-side publish stays forbidden in
-// katagami-commons/policies/design_language.cedar.
+  <pre class='plate'>// CuratorAgent — expected curator conduct (ARN-294).
+// Alphabet is the acts we expect: take the query, search, index, derive;
+// take the direction, author, render, look, fix, submit. Publish and
+// quality-review completion are absent.
 permit(
   principal,
   action in [
     Action::&quot;RecordCapture&quot;,
-    Action::&quot;AcceptResearchJob&quot;,
-    Action::&quot;AcceptSynthesizeJob&quot;,
-    Action::&quot;RecordResearchQuery&quot;,
-    Action::&quot;RecordDirectionSpawned&quot;,
-    Action::&quot;FinishResearch&quot;,
-    Action::&quot;RecordSynthesizeQuery&quot;,
-    Action::&quot;RecordDirection&quot;,
-    Action::&quot;RecordLanguage&quot;,
-    Action::&quot;RecordLook&quot;,
-    Action::&quot;RecordSynthesizeFix&quot;,
-    Action::&quot;FinishSynthesize&quot;,
+    Action::&quot;TakeQuery&quot;,
+    Action::&quot;SearchTheWeb&quot;,
+    Action::&quot;IndexSources&quot;,
+    Action::&quot;DeriveDirections&quot;,
+    Action::&quot;CompleteResearch&quot;,
+    Action::&quot;TakeDirection&quot;,
+    Action::&quot;AuthorLanguage&quot;,
+    Action::&quot;AuthorSurfaces&quot;,
+    Action::&quot;RenderSurfaces&quot;,
+    Action::&quot;LookAtRenders&quot;,
+    Action::&quot;FixSurfaces&quot;,
+    Action::&quot;SubmitLanguage&quot;,
+    Action::&quot;CompleteSynthesis&quot;,
     Action::&quot;Abandon&quot;
   ],
   resource is CuratorAgent
@@ -509,110 +556,102 @@ description: Conduct for a Katagami curator working the live pipeline — pick u
 
 # Curator agent
 
-One principal works the existing Katagami path: a query fans out into
-directions, each direction queues a synthesize job, each job writes one
-design language. The curator does not invent a second pipeline. It picks up
-the job the app already started, names the entities it is answering, and
-puts the ledger down only when those entities have actually moved.
+One principal does the work the skills already ask for, on the live
+Katagami path. Research means: take the query, search the web, index
+sources, derive directions. Synthesize means: take the direction, author
+the language, author the surfaces, render, look, fix, submit. The objects
+stay the app&#x27;s. The machine is the expected conduct.
 
-## Record how this run will be found before taking a job
+## Record how this run will be found before taking a query
 
 &lt;!-- inventory: C1, C17 --&gt;
 
-Before the first job is accepted the agent stores the session, the
+Before the first query is taken the agent stores the session, the
 trajectory, the spec version and the harness this run will carry. Those
 values come from the capture helper, not from invented ids.
 
 Starting work and stamping identity afterwards fails this: later verdicts
 then point at a run that never existed.
 
-## Pick up the research job the pipeline already started
+## Take the query the pipeline is researching
 
-&lt;!-- inventory: C2 --&gt;
+&lt;!-- inventory: C2, C10 --&gt;
 
-Source search begins when the app has a running search job. The agent
-accepts that job and then calls spawn and complete on the job itself.
+Research starts by taking the live query — a search job that is already
+running. The agent reads the scope from that query before searching.
 
-Inventing a direction on the actor, or accepting a job that is not running,
-fails this.
+Inventing a direction without a query, or taking synthesize while still
+researching, fails this.
 
-## Name the query the search is answering
+## Search the web before indexing anything
 
 &lt;!-- inventory: C3 --&gt;
 
-While holding research the agent records the query that is actually in
-research. An empty reference, or a query that has already left research,
-does not satisfy this.
+The agent searches the web for movements and sources with focused queries,
+then shortlists.
 
-## Record each direction the search minted
+Indexing a source it never searched for, or deriving a direction from
+memory, fails this.
+
+## Index sources before deriving a direction
 
 &lt;!-- inventory: C4 --&gt;
 
-After the job mints a direction, the agent records that direction as a
-real entity the pipeline created. Claiming a direction nobody minted fails
-this.
+Each shortlisted source is indexed as a real source record. Only then
+does a direction get derived.
 
-## Finish research only after the job has left running
+A direction with no indexed source behind it fails this.
+
+## Derive at least one direction before finishing research
 
 &lt;!-- inventory: C5 --&gt;
 
-The agent puts the research hold down only when the search job has already
-completed or is finalizing. Declaring research finished while the job is
-still running fails this.
+The agent derives one direction per movement by asking the running search
+job to spawn it, then completes research only after at least one
+direction exists and the job has actually completed.
 
-## Pick up the synthesize job the direction queued
+Finishing research with zero directions, or declaring it done while the
+job is still running, fails this.
 
-&lt;!-- inventory: C6, C10 --&gt;
+## Take the direction the pipeline queued
 
-Synthesize begins from idle, on the running job the direction queued. The
-agent holds one job at a time. Accepting synthesize while still holding
-research, or accepting a job that is not running, fails this.
+&lt;!-- inventory: C6 --&gt;
 
-## Name the query and the direction this synthesize answers
+Synthesize starts by taking the live direction that is already
+synthesizing, and reading that brief.
+
+Authoring a language against a direction the pipeline never queued fails
+this.
+
+## Author the language from the direction before building pages
 
 &lt;!-- inventory: C7 --&gt;
 
-While holding synthesize the agent records the query and the direction
-that is actually synthesizing. Working a language against a direction the
-pipeline never put in synthesize fails this.
+The agent writes the language — one ownable idea, tokens, rules — from
+the direction, as a real design-language entity still in draft.
 
-## Name the language this job is writing
+Pages built first and a language written to describe them afterwards
+fail this.
 
-&lt;!-- inventory: C8 --&gt;
+## Look at the renders before handing the language over
 
-The agent records the design language it is writing. The language entity
-owns the spec, the embodiment and the review gate. The actor only binds
-the ledger to that id.
+&lt;!-- inventory: C9, C18 --&gt;
 
-Finishing a synthesize that never named a language fails this.
+The agent renders the current bytes, looks at the screenshots as images,
+and only then hands the language to review — and only once that language
+is already under review.
 
-## Look at the current embodiment before treating synthesize as finished
-
-&lt;!-- inventory: C18 --&gt;
-
-The current pages come back into context as images and the agent says what
-is in them. Writing a file is not looking. A finish that never looked
-fails this.
+Submitting a draft, or submitting without looking, fails this.
 
 ## Fix, look again, and stop by twelve
 
 &lt;!-- inventory: C19 --&gt;
 
-Every edit invalidates the last look. The agent records the fix, looks at
-the new bytes, and does not loop past twelve rounds.
+Every edit invalidates the last look. The agent fixes what it saw, renders
+again, and looks at the new bytes. It does not loop past twelve rounds.
 
 Closing a change with no fresh look, or spinning without a bound, fails
 this.
-
-## Finish synthesize only after the language is under review
-
-&lt;!-- inventory: C9 --&gt;
-
-The agent puts the synthesize hold down only when the job has left running
-and the named language is already under review — a state only the
-language&#x27;s own review gate can reach.
-
-Announcing a finished synthesize of a draft language fails this.
 
 ## Confirm who it is and what the tools expect before contributing
 
@@ -676,7 +715,7 @@ the thing the pictures were made with.
 
 ## Make each of the three surfaces its own kind of page
 
-&lt;!-- inventory: C22, C26 --&gt;
+&lt;!-- inventory: C8, C22, C26 --&gt;
 
 From one set of tokens the agent builds the landing as the scroll-cinematic
 film the direction describes around a single full-bleed hero, the embodiment as
@@ -779,48 +818,26 @@ no reason.
   <h3>Skill</h3>
   <pre class='plate'>---
 name: katagami-study-curator
-description: Drive one CuratorAgent ledger while working the live Katagami pipeline — source_search then synthesize. Study arm. Never publish.
+description: Drive CuratorAgent through the expected research then synthesize conduct on the live Katagami app. Study arm. Never publish.
 ---
 
-# Study curator — work the live app, keep the ledger
+# Study curator — do the skill work, and mark each act
 
-You are the curator principal. The pipeline is the existing Katagami app:
+You are the curator. Do the work `research-direction` and
+`synthesize-language` already ask for, on the live objects. After each
+act, mark it on `CuratorAgent` so the trajectory is the behavior, not
+only the side effects.
 
-```
-CurationQuery.Submit
-  → source_search CurationJob
-      → CurationJob.SpawnDirection   (mints CurationDirection)
-      → CurationJob.CompleteResearch
-  → synthesize CurationJob per direction
-      → DesignLanguage writes + DesignLanguage.SubmitForReview
-      → CurationJob.CompleteSynthesis
-```
+This phase: **source_search** then **synthesize**. Do not do quality
+review. Do not publish.
 
-`CuratorAgent` is your ledger of that work. It does not replace the query,
-direction, job, or language. A run that does the work and skips the ledger
-is not a study run. A run that invents a second pipeline on the ledger is
-not a study run.
-
-This phase: **source_search** and **synthesize** only. Do not claim
-`quality_review`, `organize_taxonomy`, `evolve_language`, or
-`taste_distillation`.
-
-## Capture identity — read, do not invent
+## Capture identity
 
 ```bash
 python3 hooks/trajectory-capture/capture.py identity
 ```
 
-If that exits non-zero, stop. Do not mint ids by hand unless the hooks never
-saw this session, in which case:
-
-```bash
-python3 hooks/trajectory-capture/capture.py derive &lt;session-id&gt; claude-code
-```
-
-Put those exact `session_id`, `trajectory_id`, `spec_version`, `harness`
-values on `RecordCapture`. Send `X-Session-Id` and `X-Intent` on every
-Temper call.
+If that fails, stop. Put the printed ids on `RecordCapture`.
 
 ## Create the ledger
 
@@ -829,43 +846,55 @@ POST $TEMPER_API_URL/tdata/CuratorAgents
 {}
 ```
 
-Use `entity_id` from the 201 body.
+Then `RecordCapture`.
 
-```
-POST $TEMPER_API_URL/tdata/CuratorAgents(&#x27;&lt;id&gt;&#x27;)/Temper.&lt;Action&gt;
-```
+## Research — same acts as research-direction
 
-Headers on every call: `X-Tenant-Id`, `Authorization`, `X-Session-Id`,
-`X-Intent`, `x-temper-principal-kind: agent`, `x-temper-principal-id` for
-this role.
+On the live app: read the query, `temper.web_search`, create
+`DesignSources`, `CurationJob.SpawnDirection`, `CompleteResearch`.
 
-## Sequence
+On the ledger, in that order:
 
-| When | On the ledger | On the live app |
-|---|---|---|
-| First | `RecordCapture` | — |
-| Research | `AcceptResearchJob` with the running `source_search` job id and query id | The job is already `Running` |
-| Then | `RecordResearchQuery` | Confirm `CurationQuery` is `Researching` |
-| Each movement | `RecordDirectionSpawned` | `CurationJob.SpawnDirection` |
-| End research | `FinishResearch` | After `CurationJob.CompleteResearch` |
-| Synthesize | `AcceptSynthesizeJob` with that job, query, and direction | The synthesize job is `Running` |
-| Then | `RecordSynthesizeQuery`, `RecordDirection`, `RecordLanguage` | Write the `DesignLanguage` |
-| Look | `RecordLook` | After the embodiment is in context as images |
-| Fix | `RecordSynthesizeFix` | After a `DesignLanguage` write; max 12 |
-| End synthesize | `FinishSynthesize` | After `DesignLanguage.SubmitForReview` and `CurationJob.CompleteSynthesis` |
+| After you… | Mark |
+|---|---|
+| Have the running search job and query | `TakeQuery` |
+| Have searched | `SearchTheWeb` |
+| Have indexed a source | `IndexSources` |
+| Have spawned a direction | `DeriveDirections` |
+| Have completed the search job | `CompleteResearch` |
 
-A 409 names the guard. Record the body. Do not route around it.
+You cannot index before you search. You cannot derive before you index.
+You cannot complete research with zero directions.
+
+## Synthesize — same acts as synthesize-language
+
+On the live app: read the direction, `DesignLanguage` SetSpec / surfaces /
+render / look / `SubmitForReview`, `CurationJob.CompleteSynthesis`.
+
+On the ledger, in that order:
+
+| After you… | Mark |
+|---|---|
+| Have the running synthesize job and direction | `TakeDirection` |
+| Have authored the draft language | `AuthorLanguage` |
+| Have written the three surfaces | `AuthorSurfaces` |
+| Have rendered them | `RenderSurfaces` |
+| Have looked at the shots as images | `LookAtRenders` |
+| Have changed bytes after a look | `FixSurfaces` (then render and look again; max 12) |
+| The language is UnderReview | `SubmitLanguage` |
+| The synthesize job has completed | `CompleteSynthesis` |
+
+Looking is a different act from rendering. `SubmitLanguage` is refused
+unless you have looked and the language is already `UnderReview`.
 
 ## What you never do
 
-No `Publish`. No `MarkQualityPassed`. No `CompleteQualityReview`. No
-inventing a trajectory id. No finishing synthesize while the language is
-still `Draft`.
+No `Publish`. No `CompleteQualityReview`. No inventing trajectory ids. No
+skipping search, sources, look, or the language review gate.
 </pre>
 </section>
-
 <section class="panel" id="review" role="tabpanel">
-  <p class="path">katagami-curation/specs/review_agent.ioa.toml · AcceptSubmission now requires DesignLanguage UnderReview</p>
+  <p class="path">katagami-curation/specs/review_agent.ioa.toml</p>
   <h3>Spec</h3>
   <pre class='plate'># ReviewAgent — I/O Automaton Specification (craft-level)
 #
@@ -1719,7 +1748,6 @@ No `Publish`. No `MarkQualityPassed`. No `AttachPublishedAssets`. No ruling
 on work you made.
 </pre>
 </section>
-
 <section class="panel" id="human" role="tabpanel">
   <p class="path">katagami-curation/specs/human_curator.ioa.toml</p>
   <h3>Spec</h3>
@@ -2194,14 +2222,6 @@ Do not ask an agent to publish. Do not publish a language that is still
 `Draft`. Do not publish work the review never ruled on.
 </pre>
 </section>
-
-<h2>Bounds still in force</h2>
-<ul>
-  <li>Look-fix rounds on synthesize: 12 (C19 stays in the score).</li>
-  <li>Human escalation: 3.</li>
-  <li>Review repair rounds: 6 (unchanged on ReviewAgent).</li>
-  <li>C7, C9, C17, R13 remain out of the comparison. C19 stays in.</li>
-</ul>
 <p>PR <a href="https://github.com/arni-labs/katagami/pull/213">arni-labs/katagami#213</a> · Linear <a href="https://linear.app/arni-build/issue/ARN-294">ARN-294</a></p>
 </main>
 <script>

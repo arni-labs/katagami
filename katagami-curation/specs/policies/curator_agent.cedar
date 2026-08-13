@@ -1,22 +1,24 @@
-// CuratorAgent — one curator principal on the live pipeline (ARN-294).
-// The permit enumerates the alphabet. Publish and quality-review completions
-// are absent on purpose. Artifact-side publish stays forbidden in
-// katagami-commons/policies/design_language.cedar.
+// CuratorAgent — expected curator conduct (ARN-294).
+// Alphabet is the acts we expect: take the query, search, index, derive;
+// take the direction, author, render, look, fix, submit. Publish and
+// quality-review completion are absent.
 permit(
   principal,
   action in [
     Action::"RecordCapture",
-    Action::"AcceptResearchJob",
-    Action::"AcceptSynthesizeJob",
-    Action::"RecordResearchQuery",
-    Action::"RecordDirectionSpawned",
-    Action::"FinishResearch",
-    Action::"RecordSynthesizeQuery",
-    Action::"RecordDirection",
-    Action::"RecordLanguage",
-    Action::"RecordLook",
-    Action::"RecordSynthesizeFix",
-    Action::"FinishSynthesize",
+    Action::"TakeQuery",
+    Action::"SearchTheWeb",
+    Action::"IndexSources",
+    Action::"DeriveDirections",
+    Action::"CompleteResearch",
+    Action::"TakeDirection",
+    Action::"AuthorLanguage",
+    Action::"AuthorSurfaces",
+    Action::"RenderSurfaces",
+    Action::"LookAtRenders",
+    Action::"FixSurfaces",
+    Action::"SubmitLanguage",
+    Action::"CompleteSynthesis",
     Action::"Abandon"
   ],
   resource is CuratorAgent

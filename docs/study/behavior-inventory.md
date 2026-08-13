@@ -38,56 +38,59 @@ This phase the accepted jobs are `source_search` and `synthesize`.
 Source: `katagami-curation/specs/curator_agent.ioa.toml`,
 `katagami-curation/policies/curator_agent.cedar`.
 
-Its life: `Idle` → `Researching` → `Idle` → `Synthesizing` → `Idle`,
-or `Abandoned` from a working hold.
+Its life: take the query, search, index sources, derive directions; then take
+the direction, author the language, author surfaces, render, look, fix or
+submit. `Abandoned` from any working act.
 
 ### Order of work
 
-**C1. A run records its capture identity before it takes a job.** — machine
+**C1. A run records its capture identity before it takes a query.** — machine
 `RecordCapture` is the one-shot store of session, trajectory, spec version
-and harness. Accepting a job is guarded on that bit.
-*Source: spec, action `RecordCapture`; `AcceptResearchJob` / `AcceptSynthesizeJob` guard `is_true capture_recorded`.*
+and harness. `TakeQuery` is guarded on that bit.
+*Source: spec, action `RecordCapture`; `TakeQuery` guard `is_true capture_recorded`.*
 
-**C2. A research hold starts only on a running source-search job.** — machine
-`AcceptResearchJob` is reachable only from `Idle` and is guarded on the
-named `CurationJob` being `Running`.
-*Source: spec, action `AcceptResearchJob`.*
+**C2. The agent takes the live query before searching.** — machine
+`TakeQuery` requires a running `CurationJob` and a `CurationQuery` in
+`Researching`. Search is not reachable from `Idle`.
+*Source: spec, action `TakeQuery`.*
 
-**C3. A research hold names the query it is answering.** — machine
-`RecordResearchQuery` requires the named `CurationQuery` to be `Researching`.
-*Source: spec, action `RecordResearchQuery`.*
+**C3. The agent searches the web before it indexes sources.** — machine
+`SearchTheWeb` is the only edge into `Searching`. `IndexSources` requires at
+least one search.
+*Source: spec, action `SearchTheWeb`; `IndexSources` guard `min_count searches_run 1`.*
 
-**C4. A research hold records directions the job actually minted.** — machine
-`RecordDirectionSpawned` requires a real `CurationDirection` in `Discovered`
-or `Synthesizing`. Spawn itself lives on `CurationJob`.
-*Source: spec, action `RecordDirectionSpawned`.*
+**C4. The agent indexes sources before it derives directions.** — machine
+`DeriveDirections` requires at least one indexed source.
+*Source: spec, action `IndexSources`; `DeriveDirections` guard `min_count sources_indexed 1`.*
 
-**C5. Research finishes only after the job has left Running.** — machine
-`FinishResearch` is guarded on the held job being `Finalizing` or `Completed`.
-*Source: spec, action `FinishResearch`.*
+**C5. The agent derives at least one direction before completing research.** — machine
+`CompleteResearch` is only from `DirectionsReady` and requires
+`directions_derived >= 1` plus the job already `Finalizing` or `Completed`.
+*Source: spec, action `DeriveDirections`; action `CompleteResearch`.*
 
-**C6. A synthesize hold starts only on a running synthesize job.** — machine
-`AcceptSynthesizeJob` is reachable only from `Idle` and is guarded on the
-named `CurationJob` being `Running`.
-*Source: spec, action `AcceptSynthesizeJob`.*
+**C6. The agent takes the live direction before authoring a language.** — machine
+`TakeDirection` requires a running synthesize job and a `CurationDirection`
+in `Synthesizing`.
+*Source: spec, action `TakeDirection`.*
 
-**C7. A synthesize hold names the direction it is answering.** — machine
-`RecordDirection` requires the named `CurationDirection` to be `Synthesizing`.
-*Source: spec, action `RecordDirection`.*
+**C7. The agent authors the language from that direction before building pages.** — machine
+`AuthorLanguage` is the only edge out of `ReadingDirection` and requires a
+`DesignLanguage` in `Draft`.
+*Source: spec, action `AuthorLanguage`.*
 
-**C8. A synthesize hold names the language it is writing.** — machine
-`RecordLanguage` requires a real `DesignLanguage` in `Draft` or `UnderReview`.
-*Source: spec, action `RecordLanguage`.*
+**C8. Surfaces are authored after the language exists.** — machine
+`AuthorSurfaces` is reachable from `LanguageReady` (or after a fix).
+*Source: spec, action `AuthorSurfaces`.*
 
-**C9. Synthesize finishes only when that language is UnderReview.** — machine
-`FinishSynthesize` reads `DesignLanguage` off the graph. That state is only
-reachable through `DesignLanguage.SubmitForReview`.
-*Source: spec, action `FinishSynthesize` guard `required_status = ["UnderReview"]`.*
+**C9. The agent looks at the render before submitting.** — machine
+`LookAtRenders` is the only edge into `RendersSeen`. `SubmitLanguage` is only
+from `RendersSeen`, and requires the language already `UnderReview`.
+*Source: spec, action `LookAtRenders`; action `SubmitLanguage`.*
 
-**C10. A run holds one job at a time.** — machine
-Both accept actions leave `Idle`. There is no edge from `Researching` to
-`Synthesizing` without finishing or abandoning first.
-*Source: spec, `AcceptResearchJob` / `AcceptSynthesizeJob` `from = ["Idle"]`.*
+**C10. Research and synthesize are two holds from Idle, not one mixed state.** — machine
+`TakeQuery` and `TakeDirection` both leave `Idle`. There is no edge from a
+research state into a synthesize state without completing or abandoning.
+*Source: spec, `TakeQuery` / `TakeDirection` `from = ["Idle"]`.*
 
 ### What this actor may never do
 
@@ -116,7 +119,7 @@ in `Abandoned`, which is terminal.
 *Source: spec, action `Abandon`; invariant `AbandonedIsFinal`.*
 
 **C16. A hold that stops making progress is abandoned automatically.** — machine
-`Researching` and `Synthesizing` carry a timeout onto `Abandon`.
+Every working conduct state carries a timeout onto `Abandon`.
 *Source: spec, `[[state_timeout]]` on every working state.*
 
 ### The record it leaves
@@ -125,14 +128,14 @@ in `Abandoned`, which is terminal.
 Session id, trajectory id, spec version and harness live on `RecordCapture`.
 *Source: spec, action `RecordCapture` params.*
 
-**C18. Synthesize finishes only after a look at the current bytes.** — machine
-`FinishSynthesize` is guarded on `look_recorded`. `RecordSynthesizeFix`
-clears that bit.
-*Source: spec, action `RecordLook`; action `FinishSynthesize`.*
+**C18. A look of old bytes cannot carry a submit.** — machine
+`FixSurfaces` returns to `SurfacesReady`, so render and look must happen
+again. `SubmitLanguage` is only from `RendersSeen`.
+*Source: spec, action `FixSurfaces` `to = "SurfacesReady"`; `SubmitLanguage` `from = ["RendersSeen"]`.*
 
 **C19. Look-fix rounds are counted and gated at twelve.** — machine
-`RecordSynthesizeFix` increments `revision_rounds` under `max_count 12`.
-*Source: spec, action `RecordSynthesizeFix`; invariant `RevisionLoopBounded`.*
+`FixSurfaces` increments `revision_rounds` under `max_count 12`.
+*Source: spec, action `FixSurfaces`; invariant `RevisionLoopBounded`.*
 
 ### What only a person can judge
 

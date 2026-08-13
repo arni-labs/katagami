@@ -3,7 +3,7 @@
 is a recorded event.
 
 Talks to a Temper already serving the craft-level specs. Does not publish.
-Does not need a real design language — FinishSynthesize from Idle
+Does not need a real design language — CompleteSynthesis from Idle
 must 409 (wrong source state) before any artifact exists.
 
 Usage:
@@ -65,10 +65,10 @@ def main() -> int:
     rid = created.get("entity_id") or created.get("Id") or created.get("id")
     status, denied = call(
         "POST",
-        f"/tdata/CuratorAgents('{rid}')/Temper.FinishSynthesize",
+        f"/tdata/CuratorAgents('{rid}')/Temper.CompleteSynthesis",
         {},
     )
-    events.append({"action": "FinishSynthesize", "http": status, "body": denied})
+    events.append({"action": "CompleteSynthesis", "http": status, "body": denied})
     ok = status in (400, 403, 409, 422)
     report = {
         "ok": ok,
