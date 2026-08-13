@@ -95,35 +95,25 @@ Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.co
 
 ---
 
-## What we have run
-
-Live Temper: isolated `:3472`. Two Claude Code sessions (research, then Keyblock synthesize). Trajectories are in the table above. **Judgement from those ATIFs is not in this file yet** — update this section after both arms have scored the trajectories.
-
-Per-entity Temper verify (release, both apps): ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50).
-
-Composite (joint) verify: **INCOMPLETE — not a pass.** One 8-type component. 65 143 unique joint states, no dropped reaction in that prefix. Log: [temper-verify-both-dirs-release-250k-2026-08-13.txt](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt). Bound-from-spec: [nerdsane/temper#420](https://github.com/nerdsane/temper/pull/420).
-
----
-
 ## Confirmed vs not
 
 **Worked**
 
 - Actor specs, skills, and `BEHAVIOR.md` exist for curator, reviewer, and human.
-- Per-entity L0–L3 in release, including CuratorAgent after the checker bound matched the spec’s own counts.
+- Per-entity L0–L3 in release, both apps: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50). [temper#420](https://github.com/nerdsane/temper/pull/420) (bound-from-spec).
 - Live guards refuse wrong order (named 409s).
-- Two Claude Code sessions captured as ATIF and OTS.
+- Isolated Temper `:3472`. Two Claude Code sessions (research, Keyblock synthesize) captured as ATIF and OTS (table above).
 
 **Not confirmed**
 
-- Whether the two judges agree when they read the ATIFs.
+- Whether the two judges agree when they read those trajectories.
 - Reviewer or human curator driven live.
 - End-to-end through a real human publish decision.
-- A complete composite proof of the eight-type join.
+- A complete composite proof. Joint verify is **INCOMPLETE** (not a pass): one 8-type component, 65 143 unique joint states, no dropped reaction in that prefix. [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt).
 
 **Next**
 
-- Judge both captured sessions from ATIF, both arms, then put the results here.
+- Finish the eight judges (ATIF and OTS × both arms × both sessions), then put results here.
 - More samples.
 - Review session, then a real human publish decision.
 - Composite stays Incomplete until the joint encoding can finish (parked).
