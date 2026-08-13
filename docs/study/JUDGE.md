@@ -4,7 +4,8 @@ Same trajectory. Two references. Do not mix them.
 
 ## Shared
 
-You are judging one captured curator run. Read the trajectory first
+You are judging **one** captured session — either a research run or a
+synthesize run, not both. Read the trajectory first
 (kernel `GET /api/ots/trajectories/<id>/atif`, or the local archive).
 Then run layer 1:
 
@@ -24,6 +25,8 @@ Write two `TrajectoryVerdict` rows (`deterministic`, then `llm`).
 Reference: `.agents/behaviors/curator-agent/BEHAVIOR.md`
 
 Score the numbered inventory items that BEHAVIOR tags (`C1`…`C28`).
+Research sessions: score the research units; mark synthesize units `na`.
+Synthesize sessions: score the synthesize units; mark research units `na`.
 Each unit: true / false / na, with a one-line reason and a turn id.
 Do not read the IOA spec.
 

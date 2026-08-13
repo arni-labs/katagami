@@ -19,10 +19,11 @@
 
 ## What Claude is given in a trial
 
-- **Research job:** production `katagami-curation/agents/curator/skills/research-direction/SKILL.md` plus mark `CuratorAgent` after each act.
-- **Synthesize job:** production `synthesize-language/SKILL.md` plus the same ledger.
+- **Research session (one CC run):** `docs/study/SESSION-RESEARCH.md` + production `research-direction`. New ledger. Stop at CompleteResearch.
+- **Synthesize session (one CC run per direction):** `docs/study/SESSION-SYNTH.md` + production `synthesize-language`. New ledger. Stop at UnderReview.
 - **Review:** `.agents/skills/katagami-study-reviewer/SKILL.md` (no production equivalent).
 - **Human:** you. No skill unless Claude is pretending to be you.
+- **Judge:** `docs/study/JUDGE.md` — each session, both arms (BEHAVIOR.md and the machine).
 
 ## Publish
 

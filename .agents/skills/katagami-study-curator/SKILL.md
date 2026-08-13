@@ -13,8 +13,9 @@ only the side effects.
 
 Do not use `katagami-contributor`. That is the old MCP craft loop.
 
-This phase: **source_search** then **synthesize**. Do not do quality
-review. Do not publish. Do not approve a publish.
+This phase: **source_search** then **synthesize**, each in its **own
+Claude Code session** with its own ledger. Do not do both in one run.
+Do not do quality review. Do not publish. Do not approve a publish.
 
 ## Capture identity
 

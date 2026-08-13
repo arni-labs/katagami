@@ -1,0 +1,6 @@
+query=en-019ffcec-6991-78c1-b882-bce38b08f578
+job=en-019ffcec-69ba-7ec2-a76d-dc21b4cabe2c
+query_status=Researching
+job_status=Running
+job_type=source_search
+note=Configure+Start. Query.Submit used only to reach Researching.
