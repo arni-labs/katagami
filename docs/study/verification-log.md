@@ -38,12 +38,86 @@ What the entries below actually are:
 - **two cases of the instrument being wrong** — a conformance report that can be
   made to pass by a caller-supplied value, and a checker that produced 81 false
   violations on a clean run;
-- **one withdrawn conclusion**, kept in place.
+- **one withdrawn conclusion**, kept in place;
+- **one checker-vs-join finding** (2026-08-13): CuratorAgent cannot finish
+  research as a closed machine, and the cascade aborts before the joint proof.
 
 That is worth having, and it is not the same claim. A reader should leave this
 file knowing the machinery has been probed and found to have holes — not that it
 has been proven to catch things in flight. Every entry so far is a person
 driving the machine on purpose; none is the machine catching a real run.
+
+---
+
+## 2026-08-13 — CuratorAgent is not a closed machine; verify never reaches the join
+
+**Checked:** `temper verify` on the current study machines, with the rebuilt
+binary from temper `grok/composite-budget` @ `c2af92b2` (the one that accepts
+repeated `--specs-dir`). Command:
+
+```
+temper verify \
+  --specs-dir katagami-curation/specs \
+  --specs-dir katagami-commons/specs \
+  --composite-budget 250000
+```
+
+Full stdout: `docs/study/evidence/temper-verify-2026-08-13.txt`.
+
+**Found:** Temper refused to certify `CuratorAgent`. The refusal is about the
+*design of the ledger*, not a mistyped command.
+
+`CompleteResearch` (DirectionsReady → Idle) is guarded on
+`CurationJob` being `Finalizing` or `Completed`. That is the join we wrote on
+purpose: do not mark research done unless the live job has actually completed.
+Single-entity L0/L1 cannot see `CurationJob`, so they report:
+
+- L0: `dead guards: CompleteResearch`; 6 transitions use abstract
+  cross-entity guards
+- L1: `190 states explored, 1 dead transition(s): CompleteResearch`
+
+The cascade then **stops**. Commons is never opened. Composite (the joint
+proof D20 asked for) never runs. Liveness
+`QueryEventuallyResolves` / `DirectionEventuallyResolves` /
+`LanguageEventuallyResolves` are therefore **declared, not proved**.
+
+That is useful. The checker is saying: *this actor cannot finish research by
+itself*. That is exactly the join. It is also saying: *I will not go on to
+prove the join, because I treat a locally-dead success edge as a failed
+machine.* So we cannot get the proof we designed the edge to need.
+
+HumanCurator and ReviewAgent *did* pass locally on this same run:
+
+| Machine | L0 | L1 | L2 | L3 |
+|---|---|---|---|---|
+| ReviewAgent | PASS (23 548 states; 4 abstract cross-entity guards) | PASS | PASS | PASS |
+| HumanCurator | PASS (45 states; 2 abstract cross-entity guards; 1 unreachable) | PASS | PASS | PASS |
+| CurationQuery | PASS (68 states) | PASS | PASS | PASS |
+| CurationDirection | PASS (6 states) | PASS | PASS | PASS |
+| CuratorAgent | FAIL dead `CompleteResearch` | FAIL | PASS | PASS |
+
+Why Human/Review pass with the same kind of join and Curator does not:
+their cross-entity guards are treated as *abstract* and dropped from local
+induction. `CompleteResearch`'s job-status guard is treated as a *concrete
+unsatisfied* guard, so the whole edge is dead. Same idea, two checker
+behaviours.
+
+**Who caught it:** the machine (L0/L1), against the current `curator_agent.ioa.toml`.
+
+**What it costs:** we do not have a VERIFIED joint proof of the study graph.
+A scored trial that claims "the machine was verified" would be false.
+
+**What it is not:** an invariant violation on a real run. Still nobody has
+driven a live research or synthesize job against this ledger.
+
+Commons-only verify (same binary, same day,
+`docs/study/evidence/temper-verify-commons-2026-08-13.txt`): every commons
+entity passed L0–L3 locally, including DesignLanguage at 835 728 L1 states.
+Composite then **INCOMPLETE** at budget 250 000 on
+`seed=DesignLanguage scope=[DesignLanguage]` (29 879 joint states, BFS
+exhausted). So even if CuratorAgent had not aborted the cascade, the live
+language machine alone would have exhausted today's joint budget. That is a
+limit of the instrument on this graph, not a new actor-design finding.
 
 ---
 
