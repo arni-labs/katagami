@@ -11,6 +11,10 @@ This session's ids are in the prompt that launched you (query, direction,
 Running synthesize job). Create a **new** `CuratorAgent`. Do not reuse the
 research ledger.
 
+Do **not** call `ConfigureAndQueue` — that spawns a Paw job. The direction
+must already be `Synthesizing` via `BeginSynthesis`. The job must already
+be `Running` via `Start`.
+
 ```
 python3 hooks/trajectory-capture/capture.py identity
 POST /tdata/CuratorAgents {"job_id":"<Running synthesize>","query_id":"...","direction_id":"..."}
