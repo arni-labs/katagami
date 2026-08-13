@@ -38,9 +38,9 @@ This phase the accepted jobs are `source_search` and `synthesize`.
 Source: `katagami-curation/specs/curator_agent.ioa.toml`,
 `katagami-curation/policies/curator_agent.cedar`.
 
-Its life: take the query, search, index sources, derive directions; then take
-the direction, author the language, author surfaces, render, look, fix or
-submit. `Abandoned` from any working act.
+Its life: take the query, search, index sources, derive 3–5 directions; then
+take the direction, read design-language.md, author every named part, render,
+look at each surface, fix or submit. `Abandoned` from any working act.
 
 ### Order of work
 
@@ -63,9 +63,10 @@ least one search.
 `DeriveDirections` requires at least one indexed source.
 *Source: spec, action `IndexSources`; `DeriveDirections` guard `min_count sources_indexed 1`.*
 
-**C5. The agent derives at least one direction before completing research.** — machine
+**C5. The agent derives three to five directions before completing research.** — machine
 `CompleteResearch` is only from `DirectionsReady` and requires
-`directions_derived >= 1` plus the job already `Finalizing` or `Completed`.
+`directions_derived >= 3` plus the job already `Finalizing` or `Completed`.
+`DeriveDirections` is capped at five.
 *Source: spec, action `DeriveDirections`; action `CompleteResearch`.*
 
 **C6. The agent takes the live direction before authoring a language.** — machine
@@ -73,19 +74,21 @@ least one search.
 in `Synthesizing`.
 *Source: spec, action `TakeDirection`.*
 
-**C7. The agent authors the language from that direction before building pages.** — machine
-`AuthorLanguage` is the only edge out of `ReadingDirection` and requires a
-`DesignLanguage` in `Draft`.
-*Source: spec, action `AuthorLanguage`.*
+**C7. The agent authors every named language part before rendering pages.** — machine
+`ReadDesignRules` is the only edge out of `ReadingDirection`. `RenderSurfaces`
+requires concept, tokens, Katagami spec, DESIGN.md, three surfaces, shadcn and
+thumbnail. Invariant `LanguageHasEveryPart` fences the submit.
+*Source: spec, actions `AuthorConcept`, `AuthorTokens`, `AuthorKatagamiSpec`, `AuthorDesignMd`, `AuthorLanding`, `AuthorEmbodiment`, `AuthorDashboard`, `AuthorShadcn`, `AuthorThumbnail`; invariant `LanguageHasEveryPart`.*
 
-**C8. Surfaces are authored after the language exists.** — machine
-`AuthorSurfaces` is reachable from `LanguageReady` (or after a fix).
-*Source: spec, action `AuthorSurfaces`.*
+**C8. Surfaces, shadcn and the thumbnail are authored as named parts.** — machine
+Each has its own one-shot action inside `Authoring`.
+*Source: spec, actions `AuthorLanding`, `AuthorEmbodiment`, `AuthorDashboard`, `AuthorShadcn`, `AuthorThumbnail`.*
 
-**C9. The agent looks at the render before submitting.** — machine
-`LookAtRenders` is the only edge into `RendersSeen`. `SubmitLanguage` is only
-from `RendersSeen`, and requires the language already `UnderReview`.
-*Source: spec, action `LookAtRenders`; action `SubmitLanguage`.*
+**C9. The agent looks at each surface before submitting.** — machine
+`LookAtLanding`, `LookAtEmbodiment` and `LookAtDashboard` are the only edges
+into `Looking`. `SubmitLanguage` is only from `Looking`, requires all three
+current looks, and requires the language already `UnderReview`.
+*Source: spec, actions `LookAtLanding`, `LookAtEmbodiment`, `LookAtDashboard`; action `SubmitLanguage`; invariant `SubmitNeedsCurrentLooks`.*
 
 **C10. Research and synthesize are two holds from Idle, not one mixed state.** — machine
 `TakeQuery` and `TakeDirection` both leave `Idle`. There is no edge from a
@@ -129,13 +132,17 @@ Session id, trajectory id, spec version and harness live on `RecordCapture`.
 *Source: spec, action `RecordCapture` params.*
 
 **C18. A look of old bytes cannot carry a submit.** — machine
-`FixSurfaces` returns to `SurfacesReady`, so render and look must happen
-again. `SubmitLanguage` is only from `RendersSeen`.
-*Source: spec, action `FixSurfaces` `to = "SurfacesReady"`; `SubmitLanguage` `from = ["RendersSeen"]`.*
+`FixSurfaces` returns to `Authoring` and clears every look, so render and
+look must happen again. `SubmitLanguage` is only from `Looking`.
+*Source: spec, action `FixSurfaces` `to = "Authoring"`; invariant `SubmitNeedsCurrentLooks`.*
 
 **C19. Look-fix rounds are counted and gated at twelve.** — machine
 `FixSurfaces` increments `revision_rounds` under `max_count 12`.
-*Source: spec, action `FixSurfaces`; invariant `RevisionLoopBounded`.*
+*Source: spec, action `FixSurfaces`; invariant `LookFixBounded`.*
+
+**C48. The agent reads design-language.md and never lists Accepted TasteRule entities.** — machine
+`ReadDesignRules` is the only way into `Authoring`. The hint names the file.
+*Source: spec, action `ReadDesignRules`; `knowledge/rules/design-language.md`.*
 
 ### What only a person can judge
 
@@ -403,6 +410,12 @@ The three values are the documented vocabulary; nothing rejects a fourth string,
 and nothing checks that the rationale matches the verdict.
 *Source: spec, action `RecordVerdict` hint; `verdict` is a free string state var.*
 
+**R17. The reviewer opens every listed artifact before ruling.** — machine
+DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail. `RecordVerdict`
+requires each open flag. `LoadRulebook` reads `design-language.md`, not
+Accepted TasteRule entities.
+*Source: spec, actions `OpenDesignMd`, `OpenLanding`, `OpenEmbodiment`, `OpenDashboard`, `OpenShadcn`, `OpenThumbnail`; invariant `VerdictRequiresArtifactsOpened`.*
+
 ---
 
 # HumanCurator — the publishing role
@@ -426,7 +439,8 @@ not from the queue.** — machine
 *Source: spec, actions `Publish` and `ReturnWithCritique`, both `from = ["Reviewing"]`.*
 
 **H3. A submission is published once, or returned once, and that is the end.** — machine
-*Source: spec, invariants `PublishedIsFinal` and `ReturnedIsFinal`.*
+A return reopens the work on the language; this assignment is finished.
+*Source: spec, invariants `PublishedIsFinal` and `CritiqueReopens`.*
 
 ### The publish gate
 
@@ -451,12 +465,12 @@ Not "any authenticated human" — the named holder. An assignment with no holder
 not publishable at all.
 *Source: `policies/human_curator.cedar`, forbid unless `resource.assignee_ref != "" && principal.id == resource.assignee_ref`.*
 
-**H7. No agent publishes or returns with critique, whatever kind of agent it
-says it is.** — policy
-Excluded by the principal's **type**, not by an attribute it declares about
-itself. The attribute version was evadable: the agent-type header is optional, so
-an agent that simply omitted it was allowed to publish.
-*Source: `policies/human_curator.cedar`, `forbid(principal is Agent, action in [Publish, ReturnWithCritique], ...)`.*
+**H7. No agent decides to publish or return; an agent may execute Publish after ApprovePublish.** — policy
+`ApprovePublish` and `ReturnWithCritique` are excluded by the principal's
+**type**. `Publish` is allowed for a declared non-contributor agent only after
+`has_publish_approval`. The attribute version was evadable: the agent-type
+header is optional, so an agent that simply omitted it was allowed to decide.
+*Source: `policies/human_curator.cedar`, `forbid(principal is Agent, action in [ApprovePublish, ReturnWithCritique])`; Publish unless holder or approved agent; spec action `ApprovePublish`; invariant `HumanDecidesPublish`.*
 
 **H8. An agent that will not declare what kind of agent it is gets nothing on this
 record.** — policy
@@ -561,10 +575,10 @@ pipeline finalizer is named by id, so neither pays for it.
 
 | Actor | Items | machine | policy | judgment | convention |
 |---|---|---|---|---|---|
-| CuratorAgent | 47 (C1–C47) | 17 | 3 | 10 | 17 |
-| ReviewAgent | 16 (R1–R16) | 10 | 4 | 0 | 2 |
+| CuratorAgent | 48 (C1–C48) | 18 | 3 | 10 | 17 |
+| ReviewAgent | 17 (R1–R17) | 11 | 4 | 0 | 2 |
 | HumanCurator | 22 (H1–H22) | 8 | 9 | 1 | 4 |
-| **Total** | **85** | **35** | **16** | **11** | **23** |
+| **Total** | **87** | **37** | **16** | **11** | **23** |
 
 These counts are recomputed from the items themselves by
 `katagami-curation/tests/test_behavior_inventory_contract.py`, so the table

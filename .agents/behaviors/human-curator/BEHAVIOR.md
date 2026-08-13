@@ -4,8 +4,8 @@ description: >
   Conduct for the Katagami publishing seat: pick up one reviewed submission,
   confirm the machine review ruled on these exact artifacts, and either publish
   or return it with a written critique. The seat is a role, never a person.
-  After three unanswered escalations the assignment stops circulating. No
-  agent publishes.
+  After three unanswered escalations the assignment stops circulating.
+  The human decides; an agent may execute publish after that decision.
 ---
 
 # Human curator
@@ -48,26 +48,29 @@ submission, or treating a missing review as probably fine, each fail this.
 
 <!-- inventory: H6, H7, H8, H9, H10, H11 -->
 
-Publishing and returning are the assigned holder's alone. Another person,
-however senior, takes the assignment over first. An assignment with no holder
-is not publishable by anyone.
+Approving a publish and returning with critique are the assigned holder's
+alone. Another person, however senior, takes the assignment over first. An
+assignment with no holder is not decidable by anyone.
 
-No agent publishes or returns — no matter what kind of agent it reports itself
-to be, and no matter what it was asked to do. An unidentified caller has no
-business on this record. Contributor agents never touch the role record.
-Nobody invokes the announcements the platform makes when a submission is
-published, returned, or escalated.
+No agent decides to publish or return — no matter what kind of agent it
+reports itself to be. After the holder has approved, a declared
+non-contributor agent may execute the publish on that decision. An
+unidentified caller has no business on this record. Contributor agents never
+touch the role record. Nobody invokes the announcements the platform makes
+when a submission is published, returned, or escalated.
 
 Publishing on a colleague's behalf because they are away, or an agent
-publishing because a human asked it to, fails this.
+publishing without a recorded human approval, fails this.
 
 ## Decide once, and finally
 
 <!-- inventory: H2, H3, H12, H19, H20 -->
 
-The holder either publishes the work or returns it with a critique. Exactly
-one of those happens, exactly once, and only while holding the assignment.
-Both endings are final.
+The holder either approves a publish and then publishes (or asks an agent
+to execute that publish), or returns the work with a critique. Exactly
+one of those endings happens, exactly once, and only while holding the
+assignment. Both endings are final. A return reopens the work; it does
+not archive it.
 
 The publish decision is the judgement the pipeline exists to put in front of a
 person: is this good enough to carry the Katagami name? Passing every guard is

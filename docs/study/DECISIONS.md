@@ -30,5 +30,9 @@ Each row is a choice I made without you. Overrule any of them.
 | D23 | **C19 stays in the comparison.** C7, C9, C17, R13 stay out. | C19 is the agent's own look-fix loop. C7/C9/C17/R13 are platform mechanism the agent does not author. |
 | D24 | This phase the CuratorAgent alphabet is **source_search + synthesize only**. organize / evolve / taste stay on the live curator process and on `CurationJob`; they are not in the actor contract yet. Still one curator principal, one machine. | Rita: focus on source search and synthesize for now. Narrowing the alphabet does not split the principal. |
 | D25 | CuratorAgent is an actor **on the live app**, not a parallel craft loop and not a stub. It records and is guarded on `CurationQuery`, `CurationDirection`, `CurationJob`, and `DesignLanguage`. Review accepts a language that is `UnderReview`. | Rita: "thin" was the wrong word. Write the specs, skills, and BEHAVIOR.md properly for review. |
+| D26 | A finished search yields **3–5 directions**. Skills ask that; the machine refuses fewer. | Rita. |
+| D27 | Agents and reviewers read `knowledge/rules/design-language.md` and must produce the thumbnail. They do **not** list Accepted TasteRule entities. | Rita. |
+| D28 | **Human decides, agent may publish.** `ApprovePublish` is the decision. `Publish` may be executed by Rita or by an agent after that approval. | Rita: she often asks the agent to publish on a synthesize. |
+| D29 | Action `max_count` on search / index / derive is **checker fuel**, not a story invariant. Story invariants keep names like `SubmitNeedsCurrentLooks`. | Rita asked what "loop fuel" meant. The bound keeps the reachable graph finite so liveness can be proved. It is not a claim about taste. |
 
 Last updated as work proceeds. New rows append; existing rows are not silently rewritten.

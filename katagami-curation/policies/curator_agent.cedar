@@ -1,7 +1,8 @@
 // CuratorAgent — expected curator conduct (ARN-294).
 // Alphabet is the acts we expect: take the query, search, index, derive;
-// take the direction, author, render, look, fix, submit. Publish and
-// quality-review completion are absent.
+// take the direction, read design-language.md, author every named part,
+// render, look, fix, submit. Publish and quality-review completion are
+// absent.
 permit(
   principal,
   action in [
@@ -12,10 +13,20 @@ permit(
     Action::"DeriveDirections",
     Action::"CompleteResearch",
     Action::"TakeDirection",
-    Action::"AuthorLanguage",
-    Action::"AuthorSurfaces",
+    Action::"ReadDesignRules",
+    Action::"AuthorConcept",
+    Action::"AuthorTokens",
+    Action::"AuthorKatagamiSpec",
+    Action::"AuthorDesignMd",
+    Action::"AuthorLanding",
+    Action::"AuthorEmbodiment",
+    Action::"AuthorDashboard",
+    Action::"AuthorShadcn",
+    Action::"AuthorThumbnail",
     Action::"RenderSurfaces",
-    Action::"LookAtRenders",
+    Action::"LookAtLanding",
+    Action::"LookAtEmbodiment",
+    Action::"LookAtDashboard",
     Action::"FixSurfaces",
     Action::"SubmitLanguage",
     Action::"CompleteSynthesis",

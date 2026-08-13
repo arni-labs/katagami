@@ -182,6 +182,20 @@
         <Property Name="DirectionsDerived" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="RevisionRounds" Type="Edm.Int32" Nullable="false" DefaultValue="0" />
         <Property Name="AbandonReason" Type="Edm.String" Nullable="false" DefaultValue="" />
+        <Property Name="DesignRulesRead" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ConceptAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="TokensAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="KatagamiSpecAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesignMdAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailAuthored" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LanguageSubmitted" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
       </EntityType>
@@ -208,6 +222,12 @@
         <Property Name="RulebookVersion" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="LoadedRuleIds" Type="Edm.String" Nullable="false" DefaultValue="[]" />
         <Property Name="ArtifactsFetched" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesignMdOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="LandingOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="EmbodimentOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DashboardOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ShadcnOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="ThumbnailOpened" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="LandingRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="LandingInspected" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="EmbodimentRendered" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
@@ -253,6 +273,7 @@
         <Property Name="ReviewAgentId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="HasAssignment" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="HasReviewVerdict" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="HasPublishApproval" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="ReviewVerdict" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="SessionId" Type="Edm.String" Nullable="false" DefaultValue="" />
         <Property Name="TrajectoryId" Type="Edm.String" Nullable="false" DefaultValue="" />

@@ -11,7 +11,7 @@ Katagami is the **design commons**: an agent-managed library of design languages
 - **Genesis is the source of truth.** `katagami/katagami-commons` and `katagami/katagami-curation` live on the Genesis git server; GitHub (`arni-labs/katagami`) is a mirror. After merging on GitHub, **push to Genesis too** and verify both sides are in sync — sync is bidirectional, and on divergence **Genesis wins; preserve Genesis-side changes**.
 - Remote names mirror the project: `katagami-commons`, `katagami-curation` — never infrastructure names like `railway-*`.
 - When reporting git status, state branch AND remote host. Never assume `origin` = GitHub.
-- **Canonical taste rules live in the deployed Katagami app on Railway** — read all accepted taste rules from there before generating languages; the repo copy may lag.
+- **Canonical taste rules live in `knowledge/rules/design-language.md`.** Read that file before generating or reviewing a language. Do not list Accepted TasteRule entities.
 
 ## Working discipline
 

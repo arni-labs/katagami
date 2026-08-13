@@ -32,28 +32,34 @@ Then:
 |---|---|
 | First | `RecordSubmissionRef` — curator_agent_id (may be empty this phase), reviewed_entity_id = the language id, submission_type, session_id, trajectory_id, spec_version, harness |
 | Then | `AcceptSubmission` — `{}`. 409 unless that `DesignLanguage` is `UnderReview` |
-| Then | `LoadRulebook` — accepted TasteRules ids and version |
+| Then | `LoadRulebook` — read `knowledge/rules/design-language.md`. Do **not** list TasteRule entities |
 | Then | `BeginReview` |
 
 ## Examination (all inside Reviewing)
 
-Render and inspect are **different calls**. Writing a PNG is not looking at it.
+Open the listed artifacts, then render, then look. Those are different
+calls. Writing a PNG is not looking at it.
 
-`FetchArtifacts` → for each surface `Render*` then `Inspect*Render` →
-`VerifyHeroReplaceable` → `ResolveArtStyle` → `VerifyArtStyleRendered` →
-`VerifyAgainstRules` → `CheckCuratorClaims` → `RecordFinding` as needed.
+`FetchArtifacts` → `OpenDesignMd` / `OpenLanding` / `OpenEmbodiment` /
+`OpenDashboard` / `OpenShadcn` / `OpenThumbnail` → for each surface
+`Render*` then `Inspect*Render` → `VerifyHeroReplaceable` →
+`ResolveArtStyle` → `VerifyArtStyleRendered` → `VerifyAgainstRules` →
+`CheckCuratorClaims` → `RecordFinding` as needed.
 
 A repair (`RecordRepair`) answers a recorded finding, max 6, and **clears
-every perception flag**. You start the examination again before any verdict.
+every perception flag and every open**. You start the examination again
+before any verdict.
 
 ## Verdict
 
 `RecordVerdict` once: pass, revise, or reject. The rationale names at least
-one thing per surface that you saw in a render.
+one thing per surface that you saw in a render. Refused unless every
+listed artifact was opened.
 
 `Abandon` if the browser will not run or the scope is empty.
 
 ## What you never do
 
-No `Publish`. No `MarkQualityPassed`. No `AttachPublishedAssets`. No ruling
-on work you made.
+No `Publish`. No `ApprovePublish`. No `MarkQualityPassed`. No
+`AttachPublishedAssets`. No listing Accepted TasteRule entities. No
+ruling on work you made.

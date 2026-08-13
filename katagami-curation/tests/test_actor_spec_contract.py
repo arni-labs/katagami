@@ -69,10 +69,9 @@ class CuratorAgentSpecTest(unittest.TestCase):
             "SourcesReady",
             "DirectionsReady",
             "ReadingDirection",
-            "LanguageReady",
-            "SurfacesReady",
+            "Authoring",
             "SurfacesRendered",
-            "RendersSeen",
+            "Looking",
             "LanguageUnderReview",
             "Abandoned",
         ):
@@ -106,13 +105,44 @@ class CuratorAgentSpecTest(unittest.TestCase):
             guards(self.actions["DeriveDirections"]),
         )
 
-    def test_synthesize_is_direction_then_language_then_surfaces_then_look(self):
+    def test_synthesize_is_direction_then_parts_then_look(self):
         self.assertEqual(self.actions["TakeDirection"]["to"], "ReadingDirection")
-        self.assertEqual(self.actions["AuthorLanguage"]["to"], "LanguageReady")
-        self.assertEqual(self.actions["AuthorSurfaces"]["to"], "SurfacesReady")
-        self.assertEqual(self.actions["RenderSurfaces"]["from"], ["SurfacesReady"])
-        self.assertEqual(self.actions["LookAtRenders"]["from"], ["SurfacesRendered"])
-        self.assertEqual(self.actions["SubmitLanguage"]["from"], ["RendersSeen"])
+        self.assertEqual(self.actions["ReadDesignRules"]["to"], "Authoring")
+        self.assertEqual(self.actions["RenderSurfaces"]["from"], ["Authoring"])
+        self.assertEqual(self.actions["LookAtLanding"]["to"], "Looking")
+        self.assertEqual(self.actions["LookAtEmbodiment"]["to"], "Looking")
+        self.assertEqual(self.actions["LookAtDashboard"]["to"], "Looking")
+        self.assertEqual(self.actions["SubmitLanguage"]["from"], ["Looking"])
+
+    def test_research_refuses_fewer_than_three_directions(self):
+        self.assertIn(
+            {"type": "min_count", "var": "directions_derived", "min": 3},
+            guards(self.actions["CompleteResearch"]),
+        )
+        self.assertIn(
+            {"type": "max_count", "var": "directions_derived", "max": 5},
+            guards(self.actions["DeriveDirections"]),
+        )
+
+    def test_render_requires_every_named_part(self):
+        required = {
+            "design_rules_read",
+            "concept_authored",
+            "tokens_authored",
+            "katagami_spec_authored",
+            "design_md_authored",
+            "landing_authored",
+            "embodiment_authored",
+            "dashboard_authored",
+            "shadcn_authored",
+            "thumbnail_authored",
+        }
+        got = {
+            g["var"]
+            for g in guards(self.actions["RenderSurfaces"])
+            if g.get("type") == "is_true"
+        }
+        self.assertEqual(required, got)
 
     def test_take_direction_requires_the_live_direction_and_job(self):
         types = {
@@ -122,9 +152,9 @@ class CuratorAgentSpecTest(unittest.TestCase):
         }
         self.assertEqual(types, {"CurationJob", "CurationDirection"})
 
-    def test_submit_language_requires_under_review_after_a_look(self):
+    def test_submit_language_requires_under_review_after_every_look(self):
         action = self.actions["SubmitLanguage"]
-        self.assertEqual(action["from"], ["RendersSeen"])
+        self.assertEqual(action["from"], ["Looking"])
         language = [
             g
             for g in guards(action)
@@ -132,10 +162,14 @@ class CuratorAgentSpecTest(unittest.TestCase):
         ]
         self.assertEqual(language[0]["entity_type"], "DesignLanguage")
         self.assertEqual(language[0]["required_status"], ["UnderReview"])
+        required = {g["var"] for g in guards(action) if g.get("type") == "is_true"}
+        self.assertTrue(
+            {"landing_looked", "embodiment_looked", "dashboard_looked"} <= required
+        )
 
-    def test_a_fix_returns_to_surfaces_so_the_look_must_happen_again(self):
-        self.assertEqual(self.actions["FixSurfaces"]["from"], ["RendersSeen"])
-        self.assertEqual(self.actions["FixSurfaces"]["to"], "SurfacesReady")
+    def test_a_fix_returns_to_authoring_so_the_look_must_happen_again(self):
+        self.assertEqual(self.actions["FixSurfaces"]["from"], ["Looking"])
+        self.assertEqual(self.actions["FixSurfaces"]["to"], "Authoring")
 
     def test_the_referenced_commons_guards_are_where_the_requirements_live(self):
         commons_specs = CURATION_ROOT.parent / "katagami-commons" / "specs"
@@ -179,9 +213,12 @@ class CuratorAgentSpecTest(unittest.TestCase):
             guards(self.actions["FixSurfaces"]),
         )
         self.assertEqual(
-            invariants(self.spec)["RevisionLoopBounded"]["assert"],
+            invariants(self.spec)["LookFixBounded"]["assert"],
             "revision_rounds <= 12",
         )
+        self.assertIn("SubmitNeedsCurrentLooks", invariants(self.spec))
+        self.assertIn("OneLanguageOneSubmit", invariants(self.spec))
+        self.assertIn("LanguageHasEveryPart", invariants(self.spec))
 
     def test_cedar_permit_enumerates_every_input_action(self):
         policy = (POLICIES / "curator_agent.cedar").read_text()
@@ -231,6 +268,12 @@ class ReviewAgentSpecTest(unittest.TestCase):
     def test_verdict_requires_the_examination(self):
         required = {
             "artifacts_fetched",
+            "design_md_opened",
+            "landing_opened",
+            "embodiment_opened",
+            "dashboard_opened",
+            "shadcn_opened",
+            "thumbnail_opened",
             "landing_inspected",
             "embodiment_inspected",
             "dashboard_inspected",
@@ -285,6 +328,7 @@ class HumanCuratorSpecTest(unittest.TestCase):
     def test_publish_requires_the_machine_review_to_have_ruled_first(self):
         publish_guards = guards(self.actions["Publish"])
         self.assertIn({"type": "is_true", "var": "has_review_verdict"}, publish_guards)
+        self.assertIn({"type": "is_true", "var": "has_publish_approval"}, publish_guards)
         self.assertIn(
             {
                 "type": "cross_entity_state",
@@ -315,10 +359,20 @@ class HumanCuratorSpecTest(unittest.TestCase):
 
     def test_publish_is_reachable_only_from_reviewing_and_only_once(self):
         self.assertEqual(self.actions["Publish"]["from"], ["Reviewing"])
+        self.assertEqual(self.actions["ApprovePublish"]["from"], ["Reviewing"])
         self.assertEqual(
             invariants(self.spec)["PublishedIsFinal"]["assert"],
             "no_further_transitions",
         )
+        self.assertEqual(
+            invariants(self.spec)["HumanDecidesPublish"]["assert"],
+            "has_publish_approval && has_review_verdict",
+        )
+        self.assertEqual(
+            invariants(self.spec)["CritiqueReopens"]["assert"],
+            "no_further_transitions",
+        )
+        self.assertIn("OneHolder", invariants(self.spec))
 
     def test_an_unanswered_assignment_escalates_instead_of_stalling(self):
         overdue = self.actions["ReviewOverdue"]
@@ -527,8 +581,10 @@ class ActorPolicyBoundaryTest(unittest.TestCase):
     def test_no_agent_principal_may_publish_on_the_role_record(self):
         policy = (POLICIES / "human_curator.cedar").read_text()
         self.assertIn('forbid(', policy)
+        self.assertIn('Action::"ApprovePublish"', policy)
         self.assertIn('Action::"Publish"', policy)
         self.assertIn('Action::"ReturnWithCritique"', policy)
+        self.assertIn("has_publish_approval", policy)
         # Written against `has agent_type` rather than one value, so a new
         # agent type cannot quietly inherit the human's authority.
         self.assertIn("principal has agent_type", policy)

@@ -7,9 +7,10 @@ description: Conduct for a Katagami curator working the live pipeline — pick u
 
 One principal does the work the skills already ask for, on the live
 Katagami path. Research means: take the query, search the web, index
-sources, derive directions. Synthesize means: take the direction, author
-the language, author the surfaces, render, look, fix, submit. The objects
-stay the app's. The machine is the expected conduct.
+sources, derive three to five directions. Synthesize means: take the
+direction, read the design-language rulebook, author every named part,
+render, look at each surface, fix, submit. The objects stay the app's.
+The machine is the expected conduct.
 
 ## Record how this run will be found before taking a query
 
@@ -51,16 +52,16 @@ does a direction get derived.
 
 A direction with no indexed source behind it fails this.
 
-## Derive at least one direction before finishing research
+## Derive three to five directions before finishing research
 
 <!-- inventory: C5 -->
 
 The agent derives one direction per movement by asking the running search
-job to spawn it, then completes research only after at least one
-direction exists and the job has actually completed.
+job to spawn it, then completes research only after three to five
+directions exist and the job has actually completed.
 
-Finishing research with zero directions, or declaring it done while the
-job is still running, fails this.
+Finishing research with fewer than three directions, or declaring it done
+while the job is still running, fails this.
 
 ## Take the direction the pipeline queued
 
@@ -72,25 +73,39 @@ synthesizing, and reading that brief.
 Authoring a language against a direction the pipeline never queued fails
 this.
 
-## Author the language from the direction before building pages
+## Read the design-language rulebook, never a TasteRule list
+
+<!-- inventory: C48 -->
+
+Before authoring anything the agent reads `knowledge/rules/design-language.md`.
+That file is the rulebook. It does not list Accepted TasteRule entities.
+
+Judging from a remembered standard, or enumerating TasteRules and treating
+Accepted rows as the brief, fails this.
+
+## Author every named part of the language
 
 <!-- inventory: C7 -->
 
-The agent writes the language — one ownable idea, tokens, rules — from
-the direction, as a real design-language entity still in draft.
+The agent writes every named part from the direction, as a real
+design-language entity still in draft: the concept, the tokens, the
+Katagami spec, and DESIGN.md.
 
 Pages built first and a language written to describe them afterwards
-fail this.
+fail this. A SetSpec with no concept, or a DESIGN.md with no tokens, is
+the same failure.
 
-## Look at the renders before handing the language over
+## Look at each surface before handing the language over
 
 <!-- inventory: C9, C18 -->
 
-The agent renders the current bytes, looks at the screenshots as images,
-and only then hands the language to review — and only once that language
-is already under review.
+The agent renders the current bytes, looks at the landing, the embodiment
+and the dashboard as images, and only then hands the language to review —
+and only once that language is already under review. A look of old bytes
+cannot carry a submit.
 
-Submitting a draft, or submitting without looking, fails this.
+Submitting a draft, submitting without looking at every surface, or
+submitting on a look that a later fix killed, fails this.
 
 ## Fix, look again, and stop by twelve
 
@@ -169,11 +184,13 @@ the thing the pictures were made with.
 From one set of tokens the agent builds the landing as the scroll-cinematic
 film the direction describes around a single full-bleed hero, the embodiment as
 every primitive in every state carrying the signature mechanic, and the
-dashboard as a product a team would operate on in-world content.
+dashboard as a product a team would operate on in-world content. It also
+authors the shadcn artifacts and the thumbnail.
 
 A landing that is a stack of sections, an embodiment that reads as swatches,
 and a dashboard of placeholder rows are one failure: three files that are the
-same page three times.
+same page three times. Skipping shadcn or the thumbnail is the same class of
+gap — a named part was not authored.
 
 ## Render every surface at every breakpoint the run will claim
 

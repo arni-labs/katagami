@@ -34,7 +34,8 @@ An ArtStyle is one prompt, not an adapter system.
 ## Before starting
 
 1. Read `/system/knowledge/design-principles.md`,
-   `/system/knowledge/quality-standards.md`, and all accepted `TasteRules`.
+   `/system/knowledge/quality-standards.md`, and
+   `knowledge/rules/design-language.md`. Do **not** list `TasteRules` entities.
 2. List existing `ArtStyles`; the new treatment must be distinct.
 3. Research every named influence and record its eligibility:
    - collective tradition or movement;

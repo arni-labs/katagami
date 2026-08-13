@@ -58,7 +58,7 @@ Job type: `source_search`
    Use `metadata.archive_status = "deferred"` when the full page text was not
    archived. `file_id` is optional for hot-path research and should remain
    empty unless an existing file artifact already exists.
-7. **Spawn one CurationDirection per movement (engine-owned identity)**: For each discovered movement, make ONE `SpawnDirection` call on YOUR OWN source_search job (`job_id`). The engine mints the CurationDirection, stamps its identity (`query_id`, `source_search_job_id`, `workspace_id`) from this job's own fields, and queues the correct lane job — you never set those ids and never touch the direction or `CurationJob` directly. For targeted requests, spawn 1-2 directions; spawn more only for explicit broad-survey jobs. `SpawnDirection` routes the lane job for you:
+7. **Spawn one CurationDirection per movement (engine-owned identity)**: For each discovered movement, make ONE `SpawnDirection` call on YOUR OWN source_search job (`job_id`). The engine mints the CurationDirection, stamps its identity (`query_id`, `source_search_job_id`, `workspace_id`) from this job's own fields, and queues the correct lane job — you never set those ids and never touch the direction or `CurationJob` directly. Spawn 3-5 directions. A finished search yields three to five; fewer is an incomplete fan-out. `SpawnDirection` routes the lane job for you:
    - `design_language` → `synthesize`
    - `palette` → `synthesize_palette`
    - `art_style` → `synthesize_art_style`

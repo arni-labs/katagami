@@ -855,10 +855,14 @@ class ActorPolicyDecisionTest(unittest.TestCase):
     OTHER_AGENT = ("Agent", "some-pipeline", {"agent_type": "operations"})
     ANONYMOUS = ("Customer", "anonymous", {})
 
-    def _assignment(self, assignee="member-alice"):
+    def _assignment(self, assignee="member-alice", approved=True):
         return {
             "resource": ("HumanCurator", "assign-1"),
-            "resource_attrs": {"assignee_ref": assignee, "status": "Reviewing"},
+            "resource_attrs": {
+                "assignee_ref": assignee,
+                "status": "Reviewing",
+                "has_publish_approval": approved,
+            },
         }
 
     def test_the_assigned_holder_may_publish(self):
@@ -882,14 +886,38 @@ class ActorPolicyDecisionTest(unittest.TestCase):
             **self._assignment(assignee=""),
         )
 
-    def test_no_agent_publishes_even_as_the_named_holder(self):
+    def test_no_agent_approves_publish_even_as_the_named_holder(self):
         for agent in (self.CONTRIBUTOR, self.OTHER_AGENT):
             self.assertDenied(
                 "human_curator",
                 principal=agent,
-                action="Publish",
-                **self._assignment(assignee=agent[1]),
+                action="ApprovePublish",
+                **self._assignment(assignee=agent[1], approved=False),
             )
+
+    def test_a_declared_agent_may_publish_after_human_approval(self):
+        self.assertAllowed(
+            "human_curator",
+            principal=self.OTHER_AGENT,
+            action="Publish",
+            **self._assignment(approved=True),
+        )
+
+    def test_an_agent_may_not_publish_without_approval(self):
+        self.assertDenied(
+            "human_curator",
+            principal=self.OTHER_AGENT,
+            action="Publish",
+            **self._assignment(approved=False),
+        )
+
+    def test_a_contributor_still_cannot_publish_after_approval(self):
+        self.assertDenied(
+            "human_curator",
+            principal=self.CONTRIBUTOR,
+            action="Publish",
+            **self._assignment(approved=True),
+        )
 
     def test_returning_with_critique_is_bound_the_same_way(self):
         self.assertAllowed(
@@ -989,7 +1017,7 @@ class ActorPolicyDecisionTest(unittest.TestCase):
     UNDECLARED_AGENT = ("Agent", "agent-sneaky", {})
 
     def test_an_agent_that_declares_no_type_publishes_nothing(self):
-        for action in ("Publish", "ReturnWithCritique"):
+        for action in ("ApprovePublish", "Publish", "ReturnWithCritique"):
             self.assertDenied(
                 "human_curator",
                 principal=self.UNDECLARED_AGENT,

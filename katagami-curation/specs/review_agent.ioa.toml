@@ -129,6 +129,36 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "design_md_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "landing_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "embodiment_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "dashboard_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "shadcn_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "thumbnail_opened"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "landing_rendered"
 type = "bool"
 initial = "false"
@@ -277,7 +307,7 @@ effect = [
   { type = "list_append", var = "loaded_rule_ids" },
   { type = "set_bool", var = "rulebook_loaded", value = "true" },
 ]
-hint = "Load the accepted taste rulebook from the commons — TasteRules filtered to Status eq 'Accepted' — and stamp the ids and version judged against. What the trajectory must contain: a list query returning rows, with the returned rule ids and version echoed into these params. A run whose only rule source is the model's own prose has nothing to show here. The stamp is what makes two verdicts comparable and what lets a verdict be re-derived later; a rulebook recited from memory is exactly what BeginReview's guard refuses."
+hint = "Read knowledge/rules/design-language.md — that file is the rulebook. Stamp its version. Do not list Accepted TasteRule entities. A run whose only rule source is the model's own prose has nothing to show here. The stamp is what makes two verdicts comparable; a rulebook recited from memory is exactly what BeginReview's guard refuses."
 
 [[action]]
 name = "BeginReview"
@@ -304,7 +334,79 @@ from = ["Reviewing"]
 params = ["fetched_file_ids"]
 guard = [{ type = "is_false", var = "artifacts_fetched" }]
 effect = [{ type = "set_bool", var = "artifacts_fetched", value = "true" }]
-hint = "Resolve every artifact file id OFF THE ENTITY — embodiment, landing, dashboard, DESIGN.md, shadcn component spec and preview shots — through its File record, and read the actual bytes. A body that is not what its declared format claims (an SVG recovery placeholder, a JSON error, a stub, anything without <html or <!doctype for an HTML embodiment) is a finding, not an artifact. Reviewing a path the agent guessed from the slug instead of the file id the entity points at is the failure this exists to prevent. Unguarded because fetching is always safe; the constraint that matters is downstream — nothing may be rendered before this ran, and RecordRepair clears this bit so a repaired artifact must be re-fetched."
+hint = "Resolve every artifact file id OFF THE ENTITY. Then OpenDesignMd, OpenLanding, OpenEmbodiment, OpenDashboard, OpenShadcn and OpenThumbnail to actually read them. A body that is not what its declared format claims is a finding, not an artifact. RecordRepair clears this bit so a repaired artifact must be re-fetched."
+
+[[action]]
+name = "OpenDesignMd"
+kind = "input"
+from = ["Reviewing"]
+params = ["design_md_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "design_md_opened" },
+]
+effect = [{ type = "set_bool", var = "design_md_opened", value = "true" }]
+hint = "Open DESIGN.md and read the bytes. Listed so the expectation names the artifact."
+
+[[action]]
+name = "OpenLanding"
+kind = "input"
+from = ["Reviewing"]
+params = ["landing_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "landing_opened" },
+]
+effect = [{ type = "set_bool", var = "landing_opened", value = "true" }]
+hint = "Open the landing file and read the bytes."
+
+[[action]]
+name = "OpenEmbodiment"
+kind = "input"
+from = ["Reviewing"]
+params = ["embodiment_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "embodiment_opened" },
+]
+effect = [{ type = "set_bool", var = "embodiment_opened", value = "true" }]
+hint = "Open the embodiment file and read the bytes."
+
+[[action]]
+name = "OpenDashboard"
+kind = "input"
+from = ["Reviewing"]
+params = ["dashboard_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "dashboard_opened" },
+]
+effect = [{ type = "set_bool", var = "dashboard_opened", value = "true" }]
+hint = "Open the dashboard file and read the bytes."
+
+[[action]]
+name = "OpenShadcn"
+kind = "input"
+from = ["Reviewing"]
+params = ["shadcn_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "shadcn_opened" },
+]
+effect = [{ type = "set_bool", var = "shadcn_opened", value = "true" }]
+hint = "Open the shadcn artifacts (registry theme, components.md, preview shots) and read the bytes."
+
+[[action]]
+name = "OpenThumbnail"
+kind = "input"
+from = ["Reviewing"]
+params = ["thumbnail_file_notes"]
+guard = [
+  { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_false", var = "thumbnail_opened" },
+]
+effect = [{ type = "set_bool", var = "thumbnail_opened", value = "true" }]
+hint = "Open the thumbnail and look at it as an image."
 
 [[action]]
 name = "RenderLanding"
@@ -313,6 +415,7 @@ from = ["Reviewing"]
 params = ["landing_render_manifest"]
 guard = [
   { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "landing_opened" },
   { type = "is_false", var = "landing_rendered" },
 ]
 effect = [{ type = "set_bool", var = "landing_rendered", value = "true" }]
@@ -337,6 +440,7 @@ from = ["Reviewing"]
 params = ["embodiment_render_manifest"]
 guard = [
   { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "embodiment_opened" },
   { type = "is_false", var = "embodiment_rendered" },
 ]
 effect = [{ type = "set_bool", var = "embodiment_rendered", value = "true" }]
@@ -361,6 +465,7 @@ from = ["Reviewing"]
 params = ["dashboard_render_manifest"]
 guard = [
   { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "dashboard_opened" },
   { type = "is_false", var = "dashboard_rendered" },
 ]
 effect = [{ type = "set_bool", var = "dashboard_rendered", value = "true" }]
@@ -470,6 +575,12 @@ effect = [
   { type = "increment", var = "repair_rounds" },
   { type = "set_bool", var = "has_repairs", value = "true" },
   { type = "set_bool", var = "artifacts_fetched", value = "false" },
+  { type = "set_bool", var = "design_md_opened", value = "false" },
+  { type = "set_bool", var = "landing_opened", value = "false" },
+  { type = "set_bool", var = "embodiment_opened", value = "false" },
+  { type = "set_bool", var = "dashboard_opened", value = "false" },
+  { type = "set_bool", var = "shadcn_opened", value = "false" },
+  { type = "set_bool", var = "thumbnail_opened", value = "false" },
   { type = "set_bool", var = "landing_rendered", value = "false" },
   { type = "set_bool", var = "landing_inspected", value = "false" },
   { type = "set_bool", var = "embodiment_rendered", value = "false" },
@@ -492,6 +603,12 @@ to = "VerdictRecorded"
 params = ["verdict", "verdict_rationale", "reviewed_by"]
 guard = [
   { type = "is_true", var = "artifacts_fetched" },
+  { type = "is_true", var = "design_md_opened" },
+  { type = "is_true", var = "landing_opened" },
+  { type = "is_true", var = "embodiment_opened" },
+  { type = "is_true", var = "dashboard_opened" },
+  { type = "is_true", var = "shadcn_opened" },
+  { type = "is_true", var = "thumbnail_opened" },
   { type = "is_true", var = "landing_inspected" },
   { type = "is_true", var = "embodiment_inspected" },
   { type = "is_true", var = "dashboard_inspected" },
@@ -568,7 +685,7 @@ assert = "(landing_rendered || !landing_inspected) && (embodiment_rendered || !e
 # that forgets ANY clear breaks this line.
 [[invariant]]
 name = "PerceptionRequiresCurrentBytes"
-assert = "artifacts_fetched || (!landing_rendered && !landing_inspected && !embodiment_rendered && !embodiment_inspected && !dashboard_rendered && !dashboard_inspected && !hero_verified && !art_style_resolved && !art_style_verified && !rules_checked && !claims_checked)"
+assert = "artifacts_fetched || (!design_md_opened && !landing_opened && !embodiment_opened && !dashboard_opened && !shadcn_opened && !thumbnail_opened && !landing_rendered && !landing_inspected && !embodiment_rendered && !embodiment_inspected && !dashboard_rendered && !dashboard_inspected && !hero_verified && !art_style_resolved && !art_style_verified && !rules_checked && !claims_checked)"
 
 # (a) FALSIFIABLE by the same class of edit: a judgement may never outlive the
 # perception it rests on. rules_checked and claims_checked both require all
@@ -588,6 +705,11 @@ assert = "repair_rounds <= 6"
 # added edge that forgets one fails verification instead of passing quietly.
 # Named per surface rather than as one conjunction so a failure says WHICH
 # perception was missing.
+[[invariant]]
+name = "VerdictRequiresArtifactsOpened"
+when = ["VerdictRecorded"]
+assert = "design_md_opened && landing_opened && embodiment_opened && dashboard_opened && shadcn_opened && thumbnail_opened"
+
 [[invariant]]
 name = "VerdictRequiresLandingInspected"
 when = ["VerdictRecorded"]

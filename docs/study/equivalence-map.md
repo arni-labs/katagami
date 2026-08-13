@@ -35,11 +35,11 @@ a call that was never attempted.
 | C2 | Takes the live query before searching | `TakeQuery` | "Take the query the pipeline is researching" | 1 |
 | C3 | Searches the web before indexing sources | `SearchTheWeb`; `IndexSources` min_count | "Search the web before indexing anything" | 1 |
 | C4 | Indexes sources before deriving directions | `IndexSources`; `DeriveDirections` min_count | "Index sources before deriving a direction" | 1 |
-| C5 | Derives a direction before completing research | `DeriveDirections`; `CompleteResearch` | "Derive at least one direction before finishing research" | 1 |
+| C5 | Derives 3–5 directions before completing research | `DeriveDirections`; `CompleteResearch` min 3 max 5 | "Derive three to five directions before finishing research" | 1 |
 | C6 | Takes the live direction before authoring | `TakeDirection` | "Take the direction the pipeline queued" | 1 |
-| C7 | Authors the language before building pages | `AuthorLanguage` | "Author the language from the direction before building pages" | 1 |
-| C8 | Authors surfaces after the language exists | `AuthorSurfaces` | "Make each of the three surfaces its own kind of page" | 1 |
-| C9 | Looks at the render before submitting | `LookAtRenders`; `SubmitLanguage` | "Look at every generated image before building anything around it" / submit after a look | 1 |
+| C7 | Authors every named language part before rendering | `AuthorConcept` … `AuthorThumbnail`; `LanguageHasEveryPart` | "Author every named part of the language" | 1 |
+| C8 | Authors surfaces, shadcn and thumbnail as named parts | `AuthorLanding` / `AuthorEmbodiment` / `AuthorDashboard` / `AuthorShadcn` / `AuthorThumbnail` | "Make each of the three surfaces its own kind of page" | 1 |
+| C9 | Looks at each surface before submitting | `LookAtLanding` / `LookAtEmbodiment` / `LookAtDashboard`; `SubmitNeedsCurrentLooks` | "Look at each surface before handing the language over" | 1 |
 | C10 | Research and synthesize are separate holds from Idle | `TakeQuery` / `TakeDirection` from Idle | "Take the query…" / "Take the direction…" | 1 |
 | C11 | Cannot publish | no `Publish` action | "Leave publishing and review to the people who own them" | 1 |
 | C12 | Unlisted actions refused | `curator_agent.cedar` enumerated permit | same | 1 (policy) |
@@ -48,8 +48,8 @@ a call that was never attempted.
 | C15 | Abandons explicitly, finally | `Abandon`; `AbandonedIsFinal` | "End honestly when it cannot finish the hold" | 1 |
 | C16 | Working holds time out | `[[state_timeout]]` on every working act | same | 1 |
 | C17 | Records capture identity | `RecordCapture` params | "Record how this run will be found before taking a query" | 1 |
-| C18 | A fix kills the last look | `FixSurfaces` to `SurfacesReady`; `SubmitLanguage` from `RendersSeen` | "Fix, look again, and stop by twelve" | 1 |
-| C19 | Revision rounds counted and gated at 12 | `FixSurfaces`; `RevisionLoopBounded` | same | 1 |
+| C18 | A fix kills the last look | `FixSurfaces` to `Authoring`; `SubmitNeedsCurrentLooks` | "Look at each surface before handing the language over" | 1 |
+| C19 | Revision rounds counted and gated at 12 | `FixSurfaces`; `LookFixBounded` | "Fix, look again, and stop by twelve" | 1 |
 | C20 | One ownable idea, never generic | `knowledge/rules/design-language.md` 1–2 | "Make work that meets the standard", Intent | 2 |
 | C21 | Ships as one coherent set | same, rule 3 | same section, Intent | 2 |
 | C22 | Copy is a real product scene | same, rule 4 | same section, Execution | 2 |
@@ -78,6 +78,7 @@ a call that was never attempted.
 | C45 | Contributor owns its source and proof images | same, "Ownership boundary" | "Stay on your side of the finalizer boundary" | — |
 | C46 | Never calls finalizer-owned actions | same; `katagami-commons/policies/art_style.cedar` | same section, Execution | 1 (policy) |
 | C47 | Report the returned status, not the expected one | same, "Palettes and design languages" | same section, Execution | — |
+| C48 | Reads design-language.md; never lists Accepted TasteRules | `ReadDesignRules` | "Read the design-language rulebook, never a TasteRule list" | 1 |
 
 Condition B encodes C20–C27 as a rulebook the actor is expected to follow, not as
 guards. This is the honest position: they are layer 2 in both conditions. The
@@ -106,6 +107,7 @@ better on C1–C19, where one of them can actually refuse.
 | R14 | Names the run and artifacts in scope | `ReceiveSubmission` params | same section, Evidence | 1 |
 | R15 | Findings are specific and actionable | `RecordFinding` hint | "Look before ruling", Execution | 2 |
 | R16 | Verdict vocabulary; rationale supports it | `RecordVerdict` hint; `verdict` is a free string | "Rule once…", Execution + Recovery | 2 |
+| R17 | Opens every listed artifact before ruling | `OpenDesignMd` … `OpenThumbnail`; `VerdictRequiresArtifactsOpened` | "Open every listed artifact before ruling" | 1 |
 
 R15 and R16 are the two items this actor most needs and least enforces. A machine
 can see that findings exist; only a judge can see that they are true. If prose
@@ -119,11 +121,11 @@ does better anywhere, it should be here.
 |---|---|---|---|---|
 | H1 | Assignment recorded before pickup | `human_curator.ioa.toml` `AssignSubmission`; `BeginReview` guard; invariant `ReviewingRequiresAssignment` | "Take the assignment before deciding anything" | 1 |
 | H2 | Decisions taken while holding it | `Publish`, `ReturnWithCritique` `from = ["Reviewing"]` | "Publish or return — once, and finally" | 1 |
-| H3 | Published and returned are final | invariants `PublishedIsFinal`, `ReturnedIsFinal` | same section, Execution | 1 |
+| H3 | Published and returned are final | invariants `PublishedIsFinal`, `CritiqueReopens` | same section, Execution | 1 |
 | H4 | Machine review ruled, and is linked | `Publish` guards incl. `cross_entity_state … required = true`; invariant `PublishedRequiresReviewVerdict` | "Publish only after the machine review has ruled…", Evidence | 1 |
 | H5 | The review reviewed **this** submission | state var `reviewed_submission_ids`; `Publish` hint; `APP.md` | same section, second Evidence | — |
 | H6 | Only the named holder decides | `human_curator.cedar` assignee binding | "Only the named holder decides" | 1 (policy) |
-| H7 | No agent publishes or returns, by type | `human_curator.cedar` `forbid(principal is Agent, …)` | same section, Execution | 1 (policy) |
+| H7 | Human decides; agent may execute Publish after ApprovePublish | `ApprovePublish`; cedar forbid on agent ApprovePublish; Publish unless approved | "Let only the named holder decide" | 1 (policy) |
 | H8 | Undeclared agents get nothing | `human_curator.cedar` forbid unless declared or named | same section, Execution | 1 (policy) |
 | H9 | Contributors never touch the record | `human_curator.cedar` contributor forbid | same section, Execution | 1 (policy) |
 | H10 | Anonymous refused | `human_curator.cedar` forbid on `anonymous` | same section, Execution | 1 (policy) |
@@ -146,10 +148,10 @@ does better anywhere, it should be here.
 
 | | Layer 1 | Layer 2 | Convention | Total |
 |---|---|---|---|---|
-| CuratorAgent | 20 | 10 | 17 | 47 |
-| ReviewAgent | 14 | 2 | 0 | 16 |
+| CuratorAgent | 21 | 10 | 17 | 48 |
+| ReviewAgent | 15 | 2 | 0 | 17 |
 | HumanCurator | 17 | 2 | 3 | 22 |
-| **All** | **51** | **14** | **20** | **85** |
+| **All** | **53** | **14** | **20** | **87** |
 
 The layer-1 count here (49) is larger than the "machine" count in the inventory
 (34) because policy items are layer-1 checkable too: an authorization decision is
