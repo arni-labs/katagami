@@ -4,8 +4,8 @@
 Does not call a model. The caller supplies the two judge outputs (Braintrust
 shape for prose, adapted shape for the machine). This script only folds.
 
-Prose units that are in PROSE_EXEMPT are dropped from the score and listed
-as a finding — the machine can express them; the prose arm is not asked to.
+Units in COMPARISON_EXEMPT are dropped from both arms. They are platform
+mechanism, not agent conduct.
 
 Usage:
   python3 scripts/trajectory/judge_both_arms.py \
@@ -20,8 +20,9 @@ import json
 import sys
 from pathlib import Path
 
-# D2. Mechanism items: scored on the machine arm only.
-PROSE_EXEMPT = {"C7", "C9", "C17", "R13"}
+# D2. Platform mechanism — out of the comparison on both arms.
+# Listed only as an expressiveness note, never as a score.
+COMPARISON_EXEMPT = {"C7", "C9", "C17", "R13"}
 
 
 def fold(verdicts: list[str]) -> str | None:
@@ -71,12 +72,13 @@ def main() -> int:
     machine = json.loads(Path(args.machine).read_text())
 
     prose_rows = collect_prose(prose)
-    scored_prose = [(n, v) for n, v in prose_rows if not any(tag in n for tag in PROSE_EXEMPT)]
-    exempted = [(n, v) for n, v in prose_rows if any(tag in n for tag in PROSE_EXEMPT)]
     machine_rows = collect_machine(machine)
+    scored_prose = [(n, v) for n, v in prose_rows if not any(tag in n for tag in COMPARISON_EXEMPT)]
+    scored_machine = [(n, v) for n, v in machine_rows if not any(tag in n for tag in COMPARISON_EXEMPT)]
+    exempted = [(n, v) for n, v in prose_rows + machine_rows if any(tag in n for tag in COMPARISON_EXEMPT)]
 
     prose_fold = fold([v for _, v in scored_prose])
-    machine_fold = fold([v for _, v in machine_rows])
+    machine_fold = fold([v for _, v in scored_machine])
     report = {
         "prose": {
             "fold": prose_fold,
@@ -87,10 +89,10 @@ def main() -> int:
         "machine": {
             "fold": machine_fold,
             "score": score(machine_fold),
-            "units": len(machine_rows),
+            "units": len(scored_machine),
         },
         "policy": {
-            "prose_exempt": sorted(PROSE_EXEMPT),
+            "comparison_exempt": sorted(COMPARISON_EXEMPT),
             "truncation": "split-by-unit, never drop a tail",
             "complete_flag": "terminal actor state or explicit Abandon",
         },

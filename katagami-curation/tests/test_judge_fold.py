@@ -37,13 +37,17 @@ class JudgeFoldTest(unittest.TestCase):
         self.assertEqual(report["prose"]["score"], 0.0)
         self.assertEqual(report["machine"]["fold"], "true")
 
-    def test_exempted_items_do_not_enter_the_prose_score(self):
+    def test_mechanism_items_are_out_of_both_scores(self):
         report = self._run(
             {"meta_behaviors": [
                 {"name": "C17 capture identity", "occurrences": [{"verdict": "false"}]},
                 {"name": "Look at the render", "occurrences": [{"verdict": "true"}]},
             ]},
-            {"units": []},
+            {"units": [
+                {"name": "C9 ten jobs", "occurrences": [{"verdict": "false"}]},
+                {"name": "SubmitDesignLanguage", "occurrences": [{"verdict": "true"}]},
+            ]},
         )
         self.assertEqual(report["prose"]["fold"], "true")
+        self.assertEqual(report["machine"]["fold"], "true")
         self.assertIn("C17 capture identity", report["prose"]["exempted"])

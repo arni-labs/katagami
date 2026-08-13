@@ -6,7 +6,7 @@ Each row is a choice I made without you. Overrule any of them.
 | # | Decision | Why |
 |---|---|---|
 | D1 | Escalation bound = **3**. Craft `revision_rounds` stays **12**. Review `repair_rounds` stays **6**. | HANDOFF said escalation ≤ 3, retry ≤ 3, revision ≤ N. N=3 would abandon a real language after three look-fix cycles (3 surfaces × 4 breakpoints). 12/6 are the craft contract's N. Escalation is the one that changes human permission: after 3, Reassign is blocked and the assignment stops circulating. |
-| D2 | Exempt **C7, C9, C17, R13** from the prose-arm score. **C19 is not exempt** — craft specs now gate `revision_rounds` at 12, so it is real conduct. | Mechanism items still have no behavioural form. C19 changed when the craft machine landed. |
+| D2 | **C7, C9, C17, R13 are out of the comparison entirely** — not scored on either arm. Listed only as an expressiveness note: the machine can state them, prose cannot. C19 stays in (it now gates). | Rita: if the point is agent behaviour, do not score platform mechanism just to have a second way to say it. Correct. |
 | D3 | Stack existing draft branches (#211 craft, #212 prose, #210 no WASM drive) into this one PR | One PR per repo per effort from here. Those three are the contract you will read. |
 | D4 | Do **not** implement Temper kernel composite-scoping tonight | Needed for the formal joint proof, not for the LLM-judge study or for contract review. Named residual. |
 | D5 | Study judges the **Claude Code transcript** (OTS), not kernel rows alone | Tool results and HTTP 409s live in the transcript. Kernel rows drop refusals. |
