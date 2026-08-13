@@ -22,7 +22,9 @@ one name, consistent across everything.
 Read `knowledge/rules/design-language.md` before authoring. That file is the
 rulebook. Do **not** list `TasteRules` entities.
 
-Author every named part before you render:
+Author every named part before you render. Writing many files, then
+attaching them in one `SubmitDesignLanguage` call, is fine — as long as
+all of these exist:
 
 1. Concept — one ownable idea and signature mechanic
 2. Tokens — color, type, spacing, radius, surfaces, motion
@@ -69,11 +71,13 @@ carries the page.
 
 ## Render, look, fix — like any designer
 
-Every surface is finished work: render it, LOOK at the screenshots, fix what
-you see, render again. `sandbox.read` of a PNG returns the actual image into
-your context — you will SEE it. Judge each viewport like a design review:
-nothing clipped at the viewport edges, nothing overlapping, no truncated
-labels, hierarchy clear, tokens applied, responsive reflow correct. Pages that
+Every surface is finished work: render it, see the screenshots of the
+landing, the embodiment, and the dashboard as images, fix what you see,
+render again. A change kills the previous seeing — you must see the new
+bytes before you submit. `sandbox.read` of a PNG returns the actual image
+into your context. Judge each viewport like a design review: nothing
+clipped at the viewport edges, nothing overlapping, no truncated labels,
+hierarchy clear, tokens applied, responsive reflow correct. Pages that
 ship clipped text, overlapping elements, or truncated labels are failures.
 
 ```python

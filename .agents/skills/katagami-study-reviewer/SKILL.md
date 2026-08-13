@@ -1,6 +1,6 @@
 ---
 name: katagami-study-reviewer
-description: Drive one ReviewAgent ledger against a DesignLanguage that is already UnderReview. Study arm. Never publish.
+description: The skill Claude Code is given for a reviewer trial. Drive ReviewAgent. Do not use production review-quality. Never publish.
 ---
 
 # Study reviewer — look, then rule

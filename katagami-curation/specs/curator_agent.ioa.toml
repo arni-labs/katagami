@@ -318,112 +318,26 @@ effect = [{ type = "set_bool", var = "design_rules_read", value = "true" }]
 hint = "Read knowledge/rules/design-language.md — that file is the rulebook. Do not list Accepted TasteRule entities. The write target is a DesignLanguage still in Draft."
 
 [[action]]
-name = "AuthorConcept"
+name = "AuthorLanguage"
 kind = "input"
 from = ["Authoring"]
-params = ["concept_notes"]
+params = ["author_notes"]
 guard = [
   { type = "is_true", var = "design_rules_read" },
   { type = "is_false", var = "concept_authored" },
 ]
-effect = [{ type = "set_bool", var = "concept_authored", value = "true" }]
-hint = "Author the one ownable idea — philosophy, signature mechanic, name. A page without a concept first is a caption."
-
-[[action]]
-name = "AuthorTokens"
-kind = "input"
-from = ["Authoring"]
-params = ["token_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "tokens_authored" },
+effect = [
+  { type = "set_bool", var = "concept_authored", value = "true" },
+  { type = "set_bool", var = "tokens_authored", value = "true" },
+  { type = "set_bool", var = "katagami_spec_authored", value = "true" },
+  { type = "set_bool", var = "design_md_authored", value = "true" },
+  { type = "set_bool", var = "landing_authored", value = "true" },
+  { type = "set_bool", var = "embodiment_authored", value = "true" },
+  { type = "set_bool", var = "dashboard_authored", value = "true" },
+  { type = "set_bool", var = "shadcn_authored", value = "true" },
+  { type = "set_bool", var = "thumbnail_authored", value = "true" },
 ]
-effect = [{ type = "set_bool", var = "tokens_authored", value = "true" }]
-hint = "Author the tokens: color, type, spacing, radius, surfaces, motion."
-
-[[action]]
-name = "AuthorKatagamiSpec"
-kind = "input"
-from = ["Authoring"]
-params = ["spec_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "katagami_spec_authored" },
-]
-effect = [{ type = "set_bool", var = "katagami_spec_authored", value = "true" }]
-hint = "Author the Katagami spec on the entity — SetSpec: rules, layout, guidance. This is the language record, not DESIGN.md."
-
-[[action]]
-name = "AuthorDesignMd"
-kind = "input"
-from = ["Authoring"]
-params = ["design_md_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "design_md_authored" },
-]
-effect = [{ type = "set_bool", var = "design_md_authored", value = "true" }]
-hint = "Author DESIGN.md, the portable projection, and lint it clean."
-
-[[action]]
-name = "AuthorLanding"
-kind = "input"
-from = ["Authoring"]
-params = ["landing_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "landing_authored" },
-]
-effect = [{ type = "set_bool", var = "landing_authored", value = "true" }]
-hint = "Author the landing: one full-bleed hero, a real product scene."
-
-[[action]]
-name = "AuthorEmbodiment"
-kind = "input"
-from = ["Authoring"]
-params = ["embodiment_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "embodiment_authored" },
-]
-effect = [{ type = "set_bool", var = "embodiment_authored", value = "true" }]
-hint = "Author the embodiment: every primitive in every state, signature mechanic visible."
-
-[[action]]
-name = "AuthorDashboard"
-kind = "input"
-from = ["Authoring"]
-params = ["dashboard_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "dashboard_authored" },
-]
-effect = [{ type = "set_bool", var = "dashboard_authored", value = "true" }]
-hint = "Author the dashboard: a product a team would operate, in-world content."
-
-[[action]]
-name = "AuthorShadcn"
-kind = "input"
-from = ["Authoring"]
-params = ["shadcn_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "shadcn_authored" },
-]
-effect = [{ type = "set_bool", var = "shadcn_authored", value = "true" }]
-hint = "Author the three shadcn artifacts: registry-theme.json, components.md, preview-shots.json."
-
-[[action]]
-name = "AuthorThumbnail"
-kind = "input"
-from = ["Authoring"]
-params = ["thumbnail_notes"]
-guard = [
-  { type = "is_true", var = "design_rules_read" },
-  { type = "is_false", var = "thumbnail_authored" },
-]
-effect = [{ type = "set_bool", var = "thumbnail_authored", value = "true" }]
-hint = "Create the 600x400 JPEG thumbnail from the embodiment. Required. Never a TasteRule list, never an SVG stand-in."
+hint = "Author every named part: concept, tokens, Katagami spec, DESIGN.md, landing, embodiment, dashboard, shadcn, thumbnail. One mark is enough — writing the files can be many writes, and SubmitDesignLanguage can be one call. Render is refused until this has run."
 
 [[action]]
 name = "RenderSurfaces"

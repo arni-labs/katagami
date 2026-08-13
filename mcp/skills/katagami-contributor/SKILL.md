@@ -30,7 +30,7 @@ python3 hooks/trajectory-capture/capture.py identity
 
 An id you minted yourself points at no stored document: the hook files the
 trajectory under the harness session id, so a run that wrote its own invented
-id onto `ReceiveBrief` leaves a `trajectory_id` that resolves to nothing.
+id onto `RecordCapture` leaves a `trajectory_id` that resolves to nothing.
 There is one derivation, in one place
 (`scripts/trajectory/claude_session_to_ots.py::derive_trajectory_id`), and both
 sides read it.
@@ -60,7 +60,7 @@ the stored trajectory come to disagree — the failure described just above.
 
 Minting a session id is only half the job. The id names a document that does
 not exist until you convert a real transcript into it. A run that mints an id,
-writes it onto `ReceiveBrief` and never converts a transcript produces a perfect
+writes it onto `RecordCapture` and never converts a transcript produces a perfect
 ledger that nothing can judge: layer 1 answers `indeterminate` because the
 trajectory names no spec version, and neither layer-2 input can be assembled at
 all. **A study run must be captured, not merely minted** — either start the
@@ -85,20 +85,25 @@ Then:
    ingest accepted it.
 4. **Record the spec version you actually ran under.** The converter computes
    it from `CuratorAgent` in the checkout and refuses to post without one; put
-   that same value on `ReceiveBrief`. A verdict is only meaningful against the
+   that same value on `RecordCapture`. A verdict is only meaningful against the
    contract in force at the time, and `python3 scripts/trajectory/spec_version.py
    CuratorAgent` prints it. Note where each copy is read from: the judge takes
    the version off the **trajectory**, not off the ledger entity, so the value on
-   `ReceiveBrief` is the run's own record and does not stand in for a captured
+   `RecordCapture` is the run's own record and does not stand in for a captured
    trajectory. A ledger carrying the right version alongside no trajectory still
    judges `indeterminate`.
 
 ## The run ledger — drive it, do not just read about it
 
 The captured trajectory is replayed against `CuratorAgent`
-(`katagami-curation/specs/curator_agent.ioa.toml`): draft, then self-review,
-then submit — once, and only work that already reached `UnderReview` — and
-never publish.
+(`katagami-curation/specs/curator_agent.ioa.toml`): research, then
+synthesize — take the query, search, index, derive 3–5 directions; take
+the direction, read `knowledge/rules/design-language.md`, author every
+named part, render, see each surface, fix, submit. Never publish.
+
+A **study trial** does not use this file. Claude Code is given
+`.agents/skills/katagami-study-curator/SKILL.md`, which follows the
+production `research-direction` and `synthesize-language` skills.
 
 That replay has something to check only if this run actually drove a
 `CuratorAgent` entity through those states. **The ledger is not optional
@@ -113,7 +118,7 @@ One entity per run. Create it before the first piece of work:
 POST $TEMPER_API_URL/tdata/CuratorAgents
 {}
     -> 201, the new entity's state:
-       { "entity_type": "CuratorAgent", "entity_id": "<run id>", "status": "BriefReceived", ... }
+       { "entity_type": "CuratorAgent", "entity_id": "<run id>", "status": "Idle", ... }
 ```
 
 The id is **`entity_id`**. Not `Id` — that spelling belongs to other creation
@@ -140,23 +145,32 @@ x-temper-principal-id: katagami-contributor
 
 ### The sequence
 
-| # | Call | Body | When |
-|---|---|---|---|
-| 1 | `Temper.ReceiveBrief` | `direction_id`, `brief`, `session_id`, `trajectory_id`, `spec_version`, `harness` | Immediately after creating the entity. The ids come from `capture.py identity` — or `capture.py derive` for a session the hooks never saw — unchanged. |
-| 2 | `Temper.BeginDrafting` | `{}` | Before the first piece of design work. Moves to `Drafting`. Guarded on `has_brief`, so step 1 must have happened. |
-| 3 | `Temper.ClaimJob` / `Temper.ReleaseJob` | `{}` | Around each concurrent unit of work. `ClaimJob` is guarded at 10 in flight — the standing batch cap, enforced rather than remembered. |
-| 4 | `Temper.RecordDraft` | `draft_notes` | As the work takes shape. Call it more than once; it is a log, not a summary. |
-| 5 | `Temper.RecordDesignLanguage`, `Temper.RecordArtStyle`, `Temper.RecordPaletteSystem`, `Temper.RecordWritingStyle` | `design_language_ids` / `art_style_ids` / `palette_system_ids` / `writing_style_ids` | Once each artifact exists, with the ids the MCP submit tools returned. One call per lane you produced. |
-| 6 | `Temper.SelfReview` | `self_review_notes` | After reviewing your own work, before submitting. Moves to `SelfReviewed`. |
-| 7 | `Temper.SubmitDesignLanguages`, `Temper.SubmitArtStyles`, `Temper.SubmitPaletteSystems`, `Temper.SubmitWritingStyles` | `submitted_entity_type` | Last. Moves to `Submitted`, which is terminal. |
+Same acts as production `research-direction` and `synthesize-language`.
+Authoring every named part may be many file writes and one
+`SubmitDesignLanguage` call; mark `AuthorLanguage` once they all exist.
 
-Give `RecordDraft` and `SelfReview` real content. `self_review_notes` is what
-you actually checked and what you changed; a one-word note is a run that did
-not self-review, recorded as one that did.
+| After you… | Mark |
+|---|---|
+| Have capture ids | `RecordCapture` |
+| Have the running search job and query | `TakeQuery` |
+| Have searched | `SearchTheWeb` |
+| Have indexed a source | `IndexSources` |
+| Have spawned a direction | `DeriveDirections` |
+| Have completed the search job (3–5 directions) | `CompleteResearch` |
+| Have the running synthesize job and direction | `TakeDirection` |
+| Have read design-language.md | `ReadDesignRules` |
+| Have authored every named part | `AuthorLanguage` |
+| Have rendered | `RenderSurfaces` |
+| Have seen each surface | `LookAtLanding` / `LookAtEmbodiment` / `LookAtDashboard` |
+| Have changed bytes after seeing | `FixSurfaces` (then render and see again; max 12) |
+| The language is UnderReview | `SubmitLanguage` |
+| The synthesize job has completed | `CompleteSynthesis` |
 
-`Temper.Abandon` (`abandon_reason`) is the honest ending for a run that gives
-up. Use it. A run that stops silently in `Drafting` is indistinguishable from
-one that crashed.
+`Abandon` (`abandon_reason`) is the honest ending for a run that gives
+up. Use it. A run that stops silently is indistinguishable from one that
+crashed.
+
+Do not list Accepted TasteRule entities. Do not publish.
 
 ### Why submission is the hard step
 

@@ -1,6 +1,6 @@
 ---
 name: katagami-study-human
-description: Drive one HumanCurator assignment — decide publish or return a language that a ReviewAgent has already ruled on. Study arm. An agent may execute Publish only after your approval.
+description: The skill Claude Code is given for a human-curator trial. Decide ApprovePublish or return. An agent may execute Publish only after your approval.
 ---
 
 # Study human — decide, then publish or return

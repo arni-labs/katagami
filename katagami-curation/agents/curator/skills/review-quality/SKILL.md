@@ -435,9 +435,9 @@ assert thumbnail_bytes.get('media_type') == 'image/jpeg', thumbnail_bytes
     The CurationJob finalizer reads the referenced embodiment and DESIGN.md
     files, verifies the attached shadcn/ui registry theme, verifies
     agent-authored shadcn component recipes and preview-shot manifests, rejects
-    base64 text thumbnail payloads, marks verified fields through internal
-    actions, marks quality as passed, and publishes only if the entity/file
-    world is actually valid.
+    base64 text thumbnail payloads, and marks verified fields through internal
+    actions. It does **not** publish. Publish is a human decision
+    (`ApprovePublish`); an agent may execute `Publish` only after that.
     Never call `Archive` on a `DesignLanguage` during `quality_review` or public
     asset backfill. If a language cannot pass, fail the job with a concrete
     `error_message` so the pipeline can repair it through the normal governed

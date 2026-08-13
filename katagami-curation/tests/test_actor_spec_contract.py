@@ -108,6 +108,7 @@ class CuratorAgentSpecTest(unittest.TestCase):
     def test_synthesize_is_direction_then_parts_then_look(self):
         self.assertEqual(self.actions["TakeDirection"]["to"], "ReadingDirection")
         self.assertEqual(self.actions["ReadDesignRules"]["to"], "Authoring")
+        self.assertEqual(self.actions["AuthorLanguage"]["from"], ["Authoring"])
         self.assertEqual(self.actions["RenderSurfaces"]["from"], ["Authoring"])
         self.assertEqual(self.actions["LookAtLanding"]["to"], "Looking")
         self.assertEqual(self.actions["LookAtEmbodiment"]["to"], "Looking")

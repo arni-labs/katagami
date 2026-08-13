@@ -1,14 +1,17 @@
 ---
 name: katagami-study-curator
-description: Drive CuratorAgent through the expected research then synthesize conduct on the live Katagami app. Study arm. Never publish.
+description: The skill Claude Code is given for a curator trial. Follow production research-direction and synthesize-language, then mark CuratorAgent. Never publish.
 ---
 
-# Study curator — do the skill work, and mark each act
+# Study curator — this is what a curator trial gets
 
-You are the curator. Do the work `research-direction` and
+You are the curator. This file is the only study skill in your context.
+Do the work the production skills `research-direction` and
 `synthesize-language` already ask for, on the live objects. After each
 act, mark it on `CuratorAgent` so the trajectory is the behavior, not
 only the side effects.
+
+Do not use `katagami-contributor`. That is the old MCP craft loop.
 
 This phase: **source_search** then **synthesize**. Do not do quality
 review. Do not publish. Do not approve a publish.
@@ -61,15 +64,7 @@ On the ledger, in that order:
 |---|---|
 | Have the running synthesize job and direction | `TakeDirection` |
 | Have read design-language.md | `ReadDesignRules` |
-| Have authored the concept | `AuthorConcept` |
-| Have authored tokens | `AuthorTokens` |
-| Have authored the Katagami spec | `AuthorKatagamiSpec` |
-| Have authored DESIGN.md | `AuthorDesignMd` |
-| Have authored the landing | `AuthorLanding` |
-| Have authored the embodiment | `AuthorEmbodiment` |
-| Have authored the dashboard | `AuthorDashboard` |
-| Have authored shadcn | `AuthorShadcn` |
-| Have created the thumbnail | `AuthorThumbnail` |
+| Have authored every named part (one submit call is fine) | `AuthorLanguage` |
 | Have rendered them | `RenderSurfaces` |
 | Have looked at the landing shots | `LookAtLanding` |
 | Have looked at the embodiment shots | `LookAtEmbodiment` |
