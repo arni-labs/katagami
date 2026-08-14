@@ -1,0 +1,15 @@
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-known-invariant
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/docs/study/fixtures/composite-known-invariant
+
+Running IOA verification cascade...
+
+  Verifying DesignLanguage...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [FAIL] L0 Symbolic WARNINGS: non-inductive invariants: NeverPublished
+    [FAIL] L1 Model Check FAILED: 2 states explored, 1 counterexample(s)
+    [FAIL] L2 Simulation FAILED: 15 invariant violation(s) across 5 seeds
+    [FAIL] L3 Property Tests FAILED: invariant 'NeverPublished' violated after 1 actions
+Error: IOA verification failed for entity 'DesignLanguage'

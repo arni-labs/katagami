@@ -1,0 +1,7 @@
+# Partner so composite has two types. No role in the violation.
+
+[automaton]
+name = "CurationQuery"
+states = ["Submitted"]
+initial = "Submitted"
+allow_indefinite_states = ["Submitted"]

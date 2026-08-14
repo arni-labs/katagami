@@ -510,3 +510,15 @@ The previous INCOMPLETE (65 143 unique / 250k generated-edge budget, fat bool 
 **Caught by:** the composite checker, on a fixture and on a poisoned copy of the real specs. Production specs were not left poisoned.
 
 **Cost/saved:** cheap. Without this, a clean VERIFIED could have been "the join never fires a reaction the target cannot take" or "the join does not look."
+
+---
+
+## 2026-08-14 — Invariant catch vs liveness vacuity
+
+**Found:** `never(Published)` with Publish enabled is caught at L0 (non-inductive), L1 (counterexample), L2 (15 violations), L3 (after 1 action). Composite also flags `joint_local_invariants`.
+
+A liveness `from = ReadingQuery, reaches = Idle` with TakeQuery as a trap was **not** caught at first. Stateright `eventually` and L2 both ignore `from` when the initial state is already a target (Idle). `QueryEventuallyResolves` on the live CuratorAgent had the same shape. Fix: leads-to — every reachable `from` status must still be able to reach a target. After the fix the trap FAILS L1 and L2; live CuratorAgent still PASSES (39 015 states).
+
+**Caught by:** the verifier, once `from` was honored. The first liveness run was a false pass.
+
+**Cost/saved:** one Temper change. Without it, "eventually Idle" starting at Idle is true even when ReadingQuery is a dead end.

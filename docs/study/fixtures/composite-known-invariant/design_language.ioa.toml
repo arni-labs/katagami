@@ -1,0 +1,18 @@
+# Deliberately wrong. Publish is enabled from Draft, so Published is
+# reachable, but the invariant says never(Published). The verifier must
+# FAIL. Not a production spec.
+
+[automaton]
+name = "DesignLanguage"
+states = ["Draft", "Published"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "Published"]
+
+[[action]]
+name = "Publish"
+from = ["Draft"]
+to = "Published"
+
+[[invariant]]
+name = "NeverPublished"
+assert = "never(Published)"
