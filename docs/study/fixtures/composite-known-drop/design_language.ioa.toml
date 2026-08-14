@@ -1,0 +1,29 @@
+# Deliberately wrong join. SubmitForReview must not record a verdict:
+# ReviewAgent starts at SubmissionReceived; RecordVerdict is only enabled
+# from Reviewing. Composite must report this as a dropped reaction.
+# Not a production spec.
+
+[automaton]
+name = "DesignLanguage"
+states = ["Draft", "UnderReview", "Published", "Archived"]
+initial = "Draft"
+allow_indefinite_states = ["Draft", "UnderReview", "Published", "Archived"]
+
+[[action]]
+name = "SubmitForReview"
+from = ["Draft"]
+to = "UnderReview"
+
+[[action.triggers]]
+name = "submit_records_verdict_too_soon"
+kind = "entity"
+target_entity = "ReviewAgent"
+target_action = "RecordVerdict"
+
+[action.triggers.resolve_target]
+type = "same_id"
+
+[[action]]
+name = "Publish"
+from = ["UnderReview"]
+to = "Published"

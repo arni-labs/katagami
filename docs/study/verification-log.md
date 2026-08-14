@@ -500,3 +500,13 @@ The previous INCOMPLETE (65 143 unique / 250k generated-edge budget, fat bool 
 **Caught by:** the verifier, once the join vector matched the question.
 
 **Cost/saved:** one Temper change (PR nerdsane/temper#420). The 8-type proof is ~seconds after the individual L1s. Local bools (width flags, file-ready, counters) stay a per-entity proof; the join does not re-prove them.
+
+---
+
+## 2026-08-14 — Composite catch is not vacuous
+
+**Found:** adding one illegal trigger `DesignLanguage.SubmitForReview → ReviewAgent.RecordVerdict` (RecordVerdict only enabled from `Reviewing`) makes composite **FAIL**. Individuals still PASS. On the live 8-type join the checker named three drops: reviewer in `SubmissionReceived`, `VerdictRecorded`, or `Abandoned`. A missing guard would not show up this way — it would only enable more paths.
+
+**Caught by:** the composite checker, on a fixture and on a poisoned copy of the real specs. Production specs were not left poisoned.
+
+**Cost/saved:** cheap. Without this, a clean VERIFIED could have been "the join never fires a reaction the target cannot take" or "the join does not look."
