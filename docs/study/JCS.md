@@ -114,7 +114,8 @@ We ran judges ([prompt](https://github.com/arni-labs/katagami/blob/grok/jcs-stud
 **Worked**
 
 - Actor specs, skills, and `BEHAVIOR.md` exist for curator, reviewer, and human.
-- Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50).
+- Per-entity verification: ALL PASSED (CuratorAgent 39 015 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50).
+- Composite of the live app: ALL PASSED. Seed ArtStyle, 8-type join (ArtStyle, CurationDirection, CurationJob, CurationQuery, CuratorAgent, DesignLanguage, HumanCurator, ReviewAgent), 342 176 unique status states, no dropped reactions. [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-join-vector-1m-2026-08-14.txt).
 - Live guards refuse wrong order of actions.
 - Two Claude Code sessions captured as ATIF and OTS (table above).
 - Judges agreed on the two sessions above.
@@ -124,10 +125,9 @@ We ran judges ([prompt](https://github.com/arni-labs/katagami/blob/grok/jcs-stud
 - Whether that result holds on more than one synthesize session.
 - Reviewer agent has not run.
 - End-to-end through a real human publish decision has not run.
-- A complete composite verification for the entire Katagami app is not done. Joint verify is **INCOMPLETE** (not a pass). [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt).
 
 **Next**
 
 - More samples.
-- Get Temper to complete composite verification. Completing needs Temper changes, perhaps a smaller joint vector (keep only the fields the joins actually read, mostly `status)` and a budget that counts unique joint states, not generated edges. 
+- Run the reviewer, then a real human publish decision. 
 

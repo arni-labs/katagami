@@ -1,0 +1,573 @@
+2026-08-14T15:12:19Z
+Running verification cascade...
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-curation/specs
+  Specs directory: /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-commons/specs
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-curation/specs
+
+  [lint:warn] CurationJob: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'RecordProgress' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJob: action_missing_to — action 'SpawnDirection' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationJobTemplate: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordSubmissionRef' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'AcceptSubmission' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'LoadRulebook' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'FetchArtifacts' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenDesignMd' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenLanding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenEmbodiment' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenDashboard' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenShadcn' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'OpenThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderLanding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectLandingRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderEmbodiment' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectEmbodimentRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RenderDashboard' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'InspectDashboardRender' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyHeroReplaceable' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'ResolveArtStyle' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyArtStyleRendered' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'VerifyAgainstRules' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'CheckCuratorClaims' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordFinding' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ReviewAgent: action_missing_to — action 'RecordRepair' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] TasteRule: action_missing_to — action 'Define' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'SetOutputType' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'IncrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'DecrementDirectionsPending' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CurationQuery: action_missing_to — action 'RecordSynthesizeJob' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'AssignSubmission' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'RecordReviewVerdict' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] HumanCurator: action_missing_to — action 'ApprovePublish' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'RecordCapture' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] CuratorAgent: action_missing_to — action 'AuthorLanguage' has no `to` target; transition may be dead/no-op
+
+Running IOA verification cascade...
+
+  Verifying CurationDirection...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 10 guards satisfiable, 4 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 22 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying TrajectoryVerdict...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 1 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 2 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 15 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationJob...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 25 guards satisfiable, 2 invariants inductive, 0 unreachable; approximate model: 1 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 6 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 223 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationJobTemplate...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 3 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 66 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying ReviewAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 26 guards satisfiable, 16 invariants inductive, 2 unreachable; approximate model: 4 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 144608 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 53 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying TasteRule...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 4 guards satisfiable, 1 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 4 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 21 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CurationQuery...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 14 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 68 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 43 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying HumanCurator...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 8 guards satisfiable, 8 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 50 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 137 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying CuratorAgent...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 17 guards satisfiable, 6 invariants inductive, 10 unreachable; approximate model: 6 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 39015 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 64 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+IOA verification cascade: ALL PASSED
+
+Verification Report
+==================================================
+
+Specification Summary:
+  Entity types:    9
+  Actions:         0
+  Functions:       0
+  State machines:  0
+
+==================================================
+Result: PASS -- all cross-validation checks passed.
+
+Note: Full model checking (Stateright) is not yet integrated.
+      Run TLC separately for exhaustive state space exploration.
+
+--- /Users/seshendranalla/Development/katagami-worktrees/grok-jcs-study-setup/katagami-commons/specs
+
+  [lint:warn] Member: action_missing_to — action 'SetRole' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Member: action_missing_to — action 'SetFeatureTags' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Direction: action_missing_to — action 'SetDirection' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'SetSelection' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'SetCreator' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'SetSlotAssignments' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'AttachBrief' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'Rate' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Remix: action_missing_to — action 'IncrementUsage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] AgentGrant: action_missing_to — action 'RotateRefreshToken' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] AgentGrant: action_missing_to — action 'RecordUse' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignSource: action_missing_to — action 'Submit' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetName' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SubmitArtStyle' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetMedium' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetPromptTemplate' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetSlotRecipes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetGuidance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachReferenceImages' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachProofShots' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachVerifiedThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachPublishedAssets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachTasteVector' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachComputedFacets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetTaxonomy' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetTags' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetCredits' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetModelProvenance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetReviewEvidence' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AttachArtStyleReview' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetFeatured' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'AddCuratorNotes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetSources' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetLineage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'UpdateQuality' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'MarkQualityPassed' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'IncrementUsage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'IncrementFork' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ArtStyle: action_missing_to — action 'SetCreator' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetName' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SubmitPaletteSystem' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetCore' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetRamps' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetProofScenes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetUsageGuidance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachTokensExport' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachVerifiedThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachPublishedAssets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachTasteVector' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AttachComputedFacets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetTaxonomy' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetTags' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetCredits' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetModelProvenance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetFeatured' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'AddCuratorNotes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetSources' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetLineage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'UpdateQuality' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'MarkQualityPassed' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'IncrementUsage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'IncrementFork' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] PaletteSystem: action_missing_to — action 'SetCreator' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetName' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetVoiceLayer' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetMechanicalBands' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachCorpus' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetExemplars' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachReplication' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachVoiceMd' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SubmitWritingStyle' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttestConsent' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'MarkBandsSelfConsistent' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'MarkReplicationVerified' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'RecordVerification' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachPublishedAssets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AttachTasteVector' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetTaxonomy' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetTags' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetCredits' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetModelProvenance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetCrossModal' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetFeatured' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'AddCuratorNotes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetSources' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'SetLineage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'UpdateQuality' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'MarkQualityPassed' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'IncrementUsage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] WritingStyle: action_missing_to — action 'IncrementFork' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] OauthClient: action_missing_to — action 'UpdateMetadata' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignElement: action_missing_to — action 'Configure' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Taxonomy: action_missing_to — action 'Define' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Taxonomy: action_missing_to — action 'UpdateCharacteristics' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Taxonomy: action_missing_to — action 'UpdateRelations' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] Taxonomy: action_missing_to — action 'IncrementLanguageCount' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetName' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetSpec' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SubmitDesignLanguage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'WritePhilosophy' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetTokens' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetRules' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetLayout' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetGuidance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetImageryDirection' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetGenerativeCanvas' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachEmbodiment' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachDesignMd' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachShadcnExport' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachShadcnComponentSpec' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachShadcnPreviewShots' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachVerifiedThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachPublishedAssets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachLandingThumbnail' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachTasteVector' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachComputedFacets' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetTaxonomy' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetTags' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetCredits' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetModelProvenance' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetDefaultArtStyle' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetProvenanceTier' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetFeatured' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AddCuratorNotes' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetSources' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'AttachCompositions' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetLineage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'UpdateQuality' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'MarkQualityPassed' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'IncrementUsage' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'IncrementFork' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] DesignLanguage: action_missing_to — action 'SetCreator' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ElementManifest: action_missing_to — action 'SetElements' has no `to` target; transition may be dead/no-op
+
+  [lint:warn] ElementManifest: action_missing_to — action 'SetCompositions' has no `to` target; transition may be dead/no-op
+
+Running IOA verification cascade...
+
+  Verifying Member...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 5 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying Direction...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 3 guards satisfiable, 1 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 2 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying Remix...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 9 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 16 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying AgentGrant...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 4 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 8 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 41 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying DesignSource...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 3 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 21 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying ArtStyle...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 34 guards satisfiable, 10 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 19044 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying PaletteSystem...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 31 guards satisfiable, 8 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 2340 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying WritingStyle...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 33 guards satisfiable, 14 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 21001 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying OauthClient...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 3 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 51 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying DesignElement...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 5 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 4 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 75 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying Taxonomy...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 6 guards satisfiable, 3 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 8 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 95 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying DesignLanguage...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 43 guards satisfiable, 8 invariants inductive, 1 unreachable; approximate model: 2 transition(s) use abstract cross-entity guards; single-entity SMT excludes them from local induction and reachability
+    [PASS] L1 Model Check PASSED: 835728 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 301 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+  Verifying ElementManifest...
+proptest: FileFailurePersistence::SourceParallel set, but no source file known
+    [PASS] L0 Symbolic PASSED: 4 guards satisfiable, 2 invariants inductive, 0 unreachable
+    [PASS] L1 Model Check PASSED: 3 states explored, all properties hold
+    [PASS] L2 Simulation PASSED: 5 seeds, 61 transitions, 0 dropped msgs
+    [PASS] L3 Property Tests PASSED: 100 cases, 30 max steps
+
+IOA verification cascade: ALL PASSED
+
+Verification Report
+==================================================
+
+Specification Summary:
+  Entity types:    13
+  Actions:         0
+  Functions:       0
+  State machines:  0
+
+==================================================
+Result: PASS -- all cross-validation checks passed.
+
+Note: Full model checking (Stateright) is not yet integrated.
+      Run TLC separately for exhaustive state space exploration.
+
+Running composite cross-entity verification (ADR-0150, status join vector, unique budget 1000000)...
+    [PASS] seed=AgentGrant scope=[AgentGrant] — 3 joint states, no dropped reactions
+    [PASS] seed=ArtStyle scope=[ArtStyle, CurationDirection, CurationJob, CurationQuery, CuratorAgent, DesignLanguage, HumanCurator, ReviewAgent] — 342176 joint states, no dropped reactions
+    [PASS] seed=CurationJobTemplate scope=[CurationJobTemplate] — 3 joint states, no dropped reactions
+    [PASS] seed=DesignElement scope=[DesignElement] — 4 joint states, no dropped reactions
+    [PASS] seed=DesignSource scope=[DesignSource] — 3 joint states, no dropped reactions
+    [PASS] seed=Direction scope=[Direction] — 2 joint states, no dropped reactions
+    [PASS] seed=ElementManifest scope=[ElementManifest] — 3 joint states, no dropped reactions
+    [PASS] seed=Member scope=[Member] — 3 joint states, no dropped reactions
+    [PASS] seed=OAuthClient scope=[OAuthClient] — 3 joint states, no dropped reactions
+    [PASS] seed=PaletteSystem scope=[PaletteSystem] — 4 joint states, no dropped reactions
+    [PASS] seed=Remix scope=[Remix] — 3 joint states, no dropped reactions
+    [PASS] seed=TasteRule scope=[TasteRule] — 4 joint states, no dropped reactions
+    [PASS] seed=Taxonomy scope=[Taxonomy] — 3 joint states, no dropped reactions
+    [PASS] seed=TrajectoryVerdict scope=[TrajectoryVerdict] — 2 joint states, no dropped reactions
+    [PASS] seed=WritingStyle scope=[WritingStyle] — 4 joint states, no dropped reactions
+
+Composite cross-entity verification: ALL PASSED
+exit=
+2026-08-14T15:14:35Z

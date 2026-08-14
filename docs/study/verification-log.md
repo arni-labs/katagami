@@ -158,6 +158,45 @@ actually waiting on.
 
 ---
 
+## 2026-08-13 — DesignLanguage L1 is 835 728 states; debug made it look like hours
+
+**Checked:** why per-entity verify felt unusable. Isolated
+`DesignLanguage` only (commons CSDL + that one IOA). Release
+`target/release/temper` @ 15:00, command timed with `/usr/bin/time -p`.
+Stdout: `/tmp/jcs-dl-release-verify.txt`.
+
+**Found:** L1 explores **835 728** states and PASSES in **118s** release
+(`real 118.11`, `user 91.95`). The same L1 in the **debug** both-dirs
+run sat on `Verifying DesignLanguage...` for **~51 minutes** and had
+not finished. That is the same machine, same 835 728 states.
+
+Why 835k at all: the spec has **20 independent bools** (has_tokens,
+has_embodiment, has_design_md, …) plus 6 counters. Naive product is
+billions; reachable is ~2^20. Stateright stores each state as
+`BTreeMap<String, bool>` + `BTreeMap<String, usize>` + a `String`
+status, cloned on every edge. After that BFS, `find_dead_transitions`
+walks the same graph **again**. TLC fingerprints a compact tuple;
+Temper hashes fat maps. So even release is ~7k states/s, not TLC's
+hundreds of thousands — but two minutes, not an hour.
+
+The 2M debug run was therefore the wrong experiment: it had not
+started composite. It was re-proving a local L1 we already had
+(commons-only, same day, 835 728 PASS).
+
+**Who caught it:** a person, after Rita said individual verify should
+not take this long. She is right about debug. Release is the binary
+the cascade should run.
+
+**What it costs:** `temper verify` from a debug tree is not evidence
+about the method. Use release. A remaining instrument limit: 20
+authoring flags in the L1 vector, and L1 paying for two full BFS.
+
+**What it is not:** a reason to skip per-entity cascade before
+composite. Individual proof of DesignLanguage is two minutes in
+release, then the join can run.
+
+---
+
 ## 2026-08-13 — Composite said "budget exhausted" when the plan could not build
 
 **Checked:** the same curation-only `temper verify --specs-dir katagami-curation/specs --composite-budget 250000` after CuratorAgent passed. Full stdout is now the rest of `docs/study/evidence/temper-verify-curator-boundfix-2026-08-13.txt`.
@@ -449,3 +488,15 @@ What the original entry said, for the record:
 
 The last sentence is the one to keep, pointed the other way: a probe that
 retires a standing doubt has to hit the branch the doubt is about.
+
+---
+
+## 2026-08-14 — Composite of the live Katagami app completed
+
+**Found:** a joint BFS over the 8-type actor/catalog join (ArtStyle seed: ArtStyle, CurationDirection, CurationJob, CurationQuery, CuratorAgent, DesignLanguage, HumanCurator, ReviewAgent) is now **VERIFIED**: 342 176 unique status states, no dropped reactions. Isolated types each finished in 2–4 states. Per-entity cascade still ALL PASSED.
+
+The previous INCOMPLETE (65 143 unique / 250k generated-edge budget, fat bool encoding) was the verifier counting the wrong vector, not a property failure. Composite now projects each entity to the fields the join actually reads (`status`) and budgets unique joint states.
+
+**Caught by:** the verifier, once the join vector matched the question.
+
+**Cost/saved:** one Temper change (PR nerdsane/temper#420). The 8-type proof is ~seconds after the individual L1s. Local bools (width flags, file-ready, counters) stay a per-entity proof; the join does not re-prove them.
