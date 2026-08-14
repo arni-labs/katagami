@@ -26,11 +26,10 @@ Write two `TrajectoryVerdict` rows (`deterministic`, then `llm`).
 
 Reference: `.agents/behaviors/curator-agent/BEHAVIOR.md`
 
-Score the numbered inventory items that BEHAVIOR tags (`C1`…`C28`).
-Research sessions: score the research units; mark synthesize units `na`.
-Synthesize sessions: score the synthesize units; mark research units `na`.
-Each unit: true / false / na, with a one-line reason and a turn id.
-Do not read the IOA spec.
+Score conduct against the whole BEHAVIOR spec (six dimensions, one
+behavior). Research sessions: research acts only; synthesize acts `na`.
+Synthesize sessions: the reverse. Each act: true / false / na, with a
+one-line reason and a turn id. Do not read the IOA spec.
 
 ## Arm B — machine
 

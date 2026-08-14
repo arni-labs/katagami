@@ -195,6 +195,26 @@ type = "bool"
 initial = "false"
 
 [[state]]
+name = "wide_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "desktop_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "tablet_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
+name = "mobile_390_captured"
+type = "bool"
+initial = "false"
+
+[[state]]
 name = "language_submitted"
 type = "bool"
 initial = "false"
@@ -305,9 +325,13 @@ effect = [
   { type = "set_bool", var = "landing_looked", value = "false" },
   { type = "set_bool", var = "embodiment_looked", value = "false" },
   { type = "set_bool", var = "dashboard_looked", value = "false" },
+  { type = "set_bool", var = "wide_captured", value = "false" },
+  { type = "set_bool", var = "desktop_captured", value = "false" },
+  { type = "set_bool", var = "tablet_captured", value = "false" },
+  { type = "set_bool", var = "mobile_390_captured", value = "false" },
   { type = "set_bool", var = "language_submitted", value = "false" },
 ]
-hint = "Take the direction the pipeline queued. Read the brief from that CurationDirection before authoring. Clears every authoring and look flag so a second hold cannot inherit the last language."
+hint = "Take the direction the pipeline queued. Read the brief from that CurationDirection before authoring. Clears every authoring, look, and width flag so a second hold cannot inherit the last language."
 
 [[action]]
 name = "ReadDesignRules"
@@ -362,7 +386,13 @@ guard = [
   { type = "is_true", var = "shadcn_authored" },
   { type = "is_true", var = "thumbnail_authored" },
 ]
-hint = "Render the current bytes in a real browser. This produces evidence. It is not looking. Refused until every named part has been authored."
+effect = [
+  { type = "set_bool", var = "wide_captured", value = "true" },
+  { type = "set_bool", var = "desktop_captured", value = "true" },
+  { type = "set_bool", var = "tablet_captured", value = "true" },
+  { type = "set_bool", var = "mobile_390_captured", value = "true" },
+]
+hint = "Render the current bytes in a real browser at wide, desktop, tablet, and 390px mobile. This mark claims those four captures exist. Looking is refused until this has run. The kernel cannot see Playwright; a 375px shot that still posts this action is a lie the ATIF judge must catch until a width param exists."
 
 [[action]]
 name = "LookAtLanding"
@@ -370,9 +400,15 @@ kind = "input"
 from = ["SurfacesRendered", "Looking"]
 to = "Looking"
 params = ["landing_look_notes"]
-guard = [{ type = "is_false", var = "landing_looked" }]
+guard = [
+  { type = "is_false", var = "landing_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
 effect = [{ type = "set_bool", var = "landing_looked", value = "true" }]
-hint = "Look at the landing screenshots as images. Writing a PNG is not this."
+hint = "Look at the landing screenshots as images. Writing a PNG is not this. Refused until RenderSurfaces claimed the four widths."
 
 [[action]]
 name = "LookAtEmbodiment"
@@ -380,9 +416,15 @@ kind = "input"
 from = ["SurfacesRendered", "Looking"]
 to = "Looking"
 params = ["embodiment_look_notes"]
-guard = [{ type = "is_false", var = "embodiment_looked" }]
+guard = [
+  { type = "is_false", var = "embodiment_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
 effect = [{ type = "set_bool", var = "embodiment_looked", value = "true" }]
-hint = "Look at the embodiment screenshots as images."
+hint = "Look at the embodiment screenshots as images. Refused until RenderSurfaces claimed the four widths."
 
 [[action]]
 name = "LookAtDashboard"
@@ -390,9 +432,15 @@ kind = "input"
 from = ["SurfacesRendered", "Looking"]
 to = "Looking"
 params = ["dashboard_look_notes"]
-guard = [{ type = "is_false", var = "dashboard_looked" }]
+guard = [
+  { type = "is_false", var = "dashboard_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
+]
 effect = [{ type = "set_bool", var = "dashboard_looked", value = "true" }]
-hint = "Look at the dashboard screenshots as images."
+hint = "Look at the dashboard screenshots as images. Refused until RenderSurfaces claimed the four widths."
 
 [[action]]
 name = "FixSurfaces"
@@ -406,8 +454,12 @@ effect = [
   { type = "set_bool", var = "landing_looked", value = "false" },
   { type = "set_bool", var = "embodiment_looked", value = "false" },
   { type = "set_bool", var = "dashboard_looked", value = "false" },
+  { type = "set_bool", var = "wide_captured", value = "false" },
+  { type = "set_bool", var = "desktop_captured", value = "false" },
+  { type = "set_bool", var = "tablet_captured", value = "false" },
+  { type = "set_bool", var = "mobile_390_captured", value = "false" },
 ]
-hint = "Fix what the look found. Lands back in Authoring so the only way forward is render then look again. Clears every look. Bounded at twelve (C19)."
+hint = "Fix what the look found. Lands back in Authoring so the only way forward is render then look again. Clears every look and width claim. Bounded at twelve."
 
 [[action]]
 name = "SubmitLanguage"
@@ -418,6 +470,10 @@ guard = [
   { type = "is_true", var = "landing_looked" },
   { type = "is_true", var = "embodiment_looked" },
   { type = "is_true", var = "dashboard_looked" },
+  { type = "is_true", var = "wide_captured" },
+  { type = "is_true", var = "desktop_captured" },
+  { type = "is_true", var = "tablet_captured" },
+  { type = "is_true", var = "mobile_390_captured" },
   { type = "is_false", var = "language_submitted" },
   { type = "cross_entity_state", entity_type = "DesignLanguage", entity_id_source = "design_language_id", required_status = ["UnderReview"], required = true },
 ]
@@ -518,7 +574,7 @@ params = { abandon_reason = "Language under review but synthesize job never comp
 [[invariant]]
 name = "SeenBeforeSubmit"
 when = ["LanguageUnderReview"]
-assert = "landing_looked && embodiment_looked && dashboard_looked"
+assert = "landing_looked && embodiment_looked && dashboard_looked && wide_captured && desktop_captured && tablet_captured && mobile_390_captured"
 
 [[invariant]]
 name = "OneLanguageOneSubmit"

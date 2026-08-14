@@ -196,6 +196,10 @@
         <Property Name="LandingLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="EmbodimentLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="DashboardLooked" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="WideCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="DesktopCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="TabletCaptured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
+        <Property Name="Mobile390Captured" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="LanguageSubmitted" Type="Edm.Boolean" Nullable="false" DefaultValue="false" />
         <Property Name="CreatedAt" Type="Edm.DateTimeOffset" />
         <Property Name="UpdatedAt" Type="Edm.DateTimeOffset" />
