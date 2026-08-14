@@ -3,11 +3,25 @@
 #
 #   bash scripts/run-local.sh
 #
-# Starts a local Temper server on :3467, registers the commons specs at runtime
-# (entity sets only register via POST /api/specs/load-dir — the `temper serve
-# --specs-dir/--app` flags verify specs but do NOT expose their OData entity
-# sets), seeds sample palettes/art-styles/languages, and starts the Next.js dev
-# server on :3000. Open http://localhost:3000/.
+# Prereqs:
+#   - `temper` on PATH (~/.cargo/bin is added automatically). Build it from a
+#     temper checkout:  cargo build -p temper-cli  and symlink
+#     target/debug/temper into ~/.cargo/bin.
+#   - A temper checkout containing os-apps/temper-fs (default: a sibling
+#     directory of this repo named `temper`; override with
+#     TEMPER_REPO=/path/to/temper). The commons specs' ADR-0015 file-ready
+#     guards cross-check File entities, so the temper-fs specs must be
+#     registered alongside katagami-commons.
+#
+# Starts a local Temper server on :3467, registers the temper-fs + commons
+# specs at runtime (entity sets only register via POST /api/specs/load-dir —
+# the `temper serve --specs-dir/--app` flags verify specs but do NOT expose
+# their OData entity sets; the second load passes "merge":true because
+# load-dir REPLACES the tenant registry by default), waits out the L0–L3
+# verification cascade (several minutes on a debug build — creates return 423
+# VerificationRequired until it finishes), seeds sample
+# palettes/art-styles/languages, and starts the Next.js dev server on :3000.
+# Open http://localhost:3000/.
 #
 # Both servers are launched FULLY DETACHED (own session via a setsid launcher),
 # so they keep running after this script exits — they survive the terminal/agent
@@ -19,6 +33,8 @@ set -euo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TEMPER_REPO="${TEMPER_REPO:-$ROOT/../temper}"
+FS_SPECS="$TEMPER_REPO/os-apps/temper-fs/specs"
 PORT=3467
 DB="/tmp/katagami-remix-local.db"
 TENANT=default
@@ -38,6 +54,19 @@ if [ "${1:-}" = "--stop" ]; then
   stop
   echo "==> stopped."
   exit 0
+fi
+
+if ! command -v temper >/dev/null; then
+  echo "error: 'temper' not found on PATH." >&2
+  echo "       Build it from a temper checkout:  cargo build -p temper-cli" >&2
+  echo "       then:  ln -sf <temper>/target/debug/temper ~/.cargo/bin/temper" >&2
+  exit 1
+fi
+if [ ! -d "$FS_SPECS" ]; then
+  echo "error: temper-fs specs not found at $FS_SPECS" >&2
+  echo "       The File entity set is required by the commons file-ready guards." >&2
+  echo "       Point TEMPER_REPO at your temper checkout:  TEMPER_REPO=/path/to/temper bash scripts/run-local.sh" >&2
+  exit 1
 fi
 
 # A tiny launcher that detaches a process into its own session (macOS has no
@@ -67,14 +96,44 @@ curl --retry 40 --retry-delay 1 --retry-connrefused -sf \
   -H "X-Tenant-Id: $TENANT" -H "Authorization: Bearer $KEY" \
   "http://localhost:$PORT/tdata" >/dev/null
 
-echo "==> registering commons specs (runtime load-dir)"
-curl --max-time 180 -s -X POST "http://localhost:$PORT/api/specs/load-dir" \
-  -H "Content-Type: application/json" -H "x-tenant-id: $TENANT" -H "Authorization: Bearer $KEY" \
-  -d "{\"specs_dir\":\"$ROOT/katagami-commons/specs\",\"tenant\":\"$TENANT\"}" \
-  | grep -o '"all_passed":[a-z]*' | tail -1
+# load-dir runs the verification cascade synchronously-ish; give it a generous
+# budget (minutes on a debug build) instead of aborting a load that will succeed.
+load_specs() {
+  local dir="$1" merge="$2"
+  curl --max-time 1800 -s -X POST "http://localhost:$PORT/api/specs/load-dir" \
+    -H "Content-Type: application/json" -H "x-tenant-id: $TENANT" -H "Authorization: Bearer $KEY" \
+    -d "{\"specs_dir\":\"$dir\",\"tenant\":\"$TENANT\",\"merge\":$merge}" \
+    | grep -o '"all_passed":[a-z]*' | tail -1
+}
 
-echo "==> seeding sample data"
-TEMPER_URL="http://localhost:$PORT" TENANT="$TENANT" KEY="$KEY" node "$ROOT/scripts/seed-local-remix.mjs" | tail -4
+echo "==> registering temper-fs specs (File entities for the file-ready guards)"
+load_specs "$FS_SPECS" false
+echo "==> registering commons specs (merged into the tenant registry)"
+load_specs "$ROOT/katagami-commons/specs" true
+
+echo "==> seeding sample data (retries while the verification cascade finishes)"
+seeded=0
+for i in $(seq 1 90); do
+  OUT="$(TEMPER_URL="http://localhost:$PORT" TENANT="$TENANT" KEY="$KEY" \
+        node "$ROOT/scripts/seed-local-remix.mjs" 2>&1)" || true
+  if echo "$OUT" | grep -q "=== Seed complete ==="; then
+    echo "$OUT" | tail -5
+    seeded=1
+    break
+  fi
+  if echo "$OUT" | grep -q "VerificationRequired"; then
+    echo "    attempt $i: verification cascade still running — retrying in 20s"
+    sleep 20
+    continue
+  fi
+  echo "$OUT" | tail -8
+  echo "==> seed failed (see above)"
+  exit 1
+done
+if [ "$seeded" != 1 ]; then
+  echo "==> gave up waiting for the verification cascade (30 min)"
+  exit 1
+fi
 
 echo "==> writing ui/.env.local"
 cat > "$ROOT/ui/.env.local" <<EOF
