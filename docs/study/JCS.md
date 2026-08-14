@@ -100,17 +100,24 @@ Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.co
 
 ---
 
+## What the judges found
+
+Eight independent judges (two sessions × ATIF/OTS × behavior/state machine) read the full trajectories. Verdicts: [round2/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/round2).
+
+- **Research:** all four **true**. No disagreement.
+- **Keyblock:** all four **false**, same reason: captures were 1440 / 768 / 375 — not wide, not 390. Behavior and state machine agree. ATIF and OTS agree.
+
+---
+
 ## Confirmed vs not
 
 **Worked**
 
 - Actor specs, skills, and `BEHAVIOR.md` exist for curator, reviewer, and human.
-- Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50). 
+- Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50).
 - Live guards refuse wrong order of actions.
-- Ran 2 Claude Code sessions (research and synthesize) against local Temper and captured as ATIF and OTS (table above).
-- Second judge round (new six-section behavior + updated state machine), eight independent judges, full trajectories:
-  - Research: all four **true**. No disagreement. [files](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/round2)
-  - Keyblock synthesize: all four **false** on the same unit — captured 1440 / 768 / 375, not wide and not 390. Behavior and state machine now agree. ATIF and OTS agree.
+- Two Claude Code sessions captured as ATIF and OTS (table above).
+- The eight judges agreed (section above).
 
 **Not confirmed**
 
