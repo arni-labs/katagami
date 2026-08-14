@@ -14,6 +14,11 @@ name = "DesignSource"
 states = ["Submitted", "Indexed", "Failed"]
 initial = "Submitted"
 
+# ADR-0050 migration allowlist (same pattern as design_language.ioa.toml):
+# Submitted waits on the research agent's indexing pass; Indexed is the
+# durable catalog record; Failed is terminal-with-retry.
+allow_indefinite_states = ["Submitted", "Indexed", "Failed"]
+
 # --- State Variables ---
 
 [[state]]
