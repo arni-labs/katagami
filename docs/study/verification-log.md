@@ -513,12 +513,15 @@ The previous INCOMPLETE (65 143 unique / 250k generated-edge budget, fat bool 
 
 ---
 
-## 2026-08-14 — Invariant catch vs liveness vacuity
+## 2026-08-14 — Real CuratorAgent properties fail when the spec is weakened
 
-**Found:** `never(Published)` with Publish enabled is caught at L0 (non-inductive), L1 (counterexample), L2 (15 violations), L3 (after 1 action). Composite also flags `joint_local_invariants`.
+**Found:** the properties the briefing already names, on copies of the live CuratorAgent spec:
 
-A liveness `from = ReadingQuery, reaches = Idle` with TakeQuery as a trap was **not** caught at first. Stateright `eventually` and L2 both ignore `from` when the initial state is already a target (Idle). `QueryEventuallyResolves` on the live CuratorAgent had the same shape. Fix: leads-to — every reachable `from` status must still be able to reach a target. After the fix the trap FAILS L1 and L2; live CuratorAgent still PASSES (39 015 states).
+- **SeenBeforeSubmit** — SubmitLanguage allowed from SurfacesRendered without LookAt*. L1 FAIL (113 544 states, 1 counterexample), L2 FAIL (2 violations), L3 FAIL: `invariant 'SeenBeforeSubmit' violated after 8 actions`. L0 still PASS (the bool conjunction is not what SMT proves here).
+- **QueryEventuallyResolves** — SearchTheWeb and Abandon no longer leave ReadingQuery, timeout removed. L1 FAIL (341 states), L2 FAIL (8 liveness violations). L3 does not check liveness. Unpoisoned CuratorAgent still PASSES (39 015).
 
-**Caught by:** the verifier, once `from` was honored. The first liveness run was a false pass.
+An earlier toy `never(Published)` is not a Katagami property and is not the check. These two are.
 
-**Cost/saved:** one Temper change. Without it, "eventually Idle" starting at Idle is true even when ReadingQuery is a dead end.
+**Caught by:** L1/L2/L3 on the real machine's own named properties. Composite does not re-check SeenBeforeSubmit (bools are not in the join vector).
+
+**Cost/saved:** shows the live invariant is not decorative. Weaken the guard, the named property fails.
