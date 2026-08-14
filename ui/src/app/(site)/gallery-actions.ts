@@ -13,6 +13,7 @@ import {
   searchPaletteCards,
 } from "@/lib/search";
 import { toArtStyleItem, toPaletteItem } from "@/lib/lane-items";
+import { hasFullGalleryAccess } from "@/lib/entity-visibility";
 import type { PaletteItem } from "@/components/palette-card";
 import type { ArtStyleItem } from "@/components/art-style-card";
 
@@ -31,6 +32,10 @@ export async function loadLanguagePage(input: {
   hue?: string;
   family?: string;
 }): Promise<PageResult<DesignLanguage>> {
+  // ARN-331: language browsing beyond the server-rendered teaser is a
+  // signed-in surface. Enforced here — not just hidden in the UI — because a
+  // server action is a public HTTP endpoint anyone can invoke directly.
+  if (!(await hasFullGalleryAccess())) return { items: [], nextCursor: null };
   return pageDesignLanguages({
     cursor: input.cursor ?? undefined,
     search: input.search,
@@ -74,6 +79,9 @@ export async function searchLanguagesByMeaning(input: {
   query: string;
   k?: number;
 }): Promise<DesignLanguage[]> {
+  // ARN-331: same signed-in gate as loadLanguagePage — meaning search ranks
+  // the full published catalog, which would sidestep the teaser cap.
+  if (!(await hasFullGalleryAccess())) return [];
   return searchLanguageCards(input.query, input.k ?? MEANING_LIMIT);
 }
 

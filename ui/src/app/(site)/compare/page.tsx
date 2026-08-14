@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { getDesignLanguage, listDesignLanguages, parseJson } from "@/lib/odata";
+import { canViewNonPublished } from "@/lib/entity-visibility";
 import { SpecPanel } from "@/components/spec-panel";
 import { EmbodimentViewer } from "@/components/embodiment-viewer";
 import { CompareSelector } from "@/components/compare-selector";
@@ -17,6 +19,17 @@ async function ComparisonView({ idA, idB }: { idA: string; idB: string }) {
     getDesignLanguage(idA),
     getDesignLanguage(idB),
   ]);
+
+  // ARN-331: the selector only offers Published languages, but the ids arrive
+  // via the URL — a guessed Draft/UnderReview id must not render for the
+  // public. The owner check runs only on the non-Published branch, mirroring
+  // /language/[id], so Published comparisons never read cookies.
+  if (
+    (langA.status !== "Published" || langB.status !== "Published") &&
+    !(await canViewNonPublished())
+  ) {
+    notFound();
+  }
 
   const sides = [
     { lang: langA, tint: "sakura" as const, tape: "sakura" as const },

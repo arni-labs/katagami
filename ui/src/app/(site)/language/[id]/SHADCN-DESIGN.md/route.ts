@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { designMdToMarkdown } from "@/components/spec-panel";
 import { getDesignLanguage } from "@/lib/odata";
+import { artifactGate } from "@/lib/entity-visibility";
 import { readTemperFileText } from "@/lib/temper-files";
 import {
   buildShadcnRegistryTheme,
@@ -38,6 +39,9 @@ export async function GET(
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
   }
+
+  const gate = await artifactGate(lang.status);
+  if (!gate.allowed) return gate.response;
 
   const f = lang.fields;
   const filename = f.slug
@@ -128,7 +132,7 @@ export async function GET(
     headers: {
       "content-type": "text/markdown; charset=utf-8",
       "content-disposition": `inline; filename="${filename}"`,
-      "cache-control": "public, max-age=60, s-maxage=300",
+      "cache-control": gate.cacheControl,
       "x-katagami-shadcn-status": allAgentAuthored
         ? "validated-kit"
         : "compatibility-fallback",

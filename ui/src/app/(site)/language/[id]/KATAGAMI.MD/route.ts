@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDesignLanguage } from "@/lib/odata";
+import { artifactGate } from "@/lib/entity-visibility";
 import { katagamiSpecToMarkdown } from "@/components/spec-panel";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,9 @@ export async function GET(
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
   }
+
+  const gate = await artifactGate(lang.status);
+  if (!gate.allowed) return gate.response;
 
   const f = lang.fields;
   const markdown = katagamiSpecToMarkdown({
