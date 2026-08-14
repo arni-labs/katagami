@@ -89,16 +89,12 @@ We store OTS and export ATIF (`GET …/atif`). Eight separate judges ran: each s
 
 Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.com/harbor-framework/harbor) → ATIF → mapped to OTS → `POST /api/ots/trajectories`. How: [hooks/trajectory-capture/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/hooks/trajectory-capture). Converter: [claude_session_to_ots.py](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/scripts/trajectory/claude_session_to_ots.py).
 
-**Where they live**
+Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/trajectories). Also on the local Temper: `GET http://127.0.0.1:3472/api/ots/trajectories/<id>/atif`.
 
-- Server: `GET http://127.0.0.1:3472/api/ots/trajectories/<id>/atif`
-- Offline: `~/.katagami/trajectory-queue/archive/<id>.json` (OTS) and `<id>.atif.json` (ATIF)
-
-
-| Session             | `trajectory_id`                 | ATIF      | OTS       |
-| ------------------- | ------------------------------- | --------- | --------- |
-| Research            | `traj-98368249db11e01879992cf4` | 49 steps  | 49 turns  |
-| Keyblock synthesize | `traj-1ec04abc2c522975dfc9ac1a` | 103 steps | 103 turns |
+| Session | `trajectory_id` | ATIF | OTS |
+| --- | --- | --- | --- |
+| Research | `traj-98368249db11e01879992cf4` | [49 steps](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.atif.json) | [49 turns](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.ots.json) |
+| Keyblock synthesize | `traj-1ec04abc2c522975dfc9ac1a` | [103 steps](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-1ec04abc2c522975dfc9ac1a.atif.json) | [103 turns](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-1ec04abc2c522975dfc9ac1a.ots.json) |
 
 
 ---
