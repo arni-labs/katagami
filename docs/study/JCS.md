@@ -78,11 +78,11 @@ Examples of properties the per-entity checker runs on CuratorAgent (not the full
 The judge reads a **trajectory**.
 
 
-| Format               | What it is                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code `.jsonl` | Raw session transcript the harness writes.                                                                                 |
+| Format               | What it is                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| Claude Code `.jsonl` | Raw session transcript the harness writes.                                               |
 | **ATIF v1.7**        | Harbor’s Agent Trajectory Interchange Format (`steps[]`: messages, tool calls, results). |
-| **OTS 0.1.0**        | Temper’s stored document (`turns[]`). Same run, persisted on the server. |
+| **OTS 0.1.0**        | Temper’s stored document (`turns[]`). Same run, persisted on the server.                 |
 
 
 We store OTS and export ATIF (`GET …/atif`). Eight separate judges ran: each session × each format × behavior vs state machine. They read the trajectory file, not a summary.
@@ -91,9 +91,10 @@ Pipeline: Claude Code session → `.jsonl` → [Harbor 0.21.0](https://github.co
 
 Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/trajectories). Also on the local Temper: `GET http://127.0.0.1:3472/api/ots/trajectories/<id>/atif`.
 
-| Session | `trajectory_id` | ATIF | OTS |
-| --- | --- | --- | --- |
-| Research | `traj-98368249db11e01879992cf4` | [49 steps](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.atif.json) | [49 turns](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.ots.json) |
+
+| Session             | `trajectory_id`                 | ATIF                                                                                                                                                  | OTS                                                                                                                                                  |
+| ------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Research            | `traj-98368249db11e01879992cf4` | [49 steps](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.atif.json)  | [49 turns](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-98368249db11e01879992cf4.ots.json)  |
 | Keyblock synthesize | `traj-1ec04abc2c522975dfc9ac1a` | [103 steps](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-1ec04abc2c522975dfc9ac1a.atif.json) | [103 turns](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/trajectories/traj-1ec04abc2c522975dfc9ac1a.ots.json) |
 
 
@@ -107,12 +108,13 @@ Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.co
 - Per-entity verification: ALL PASSED (CuratorAgent 37 754 states, ReviewAgent 144 608, DesignLanguage 835 728, HumanCurator 50). 
 - Live guards refuse wrong order of actions.
 - Ran 2 Claude Code sessions (research and synthesize) against local Temper and captured as ATIF and OTS (table above).
-- Research: all four judges fold **true** (behavior and state machine, ATIF and OTS). No disagreement.
-- Keyblock synthesize: state-machine judges fold **true** on both formats. Behavior judges fold **false** on both formats. Same reason: Playwright captured 1440 / 768 / 375 only — no wide, mobile not 390px. The state machine has no such guard, so that unit is na there. [research ATIF](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-atif-fold.txt) · [research OTS](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-research-ots-fold.txt) · [Keyblock ATIF](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-synth-atif-fold.txt) · [Keyblock OTS](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/judge-synth-ots-fold.txt).
+- Second judge round (new six-section behavior + updated state machine), eight independent judges, full trajectories:
+  - Research: all four **true**. No disagreement. [files](https://github.com/arni-labs/katagami/tree/grok/jcs-study-setup/docs/study/evidence/round2)
+  - Keyblock synthesize: all four **false** on the same unit — captured 1440 / 768 / 375, not wide and not 390. Behavior and state machine now agree. ATIF and OTS agree.
 
 **Not confirmed**
 
-- Whether that split holds on more than one synthesize session.
+- Whether that result holds on more than one synthesize session.
 - Reviewer agent has not run.
 - End-to-end through a real human publish decision has not run.
 - A complete composite verification for the entire Katagami app is not done. Joint verify is **INCOMPLETE** (not a pass). [log](https://github.com/arni-labs/katagami/blob/grok/jcs-study-setup/docs/study/evidence/temper-verify-both-dirs-release-250k-2026-08-13.txt).
@@ -120,5 +122,5 @@ Copies of the judged runs: [docs/study/evidence/trajectories/](https://github.co
 **Next**
 
 - More samples.
-- Get Temper to complete composite verification. The join is eight types in one product (DesignLanguage alone is 835 728 local states). Completing it likely needs a smaller joint vector — keep only the fields the joins actually read, mostly `status` — and a budget that counts unique joint states, not generated edges. Raising `--composite-budget` on the current encoding will not finish the space. Those Temper changes are parked.
+- Get Temper to complete composite verification. Completing needs Temper changes, perhaps a smaller joint vector (keep only the fields the joins actually read, mostly `status)` and a budget that counts unique joint states, not generated edges. 
 

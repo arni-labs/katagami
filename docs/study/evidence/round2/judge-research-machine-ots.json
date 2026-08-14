@@ -1,0 +1,137 @@
+{
+  "session": "research",
+  "format": "ots",
+  "reference": "curator_agent.ioa.toml",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "29",
+          "reason": "RecordCapture is one-shot from Idle and TakeQuery is guarded on capture_recorded; OTS turn 4 RecordCapture 200 (ledger en-019ffced…) then TakeQuery 409, turn 29 RecordCapture then TakeQuery 200 (ledger en-019ffcef…) to ReadingQuery"
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "29",
+          "reason": "TakeQuery is the only Idle->ReadingQuery edge and requires CurationJob Running + CurationQuery Researching; OTS turn 29 TakeQuery 200 on job en-019ffcec-69ba… / query en-019ffcec-6991… to ReadingQuery, first WebSearch at turn 32"
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "33",
+          "reason": "SearchTheWeb is the only edge into Searching and IndexSources requires searches_run>=1; OTS turn 32 ran 3 WebSearch queries, turn 33 SearchTheWeb 200 x3, first IndexSources at turn 36"
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "36",
+          "reason": "DeriveDirections requires sources_indexed>=1; OTS turn 36 created/Submitted/Indexed 6 DesignSources and marked IndexSources 200 each before any SpawnDirection/DeriveDirections"
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "38",
+          "reason": "CompleteResearch requires directions_derived>=3 (DeriveDirections max 5) and job Finalizing/Completed; OTS turn 38 SpawnDirection+DeriveDirections 200 x4, job CompleteResearch 409 then 200 at turn 40, ledger CompleteResearch 200 at turn 41 with directions_derived=4"
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "TakeDirection is the synthesize hold from Idle; this research OTS never POSTed it"
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "ReadDesignRules is the synthesize edge out of ReadingDirection; not taken in this research OTS"
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "AuthorLanguage and LanguageHasEveryPart are synthesize; no AuthorLanguage in this OTS"
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "LookAt* and SeenBeforeSubmit are synthesize; no LookAtLanding/Embodiment/Dashboard in this OTS"
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "RenderSurfaces four-width claims are synthesize; not entered"
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "FixSurfaces (clears looks, returns to Authoring) is synthesize; not taken"
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "49",
+          "reason": "CuratorAgent alphabet has no Publish; OTS has no Temper.Publish and turn 49 stops after CompleteResearch without publishing"
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Abandon / AbandonedIsFinal not taken; research hold completed to Idle at turn 41 (ledger 1 stayed Idle, from which Abandon is not enabled)"
+        }
+      ]
+    }
+  ]
+}

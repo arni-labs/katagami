@@ -1,0 +1,137 @@
+{
+  "session": "synthesize",
+  "format": "ots",
+  "reference": "curator_agent.ioa.toml",
+  "units": [
+    {
+      "name": "capture_before_hold",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "RecordCapture is one-shot from Idle and TakeDirection is guarded on capture_recorded; OTS T4 RecordCapture 200 then T5 TakeDirection 409 (empty held_job_id), T10 RecordCapture then TakeDirection 200 (ledger en-019ffd06…), T20 RecordCapture then TakeDirection 200 (final ledger en-019ffd07-7549…)"
+        }
+      ]
+    },
+    {
+      "name": "take_live_query",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "TakeQuery is the research Idle->ReadingQuery edge; this synthesize OTS never POSTed it"
+        }
+      ]
+    },
+    {
+      "name": "search_before_index",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "SearchTheWeb/IndexSources are research; not taken on this hold"
+        }
+      ]
+    },
+    {
+      "name": "index_before_direction",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "DeriveDirections requires sources_indexed>=1; no IndexSources in this synthesize OTS"
+        }
+      ]
+    },
+    {
+      "name": "three_to_five_directions",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "CompleteResearch requires directions_derived 3–5; no DeriveDirections or CompleteResearch"
+        }
+      ]
+    },
+    {
+      "name": "take_queued_direction",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "TakeDirection is the only Idle->ReadingDirection edge and requires capture_recorded, CurationJob Running on held_job_id, CurationDirection Synthesizing; OTS T7 job Running, T11 direction Synthesizing, T5/T8 409 empty held_job_id, T10 TakeDirection 200, T20 TakeDirection 200 on final ledger"
+        }
+      ]
+    },
+    {
+      "name": "read_rulebook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "20",
+          "reason": "ReadDesignRules is the only ReadingDirection->Authoring edge (Draft DesignLanguage; hint: design-language.md, never TasteRule); OTS T13 read katagami-curation/knowledge/rules/design-language.md, T14/T19 409 missing persisted design_language_id, T20 ReadDesignRules 200 to Authoring with design_rules_read true; no GET TasteRules"
+        }
+      ]
+    },
+    {
+      "name": "author_named_parts",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "45",
+          "reason": "AuthorLanguage (after design_rules_read, before RenderSurfaces) sets concept/tokens/katagami_spec/DESIGN.md/landing/embodiment/dashboard/shadcn/thumbnail; OTS T36–42 wrote those files, T45 AuthorLanguage 200 with notes naming every part; RenderSurfaces only at T48"
+        }
+      ]
+    },
+    {
+      "name": "look_before_submit",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "77",
+          "reason": "SubmitLanguage and SeenBeforeSubmit require landing_looked && embodiment_looked && dashboard_looked; OTS read PNGs as images then LookAt* 200 at T59, FixSurfaces cleared looks, T69–76 re-read images, T77 LookAt* 200, T80 SubmitLanguage 200 from Looking after language UnderReview (T79)"
+        }
+      ]
+    },
+    {
+      "name": "four_widths",
+      "occurrences": [
+        {
+          "verdict": "false",
+          "turn": "48",
+          "reason": "RenderSurfaces claims wide_captured, desktop_captured, tablet_captured, mobile_390_captured (Look*/SubmitLanguage/SeenBeforeSubmit require all four); OTS T46 Playwright used only desktop 1440, tablet 768, mobile 375 — no wide, mobile not 390 — then T48 (and T68) posted RenderSurfaces"
+        }
+      ]
+    },
+    {
+      "name": "fix_and_relook",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "66",
+          "reason": "FixSurfaces Looking->Authoring clears looks and the four width flags so the only forward path is render then look again (max 12); OTS T66 FixSurfaces 200 revision_rounds=1, T67 re-render, T68 RenderSurfaces, T69–77 re-look, SubmitLanguage only from Looking at T80"
+        }
+      ]
+    },
+    {
+      "name": "no_publish",
+      "occurrences": [
+        {
+          "verdict": "true",
+          "turn": "103",
+          "reason": "CuratorAgent alphabet has no Publish; OTS never called Publish or ApprovePublish; T79 SubmitForReview left DesignLanguage UnderReview; T103 reports Keyblock still UnderReview"
+        }
+      ]
+    },
+    {
+      "name": "abandon_honestly",
+      "occurrences": [
+        {
+          "verdict": "na",
+          "turn": "",
+          "reason": "Abandon / AbandonedIsFinal not taken; final hold reached Idle at T96 (ledgers left Idle cannot Abandon — Abandon is not enabled from Idle)"
+        }
+      ]
+    }
+  ]
+}
